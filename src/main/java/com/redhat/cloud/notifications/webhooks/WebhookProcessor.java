@@ -43,9 +43,24 @@ public class WebhookProcessor {
                     return postReq.send()
                             // TODO Handle the response correctly
                             .onFailure().invoke(t -> {
+                                // TODO Handle timeouts and such here (or incorrect DNS etc)
+                                // Make at least a rudimentary detect when to disable and when to retry later
                                 System.out.printf("We failed to process the request: %s\n", t.getMessage());
                             })
-                            .onItem().apply((Function<HttpResponse<Buffer>, Void>) bufferHttpResponse -> null);
+                            .onItem().apply((Function<HttpResponse<Buffer>, Void>) resp -> {
+                                if(resp.statusCode() >= 200 && resp.statusCode() <= 300) {
+                                    // Accepted
+                                }
+                                if(resp.statusCode() >= 400 && resp.statusCode() < 500) {
+                                    // Disable, this isn't temporary error
+                                } else if(resp.statusCode() > 500) {
+                                    // Temporary error, allow retry
+                                } else {
+                                    // Redirects etc should have been followed by the vertx (test this)
+                                }
+
+                                return null;
+                            });
                 }).merge().toUni();
     }
 }

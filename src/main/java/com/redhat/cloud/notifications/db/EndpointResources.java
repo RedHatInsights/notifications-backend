@@ -4,15 +4,10 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.subscription.UniEmitter;
 import org.hibernate.reactive.mutiny.Mutiny;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 @ApplicationScoped
 public class EndpointResources {
@@ -35,7 +30,13 @@ public class EndpointResources {
     }
 
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
-        return null;
+        // TODO This doesn't merge properties based on the type (such as webhooks) - nor do errors if that wasn't possible
+        return mutinySession.onItem().produceUni(session -> session.persist(endpoint))
+                .onItem().produceUni(Mutiny.Session::flush)
+                .onItem().apply(ignored -> endpoint)
+                .onFailure().invoke(t -> {
+                    System.out.printf("Failed to persist, %s\n", t.getMessage());
+                });
     }
 
     public Uni<Void> deleteEndpoint(String tenant, String id) {

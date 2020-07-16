@@ -22,6 +22,6 @@ public class EndpointProcessor {
         return resources
                 .getEndpoints(action.getTenantId())
                 // Map to new entity with all the necessary information for invocation
-                .onItem().apply(endpoint -> new Notification(action.getTenantId(), endpoint.getId(), action.getEvent()));
+                .onItem().apply(endpoint -> new Notification(action.getTenantId(), endpoint.getId().toString(), action.getEvent()));
     }
 }

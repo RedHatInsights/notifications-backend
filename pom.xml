@@ -62,6 +62,10 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-resteasy-jackson</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
       <scope>test</scope>
     </dependency>
@@ -90,7 +94,6 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-reactive-pg-client</artifactId>
     </dependency>
-
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-hibernate-reactive-deployment</artifactId>
@@ -98,6 +101,13 @@
       <version>${quarkus-plugin.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>io.smallrye.reactive</groupId>
+      <artifactId>mutiny-reactor</artifactId>
+      <version>0.6.0</version>
+    </dependency>
+
+    <!-- Can't enable, see https://github.com/quarkusio/quarkus/issues/10716 -->
     <!-- Flyway specific dependencies -->
 <!--    <dependency>-->
 <!--      <groupId>io.quarkus</groupId>-->
@@ -109,6 +119,12 @@
 <!--      <groupId>io.quarkus</groupId>-->
 <!--      <artifactId>quarkus-jdbc-postgresql</artifactId>-->
 <!--    </dependency>-->
+
+    <dependency>
+      <groupId>io.r2dbc</groupId> <!-- org.postgresql after 0.9.* -->
+      <artifactId>r2dbc-postgresql</artifactId>
+      <version>0.8.3.RELEASE</version>
+    </dependency>
 
   </dependencies>
   <build>
