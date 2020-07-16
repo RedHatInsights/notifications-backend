@@ -106,6 +106,10 @@
       <artifactId>mutiny-reactor</artifactId>
       <version>0.6.0</version>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-openapi</artifactId>
+    </dependency>
 
     <!-- Can't enable, see https://github.com/quarkusio/quarkus/issues/10716 -->
     <!-- Flyway specific dependencies -->
