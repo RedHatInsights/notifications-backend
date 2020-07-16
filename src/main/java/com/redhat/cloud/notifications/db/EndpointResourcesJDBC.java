@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
@@ -24,6 +25,7 @@ public class EndpointResourcesJDBC {
     Mono<PostgresqlConnection> connectionPublisher;
 
     // TODO Modify to use PreparedStatements
+    // TODO Pooling?
 
     @PostConstruct
     void init() {
@@ -39,23 +41,61 @@ public class EndpointResourcesJDBC {
     }
 
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
-        Mono<Endpoint> endpointMono = connectionPublisher.flatMapMany(conn ->
-                conn.createStatement("INSERT INTO public.endpoints (account_id, endpoint_type, enabled, name, description, created) VALUES ($1, $2, $3, $4, $5, $6)")
-                        .bind("$1", endpoint.getTenant())
-                        .bind("$2", 1)
-                        .bind("$3", endpoint.isEnabled())
-                        .bind("$4", endpoint.getName())
-                        .bind("$5", endpoint.getDescription())
-                        .bind("$6", LocalDateTime.now())
-                        .returnGeneratedValues("id")
-                        .execute())
-                .flatMap(res -> res
-                        .map(((row, rowMetadata) -> {
-                            endpoint.setId(row.get("id", UUID.class));
-                            return endpoint;
-                        }))).next();
+//        Mono<Endpoint> endpointMono = connectionPublisher.flatMap(conn -> {
+//            return conn.beginTransaction()
+//                    .flatMapMany(cr -> insertEndpointStatement(endpoint, conn))
+//                    .flatMap(endpoint2 -> insertWebhooksStatement(endpoint2, conn))
+//                    .then(conn.commitTransaction())
+//                    .map(ignored -> endpoint);
+//        });
+        Mono<Endpoint> endpointMono = connectionPublisher.flatMap(conn -> {
+            Flux<Endpoint> endpointFlux = insertEndpointStatement(endpoint, conn);
+            Flux<Endpoint> endpointFlux1 = endpointFlux.flatMap(ep -> insertWebhooksStatement(ep, conn));
+            return endpointFlux1.next();
+        });
 
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), endpointMono);
+    }
+
+    private Flux<Endpoint> insertEndpointStatement(Endpoint endpoint, PostgresqlConnection conn) {
+        Flux<PostgresqlResult> execute = conn.createStatement("INSERT INTO public.endpoints (account_id, endpoint_type, enabled, name, description, created) VALUES ($1, $2, $3, $4, $5, $6)")
+                .bind("$1", endpoint.getTenant())
+                .bind("$2", 1)
+                .bind("$3", endpoint.isEnabled())
+                .bind("$4", endpoint.getName())
+                .bind("$5", endpoint.getDescription())
+                .bind("$6", LocalDateTime.now())
+                .returnGeneratedValues("id", "created")
+                .execute();
+
+        Flux<Endpoint> endpointFlux = execute.flatMap(res -> res
+                .map(((row, rowMetadata) -> {
+                    endpoint.setId(row.get("id", UUID.class));
+                    endpoint.setCreated(row.get("created", Date.class));
+                    return endpoint;
+                })));
+
+        return endpointFlux;
+    }
+
+    private Flux<Endpoint> insertWebhooksStatement(Endpoint endpoint, PostgresqlConnection conn) {
+        WebhookAttributes attr = (WebhookAttributes) endpoint.getProperties();
+        Flux<PostgresqlResult> execute = conn.createStatement("INSERT INTO public.endpoint_webhooks (endpoint_id, url, method, disable_ssl_verification, secret_token) VALUES ($1, $2, $3, $4, $5)")
+                .bind("$1", endpoint.getId())
+                .bind("$2", attr.getUrl())
+                .bind("$3", attr.getMethod().toString())
+                .bind("$4", attr.isDisableSSLVerification())
+                .bind("$5", attr.getSecretToken())
+                .returnGeneratedValues("id")
+                .execute();
+
+        Flux<Endpoint> endpointFlux = execute.flatMap(res -> res
+                .map(((row, rowMetadata) -> {
+                    endpoint.setProperties(attr);
+                    return endpoint;
+                })));
+
+        return endpointFlux;
     }
 
     public Multi<Endpoint> getEndpoints(String tenant) {

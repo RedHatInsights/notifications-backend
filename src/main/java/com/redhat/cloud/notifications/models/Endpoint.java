@@ -34,6 +34,8 @@ public class Endpoint {
         WEBHOOK, EMAIL;
     }
 
+    // TODO Validation for these properties (to prevent errors when inserting)
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private UUID id; // Should be UUID
@@ -47,17 +49,20 @@ public class Endpoint {
     private boolean enabled;
 
     @Column(name = "endpoint_type")
+    // Transform to lower case in JSON
     private EndpointType type;
 
 //    @CreationTimestamp
 //    @ColumnDefault("CURRENT_TIMESTAMP")
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created", updatable = false)
+    // TODO JSON should be formatted based on the insights type, so ISO8601
     private Date created;
 
 //    @UpdateTimestamp
 //    @ColumnDefault("CURRENT_TIMESTAMP")
     @Temporal(TemporalType.TIMESTAMP)
+    // TODO JSON should be formatted based on the insights type, so ISO8601
     private Date updated;
 
     @Transient // Ignore for Entity usage

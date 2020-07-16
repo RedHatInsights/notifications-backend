@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.Column;
@@ -15,7 +16,10 @@ public class WebhookAttributes extends Attributes {
         GET, POST;
     }
 
+    // TODO Validation for these properties (to prevent errors when inserting)
+
     @Id
+    @JsonIgnore
     private Integer id;
 
     private String url;
@@ -30,6 +34,10 @@ public class WebhookAttributes extends Attributes {
     private String secretToken;
 
     public WebhookAttributes() {
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getUrl() {
