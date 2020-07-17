@@ -164,4 +164,19 @@ public class Endpoint {
     public void preUpdate() {
         updated = Date.from(Instant.now());
     }
+
+    @Override
+    public String toString() {
+        return "Endpoint{" +
+                "id=" + id +
+                ", tenant='" + tenant + '\'' +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", enabled=" + enabled +
+                ", type=" + type +
+                ", created=" + created +
+                ", updated=" + updated +
+                ", properties=" + properties +
+                '}';
+    }
 }

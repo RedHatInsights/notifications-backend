@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.db.EndpointResources;
+import com.redhat.cloud.notifications.db.EndpointResourcesJDBC;
 import com.redhat.cloud.notifications.models.Notification;
 import io.smallrye.mutiny.Multi;
 import org.hawkular.alerts.api.model.action.Action;
@@ -12,7 +12,7 @@ import javax.inject.Inject;
 public class EndpointProcessor {
 
     @Inject
-    EndpointResources resources;
+    EndpointResourcesJDBC resources;
 
     public Multi<Notification> process(Action action) {
         // Take input action and replace it with the correct endpoints
@@ -20,8 +20,9 @@ public class EndpointProcessor {
         // Fetch all the endpoints
         // This should filter for action sets etc when necessary - for now we fetch all the tenant targets
         return resources
+                // TODO This doesn't make sense (webhooks processor fetches all the same info as well)
                 .getEndpoints(action.getTenantId())
                 // Map to new entity with all the necessary information for invocation
-                .onItem().apply(endpoint -> new Notification(action.getTenantId(), endpoint.getId().toString(), action.getEvent()));
+                .onItem().apply(endpoint -> new Notification(action.getTenantId(), action.getEvent()));
     }
 }

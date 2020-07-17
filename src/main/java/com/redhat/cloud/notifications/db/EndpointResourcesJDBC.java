@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
@@ -24,11 +25,9 @@ public class EndpointResourcesJDBC {
 
     Mono<PostgresqlConnection> connectionPublisher;
 
-    // TODO Modify to use PreparedStatements
-    // TODO Pooling?
-
     @PostConstruct
-    void init() {
+    void getConnectionPublisher() {
+        // TODO Extract from config
         PostgresqlConnectionFactory connectionFactory = new PostgresqlConnectionFactory(PostgresqlConnectionConfiguration.builder()
                 .host("192.168.1.139")
                 .port(5432)
@@ -39,6 +38,10 @@ public class EndpointResourcesJDBC {
 
         connectionPublisher = connectionFactory.create();
     }
+
+    // TODO Modify to use PreparedStatements
+    // TODO Pooling?
+    // TODO Extract to interface so JDBC and JPA impls can be both used or selected later
 
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
 //        Mono<Endpoint> endpointMono = connectionPublisher.flatMap(conn -> {
@@ -60,7 +63,7 @@ public class EndpointResourcesJDBC {
     private Flux<Endpoint> insertEndpointStatement(Endpoint endpoint, PostgresqlConnection conn) {
         Flux<PostgresqlResult> execute = conn.createStatement("INSERT INTO public.endpoints (account_id, endpoint_type, enabled, name, description, created) VALUES ($1, $2, $3, $4, $5, $6)")
                 .bind("$1", endpoint.getTenant())
-                .bind("$2", 1)
+                .bind("$2", endpoint.getType().ordinal())
                 .bind("$3", endpoint.isEnabled())
                 .bind("$4", endpoint.getName())
                 .bind("$5", endpoint.getDescription())
@@ -98,25 +101,68 @@ public class EndpointResourcesJDBC {
         return endpointFlux;
     }
 
+    private static final String basicEndpointGetQuery = "SELECT e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints AS e JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id";
+
+    public Multi<Endpoint> getActiveEndpointsPerType(String tenant, Endpoint.EndpointType type) {
+        // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
+        String query = basicEndpointGetQuery + " WHERE e.account_id = $1 AND e.endpoint_type = $2 AND e.enabled = true";
+        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
+                conn.createStatement(query)
+                        .bind("$1", tenant)
+                        .bind("$2", type.ordinal())
+                        .execute());
+        Flux<Endpoint> endpointFlux = mapResultSetToEndpoint(resultFlux);
+        return Multi.createFrom().converter(MultiReactorConverters.fromFlux(), endpointFlux);
+    }
+
     public Multi<Endpoint> getEndpoints(String tenant) {
         // TODO Add JOIN ON clause to proper table, such as webhooks and then read the results
+        String query = basicEndpointGetQuery + " WHERE e.account_id = $1";
         Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
-                conn.createStatement("SELECT id, endpoint_type, enabled, name, description, created, updated FROM public.endpoints WHERE account_id = $1")
+                conn.createStatement(query)
                         .bind("$1", tenant)
                         .execute());
+        Flux<Endpoint> endpointFlux = mapResultSetToEndpoint(resultFlux);
+        return Multi.createFrom().converter(MultiReactorConverters.fromFlux(), endpointFlux);
+    }
+
+    private Flux<Endpoint> mapResultSetToEndpoint(Flux<PostgresqlResult> resultFlux) {
         Flux<Endpoint> endpointFlux = resultFlux.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> {
+            Endpoint.EndpointType endpointType = Endpoint.EndpointType.values()[row.get("endpoint_type", Integer.class)];
+
             Endpoint endpoint = new Endpoint();
             endpoint.setId(row.get("id", UUID.class));
             endpoint.setEnabled(row.get("enabled", Boolean.class));
-            endpoint.setType(Endpoint.EndpointType.values()[row.get("endpoint_type", Integer.class)]);
+            endpoint.setType(endpointType);
             endpoint.setName(row.get("name", String.class));
             endpoint.setDescription(row.get("description", String.class));
             endpoint.setCreated(row.get("created", Date.class));
             endpoint.setUpdated(row.get("updated", Date.class));
 
+            switch(endpointType) {
+                case WEBHOOK:
+                    WebhookAttributes attr = new WebhookAttributes();
+                    attr.setId(row.get("webhook_id", Integer.class));
+                    attr.setDisableSSLVerification(row.get("disable_ssl_verification", Boolean.class));
+                    attr.setSecretToken(row.get("secret_token", String.class));
+                    String method = row.get("method", String.class);
+                    attr.setMethod(WebhookAttributes.HttpType.valueOf(method));
+                    attr.setUrl(row.get("url", String.class));
+                    endpoint.setProperties(attr);
+            }
+
             return endpoint;
         }));
+        return endpointFlux;
+    }
 
-        return Multi.createFrom().converter(MultiReactorConverters.fromFlux(), endpointFlux);
+    public Uni<Endpoint> getEndpoint(String tenant, String id) {
+        // TODO Implement
+        return Uni.createFrom().nullItem();
+    }
+
+    public Uni<Void> deleteEndpoint(String tenant, String id) {
+        // TODO Implement
+        return Uni.createFrom().nullItem();
     }
 }

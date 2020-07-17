@@ -23,15 +23,15 @@ public class WebhookAttributes extends Attributes {
     private Integer id;
 
     private String url;
-    private HttpType method; // Should be something typed
+    private HttpType method;
 
     @Column(name = "disable_ssl_verification")
     @JsonProperty("disable_ssl_verification")
-    private boolean disableSSLVerification;
+    private boolean disableSSLVerification = false;
 
     @Column(name = "secret_token")
     @JsonProperty("secret_token")
-    private String secretToken;
+    private String secretToken; // TODO Should be optional
 
     public WebhookAttributes() {
     }
@@ -52,7 +52,34 @@ public class WebhookAttributes extends Attributes {
         return disableSSLVerification;
     }
 
+    public void setDisableSSLVerification(boolean disableSSLVerification) {
+        this.disableSSLVerification = disableSSLVerification;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setMethod(HttpType method) {
+        this.method = method;
+    }
+
+    public void setSecretToken(String secretToken) {
+        this.secretToken = secretToken;
+    }
+
     public String getSecretToken() {
         return secretToken;
+    }
+
+    @Override
+    public String toString() {
+        return "WebhookAttributes{" +
+                "id=" + id +
+                ", url='" + url + '\'' +
+                ", method=" + method +
+                ", disableSSLVerification=" + disableSSLVerification +
+                ", secretToken='" + secretToken + '\'' +
+                '}';
     }
 }

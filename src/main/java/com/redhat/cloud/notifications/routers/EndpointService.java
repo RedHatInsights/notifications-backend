@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.EndpointResourcesJDBC;
+import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Multi;
@@ -18,7 +18,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.net.URI;
+import java.util.UUID;
 
 @Path("/endpoints")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -28,20 +28,20 @@ import java.net.URI;
 public class EndpointService {
 
     @Inject
-    EndpointResources resources;
+    EndpointResourcesJDBC resources;
 
     @Inject
-    EndpointResourcesJDBC resdb;
+    NotificationResources notifResources;
 
     @GET
     public Multi<Endpoint> getEndpoints() {
-        return resdb.getEndpoints("tenant");
+        return resources.getEndpoints("tenant");
     }
 
     @POST
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
         endpoint.setTenant("tenant");
-        return resdb.createEndpoint(endpoint);
+        return resources.createEndpoint(endpoint);
     }
 
     @GET
@@ -67,14 +67,15 @@ public class EndpointService {
 
     @GET
     @Path("/{id}/history")
-    public Multi<NotificationHistory> getEndpointHistory(@PathParam("id") String id) {
-        return null; // TODO
+    public Multi<NotificationHistory> getEndpointHistory(@PathParam("id") UUID id) {
+        return notifResources.getNotificationHistory("tenant", id);
     }
 
     @GET
     @Path("/{id}/history/{history_id}")
     // TODO This should return a non-typed JSON
-    public Uni<Response> getDetailedEndpointHistory(@PathParam("id") String id, @PathParam("history_id") String historyId) {
-        return null;
+    public Uni<Response> getDetailedEndpointHistory(@PathParam("id") UUID id, @PathParam("history_id") Integer historyId) {
+        return notifResources.getNotificationDetails("tenant", id, historyId)
+                .onItem().apply(json -> Response.ok(json).build());
     }
 }
