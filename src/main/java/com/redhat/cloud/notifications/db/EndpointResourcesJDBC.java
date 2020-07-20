@@ -165,4 +165,9 @@ public class EndpointResourcesJDBC {
         // TODO Implement
         return Uni.createFrom().nullItem();
     }
+
+    public Uni<Void> disableEndpoint(String tenant, String id) {
+        // TODO Implement
+        return Uni.createFrom().nullItem();
+    }
 }

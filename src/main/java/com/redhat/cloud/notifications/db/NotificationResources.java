@@ -45,7 +45,7 @@ public class NotificationResources {
             String query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result) VALUES ($1, $2, $3, $4)";
             if (!history.isInvocationResult()) {
                 // Negative result
-                query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result, details) VALUES ($1, $2, $3, $4. $5)";
+                query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result, details) VALUES ($1, $2, $3, $4, $5)";
             }
 
             PostgresqlStatement st = conn.createStatement(query)
