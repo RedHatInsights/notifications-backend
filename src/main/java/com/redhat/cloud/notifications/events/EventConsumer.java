@@ -39,7 +39,7 @@ public class EventConsumer {
                                 .merge()
                         // Receive only notification of completion
                 )
-                .toUni()
+                .collectItems().last()
                 // Third pipeline stage - handle failures (nothing should be here) and ack the Kafka topic
                 .onFailure().invoke(Throwable::printStackTrace); // TODO Proper error handling
 //                .onItem().produceCompletionStage(m -> input.ack());

@@ -54,7 +54,7 @@ public class WebhookProcessor {
 
                     final long startTime = System.currentTimeMillis();
 
-                    return postReq.send()
+                    return postReq.sendJson(item.getPayload())
                             // TODO Handle the response correctly
                             .onItem().apply(resp -> {
                                 final long endTime = System.currentTimeMillis();
@@ -89,6 +89,8 @@ public class WebhookProcessor {
                                 return history;
                             })
                             .onFailure().recoverWithItem(t -> {
+                                // TODO In Mutiny this recovery only recovers the first item and then kills the whole upper Multi<Endpoint> processing
+                                //      - we need an alternative method to survive from errors
                                 // TODO Duplicate code with the success part
                                 final long endTime = System.currentTimeMillis();
                                 NotificationHistory history = new NotificationHistory();
@@ -100,7 +102,7 @@ public class WebhookProcessor {
                                 JsonObject details = new JsonObject();
                                 details.put("url", properties.getUrl());
                                 details.put("method", properties.getMethod());
-                                details.put("error_message", t.getMessage());
+                                details.put("error_message", t.getMessage()); // TODO This message isn't always the most descriptive..
                                 history.setDetails(details);
 
                                 System.out.printf("We failed to process the request: %s\n", t.getMessage());
@@ -111,14 +113,14 @@ public class WebhookProcessor {
                                 else if(t instanceof UnknownHostException) {
                                     UnknownHostException uhe = (UnknownHostException) t;
                                 }
-                                // TODO Create NotificationHistory here also!
+
                                 // io.netty.channel.ConnectTimeoutException: connection timed out: webhook.site/46.4.105.116:443
                                 return history;
                             })
                             .onItem().produceUni(history -> notifResources.createNotificationHistory(history));
                 })
                 .merge()
-                .onFailure().invoke(Throwable::printStackTrace)
-                .toUni().map(ignored -> null);
+                .collectItems().last()
+                .map(ignored -> null);
     }
 }
