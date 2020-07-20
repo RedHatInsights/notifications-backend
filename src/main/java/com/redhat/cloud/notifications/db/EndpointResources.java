@@ -15,7 +15,6 @@ import reactor.core.publisher.Mono;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
@@ -41,9 +40,9 @@ public class EndpointResources {
 
     // TODO Modify to use PreparedStatements
     // TODO Pooling?
-    // TODO Extract to interface so JDBC and JPA impls can be both used or selected later
 
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
+        // TODO Fix transaction so that we don't end up with endpoint without properties (if validation fails)
 //        Mono<Endpoint> endpointMono = connectionPublisher.flatMap(conn -> {
 //            return conn.beginTransaction()
 //                    .flatMapMany(cr -> insertEndpointStatement(endpoint, conn))
@@ -139,7 +138,7 @@ public class EndpointResources {
             endpoint.setCreated(row.get("created", Date.class));
             endpoint.setUpdated(row.get("updated", Date.class));
 
-            switch(endpointType) {
+            switch (endpointType) {
                 case WEBHOOK:
                     WebhookAttributes attr = new WebhookAttributes();
                     attr.setId(row.get("webhook_id", Integer.class));
@@ -149,6 +148,7 @@ public class EndpointResources {
                     attr.setMethod(WebhookAttributes.HttpType.valueOf(method));
                     attr.setUrl(row.get("url", String.class));
                     endpoint.setProperties(attr);
+                default:
             }
 
             return endpoint;
@@ -157,17 +157,52 @@ public class EndpointResources {
     }
 
     public Uni<Endpoint> getEndpoint(String tenant, String id) {
+        String query = basicEndpointGetQuery + " AND e.id = $2";
+        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
+                conn.createStatement(query)
+                        .bind("$1", tenant)
+                        .bind("$2", id)
+                        .execute());
+
         // TODO Implement
         return Uni.createFrom().nullItem();
     }
 
-    public Uni<Void> deleteEndpoint(String tenant, String id) {
-        // TODO Implement
-        return Uni.createFrom().nullItem();
+    public Uni<Boolean> deleteEndpoint(String tenant, String id) {
+        String query = "DELETE FROM public.endpoints WHERE account_id = $1 AND id = $2";
+        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
+                conn.createStatement(query)
+                        .bind("$1", tenant)
+                        .bind("$2", id)
+                        .execute());
+
+        Mono<Boolean> monoResult = resultFlux.flatMap(PostgresqlResult::getRowsUpdated)
+                .map(i -> i > 0).next();
+
+        return Uni.createFrom().converter(UniReactorConverters.fromMono(), monoResult);
     }
 
-    public Uni<Void> disableEndpoint(String tenant, String id) {
-        // TODO Implement
-        return Uni.createFrom().nullItem();
+    public Uni<Boolean> disableEndpoint(String tenant, String id) {
+        return modifyEndpointStatus(tenant, id, false);
+    }
+
+    public Uni<Boolean> enableEndpoint(String tenant, String id) {
+        return modifyEndpointStatus(tenant, id, true);
+    }
+
+    public Uni<Boolean> modifyEndpointStatus(String tenant, String id, boolean enabled) {
+        String query = "UPDATE public.endpoints SET enabled = $1 WHERE account_id = $2 AND id = $3";
+
+        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
+                conn.createStatement(query)
+                        .bind("$1", enabled)
+                        .bind("$2", tenant)
+                        .bind("$3", id)
+                        .execute());
+
+        Mono<Boolean> monoResult = resultFlux.flatMap(PostgresqlResult::getRowsUpdated)
+                .map(i -> i > 0).next();
+
+        return Uni.createFrom().converter(UniReactorConverters.fromMono(), monoResult);
     }
 }

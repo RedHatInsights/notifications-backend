@@ -19,6 +19,7 @@
     <surefire-plugin.version>2.22.1</surefire-plugin.version>
     <policies.version>2.1.0-SNAPSHOT</policies.version>
     <r2dbc.version>0.8.4.RELEASE</r2dbc.version>
+    <checkstyle-plugin.version>3.1.1</checkstyle-plugin.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -132,6 +133,27 @@
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
           </systemPropertyVariables>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${checkstyle-plugin.version}</version>
+        <configuration>
+          <configLocation>/checkstyle.xml</configLocation>
+          <encoding>UTF-8</encoding>
+          <consoleOutput>true</consoleOutput>
+          <failsOnError>true</failsOnError>
+          <linkXRef>false</linkXRef>
+        </configuration>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

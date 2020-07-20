@@ -23,8 +23,9 @@ import java.util.UUID;
 @Path("/endpoints")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-// TODO Needs a filter or preprocessor to get x-rh-identity parsed @Context SecurityContext ctx and then tenant set correctly
+// TODO Needs a filter or preprocessor to get x-rh-identity parsed @Context SecurityContext ctx and then set tenant correctly
 // Email endpoints are not added at this point
+// TODO Needs documentation annotations also
 public class EndpointService {
 
     @Inject
@@ -60,8 +61,22 @@ public class EndpointService {
     }
 
     @PUT
+    @Path("/{id}/enable")
+    public Uni<Response> enableEndpoint(@PathParam("id") String id) {
+        return resources.enableEndpoint("tenant", id)
+                .onItem().apply(ignored -> Response.noContent().build());
+    }
+
+    @DELETE
+    @Path("/{id}/enable")
+    public Uni<Response> disableEndpoint(@PathParam("id") String id) {
+        return resources.disableEndpoint("tenant", id)
+                .onItem().apply(ignored -> Response.noContent().build());
+    }
+
+    @PUT
     @Path("/{id}")
-    public Uni<Response> updateEndpoint(@PathParam("id") String id) {
+    public Uni<Response> updateEndpoint(@PathParam("id") String id, Endpoint endpoint) {
         return null; // TODO
     }
 
@@ -73,7 +88,6 @@ public class EndpointService {
 
     @GET
     @Path("/{id}/history/{history_id}")
-    // TODO This should return a non-typed JSON
     public Uni<Response> getDetailedEndpointHistory(@PathParam("id") UUID id, @PathParam("history_id") Integer historyId) {
         return notifResources.getNotificationDetails("tenant", id, historyId)
                 .onItem().apply(json -> Response.ok(json).build());
