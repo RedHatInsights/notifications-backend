@@ -7,16 +7,6 @@ import java.util.Date;
 import java.util.UUID;
 
 public class NotificationHistory {
-//    account_id: str
-//    endpoint_id: str
-//    invocation_time: int = 0
-//    invocation_result: bool = False
-//    details: dict = None
-//
-//    class NotificationHistoryOut(NotificationHistory):
-//    id: str
-//    created: datetime
-
     private Integer id;
     private UUID endpointId;
 

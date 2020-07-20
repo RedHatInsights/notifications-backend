@@ -101,11 +101,11 @@ public class EndpointResourcesJDBC {
         return endpointFlux;
     }
 
-    private static final String basicEndpointGetQuery = "SELECT e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints AS e JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id";
+    private static final String basicEndpointGetQuery = "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints AS e JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id  WHERE e.account_id = $1";
 
     public Multi<Endpoint> getActiveEndpointsPerType(String tenant, Endpoint.EndpointType type) {
         // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
-        String query = basicEndpointGetQuery + " WHERE e.account_id = $1 AND e.endpoint_type = $2 AND e.enabled = true";
+        String query = basicEndpointGetQuery + " AND e.endpoint_type = $2 AND e.enabled = true";
         Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
                 conn.createStatement(query)
                         .bind("$1", tenant)
@@ -117,9 +117,8 @@ public class EndpointResourcesJDBC {
 
     public Multi<Endpoint> getEndpoints(String tenant) {
         // TODO Add JOIN ON clause to proper table, such as webhooks and then read the results
-        String query = basicEndpointGetQuery + " WHERE e.account_id = $1";
         Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
-                conn.createStatement(query)
+                conn.createStatement(basicEndpointGetQuery)
                         .bind("$1", tenant)
                         .execute());
         Flux<Endpoint> endpointFlux = mapResultSetToEndpoint(resultFlux);
@@ -131,6 +130,7 @@ public class EndpointResourcesJDBC {
             Endpoint.EndpointType endpointType = Endpoint.EndpointType.values()[row.get("endpoint_type", Integer.class)];
 
             Endpoint endpoint = new Endpoint();
+            endpoint.setTenant(row.get("account_id", String.class));
             endpoint.setId(row.get("id", UUID.class));
             endpoint.setEnabled(row.get("enabled", Boolean.class));
             endpoint.setType(endpointType);

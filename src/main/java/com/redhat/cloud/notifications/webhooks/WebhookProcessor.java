@@ -11,14 +11,12 @@ import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
-import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
-import java.util.function.Function;
 
 @ApplicationScoped
 public class WebhookProcessor {
@@ -51,7 +49,6 @@ public class WebhookProcessor {
 
                     if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
                         postReq = postReq.putHeader(TOKEN_HEADER, properties.getSecretToken());
-
                     }
 
                     return postReq.send()
@@ -70,44 +67,24 @@ public class WebhookProcessor {
                                 // io.netty.channel.ConnectTimeoutException: connection timed out: webhook.site/46.4.105.116:443
                             })
                             .onItem().produceUni(resp -> {
+                                NotificationHistory history = new NotificationHistory();
+                                history.setInvocationTime(0); // TODO Add instrumentation to vertx client
+                                history.setEndpointId(endpoint.getId());
+                                history.setTenant(endpoint.getTenant());
+
                                 if(resp.statusCode() >= 200 && resp.statusCode() <= 300) {
                                     // Accepted
-                                    NotificationHistory history = new NotificationHistory();
-                                    history.setInvocationTime(0); // TODO Add instrumentation to vertx client
                                     history.setInvocationResult(true);
-                                    history.setEndpointId(endpoint.getId());
-                                    history.setTenant(endpoint.getTenant());
-
-                                    return notifResources.createNotificationHistory(history);
                                 } else if(resp.statusCode() > 500) {
                                     // Temporary error, allow retry
+                                    history.setInvocationResult(false);
                                 } else {
                                     // Redirects etc should have been followed by the vertx (test this)
+                                    history.setInvocationResult(false);
                                 }
 
-                                return Uni.createFrom().nullItem();
+                                return notifResources.createNotificationHistory(history);
                             });
-//                            .onItem().apply((Function<HttpResponse<Buffer>, Void>) resp -> {
-//                                if(resp.statusCode() >= 200 && resp.statusCode() <= 300) {
-//                                    // Accepted
-//                                    NotificationHistory history = new NotificationHistory();
-//                                    history.setInvocationTime(0); // TODO Add instrumentation to vertx client
-//                                    history.setInvocationResult(true);
-//                                    history.setEndpointId(endpoint.getId());
-//                                    history.setTenant(endpoint.getTenant());
-//
-//                                    notifResources.createNotificationHistory(history);
-//                                }
-//                                if(resp.statusCode() >= 400 && resp.statusCode() < 500) {
-//                                    // Disable, this isn't temporary error
-//                                } else if(resp.statusCode() > 500) {
-//                                    // Temporary error, allow retry
-//                                } else {
-//                                    // Redirects etc should have been followed by the vertx (test this)
-//                                }
-//
-//                                return null;
-//                            });
-                }).merge().toUni();
+                }).merge().toUni().map(ignored -> null);
     }
 }

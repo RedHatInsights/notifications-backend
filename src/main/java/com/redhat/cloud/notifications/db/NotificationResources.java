@@ -40,26 +40,33 @@ public class NotificationResources {
         connectionPublisher = connectionFactory.create();
     }
 
-    public Uni<Void> createNotificationHistory(NotificationHistory history) {
+    public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {
         Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn -> {
-            String query = "INSERT INTO public.notification_history (endpoint_id, invocation_time, invocation_result) VALUES ($1, $2, $3)";
+            String query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result) VALUES ($1, $2, $3, $4)";
             if (!history.isInvocationResult()) {
-                // Positive result
-                query = "INSERT INTO public.notification_history (endpoint_id, invocation_time, invocation_result, details) VALUES ($1, $2, $3, $4)";
+                // Negative result
+                query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result, details) VALUES ($1, $2, $3, $4. $5)";
             }
 
             PostgresqlStatement st = conn.createStatement(query)
-                    .bind("$1", history.getEndpointId())
-                    .bind("$2", history.getInvocationTime())
-                    .bind("$3", history.isInvocationResult());
+                    .bind("$1", history.getTenant())
+                    .bind("$2", history.getEndpointId())
+                    .bind("$3", history.getInvocationTime())
+                    .bind("$4", history.isInvocationResult());
 
             if (!history.isInvocationResult()) {
-                st = st.bind("$4", Json.of(history.getDetails().encode()));
+                st = st.bind("$5", Json.of(history.getDetails().encode()));
             }
             return st.returnGeneratedValues("id", "created").execute();
         });
 
-        return Uni.createFrom().converter(UniReactorConverters.fromMono(), resultFlux.next()).onItem().apply(r -> null);
+        Flux<NotificationHistory> notificationHistoryFlux = resultFlux.flatMap(res -> res.map((row, rowMetadata) -> {
+            history.setCreated(row.get("created", Date.class));
+            history.setId(row.get("id", Integer.class));
+            return history;
+        }));
+
+        return Uni.createFrom().converter(UniReactorConverters.fromMono(), notificationHistoryFlux.next());
     }
 
     public Multi<NotificationHistory> getNotificationHistory(String tenant, UUID endpoint) {
