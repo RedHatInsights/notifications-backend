@@ -4,29 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.UUID;
 
-@Entity
-@Table(name = "endpoints")
 public class Endpoint {
 
 //}<T extends Attributes> {
@@ -36,36 +17,24 @@ public class Endpoint {
 
     // TODO Validation for these properties (to prevent errors when inserting)
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private UUID id; // Should be UUID
 
     @JsonIgnore
-    @Column(name = "account_id")
     private String tenant;
 
     private String name;
     private String description;
     private boolean enabled;
 
-    @Column(name = "endpoint_type")
     // Transform to lower case in JSON
     private EndpointType type;
 
-//    @CreationTimestamp
-//    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "created", updatable = false)
     // TODO JSON should be formatted based on the insights type, so ISO8601
     private Date created;
 
-//    @UpdateTimestamp
-//    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Temporal(TemporalType.TIMESTAMP)
     // TODO JSON should be formatted based on the insights type, so ISO8601
     private Date updated;
 
-    @Transient // Ignore for Entity usage
     @JsonTypeInfo(
             use = JsonTypeInfo.Id.NAME,
             property = "type",
@@ -153,16 +122,6 @@ public class Endpoint {
 
     public void setType(EndpointType type) {
         this.type = type;
-    }
-
-    @PrePersist
-    public void prePersist() {
-        created = Date.from(Instant.now());
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        updated = Date.from(Instant.now());
     }
 
     @Override

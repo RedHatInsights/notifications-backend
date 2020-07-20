@@ -18,6 +18,7 @@
     <quarkus.platform.version>1.6.0.Final</quarkus.platform.version>
     <surefire-plugin.version>2.22.1</surefire-plugin.version>
     <policies.version>2.1.0-SNAPSHOT</policies.version>
+    <r2dbc.version>0.8.4.RELEASE</r2dbc.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -28,13 +29,6 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!--      <dependency>-->
-      <!--        <groupId>io.r2dbc</groupId>-->
-      <!--        <artifactId>r2dbc-bom</artifactId>-->
-      <!--        <version>${r2dbc-releasetrain.version}</version>-->
-      <!--        <type>pom</type>-->
-      <!--        <scope>import</scope>-->
-      <!--      </dependency>-->
     </dependencies>
   </dependencyManagement>
   <dependencies>
@@ -49,13 +43,6 @@
       <artifactId>policies-engine-api</artifactId>
       <version>${policies.version}</version>
     </dependency>
-
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-hibernate-reactive</artifactId>
-      <version>${quarkus-plugin.version}</version>
-    </dependency>
-
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-resteasy</artifactId>
@@ -91,17 +78,6 @@
       <artifactId>smallrye-mutiny-vertx-web-client</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-reactive-pg-client</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-hibernate-reactive-deployment</artifactId>
-      <scope>provided</scope>
-      <version>${quarkus-plugin.version}</version>
-    </dependency>
-
-    <dependency>
       <groupId>io.smallrye.reactive</groupId>
       <artifactId>mutiny-reactor</artifactId>
       <version>0.6.0</version>
@@ -111,23 +87,22 @@
       <artifactId>quarkus-smallrye-openapi</artifactId>
     </dependency>
 
-    <!-- Can't enable, see https://github.com/quarkusio/quarkus/issues/10716 -->
     <!-- Flyway specific dependencies -->
-<!--    <dependency>-->
-<!--      <groupId>io.quarkus</groupId>-->
-<!--      <artifactId>quarkus-flyway</artifactId>-->
-<!--    </dependency>-->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-flyway</artifactId>
+    </dependency>
 
-<!--    &lt;!&ndash; JDBC driver dependencies &ndash;&gt;-->
-<!--    <dependency>-->
-<!--      <groupId>io.quarkus</groupId>-->
-<!--      <artifactId>quarkus-jdbc-postgresql</artifactId>-->
-<!--    </dependency>-->
+    <!-- JDBC driver dependencies -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jdbc-postgresql</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>io.r2dbc</groupId> <!-- org.postgresql after 0.9.* -->
       <artifactId>r2dbc-postgresql</artifactId>
-      <version>0.8.3.RELEASE</version>
+      <version>${r2dbc.version}</version>
     </dependency>
 
   </dependencies>

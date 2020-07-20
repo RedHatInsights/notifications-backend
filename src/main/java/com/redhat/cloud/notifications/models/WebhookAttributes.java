@@ -3,13 +3,6 @@ package com.redhat.cloud.notifications.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
-@Entity
-@Table(name = "endpoint_webhooks")
 public class WebhookAttributes extends Attributes {
 
     public enum HttpType {
@@ -18,18 +11,15 @@ public class WebhookAttributes extends Attributes {
 
     // TODO Validation for these properties (to prevent errors when inserting)
 
-    @Id
     @JsonIgnore
     private Integer id;
 
     private String url;
     private HttpType method;
 
-    @Column(name = "disable_ssl_verification")
     @JsonProperty("disable_ssl_verification")
     private boolean disableSSLVerification = false;
 
-    @Column(name = "secret_token")
     @JsonProperty("secret_token")
     private String secretToken; // TODO Should be optional
 

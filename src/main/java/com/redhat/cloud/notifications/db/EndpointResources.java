@@ -21,7 +21,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @ApplicationScoped
-public class EndpointResourcesJDBC {
+public class EndpointResources {
 
     Mono<PostgresqlConnection> connectionPublisher;
 

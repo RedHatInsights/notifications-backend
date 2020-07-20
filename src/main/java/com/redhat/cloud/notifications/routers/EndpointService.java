@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.db.EndpointResourcesJDBC;
+import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -28,7 +28,7 @@ import java.util.UUID;
 public class EndpointService {
 
     @Inject
-    EndpointResourcesJDBC resources;
+    EndpointResources resources;
 
     @Inject
     NotificationResources notifResources;
@@ -40,7 +40,7 @@ public class EndpointService {
 
     @POST
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
-        endpoint.setTenant("tenant");
+        endpoint.setTenant("tutorial");
         return resources.createEndpoint(endpoint);
     }
 

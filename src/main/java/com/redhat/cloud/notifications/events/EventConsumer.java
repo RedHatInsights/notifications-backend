@@ -40,10 +40,8 @@ public class EventConsumer {
                         // Receive only notification of completion
                 )
                 .toUni()
-                // Third pipeline stage - handle failures (nothing should be propagated here) and ack the Kafka topic
-                .onFailure().invoke(Throwable::printStackTrace); // This does not invoke the next ack
-//                .onFailure().retry().atMost(1) // Retry should not be here..
-        // TODO Return this after testing
+                // Third pipeline stage - handle failures (nothing should be here) and ack the Kafka topic
+                .onFailure().invoke(Throwable::printStackTrace); // TODO Proper error handling
 //                .onItem().produceCompletionStage(m -> input.ack());
     }
 

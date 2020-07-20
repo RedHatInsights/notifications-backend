@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.webhooks;
 
-import com.redhat.cloud.notifications.db.EndpointResourcesJDBC;
+import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
@@ -28,7 +28,7 @@ public class WebhookProcessor {
     Vertx vertx;
 
     @Inject
-    EndpointResourcesJDBC resources;
+    EndpointResources resources;
 
     @Inject
     NotificationResources notifResources;
@@ -56,21 +56,7 @@ public class WebhookProcessor {
 
                     return postReq.send()
                             // TODO Handle the response correctly
-                            .onFailure().invoke(t -> {
-                                // TODO Handle timeouts and such here (or incorrect DNS etc)
-                                // Make at least a rudimentary detect when to disable and when to retry later
-                                System.out.printf("We failed to process the request: %s\n", t.getMessage());
-                                if(t instanceof ConnectException) {
-                                    // Connection refused for example
-                                    ConnectException ce = (ConnectException) t;
-                                }
-                                else if(t instanceof UnknownHostException) {
-                                    UnknownHostException uhe = (UnknownHostException) t;
-                                }
-                                // TODO Create NotificationHistory here also!
-                                // io.netty.channel.ConnectTimeoutException: connection timed out: webhook.site/46.4.105.116:443
-                            })
-                            .onItem().produceUni(resp -> {
+                            .onItem().apply(resp -> {
                                 final long endTime = System.currentTimeMillis();
                                 NotificationHistory history = new NotificationHistory();
                                 history.setInvocationTime(endTime - startTime);
@@ -95,12 +81,44 @@ public class WebhookProcessor {
                                     details.put("url", properties.getUrl());
                                     details.put("method", properties.getMethod());
                                     details.put("code", resp.statusCode());
+                                    // This isn't async body reading, lets hope vertx handles it async underneath before calling this apply method
                                     details.put("response_body", resp.bodyAsString());
                                     history.setDetails(details);
                                 }
 
-                                return notifResources.createNotificationHistory(history);
-                            });
-                }).merge().toUni().map(ignored -> null);
+                                return history;
+                            })
+                            .onFailure().recoverWithItem(t -> {
+                                // TODO Duplicate code with the success part
+                                final long endTime = System.currentTimeMillis();
+                                NotificationHistory history = new NotificationHistory();
+                                history.setInvocationTime(endTime - startTime);
+                                history.setEndpointId(endpoint.getId());
+                                history.setTenant(endpoint.getTenant());
+
+                                // TODO Duplicate code with the error return code part
+                                JsonObject details = new JsonObject();
+                                details.put("url", properties.getUrl());
+                                details.put("method", properties.getMethod());
+                                details.put("error_message", t.getMessage());
+                                history.setDetails(details);
+
+                                System.out.printf("We failed to process the request: %s\n", t.getMessage());
+                                if(t instanceof ConnectException) {
+                                    // Connection refused for example
+                                    ConnectException ce = (ConnectException) t;
+                                }
+                                else if(t instanceof UnknownHostException) {
+                                    UnknownHostException uhe = (UnknownHostException) t;
+                                }
+                                // TODO Create NotificationHistory here also!
+                                // io.netty.channel.ConnectTimeoutException: connection timed out: webhook.site/46.4.105.116:443
+                                return history;
+                            })
+                            .onItem().produceUni(history -> notifResources.createNotificationHistory(history));
+                })
+                .merge()
+                .onFailure().invoke(Throwable::printStackTrace)
+                .toUni().map(ignored -> null);
     }
 }
