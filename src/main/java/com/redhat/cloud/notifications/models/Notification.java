@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.models;
 
 public class Notification {
-    private String tenant;
+    private final String tenant;
 
     // TODO This is a placeholder!
-    private Object payload;
+    private final Object payload;
 
     public Notification(String tenant, Object payload) {
         this.tenant = tenant;

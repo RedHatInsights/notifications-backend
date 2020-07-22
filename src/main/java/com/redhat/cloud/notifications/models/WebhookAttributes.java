@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class WebhookAttributes extends Attributes {
 
     public enum HttpType {
-        GET, POST;
+        GET, POST
     }
 
     // TODO Validation for these properties (to prevent errors when inserting)

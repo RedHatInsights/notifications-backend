@@ -70,14 +70,12 @@ public class EndpointResources {
                 .returnGeneratedValues("id", "created")
                 .execute();
 
-        Flux<Endpoint> endpointFlux = execute.flatMap(res -> res
+        return execute.flatMap(res -> res
                 .map(((row, rowMetadata) -> {
                     endpoint.setId(row.get("id", UUID.class));
                     endpoint.setCreated(row.get("created", Date.class));
                     return endpoint;
                 })));
-
-        return endpointFlux;
     }
 
     private Flux<Endpoint> insertWebhooksStatement(Endpoint endpoint, PostgresqlConnection conn) {
@@ -91,13 +89,11 @@ public class EndpointResources {
                 .returnGeneratedValues("id")
                 .execute();
 
-        Flux<Endpoint> endpointFlux = execute.flatMap(res -> res
+        return execute.flatMap(res -> res
                 .map(((row, rowMetadata) -> {
                     endpoint.setProperties(attr);
                     return endpoint;
                 })));
-
-        return endpointFlux;
     }
 
     private static final String basicEndpointGetQuery = "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints AS e JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id  WHERE e.account_id = $1";
@@ -125,7 +121,7 @@ public class EndpointResources {
     }
 
     private Flux<Endpoint> mapResultSetToEndpoint(Flux<PostgresqlResult> resultFlux) {
-        Flux<Endpoint> endpointFlux = resultFlux.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> {
+        return resultFlux.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> {
             Endpoint.EndpointType endpointType = Endpoint.EndpointType.values()[row.get("endpoint_type", Integer.class)];
 
             Endpoint endpoint = new Endpoint();
@@ -153,7 +149,6 @@ public class EndpointResources {
 
             return endpoint;
         }));
-        return endpointFlux;
     }
 
     public Uni<Endpoint> getEndpoint(String tenant, String id) {

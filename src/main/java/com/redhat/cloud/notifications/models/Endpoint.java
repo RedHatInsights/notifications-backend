@@ -12,8 +12,8 @@ public class Endpoint {
 
 //}<T extends Attributes> {
     public enum EndpointType {
-        WEBHOOK, EMAIL;
-    }
+        WEBHOOK, EMAIL
+}
 
     // TODO Validation for these properties (to prevent errors when inserting)
 
