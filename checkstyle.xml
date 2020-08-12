@@ -34,6 +34,13 @@
 
     <module name="NewlineAtEndOfFile"/>
 
+    <module name="RegexpSingleline">
+        <property name="format" value="^\s*\*\s*@author" />
+        <property name="minimum" value="0" />
+        <property name="maximum" value="0" />
+        <property name="message" value="Javadoc has illegal ''author'' tag." />
+    </module>
+
     <module name="TreeWalker">
 
 <!--        <property name="cacheFile" value="${checkstyle.cache.file}" />-->
@@ -82,12 +89,18 @@
         <module name="EmptyForIteratorPad"/>
         <module name="GenericWhitespace"/>
         <module name="MethodParamPad"/>
-        <module name="NoWhitespaceAfter"/>
+        <module name="NoWhitespaceAfter">
+            <property name="allowLineBreaks" value="false"/>
+        </module>
         <module name="NoWhitespaceBefore"/>
         <module name="ParenPad"/>
         <module name="TypecastParenPad"/>
         <module name="WhitespaceAfter"/>
         <module name="WhitespaceAround"/>
+        <module name="EmptyLineSeparator">
+            <property name="allowNoEmptyLineBetweenFields" value="true" />
+            <property name="allowMultipleEmptyLinesInsideClassMembers" value="false"/>
+        </module>
 
         <!-- Checks for blocks. You know, those {}'s         -->
         <!-- See https://checkstyle.org/config_blocks.html -->
