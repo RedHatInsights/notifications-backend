@@ -2,8 +2,6 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
-import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
-import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
 import io.smallrye.mutiny.Multi;
@@ -12,7 +10,6 @@ import io.smallrye.mutiny.converters.multi.MultiReactorConverters;
 import io.smallrye.mutiny.converters.uni.UniReactorConverters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import java.time.LocalDateTime;
@@ -20,22 +17,13 @@ import java.util.Date;
 import java.util.UUID;
 
 @ApplicationScoped
-public class EndpointResources {
+public class EndpointResources extends AbstractResource {
 
     Mono<PostgresqlConnection> connectionPublisher;
 
     @PostConstruct
     void getConnectionPublisher() {
-        // TODO Extract from config
-        PostgresqlConnectionFactory connectionFactory = new PostgresqlConnectionFactory(PostgresqlConnectionConfiguration.builder()
-                .host("192.168.1.139")
-                .port(5432)
-                .username("hook")
-                .password("9FLK6cMm5px8vZ52")
-                .database("notifications")
-                .build());
-
-        connectionPublisher = connectionFactory.create();
+        connectionPublisher = getPostgresConnection();
     }
 
     // TODO Modify to use PreparedStatements
