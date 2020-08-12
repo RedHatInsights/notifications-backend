@@ -1,8 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
-import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
 import io.r2dbc.postgresql.api.PostgresqlStatement;
@@ -14,29 +12,20 @@ import io.smallrye.mutiny.converters.uni.UniReactorConverters;
 import io.vertx.core.json.JsonObject;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Date;
 import java.util.UUID;
 
 @ApplicationScoped
-public class NotificationResources {
+public class NotificationResources extends AbstractResource {
 
     Mono<PostgresqlConnection> connectionPublisher;
 
     @PostConstruct
     void getConnectionPublisher() {
-        // TODO Pooling and unify with other resourceConnectors
-        PostgresqlConnectionFactory connectionFactory = new PostgresqlConnectionFactory(PostgresqlConnectionConfiguration.builder()
-                .host("192.168.1.139")
-                .port(5432)
-                .username("hook")
-                .password("9FLK6cMm5px8vZ52")
-                .database("notifications")
-                .build());
 
-        connectionPublisher = connectionFactory.create();
+        connectionPublisher = getPostgresConnection();
     }
 
     public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {

@@ -1,12 +1,12 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.common.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -29,6 +29,9 @@ import java.util.UUID;
 public class EndpointService {
 
     @Inject
+    RhIdPrincipal user;
+
+    @Inject
     EndpointResources resources;
 
     @Inject
@@ -48,6 +51,9 @@ public class EndpointService {
     @GET
     @Path("/{id}")
     public Uni<Endpoint> getEndpoint(@PathParam("id") String id) {
+        if (!user.canReadAll()) {
+            throw new RuntimeException("no permission");
+        }
         // TODO This should return with typed properties
         return resources.getEndpoint("tenant", id);
     }
