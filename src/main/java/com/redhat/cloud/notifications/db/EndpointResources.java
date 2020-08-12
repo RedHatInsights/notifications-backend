@@ -10,8 +10,9 @@ import io.smallrye.mutiny.converters.multi.MultiReactorConverters;
 import io.smallrye.mutiny.converters.uni.UniReactorConverters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import javax.annotation.PostConstruct;
+
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
@@ -19,12 +20,8 @@ import java.util.UUID;
 @ApplicationScoped
 public class EndpointResources extends AbstractResource {
 
+    @Inject
     Mono<PostgresqlConnection> connectionPublisher;
-
-    @PostConstruct
-    void getConnectionPublisher() {
-        connectionPublisher = getPostgresConnection();
-    }
 
     // TODO Modify to use PreparedStatements
     // TODO Pooling?

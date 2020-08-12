@@ -12,21 +12,17 @@ import io.smallrye.mutiny.converters.uni.UniReactorConverters;
 import io.vertx.core.json.JsonObject;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import javax.annotation.PostConstruct;
+
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.util.Date;
 import java.util.UUID;
 
 @ApplicationScoped
-public class NotificationResources extends AbstractResource {
+public class NotificationResources {
 
+    @Inject
     Mono<PostgresqlConnection> connectionPublisher;
-
-    @PostConstruct
-    void getConnectionPublisher() {
-
-        connectionPublisher = getPostgresConnection();
-    }
 
     public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {
         Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn -> {
