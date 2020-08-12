@@ -122,6 +122,8 @@
         <module name="PackageAnnotation" />
         <module name="CovariantEquals" />
         <module name="ArrayTypeStyle" />
+
+        <module name="Indentation" />
     </module>
 
 </module>
