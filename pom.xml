@@ -20,7 +20,8 @@
     <policies.version>2.1.0-SNAPSHOT</policies.version>
     <r2dbc.version>0.8.4.RELEASE</r2dbc.version>
     <checkstyle-plugin.version>3.1.1</checkstyle-plugin.version>
-    <version.testcontainers>1.14.3</version.testcontainers>
+    <mutiny-reactor.version>0.7.0</mutiny-reactor.version>
+    <testcontainers.version>1.14.3</testcontainers.version>
     <mockserver-client-java.version>5.5.4</mockserver-client-java.version> <!-- not the newest, but matches what is in org.testcontainers:mockserver -->
   </properties>
   <dependencyManagement>
@@ -83,7 +84,7 @@
     <dependency>
       <groupId>io.smallrye.reactive</groupId>
       <artifactId>mutiny-reactor</artifactId>
-      <version>0.6.0</version>
+      <version>${mutiny-reactor.version}</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -109,33 +110,21 @@
     </dependency>
 
     <dependency>
-      <!-- This pulls (and builds if necessary) the
-           commons-project
-      <groupId>com.redhat.cloud.common</groupId>
-      <artifactId>java</artifactId>
-      -->
-      <groupId>com.github.RedHatInsights</groupId>
-      <artifactId>insights-common-java</artifactId>
-      <version>4c2400c41a</version>
-    </dependency>
-
-
-    <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>postgresql</artifactId>
-      <version>${version.testcontainers}</version>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>${version.testcontainers}</version>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>mockserver</artifactId>
-      <version>${version.testcontainers}</version>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -144,9 +133,6 @@
       <version>${mockserver-client-java.version}</version>
       <scope>test</scope>
     </dependency>
-
-
-
   </dependencies>
   <build>
     <plugins>

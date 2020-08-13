@@ -18,10 +18,13 @@ import java.util.Date;
 import java.util.UUID;
 
 @ApplicationScoped
-public class EndpointResources extends AbstractResource {
+public class EndpointResources extends DatasourceProvider {
 
     @Inject
     Mono<PostgresqlConnection> connectionPublisher;
+
+    @Inject
+    Uni<PostgresqlConnection> connectionPublisherUni;
 
     // TODO Modify to use PreparedStatements
     // TODO Pooling?
@@ -86,13 +89,21 @@ public class EndpointResources extends AbstractResource {
     public Multi<Endpoint> getActiveEndpointsPerType(String tenant, Endpoint.EndpointType type) {
         // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
         String query = basicEndpointGetQuery + " AND e.endpoint_type = $2 AND e.enabled = true";
-        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
-                conn.createStatement(query)
+        return connectionPublisherUni.toMulti()
+                .onItem()
+                .apply(conn -> conn.createStatement(query)
                         .bind("$1", tenant)
                         .bind("$2", type.ordinal())
-                        .execute());
-        Flux<Endpoint> endpointFlux = mapResultSetToEndpoint(resultFlux);
-        return Multi.createFrom().converter(MultiReactorConverters.fromFlux(), endpointFlux);
+                        .execute())
+                .flatMap(this::mapResultSetToEndpoint);
+
+//        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
+//                conn.createStatement(query)
+//                        .bind("$1", tenant)
+//                        .bind("$2", type.ordinal())
+//                        .execute());
+//        Flux<Endpoint> endpointFlux = mapResultSetToEndpoint(resultFlux);
+//        return Multi.createFrom().converter(MultiReactorConverters.fromFlux(), endpointFlux);
     }
 
     public Multi<Endpoint> getEndpoints(String tenant) {

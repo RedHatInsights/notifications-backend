@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.common.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -28,8 +27,8 @@ import java.util.UUID;
 // TODO Needs documentation annotations also
 public class EndpointService {
 
-    @Inject
-    RhIdPrincipal user;
+//    @Inject
+//    RhIdPrincipal user;
 
     @Inject
     EndpointResources resources;
@@ -51,9 +50,9 @@ public class EndpointService {
     @GET
     @Path("/{id}")
     public Uni<Endpoint> getEndpoint(@PathParam("id") String id) {
-        if (!user.canReadAll()) {
-            throw new RuntimeException("no permission");
-        }
+//        if (!user.canReadAll()) {
+//            throw new RuntimeException("no permission");
+//        }
         // TODO This should return with typed properties
         return resources.getEndpoint("tenant", id);
     }
