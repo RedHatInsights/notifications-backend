@@ -7,7 +7,6 @@ import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.quarkus.vertx.http.runtime.security.ChallengeData;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.quarkus.vertx.http.runtime.security.HttpCredentialTransport;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -15,9 +14,7 @@ import io.vertx.ext.web.RoutingContext;
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Function;
 
 /**
  * Implements Jakarta EE JSR-375 (Security API) HttpAuthenticationMechanism for the insight's
@@ -34,15 +31,15 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
         if(xRhIdentityHeaderValue == null) {
             return Uni.createFrom().nullItem();
         }
-        Uni<Set<String>> rbacRoles = getRbacRoles(xRhIdentityHeaderValue);
+
+        RhIdentityAuthenticationRequest authReq = new RhIdentityAuthenticationRequest(xRhIdentityHeaderValue);
+        Uni<SecurityIdentity> identityUni = identityProviderManager.authenticate(authReq);
 
         Uni<QuarkusSecurityIdentity.Builder> identityBuilderUni = Uni.createFrom().item(getRhIdentityFromString(xRhIdentityHeaderValue))
                 .onItem().transform(rhid -> new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(), rhid.getIdentity().getAccountNumber()))
                 .onItem().transform(principal -> QuarkusSecurityIdentity.builder().setPrincipal(principal));
 
-        // Do RBAC query and then do (addRoles etc to the SecurityIdentity)
-        return rbacRoles
-                .onItem().transformToUni((Function<Set<String>, Uni<QuarkusSecurityIdentity.Builder>>) roles -> identityBuilderUni.onItem().transform(b -> b.addRoles(roles)))
+        return identityBuilderUni.onItem().transformToUni(builder -> identityUni.onItem().transform(ide -> builder.addRoles(ide.getRoles())))
                 .onItem().transform(QuarkusSecurityIdentity.Builder::build);
     }
 
@@ -53,21 +50,12 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
 
     @Override
     public Set<Class<? extends AuthenticationRequest>> getCredentialTypes() {
-        return Collections.emptySet();
+        return Collections.singleton(RhIdentityAuthenticationRequest.class);
     }
 
     @Override
     public HttpCredentialTransport getCredentialTransport() {
         return null;
-    }
-
-    private Uni<Set<String>> getRbacRoles(String xRhIdentity) {
-        // TODO Add RBAC call and mapping to Set<String>
-        Set<String> rights = new HashSet<>();
-        rights.add("read");
-        rights.add("write");
-        rights.add("execute");
-        return Uni.createFrom().item(rights);
     }
 
     private static RhIdentity getRhIdentityFromString(String xRhIdHeader) {
