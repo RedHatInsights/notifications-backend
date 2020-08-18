@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.models.Notification;
 import io.smallrye.mutiny.Multi;
 import org.hawkular.alerts.api.model.action.Action;
-
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped

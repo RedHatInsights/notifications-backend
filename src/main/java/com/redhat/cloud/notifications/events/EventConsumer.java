@@ -6,7 +6,6 @@ import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.hawkular.alerts.api.model.action.Action;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 

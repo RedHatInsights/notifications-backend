@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.core.json.JsonObject;
-
 import java.util.Date;
 import java.util.UUID;
 

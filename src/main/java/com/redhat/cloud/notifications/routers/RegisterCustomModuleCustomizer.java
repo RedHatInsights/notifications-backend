@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.jackson.ObjectMapperCustomizer;
-
 import javax.inject.Singleton;
 
 @Singleton

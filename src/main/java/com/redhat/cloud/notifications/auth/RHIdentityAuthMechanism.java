@@ -10,7 +10,6 @@ import io.quarkus.vertx.http.runtime.security.HttpCredentialTransport;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Base64;
 import java.util.Collections;
@@ -28,7 +27,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {
         String xRhIdentityHeaderValue = routingContext.request().getHeader(IDENTITY_HEADER);
-        if(xRhIdentityHeaderValue == null) {
+        if (xRhIdentityHeaderValue == null) {
             return Uni.createFrom().nullItem();
         }
 

@@ -12,7 +12,6 @@ import io.smallrye.mutiny.converters.uni.UniReactorConverters;
 import io.vertx.core.json.JsonObject;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.Date;

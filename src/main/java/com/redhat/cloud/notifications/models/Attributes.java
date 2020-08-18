@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.util.UUID;
 
 public abstract class Attributes {

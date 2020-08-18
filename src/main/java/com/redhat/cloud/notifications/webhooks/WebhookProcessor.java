@@ -13,7 +13,6 @@ import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.ConnectException;

@@ -7,7 +7,6 @@ import io.r2dbc.spi.ConnectionFactoryOptions;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import reactor.core.publisher.Mono;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 

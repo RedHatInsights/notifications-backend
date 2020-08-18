@@ -3,10 +3,8 @@ package com.redhat.cloud.notifications;
 import io.restassured.http.Header;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
-
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-
 import static org.junit.Assert.fail;
 
 public abstract class AbstractITest {

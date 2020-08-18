@@ -6,13 +6,11 @@ import org.mockserver.model.HttpResponse;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.MockServerContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
-
 import static org.mockserver.model.HttpRequest.request;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
@@ -99,28 +97,28 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         String fullAccessRbac = AbstractITest.getFileAsString("rbac-examples/rbac_example_full_access.json");
         String noAccessRbac = AbstractITest.getFileAsString("rbac-examples/rbac_example_no_access.json");
         mockServerClient
-                .when(request()
-                        .withPath("/api/rbac/v1/access/")
-                        .withQueryStringParameter("application", "policies")
-                        .withHeader("x-rh-identity", ".*2UtZG9lLXVzZXIifQ==") // normal user all allowed
-                )
-                .respond(HttpResponse.response()
-                        .withStatusCode(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(fullAccessRbac)
+            .when(request()
+                    .withPath("/api/rbac/v1/access/")
+                    .withQueryStringParameter("application", "policies")
+                    .withHeader("x-rh-identity", ".*2UtZG9lLXVzZXIifQ==") // normal user all allowed
+            )
+            .respond(HttpResponse.response()
+                    .withStatusCode(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(fullAccessRbac)
 
-                );
+            );
         mockServerClient
-                .when(request()
-                        .withPath("/api/rbac/v1/access/")
-                        .withQueryStringParameter("application", "policies")
-                        .withHeader("x-rh-identity", ".*kYW1wZi11c2VyIn0=") // hans dampf user nothing allowed
-                )
-                .respond(HttpResponse.response()
-                        .withStatusCode(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(noAccessRbac)
-                );
+            .when(request()
+                    .withPath("/api/rbac/v1/access/")
+                    .withQueryStringParameter("application", "policies")
+                    .withHeader("x-rh-identity", ".*kYW1wZi11c2VyIn0=") // hans dampf user nothing allowed
+            )
+            .respond(HttpResponse.response()
+                    .withStatusCode(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(noAccessRbac)
+            );
     }
 
 

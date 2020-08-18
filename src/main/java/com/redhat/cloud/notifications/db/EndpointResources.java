@@ -10,7 +10,6 @@ import io.smallrye.mutiny.converters.multi.MultiReactorConverters;
 import io.smallrye.mutiny.converters.uni.UniReactorConverters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.LocalDateTime;

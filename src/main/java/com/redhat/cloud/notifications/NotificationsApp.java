@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications;
 
 import io.vertx.ext.web.Router;
-
 import javax.enterprise.event.Observes;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
