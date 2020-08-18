@@ -36,8 +36,7 @@ public class WebhookProcessor {
     // TODO This process(Uni<Void>) should probably be an interface that can be fetched with injections (like action plugins in policies-engine)
     public Uni<Void> process(Notification item) {
         return resources.getActiveEndpointsPerType(item.getTenant(), Endpoint.EndpointType.WEBHOOK)
-                .onItem().produceUni(endpoint -> {
-                    System.out.printf("Processing webhook: %s\n", endpoint.toString());
+                .onItem().transformToUni(endpoint -> {
                     WebhookAttributes properties = (WebhookAttributes) endpoint.getProperties();
 
                     WebClientOptions options = new WebClientOptions()
@@ -56,7 +55,7 @@ public class WebhookProcessor {
 
                     return postReq.sendJson(item.getPayload())
                             // TODO Handle the response correctly
-                            .onItem().apply(resp -> {
+                            .onItem().transform(resp -> {
                                 final long endTime = System.currentTimeMillis();
                                 NotificationHistory history = new NotificationHistory();
                                 history.setInvocationTime(endTime - startTime);
@@ -89,8 +88,6 @@ public class WebhookProcessor {
                                 return history;
                             })
                             .onFailure().recoverWithItem(t -> {
-                                // TODO In Mutiny this recovery only recovers the first item and then kills the whole upper Multi<Endpoint> processing
-                                //      - we need an alternative method to survive from errors
                                 // TODO Duplicate code with the success part
                                 final long endTime = System.currentTimeMillis();
                                 NotificationHistory history = new NotificationHistory();
@@ -116,7 +113,7 @@ public class WebhookProcessor {
                                 // io.netty.channel.ConnectTimeoutException: connection timed out: webhook.site/46.4.105.116:443
                                 return history;
                             })
-                            .onItem().produceUni(history -> notifResources.createNotificationHistory(history));
+                            .onItem().transformToUni(history -> notifResources.createNotificationHistory(history));
                 })
                 .merge()
                 .onItem().ignoreAsUni();

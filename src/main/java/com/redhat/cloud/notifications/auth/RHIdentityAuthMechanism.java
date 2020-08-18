@@ -28,7 +28,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {
         String xRhIdentityHeaderValue = routingContext.request().getHeader(IDENTITY_HEADER);
-        if(xRhIdentityHeaderValue == null) {
+        if (xRhIdentityHeaderValue == null) {
             return Uni.createFrom().nullItem();
         }
 

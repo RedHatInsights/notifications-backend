@@ -91,7 +91,7 @@ public class EndpointResources extends DatasourceProvider {
         String query = basicEndpointGetQuery + " AND e.endpoint_type = $2 AND e.enabled = true";
         return connectionPublisherUni.toMulti()
                 .onItem()
-                .apply(conn -> conn.createStatement(query)
+                .transform(conn -> conn.createStatement(query)
                         .bind("$1", tenant)
                         .bind("$2", type.ordinal())
                         .execute())
@@ -149,14 +149,14 @@ public class EndpointResources extends DatasourceProvider {
 
     public Uni<Endpoint> getEndpoint(String tenant, String id) {
         String query = basicEndpointGetQuery + " AND e.id = $2";
-        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
-                conn.createStatement(query)
+        return connectionPublisherUni.toMulti()
+                .onItem()
+                .transform(conn -> conn.createStatement(query)
                         .bind("$1", tenant)
                         .bind("$2", id)
-                        .execute());
-
-        // TODO Implement
-        return Uni.createFrom().nullItem();
+                        .execute())
+                .flatMap(this::mapResultSetToEndpoint)
+                .toUni();
     }
 
     public Uni<Boolean> deleteEndpoint(String tenant, String id) {
@@ -167,6 +167,7 @@ public class EndpointResources extends DatasourceProvider {
                         .bind("$2", id)
                         .execute());
 
+        // Actually, the endpoint targeting this should be repeatable
         Mono<Boolean> monoResult = resultFlux.flatMap(PostgresqlResult::getRowsUpdated)
                 .map(i -> i > 0).next();
 
