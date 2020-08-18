@@ -7,6 +7,7 @@ import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.MockServerContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -20,15 +21,16 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     PostgreSQLContainer<?> postgreSQLContainer;
     MockServerContainer mockEngineServer;
     MockServerClient mockServerClient;
+    RbacConfigurator configurator;
 
     @Override
     public Map<String, String> start() {
-        System.err.println("++++  TestLifecycleManager start +++");
+        System.out.println("++++  TestLifecycleManager start +++");
         Map<String, String> properties = new HashMap<>();
         try {
             setupPostgres(properties);
-        } catch (SQLException throwables) {
-            throw new RuntimeException(throwables);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
         setupMockEngine(properties);
 
@@ -39,14 +41,30 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     @Override
     public void stop() {
         postgreSQLContainer.stop();
+        mockEngineServer.stop();
     }
 
 
     @Override
     public void inject(Object testInstance) {
-        if (testInstance instanceof AbstractITest) {
-            AbstractITest test = (AbstractITest) testInstance;
-            // TODO put in here what needs injection
+        Class<?> c = testInstance.getClass();
+        while (c != Object.class) {
+            for (Field f : c.getDeclaredFields()) {
+                if (f.getAnnotation(MockRbacConfig.class) != null) {
+                    if (!RbacConfigurator.class.isAssignableFrom(f.getType())) {
+                        throw new RuntimeException("@MockRbacConfig can only be used on fields of type RbacConfigurator");
+                    }
+
+                    f.setAccessible(true);
+                    try {
+                        f.set(testInstance, configurator);
+                        return;
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+            c = c.getSuperclass();
         }
     }
 
@@ -86,42 +104,11 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         String mockServerUrl = "http://" + mockEngineServer.getContainerIpAddress() + ":" + mockEngineServer.getServerPort();
         mockServerClient = new MockServerClient(mockEngineServer.getContainerIpAddress(), mockEngineServer.getServerPort());
 
-        mockRbac();
+        configurator = new RbacConfigurator(mockServerClient);
 
         props.put("engine/mp-rest/url", mockServerUrl);
         props.put("rbac/mp-rest/url", mockServerUrl);
         props.put("notifications/mp-rest/url", mockServerUrl);
 
     }
-
-    private void mockRbac() {
-        // RBac server
-        String fullAccessRbac = AbstractITest.getFileAsString("rbac-examples/rbac_example_full_access.json");
-        String noAccessRbac = AbstractITest.getFileAsString("rbac-examples/rbac_example_no_access.json");
-        mockServerClient
-                .when(request()
-                        .withPath("/api/rbac/v1/access/")
-                        .withQueryStringParameter("application", "policies")
-                        .withHeader("x-rh-identity", ".*2UtZG9lLXVzZXIifQ==") // normal user all allowed
-                )
-                .respond(HttpResponse.response()
-                        .withStatusCode(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(fullAccessRbac)
-
-                );
-        mockServerClient
-                .when(request()
-                        .withPath("/api/rbac/v1/access/")
-                        .withQueryStringParameter("application", "policies")
-                        .withHeader("x-rh-identity", ".*kYW1wZi11c2VyIn0=") // hans dampf user nothing allowed
-                )
-                .respond(HttpResponse.response()
-                        .withStatusCode(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(noAccessRbac)
-                );
-    }
-
-
 }
