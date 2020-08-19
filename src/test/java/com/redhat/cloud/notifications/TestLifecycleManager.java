@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import org.mockserver.client.MockServerClient;
-import org.mockserver.model.HttpResponse;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.MockServerContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -21,7 +20,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     PostgreSQLContainer<?> postgreSQLContainer;
     MockServerContainer mockEngineServer;
     MockServerClient mockServerClient;
-    RbacConfigurator configurator;
+    MockServerClientConfig configurator;
 
     @Override
     public Map<String, String> start() {
@@ -50,8 +49,8 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         Class<?> c = testInstance.getClass();
         while (c != Object.class) {
             for (Field f : c.getDeclaredFields()) {
-                if (f.getAnnotation(MockRbacConfig.class) != null) {
-                    if (!RbacConfigurator.class.isAssignableFrom(f.getType())) {
+                if (f.getAnnotation(MockServerConfig.class) != null) {
+                    if (!MockServerClientConfig.class.isAssignableFrom(f.getType())) {
                         throw new RuntimeException("@MockRbacConfig can only be used on fields of type RbacConfigurator");
                     }
 
@@ -104,7 +103,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         String mockServerUrl = "http://" + mockEngineServer.getContainerIpAddress() + ":" + mockEngineServer.getServerPort();
         mockServerClient = new MockServerClient(mockEngineServer.getContainerIpAddress(), mockEngineServer.getServerPort());
 
-        configurator = new RbacConfigurator(mockServerClient);
+        configurator = new MockServerClientConfig(mockServerClient);
 
         props.put("engine/mp-rest/url", mockServerUrl);
         props.put("rbac/mp-rest/url", mockServerUrl);

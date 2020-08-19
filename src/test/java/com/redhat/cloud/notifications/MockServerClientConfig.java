@@ -1,11 +1,13 @@
 package com.redhat.cloud.notifications;
 
 import org.mockserver.client.MockServerClient;
+import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 
 import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
-public class RbacConfigurator {
+public class MockServerClientConfig {
     private MockServerClient mockServerClient;
 
     public enum RbacAccess {
@@ -23,7 +25,7 @@ public class RbacConfigurator {
         }
     }
 
-    public RbacConfigurator(MockServerClient mockServerClient) {
+    public MockServerClientConfig(MockServerClient mockServerClient) {
         this.mockServerClient = mockServerClient;
     }
 
@@ -34,10 +36,22 @@ public class RbacConfigurator {
                         .withQueryStringParameter("application", "notifications")
                         .withHeader("x-rh-identity", xRhIdentity)
                 )
-                .respond(HttpResponse.response()
+                .respond(response()
                         .withStatusCode(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody(access.getPayload())
                 );
+    }
+
+    public void addHttpTestEndpoint(HttpRequest request, HttpResponse response, boolean secure) {
+        // TODO Maybe this should be MockServerConfigurator instead of RbacConfigurator?
+        this.mockServerClient
+                .withSecure(secure)
+                .when(request)
+                .respond(response);
+    }
+
+    public void removeHttpTestEndpoint(HttpRequest request) {
+        this.mockServerClient.clear(request);
     }
 }
