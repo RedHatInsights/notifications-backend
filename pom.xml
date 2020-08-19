@@ -23,6 +23,7 @@
     <mutiny-reactor.version>0.7.0</mutiny-reactor.version>
     <testcontainers.version>1.14.3</testcontainers.version>
     <mockserver-client-java.version>5.5.4</mockserver-client-java.version> <!-- not the newest, but matches what is in org.testcontainers:mockserver -->
+    <version.cloud-commons>0.1.1</version.cloud-commons>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -96,6 +97,10 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-opentracing</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-security</artifactId>
     </dependency>
 
@@ -117,6 +122,13 @@
       <version>${r2dbc.version}</version>
     </dependency>
 
+<!--
+    <dependency>
+      <groupId>com.redhat.cloud.common</groupId>
+      <artifactId>java</artifactId>
+      <version>${version.cloud-commons}</version>
+    </dependency>
+-->
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>postgresql</artifactId>
@@ -229,9 +241,13 @@
 
   <repositories>
     <repository>
-      <!-- on the fly build for other repos that are on GH only -->
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
+      <id>filerepo</id>
+      <url>file:///${project.basedir}/src/main/resources/repo</url>
+    </repository>
+
+    <repository>
+      <id>JBoss Public</id>
+      <url>https://repository.jboss.org/nexus/content/groups/public</url>
     </repository>
   </repositories>
 </project>
