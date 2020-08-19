@@ -122,11 +122,13 @@
       <version>${r2dbc.version}</version>
     </dependency>
 
+<!--
     <dependency>
       <groupId>com.redhat.cloud.common</groupId>
       <artifactId>java</artifactId>
       <version>${version.cloud-commons}</version>
     </dependency>
+-->
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>postgresql</artifactId>
