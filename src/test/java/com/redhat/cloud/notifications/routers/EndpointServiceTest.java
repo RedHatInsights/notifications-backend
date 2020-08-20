@@ -20,6 +20,7 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -56,7 +57,6 @@ public class EndpointServiceTest {
         webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
         Endpoint ep = new Endpoint();
-        ep.setTenant(tenant);
         ep.setType(Endpoint.EndpointType.WEBHOOK);
         ep.setName("endpoint to find");
         ep.setDescription("needle in the haystack");
@@ -82,20 +82,51 @@ public class EndpointServiceTest {
         assertNotNull(responsePoint.getProperties());
         assertTrue(responsePointSingle.isEnabled());
 
-        // Disable, fetch, enable, fetch
+        // Disable and fetch
         given()
                 .header(identityHeader)
                 .when().delete("/endpoints/" + responsePoint.getId() + "/enable")
                 .then()
                 .statusCode(204);
 
+        responsePointSingle = fetchSingle(responsePoint.getId(), identityHeader);
+        assertNotNull(responsePoint.getProperties());
+        assertFalse(responsePointSingle.isEnabled());
+
+        // Enable and fetch
         given()
                 .header(identityHeader)
                 .when().put("/endpoints/" + responsePoint.getId() + "/enable")
                 .then()
                 .statusCode(204);
 
-        // Delete, fetch
+        responsePointSingle = fetchSingle(responsePoint.getId(), identityHeader);
+        assertNotNull(responsePoint.getProperties());
+        assertTrue(responsePointSingle.isEnabled());
+
+        // Delete
+        given()
+                .header(identityHeader)
+                .when().delete("/endpoints/" + responsePoint.getId())
+                .then()
+                .statusCode(200);
+
+        // Fetch single
+        given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .when().get("/endpoints/" + responsePoint.getId())
+                .then()
+                .statusCode(204); // TODO This should return 404 and not 204
+
+        // Fetch all, nothing should be left
+        given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .body(is("[]"));
     }
 
     private Endpoint fetchSingle(UUID id, Header identityHeader) {

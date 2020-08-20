@@ -277,7 +277,9 @@ CREATE INDEX ix_endpoints_account_id ON public.endpoints USING btree (account_id
 --
 
 ALTER TABLE ONLY public.endpoint_webhooks
-    ADD CONSTRAINT endpoint_webhooks_endpoint_id_fkey FOREIGN KEY (endpoint_id) REFERENCES public.endpoints(id);
+    ADD CONSTRAINT endpoint_webhooks_endpoint_id_fkey FOREIGN KEY (endpoint_id) REFERENCES public.endpoints(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE;
 
 
 --
@@ -285,7 +287,9 @@ ALTER TABLE ONLY public.endpoint_webhooks
 --
 
 ALTER TABLE ONLY public.notification_history
-    ADD CONSTRAINT notification_history_endpoint_id_fkey FOREIGN KEY (endpoint_id) REFERENCES public.endpoints(id);
+    ADD CONSTRAINT notification_history_endpoint_id_fkey FOREIGN KEY (endpoint_id) REFERENCES public.endpoints(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE;
 
 
 --

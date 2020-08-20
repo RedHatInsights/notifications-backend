@@ -68,7 +68,7 @@ public class EndpointService {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.deleteEndpoint(principal.getAccount(), id)
                 // onFailure() ?
-                .onItem().transform(ignored -> Response.noContent().build());
+                .onItem().transform(ignored -> Response.ok().build());
     }
 
     @PUT
