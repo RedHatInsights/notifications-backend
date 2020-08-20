@@ -64,7 +64,7 @@ public class EndpointService {
     @DELETE
     @Path("/{id}")
     @RolesAllowed("write")
-    public Uni<Response> deleteEndpoint(@Context SecurityContext sec, @PathParam("id") String id) {
+    public Uni<Response> deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.deleteEndpoint(principal.getAccount(), id)
                 // onFailure() ?
@@ -74,7 +74,7 @@ public class EndpointService {
     @PUT
     @Path("/{id}/enable")
     @RolesAllowed("write")
-    public Uni<Response> enableEndpoint(@Context SecurityContext sec, @PathParam("id") String id) {
+    public Uni<Response> enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.enableEndpoint(principal.getAccount(), id)
                 .onItem().apply(ignored -> Response.noContent().build());
@@ -83,7 +83,7 @@ public class EndpointService {
     @DELETE
     @Path("/{id}/enable")
     @RolesAllowed("write")
-    public Uni<Response> disableEndpoint(@Context SecurityContext sec, @PathParam("id") String id) {
+    public Uni<Response> disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.disableEndpoint(principal.getAccount(), id)
                 .onItem().transform(ignored -> Response.noContent().build());
@@ -92,7 +92,7 @@ public class EndpointService {
     @PUT
     @Path("/{id}")
     @RolesAllowed("write")
-    public Uni<Response> updateEndpoint(@Context SecurityContext sec, @PathParam("id") String id, Endpoint endpoint) {
+    public Uni<Response> updateEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return null; // TODO
     }

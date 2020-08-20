@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.auth;
 
+import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.AuthenticationRequest;
@@ -31,11 +32,11 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
         if (xRhIdentityHeaderValue == null) {
             return Uni.createFrom().nullItem();
         }
-
         RhIdentityAuthenticationRequest authReq = new RhIdentityAuthenticationRequest(xRhIdentityHeaderValue);
         Uni<SecurityIdentity> identityUni = identityProviderManager.authenticate(authReq);
 
-        Uni<QuarkusSecurityIdentity.Builder> identityBuilderUni = Uni.createFrom().item(getRhIdentityFromString(xRhIdentityHeaderValue))
+        Uni<QuarkusSecurityIdentity.Builder> identityBuilderUni = Uni.createFrom().item(() -> getRhIdentityFromString(xRhIdentityHeaderValue))
+                .onFailure().transform(AuthenticationFailedException::new)
                 .onItem().transform(rhid -> new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(), rhid.getIdentity().getAccountNumber()))
                 .onItem().transform(principal -> QuarkusSecurityIdentity.builder().setPrincipal(principal));
 

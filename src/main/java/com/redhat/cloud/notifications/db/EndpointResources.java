@@ -159,7 +159,7 @@ public class EndpointResources extends DatasourceProvider {
                 .toUni();
     }
 
-    public Uni<Boolean> deleteEndpoint(String tenant, String id) {
+    public Uni<Boolean> deleteEndpoint(String tenant, UUID id) {
         String query = "DELETE FROM public.endpoints WHERE account_id = $1 AND id = $2";
         Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
                 conn.createStatement(query)
@@ -174,15 +174,15 @@ public class EndpointResources extends DatasourceProvider {
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), monoResult);
     }
 
-    public Uni<Boolean> disableEndpoint(String tenant, String id) {
+    public Uni<Boolean> disableEndpoint(String tenant, UUID id) {
         return modifyEndpointStatus(tenant, id, false);
     }
 
-    public Uni<Boolean> enableEndpoint(String tenant, String id) {
+    public Uni<Boolean> enableEndpoint(String tenant, UUID id) {
         return modifyEndpointStatus(tenant, id, true);
     }
 
-    public Uni<Boolean> modifyEndpointStatus(String tenant, String id, boolean enabled) {
+    public Uni<Boolean> modifyEndpointStatus(String tenant, UUID id, boolean enabled) {
         String query = "UPDATE public.endpoints SET enabled = $1 WHERE account_id = $2 AND id = $3";
 
         Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
