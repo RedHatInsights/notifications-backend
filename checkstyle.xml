@@ -22,6 +22,7 @@
         "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
 
 <module name="Checker">
+    <property name="localeLanguage" value="en"/>
     <module name="FileTabCharacter">
         <property name="eachLine" value="true" />
     </module>
