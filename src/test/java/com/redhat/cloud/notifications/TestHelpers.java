@@ -40,7 +40,7 @@ public class TestHelpers {
 
     public static String getFileAsString(String filename) {
         try {
-            InputStream is = AbstractITest.class.getClassLoader().getResourceAsStream(filename);
+            InputStream is = TestHelpers.class.getClassLoader().getResourceAsStream(filename);
             return IOUtils.toString(is, StandardCharsets.UTF_8);
         } catch (Exception e) {
             fail("Failed to read rhid example file: " + e.getMessage());

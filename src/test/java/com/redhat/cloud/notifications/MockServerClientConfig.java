@@ -11,8 +11,8 @@ public class MockServerClientConfig {
     private MockServerClient mockServerClient;
 
     public enum RbacAccess {
-        FULL_ACCESS(AbstractITest.getFileAsString("rbac-examples/rbac_example_full_access.json")),
-        NO_ACCESS(AbstractITest.getFileAsString("rbac-examples/rbac_example_no_access.json"));
+        FULL_ACCESS(TestHelpers.getFileAsString("rbac-examples/rbac_example_full_access.json")),
+        NO_ACCESS(TestHelpers.getFileAsString("rbac-examples/rbac_example_no_access.json"));
 
         private String payload;
 
