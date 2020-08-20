@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications;
 
+import com.redhat.cloud.notifications.auth.RHIdentityAuthMechanism;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -34,7 +35,7 @@ public class MockServerClientConfig {
                 .when(request()
                         .withPath("/api/rbac/v1/access/")
                         .withQueryStringParameter("application", "notifications")
-                        .withHeader("x-rh-identity", xRhIdentity)
+                        .withHeader(RHIdentityAuthMechanism.IDENTITY_HEADER, xRhIdentity)
                 )
                 .respond(response()
                         .withStatusCode(200)

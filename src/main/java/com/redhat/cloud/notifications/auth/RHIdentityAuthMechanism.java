@@ -23,7 +23,7 @@ import java.util.Set;
 @ApplicationScoped
 public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
 
-    private static final String IDENTITY_HEADER = "x-rh-identity";
+    public static final String IDENTITY_HEADER = "x-rh-identity";
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {

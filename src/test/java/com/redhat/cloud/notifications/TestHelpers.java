@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications;
 
+import com.redhat.cloud.notifications.auth.RHIdentityAuthMechanism;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;
@@ -31,11 +32,11 @@ public class TestHelpers {
     }
 
     public static Header createIdentityHeader(String tenant, String username) {
-        return new Header("x-rh-identity", encodeIdentityInfo(tenant, username));
+        return new Header(RHIdentityAuthMechanism.IDENTITY_HEADER, encodeIdentityInfo(tenant, username));
     }
 
     public static Header createIdentityHeader(String encodedIdentityHeader) {
-        return new Header("x-rh-identity", encodedIdentityHeader);
+        return new Header(RHIdentityAuthMechanism.IDENTITY_HEADER, encodedIdentityHeader);
     }
 
     public static String getFileAsString(String filename) {
