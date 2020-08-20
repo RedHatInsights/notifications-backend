@@ -2,8 +2,11 @@ package com.redhat.cloud.notifications;
 
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
+import org.apache.commons.io.IOUtils;
 
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static org.junit.Assert.fail;
@@ -33,5 +36,15 @@ public class TestHelpers {
 
     public static Header createIdentityHeader(String encodedIdentityHeader) {
         return new Header("x-rh-identity", encodedIdentityHeader);
+    }
+
+    public static String getFileAsString(String filename) {
+        try {
+            InputStream is = AbstractITest.class.getClassLoader().getResourceAsStream(filename);
+            return IOUtils.toString(is, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            fail("Failed to read rhid example file: " + e.getMessage());
+            return "";
+        }
     }
 }

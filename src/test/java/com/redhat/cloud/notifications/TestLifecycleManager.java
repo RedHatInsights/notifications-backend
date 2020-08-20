@@ -92,7 +92,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         statement.execute("CREATE EXTENSION pgcrypto;");
         statement.close();
         connection.close();
-
     }
 
     void setupMockEngine(Map<String, String> props) {
@@ -105,9 +104,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
         configurator = new MockServerClientConfig(mockServerClient);
 
-        props.put("engine/mp-rest/url", mockServerUrl);
         props.put("rbac/mp-rest/url", mockServerUrl);
-        props.put("notifications/mp-rest/url", mockServerUrl);
-
     }
 }

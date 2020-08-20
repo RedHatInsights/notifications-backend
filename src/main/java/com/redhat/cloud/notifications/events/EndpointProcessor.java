@@ -19,6 +19,6 @@ public class EndpointProcessor {
             - So fetch endpoints here (without JOINs) and fetch properties in the processor
          */
         return Multi.createFrom().item(action)
-                .onItem().apply(endpoint -> new Notification(action.getTenantId(), action.getEvent()));
+                .onItem().transform(endpoint -> new Notification(action.getTenantId(), action.getEvent()));
     }
 }

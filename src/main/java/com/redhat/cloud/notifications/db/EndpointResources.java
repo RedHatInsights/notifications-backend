@@ -147,7 +147,7 @@ public class EndpointResources extends DatasourceProvider {
         }));
     }
 
-    public Uni<Endpoint> getEndpoint(String tenant, String id) {
+    public Uni<Endpoint> getEndpoint(String tenant, UUID id) {
         String query = basicEndpointGetQuery + " AND e.id = $2";
         return connectionPublisherUni.toMulti()
                 .onItem()

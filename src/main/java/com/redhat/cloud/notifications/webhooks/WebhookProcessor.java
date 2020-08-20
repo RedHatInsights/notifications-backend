@@ -44,17 +44,16 @@ public class WebhookProcessor {
                             .setConnectTimeout(3000); // TODO Should this be configurable by the user? We need a maximum in any case
 
                     // TODO Add here the method type as the call
-                    HttpRequest<Buffer> postReq = WebClient.create(vertx, options)
-                            .postAbs(properties.getUrl());
+                    HttpRequest<Buffer> req = WebClient.create(vertx, options)
+                            .rawAbs(properties.getMethod().name(), properties.getUrl());
 
                     if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
-                        postReq = postReq.putHeader(TOKEN_HEADER, properties.getSecretToken());
+                        req = req.putHeader(TOKEN_HEADER, properties.getSecretToken());
                     }
 
                     final long startTime = System.currentTimeMillis();
 
-                    return postReq.sendJson(item.getPayload())
-                            // TODO Handle the response correctly
+                    return req.sendJson(item.getPayload())
                             .onItem().transform(resp -> {
                                 final long endTime = System.currentTimeMillis();
                                 NotificationHistory history = new NotificationHistory();

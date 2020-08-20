@@ -25,18 +25,17 @@ public class EventConsumer {
     public Uni<Void> processAsync(Message<String> input) {
         return Uni.createFrom()
                 .item(input)
-                .then(self -> self
+                .stage(self -> self
                                 // First pipeline stage - modify from Kafka message to processable entity
-                                .onItem().apply(Message::getPayload)
-                                .onItem().apply(this::extractJson)
+                                .onItem().transform(Message::getPayload)
+                                .onItem().transform(this::extractJson)
                         // TODO Handle here and set the counters for broken input data and produce empty message?
                 )
-                .then(self -> self
+                .stage(self -> self
                                 // Second pipeline stage - enrich from input to destination (webhook) processor format
                                 .onItem()
-                                .produceMulti(action -> destinations.process(action))
-                                .onItem().produceUni(notif -> webhooks.process(notif))
-                                .merge()
+                                .transformToMulti(action -> destinations.process(action))
+                                .onItem().transformToUniAndMerge(notif -> webhooks.process(notif))
                         // Receive only notification of completion
                 )
                 .onItem().ignoreAsUni()

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -11,7 +12,10 @@ import java.util.UUID;
 public class Endpoint {
 
     public enum EndpointType {
-        WEBHOOK, EMAIL
+        @JsonProperty("webhook")
+        WEBHOOK,
+        @JsonProperty("email")
+        EMAIL
     }
 
     // TODO Validation for these properties (to prevent errors when inserting)
@@ -87,6 +91,7 @@ public class Endpoint {
         this.enabled = enabled;
     }
 
+    @JsonGetter
     public EndpointType getType() {
         return type;
     }

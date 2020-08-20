@@ -55,7 +55,7 @@ public class EndpointService {
     @GET
     @Path("/{id}")
     @RolesAllowed("read")
-    public Uni<Endpoint> getEndpoint(@Context SecurityContext sec, @PathParam("id") String id) {
+    public Uni<Endpoint> getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         // TODO This should return with typed properties
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.getEndpoint(principal.getAccount(), id);

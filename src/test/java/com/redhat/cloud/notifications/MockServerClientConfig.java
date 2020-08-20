@@ -54,4 +54,12 @@ public class MockServerClientConfig {
     public void removeHttpTestEndpoint(HttpRequest request) {
         this.mockServerClient.clear(request);
     }
+
+    public MockServerClient getMockServerClient() {
+        return mockServerClient;
+    }
+
+    public String getRunningAddress() {
+        return String.format("%s:%d", mockServerClient.remoteAddress().getHostName(), mockServerClient.remoteAddress().getPort());
+    }
 }
