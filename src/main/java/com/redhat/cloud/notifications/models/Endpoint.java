@@ -5,12 +5,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.Date;
 import java.util.UUID;
 
 public class Endpoint {
 
+    @Schema(enumeration = { "webhook", "email" })
     public enum EndpointType {
         @JsonProperty("webhook")
         WEBHOOK,
@@ -38,6 +40,7 @@ public class Endpoint {
     // TODO JSON should be formatted based on the insights type, so ISO8601
     private Date updated;
 
+    @Schema(oneOf = { WebhookAttributes.class, EmailAttributes.class })
     @JsonTypeInfo(
             use = JsonTypeInfo.Id.NAME,
             property = "type",
