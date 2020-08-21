@@ -13,6 +13,7 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -56,9 +57,9 @@ public class EndpointService {
     @Path("/{id}")
     @RolesAllowed("read")
     public Uni<Endpoint> getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        // TODO This should return with typed properties
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getEndpoint(principal.getAccount(), id);
+        return resources.getEndpoint(principal.getAccount(), id)
+                .onItem().ifNull().failWith(new NotFoundException());
     }
 
     @DELETE
@@ -77,7 +78,7 @@ public class EndpointService {
     public Uni<Response> enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.enableEndpoint(principal.getAccount(), id)
-                .onItem().apply(ignored -> Response.noContent().build());
+                .onItem().transform(ignored -> Response.ok().build());
     }
 
     @DELETE
@@ -86,7 +87,7 @@ public class EndpointService {
     public Uni<Response> disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.disableEndpoint(principal.getAccount(), id)
-                .onItem().transform(ignored -> Response.noContent().build());
+                .onItem().transform(ignored -> Response.ok().build());
     }
 
     @PUT
@@ -111,6 +112,12 @@ public class EndpointService {
     public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return notifResources.getNotificationDetails(principal.getAccount(), id, historyId)
-                .onItem().apply(json -> Response.ok(json).build());
+                .onItem().ifNull().failWith(new NotFoundException())
+                .onItem().transform(json -> {
+                    if (json.isEmpty()) {
+                        return Response.noContent().build();
+                    }
+                    return Response.ok(json).build();
+                });
     }
 }

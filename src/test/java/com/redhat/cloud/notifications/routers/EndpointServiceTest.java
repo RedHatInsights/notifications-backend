@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -46,7 +47,7 @@ public class EndpointServiceTest {
                 .header(identityHeader)
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(200) // TODO Maybe 204 here instead?
                 .body(is("[]"));
 
         // Add new endpoints
@@ -73,11 +74,22 @@ public class EndpointServiceTest {
                 .statusCode(200)
                 .extract().response();
 
-        // Should this be a list?
         Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
         assertNotNull(responsePoint.getId());
 
-        // Fetch single endpoint and endpoints
+        // Fetch the list
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        List<Endpoint> endpoints = Json.decodeValue(response.getBody().asString(), List.class);
+        assertEquals(1, endpoints.size());
+
+        // Fetch single endpoint also and verify
         Endpoint responsePointSingle = fetchSingle(responsePoint.getId(), identityHeader);
         assertNotNull(responsePoint.getProperties());
         assertTrue(responsePointSingle.isEnabled());
@@ -87,7 +99,7 @@ public class EndpointServiceTest {
                 .header(identityHeader)
                 .when().delete("/endpoints/" + responsePoint.getId() + "/enable")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         responsePointSingle = fetchSingle(responsePoint.getId(), identityHeader);
         assertNotNull(responsePoint.getProperties());
@@ -98,7 +110,7 @@ public class EndpointServiceTest {
                 .header(identityHeader)
                 .when().put("/endpoints/" + responsePoint.getId() + "/enable")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         responsePointSingle = fetchSingle(responsePoint.getId(), identityHeader);
         assertNotNull(responsePoint.getProperties());
@@ -117,7 +129,7 @@ public class EndpointServiceTest {
                 .header(identityHeader)
                 .when().get("/endpoints/" + responsePoint.getId())
                 .then()
-                .statusCode(204); // TODO This should return 404 and not 204
+                .statusCode(404);
 
         // Fetch all, nothing should be left
         given()
@@ -136,11 +148,10 @@ public class EndpointServiceTest {
                 .when().get("/endpoints/" + id)
                 .then()
                 .statusCode(200)
+                .body("id", equalTo(id.toString()))
                 .extract().response();
 
-        Endpoint responsePointSingle = Json.decodeValue(response.getBody().asString(), Endpoint.class);
-        assertEquals(id, responsePointSingle.getId());
-        return responsePointSingle;
+        return Json.decodeValue(response.getBody().asString(), Endpoint.class);
     }
 
     @Test
