@@ -45,7 +45,6 @@ public class MockServerClientConfig {
     }
 
     public void addHttpTestEndpoint(HttpRequest request, HttpResponse response, boolean secure) {
-        // TODO Maybe this should be MockServerConfigurator instead of RbacConfigurator?
         this.mockServerClient
                 .withSecure(secure)
                 .when(request)

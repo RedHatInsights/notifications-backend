@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
+import io.r2dbc.postgresql.api.PostgresqlStatement;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.converters.multi.MultiReactorConverters;
@@ -68,12 +69,19 @@ public class EndpointResources extends DatasourceProvider {
 
     private Flux<Endpoint> insertWebhooksStatement(Endpoint endpoint, PostgresqlConnection conn) {
         WebhookAttributes attr = (WebhookAttributes) endpoint.getProperties();
-        Flux<PostgresqlResult> execute = conn.createStatement("INSERT INTO public.endpoint_webhooks (endpoint_id, url, method, disable_ssl_verification, secret_token) VALUES ($1, $2, $3, $4, $5)")
+        PostgresqlStatement bind = conn.createStatement("INSERT INTO public.endpoint_webhooks (endpoint_id, url, method, disable_ssl_verification, secret_token) VALUES ($1, $2, $3, $4, $5)")
                 .bind("$1", endpoint.getId())
                 .bind("$2", attr.getUrl())
                 .bind("$3", attr.getMethod().toString())
-                .bind("$4", attr.isDisableSSLVerification())
-                .bind("$5", attr.getSecretToken())
+                .bind("$4", attr.isDisableSSLVerification());
+
+        if (attr.getSecretToken() != null) {
+            bind.bind("$5", attr.getSecretToken());
+        } else {
+            bind.bindNull("$5", String.class);
+        }
+
+        Flux<PostgresqlResult> execute = bind
                 .returnGeneratedValues("id")
                 .execute();
 
