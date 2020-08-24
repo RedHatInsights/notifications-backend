@@ -10,7 +10,6 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
-import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.microprofile.reactive.messaging.Channel;
@@ -20,11 +19,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.mockserver.mock.action.ExpectationResponseCallback;
-import org.mockserver.model.HttpClassCallback;
 import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.verify.VerificationTimes;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import static io.restassured.RestAssured.given;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.mockserver.model.HttpError.error;
 import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
