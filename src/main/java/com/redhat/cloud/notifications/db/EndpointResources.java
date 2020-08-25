@@ -104,14 +104,6 @@ public class EndpointResources extends DatasourceProvider {
                         .bind("$2", type.ordinal())
                         .execute())
                 .flatMap(this::mapResultSetToEndpoint);
-
-//        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
-//                conn.createStatement(query)
-//                        .bind("$1", tenant)
-//                        .bind("$2", type.ordinal())
-//                        .execute());
-//        Flux<Endpoint> endpointFlux = mapResultSetToEndpoint(resultFlux);
-//        return Multi.createFrom().converter(MultiReactorConverters.fromFlux(), endpointFlux);
     }
 
     public Multi<Endpoint> getEndpoints(String tenant) {

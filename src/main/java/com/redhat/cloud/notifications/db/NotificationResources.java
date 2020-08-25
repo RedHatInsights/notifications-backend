@@ -24,6 +24,9 @@ public class NotificationResources {
     @Inject
     Mono<PostgresqlConnection> connectionPublisher;
 
+    @Inject
+    Uni<PostgresqlConnection> connectionPublisherUni;
+
     public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {
         Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn -> {
             String query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result) VALUES ($1, $2, $3, $4)";
@@ -79,6 +82,17 @@ public class NotificationResources {
 
     public Uni<JsonObject> getNotificationDetails(String tenant, UUID endpoint, Integer historyId) {
         String query = "SELECT details FROM public.notification_history WHERE account_id = $1 AND endpoint_id = $2 AND id = $3";
-        return Uni.createFrom().nullItem();
+        return connectionPublisherUni.toMulti()
+                .onItem()
+                .transform(conn -> conn.createStatement(query)
+                        .bind("$1", tenant)
+                        .bind("$2", endpoint)
+                        .bind("$3", historyId)
+                        .execute())
+                .flatMap(resFlux -> resFlux.flatMap(res -> res.map((row, rowMetadata) -> {
+                    String json = row.get("details", String.class);
+                    return new JsonObject(json);
+                })))
+                .toUni();
     }
 }

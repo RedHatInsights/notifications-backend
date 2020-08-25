@@ -107,7 +107,7 @@ public class EndpointService {
     }
 
     @GET
-    @Path("/{id}/history/{history_id}")
+    @Path("/{id}/history/{history_id}/details")
     @RolesAllowed("read")
     public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
