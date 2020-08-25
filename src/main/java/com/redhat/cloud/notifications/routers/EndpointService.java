@@ -10,6 +10,7 @@ import io.smallrye.mutiny.Uni;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -47,7 +48,7 @@ public class EndpointService {
 
     @POST
     @RolesAllowed("write")
-    public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, Endpoint endpoint) {
+    public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setTenant(principal.getAccount());
         return resources.createEndpoint(endpoint);

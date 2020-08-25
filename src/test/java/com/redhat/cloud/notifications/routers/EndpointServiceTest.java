@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.MockServerClientConfig;
+import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -185,5 +185,77 @@ public class EndpointServiceTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(401);
+    }
+
+    @Test
+    void testEndpointValidation() {
+        String tenant = "validation";
+        String userName = "testEndpointValidation";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        // Add new endpoint without properties
+        Endpoint ep = new Endpoint();
+        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setName("endpoint with missing properties");
+        ep.setDescription("Destined to fail");
+        ep.setEnabled(true);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(400);
+
+        WebhookAttributes webAttr = new WebhookAttributes();
+        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setDisableSSLVerification(false);
+        webAttr.setSecretToken("my-super-secret-token");
+        webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+
+        // Test with properties, but without endpoint type
+        ep.setProperties(webAttr);
+        ep.setType(null);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(400);
+
+        // Test with incorrect webhook properties
+        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setName("endpoint with incorrect webhook properties");
+        webAttr.setMethod(null);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(400);
+
+        // Type and attributes don't match
+        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        ep.setType(Endpoint.EndpointType.EMAIL);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(400);
     }
 }

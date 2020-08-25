@@ -3,18 +3,20 @@ package com.redhat.cloud.notifications.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import javax.validation.constraints.NotNull;
+
 public class WebhookAttributes extends Attributes {
 
     public enum HttpType {
         GET, POST
     }
 
-    // TODO Validation for these properties (to prevent errors when inserting)
-
     @JsonIgnore
     private Integer id;
 
+    @NotNull
     private String url;
+    @NotNull
     private HttpType method;
 
     @JsonProperty("disable_ssl_verification")

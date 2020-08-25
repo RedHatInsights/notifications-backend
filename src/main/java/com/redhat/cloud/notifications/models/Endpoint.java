@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.util.Date;
 import java.util.UUID;
 
@@ -20,18 +22,20 @@ public class Endpoint {
         EMAIL
     }
 
-    // TODO Validation for these properties (to prevent errors when inserting)
-
     private UUID id; // Should be UUID
 
     @JsonIgnore
     private String tenant;
 
+    @NotNull
     private String name;
+    @NotNull
     private String description;
-    private boolean enabled;
+
+    private boolean enabled = false;
 
     // Transform to lower case in JSON
+    @NotNull
     private EndpointType type;
 
     // TODO JSON should be formatted based on the insights type, so ISO8601
@@ -49,6 +53,8 @@ public class Endpoint {
             @JsonSubTypes.Type(value = WebhookAttributes.class, name = "webhook"),
             @JsonSubTypes.Type(value = EmailAttributes.class, name = "email"),
     })
+    @NotNull
+    @Valid
     private Attributes properties;
 
     public Endpoint() {
