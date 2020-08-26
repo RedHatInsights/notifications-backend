@@ -42,7 +42,7 @@ public class EndpointResources extends DatasourceProvider {
         Mono<Endpoint> endpointMono = connectionPublisher.flatMap(conn -> {
             Flux<Endpoint> endpointFlux = insertEndpointStatement(endpoint, conn);
             Flux<Endpoint> endpointFlux1 = endpointFlux.flatMap(ep -> {
-                if(endpoint.getProperties() != null && ep.getType() == Endpoint.EndpointType.WEBHOOK) {
+                if (endpoint.getProperties() != null && ep.getType() == Endpoint.EndpointType.WEBHOOK) {
                     return insertWebhooksStatement(ep, conn);
                 } else {
                     // Other types are not supported at this point
@@ -212,7 +212,7 @@ public class EndpointResources extends DatasourceProvider {
         Mono<Boolean> endpointMono = connectionPublisher.flatMap(conn -> {
             Mono<Boolean> endpointFlux = updateEndpointStatement(endpoint, conn);
             Mono<Boolean> endpointFlux1 = endpointFlux.flatMap(ep -> {
-                if(endpoint.getProperties() != null && endpoint.getType() == Endpoint.EndpointType.WEBHOOK) {
+                if (endpoint.getProperties() != null && endpoint.getType() == Endpoint.EndpointType.WEBHOOK) {
                     return updateWebhooksStatement(endpoint, conn);
                 }
                 return Mono.empty();
