@@ -11,6 +11,7 @@ import io.smallrye.mutiny.Uni;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -48,7 +49,7 @@ public class EndpointService {
 
     @POST
     @RolesAllowed("write")
-    public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @Valid Endpoint endpoint) {
+    public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setTenant(principal.getAccount());
         return resources.createEndpoint(endpoint);
@@ -94,9 +95,12 @@ public class EndpointService {
     @PUT
     @Path("/{id}")
     @RolesAllowed("write")
-    public Uni<Response> updateEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, Endpoint endpoint) {
+    public Uni<Response> updateEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return null; // TODO
+        endpoint.setTenant(principal.getAccount());
+        endpoint.setId(id);
+        return resources.updateEndpoint(endpoint)
+                .onItem().transform(ignored -> Response.ok().build());
     }
 
     @GET
@@ -113,6 +117,7 @@ public class EndpointService {
     public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return notifResources.getNotificationDetails(principal.getAccount(), id, historyId)
+                // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
                 .onItem().ifNull().failWith(new NotFoundException())
                 .onItem().transform(json -> {
                     if (json.isEmpty()) {

@@ -31,7 +31,7 @@ public class EndpointResources extends DatasourceProvider {
     // TODO Pooling?
 
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
-        // TODO Fix transaction so that we don't end up with endpoint without properties (if validation fails)
+        // TODO Fix transaction so that we don't end up with endpoint without properties
 //        Mono<Endpoint> endpointMono = connectionPublisher.flatMap(conn -> {
 //            return conn.beginTransaction()
 //                    .flatMapMany(cr -> insertEndpointStatement(endpoint, conn))
@@ -41,7 +41,14 @@ public class EndpointResources extends DatasourceProvider {
 //        });
         Mono<Endpoint> endpointMono = connectionPublisher.flatMap(conn -> {
             Flux<Endpoint> endpointFlux = insertEndpointStatement(endpoint, conn);
-            Flux<Endpoint> endpointFlux1 = endpointFlux.flatMap(ep -> insertWebhooksStatement(ep, conn));
+            Flux<Endpoint> endpointFlux1 = endpointFlux.flatMap(ep -> {
+                if(endpoint.getProperties() != null && ep.getType() == Endpoint.EndpointType.WEBHOOK) {
+                    return insertWebhooksStatement(ep, conn);
+                } else {
+                    // Other types are not supported at this point
+                    return Flux.empty();
+                }
+            });
             return endpointFlux1.next();
         });
 
@@ -87,6 +94,7 @@ public class EndpointResources extends DatasourceProvider {
 
         return execute.flatMap(res -> res
                 .map(((row, rowMetadata) -> {
+                    // Should we update the id here? row.get("id", Integer.class); since it's the generated value
                     endpoint.setProperties(attr);
                     return endpoint;
                 })));
@@ -197,4 +205,61 @@ public class EndpointResources extends DatasourceProvider {
 
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), monoResult);
     }
+
+    public Uni<Boolean> updateEndpoint(Endpoint endpoint) {
+        // TODO Update could fail because the item did not exist, throw 404 in that case?
+        // TODO Fix transaction so that we don't end up with half the updates applied
+        Mono<Boolean> endpointMono = connectionPublisher.flatMap(conn -> {
+            Mono<Boolean> endpointFlux = updateEndpointStatement(endpoint, conn);
+            Mono<Boolean> endpointFlux1 = endpointFlux.flatMap(ep -> {
+                if(endpoint.getProperties() != null && endpoint.getType() == Endpoint.EndpointType.WEBHOOK) {
+                    return updateWebhooksStatement(endpoint, conn);
+                }
+                return Mono.empty();
+            });
+            return endpointFlux1;
+        });
+
+        return Uni.createFrom().converter(UniReactorConverters.fromMono(), endpointMono);
+    }
+
+    private Mono<Boolean> updateEndpointStatement(Endpoint endpoint, PostgresqlConnection conn) {
+        String endpointQuery = "UPDATE public.endpoints SET name = $3, description = $4, enabled = $5, updated = $6 WHERE account_id = $1 AND id = $2";
+        PostgresqlStatement bindSt = conn.createStatement(endpointQuery)
+                .bind("$1", endpoint.getTenant())
+                .bind("$2", endpoint.getId())
+                .bind("$3", endpoint.getName())
+                .bind("$4", endpoint.getDescription())
+                .bind("$5", endpoint.isEnabled())
+                .bind("$6", LocalDateTime.now());
+
+        return bindSt
+                .execute()
+                .flatMap(PostgresqlResult::getRowsUpdated)
+                .map(i -> i > 0).next();
+    }
+
+    private Mono<Boolean> updateWebhooksStatement(Endpoint endpoint, PostgresqlConnection conn) {
+        WebhookAttributes attr = (WebhookAttributes) endpoint.getProperties();
+        System.out.printf("Update webhooks: %s\n", attr.getSecretToken());
+        String webhookQuery = "UPDATE public.endpoint_webhooks SET url = $2, method = $3, disable_ssl_verification = $4, secret_token = $5 WHERE endpoint_id = $1 ";
+
+        PostgresqlStatement bindSt = conn.createStatement(webhookQuery)
+                .bind("$1", endpoint.getId())
+                .bind("$2", attr.getUrl())
+                .bind("$3", attr.getMethod().toString())
+                .bind("$4", attr.isDisableSSLVerification());
+
+        if (attr.getSecretToken() != null) {
+            bindSt.bind("$5", attr.getSecretToken());
+        } else {
+            bindSt.bindNull("$5", String.class);
+        }
+
+        return bindSt
+                .execute()
+                .flatMap(PostgresqlResult::getRowsUpdated)
+                .map(i -> i > 0).next();
+    }
+
 }

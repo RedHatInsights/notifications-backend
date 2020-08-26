@@ -258,4 +258,98 @@ public class EndpointServiceTest {
                 .then()
                 .statusCode(400);
     }
+
+    @Test
+    void testEndpointUpdates() {
+        String tenant = "updates";
+        String userName = "testEndpointUpdates";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        // Test empty tenant
+        given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200) // TODO Maybe 204 here instead?
+                .body(is("[]"));
+
+        // Add new endpoints
+        WebhookAttributes webAttr = new WebhookAttributes();
+        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setDisableSSLVerification(false);
+        webAttr.setSecretToken("my-super-secret-token");
+        webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+
+        Endpoint ep = new Endpoint();
+        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setName("endpoint to find");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(webAttr);
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
+        assertNotNull(responsePoint.getId());
+
+        // Fetch the list
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .contentType(ContentType.JSON)
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        List<Endpoint> endpoints = Json.decodeValue(response.getBody().asString(), List.class);
+        assertEquals(1, endpoints.size());
+
+        // Fetch single endpoint also and verify
+        Endpoint responsePointSingle = fetchSingle(responsePoint.getId(), identityHeader);
+        assertNotNull(responsePoint.getProperties());
+        assertTrue(responsePointSingle.isEnabled());
+
+        // Update the endpoint
+        responsePointSingle.setName("endpoint found");
+        WebhookAttributes attrSingle = (WebhookAttributes) responsePointSingle.getProperties();
+        attrSingle.setSecretToken("not-so-secret-anymore");
+
+        // Update without payload
+        given()
+                .header(identityHeader)
+                .contentType(ContentType.JSON)
+                .when()
+                .put(String.format("/endpoints/%s", responsePointSingle.getId()))
+                .then()
+                .statusCode(400);
+
+        // With payload
+        given()
+                .header(identityHeader)
+                .contentType(ContentType.JSON)
+                .when()
+                .body(Json.encode(responsePointSingle))
+                .put(String.format("/endpoints/%s", responsePointSingle.getId()))
+                .then()
+                .statusCode(200);
+
+        // Fetch single one again to see that the updates were done
+        Endpoint updatedEndpoint = fetchSingle(responsePointSingle.getId(), identityHeader);
+        WebhookAttributes attrSingleUpdated = (WebhookAttributes) updatedEndpoint.getProperties();
+        assertEquals("endpoint found", updatedEndpoint.getName());
+        assertEquals("not-so-secret-anymore", attrSingleUpdated.getSecretToken());
+    }
 }
