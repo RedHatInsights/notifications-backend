@@ -43,7 +43,6 @@ public class WebhookProcessor {
                             .setSsl(!properties.isDisableSSLVerification())
                             .setConnectTimeout(3000); // TODO Should this be configurable by the user? We need a maximum in any case
 
-                    // TODO Add here the method type as the call
                     HttpRequest<Buffer> req = WebClient.create(vertx, options)
                             .rawAbs(properties.getMethod().name(), properties.getUrl());
 

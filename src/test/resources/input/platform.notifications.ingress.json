@@ -4,7 +4,8 @@
   "actionId": "_managed-instance-webhook-cbdb5fc1160e1557",
   "global": false,
   "properties": {
-    "_managed": "true"
+    "_managed": "true",
+    "endpoint_id": ""
   },
   "eventId": "detect-floating-5-tutorial4-1594977340720-371050da-dd41-4253-97d2-ed8b6686f3b2",
   "ctime": 1594977340725,

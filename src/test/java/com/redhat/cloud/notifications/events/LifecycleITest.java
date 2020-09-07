@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.events;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -27,8 +26,6 @@ import org.mockserver.model.HttpRequest;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -36,8 +33,6 @@ import java.util.concurrent.TimeUnit;
 import static io.restassured.RestAssured.given;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockserver.model.HttpResponse.response;

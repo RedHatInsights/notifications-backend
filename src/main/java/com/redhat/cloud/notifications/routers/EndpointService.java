@@ -107,6 +107,7 @@ public class EndpointService {
     @Path("/{id}/history")
     @RolesAllowed("read")
     public Multi<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id) {
+        // TODO We need globally limitations (Paging support and limits etc)
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return notifResources.getNotificationHistory(principal.getAccount(), id);
     }
