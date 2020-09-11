@@ -4,9 +4,8 @@ import io.quarkus.vertx.web.RouteFilter;
 import io.vertx.ext.web.RoutingContext;
 
 /**
- * Change the accept header if needed for Openapi requests
- *
- * @author hrupp
+ * Change the accept header if needed for Openapi requests when
+ * openapi.json is requested.
  */
 public class OASAcceptHeaderMangler {
 
