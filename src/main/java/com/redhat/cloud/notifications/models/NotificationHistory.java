@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.core.json.JsonObject;
 
@@ -15,6 +16,7 @@ public class NotificationHistory {
 
     private long invocationTime;
     private boolean invocationResult;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Date created;
     private JsonObject details;
 

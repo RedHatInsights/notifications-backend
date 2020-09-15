@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -39,9 +40,11 @@ public class Endpoint {
     private EndpointType type;
 
     // TODO JSON should be formatted based on the insights type, so ISO8601
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Date created;
 
     // TODO JSON should be formatted based on the insights type, so ISO8601
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Date updated;
 
     @Schema(oneOf = { WebhookAttributes.class, EmailAttributes.class })
