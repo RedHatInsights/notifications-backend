@@ -25,6 +25,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.UriInfo;
 import java.util.UUID;
 
 @Path("/endpoints")
@@ -42,9 +43,9 @@ public class EndpointService {
 
     @GET
     @RolesAllowed("read")
-    public Multi<Endpoint> getEndpoints(@Context SecurityContext sec) {
+    public Multi<Endpoint> getEndpoints(@Context SecurityContext sec, @Context UriInfo uriInfo) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getEndpoints(principal.getAccount());
+        return resources.getEndpoints(principal.getAccount(), ParamUtils.parseQueryParams(uriInfo));
     }
 
     @POST
@@ -115,9 +116,9 @@ public class EndpointService {
     @GET
     @Path("/{id}/history/{history_id}/details")
     @RolesAllowed("read")
-    public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId) {
+    public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId, @Context UriInfo uriInfo) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return notifResources.getNotificationDetails(principal.getAccount(), id, historyId)
+        return notifResources.getNotificationDetails(principal.getAccount(), ParamUtils.parseQueryParams(uriInfo), id, historyId)
                 // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
                 .onItem().ifNull().failWith(new NotFoundException())
                 .onItem().transform(json -> {
