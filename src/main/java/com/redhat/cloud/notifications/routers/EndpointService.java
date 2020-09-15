@@ -71,7 +71,7 @@ public class EndpointService {
     @DELETE
     @Path("/{id}")
     @RolesAllowed("write")
-    @APIResponse(responseCode = "200", content = @Content( schema = @Schema( type = SchemaType.STRING)))
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.deleteEndpoint(principal.getAccount(), id)
@@ -82,7 +82,7 @@ public class EndpointService {
     @PUT
     @Path("/{id}/enable")
     @RolesAllowed("write")
-    @APIResponse(responseCode = "200", content = @Content( schema = @Schema( type = SchemaType.STRING)))
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.enableEndpoint(principal.getAccount(), id)
@@ -92,7 +92,7 @@ public class EndpointService {
     @DELETE
     @Path("/{id}/enable")
     @RolesAllowed("write")
-    @APIResponse(responseCode = "200", content = @Content( schema = @Schema( type = SchemaType.STRING)))
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.disableEndpoint(principal.getAccount(), id)
@@ -102,7 +102,7 @@ public class EndpointService {
     @PUT
     @Path("/{id}")
     @RolesAllowed("write")
-    @APIResponse(responseCode = "200", content = @Content( schema = @Schema( type = SchemaType.STRING)))
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> updateEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setTenant(principal.getAccount());
@@ -123,7 +123,7 @@ public class EndpointService {
     @GET
     @Path("/{id}/history/{history_id}/details")
     @RolesAllowed("read")
-    @APIResponse(responseCode = "200", content = @Content( schema = @Schema( type = SchemaType.STRING)))
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return notifResources.getNotificationDetails(principal.getAccount(), id, historyId)
