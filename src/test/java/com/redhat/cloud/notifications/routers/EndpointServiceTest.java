@@ -352,4 +352,71 @@ public class EndpointServiceTest {
         assertEquals("endpoint found", updatedEndpoint.getName());
         assertEquals("not-so-secret-anymore", attrSingleUpdated.getSecretToken());
     }
+
+    @Test
+    void testEndpointLimiter() {
+        String tenant = "limiter";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        for(int i = 0; i < 29; i++) {
+            // Add new endpoints
+            WebhookAttributes webAttr = new WebhookAttributes();
+            webAttr.setMethod(WebhookAttributes.HttpType.POST);
+            webAttr.setDisableSSLVerification(false);
+            webAttr.setSecretToken("my-super-secret-token");
+            webAttr.setUrl(String.format("https://%s/%d", mockServerConfig.getRunningAddress(), i));
+
+            Endpoint ep = new Endpoint();
+            ep.setType(Endpoint.EndpointType.WEBHOOK);
+            ep.setName(String.format("Endpoint %d", i));
+            ep.setDescription("Try to find me!");
+            ep.setEnabled(true);
+            ep.setProperties(webAttr);
+
+            Response response = given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .body(Json.encode(ep))
+                    .post("/endpoints")
+                    .then()
+                    .statusCode(200)
+                    .extract().response();
+
+            Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
+            assertNotNull(responsePoint.getId());
+        }
+
+        // Fetch the list, page 1
+        Response response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .queryParam("pageSize", "10")
+                .queryParam("pageNumber", "0")
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        List<Endpoint> endpoints = Json.decodeValue(response.getBody().asString(), List.class);
+        assertEquals(10, endpoints.size());
+
+        // Fetch the list, page 3
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .queryParam("pageSize", "10")
+                .queryParam("pageNumber", "2")
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        endpoints = Json.decodeValue(response.getBody().asString(), List.class);
+        assertEquals(9, endpoints.size());
+    }
 }

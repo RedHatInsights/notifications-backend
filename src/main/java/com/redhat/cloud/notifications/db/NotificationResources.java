@@ -80,8 +80,9 @@ public class NotificationResources {
         }));
     }
 
-    public Uni<JsonObject> getNotificationDetails(String tenant, UUID endpoint, Integer historyId) {
-        String query = "SELECT details FROM public.notification_history WHERE account_id = $1 AND endpoint_id = $2 AND id = $3";
+    public Uni<JsonObject> getNotificationDetails(String tenant, QueryCreator.Limit limiter, UUID endpoint, Integer historyId) {
+        String basicQuery = "SELECT details FROM public.notification_history WHERE account_id = $1 AND endpoint_id = $2 AND id = $3";
+        String query = QueryCreator.modifyQuery(basicQuery, limiter);
         return connectionPublisherUni.toMulti()
                 .onItem()
                 .transform(conn -> conn.createStatement(query)
