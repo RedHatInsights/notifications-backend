@@ -2,6 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>com.redhat.cloud.policies</groupId>
+    <artifactId>policies-engine</artifactId>
+    <version>2.1.0-SNAPSHOT</version>
+  </parent>
+
   <artifactId>policies-engine-api</artifactId>
   <packaging>jar</packaging>
 
@@ -21,6 +27,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+      <version>${version.com.google.guava}</version>
     </dependency>
 
     <!-- Logging -->
@@ -71,10 +78,5 @@
       </plugin>
     </plugins>
   </build>
-  <distributionManagement>
-    <repository>
-      <id>internal</id>
-      <url>file://${project.build.directory}/mvn-repo</url>
-    </repository>
-  </distributionManagement>
+
 </project>
