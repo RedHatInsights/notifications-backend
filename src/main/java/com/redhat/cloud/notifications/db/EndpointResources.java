@@ -114,10 +114,11 @@ public class EndpointResources extends DatasourceProvider {
                 .flatMap(this::mapResultSetToEndpoint);
     }
 
-    public Multi<Endpoint> getEndpoints(String tenant) {
+    public Multi<Endpoint> getEndpoints(String tenant, QueryCreator.Limit limiter) {
+        String query = QueryCreator.modifyQuery(basicEndpointGetQuery, limiter);
         // TODO Add JOIN ON clause to proper table, such as webhooks and then read the results
         Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
-                conn.createStatement(basicEndpointGetQuery)
+                conn.createStatement(query)
                         .bind("$1", tenant)
                         .execute());
         Flux<Endpoint> endpointFlux = mapResultSetToEndpoint(resultFlux);
@@ -241,7 +242,6 @@ public class EndpointResources extends DatasourceProvider {
 
     private Mono<Boolean> updateWebhooksStatement(Endpoint endpoint, PostgresqlConnection conn) {
         WebhookAttributes attr = (WebhookAttributes) endpoint.getProperties();
-        System.out.printf("Update webhooks: %s\n", attr.getSecretToken());
         String webhookQuery = "UPDATE public.endpoint_webhooks SET url = $2, method = $3, disable_ssl_verification = $4, secret_token = $5 WHERE endpoint_id = $1 ";
 
         PostgresqlStatement bindSt = conn.createStatement(webhookQuery)
