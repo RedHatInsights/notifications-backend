@@ -34,7 +34,7 @@ public class PoliciesTransformer {
                     message.put("policy_condition", eventEval.getCondition().getExpression());
 
                     message.put("insights_id", eventEval.getContext().get("insights_id"));
-                    message.put("display_name", eventEval.getValue().getTags().get("display_name"));
+                    message.put("display_name", eventEval.getValue().getTags().get("display_name").iterator().next());
                     break Outer; // We only want to process the first one
                 }
             }
