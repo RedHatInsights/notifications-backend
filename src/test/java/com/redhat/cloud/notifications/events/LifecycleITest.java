@@ -181,7 +181,7 @@ public class LifecycleITest {
                     // TODO Validate that we actually reach this part
                     assertFalse(history.isInvocationResult());
                     WebhookAttributes attr = (WebhookAttributes) ep.getProperties();
-                    System.out.printf("/endpoints/%s/history/%s/details", ep.getId().toString(), history.getId());
+
                     // Fetch details
                     response = given()
                             .header(identityHeader)

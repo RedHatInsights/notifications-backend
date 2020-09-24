@@ -439,7 +439,6 @@ public class EndpointServiceTest {
                 .body(is("[]"));
 
         for(int i = 0; i < 200; i++) {
-//            System.out.printf("%d call\n", i);
             // Add new endpoints
             WebhookAttributes webAttr = new WebhookAttributes();
             webAttr.setMethod(WebhookAttributes.HttpType.POST);
@@ -467,7 +466,6 @@ public class EndpointServiceTest {
             Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
             assertNotNull(responsePoint.getId());
 
-//            System.out.printf("Second %d call\n", i);
             // Fetch the list
             given()
                     // Set header to x-rh-identity
