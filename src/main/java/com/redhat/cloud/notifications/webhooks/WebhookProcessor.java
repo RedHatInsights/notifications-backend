@@ -100,7 +100,6 @@ public class WebhookProcessor {
                                 details.put("error_message", t.getMessage()); // TODO This message isn't always the most descriptive..
                                 history.setDetails(details);
 
-                                System.out.printf("We failed to process the request: %s\n", t.getMessage());
                                 if (t instanceof ConnectException) {
                                     // Connection refused for example
                                     ConnectException ce = (ConnectException) t;

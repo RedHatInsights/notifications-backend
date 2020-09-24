@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
@@ -22,35 +23,30 @@ import java.util.UUID;
 public class EndpointResources extends DatasourceProvider {
 
     @Inject
-    Mono<PostgresqlConnection> connectionPublisher;
+    Provider<Mono<PostgresqlConnection>> connectionPublisher;
 
     @Inject
-    Uni<PostgresqlConnection> connectionPublisherUni;
+    Provider<Uni<PostgresqlConnection>> connectionPublisherUni;
 
     // TODO Modify to use PreparedStatements
-    // TODO Pooling?
 
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
-        // TODO Fix transaction so that we don't end up with endpoint without properties
-//        Mono<Endpoint> endpointMono = connectionPublisher.flatMap(conn -> {
-//            return conn.beginTransaction()
-//                    .flatMapMany(cr -> insertEndpointStatement(endpoint, conn))
-//                    .flatMap(endpoint2 -> insertWebhooksStatement(endpoint2, conn))
-//                    .then(conn.commitTransaction())
-//                    .map(ignored -> endpoint);
-//        });
-        Mono<Endpoint> endpointMono = connectionPublisher.flatMap(conn -> {
-            Flux<Endpoint> endpointFlux = insertEndpointStatement(endpoint, conn);
-            Flux<Endpoint> endpointFlux1 = endpointFlux.flatMap(ep -> {
-                if (endpoint.getProperties() != null && ep.getType() == Endpoint.EndpointType.WEBHOOK) {
-                    return insertWebhooksStatement(ep, conn);
-                } else {
-                    // Other types are not supported at this point
-                    return Flux.empty();
-                }
-            });
-            return endpointFlux1.next();
-        });
+        Mono<Endpoint> endpointMono =
+                Mono.usingWhen(
+                        connectionPublisher.get(),
+                        conn -> {
+                            Flux<Endpoint> endpointFlux = insertEndpointStatement(endpoint, conn);
+                            Flux<Endpoint> endpointFlux1 = endpointFlux.flatMap(ep -> {
+                                if (endpoint.getProperties() != null && ep.getType() == Endpoint.EndpointType.WEBHOOK) {
+                                    return insertWebhooksStatement(ep, conn);
+                                } else {
+                                    // Other types are not supported at this point
+                                    return Flux.empty();
+                                }
+                            });
+                            return endpointFlux1.next();
+                        },
+                        PostgresqlConnection::close);
 
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), endpointMono);
     }
@@ -105,23 +101,32 @@ public class EndpointResources extends DatasourceProvider {
     public Multi<Endpoint> getActiveEndpointsPerType(String tenant, Endpoint.EndpointType type) {
         // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
         String query = basicEndpointGetQuery + " AND e.endpoint_type = $2 AND e.enabled = true";
-        return connectionPublisherUni.toMulti()
-                .onItem()
-                .transform(conn -> conn.createStatement(query)
-                        .bind("$1", tenant)
-                        .bind("$2", type.ordinal())
-                        .execute())
-                .flatMap(this::mapResultSetToEndpoint);
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .bind("$2", type.ordinal())
+                                    .execute();
+                            return this.mapResultSetToEndpoint(execute);
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }));
     }
 
     public Multi<Endpoint> getEndpoints(String tenant, QueryCreator.Limit limiter) {
         String query = QueryCreator.modifyQuery(basicEndpointGetQuery, limiter);
         // TODO Add JOIN ON clause to proper table, such as webhooks and then read the results
-        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
-                conn.createStatement(query)
-                        .bind("$1", tenant)
-                        .execute());
-        Flux<Endpoint> endpointFlux = mapResultSetToEndpoint(resultFlux);
+        Flux<Endpoint> endpointFlux = Flux.usingWhen(connectionPublisher.get(),
+                conn -> {
+                    Flux<PostgresqlResult> resultFlux = conn.createStatement(query)
+                            .bind("$1", tenant)
+                            .execute();
+                    return mapResultSetToEndpoint(resultFlux);
+                },
+                PostgresqlConnection::close);
         return Multi.createFrom().converter(MultiReactorConverters.fromFlux(), endpointFlux);
     }
 
@@ -158,27 +163,37 @@ public class EndpointResources extends DatasourceProvider {
 
     public Uni<Endpoint> getEndpoint(String tenant, UUID id) {
         String query = basicEndpointGetQuery + " AND e.id = $2";
-        return connectionPublisherUni.toMulti()
-                .onItem()
-                .transform(conn -> conn.createStatement(query)
-                        .bind("$1", tenant)
-                        .bind("$2", id)
-                        .execute())
-                .flatMap(this::mapResultSetToEndpoint)
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .bind("$2", id)
+                                    .execute();
+                            return this.mapResultSetToEndpoint(execute);
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }))
                 .toUni();
     }
 
     public Uni<Boolean> deleteEndpoint(String tenant, UUID id) {
         String query = "DELETE FROM public.endpoints WHERE account_id = $1 AND id = $2";
-        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
-                conn.createStatement(query)
-                        .bind("$1", tenant)
-                        .bind("$2", id)
-                        .execute());
+        Mono<Boolean> monoResult =
+                Mono.usingWhen(connectionPublisher.get(),
+                        conn -> {
+                            Flux<PostgresqlResult> resultFlux = conn.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .bind("$2", id)
+                                    .execute();
 
-        // Actually, the endpoint targeting this should be repeatable
-        Mono<Boolean> monoResult = resultFlux.flatMap(PostgresqlResult::getRowsUpdated)
-                .map(i -> i > 0).next();
+                            // Actually, the endpoint targeting this should be repeatable
+                            return resultFlux.flatMap(PostgresqlResult::getRowsUpdated)
+                                    .map(i -> i > 0).next();
+                        },
+                        PostgresqlConnection::close);
 
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), monoResult);
     }
@@ -194,15 +209,19 @@ public class EndpointResources extends DatasourceProvider {
     public Uni<Boolean> modifyEndpointStatus(String tenant, UUID id, boolean enabled) {
         String query = "UPDATE public.endpoints SET enabled = $1 WHERE account_id = $2 AND id = $3";
 
-        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
-                conn.createStatement(query)
-                        .bind("$1", enabled)
-                        .bind("$2", tenant)
-                        .bind("$3", id)
-                        .execute());
+        Mono<Boolean> monoResult =
+                Mono.usingWhen(connectionPublisher.get(),
+                        conn -> {
+                            Flux<PostgresqlResult> resultFlux = conn.createStatement(query)
+                                    .bind("$1", enabled)
+                                    .bind("$2", tenant)
+                                    .bind("$3", id)
+                                    .execute();
 
-        Mono<Boolean> monoResult = resultFlux.flatMap(PostgresqlResult::getRowsUpdated)
-                .map(i -> i > 0).next();
+                            return resultFlux.flatMap(PostgresqlResult::getRowsUpdated)
+                                    .map(i -> i > 0).next();
+                        },
+                        PostgresqlConnection::close);
 
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), monoResult);
     }
@@ -210,16 +229,19 @@ public class EndpointResources extends DatasourceProvider {
     public Uni<Boolean> updateEndpoint(Endpoint endpoint) {
         // TODO Update could fail because the item did not exist, throw 404 in that case?
         // TODO Fix transaction so that we don't end up with half the updates applied
-        Mono<Boolean> endpointMono = connectionPublisher.flatMap(conn -> {
-            Mono<Boolean> endpointFlux = updateEndpointStatement(endpoint, conn);
-            Mono<Boolean> endpointFlux1 = endpointFlux.flatMap(ep -> {
-                if (endpoint.getProperties() != null && endpoint.getType() == Endpoint.EndpointType.WEBHOOK) {
-                    return updateWebhooksStatement(endpoint, conn);
-                }
-                return Mono.empty();
-            });
-            return endpointFlux1;
-        });
+        Mono<Boolean> endpointMono =
+                Mono.usingWhen(connectionPublisher.get(),
+                        conn -> {
+                            Mono<Boolean> endpointFlux = updateEndpointStatement(endpoint, conn);
+                            Mono<Boolean> endpointFlux1 = endpointFlux.flatMap(ep -> {
+                                if (endpoint.getProperties() != null && endpoint.getType() == Endpoint.EndpointType.WEBHOOK) {
+                                    return updateWebhooksStatement(endpoint, conn);
+                                }
+                                return Mono.empty();
+                            });
+                            return endpointFlux1;
+                        },
+                        PostgresqlConnection::close);
 
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), endpointMono);
     }
@@ -261,5 +283,4 @@ public class EndpointResources extends DatasourceProvider {
                 .flatMap(PostgresqlResult::getRowsUpdated)
                 .map(i -> i > 0).next();
     }
-
 }

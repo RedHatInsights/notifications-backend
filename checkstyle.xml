@@ -137,7 +137,8 @@
         <module name="CovariantEquals" />
         <module name="ArrayTypeStyle" />
 
-        <module name="Indentation" />
+        <!-- Checkstyle https://github.com/checkstyle/checkstyle/pull/8719 -->
+<!--        <module name="Indentation" />-->
     </module>
 
 </module>

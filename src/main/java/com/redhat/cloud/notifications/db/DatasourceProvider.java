@@ -1,13 +1,16 @@
 package com.redhat.cloud.notifications.db;
 
+import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.spi.ConnectionFactories;
+import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import reactor.core.publisher.Mono;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 
@@ -23,30 +26,33 @@ public class DatasourceProvider {
     @ConfigProperty(name = "quarkus.datasource.password")
     String password;
 
-    @Produces
-    Mono<PostgresqlConnection> getPostgresConnection() {
-        // TODO We could use a pooling method here. However, the r2dbc-pool needs to do .close() after using a connection to return it..
-        ConnectionFactoryOptions parse = ConnectionFactoryOptions.parse(dataSourceUrl.replaceFirst("jdbc", "r2dbc"));
+    private ConnectionFactory pool;
+
+    @PostConstruct
+    void init() {
+        ConnectionFactoryOptions parse = ConnectionFactoryOptions.parse(dataSourceUrl.replaceFirst("jdbc", "r2dbc:pool"));
         ConnectionFactoryOptions options = parse.mutate()
                 .option(ConnectionFactoryOptions.USER, username)
                 .option(ConnectionFactoryOptions.PASSWORD, password)
                 .build();
 
-        PostgresqlConnectionFactory connectionFactory = (PostgresqlConnectionFactory) ConnectionFactories.get(options);
+        ConnectionFactory connectionFactory = ConnectionFactories.get(options);
+        this.pool = connectionFactory;
+    }
 
-        return Mono.from(connectionFactory.create());
+    @Produces
+    Mono<PostgresqlConnection> getPostgresConnection() {
+        ConnectionPool connectionPool = (ConnectionPool) pool;
+        PostgresqlConnectionFactory postgresqlConnectionFactory = (PostgresqlConnectionFactory) connectionPool.unwrap();
+
+        return postgresqlConnectionFactory.create();
     }
 
     @Produces
     Uni<PostgresqlConnection> getConnection() {
-        ConnectionFactoryOptions parse = ConnectionFactoryOptions.parse(dataSourceUrl.replaceFirst("jdbc", "r2dbc"));
-        ConnectionFactoryOptions options = parse.mutate()
-                .option(ConnectionFactoryOptions.USER, username)
-                .option(ConnectionFactoryOptions.PASSWORD, password)
-                .build();
+        ConnectionPool connectionPool = (ConnectionPool) pool;
+        PostgresqlConnectionFactory postgresqlConnectionFactory = (PostgresqlConnectionFactory) connectionPool.unwrap();
 
-        PostgresqlConnectionFactory connectionFactory = (PostgresqlConnectionFactory) ConnectionFactories.get(options);
-
-        return Uni.createFrom().publisher(connectionFactory.create());
+        return Uni.createFrom().publisher(postgresqlConnectionFactory.create());
     }
 }

@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import java.util.Date;
 import java.util.UUID;
 
@@ -22,48 +23,78 @@ import java.util.UUID;
 public class NotificationResources {
 
     @Inject
-    Mono<PostgresqlConnection> connectionPublisher;
+    Provider<Mono<PostgresqlConnection>> connectionPublisher;
 
     @Inject
-    Uni<PostgresqlConnection> connectionPublisherUni;
+    Provider<Uni<PostgresqlConnection>> connectionPublisherUni;
 
     public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {
-        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn -> {
-            String query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result) VALUES ($1, $2, $3, $4)";
-            if (!history.isInvocationResult()) {
-                // Negative result
-                query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result, details) VALUES ($1, $2, $3, $4, $5)";
-            }
+        Flux<NotificationHistory> notificationHistoryFlux = Flux.usingWhen(connectionPublisher.get(),
+                conn -> {
+                    String query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result) VALUES ($1, $2, $3, $4)";
+                    if (!history.isInvocationResult()) {
+                        // Negative result
+                        query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result, details) VALUES ($1, $2, $3, $4, $5)";
+                    }
 
-            PostgresqlStatement st = conn.createStatement(query)
-                    .bind("$1", history.getTenant())
-                    .bind("$2", history.getEndpointId())
-                    .bind("$3", history.getInvocationTime())
-                    .bind("$4", history.isInvocationResult());
+                    PostgresqlStatement st = conn.createStatement(query)
+                            .bind("$1", history.getTenant())
+                            .bind("$2", history.getEndpointId())
+                            .bind("$3", history.getInvocationTime())
+                            .bind("$4", history.isInvocationResult());
 
-            if (!history.isInvocationResult()) {
-                st = st.bind("$5", Json.of(history.getDetails().encode()));
-            }
-            return st.returnGeneratedValues("id", "created").execute();
-        });
+                    if (!history.isInvocationResult()) {
+                        st = st.bind("$5", Json.of(history.getDetails().encode()));
+                    }
+                    Flux<PostgresqlResult> execute = st.returnGeneratedValues("id", "created").execute();
+                    return execute.flatMap(res -> res.map((row, rowMetadata) -> {
+                        history.setCreated(row.get("created", Date.class));
+                        history.setId(row.get("id", Integer.class));
+                        return history;
+                    }));
+                },
+                PostgresqlConnection::close);
 
-        Flux<NotificationHistory> notificationHistoryFlux = resultFlux.flatMap(res -> res.map((row, rowMetadata) -> {
-            history.setCreated(row.get("created", Date.class));
-            history.setId(row.get("id", Integer.class));
-            return history;
-        }));
+//        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn -> {
+//            String query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result) VALUES ($1, $2, $3, $4)";
+//            if (!history.isInvocationResult()) {
+//                // Negative result
+//                query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result, details) VALUES ($1, $2, $3, $4, $5)";
+//            }
+//
+//            PostgresqlStatement st = conn.createStatement(query)
+//                    .bind("$1", history.getTenant())
+//                    .bind("$2", history.getEndpointId())
+//                    .bind("$3", history.getInvocationTime())
+//                    .bind("$4", history.isInvocationResult());
+//
+//            if (!history.isInvocationResult()) {
+//                st = st.bind("$5", Json.of(history.getDetails().encode()));
+//            }
+//            return st.returnGeneratedValues("id", "created").execute();
+//        });
+//
+//        Flux<NotificationHistory> notificationHistoryFlux = resultFlux.flatMap(res -> res.map((row, rowMetadata) -> {
+//            history.setCreated(row.get("created", Date.class));
+//            history.setId(row.get("id", Integer.class));
+//            return history;
+//        }));
 
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), notificationHistoryFlux.next());
     }
 
     public Multi<NotificationHistory> getNotificationHistory(String tenant, UUID endpoint) {
         String query = "SELECT id, endpoint_id, created, invocation_time, invocation_result FROM public.notification_history WHERE account_id = $1 AND endpoint_id = $2";
-        Flux<PostgresqlResult> resultFlux = connectionPublisher.flatMapMany(conn ->
-                conn.createStatement(query)
-                        .bind("$1", tenant)
-                        .bind("$2", endpoint)
-                        .execute());
-        Flux<NotificationHistory> endpointFlux = mapResultSetToNotificationHistory(resultFlux);
+        Flux<NotificationHistory> endpointFlux = Flux.usingWhen(connectionPublisher.get(),
+                conn -> {
+                    Flux<PostgresqlResult> resultFlux = conn.createStatement(query)
+                            .bind("$1", tenant)
+                            .bind("$2", endpoint)
+                            .execute();
+                    return mapResultSetToNotificationHistory(resultFlux);
+                },
+                PostgresqlConnection::close);
+
         return Multi.createFrom().converter(MultiReactorConverters.fromFlux(), endpointFlux);
     }
 
@@ -83,17 +114,23 @@ public class NotificationResources {
     public Uni<JsonObject> getNotificationDetails(String tenant, QueryCreator.Limit limiter, UUID endpoint, Integer historyId) {
         String basicQuery = "SELECT details FROM public.notification_history WHERE account_id = $1 AND endpoint_id = $2 AND id = $3";
         String query = QueryCreator.modifyQuery(basicQuery, limiter);
-        return connectionPublisherUni.toMulti()
-                .onItem()
-                .transform(conn -> conn.createStatement(query)
-                        .bind("$1", tenant)
-                        .bind("$2", endpoint)
-                        .bind("$3", historyId)
-                        .execute())
-                .flatMap(resFlux -> resFlux.flatMap(res -> res.map((row, rowMetadata) -> {
-                    String json = row.get("details", String.class);
-                    return new JsonObject(json);
-                })))
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .bind("$2", endpoint)
+                                    .bind("$3", historyId)
+                                    .execute();
+                            return execute.flatMap(res -> res.map((row, rowMetadata) -> {
+                                String json = row.get("details", String.class);
+                                return new JsonObject(json);
+                            }));
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }))
                 .toUni();
     }
 }
