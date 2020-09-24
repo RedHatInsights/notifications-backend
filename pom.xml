@@ -125,7 +125,11 @@
       <artifactId>r2dbc-postgresql</artifactId>
       <version>${r2dbc.version}</version>
     </dependency>
-
+    <dependency>
+      <groupId>io.r2dbc</groupId>
+      <artifactId>r2dbc-pool</artifactId>
+      <version>${r2dbc.version}</version>
+    </dependency>
 <!--
     <dependency>
       <groupId>com.redhat.cloud.common</groupId>
