@@ -20,7 +20,7 @@ SET row_security = off;
 -- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
 --
 
--- CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
 
 --
