@@ -4,8 +4,11 @@ import io.quarkus.runtime.StartupEvent;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.event.Observes;
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.core.Application;
 
-public class NotificationsApp {
+@ApplicationPath("/v1.0")
+public class NotificationsApp extends Application {
     private static final String BUILD_COMMIT_ENV_NAME = "OPENSHIFT_BUILD_COMMIT";
     private static final String BUILD_REFERENCE_ENV_NAME = "OPENSHIFT_BUILD_REFERENCE";
     private static final String BUILD_NAME_ENV_NAME = "OPENSHIFT_BUILD_NAME";
