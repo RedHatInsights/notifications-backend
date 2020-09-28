@@ -15,7 +15,6 @@ import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
-import org.hawkular.alerts.api.model.action.Action;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -61,16 +60,14 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         final long startTime = System.currentTimeMillis();
 
         // Note, transformer may not block! Otherwise, use a Uni<> and send that when ready
-        Uni<JsonObject> payload = transformer.transform((Action) item.getPayload());
+        Uni<JsonObject> payload = transformer.transform(item.getAction());
 
         return payload.onItem()
                 .transformToUni(json -> req.sendJson(json)
                         .onItem().transform(resp -> {
                             final long endTime = System.currentTimeMillis();
-                            NotificationHistory history = new NotificationHistory();
-                            history.setInvocationTime(endTime - startTime);
-                            history.setEndpointId(endpoint.getId());
-                            history.setTenant(endpoint.getTenant());
+                            // Default result is false
+                            NotificationHistory history = getHistoryStub(item, endTime - startTime);
 
                             if (resp.statusCode() >= 200 && resp.statusCode() <= 300) {
                                 // Accepted
@@ -100,10 +97,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                         }).onFailure().recoverWithItem(t -> {
                             // TODO Duplicate code with the success part
                             final long endTime = System.currentTimeMillis();
-                            NotificationHistory history = new NotificationHistory();
-                            history.setInvocationTime(endTime - startTime);
-                            history.setEndpointId(endpoint.getId());
-                            history.setTenant(endpoint.getTenant());
+                            NotificationHistory history = getHistoryStub(item, endTime - startTime);
 
                             // TODO Duplicate code with the error return code part
                             JsonObject details = new JsonObject();
@@ -125,5 +119,15 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                 )
                 .onItem().transformToUni(history -> notifResources.createNotificationHistory(history))
                 .onItem().ignore().andContinueWithNull();
+    }
+
+    private NotificationHistory getHistoryStub(Notification item, long invocationTime) {
+        NotificationHistory history = new NotificationHistory();
+        history.setInvocationTime(invocationTime);
+        history.setEndpointId(item.getEndpoint().getId());
+        history.setTenant(item.getEndpoint().getTenant());
+        history.setEventId(item.getEventId());
+        history.setInvocationResult(false);
+        return history;
     }
 }

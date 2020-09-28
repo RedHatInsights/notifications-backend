@@ -1,28 +1,30 @@
 package com.redhat.cloud.notifications.models;
 
-public class Notification {
-    private final String tenant;
+import com.redhat.cloud.notifications.ingress.Action;
 
-    // TODO This is a placeholder!
-    private final Object payload;
+public class Notification {
+    private Action action;
 
     private final Endpoint endpoint;
 
-    public Notification(String tenant, Object payload, Endpoint endpoint) {
-        this.tenant = tenant;
-        this.payload = payload;
+    public Notification(Action action, Endpoint endpoint) {
+        this.action = action;
         this.endpoint = endpoint;
     }
 
-    public String getTenant() {
-        return tenant;
+    public Action getAction() {
+        return action;
     }
 
-    public Object getPayload() {
-        return payload;
+    public String getTenant() {
+        return action.getEvent().getAccountId();
     }
 
     public Endpoint getEndpoint() {
         return endpoint;
+    }
+
+    public String getEventId() {
+        return action.getEventId();
     }
 }

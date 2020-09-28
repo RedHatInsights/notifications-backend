@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.db.EndpointResources;
+import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
@@ -8,7 +9,6 @@ import com.redhat.cloud.notifications.processors.EventBusTypeProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import org.hawkular.alerts.api.model.action.Action;
 import org.reactivestreams.Publisher;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -34,10 +34,10 @@ public class EndpointProcessor {
         // TODO ApplicationName and eventType are going to be extracted from the new input model - from another PR
         //      We also need to add the original message's unique id to the notification
 
-        Uni<Void> endpointsCallResult = getEndpoints(action.getTenantId(), "Policies", "All")
+        Uni<Void> endpointsCallResult = getEndpoints(action.getEvent().getAccountId(), "Policies", "All")
                 .onItem()
                 .transformToUni(endpoint -> {
-                    Notification endpointNotif = new Notification(action.getTenantId(), action, endpoint);
+                    Notification endpointNotif = new Notification(action, endpoint);
                     return endpointTypeToProcessor(endpoint.getType()).process(endpointNotif);
                 })
                 .merge()
@@ -45,7 +45,7 @@ public class EndpointProcessor {
                 .ignoreAsUni();
 
         // Notification is an endpoint type as well? Must it be created manually each time?
-        Notification notification = new Notification(action.getTenantId(), action, null);
+        Notification notification = new Notification(action, null);
         Uni<Void> notificationResult = notificationProcessor.process(notification);
 
         return Uni.combine().all().unis(endpointsCallResult, notificationResult).discardItems();

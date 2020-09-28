@@ -6,6 +6,8 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.EndpointResources;
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
@@ -19,7 +21,6 @@ import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import org.apache.commons.io.IOUtils;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,12 +32,16 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.mockserver.model.HttpRequest;
 
 import javax.inject.Inject;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -206,9 +211,28 @@ public class LifecycleITest {
                 });
 
         // Read the input file and send it
-        InputStream is = getClass().getClassLoader().getResourceAsStream("input/platform.notifications.ingress.json");
-        String inputJson = IOUtils.toString(is, StandardCharsets.UTF_8);
-        ingressChan.send(inputJson);
+        Action targetAction = new Action();
+        targetAction.setApplication("Policies");
+        targetAction.setTimestamp(LocalDateTime.now());
+        targetAction.setEventId(UUID.randomUUID().toString());
+        targetAction.setEventType("Any");
+        targetAction.setTags(new ArrayList<>());
+
+        Context context = new Context();
+        context.setAccountId("tenant");
+        Map<String, String> values = new HashMap<>();
+        values.put("k", "v");
+        values.put("k2", "v2");
+        values.put("k3", "v");
+        context.setMessage(values);
+        targetAction.setEvent(context);
+
+        String payload = serializeAction(targetAction);
+        ingressChan.send(payload);
+
+//        InputStream is = getClass().getClassLoader().getResourceAsStream("input/platform.notifications.ingress.json");
+//        String inputJson = IOUtils.toString(is, StandardCharsets.UTF_8);
+//        ingressChan.send(inputJson);
 
         if (!latch.await(5, TimeUnit.SECONDS)) {
             fail("HttpServer never received the requests");
