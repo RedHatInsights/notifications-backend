@@ -106,3 +106,6 @@ WITH (
 
 ALTER TABLE public.endpoint_webhooks
     ADD COLUMN basic_authentication jsonb;
+
+ALTER TABLE public.notification_history
+    ADD COLUMN event_id character varying;
