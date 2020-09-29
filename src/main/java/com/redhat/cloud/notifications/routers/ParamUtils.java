@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.db.QueryCreator;
+import com.redhat.cloud.notifications.db.Query;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
@@ -9,7 +9,7 @@ public class ParamUtils {
     public static final String PAGE_SIZE = "pageSize";
     public static final String PAGE_NUMBER = "pageNumber";
 
-    public static QueryCreator.Limit parseQueryParams(UriInfo uriInfo) {
+    public static Query.Limit parseQueryParams(UriInfo uriInfo) {
         MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
         String pageSizeS = queryParameters.getFirst(PAGE_SIZE);
         if (pageSizeS != null) {
@@ -21,8 +21,8 @@ public class ParamUtils {
                 pageNumber = Integer.parseInt(pageNumberS);
             }
 
-            return new QueryCreator.Limit(pageNumber, pageSize);
+            return new Query.Limit(pageNumber, pageSize);
         }
-        return new QueryCreator.Limit(0, 0);
+        return new Query.Limit(0, 0);
     }
 }

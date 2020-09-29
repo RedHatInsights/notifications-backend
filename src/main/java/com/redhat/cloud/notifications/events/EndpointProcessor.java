@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.webhooks.WebhookProcessor;
 import com.redhat.cloud.notifications.webhooks.transformers.PoliciesTransformer;
 import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.core.Vertx;
 import org.hawkular.alerts.api.model.action.Action;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -14,6 +15,9 @@ public class EndpointProcessor {
 
     @Inject
     WebhookProcessor webhooks;
+
+    @Inject
+    Vertx vertx;
 
     @Inject
     PoliciesTransformer transformer;
@@ -30,7 +34,16 @@ public class EndpointProcessor {
         return Uni.createFrom().item(action)
                 .onItem().transformToUni(this::transform)
                 .onItem().transform(payload -> new Notification(action.getTenantId(), payload))
-                .onItem().transformToUni(notif -> webhooks.process(notif));
+                .onItem().transformToUni(notification -> {
+                    // TODO Get endpoints here, send each endpointType to the correct processor
+                    String addr = String.format("notifications-%s", notification.getTenant());
+                    Uni<Void> webhooksResult = webhooks.process(notification);
+                    // TODO Investigate the performance of this write.. is it blocking or not?
+                    //      does it need to be closed?
+                    //      This should also be a separate processor
+                    Uni<Void> writeToBus = vertx.eventBus().publisher(addr).write(notification);
+                    return Uni.combine().all().unis(webhooksResult, writeToBus).discardItems();
+                });
     }
 
     public Uni<Object> transform(Action action) {

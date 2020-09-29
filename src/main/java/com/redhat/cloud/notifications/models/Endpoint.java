@@ -39,11 +39,9 @@ public class Endpoint {
     @NotNull
     private EndpointType type;
 
-    // TODO JSON should be formatted based on the insights type, so ISO8601
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Date created;
 
-    // TODO JSON should be formatted based on the insights type, so ISO8601
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Date updated;
 

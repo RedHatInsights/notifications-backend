@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
-public class QueryCreator {
+public class Query {
     public static class Limit {
         private int pageNumber;
         private int pageSize;
@@ -28,14 +28,14 @@ public class QueryCreator {
         return builder.toString();
     }
 
-    public static String modifyQuery(String basicQuery, QueryCreator.Limit limiter) {
+    public static String modifyQuery(String basicQuery, Query.Limit limiter) {
         // TODO Should we have sorting here (other than natural sort)
         if (limiter != null && limiter.getPageSize() > 0) {
             StringBuilder builder = new StringBuilder();
             builder
                     .append(basicQuery)
                     .append(" ")
-                    .append(QueryCreator.getPostgresQuery(limiter));
+                    .append(Query.getPostgresQuery(limiter));
             return builder.toString();
         }
 

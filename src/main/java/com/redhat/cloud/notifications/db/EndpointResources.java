@@ -96,7 +96,7 @@ public class EndpointResources extends DatasourceProvider {
                 })));
     }
 
-    private static final String basicEndpointGetQuery = "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints AS e JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id  WHERE e.account_id = $1";
+    private static final String basicEndpointGetQuery = "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints AS e JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id WHERE e.account_id = $1";
 
     public Multi<Endpoint> getActiveEndpointsPerType(String tenant, Endpoint.EndpointType type) {
         // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
@@ -116,8 +116,40 @@ public class EndpointResources extends DatasourceProvider {
                         }));
     }
 
-    public Multi<Endpoint> getEndpoints(String tenant, QueryCreator.Limit limiter) {
-        String query = QueryCreator.modifyQuery(basicEndpointGetQuery, limiter);
+    public Multi<Endpoint> getTargetEndpoints(String tenant, String applicationName, String eventTypeName) {
+        String query = "WITH accepted_event_types AS ( " +
+                "SELECT aev.event_type_id FROM public.application_event_type aev " +
+                "JOIN public.applications a ON a.id = aev.application_id " +
+                "JOIN public.event_type et ON et.id = aev.event_type_id " +
+                "WHERE a.name = $1 AND et.name = $2) " +
+                "SELECT e.* FROM public.endpoints e " +
+                "JOIN public.endpoint_targets et ON et.endpoint_id = e.id " +
+                "JOIN accepted_event_types aet ON aet.event_type_id = et.event_type_id " +
+                "WHERE et.account_id = $3";
+
+        // $1 = application_name
+        // $2 = event_type_name
+        // $3 = tenant
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", applicationName)
+                                    .bind("$2", eventTypeName)
+                                    .bind("$3", tenant)
+                                    .execute();
+                            return this.mapResultSetToEndpoint(execute);
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }));
+    }
+
+    public Multi<Endpoint> getEndpoints(String tenant, Query.Limit limiter) {
+        // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
+        //      or should I just create a new method for it?
+
+        String query = Query.modifyQuery(basicEndpointGetQuery, limiter);
         // TODO Add JOIN ON clause to proper table, such as webhooks and then read the results
         Flux<Endpoint> endpointFlux = Flux.usingWhen(connectionPublisher.get(),
                 conn -> {
