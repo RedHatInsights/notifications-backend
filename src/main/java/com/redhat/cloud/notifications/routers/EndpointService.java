@@ -7,9 +7,12 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 import javax.annotation.security.RolesAllowed;
@@ -47,6 +50,20 @@ public class EndpointService {
 
     @GET
     @RolesAllowed("read")
+    @Parameters({
+            @Parameter(
+                    name = "pageSize",
+                    in = ParameterIn.QUERY,
+                    description = "Number of items per page, if not specified or 0 is used, returns all elements",
+                    schema = @Schema(type = SchemaType.INTEGER)
+            ),
+            @Parameter(
+                    name = "pageNumber",
+                    in = ParameterIn.QUERY,
+                    description = "Page number. Starts at first page (0), if not specified starts at first page.",
+                    schema = @Schema(type = SchemaType.INTEGER)
+            )
+    })
     public Multi<Endpoint> getEndpoints(@Context SecurityContext sec, @Context UriInfo uriInfo) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.getEndpoints(principal.getAccount(), ParamUtils.parseQueryParams(uriInfo));
@@ -124,6 +141,20 @@ public class EndpointService {
     @GET
     @Path("/{id}/history/{history_id}/details")
     @RolesAllowed("read")
+    @Parameters({
+            @Parameter(
+                    name = "pageSize",
+                    in = ParameterIn.QUERY,
+                    description = "Number of items per page, if not specified or 0 is used, returns all elements",
+                    schema = @Schema(type = SchemaType.INTEGER)
+            ),
+            @Parameter(
+                    name = "pageNumber",
+                    in = ParameterIn.QUERY,
+                    description = "Page number. Starts at first page (0), if not specified starts at first page.",
+                    schema = @Schema(type = SchemaType.INTEGER)
+            )
+    })
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId, @Context UriInfo uriInfo) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
