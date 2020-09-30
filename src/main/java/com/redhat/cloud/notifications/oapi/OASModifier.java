@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.oapi;
 import org.eclipse.microprofile.openapi.OASFilter;
 import org.eclipse.microprofile.openapi.models.Components;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.eclipse.microprofile.openapi.models.Operation;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.Paths;
 import org.eclipse.microprofile.openapi.models.media.Schema;
@@ -28,23 +27,6 @@ public class OASModifier implements OASFilter {
         Paths paths = openAPI.getPaths();
         Set<String> keySet = paths.getPathItems().keySet();
         Map<String, PathItem> replacementItems = new HashMap<>();
-        for (String key : keySet) {
-            PathItem p = paths.getPathItem(key);
-            String mangledName = mangleName(key);
-            replacementItems.put(mangledName, p);
-
-            Map<PathItem.HttpMethod, Operation> operations = p.getOperations();
-            for (Map.Entry<PathItem.HttpMethod, Operation> entry : operations.entrySet()) {
-                Operation op = entry.getValue();
-
-                if (op.getOperationId() == null || op.getOperationId().isEmpty()) {
-
-                    String id = toCamelCase(mangledName);
-                    id = entry.getKey().toString().toLowerCase() + id;
-                    op.setOperationId(id);
-                }
-            }
-        }
         paths.setPathItems(replacementItems);
 
         // Settings values should not be shown in openapi export
@@ -81,11 +63,4 @@ public class OASModifier implements OASFilter {
         return sb.toString();
     }
 
-    private String mangleName(String key) {
-        // Base Filler - would report as empty otherwise
-        if (key.equals("/api/notifications/v1.0")) {
-            return "/";
-        }
-        return key.replace("/api/notifications/v1.0", "");
-    }
 }

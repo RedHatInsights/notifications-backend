@@ -47,7 +47,7 @@ public class LifecycleITest {
 
     @BeforeEach
     void beforeEach() {
-        RestAssured.basePath = "/api/notifications/v1.0";
+        RestAssured.basePath = "/api/integrations/v1.0";
     }
 
     private Header identityHeader;
@@ -90,7 +90,7 @@ public class LifecycleITest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
-                .post("/endpoints")
+                .post("/")
                 .then()
                 .statusCode(200);
 
@@ -111,7 +111,7 @@ public class LifecycleITest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
-                .post("/endpoints")
+                .post("/")
                 .then()
                 .statusCode(200);
     }
@@ -160,7 +160,7 @@ public class LifecycleITest {
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .get("/endpoints")
+                .get("/")
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -174,7 +174,7 @@ public class LifecycleITest {
                     .header(identityHeader)
                     .when()
                     .contentType(ContentType.JSON)
-                    .get(String.format("/endpoints/%s/history", ep.getId().toString()))
+                    .get(String.format("/%s/history", ep.getId().toString()))
                     .then()
                     .statusCode(200)
                     .extract().response();
@@ -194,7 +194,7 @@ public class LifecycleITest {
                             .header(identityHeader)
                             .when()
                             .contentType(ContentType.JSON)
-                            .get(String.format("/endpoints/%s/history/%s/details", ep.getId().toString(), history.getId()))
+                            .get(String.format("/%s/history/%s/details", ep.getId().toString(), history.getId()))
                             .then()
                             .statusCode(200)
                             .extract().response();

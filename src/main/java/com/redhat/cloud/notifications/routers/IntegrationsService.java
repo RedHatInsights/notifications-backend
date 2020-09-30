@@ -35,12 +35,12 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import java.util.UUID;
 
-@Path("/endpoints")
+@Path("/api/integrations/v1.0")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 // Email endpoints are not added at this point
 // TODO Needs documentation annotations
-public class EndpointService {
+public class IntegrationsService {
 
     @Inject
     EndpointResources resources;

@@ -24,6 +24,7 @@
     <testcontainers.version>1.14.3</testcontainers.version>
     <mockserver-client-java.version>5.5.4</mockserver-client-java.version> <!-- not the newest, but matches what is in org.testcontainers:mockserver -->
     <version.cloud-commons>0.1.1</version.cloud-commons>
+    <openapi-parser.version>4.0.4</openapi-parser.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -176,6 +177,12 @@
       <groupId>org.mock-server</groupId>
       <artifactId>mockserver-client-java</artifactId>
       <version>${mockserver-client-java.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.reprezen.kaizen</groupId>
+      <artifactId>openapi-parser</artifactId>
+      <version>${openapi-parser.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
