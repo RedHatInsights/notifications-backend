@@ -5,6 +5,8 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Redirect routes with only the major version
@@ -13,8 +15,7 @@ import java.util.logging.Logger;
 @SuppressWarnings("unused")
 public class RouteRedirector {
 
-    private static final String API_NOTIFICATIONS_V_1 = "/api/notifications/v1/";
-    private static final String API_NOTIFICATIONS_V_1_0 = "/api/notifications/v1.0/";
+    Pattern p = Pattern.compile("/api/(integrations|notifications)/v1/(.*)");
 
     Logger log = Logger.getLogger(this.getClass().getSimpleName());
 
@@ -32,13 +33,14 @@ public class RouteRedirector {
         if (log.isLoggable(Level.FINER)) {
             log.finer("Incoming uri: " + uri);
         }
-        if (uri.startsWith(API_NOTIFICATIONS_V_1)) {
-            String remain = uri.substring(API_NOTIFICATIONS_V_1.length());
+        Matcher m = p.matcher(uri);
+        if (m.matches()) {
+            String newTarget = "/api/" + m.group(1) + "/v1.0/" + m.group(2);
             if (log.isLoggable(Level.FINER)) {
-                log.finer("Rerouting to :" + API_NOTIFICATIONS_V_1_0 + remain);
+                log.finer("Rerouting to :" + newTarget);
             }
 
-            rc.reroute(API_NOTIFICATIONS_V_1_0 + remain);
+            rc.reroute(newTarget);
             return;
         }
         rc.next();
