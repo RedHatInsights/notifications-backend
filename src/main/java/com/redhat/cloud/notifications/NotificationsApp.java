@@ -5,7 +5,7 @@ import org.jboss.logging.Logger;
 
 import javax.enterprise.event.Observes;
 
-public class NotificationsApp {
+public class NotificationsApp  {
     private static final String BUILD_COMMIT_ENV_NAME = "OPENSHIFT_BUILD_COMMIT";
     private static final String BUILD_REFERENCE_ENV_NAME = "OPENSHIFT_BUILD_REFERENCE";
     private static final String BUILD_NAME_ENV_NAME = "OPENSHIFT_BUILD_NAME";

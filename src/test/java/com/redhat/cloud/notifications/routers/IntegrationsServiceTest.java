@@ -8,10 +8,12 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.Json;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -27,7 +29,12 @@ import static org.junit.Assert.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class EndpointServiceTest {
+public class IntegrationsServiceTest {
+
+    @BeforeEach
+    void beforeEach() {
+        RestAssured.basePath = "/api/integrations/v1.0";
+    }
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
@@ -45,7 +52,7 @@ public class EndpointServiceTest {
         given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .when().get("/endpoints")
+                .when().get("/")
                 .then()
                 .statusCode(200) // TODO Maybe 204 here instead?
                 .body(is("[]"));
@@ -69,7 +76,7 @@ public class EndpointServiceTest {
                     .when()
                     .contentType(ContentType.JSON)
                     .body(Json.encode(ep))
-                    .post("/endpoints")
+                    .post("/")
                     .then()
                     .statusCode(200)
                     .extract().response();
@@ -81,7 +88,7 @@ public class EndpointServiceTest {
             response = given()
                     // Set header to x-rh-identity
                     .header(identityHeader)
-                    .when().get("/endpoints")
+                    .when().get("/")
                     .then()
                     .statusCode(200)
                     .extract().response();
@@ -97,7 +104,7 @@ public class EndpointServiceTest {
         // Disable and fetch
         given()
                 .header(identityHeader)
-                .when().delete("/endpoints/" + responsePoint.getId() + "/enable")
+                .when().delete("/" + responsePoint.getId() + "/enable")
                 .then()
                 .statusCode(200);
 
@@ -108,7 +115,7 @@ public class EndpointServiceTest {
         // Enable and fetch
         given()
                 .header(identityHeader)
-                .when().put("/endpoints/" + responsePoint.getId() + "/enable")
+                .when().put("/" + responsePoint.getId() + "/enable")
                 .then()
                 .statusCode(200);
 
@@ -119,7 +126,7 @@ public class EndpointServiceTest {
         // Delete
         given()
                 .header(identityHeader)
-                .when().delete("/endpoints/" + responsePoint.getId())
+                .when().delete("/" + responsePoint.getId())
                 .then()
                 .statusCode(200);
 
@@ -127,7 +134,7 @@ public class EndpointServiceTest {
         given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .when().get("/endpoints/" + responsePoint.getId())
+                .when().get("/" + responsePoint.getId())
                 .then()
                 .statusCode(404);
 
@@ -135,7 +142,7 @@ public class EndpointServiceTest {
         given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .when().get("/endpoints")
+                .when().get("/")
                 .then()
                 .statusCode(200)
                 .body(is("[]"));
@@ -145,7 +152,7 @@ public class EndpointServiceTest {
         Response response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .when().get("/endpoints/" + id)
+                .when().get("/" + id)
                 .then()
                 .statusCode(200)
                 .body("id", equalTo(id.toString()))
@@ -165,7 +172,7 @@ public class EndpointServiceTest {
         given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .when().get("/endpoints")
+                .when().get("/")
                 .then()
                 .statusCode(401);
 
@@ -175,14 +182,14 @@ public class EndpointServiceTest {
         given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .when().get("/endpoints")
+                .when().get("/")
                 .then()
                 .statusCode(403);
 
         // Test bogus x-rh-identity header that fails Base64 decoding
         given()
                 .header(new Header("x-rh-identity", "00000"))
-                .when().get("/endpoints")
+                .when().get("/")
                 .then()
                 .statusCode(401);
     }
@@ -208,7 +215,7 @@ public class EndpointServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
-                .post("/endpoints")
+                .post("/")
                 .then()
                 .statusCode(400);
 
@@ -227,7 +234,7 @@ public class EndpointServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
-                .post("/endpoints")
+                .post("/")
                 .then()
                 .statusCode(400);
 
@@ -241,7 +248,7 @@ public class EndpointServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
-                .post("/endpoints")
+                .post("/")
                 .then()
                 .statusCode(400);
 
@@ -254,7 +261,7 @@ public class EndpointServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
-                .post("/endpoints")
+                .post("/")
                 .then()
                 .statusCode(400);
     }
@@ -272,7 +279,7 @@ public class EndpointServiceTest {
         given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .when().get("/endpoints")
+                .when().get("/")
                 .then()
                 .statusCode(200) // TODO Maybe 204 here instead?
                 .body(is("[]"));
@@ -296,7 +303,7 @@ public class EndpointServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
-                .post("/endpoints")
+                .post("/")
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -309,7 +316,7 @@ public class EndpointServiceTest {
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .contentType(ContentType.JSON)
-                .when().get("/endpoints")
+                .when().get("/")
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -332,7 +339,7 @@ public class EndpointServiceTest {
                 .header(identityHeader)
                 .contentType(ContentType.JSON)
                 .when()
-                .put(String.format("/endpoints/%s", responsePointSingle.getId()))
+                .put(String.format("/%s", responsePointSingle.getId()))
                 .then()
                 .statusCode(400);
 
@@ -342,7 +349,7 @@ public class EndpointServiceTest {
                 .contentType(ContentType.JSON)
                 .when()
                 .body(Json.encode(responsePointSingle))
-                .put(String.format("/endpoints/%s", responsePointSingle.getId()))
+                .put(String.format("/%s", responsePointSingle.getId()))
                 .then()
                 .statusCode(200);
 
@@ -382,7 +389,7 @@ public class EndpointServiceTest {
                     .when()
                     .contentType(ContentType.JSON)
                     .body(Json.encode(ep))
-                    .post("/endpoints")
+                    .post("/")
                     .then()
                     .statusCode(200)
                     .extract().response();
@@ -397,7 +404,7 @@ public class EndpointServiceTest {
                 .header(identityHeader)
                 .queryParam("pageSize", "10")
                 .queryParam("pageNumber", "0")
-                .when().get("/endpoints")
+                .when().get("/")
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -411,7 +418,7 @@ public class EndpointServiceTest {
                 .header(identityHeader)
                 .queryParam("pageSize", "10")
                 .queryParam("pageNumber", "2")
-                .when().get("/endpoints")
+                .when().get("/")
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -433,7 +440,7 @@ public class EndpointServiceTest {
         given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .when().get("/endpoints")
+                .when().get("/")
                 .then()
                 .statusCode(200) // TODO Maybe 204 here instead?
                 .body(is("[]"));
@@ -458,7 +465,7 @@ public class EndpointServiceTest {
                     .when()
                     .contentType(ContentType.JSON)
                     .body(Json.encode(ep))
-                    .post("/endpoints")
+                    .post("/")
                     .then()
                     .statusCode(200)
                     .extract().response();
@@ -470,7 +477,7 @@ public class EndpointServiceTest {
             given()
                     // Set header to x-rh-identity
                     .header(identityHeader)
-                    .when().get("/endpoints")
+                    .when().get("/")
                     .then()
                     .statusCode(200)
                     .extract().response();
