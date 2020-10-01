@@ -107,6 +107,8 @@ public class LifecycleITest {
                 .post("/endpoints")
                 .then()
                 .statusCode(200);
+
+        // TODO Link an application to event type to endpoint
     }
 
     @Test

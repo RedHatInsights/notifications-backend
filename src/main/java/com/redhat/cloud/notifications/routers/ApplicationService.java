@@ -7,11 +7,13 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
 import javax.inject.Inject;
+import javax.validation.Valid;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
+import java.util.UUID;
 
 @Path("/applications")
 public class ApplicationService {
@@ -26,27 +28,27 @@ public class ApplicationService {
     }
 
     @POST
-    public Uni<Application> addApplication(Application application) {
+    public Uni<Application> addApplication(@Valid Application application) {
         // We need to ensure that the x-rh-identity isn't present here
         return appResources.createApplication(application);
     }
 
     @GET
     @Path("/{id}")
-    public Uni<Application> getApplication(@PathParam("id") Integer id) {
+    public Uni<Application> getApplication(@PathParam("id") UUID id) {
         return appResources.getApplication(id);
     }
 
     @POST
     @Path("/{id}/eventTypes")
-    public Uni<Response> addEventType(@PathParam("id") Integer applicationId, EventType eventType) {
+    public Uni<Response> addEventType(@PathParam("id") UUID applicationId, @Valid EventType eventType) {
         return appResources.addEventTypeToApplication(applicationId, eventType)
                 .onItem().transform(ignored -> Response.ok().build());
     }
 
     @GET
     @Path("/{id}/eventTypes")
-    public Multi<EventType> getEventTypes(@PathParam("id") Integer applicationId) {
+    public Multi<EventType> getEventTypes(@PathParam("id") UUID applicationId) {
         return appResources.getEventTypes(applicationId);
     }
 }

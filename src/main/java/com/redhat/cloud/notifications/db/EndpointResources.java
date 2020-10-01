@@ -118,6 +118,7 @@ public class EndpointResources extends DatasourceProvider {
 
     public Multi<Endpoint> getTargetEndpoints(String tenant, String applicationName, String eventTypeName) {
         // TODO Add UNION JOIN for different endpoint types here
+        // TODO Add index for application_name & event_type_name
         String query = "WITH accepted_event_types AS ( " +
                 "SELECT aev.event_type_id FROM public.application_event_type aev " +
                 "JOIN public.applications a ON a.id = aev.application_id " +

@@ -7,9 +7,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
 import java.util.Set;
+import java.util.UUID;
 
 public class Application {
-    private Integer id;
+    private UUID id;
 
     @NotNull
     private String name;
@@ -29,11 +30,11 @@ public class Application {
 
     }
 
-    public Integer getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
