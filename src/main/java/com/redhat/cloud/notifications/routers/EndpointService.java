@@ -168,4 +168,15 @@ public class EndpointService {
                     return Response.ok(json).build();
                 });
     }
+
+    @PUT
+    @Path("/{id}/{eventTypeId}")
+    @RolesAllowed("write")
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    public Uni<Response> linkEndpointToEventType(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
+        // TODO Is this notifications or integrations rights?
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return resources.linkEndpoint(principal.getAccount(), endpointId, eventTypeId)
+                .onItem().transform(ignored -> Response.ok().build());
+    }
 }

@@ -6,9 +6,12 @@ public class Notification {
     // TODO This is a placeholder!
     private final Object payload;
 
-    public Notification(String tenant, Object payload) {
+    private final Endpoint endpoint;
+
+    public Notification(String tenant, Object payload, Endpoint endpoint) {
         this.tenant = tenant;
         this.payload = payload;
+        this.endpoint = endpoint;
     }
 
     public String getTenant() {
@@ -17,5 +20,9 @@ public class Notification {
 
     public Object getPayload() {
         return payload;
+    }
+
+    public Endpoint getEndpoint() {
+        return endpoint;
     }
 }

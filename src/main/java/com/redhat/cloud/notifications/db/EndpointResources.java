@@ -117,19 +117,18 @@ public class EndpointResources extends DatasourceProvider {
     }
 
     public Multi<Endpoint> getTargetEndpoints(String tenant, String applicationName, String eventTypeName) {
+        // TODO Add UNION JOIN for different endpoint types here
         String query = "WITH accepted_event_types AS ( " +
                 "SELECT aev.event_type_id FROM public.application_event_type aev " +
                 "JOIN public.applications a ON a.id = aev.application_id " +
                 "JOIN public.event_type et ON et.id = aev.event_type_id " +
                 "WHERE a.name = $1 AND et.name = $2) " +
-                "SELECT e.* FROM public.endpoints e " +
+                "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints AS e  FROM public.endpoints e " +
                 "JOIN public.endpoint_targets et ON et.endpoint_id = e.id " +
                 "JOIN accepted_event_types aet ON aet.event_type_id = et.event_type_id " +
-                "WHERE et.account_id = $3";
+                "JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id " +
+                "WHERE et.account_id = $3 AND e.enabled = true";
 
-        // $1 = application_name
-        // $2 = event_type_name
-        // $3 = tenant
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
@@ -256,6 +255,26 @@ public class EndpointResources extends DatasourceProvider {
                         PostgresqlConnection::close);
 
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), monoResult);
+    }
+
+    public Uni<Boolean> linkEndpoint(String tenant, UUID endpointId, long eventTypeId) {
+        String query = "INSERT INTO public.endpoint_targets (account_id, event_type_id, endpoint_id) VALUES ($1, $2, $3)";
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .bind("$2", eventTypeId)
+                                    .bind("$3", endpointId)
+                                    .execute();
+                            return execute.flatMap(PostgresqlResult::getRowsUpdated)
+                                    .map(i -> i > 0).next();
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }))
+                .toUni();
     }
 
     public Uni<Boolean> updateEndpoint(Endpoint endpoint) {

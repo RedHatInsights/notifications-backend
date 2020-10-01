@@ -44,6 +44,7 @@ public class NotificationService {
     @Path("/{id}")
     public Uni<Response> markRead(@Context SecurityContext sec, Integer id) {
         // Mark the notification id for <tenantId><userId> 's subscription as read
+        return Uni.createFrom().nullItem();
     }
 
     // TODO Mark all as read?

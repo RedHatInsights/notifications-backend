@@ -50,41 +50,41 @@ public class EndpointServiceTest {
                 .statusCode(200) // TODO Maybe 204 here instead?
                 .body(is("[]"));
 
-            // Add new endpoints
-            WebhookAttributes webAttr = new WebhookAttributes();
-            webAttr.setMethod(WebhookAttributes.HttpType.POST);
-            webAttr.setDisableSSLVerification(false);
-            webAttr.setSecretToken("my-super-secret-token");
-            webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+        // Add new endpoints
+        WebhookAttributes webAttr = new WebhookAttributes();
+        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setDisableSSLVerification(false);
+        webAttr.setSecretToken("my-super-secret-token");
+        webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
-            Endpoint ep = new Endpoint();
-            ep.setType(Endpoint.EndpointType.WEBHOOK);
-            ep.setName("endpoint to find");
-            ep.setDescription("needle in the haystack");
-            ep.setEnabled(true);
-            ep.setProperties(webAttr);
+        Endpoint ep = new Endpoint();
+        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setName("endpoint to find");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(webAttr);
 
-            Response response = given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(ContentType.JSON)
-                    .body(Json.encode(ep))
-                    .post("/endpoints")
-                    .then()
-                    .statusCode(200)
-                    .extract().response();
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
 
-            Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
-            assertNotNull(responsePoint.getId());
+        Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
+        assertNotNull(responsePoint.getId());
 
-            // Fetch the list
-            response = given()
-                    // Set header to x-rh-identity
-                    .header(identityHeader)
-                    .when().get("/endpoints")
-                    .then()
-                    .statusCode(200)
-                    .extract().response();
+        // Fetch the list
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
 
         List<Endpoint> endpoints = Json.decodeValue(response.getBody().asString(), List.class);
         assertEquals(1, endpoints.size());
@@ -362,7 +362,7 @@ public class EndpointServiceTest {
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        for(int i = 0; i < 29; i++) {
+        for (int i = 0; i < 29; i++) {
             // Add new endpoints
             WebhookAttributes webAttr = new WebhookAttributes();
             webAttr.setMethod(WebhookAttributes.HttpType.POST);
@@ -420,7 +420,7 @@ public class EndpointServiceTest {
         assertEquals(9, endpoints.size());
     }
 
-//    @Test
+    //    @Test
     void testConnectionCount() {
         String tenant = "count";
         String userName = "user";
@@ -438,7 +438,7 @@ public class EndpointServiceTest {
                 .statusCode(200) // TODO Maybe 204 here instead?
                 .body(is("[]"));
 
-        for(int i = 0; i < 200; i++) {
+        for (int i = 0; i < 200; i++) {
             // Add new endpoints
             WebhookAttributes webAttr = new WebhookAttributes();
             webAttr.setMethod(WebhookAttributes.HttpType.POST);

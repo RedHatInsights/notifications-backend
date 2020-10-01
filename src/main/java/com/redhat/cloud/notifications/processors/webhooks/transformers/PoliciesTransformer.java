@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.webhooks.transformers;
+package com.redhat.cloud.notifications.processors.webhooks.transformers;
 
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -43,7 +43,7 @@ public class PoliciesTransformer {
         return message;
     }
 
-    public Uni<Object> transform(Action action) {
+    public Uni<JsonObject> transform(Action action) {
         // Fields and terminology straight from the target project
         LocalDateTime ts = Instant.ofEpochMilli(action.getCtime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
 
