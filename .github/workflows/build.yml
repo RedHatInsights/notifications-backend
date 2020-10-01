@@ -25,10 +25,5 @@ jobs:
       - uses: actions/upload-artifact@v2
         name: Upload openapi.json
         with:
-          name: openapi.notifications.json
-          path: target/classes/openapi.notifications.json
-      - uses: actions/upload-artifact@v2
-        name: Upload openapi.json
-        with:
-          name: openapi.integrations.json
-          path: target/classes/openapi.integrations.json
+          name: openapi.json
+          path: target/openapi.json

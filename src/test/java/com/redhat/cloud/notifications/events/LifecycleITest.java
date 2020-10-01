@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
@@ -19,7 +18,6 @@ import org.apache.commons.io.IOUtils;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -44,11 +42,6 @@ import static org.mockserver.model.HttpResponse.response;
 @TestMethodOrder(MethodOrderer.Alphanumeric.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LifecycleITest {
-
-    @BeforeEach
-    void beforeEach() {
-        RestAssured.basePath = "/api/integrations/v1.0";
-    }
 
     private Header identityHeader;
 
@@ -90,7 +83,7 @@ public class LifecycleITest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
-                .post("/")
+                .post("/endpoints")
                 .then()
                 .statusCode(200);
 
@@ -111,7 +104,7 @@ public class LifecycleITest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
-                .post("/")
+                .post("/endpoints")
                 .then()
                 .statusCode(200);
     }
@@ -160,7 +153,7 @@ public class LifecycleITest {
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .get("/")
+                .get("/endpoints")
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -174,7 +167,7 @@ public class LifecycleITest {
                     .header(identityHeader)
                     .when()
                     .contentType(ContentType.JSON)
-                    .get(String.format("/%s/history", ep.getId().toString()))
+                    .get(String.format("/endpoints/%s/history", ep.getId().toString()))
                     .then()
                     .statusCode(200)
                     .extract().response();
@@ -194,7 +187,7 @@ public class LifecycleITest {
                             .header(identityHeader)
                             .when()
                             .contentType(ContentType.JSON)
-                            .get(String.format("/%s/history/%s/details", ep.getId().toString(), history.getId()))
+                            .get(String.format("/endpoints/%s/history/%s/details", ep.getId().toString(), history.getId()))
                             .then()
                             .statusCode(200)
                             .extract().response();

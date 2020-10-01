@@ -16,7 +16,7 @@
     <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
     <quarkus.platform.version>1.7.1.Final</quarkus.platform.version>
-    <surefire-plugin.version>2.22.2</surefire-plugin.version>
+    <surefire-plugin.version>2.22.1</surefire-plugin.version>
     <policies.version>2.1.0-20200917.130620-1</policies.version>
     <r2dbc.version>0.8.4.RELEASE</r2dbc.version>
     <checkstyle-plugin.version>3.1.1</checkstyle-plugin.version>
@@ -24,7 +24,6 @@
     <testcontainers.version>1.14.3</testcontainers.version>
     <mockserver-client-java.version>5.5.4</mockserver-client-java.version> <!-- not the newest, but matches what is in org.testcontainers:mockserver -->
     <version.cloud-commons>0.1.1</version.cloud-commons>
-    <openapi-parser.version>4.0.4</openapi-parser.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -179,12 +178,6 @@
       <version>${mockserver-client-java.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.reprezen.kaizen</groupId>
-      <artifactId>openapi-parser</artifactId>
-      <version>${openapi-parser.version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -212,21 +205,10 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${surefire-plugin.version}</version>
         <configuration>
-          <excludedGroups>integration</excludedGroups>
           <systemPropertyVariables>
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
           </systemPropertyVariables>
         </configuration>
-        <executions>
-          <execution>
-            <id>integration-test</id>
-            <phase>integration-test</phase>
-            <goals><goal>test</goal></goals>
-            <configuration>
-              <excludedGroups>!integration</excludedGroups>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -248,28 +230,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>3.0.0</version>
-        <executions>
-          <execution>
-            <id>split-oapi</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>java</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <mainClass>com.redhat.cloud.oapi_splitter.OApiSplitter</mainClass>
-          <workingDirectory>${project.basedir}</workingDirectory>
-          <arguments>
-            <argument>target/openapi.json</argument>
-            <argument>target/classes/</argument>
-          </arguments>
-        </configuration>
       </plugin>
     </plugins>
   </build>
