@@ -18,7 +18,7 @@
     "dataId": "detect-floating-5-tutorial4",
     "category": "ALERT",
     "text": "These hosts are not allocated to any known infrastructure provider",
-    "tags": {},
+    "tags": [],
     "trigger": {
       "tenantId": "tutorial",
       "id": "detect-floating-5-tutorial4",
@@ -29,7 +29,7 @@
       "eventCategory": null,
       "eventText": null,
       "severity": "MEDIUM",
-      "tags": {},
+      "tags": [],
       "actions": [
         {
           "tenantId": "tutorial",
@@ -95,12 +95,12 @@
               "rhel_machine_id": "3f01b55457674041b75e41829bcee1dc",
               "insight_id": "20"
             },
-            "tags": {
-              "subscription_manager_id": "3f01b55457674041b75e41829bcee1dc",
-              "ansible_host": "host1.mydomain.com",
-              "satellite_id": "3f01b55457674041b75e41829bcee1dc",
-              "display_name": "host2.mydomain.com"
-            }
+            "tags": [
+              { "subscription_manager_id": "3f01b55457674041b75e41829bcee1dc" },
+              { "ansible_host": "host1.mydomain.com" },
+              { "satellite_id": "3f01b55457674041b75e41829bcee1dc" },
+              { "display_name": "host2.mydomain.com" }
+            ]
           }
         }
       ]
