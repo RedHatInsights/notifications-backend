@@ -8,14 +8,18 @@ import io.smallrye.mutiny.Uni;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import java.util.UUID;
 
 @Path("/applications")
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
 public class ApplicationService {
 
     @Inject
@@ -41,9 +45,8 @@ public class ApplicationService {
 
     @POST
     @Path("/{id}/eventTypes")
-    public Uni<Response> addEventType(@PathParam("id") UUID applicationId, @Valid EventType eventType) {
-        return appResources.addEventTypeToApplication(applicationId, eventType)
-                .onItem().transform(ignored -> Response.ok().build());
+    public Uni<EventType> addEventType(@PathParam("id") UUID applicationId, @Valid EventType eventType) {
+        return appResources.addEventTypeToApplication(applicationId, eventType);
     }
 
     @GET

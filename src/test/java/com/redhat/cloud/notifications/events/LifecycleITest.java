@@ -4,7 +4,10 @@ import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.EndpointResources;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -24,6 +27,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.mockserver.model.HttpRequest;
 
+import javax.inject.Inject;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -35,6 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
@@ -51,6 +56,9 @@ public class LifecycleITest {
     @Channel("ingress")
     Emitter<String> ingressChan;
 
+    @Inject
+    EndpointResources resources;
+
     @BeforeAll
     void setup() {
         // Create Rbacs
@@ -64,6 +72,39 @@ public class LifecycleITest {
 
     @Test
     void t01_testAdding() {
+        Application app = new Application();
+        app.setName("Policies");
+        app.setDescription("The best app in the life");
+
+        Response response = given()
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(app))
+                .post("/applications")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Application appResponse = Json.decodeValue(response.getBody().asString(), Application.class);
+        assertNotNull(appResponse.getId());
+
+        // Create eventType
+        EventType eventType = new EventType();
+        eventType.setName("All");
+        eventType.setDescription("Policies will take care of the rules");
+
+        response = given()
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(eventType))
+                .post(String.format("/applications/%s/eventTypes", appResponse.getId()))
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        EventType typeResponse = Json.decodeValue(response.getBody().asString(), EventType.class);
+        assertNotNull(typeResponse.getId());
+
         // Add new endpoints
         WebhookAttributes webAttr = new WebhookAttributes();
         webAttr.setMethod(WebhookAttributes.HttpType.POST);
@@ -78,14 +119,18 @@ public class LifecycleITest {
         ep.setEnabled(true);
         ep.setProperties(webAttr);
 
-        given()
+        response = given()
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint endpoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
+        assertNotNull(endpoint.getId());
 
         webAttr = new WebhookAttributes();
         webAttr.setMethod(WebhookAttributes.HttpType.POST);
@@ -99,16 +144,36 @@ public class LifecycleITest {
         ep.setEnabled(true);
         ep.setProperties(webAttr);
 
-        given()
+        response = given()
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint endpointFail = Json.decodeValue(response.getBody().asString(), Endpoint.class);
+        assertNotNull(endpointFail.getId());
+
+        // Link an eventType to endpoints
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .put(String.format("/endpoints/%s/%d", endpoint.getId(), typeResponse.getId()))
+                .then()
                 .statusCode(200);
 
-        // TODO Link an application to event type to endpoint
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .put(String.format("/endpoints/%s/%d", endpointFail.getId(), typeResponse.getId()))
+                .then()
+                .statusCode(200);
     }
 
     @Test

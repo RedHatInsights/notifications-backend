@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.EventBusTypeProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hawkular.alerts.api.model.action.Action;
 
@@ -28,14 +27,13 @@ public class EndpointProcessor {
     public Uni<Void> process(Action action) {
         // TODO These are going to be extracted from the new input model - from another PR
         //      We also need to add the original message's unique id to the notification
-        Multi<Endpoint> targetEndpoints = resources.getTargetEndpoints(action.getTenantId(), "Policies", "All");
-
-        Uni<Void> endpointsCallResult = targetEndpoints
+        Uni<Void> endpointsCallResult = resources.getTargetEndpoints(action.getTenantId(), "Policies", "All")
                 .onItem()
-                .invokeUni(endpoint -> {
+                .transformToUni(endpoint -> {
                     Notification endpointNotif = new Notification(action.getTenantId(), action, endpoint);
                     return endpointTypeToProcessor(endpoint.getType()).process(endpointNotif);
                 })
+                .merge()
                 .onItem()
                 .ignoreAsUni();
 

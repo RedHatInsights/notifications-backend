@@ -179,4 +179,13 @@ public class EndpointService {
         return resources.linkEndpoint(principal.getAccount(), endpointId, eventTypeId)
                 .onItem().transform(ignored -> Response.ok().build());
     }
+
+    @GET
+    @Path("/{id}/{eventTypeId}")
+    @RolesAllowed("read")
+    public Multi<Endpoint> getTargetEndpoints(@Context SecurityContext sec, @PathParam("id") UUID applicationId, @PathParam("eventTypeId") Integer eventTypeId) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return Multi.createFrom().nothing();
+//        return resources.getTargetEndpoints()
+    }
 }

@@ -124,7 +124,7 @@ public class EndpointResources extends DatasourceProvider {
                 "JOIN public.applications a ON a.id = aev.application_id " +
                 "JOIN public.event_type et ON et.id = aev.event_type_id " +
                 "WHERE a.name = $1 AND et.name = $2) " +
-                "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints AS e  FROM public.endpoints e " +
+                "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints e " +
                 "JOIN public.endpoint_targets et ON et.endpoint_id = e.id " +
                 "JOIN accepted_event_types aet ON aet.event_type_id = et.event_type_id " +
                 "JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id " +
@@ -138,6 +138,7 @@ public class EndpointResources extends DatasourceProvider {
                                     .bind("$2", eventTypeName)
                                     .bind("$3", tenant)
                                     .execute();
+
                             return this.mapResultSetToEndpoint(execute);
                         })
                         .withFinalizer(postgresqlConnection -> {

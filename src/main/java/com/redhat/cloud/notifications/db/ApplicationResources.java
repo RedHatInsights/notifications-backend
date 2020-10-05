@@ -42,7 +42,7 @@ public class ApplicationResources {
     }
 
     public Uni<EventType> addEventTypeToApplication(UUID applicationId, EventType type) {
-        String insertQuery = "INSERT INTO public.event (name, description) VALUES ($1, $2)";
+        String insertQuery = "INSERT INTO public.event_type (name, description) VALUES ($1, $2)";
         String linkQuery = "INSERT INTO public.application_event_type (application_id, event_type_id) VALUES ($1, $2)";
 
         return connectionPublisher.get().onItem()
@@ -71,7 +71,7 @@ public class ApplicationResources {
                 .toUni();
     }
 
-    private static final String APPLICATION_QUERY = "SELECT a.id, a.name, a.description, a.created, a.updated FROM public.applications";
+    private static final String APPLICATION_QUERY = "SELECT a.id, a.name, a.description, a.created, a.updated FROM public.applications a";
 
 
     public Multi<Application> getApplications() {

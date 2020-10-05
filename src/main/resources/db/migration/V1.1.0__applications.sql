@@ -1,5 +1,13 @@
 -- Table: public.event_type
 
+CREATE SEQUENCE public.event_type_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
 -- DROP TABLE public.event_type;
 
 CREATE TABLE public.event_type
@@ -22,13 +30,13 @@ CREATE TABLE public.endpoint_targets
 (
     account_id character varying(50) COLLATE pg_catalog."default" NOT NULL,
     event_type_id bigint NOT NULL,
-    endpoint_id uuid NOT NULL,
-    CONSTRAINT endpoint_targets_pkey PRIMARY KEY (account_id, event_type_id)
+    endpoint_id uuid NOT NULL
 )
 WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+--    CONSTRAINT endpoint_targets_pkey PRIMARY KEY (account_id, event_type_id)
 
 ALTER TABLE public.endpoint_targets
     ADD CONSTRAINT "FK_event_type_id_target" FOREIGN KEY (event_type_id)
@@ -68,3 +76,15 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+
+CREATE INDEX "IX_application_name"
+    ON public.applications USING btree
+    (name ASC NULLS LAST);
+
+CREATE INDEX "IX_event_type_name"
+    ON public.event_type USING btree
+    (name ASC NULLS LAST);
+
+CREATE INDEX "IX_target_endpoint_id"
+    ON public.endpoint_targets USING btree
+    (account_id ASC NULLS LAST, event_type_id ASC NULLS LAST);

@@ -13,7 +13,8 @@ public class EventBusTypeProcessor implements EndpointTypeProcessor {
     Vertx vertx;
 
     public Uni<Void> process(Notification notification) {
-        return vertx.eventBus().publisher(getAddress(notification.getTenant())).write(notification);
+        return Uni.createFrom().nullItem();
+//        return vertx.eventBus().publisher(getAddress(notification.getTenant())).write(notification.toString());
     }
 
     public static String getAddress(String tenantId) {
