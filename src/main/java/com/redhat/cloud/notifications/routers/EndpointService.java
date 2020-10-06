@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
+import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Multi;
@@ -19,6 +20,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -32,7 +34,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import javax.ws.rs.core.UriInfo;
 import java.util.UUID;
 
 @Path("/endpoints")
@@ -64,9 +65,9 @@ public class EndpointService {
                     schema = @Schema(type = SchemaType.INTEGER)
             )
     })
-    public Multi<Endpoint> getEndpoints(@Context SecurityContext sec, @Context UriInfo uriInfo) {
+    public Multi<Endpoint> getEndpoints(@Context SecurityContext sec, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getEndpoints(principal.getAccount(), ParamUtils.parseQueryParams(uriInfo));
+        return resources.getEndpoints(principal.getAccount(), query.getLimit());
     }
 
     @POST
@@ -156,9 +157,9 @@ public class EndpointService {
             )
     })
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId, @Context UriInfo uriInfo) {
+    public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return notifResources.getNotificationDetails(principal.getAccount(), ParamUtils.parseQueryParams(uriInfo), id, historyId)
+        return notifResources.getNotificationDetails(principal.getAccount(), query.getLimit(), id, historyId)
                 // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
                 .onItem().ifNull().failWith(new NotFoundException())
                 .onItem().transform(json -> {
@@ -170,7 +171,7 @@ public class EndpointService {
     }
 
     @PUT
-    @Path("/{id}/{eventTypeId}")
+    @Path("/{id}/eventType/{eventTypeId}")
     @RolesAllowed("write")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> linkEndpointToEventType(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
@@ -180,12 +181,20 @@ public class EndpointService {
                 .onItem().transform(ignored -> Response.ok().build());
     }
 
-    @GET
-    @Path("/{id}/{eventTypeId}")
-    @RolesAllowed("read")
-    public Multi<Endpoint> getTargetEndpoints(@Context SecurityContext sec, @PathParam("id") UUID applicationId, @PathParam("eventTypeId") Integer eventTypeId) {
+    @DELETE
+    @Path("/{id}/eventType/{eventTypeId}")
+    @RolesAllowed("write")
+    public Uni<Response> unlinkEndpointFromEventType(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return Multi.createFrom().nothing();
-//        return resources.getTargetEndpoints()
+        return resources.unlinkEndpoint(principal.getAccount(), endpointId, eventTypeId)
+                .onItem().transform(ignored -> Response.ok().build());
+    }
+
+    @GET
+    @Path("/eventType/{eventTypeId}")
+    @RolesAllowed("read")
+    public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query.getLimit());
     }
 }

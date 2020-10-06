@@ -140,4 +140,41 @@ public class ApplicationResources {
                             postgresqlConnection.close().subscribe();
                         }));
     }
+
+    public Multi<EventType> getEventTypes(Query.Limit limiter) {
+        String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.description AS et_desc, a.id AS a_id, a.name AS a_name FROM public.event_type et " +
+                "JOIN public.application_event_type aet ON aet.event_type_id = et.id " +
+                "JOIN public.applications a ON a.id = aet.application_id";
+
+        String query = Query.modifyQuery(basicQuery, limiter);
+
+        return connectionPublisher.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .execute();
+
+                            return mapResultSetToEventTypes(execute);
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }));
+    }
+
+    private Flux<EventType> mapResultSetToEventTypes(Flux<PostgresqlResult> resultFlux) {
+        return resultFlux.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> {
+            Application app = new Application();
+            app.setId(row.get("a_id", UUID.class));
+            app.setName(row.get("a_name", String.class));
+
+            EventType eventType = new EventType();
+            eventType.setId(row.get("et_id", Integer.class));
+            eventType.setName(row.get("et_name", String.class));
+            eventType.setDescription(row.get("et_desc", String.class));
+
+            eventType.setApplication(app);
+
+            return eventType;
+        }));
+    }
 }

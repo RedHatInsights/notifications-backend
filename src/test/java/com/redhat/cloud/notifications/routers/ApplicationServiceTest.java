@@ -13,7 +13,6 @@ import io.vertx.core.json.Json;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
@@ -38,7 +37,6 @@ public class ApplicationServiceTest {
                 .when().get("/applications")
                 .then()
                 .statusCode(200);
-//                .body(is("[]"));
 
         Response response = given()
                 .when()
@@ -59,17 +57,17 @@ public class ApplicationServiceTest {
         eventType.setName(EVENT_TYPE_NAME);
         eventType.setDescription("Policies will take care of the rules");
 
-        given()
+        response = given()
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(eventType))
                 .post(String.format("/applications/%s/eventTypes", appResponse.getId()))
                 .then()
-                .statusCode(200);
-//                .extract().response();
+                .statusCode(200)
+                .extract().response();
 
-//        EventType typeResponse = Json.decodeValue(response.getBody().asString(), EventType.class);
-//        assertNotNull(typeResponse.getId());
+        EventType typeResponse = Json.decodeValue(response.getBody().asString(), EventType.class);
+        assertNotNull(typeResponse.getId());
     }
 
     @Test

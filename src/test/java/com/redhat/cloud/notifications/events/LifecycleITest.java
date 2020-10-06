@@ -20,6 +20,7 @@ import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -163,7 +164,7 @@ public class LifecycleITest {
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .put(String.format("/endpoints/%s/%d", endpoint.getId(), typeResponse.getId()))
+                .put(String.format("/endpoints/%s/eventType/%d", endpoint.getId(), typeResponse.getId()))
                 .then()
                 .statusCode(200);
 
@@ -171,7 +172,7 @@ public class LifecycleITest {
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .put(String.format("/endpoints/%s/%d", endpointFail.getId(), typeResponse.getId()))
+                .put(String.format("/endpoints/%s/eventType/%d", endpointFail.getId(), typeResponse.getId()))
                 .then()
                 .statusCode(200);
     }
@@ -270,5 +271,47 @@ public class LifecycleITest {
                 }
             }
         }
+    }
+
+    @Test
+    void t04_getUIDetailsAndUnlink() {
+        /*
+        Response response = given()
+                .when()
+                .header(identityHeader)
+                .contentType(ContentType.JSON)
+                .get("/notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        List<EventType> listResponse = Json.decodeValue(response.getBody().asString(), List.class);
+        Assertions.assertTrue(listResponse.size() > 1);
+
+        EventType policiesAll = null;
+        for (EventType eventType : listResponse) {
+            if(eventType.getName().equals("All") && eventType.getApplication().getName().equals("Policies")) {
+                policiesAll = eventType;
+                break;
+            }
+        }
+
+        assertNotNull(policiesAll);
+
+        // Fetch the list
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .when().get(String.format("/endpoints/eventType/%d", policiesAll.getId()))
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        List<Endpoint> endpoints = Json.decodeValue(response.getBody().asString(), List.class);
+        assertEquals(2, endpoints.size());
+
+        // TODO Unlink the endpoints
+
+         */
     }
 }

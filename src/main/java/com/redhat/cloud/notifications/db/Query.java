@@ -1,6 +1,14 @@
 package com.redhat.cloud.notifications.db;
 
+import javax.ws.rs.QueryParam;
+
 public class Query {
+    @QueryParam("pageSize")
+    private Integer pageSize;
+
+    @QueryParam("pageNumber")
+    private Integer pageNumber;
+
     public static class Limit {
         private int pageNumber;
         private int pageSize;
@@ -17,6 +25,16 @@ public class Query {
         public int calculateOffset() {
             return pageNumber * pageSize;
         }
+    }
+
+    public Limit getLimit() {
+        if (pageSize != null) {
+            if (pageNumber == null) {
+                pageNumber = 0;
+            }
+            return new Limit(pageNumber, pageSize);
+        }
+        return new Limit(0, 0);
     }
 
     public static String getPostgresQuery(Limit limiter) {

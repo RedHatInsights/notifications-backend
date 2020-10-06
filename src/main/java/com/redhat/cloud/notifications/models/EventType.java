@@ -12,6 +12,8 @@ public class EventType {
     @NotNull
     private String description;
 
+    private Application application;
+
     // These endpoints are set per tenant - not application!
     // optional
     private Set<Endpoint> endpoints;
@@ -42,5 +44,13 @@ public class EventType {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Application getApplication() {
+        return application;
+    }
+
+    public void setApplication(Application application) {
+        this.application = application;
     }
 }

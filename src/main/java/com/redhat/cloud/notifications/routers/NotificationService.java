@@ -1,27 +1,49 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
+import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.Notification;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Vertx;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.ws.rs.BeanParam;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.UUID;
 
 @Path("/notifications")
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
 public class NotificationService {
 
     @Inject
     Vertx vertx;
+
+    @Inject
+    ApplicationResources apps;
+
+    @Inject
+    EndpointService endpointService;
 
     @GET
     @Produces(MediaType.SERVER_SENT_EVENTS)
@@ -55,5 +77,36 @@ public class NotificationService {
         // TODO This should call some global point which is used by the Processor interface to push data to the same queue names
         RhIdPrincipal rhUser = (RhIdPrincipal) principal;
         return String.format("notifications-%s", rhUser.getAccount());
+    }
+
+    // Event type fetching
+
+    @GET
+    @Path("/eventTypes")
+    @RolesAllowed("read")
+    public Multi<EventType> getEventTypes(@BeanParam Query query) {
+        return apps.getEventTypes(query.getLimit());
+    }
+
+    @PUT
+    @Path("/eventTypes/{id}/{endpointId}")
+    @RolesAllowed("write")
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    public Uni<Response> linkEndpointToEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("id") Integer eventTypeId) {
+        return endpointService.linkEndpointToEventType(sec, endpointId, eventTypeId);
+    }
+
+    @DELETE
+    @Path("/eventTypes/{id}/{endpointId}")
+    @RolesAllowed("write")
+    public Uni<Response> unlinkEndpointFromEventType(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
+        return endpointService.unlinkEndpointFromEventType(sec, endpointId, eventTypeId);
+    }
+
+    @GET
+    @Path("/eventTypes/{id}")
+    @RolesAllowed("read")
+    public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
+        return endpointService.getLinkedEndpoints(sec, eventTypeId, query);
     }
 }

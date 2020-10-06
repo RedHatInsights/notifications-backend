@@ -279,6 +279,49 @@ public class EndpointResources extends DatasourceProvider {
                 .toUni();
     }
 
+    public Uni<Boolean> unlinkEndpoint(String tenant, UUID endpointId, long eventTypeId) {
+        String query = "DELETE FROM public.endpoint_targets WHERE account_id = $1 AND event_type_id = $2 AND endpoint_id = $3";
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .bind("$2", eventTypeId)
+                                    .bind("$3", endpointId)
+                                    .execute();
+                            return execute.flatMap(PostgresqlResult::getRowsUpdated)
+                                    .map(i -> i > 0).next();
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }))
+                .toUni();
+    }
+
+    public Multi<Endpoint> getLinkedEndpoints(String tenant, long eventTypeId, Query.Limit limiter) {
+        String basicQuery = "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints e " +
+                "JOIN public.endpoint_targets et ON et.endpoint_id = e.id " +
+                "JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id " +
+                "WHERE et.account_id = $1 AND et.event_type_id = $2";
+
+        String query = Query.modifyQuery(basicQuery, limiter);
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .bind("$2", eventTypeId)
+                                    .execute();
+
+                            return this.mapResultSetToEndpoint(execute);
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }));
+    }
+
     public Uni<Boolean> updateEndpoint(Endpoint endpoint) {
         // TODO Update could fail because the item did not exist, throw 404 in that case?
         // TODO Fix transaction so that we don't end up with half the updates applied
