@@ -104,9 +104,9 @@ public class NotificationService {
     }
 
     @GET
-    @Path("/eventTypes/{id}")
+    @Path("/eventTypes/{eventTypeId}")
     @RolesAllowed("read")
     public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
-        return endpointService.getLinkedEndpoints(sec, eventTypeId, query);
+        return endpointService.getLinkedEndpointsInternal(sec, eventTypeId, query);
     }
 }

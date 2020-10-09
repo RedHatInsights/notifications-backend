@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.NotNull;
@@ -16,14 +17,18 @@ public class Application {
     private String name;
 
     @NotNull
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String description;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Date created;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Date updated;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Set<EventType> eventTypes; // optional
 
     public Application() {

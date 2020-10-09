@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import javax.validation.constraints.NotNull;
 import java.util.Set;
 
@@ -12,10 +14,12 @@ public class EventType {
     @NotNull
     private String description;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Application application;
 
     // These endpoints are set per tenant - not application!
     // optional
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Set<Endpoint> endpoints;
 
     public EventType() {

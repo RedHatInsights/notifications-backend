@@ -275,7 +275,6 @@ public class LifecycleITest {
 
     @Test
     void t04_getUIDetailsAndUnlink() {
-        /*
         Response response = given()
                 .when()
                 .header(identityHeader)
@@ -285,11 +284,11 @@ public class LifecycleITest {
                 .statusCode(200)
                 .extract().response();
 
-        List<EventType> listResponse = Json.decodeValue(response.getBody().asString(), List.class);
-        Assertions.assertTrue(listResponse.size() > 1);
+        EventType[] typesResponse = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        Assertions.assertTrue(typesResponse.length >= 1);
 
         EventType policiesAll = null;
-        for (EventType eventType : listResponse) {
+        for (EventType eventType : typesResponse) {
             if(eventType.getName().equals("All") && eventType.getApplication().getName().equals("Policies")) {
                 policiesAll = eventType;
                 break;
@@ -302,16 +301,33 @@ public class LifecycleITest {
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .when().get(String.format("/endpoints/eventType/%d", policiesAll.getId()))
+                .when().get(String.format("/notifications/eventTypes/%d", policiesAll.getId()))
                 .then()
                 .statusCode(200)
                 .extract().response();
 
-        List<Endpoint> endpoints = Json.decodeValue(response.getBody().asString(), List.class);
-        assertEquals(2, endpoints.size());
+        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        assertEquals(2, endpoints.length);
 
-        // TODO Unlink the endpoints
+        for (Endpoint endpoint : endpoints) {
+            given()
+                    .header(identityHeader)
+                    .when()
+                    .delete(String.format("/endpoints/%s/eventType/%d", endpoint.getId(), policiesAll.getId()))
+                    .then()
+                    .statusCode(200);
+        }
 
-         */
+        // Fetch the list again
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .when().get(String.format("/notifications/eventTypes/%d", policiesAll.getId()))
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        assertEquals(0, endpoints.length);
     }
 }

@@ -25,7 +25,7 @@ public class ApplicationServiceTest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
-    @Test
+//    @Test
     void testPoliciesApplicationAdding() {
         Application app = new Application();
         app.setName(APP_NAME);

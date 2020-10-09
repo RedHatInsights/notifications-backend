@@ -194,7 +194,13 @@ public class EndpointService {
     @Path("/eventType/{eventTypeId}")
     @RolesAllowed("read")
     public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
+        return getLinkedEndpointsInternal(sec, eventTypeId, query);
+    }
+
+    public Multi<Endpoint> getLinkedEndpointsInternal(SecurityContext sec, Integer eventTypeId, Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query.getLimit());
+        Query.Limit limit = query.getLimit();
+        String account = principal.getAccount();
+        return resources.getLinkedEndpoints(account, eventTypeId, limit);
     }
 }
