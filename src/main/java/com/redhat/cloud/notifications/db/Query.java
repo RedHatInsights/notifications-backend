@@ -3,15 +3,19 @@ package com.redhat.cloud.notifications.db;
 import javax.ws.rs.QueryParam;
 
 public class Query {
-    @QueryParam("pageSize")
+    @QueryParam("limit")
     private Integer pageSize;
 
     @QueryParam("pageNumber")
     private Integer pageNumber;
 
+    @QueryParam("offset")
+    private Integer offset;
+
     public static class Limit {
         private int pageNumber;
         private int pageSize;
+        private int offset;
 
         public Limit(int pageNumber, int pageSize) {
             this.pageNumber = pageNumber;
@@ -23,6 +27,9 @@ public class Query {
         }
 
         public int calculateOffset() {
+            if(offset > 0) {
+                return offset;
+            }
             return pageNumber * pageSize;
         }
     }
@@ -58,5 +65,14 @@ public class Query {
         }
 
         return basicQuery;
+    }
+
+    public static String modifyToCountQuery(String theQuery) {
+        StringBuilder builder = new StringBuilder();
+        return builder
+                .append("SELECT COUNT(*) FROM (")
+                .append(theQuery)
+                .append(") counted")
+                .toString();
     }
 }
