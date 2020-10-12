@@ -95,7 +95,7 @@ public class EndpointResources extends DatasourceProvider {
                 })));
     }
 
-    private static final String basicEndpointSelectQuery = "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token";
+    private static final String basicEndpointSelectQuery = "SELECT e.account_id, e.id AS endpoint_id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token";
     private static final String basicEndpointGetQuery = basicEndpointSelectQuery + " FROM public.endpoints AS e JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id ";
 
     public Multi<Endpoint> getActiveEndpointsPerType(String tenant, Endpoint.EndpointType type) {
@@ -125,8 +125,6 @@ public class EndpointResources extends DatasourceProvider {
                 "JOIN public.event_type et ON et.id = aev.event_type_id " +
                 "WHERE a.name = $1 AND et.name = $2) " +
                 basicEndpointGetQuery +
-//                "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints e " +
-//                "JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id " +
                 "JOIN public.endpoint_targets et ON et.endpoint_id = e.id " +
                 "JOIN accepted_event_types aet ON aet.event_type_id = et.event_type_id " +
                 "WHERE et.account_id = $3 AND e.enabled = true";
@@ -174,7 +172,7 @@ public class EndpointResources extends DatasourceProvider {
 
             Endpoint endpoint = new Endpoint();
             endpoint.setTenant(row.get("account_id", String.class));
-            endpoint.setId(row.get("id", UUID.class));
+            endpoint.setId(row.get("endpoint_id", UUID.class));
             endpoint.setEnabled(row.get("enabled", Boolean.class));
             endpoint.setType(endpointType);
             endpoint.setName(row.get("name", String.class));
@@ -307,9 +305,8 @@ public class EndpointResources extends DatasourceProvider {
     }
 
     public Multi<Endpoint> getLinkedEndpoints(String tenant, long eventTypeId, Query.Limit limiter) {
-        String basicQuery = "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints e " +
+        String basicQuery = basicEndpointGetQuery +
                 "JOIN public.endpoint_targets et ON et.endpoint_id = e.id " +
-                "JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id " +
                 "WHERE et.account_id = $1 AND et.event_type_id = $2";
 
         String query = Query.modifyQuery(basicQuery, limiter);

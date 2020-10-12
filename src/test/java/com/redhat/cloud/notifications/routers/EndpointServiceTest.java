@@ -395,8 +395,8 @@ public class EndpointServiceTest {
         Response response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .queryParam("pageSize", "10")
-                .queryParam("pageNumber", "0")
+                .queryParam("limit", "10")
+                .queryParam("offset", "0")
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200)
@@ -409,7 +409,7 @@ public class EndpointServiceTest {
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .queryParam("pageSize", "10")
+                .queryParam("limit", "10")
                 .queryParam("pageNumber", "2")
                 .when().get("/endpoints")
                 .then()
