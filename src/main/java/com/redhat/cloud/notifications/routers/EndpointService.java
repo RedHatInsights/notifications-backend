@@ -169,38 +169,4 @@ public class EndpointService {
                     return Response.ok(json).build();
                 });
     }
-
-    @PUT
-    @Path("/{id}/eventType/{eventTypeId}")
-    @RolesAllowed("write")
-    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> linkEndpointToEventType(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
-        // TODO Is this notifications or integrations rights?
-        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.linkEndpoint(principal.getAccount(), endpointId, eventTypeId)
-                .onItem().transform(ignored -> Response.ok().build());
-    }
-
-    @DELETE
-    @Path("/{id}/eventType/{eventTypeId}")
-    @RolesAllowed("write")
-    public Uni<Response> unlinkEndpointFromEventType(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
-        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.unlinkEndpoint(principal.getAccount(), endpointId, eventTypeId)
-                .onItem().transform(ignored -> Response.ok().build());
-    }
-
-    @GET
-    @Path("/eventType/{eventTypeId}")
-    @RolesAllowed("read")
-    public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
-        return getLinkedEndpointsInternal(sec, eventTypeId, query);
-    }
-
-    public Multi<Endpoint> getLinkedEndpointsInternal(SecurityContext sec, Integer eventTypeId, Query query) {
-        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        Query.Limit limit = query.getLimit();
-        String account = principal.getAccount();
-        return resources.getLinkedEndpoints(account, eventTypeId, limit);
-    }
 }

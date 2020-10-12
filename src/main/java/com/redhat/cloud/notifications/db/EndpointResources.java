@@ -7,7 +7,6 @@ import io.r2dbc.postgresql.api.PostgresqlResult;
 import io.r2dbc.postgresql.api.PostgresqlStatement;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.converters.multi.MultiReactorConverters;
 import io.smallrye.mutiny.converters.uni.UniReactorConverters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -96,11 +95,12 @@ public class EndpointResources extends DatasourceProvider {
                 })));
     }
 
-    private static final String basicEndpointGetQuery = "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints AS e JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id WHERE e.account_id = $1";
+    private static final String basicEndpointSelectQuery = "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token";
+    private static final String basicEndpointGetQuery = basicEndpointSelectQuery + " FROM public.endpoints AS e JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id ";
 
     public Multi<Endpoint> getActiveEndpointsPerType(String tenant, Endpoint.EndpointType type) {
         // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
-        String query = basicEndpointGetQuery + " AND e.endpoint_type = $2 AND e.enabled = true";
+        String query = basicEndpointGetQuery + "WHERE e.account_id = $1 AND e.endpoint_type = $2 AND e.enabled = true";
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
@@ -124,10 +124,11 @@ public class EndpointResources extends DatasourceProvider {
                 "JOIN public.applications a ON a.id = aev.application_id " +
                 "JOIN public.event_type et ON et.id = aev.event_type_id " +
                 "WHERE a.name = $1 AND et.name = $2) " +
-                "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints e " +
+                basicEndpointGetQuery +
+//                "SELECT e.account_id, e.id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token FROM public.endpoints e " +
+//                "JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id " +
                 "JOIN public.endpoint_targets et ON et.endpoint_id = e.id " +
                 "JOIN accepted_event_types aet ON aet.event_type_id = et.event_type_id " +
-                "JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id " +
                 "WHERE et.account_id = $3 AND e.enabled = true";
 
         return connectionPublisherUni.get().onItem()
@@ -149,18 +150,22 @@ public class EndpointResources extends DatasourceProvider {
     public Multi<Endpoint> getEndpoints(String tenant, Query.Limit limiter) {
         // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
         //      or should I just create a new method for it?
+        String allAccountEndpointsQuery = basicEndpointGetQuery + " WHERE e.account_id = $1";
 
-        String query = Query.modifyQuery(basicEndpointGetQuery, limiter);
+        String query = Query.modifyQuery(allAccountEndpointsQuery, limiter);
         // TODO Add JOIN ON clause to proper table, such as webhooks and then read the results
-        Flux<Endpoint> endpointFlux = Flux.usingWhen(connectionPublisher.get(),
-                conn -> {
-                    Flux<PostgresqlResult> resultFlux = conn.createStatement(query)
-                            .bind("$1", tenant)
-                            .execute();
-                    return mapResultSetToEndpoint(resultFlux);
-                },
-                PostgresqlConnection::close);
-        return Multi.createFrom().converter(MultiReactorConverters.fromFlux(), endpointFlux);
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .execute();
+
+                            return this.mapResultSetToEndpoint(execute);
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }));
     }
 
     private Flux<Endpoint> mapResultSetToEndpoint(Flux<PostgresqlResult> resultFlux) {
@@ -187,6 +192,7 @@ public class EndpointResources extends DatasourceProvider {
                     attr.setMethod(WebhookAttributes.HttpType.valueOf(method));
                     attr.setUrl(row.get("url", String.class));
                     endpoint.setProperties(attr);
+                    break;
                 default:
             }
 
@@ -195,7 +201,8 @@ public class EndpointResources extends DatasourceProvider {
     }
 
     public Uni<Endpoint> getEndpoint(String tenant, UUID id) {
-        String query = basicEndpointGetQuery + " AND e.id = $2";
+        String allAccountEndpointsQuery = basicEndpointGetQuery + " WHERE e.account_id = $1";
+        String query = allAccountEndpointsQuery + " AND e.id = $2";
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
@@ -320,6 +327,67 @@ public class EndpointResources extends DatasourceProvider {
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
                         }));
+    }
+
+    public Multi<Endpoint> getDefaultEndpoints(String tenant) {
+        String query = "WITH default_endpoints AS ( " +
+                "SELECT endpoint_id " +
+                "FROM public.endpoint_defaults " +
+                "WHERE account_id = $1 " +
+                ")" +
+                basicEndpointGetQuery +
+                "JOIN default_endpoints ae ON ae.endpoint_id = e.id";
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .execute();
+
+                            return this.mapResultSetToEndpoint(execute);
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }));
+    }
+
+    public Uni<Boolean> addEndpointToDefaults(String tenant, UUID endpointId) {
+        String query = "INSERT INTO public.endpoint_defaults (account_id, endpoint_id) VALUES ($1, $2)";
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .bind("$2", endpointId)
+                                    .execute();
+                            return execute.flatMap(PostgresqlResult::getRowsUpdated)
+                                    .map(i -> i > 0).next();
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }))
+                .toUni();
+    }
+
+    public Uni<Boolean> deleteEndpointFromDefaults(String tenant, UUID endpointId) {
+        String query = "DELETE FROM public.endpoint_defaults WHERE account_id = $1 AND endpoint_id = $2";
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .bind("$2", endpointId)
+                                    .execute();
+                            return execute.flatMap(PostgresqlResult::getRowsUpdated)
+                                    .map(i -> i > 0).next();
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }))
+                .toUni();
     }
 
     public Uni<Boolean> updateEndpoint(Endpoint endpoint) {

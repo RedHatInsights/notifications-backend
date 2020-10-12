@@ -160,21 +160,15 @@ public class LifecycleITest {
 
         // Link an eventType to endpoints
 
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(ContentType.JSON)
-                .put(String.format("/endpoints/%s/eventType/%d", endpoint.getId(), typeResponse.getId()))
-                .then()
-                .statusCode(200);
-
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(ContentType.JSON)
-                .put(String.format("/endpoints/%s/eventType/%d", endpointFail.getId(), typeResponse.getId()))
-                .then()
-                .statusCode(200);
+        for (Endpoint endpointLink : List.of(endpoint, endpointFail)) {
+            given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .put(String.format("/notifications/eventTypes/%d/%s", typeResponse.getId(), endpointLink.getId()))
+                    .then()
+                    .statusCode(200);
+        }
     }
 
     @Test
@@ -313,7 +307,7 @@ public class LifecycleITest {
             given()
                     .header(identityHeader)
                     .when()
-                    .delete(String.format("/endpoints/%s/eventType/%d", endpoint.getId(), policiesAll.getId()))
+                    .delete(String.format("/notifications/eventTypes/%d/%s", policiesAll.getId(), endpoint.getId()))
                     .then()
                     .statusCode(200);
         }

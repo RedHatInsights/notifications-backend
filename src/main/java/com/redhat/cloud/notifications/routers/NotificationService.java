@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
@@ -45,6 +46,9 @@ public class NotificationService {
     @Inject
     EndpointService endpointService;
 
+    @Inject
+    EndpointResources resources;
+
     @GET
     @Produces(MediaType.SERVER_SENT_EVENTS)
     @Path("/updates")
@@ -79,7 +83,7 @@ public class NotificationService {
         return String.format("notifications-%s", rhUser.getAccount());
     }
 
-    // Event type fetching
+    // Event type linking
 
     @GET
     @Path("/eventTypes")
@@ -89,24 +93,53 @@ public class NotificationService {
     }
 
     @PUT
-    @Path("/eventTypes/{id}/{endpointId}")
+    @Path("/eventTypes/{eventTypeId}/{endpointId}")
     @RolesAllowed("write")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> linkEndpointToEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("id") Integer eventTypeId) {
-        return endpointService.linkEndpointToEventType(sec, endpointId, eventTypeId);
+    public Uni<Response> linkEndpointToEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return resources.linkEndpoint(principal.getAccount(), endpointId, eventTypeId)
+                .onItem().transform(ignored -> Response.ok().build());
     }
 
     @DELETE
-    @Path("/eventTypes/{id}/{endpointId}")
+    @Path("/eventTypes/{eventTypeId}/{endpointId}")
     @RolesAllowed("write")
-    public Uni<Response> unlinkEndpointFromEventType(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
-        return endpointService.unlinkEndpointFromEventType(sec, endpointId, eventTypeId);
+    public Uni<Response> unlinkEndpointFromEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return resources.unlinkEndpoint(principal.getAccount(), endpointId, eventTypeId)
+                .onItem().transform(ignored -> Response.ok().build());
     }
 
     @GET
     @Path("/eventTypes/{eventTypeId}")
     @RolesAllowed("read")
     public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
-        return endpointService.getLinkedEndpointsInternal(sec, eventTypeId, query);
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query.getLimit());
+    }
+
+    @GET
+    @Path("/defaults")
+    @RolesAllowed("read")
+    public Multi<Endpoint> getDefaultEndpoints(@Context SecurityContext sec) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return resources.getDefaultEndpoints(principal.getAccount());
+    }
+
+    @PUT
+    @Path("/defaults/{endpointId}")
+    public Uni<Response> addEndpointToDefaults(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return resources.addEndpointToDefaults(principal.getAccount(), endpointId)
+                .onItem().transform(ignored -> Response.ok().build());
+    }
+
+    @DELETE
+    @Path("/defaults/{endpointId}")
+    public Uni<Response> deleteEndpointFromDefaults(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return resources.deleteEndpointFromDefaults(principal.getAccount(), endpointId)
+                .onItem().transform(ignored -> Response.ok().build());
     }
 }

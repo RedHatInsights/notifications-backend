@@ -20,7 +20,9 @@ public class Endpoint {
         @JsonProperty("webhook")
         WEBHOOK,
         @JsonProperty("email")
-        EMAIL
+        EMAIL,
+        @JsonProperty("default")
+        DEFAULT
     }
 
     private UUID id; // Should be UUID

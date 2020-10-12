@@ -88,3 +88,18 @@ CREATE INDEX "IX_event_type_name"
 CREATE INDEX "IX_target_endpoint_id"
     ON public.endpoint_targets USING btree
     (account_id ASC NULLS LAST, event_type_id ASC NULLS LAST);
+
+CREATE TABLE public.endpoint_defaults
+(
+    account_id character varying NOT NULL,
+    endpoint_id uuid NOT NULL,
+    PRIMARY KEY ("account_id", endpoint_id),
+    CONSTRAINT "FK_default_endpoint_id" FOREIGN KEY (endpoint_id)
+        REFERENCES public.endpoints (id) MATCH SIMPLE
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+        NOT VALID
+)
+WITH (
+    OIDS = FALSE
+);
