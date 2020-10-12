@@ -19,13 +19,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class ApplicationServiceTest {
 
-    static final String APP_NAME = "Policies";
+    static final String APP_NAME = "PoliciesApplicationServiceTest";
     static final String EVENT_TYPE_NAME = "All";
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
-//    @Test
+    @Test
     void testPoliciesApplicationAdding() {
         Application app = new Application();
         app.setName(APP_NAME);
@@ -68,10 +68,5 @@ public class ApplicationServiceTest {
 
         EventType typeResponse = Json.decodeValue(response.getBody().asString(), EventType.class);
         assertNotNull(typeResponse.getId());
-    }
-
-    @Test
-    void test3ScaleRejection() {
-        // Test that x-rh-identity is not present
     }
 }

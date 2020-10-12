@@ -54,9 +54,9 @@ public class Endpoint {
             include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
     @JsonSubTypes({
             @JsonSubTypes.Type(value = WebhookAttributes.class, name = "webhook"),
-            @JsonSubTypes.Type(value = EmailAttributes.class, name = "email"),
+            @JsonSubTypes.Type(value = EmailAttributes.class, name = "email")
     })
-    @NotNull
+//    @NotNull
     @Valid
     private Attributes properties;
 

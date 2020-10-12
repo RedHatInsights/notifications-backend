@@ -40,7 +40,7 @@ public class EndpointResources extends DatasourceProvider {
                                     return insertWebhooksStatement(ep, conn);
                                 } else {
                                     // Other types are not supported at this point
-                                    return Flux.empty();
+                                    return Flux.just(ep);
                                 }
                             });
                             return endpointFlux1.next();
@@ -98,9 +98,19 @@ public class EndpointResources extends DatasourceProvider {
     private static final String basicEndpointSelectQuery = "SELECT e.account_id, e.id AS endpoint_id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token";
     private static final String basicEndpointGetQuery = basicEndpointSelectQuery + " FROM public.endpoints AS e JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id ";
 
-    public Multi<Endpoint> getActiveEndpointsPerType(String tenant, Endpoint.EndpointType type) {
+    public Multi<Endpoint> getEndpointsPerType(String tenant, Endpoint.EndpointType type, boolean activeOnly) {
+        // TODO Modify the parameter to take a vararg of Functions that modify the query
         // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
-        String query = basicEndpointGetQuery + "WHERE e.account_id = $1 AND e.endpoint_type = $2 AND e.enabled = true";
+        StringBuilder queryBuilder = new StringBuilder();
+        queryBuilder
+                .append(basicEndpointGetQuery)
+                .append("WHERE e.account_id = $1 AND e.endpoint_type = $2");
+
+        if (activeOnly) {
+            queryBuilder.append(" AND e.enabled = true");
+        }
+
+        final String query = queryBuilder.toString();
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,

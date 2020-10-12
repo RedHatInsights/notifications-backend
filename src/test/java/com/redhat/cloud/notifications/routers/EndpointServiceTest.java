@@ -12,6 +12,8 @@ import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.Json;
+import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -418,6 +420,51 @@ public class EndpointServiceTest {
 
         endpoints = Json.decodeValue(response.getBody().asString(), List.class);
         assertEquals(9, endpoints.size());
+    }
+
+//    @Test
+    void testDefaultEndpointRegistering() {
+        String tenant = "defaultRegister";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        Endpoint ep = new Endpoint();
+        ep.setType(Endpoint.EndpointType.DEFAULT);
+        ep.setName("Default endpoint");
+        ep.setDescription("The ultimate fallback");
+        ep.setEnabled(true);
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
+        Assert.assertNotNull(responsePoint.getId());
+
+        // Fetch the default endpoint
+
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .queryParam("type", "default")
+                .get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint[] defEndpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        Assertions.assertEquals(1, defEndpoints.length);
+        Assertions.assertEquals(responsePoint.getId(), defEndpoints[0].getId());
     }
 
     //    @Test
