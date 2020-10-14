@@ -15,7 +15,7 @@ import java.util.UUID;
 
 public class Endpoint {
 
-    @Schema(enumeration = { "webhook", "email" })
+    @Schema(enumeration = { "webhook", "email", "default" })
     public enum EndpointType {
         @JsonProperty("webhook")
         WEBHOOK,
