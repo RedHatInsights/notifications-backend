@@ -68,11 +68,12 @@ public class EndpointService {
                     schema = @Schema(type = SchemaType.INTEGER)
             )
     })
-    public Multi<Endpoint> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") Endpoint.EndpointType targetType, @QueryParam("active") @DefaultValue("false") boolean activeOnly) {
+    public Multi<Endpoint> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") @DefaultValue("false") boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
         if (targetType != null) {
-            return resources.getEndpointsPerType(principal.getAccount(), targetType, activeOnly);
+            Endpoint.EndpointType endpointType = Endpoint.EndpointType.valueOf(targetType.toUpperCase());
+            return resources.getEndpointsPerType(principal.getAccount(), endpointType, activeOnly);
         }
 
         return resources.getEndpoints(principal.getAccount(), query.getLimit());
@@ -86,7 +87,15 @@ public class EndpointService {
 
         if (endpoint.getType() != Endpoint.EndpointType.DEFAULT && endpoint.getProperties() == null) {
             throw new BadRequestException("Properties is required");
+        } else if (endpoint.getType() == Endpoint.EndpointType.DEFAULT) {
+            // Only a single default endpoint is allowed
+            return resources.getEndpointsPerType(principal.getAccount(), Endpoint.EndpointType.DEFAULT, false)
+                    .toUni()
+                    .onItem()
+                    .ifNull()
+                    .switchTo(resources.createEndpoint(endpoint));
         }
+
         return resources.createEndpoint(endpoint);
     }
 

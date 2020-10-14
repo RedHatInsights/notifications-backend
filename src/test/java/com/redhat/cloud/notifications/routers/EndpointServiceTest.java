@@ -12,8 +12,6 @@ import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.Json;
-import org.junit.Assert;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -422,7 +420,7 @@ public class EndpointServiceTest {
         assertEquals(9, endpoints.size());
     }
 
-//    @Test
+    @Test
     void testDefaultEndpointRegistering() {
         String tenant = "defaultRegister";
         String userName = "user";
@@ -448,23 +446,74 @@ public class EndpointServiceTest {
                 .extract().response();
 
         Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
-        Assert.assertNotNull(responsePoint.getId());
+        assertNotNull(responsePoint.getId());
+
+        Endpoint responsePointSingle = fetchSingle(responsePoint.getId(), identityHeader);
+        assertEquals(responsePoint.getId(), responsePointSingle.getId());
+        assertEquals(responsePoint.getType(), responsePointSingle.getType());
 
         // Fetch the default endpoint
-
         response = given()
                 .header(identityHeader)
+                .queryParam("type", "default")
                 .when()
                 .contentType(ContentType.JSON)
-                .queryParam("type", "default")
                 .get("/endpoints")
                 .then()
                 .statusCode(200)
                 .extract().response();
 
         Endpoint[] defEndpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
-        Assertions.assertEquals(1, defEndpoints.length);
-        Assertions.assertEquals(responsePoint.getId(), defEndpoints[0].getId());
+        assertEquals(1, defEndpoints.length);
+        assertEquals(responsePoint.getId(), defEndpoints[0].getId());
+        assertEquals(Endpoint.EndpointType.DEFAULT, responsePoint.getType());
+
+        // Add another type as well
+        Endpoint another = new Endpoint();
+        another.setType(Endpoint.EndpointType.WEBHOOK);
+        another.setDescription("desc");
+        another.setName("name");
+
+        WebhookAttributes attr = new WebhookAttributes();
+        attr.setMethod(WebhookAttributes.HttpType.POST);
+        attr.setUrl("http://localhost");
+
+        another.setProperties(attr);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(another))
+                .post("/endpoints")
+                .then()
+                .statusCode(200);
+
+        // Ensure that there's only a single default endpoint
+        // This second insert should return the original one without modifications
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200);
+
+        response = given()
+                .header(identityHeader)
+                .queryParam("type", "default")
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        defEndpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        assertEquals(1, defEndpoints.length);
+        assertEquals(responsePoint.getId(), defEndpoints[0].getId());
+        assertEquals(Endpoint.EndpointType.DEFAULT, responsePoint.getType());
     }
 
     //    @Test

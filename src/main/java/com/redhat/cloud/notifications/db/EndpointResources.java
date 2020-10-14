@@ -95,8 +95,9 @@ public class EndpointResources extends DatasourceProvider {
                 })));
     }
 
-    private static final String basicEndpointSelectQuery = "SELECT e.account_id, e.id AS endpoint_id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated, ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token";
-    private static final String basicEndpointGetQuery = basicEndpointSelectQuery + " FROM public.endpoints AS e JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id ";
+    private static final String basicEndpointSelectQuery = "SELECT e.account_id, e.id AS endpoint_id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated";
+    private static final String webhookEndpointSelectQuery = ", ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token";
+    private static final String basicEndpointGetQuery = basicEndpointSelectQuery + webhookEndpointSelectQuery + " FROM public.endpoints AS e LEFT JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id ";
 
     public Multi<Endpoint> getEndpointsPerType(String tenant, Endpoint.EndpointType type, boolean activeOnly) {
         // TODO Modify the parameter to take a vararg of Functions that modify the query

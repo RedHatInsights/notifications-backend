@@ -122,7 +122,7 @@ public class NotificationService {
     @GET
     @Path("/defaults")
     @RolesAllowed("read")
-    public Multi<Endpoint> getDefaultEndpoints(@Context SecurityContext sec) {
+    public Multi<Endpoint> getEndpointsForDefaults(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.getDefaultEndpoints(principal.getAccount());
     }
