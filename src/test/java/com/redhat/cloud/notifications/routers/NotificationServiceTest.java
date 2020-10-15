@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -13,7 +12,6 @@ import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.Json;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -21,8 +19,8 @@ import org.junit.jupiter.api.TestInstance;
 import javax.inject.Inject;
 
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -59,7 +57,7 @@ public class NotificationServiceTest {
                 .extract().response();
 
         EventType[] eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
-        assertEquals(100, eventTypes.length);
+        assertTrue(eventTypes.length >= 100); // Depending on the test order, we might have existing application types also
 
         EventType policiesAll = eventTypes[0];
         assertNotNull(policiesAll.getId());

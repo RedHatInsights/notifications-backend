@@ -403,16 +403,13 @@ public class EndpointResources extends DatasourceProvider {
         // TODO Fix transaction so that we don't end up with half the updates applied
         Mono<Boolean> endpointMono =
                 Mono.usingWhen(connectionPublisher.get(),
-                        conn -> {
-                            Mono<Boolean> endpointFlux = updateEndpointStatement(endpoint, conn);
-                            Mono<Boolean> endpointFlux1 = endpointFlux.flatMap(ep -> {
-                                if (endpoint.getProperties() != null && endpoint.getType() == Endpoint.EndpointType.WEBHOOK) {
-                                    return updateWebhooksStatement(endpoint, conn);
-                                }
-                                return Mono.empty();
-                            });
-                            return endpointFlux1;
-                        },
+                        conn -> updateEndpointStatement(endpoint, conn)
+                                .flatMap(ep -> {
+                                    if (endpoint.getProperties() != null && endpoint.getType() == Endpoint.EndpointType.WEBHOOK) {
+                                        return updateWebhooksStatement(endpoint, conn);
+                                    }
+                                    return Mono.empty();
+                        }),
                         PostgresqlConnection::close);
 
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), endpointMono);

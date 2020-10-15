@@ -16,8 +16,6 @@ import java.util.Set;
 @ApplicationScoped
 public class PoliciesTransformer {
 
-    private static String APPLICATION_NAME = "policies";
-
     private JsonObject createMessage(Action action) {
         JsonObject message = new JsonObject();
 
@@ -48,6 +46,7 @@ public class PoliciesTransformer {
         LocalDateTime ts = Instant.ofEpochMilli(action.getCtime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
 
         JsonObject message = new JsonObject();
+        String APPLICATION_NAME = "policies";
         message.put("application", APPLICATION_NAME);
         message.put("account_id", action.getTenantId());
         message.put("timestamp", ts.toString());

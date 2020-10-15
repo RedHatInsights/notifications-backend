@@ -100,6 +100,7 @@ public class NotificationResources {
                                     .execute();
                             return execute.flatMap(res -> res.map((row, rowMetadata) -> {
                                 String json = row.get("details", String.class);
+                                // TODO json field is not necessarily available!
                                 return new JsonObject(json);
                             }));
                         })

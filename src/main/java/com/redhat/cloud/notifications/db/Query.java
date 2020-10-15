@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import javax.ws.rs.QueryParam;
+import java.util.function.Function;
 
 public class Query {
     @QueryParam("limit")
@@ -91,44 +92,46 @@ public class Query {
     }
 
     public static String getPostgresQuery(Limit limiter) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("LIMIT ");
-        builder.append(limiter.getPageSize());
-        builder.append(" OFFSET ");
-        builder.append(limiter.calculateOffset());
-        return builder.toString();
+        String builder = "LIMIT " +
+                limiter.getPageSize() +
+                " OFFSET " +
+                limiter.calculateOffset();
+        return builder;
     }
 
     public static String modifyQuery(String basicQuery, Query.Limit limiter) {
         // TODO Should we have sorting here (other than natural sort)
         if (limiter != null && limiter.getPageSize() > 0) {
-            StringBuilder builder = new StringBuilder();
-            builder
-                    .append(basicQuery)
-                    .append(" ")
-                    .append(Query.getPostgresQuery(limiter));
-            return builder.toString();
+            String builder = basicQuery +
+                    " " +
+                    Query.getPostgresQuery(limiter);
+            return builder;
         }
 
         return basicQuery;
     }
 
+    public static Function<String, String> modifyToCountQuery() {
+        return s -> {
+            String builder = "SELECT COUNT(*) FROM (" +
+                    s +
+                    ") counted";
+            return builder;
+        };
+    }
+
     public static String modifyToCountQuery(String theQuery) {
-        StringBuilder builder = new StringBuilder();
-        return builder
-                .append("SELECT COUNT(*) FROM (")
-                .append(theQuery)
-                .append(") counted")
-                .toString();
+        String builder = "SELECT COUNT(*) FROM (" +
+                theQuery +
+                ") counted";
+        return builder;
     }
 
     public static String modifyWithSort(String theQuery, Query.Sort sorter) {
-        StringBuilder builder = new StringBuilder();
-        return builder
-                .append(theQuery)
-                .append("ORDER BY ")
-                .append(sorter.getSortColumn())
-                .append(sorter.getSortOrder().toString())
-                .toString();
+        String builder = theQuery +
+                "ORDER BY " +
+                sorter.getSortColumn() +
+                sorter.getSortOrder().toString();
+        return builder;
     }
 }
