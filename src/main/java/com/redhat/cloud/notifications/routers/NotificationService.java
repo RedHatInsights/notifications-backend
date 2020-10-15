@@ -89,7 +89,7 @@ public class NotificationService {
     @Path("/eventTypes")
     @RolesAllowed("read")
     public Multi<EventType> getEventTypes(@BeanParam Query query) {
-        return apps.getEventTypes(query.getLimit());
+        return apps.getEventTypes(query);
     }
 
     @PUT
@@ -116,7 +116,7 @@ public class NotificationService {
     @RolesAllowed("read")
     public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query.getLimit());
+        return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query);
     }
 
     @GET

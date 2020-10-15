@@ -76,7 +76,7 @@ public class EndpointService {
             return resources.getEndpointsPerType(principal.getAccount(), endpointType, activeOnly);
         }
 
-        return resources.getEndpoints(principal.getAccount(), query.getLimit());
+        return resources.getEndpoints(principal.getAccount(), query);
     }
 
     @POST
@@ -180,7 +180,7 @@ public class EndpointService {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return notifResources.getNotificationDetails(principal.getAccount(), query.getLimit(), id, historyId)
+        return notifResources.getNotificationDetails(principal.getAccount(), query, id, historyId)
                 // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
                 .onItem().ifNull().failWith(new NotFoundException())
                 .onItem().transform(json -> {

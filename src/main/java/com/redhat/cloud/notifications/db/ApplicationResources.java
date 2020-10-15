@@ -141,12 +141,12 @@ public class ApplicationResources {
                         }));
     }
 
-    public Multi<EventType> getEventTypes(Query.Limit limiter) {
+    public Multi<EventType> getEventTypes(Query limiter) {
         String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.description AS et_desc, a.id AS a_id, a.name AS a_name FROM public.event_type et " +
                 "JOIN public.application_event_type aet ON aet.event_type_id = et.id " +
                 "JOIN public.applications a ON a.id = aet.application_id";
 
-        String query = Query.modifyQuery(basicQuery, limiter);
+        String query = limiter.getModifiedQuery(basicQuery);
 
         return connectionPublisher.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,

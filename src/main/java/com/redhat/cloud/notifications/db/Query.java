@@ -79,6 +79,10 @@ public class Query {
     }
 
     public Sort getSort() {
+        if (sortBy == null || sortBy.length() < 1) {
+            return null;
+        }
+
         String[] sortSplit = sortBy.split(":");
         Sort sort = new Sort(sortSplit[0]);
         if (sortSplit.length > 1) {
@@ -99,8 +103,23 @@ public class Query {
         return builder;
     }
 
-    public static String modifyQuery(String basicQuery, Query.Limit limiter) {
-        // TODO Should we have sorting here (other than natural sort)
+    public String getModifiedQuery(String basicQuery) {
+        // Use the internal Query
+        // What's the proper order? SORT first, then LIMIT? COUNT as last one?
+        String query = basicQuery;
+        Sort sort = getSort();
+        if (sort != null) {
+            query = modifyWithSort(query, sort);
+        }
+        Limit limiter = getLimit();
+        if (limiter != null && (limiter.getPageSize() > 0 || limiter.calculateOffset() > 0)) {
+            query = modifyQuery(query, limiter);
+        }
+        return query;
+    }
+
+    private static String modifyQuery(String basicQuery, Query.Limit limiter) {
+        // TODO Take into account new limit+pageNumber keyword mess
         if (limiter != null && limiter.getPageSize() > 0) {
             String builder = basicQuery +
                     " " +
@@ -127,7 +146,7 @@ public class Query {
         return builder;
     }
 
-    public static String modifyWithSort(String theQuery, Query.Sort sorter) {
+    private static String modifyWithSort(String theQuery, Query.Sort sorter) {
         String builder = theQuery +
                 "ORDER BY " +
                 sorter.getSortColumn() +

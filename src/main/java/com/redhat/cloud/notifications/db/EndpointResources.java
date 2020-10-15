@@ -156,12 +156,12 @@ public class EndpointResources extends DatasourceProvider {
                         }));
     }
 
-    public Multi<Endpoint> getEndpoints(String tenant, Query.Limit limiter) {
+    public Multi<Endpoint> getEndpoints(String tenant, Query limiter) {
         // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
         //      or should I just create a new method for it?
         String allAccountEndpointsQuery = basicEndpointGetQuery + " WHERE e.account_id = $1";
 
-        String query = Query.modifyQuery(allAccountEndpointsQuery, limiter);
+        String query = limiter.getModifiedQuery(allAccountEndpointsQuery);
         // TODO Add JOIN ON clause to proper table, such as webhooks and then read the results
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
@@ -315,12 +315,12 @@ public class EndpointResources extends DatasourceProvider {
                 .toUni();
     }
 
-    public Multi<Endpoint> getLinkedEndpoints(String tenant, long eventTypeId, Query.Limit limiter) {
+    public Multi<Endpoint> getLinkedEndpoints(String tenant, long eventTypeId, Query limiter) {
         String basicQuery = basicEndpointGetQuery +
                 "JOIN public.endpoint_targets et ON et.endpoint_id = e.id " +
                 "WHERE et.account_id = $1 AND et.event_type_id = $2";
 
-        String query = Query.modifyQuery(basicQuery, limiter);
+        String query = limiter.getModifiedQuery(basicQuery);
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
