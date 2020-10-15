@@ -83,6 +83,11 @@ public class Query {
     }
 
     public Sort getSort() {
+        // Endpoints: sort by: name, type, "last connection status" (?), enabled
+        //      -> endpoint_id, name, endpoint_type, enabled are the accepted parameter names
+        // TODO Should they be id, name, type, enabled for consistency and then modified in the actual query to Postgres?
+        // And if it's not an accepted value? Throw exception?
+
         if (sortBy == null || sortBy.length() < 1) {
             return null;
         }
@@ -146,7 +151,7 @@ public class Query {
     private static String modifyWithSort(String theQuery, Query.Sort sorter) {
         return theQuery +
                 " ORDER BY " +
-                sorter.getSortColumn() +
+                sorter.getSortColumn() + " " +
                 sorter.getSortOrder().toString();
     }
 }
