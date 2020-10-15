@@ -29,9 +29,12 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {
         String xRhIdentityHeaderValue = routingContext.request().getHeader(IDENTITY_HEADER);
+
+        // Access from outside the 3Scale
         if (xRhIdentityHeaderValue == null) {
-            return Uni.createFrom().nullItem();
+            return Uni.createFrom().item(QuarkusSecurityIdentity.builder().build());
         }
+
         RhIdentityAuthenticationRequest authReq = new RhIdentityAuthenticationRequest(xRhIdentityHeaderValue);
         Uni<SecurityIdentity> identityUni = identityProviderManager.authenticate(authReq);
 

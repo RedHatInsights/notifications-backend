@@ -13,8 +13,6 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockserver.model.HttpRequest.request;
-
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
     PostgreSQLContainer<?> postgreSQLContainer;

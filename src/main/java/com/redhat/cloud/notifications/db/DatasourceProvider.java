@@ -36,8 +36,7 @@ public class DatasourceProvider {
                 .option(ConnectionFactoryOptions.PASSWORD, password)
                 .build();
 
-        ConnectionFactory connectionFactory = ConnectionFactories.get(options);
-        this.pool = connectionFactory;
+        this.pool = ConnectionFactories.get(options);
     }
 
     @Produces

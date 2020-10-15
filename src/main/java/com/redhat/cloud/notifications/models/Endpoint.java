@@ -15,12 +15,14 @@ import java.util.UUID;
 
 public class Endpoint {
 
-    @Schema(enumeration = { "webhook", "email" })
+    @Schema(enumeration = { "webhook", "email", "default" })
     public enum EndpointType {
         @JsonProperty("webhook")
         WEBHOOK,
         @JsonProperty("email")
-        EMAIL
+        EMAIL,
+        @JsonProperty("default")
+        DEFAULT
     }
 
     private UUID id; // Should be UUID
@@ -39,11 +41,9 @@ public class Endpoint {
     @NotNull
     private EndpointType type;
 
-    // TODO JSON should be formatted based on the insights type, so ISO8601
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Date created;
 
-    // TODO JSON should be formatted based on the insights type, so ISO8601
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Date updated;
 
@@ -54,9 +54,9 @@ public class Endpoint {
             include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
     @JsonSubTypes({
             @JsonSubTypes.Type(value = WebhookAttributes.class, name = "webhook"),
-            @JsonSubTypes.Type(value = EmailAttributes.class, name = "email"),
+            @JsonSubTypes.Type(value = EmailAttributes.class, name = "email")
     })
-    @NotNull
+//    @NotNull
     @Valid
     private Attributes properties;
 

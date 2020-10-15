@@ -20,10 +20,10 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -50,41 +50,41 @@ public class EndpointServiceTest {
                 .statusCode(200) // TODO Maybe 204 here instead?
                 .body(is("[]"));
 
-            // Add new endpoints
-            WebhookAttributes webAttr = new WebhookAttributes();
-            webAttr.setMethod(WebhookAttributes.HttpType.POST);
-            webAttr.setDisableSSLVerification(false);
-            webAttr.setSecretToken("my-super-secret-token");
-            webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+        // Add new endpoints
+        WebhookAttributes webAttr = new WebhookAttributes();
+        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setDisableSSLVerification(false);
+        webAttr.setSecretToken("my-super-secret-token");
+        webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
-            Endpoint ep = new Endpoint();
-            ep.setType(Endpoint.EndpointType.WEBHOOK);
-            ep.setName("endpoint to find");
-            ep.setDescription("needle in the haystack");
-            ep.setEnabled(true);
-            ep.setProperties(webAttr);
+        Endpoint ep = new Endpoint();
+        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setName("endpoint to find");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(webAttr);
 
-            Response response = given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(ContentType.JSON)
-                    .body(Json.encode(ep))
-                    .post("/endpoints")
-                    .then()
-                    .statusCode(200)
-                    .extract().response();
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
 
-            Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
-            assertNotNull(responsePoint.getId());
+        Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
+        assertNotNull(responsePoint.getId());
 
-            // Fetch the list
-            response = given()
-                    // Set header to x-rh-identity
-                    .header(identityHeader)
-                    .when().get("/endpoints")
-                    .then()
-                    .statusCode(200)
-                    .extract().response();
+        // Fetch the list
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
 
         List<Endpoint> endpoints = Json.decodeValue(response.getBody().asString(), List.class);
         assertEquals(1, endpoints.size());
@@ -362,7 +362,7 @@ public class EndpointServiceTest {
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        for(int i = 0; i < 29; i++) {
+        for (int i = 0; i < 29; i++) {
             // Add new endpoints
             WebhookAttributes webAttr = new WebhookAttributes();
             webAttr.setMethod(WebhookAttributes.HttpType.POST);
@@ -395,8 +395,8 @@ public class EndpointServiceTest {
         Response response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .queryParam("pageSize", "10")
-                .queryParam("pageNumber", "0")
+                .queryParam("limit", "10")
+                .queryParam("offset", "0")
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200)
@@ -409,7 +409,7 @@ public class EndpointServiceTest {
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .queryParam("pageSize", "10")
+                .queryParam("limit", "10")
                 .queryParam("pageNumber", "2")
                 .when().get("/endpoints")
                 .then()
@@ -420,7 +420,103 @@ public class EndpointServiceTest {
         assertEquals(9, endpoints.size());
     }
 
-//    @Test
+    @Test
+    void testDefaultEndpointRegistering() {
+        String tenant = "defaultRegister";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        Endpoint ep = new Endpoint();
+        ep.setType(Endpoint.EndpointType.DEFAULT);
+        ep.setName("Default endpoint");
+        ep.setDescription("The ultimate fallback");
+        ep.setEnabled(true);
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
+        assertNotNull(responsePoint.getId());
+
+        Endpoint responsePointSingle = fetchSingle(responsePoint.getId(), identityHeader);
+        assertEquals(responsePoint.getId(), responsePointSingle.getId());
+        assertEquals(responsePoint.getType(), responsePointSingle.getType());
+
+        // Fetch the default endpoint
+        response = given()
+                .header(identityHeader)
+                .queryParam("type", "default")
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint[] defEndpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        assertEquals(1, defEndpoints.length);
+        assertEquals(responsePoint.getId(), defEndpoints[0].getId());
+        assertEquals(Endpoint.EndpointType.DEFAULT, responsePoint.getType());
+
+        // Add another type as well
+        Endpoint another = new Endpoint();
+        another.setType(Endpoint.EndpointType.WEBHOOK);
+        another.setDescription("desc");
+        another.setName("name");
+
+        WebhookAttributes attr = new WebhookAttributes();
+        attr.setMethod(WebhookAttributes.HttpType.POST);
+        attr.setUrl("http://localhost");
+
+        another.setProperties(attr);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(another))
+                .post("/endpoints")
+                .then()
+                .statusCode(200);
+
+        // Ensure that there's only a single default endpoint
+        // This second insert should return the original one without modifications
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200);
+
+        response = given()
+                .header(identityHeader)
+                .queryParam("type", "default")
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        defEndpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        assertEquals(1, defEndpoints.length);
+        assertEquals(responsePoint.getId(), defEndpoints[0].getId());
+        assertEquals(Endpoint.EndpointType.DEFAULT, responsePoint.getType());
+    }
+
+    //    @Test
     void testConnectionCount() {
         String tenant = "count";
         String userName = "user";
@@ -438,7 +534,7 @@ public class EndpointServiceTest {
                 .statusCode(200) // TODO Maybe 204 here instead?
                 .body(is("[]"));
 
-        for(int i = 0; i < 200; i++) {
+        for (int i = 0; i < 200; i++) {
             // Add new endpoints
             WebhookAttributes webAttr = new WebhookAttributes();
             webAttr.setMethod(WebhookAttributes.HttpType.POST);

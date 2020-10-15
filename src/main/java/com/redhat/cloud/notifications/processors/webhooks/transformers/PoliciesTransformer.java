@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.webhooks.transformers;
+package com.redhat.cloud.notifications.processors.webhooks.transformers;
 
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -15,8 +15,6 @@ import java.util.Set;
 
 @ApplicationScoped
 public class PoliciesTransformer {
-
-    private static String APPLICATION_NAME = "policies";
 
     private JsonObject createMessage(Action action) {
         JsonObject message = new JsonObject();
@@ -43,11 +41,12 @@ public class PoliciesTransformer {
         return message;
     }
 
-    public Uni<Object> transform(Action action) {
+    public Uni<JsonObject> transform(Action action) {
         // Fields and terminology straight from the target project
         LocalDateTime ts = Instant.ofEpochMilli(action.getCtime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
 
         JsonObject message = new JsonObject();
+        String APPLICATION_NAME = "policies";
         message.put("application", APPLICATION_NAME);
         message.put("account_id", action.getTenantId());
         message.put("timestamp", ts.toString());

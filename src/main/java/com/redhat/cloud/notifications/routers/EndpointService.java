@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
+import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Multi;
@@ -19,8 +20,11 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
@@ -28,11 +32,11 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import javax.ws.rs.core.UriInfo;
 import java.util.UUID;
 
 @Path("/endpoints")
@@ -52,7 +56,7 @@ public class EndpointService {
     @RolesAllowed("read")
     @Parameters({
             @Parameter(
-                    name = "pageSize",
+                    name = "limit",
                     in = ParameterIn.QUERY,
                     description = "Number of items per page, if not specified or 0 is used, returns all elements",
                     schema = @Schema(type = SchemaType.INTEGER)
@@ -64,9 +68,15 @@ public class EndpointService {
                     schema = @Schema(type = SchemaType.INTEGER)
             )
     })
-    public Multi<Endpoint> getEndpoints(@Context SecurityContext sec, @Context UriInfo uriInfo) {
+    public Multi<Endpoint> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") @DefaultValue("false") boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getEndpoints(principal.getAccount(), ParamUtils.parseQueryParams(uriInfo));
+
+        if (targetType != null) {
+            Endpoint.EndpointType endpointType = Endpoint.EndpointType.valueOf(targetType.toUpperCase());
+            return resources.getEndpointsPerType(principal.getAccount(), endpointType, activeOnly);
+        }
+
+        return resources.getEndpoints(principal.getAccount(), query);
     }
 
     @POST
@@ -74,6 +84,18 @@ public class EndpointService {
     public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setTenant(principal.getAccount());
+
+        if (endpoint.getType() != Endpoint.EndpointType.DEFAULT && endpoint.getProperties() == null) {
+            throw new BadRequestException("Properties is required");
+        } else if (endpoint.getType() == Endpoint.EndpointType.DEFAULT) {
+            // Only a single default endpoint is allowed
+            return resources.getEndpointsPerType(principal.getAccount(), Endpoint.EndpointType.DEFAULT, false)
+                    .toUni()
+                    .onItem()
+                    .ifNull()
+                    .switchTo(resources.createEndpoint(endpoint));
+        }
+
         return resources.createEndpoint(endpoint);
     }
 
@@ -156,9 +178,9 @@ public class EndpointService {
             )
     })
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId, @Context UriInfo uriInfo) {
+    public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") Integer historyId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return notifResources.getNotificationDetails(principal.getAccount(), ParamUtils.parseQueryParams(uriInfo), id, historyId)
+        return notifResources.getNotificationDetails(principal.getAccount(), query, id, historyId)
                 // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
                 .onItem().ifNull().failWith(new NotFoundException())
                 .onItem().transform(json -> {

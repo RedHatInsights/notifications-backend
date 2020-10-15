@@ -8,7 +8,7 @@ import javax.validation.constraints.NotNull;
 public class WebhookAttributes extends Attributes {
 
     public enum HttpType {
-        GET, POST
+        GET, POST, PUT
     }
 
     @JsonIgnore

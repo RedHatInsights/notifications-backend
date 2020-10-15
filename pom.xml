@@ -12,15 +12,15 @@
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <quarkus-plugin.version>1.7.1.Final</quarkus-plugin.version>
+    <quarkus-plugin.version>1.8.3.Final</quarkus-plugin.version>
     <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-    <quarkus.platform.version>1.7.1.Final</quarkus.platform.version>
+    <quarkus.platform.version>1.8.3.Final</quarkus.platform.version>
     <surefire-plugin.version>2.22.1</surefire-plugin.version>
     <policies.version>2.1.0-20201005.064728-2</policies.version>
     <r2dbc.version>0.8.4.RELEASE</r2dbc.version>
     <checkstyle-plugin.version>3.1.1</checkstyle-plugin.version>
-    <mutiny-reactor.version>0.7.0</mutiny-reactor.version>
+    <mutiny-reactor.version>0.8.1</mutiny-reactor.version>
     <testcontainers.version>1.14.3</testcontainers.version>
     <mockserver-client-java.version>5.5.4</mockserver-client-java.version> <!-- not the newest, but matches what is in org.testcontainers:mockserver -->
     <version.cloud-commons>0.1.1</version.cloud-commons>

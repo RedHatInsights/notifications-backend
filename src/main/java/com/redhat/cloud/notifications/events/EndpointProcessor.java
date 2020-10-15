@@ -1,40 +1,72 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.db.EndpointResources;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
-import com.redhat.cloud.notifications.webhooks.WebhookProcessor;
-import com.redhat.cloud.notifications.webhooks.transformers.PoliciesTransformer;
+import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.EventBusTypeProcessor;
+import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hawkular.alerts.api.model.action.Action;
+import org.reactivestreams.Publisher;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.function.Function;
 
 @ApplicationScoped
 public class EndpointProcessor {
 
     @Inject
-    WebhookProcessor webhooks;
+    EndpointResources resources;
 
     @Inject
-    PoliciesTransformer transformer;
+    EventBusTypeProcessor notificationProcessor;
+
+    @Inject
+    DefaultProcessor defaultProcessor;
+
+    @Inject
+    WebhookTypeProcessor webhooks;
 
     public Uni<Void> process(Action action) {
-        /*
-        TODO For the first iteration, this won't do anything useful (just a small transform of data)
-        For later versions, the process should be:
+        // TODO ApplicationName and eventType are going to be extracted from the new input model - from another PR
+        //      We also need to add the original message's unique id to the notification
 
-            - This will modify the action to proper notifications matching the target rules (action sets etc)
-            - The processor will only get the more detailed information it needs based on the type it wants
-            - So fetch endpoints here (without JOINs) and fetch properties in the processor
-         */
-        return Uni.createFrom().item(action)
-                .onItem().transformToUni(this::transform)
-                .onItem().transform(payload -> new Notification(action.getTenantId(), payload))
-                .onItem().transformToUni(notif -> webhooks.process(notif));
+        Uni<Void> endpointsCallResult = getEndpoints(action.getTenantId(), "Policies", "All")
+                .onItem()
+                .transformToUni(endpoint -> {
+                    Notification endpointNotif = new Notification(action.getTenantId(), action, endpoint);
+                    return endpointTypeToProcessor(endpoint.getType()).process(endpointNotif);
+                })
+                .merge()
+                .onItem()
+                .ignoreAsUni();
+
+        // Notification is an endpoint type as well? Must it be created manually each time?
+        Notification notification = new Notification(action.getTenantId(), action, null);
+        Uni<Void> notificationResult = notificationProcessor.process(notification);
+
+        return Uni.combine().all().unis(endpointsCallResult, notificationResult).discardItems();
     }
 
-    public Uni<Object> transform(Action action) {
-        // Transform to destination format, based on the input (sender) and output (processor type)
-        return transformer.transform(action); // We only have a single type right now
+    public EndpointTypeProcessor endpointTypeToProcessor(Endpoint.EndpointType endpointType) {
+        switch (endpointType) {
+            case WEBHOOK:
+                return webhooks;
+            default:
+                return notificationProcessor;
+        }
+    }
+
+    public Multi<Endpoint> getEndpoints(String tenant, String applicationName, String eventTypeName) {
+        return resources.getTargetEndpoints(tenant, applicationName, eventTypeName)
+                .flatMap((Function<Endpoint, Publisher<Endpoint>>) endpoint -> {
+                    if (endpoint.getType() == Endpoint.EndpointType.DEFAULT) {
+                        return defaultProcessor.getDefaultEndpoints(endpoint);
+                    }
+                    return Multi.createFrom().item(endpoint);
+                });
     }
 }
