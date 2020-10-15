@@ -17,33 +17,37 @@ public class Query {
     private String sortBy;
 
     public static class Limit {
-        private int pageNumber;
-        private int pageSize;
+        private int limit;
         private int offset;
 
-        public Limit(int pageNumber, int pageSize) {
-            this.pageNumber = pageNumber;
-            this.pageSize = pageSize;
+        public Limit(int limit, int offset) {
+            this.limit = limit;
+            this.offset = offset;
         }
 
-        public int getPageSize() {
-            return pageSize;
+        public int getLimit() {
+            return limit;
         }
 
-        public int calculateOffset() {
-            if (offset > 0) {
-                return offset;
-            }
+        public int getOffset() {
+            return offset;
+        }
+
+        public static int calculateOffset(int pageNumber, int pageSize) {
             return pageNumber * pageSize;
         }
     }
 
     public Limit getLimit() {
         if (pageSize != null) {
-            if (pageNumber == null) {
-                pageNumber = 0;
+            // offset takes precedence over pageNumber if both are set
+            if (pageNumber != null && offset == null) {
+                offset = Limit.calculateOffset(pageNumber, pageSize);
             }
-            return new Limit(pageNumber, pageSize);
+            if (offset == null) {
+                offset = 0;
+            }
+            return new Limit(pageSize, offset);
         }
         return new Limit(0, 0);
     }
@@ -95,12 +99,11 @@ public class Query {
         return sort;
     }
 
-    public static String getPostgresQuery(Limit limiter) {
-        String builder = "LIMIT " +
-                limiter.getPageSize() +
+    public static String getLimiterQuery(Limit limiter) {
+        return "LIMIT " +
+                limiter.getLimit() +
                 " OFFSET " +
-                limiter.calculateOffset();
-        return builder;
+                limiter.getOffset();
     }
 
     public String getModifiedQuery(String basicQuery) {
@@ -112,45 +115,38 @@ public class Query {
             query = modifyWithSort(query, sort);
         }
         Limit limiter = getLimit();
-        if (limiter != null && (limiter.getPageSize() > 0 || limiter.calculateOffset() > 0)) {
-            query = modifyQuery(query, limiter);
+        if (limiter != null && (limiter.getLimit() > 0)) {
+            query = modifyQueryWithOffsetLimit(query, limiter);
         }
         return query;
     }
 
-    private static String modifyQuery(String basicQuery, Query.Limit limiter) {
-        // TODO Take into account new limit+pageNumber keyword mess
-        if (limiter != null && limiter.getPageSize() > 0) {
-            String builder = basicQuery +
+    private static String modifyQueryWithOffsetLimit(String basicQuery, Query.Limit limiter) {
+        if (limiter != null && limiter.getLimit() > 0) {
+            return basicQuery +
                     " " +
-                    Query.getPostgresQuery(limiter);
-            return builder;
+                    Query.getLimiterQuery(limiter);
         }
 
         return basicQuery;
     }
 
     public static Function<String, String> modifyToCountQuery() {
-        return s -> {
-            String builder = "SELECT COUNT(*) FROM (" +
-                    s +
-                    ") counted";
-            return builder;
-        };
+        return s -> "SELECT COUNT(*) FROM (" +
+                s +
+                ") counted";
     }
 
     public static String modifyToCountQuery(String theQuery) {
-        String builder = "SELECT COUNT(*) FROM (" +
+        return "SELECT COUNT(*) FROM (" +
                 theQuery +
                 ") counted";
-        return builder;
     }
 
     private static String modifyWithSort(String theQuery, Query.Sort sorter) {
-        String builder = theQuery +
-                "ORDER BY " +
+        return theQuery +
+                " ORDER BY " +
                 sorter.getSortColumn() +
                 sorter.getSortOrder().toString();
-        return builder;
     }
 }
