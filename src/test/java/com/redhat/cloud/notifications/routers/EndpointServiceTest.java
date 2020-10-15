@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -14,6 +15,7 @@ import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,6 +33,9 @@ public class EndpointServiceTest {
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
+
+    @Inject
+    ResourceHelpers helpers;
 
     @Test
     void testEndpointAdding() {
@@ -514,6 +519,67 @@ public class EndpointServiceTest {
         assertEquals(1, defEndpoints.length);
         assertEquals(responsePoint.getId(), defEndpoints[0].getId());
         assertEquals(Endpoint.EndpointType.DEFAULT, responsePoint.getType());
+    }
+
+    @Test
+    void testSortingOrder() {
+        String tenant = "testSortingOrder";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        // Create 50 test-ones with sanely sortable name & enabled & disabled & type
+        int[] stats = helpers.createTestEndpoints(tenant, 50);
+        int disableCount = stats[1];
+        int webhookCount = stats[2];
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        assertEquals(stats[0], endpoints.length);
+
+        response = given()
+                .header(identityHeader)
+                .queryParam("sort_by", "enabled")
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        assertFalse(endpoints[0].isEnabled());
+        assertFalse(endpoints[disableCount - 1].isEnabled());
+        assertTrue(endpoints[disableCount].isEnabled());
+        assertTrue(endpoints[stats[0] - 1].isEnabled());
+
+        response = given()
+                .header(identityHeader)
+                .queryParam("sort_by", "name:desc")
+                .queryParam("limit", "50")
+                .queryParam("offset", stats[0] - 20)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        assertEquals(20, endpoints.length);
+        assertEquals("Default endpoint", endpoints[endpoints.length - 1].getName());
+        assertEquals("Endpoint 1", endpoints[endpoints.length - 2].getName());
+        assertEquals("Endpoint 26", endpoints[0].getName());
     }
 
     //    @Test
