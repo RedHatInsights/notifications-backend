@@ -32,7 +32,9 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
 
         // Access from outside the 3Scale
         if (xRhIdentityHeaderValue == null) {
-            return Uni.createFrom().item(QuarkusSecurityIdentity.builder().build());
+            return Uni.createFrom().item(QuarkusSecurityIdentity.builder()
+                    .setPrincipal(new RhIdPrincipal("-noauth-", "-1"))
+                    .build());
         }
 
         RhIdentityAuthenticationRequest authReq = new RhIdentityAuthenticationRequest(xRhIdentityHeaderValue);
