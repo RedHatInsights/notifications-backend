@@ -142,7 +142,7 @@ public class ApplicationResources {
     }
 
     public Multi<EventType> getEventTypes(Query limiter) {
-        String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.description AS et_desc, a.id AS a_id, a.name AS a_name FROM public.event_type et " +
+        String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.description AS et_desc, a.id AS a_id, a.name AS a_name, a.description as a_description FROM public.event_type et " +
                 "JOIN public.application_event_type aet ON aet.event_type_id = et.id " +
                 "JOIN public.applications a ON a.id = aet.application_id";
 
@@ -166,6 +166,7 @@ public class ApplicationResources {
             Application app = new Application();
             app.setId(row.get("a_id", UUID.class));
             app.setName(row.get("a_name", String.class));
+            app.setDescription(row.get("a_description", String.class));
 
             EventType eventType = new EventType();
             eventType.setId(row.get("et_id", Integer.class));
