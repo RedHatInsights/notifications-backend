@@ -39,7 +39,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.UUID;
 
-@Path("/endpoints")
+@Path("/api/integrations/v1.0/endpoints")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 // Email endpoints are not added at this point

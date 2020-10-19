@@ -8,11 +8,13 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -33,6 +35,11 @@ public class NotificationServiceTest {
     ResourceHelpers helpers;
 
     private Header identityHeader;
+
+    @BeforeEach
+    void beforeEach() {
+        RestAssured.basePath = "/api/notifications/v1.0";
+    }
 
     @BeforeAll
     void init() {

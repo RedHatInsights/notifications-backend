@@ -7,9 +7,11 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.vertx.core.json.Json;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -21,6 +23,11 @@ public class ApplicationServiceTest {
 
     static final String APP_NAME = "PoliciesApplicationServiceTest";
     static final String EVENT_TYPE_NAME = "All";
+
+    @BeforeEach
+    void beforeEach() {
+        RestAssured.basePath = "/api/integrations/v1.0";
+    }
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;

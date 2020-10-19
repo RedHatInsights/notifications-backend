@@ -32,7 +32,7 @@ import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.UUID;
 
-@Path("/notifications")
+@Path("/api/notifications/v1.0/notifications")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class NotificationService {

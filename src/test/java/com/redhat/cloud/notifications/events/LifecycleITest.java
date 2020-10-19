@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
@@ -20,8 +21,8 @@ import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -48,6 +49,11 @@ import static org.mockserver.model.HttpResponse.response;
 @TestMethodOrder(MethodOrderer.Alphanumeric.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LifecycleITest {
+
+    @BeforeEach
+    void beforeEach() {
+        RestAssured.basePath = "/api/integrations/v1.0";
+    }
 
     private Header identityHeader;
 
@@ -162,6 +168,7 @@ public class LifecycleITest {
 
         for (Endpoint endpointLink : List.of(endpoint, endpointFail)) {
             given()
+                    .basePath("/api/notifications/v1.0/")
                     .header(identityHeader)
                     .when()
                     .contentType(ContentType.JSON)
@@ -270,6 +277,7 @@ public class LifecycleITest {
     @Test
     void t04_getUIDetailsAndUnlink() {
         Response response = given()
+                .basePath("/api/notifications/v1.0/")
                 .when()
                 .header(identityHeader)
                 .contentType(ContentType.JSON)
@@ -293,6 +301,7 @@ public class LifecycleITest {
 
         // Fetch the list
         response = given()
+                .basePath("/api/notifications/v1.0/")
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .when().get(String.format("/notifications/eventTypes/%d", policiesAll.getId()))
@@ -305,6 +314,7 @@ public class LifecycleITest {
 
         for (Endpoint endpoint : endpoints) {
             given()
+                    .basePath("/api/notifications/v1.0/")
                     .header(identityHeader)
                     .when()
                     .delete(String.format("/notifications/eventTypes/%d/%s", policiesAll.getId(), endpoint.getId()))
@@ -314,6 +324,7 @@ public class LifecycleITest {
 
         // Fetch the list again
         response = given()
+                .basePath("/api/notifications/v1.0/")
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .when().get(String.format("/notifications/eventTypes/%d", policiesAll.getId()))
