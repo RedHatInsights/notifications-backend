@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -38,7 +39,7 @@ public class NotificationServiceTest {
 
     @BeforeEach
     void beforeEach() {
-        RestAssured.basePath = "/api/notifications/v1.0";
+        RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
     }
 
     @BeforeAll

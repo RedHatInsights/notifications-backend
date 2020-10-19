@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.EndpointResources;
@@ -52,7 +53,7 @@ public class LifecycleITest {
 
     @BeforeEach
     void beforeEach() {
-        RestAssured.basePath = "/api/integrations/v1.0";
+        RestAssured.basePath = com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
     }
 
     private Header identityHeader;
@@ -168,7 +169,7 @@ public class LifecycleITest {
 
         for (Endpoint endpointLink : List.of(endpoint, endpointFail)) {
             given()
-                    .basePath("/api/notifications/v1.0/")
+                    .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                     .header(identityHeader)
                     .when()
                     .contentType(ContentType.JSON)
@@ -277,7 +278,7 @@ public class LifecycleITest {
     @Test
     void t04_getUIDetailsAndUnlink() {
         Response response = given()
-                .basePath("/api/notifications/v1.0/")
+                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                 .when()
                 .header(identityHeader)
                 .contentType(ContentType.JSON)
@@ -301,7 +302,7 @@ public class LifecycleITest {
 
         // Fetch the list
         response = given()
-                .basePath("/api/notifications/v1.0/")
+                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .when().get(String.format("/notifications/eventTypes/%d", policiesAll.getId()))
@@ -314,7 +315,7 @@ public class LifecycleITest {
 
         for (Endpoint endpoint : endpoints) {
             given()
-                    .basePath("/api/notifications/v1.0/")
+                    .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                     .header(identityHeader)
                     .when()
                     .delete(String.format("/notifications/eventTypes/%d/%s", policiesAll.getId(), endpoint.getId()))
@@ -324,7 +325,7 @@ public class LifecycleITest {
 
         // Fetch the list again
         response = given()
-                .basePath("/api/notifications/v1.0/")
+                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .when().get(String.format("/notifications/eventTypes/%d", policiesAll.getId()))

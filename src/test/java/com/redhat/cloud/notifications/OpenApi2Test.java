@@ -20,16 +20,16 @@ import java.net.URL;
 public class OpenApi2Test {
 
     // QuarkusTest will inject the host+port for us.
-    @TestHTTPResource("/api/notifications/v1.0/openapi.json")
+    @TestHTTPResource(TestConstants.API_NOTIFICATIONS_V_1_0 + "/openapi.json")
     URL nUrl;
 
-    @TestHTTPResource("/api/notifications/v1/openapi.json")
+    @TestHTTPResource(TestConstants.API_NOTIFICATIONS_V_1 + "/openapi.json")
     URL nUrl1;
 
-    @TestHTTPResource("/api/integrations/v1.0/openapi.json")
+    @TestHTTPResource(TestConstants.API_INTEGRATIONS_V_1_0 + "/openapi.json")
     URL iUrl;
 
-    @TestHTTPResource("/api/integrations/v1/openapi.json")
+    @TestHTTPResource(TestConstants.API_INTEGRATIONS_V_1 + "/openapi.json")
     URL iUrl1;
 
     @Test

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
@@ -32,7 +33,7 @@ import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.UUID;
 
-@Path("/api/notifications/v1.0/notifications")
+@Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class NotificationService {

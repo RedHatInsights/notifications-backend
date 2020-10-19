@@ -1,5 +1,7 @@
 package com.redhat.cloud.oapi_splitter;
 
+import com.redhat.cloud.notifications.Constants;
+
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
@@ -61,10 +63,10 @@ public class OApiSplitter {
                     for (String path : paths) {
                         JsonObject pathValue = (JsonObject) pathsObject.get(path);
                         if (!path.endsWith("openapi.json")) { // Skip the openapi endpoint
-                            if (path.startsWith("/api/notifications/v1.0")) {
+                            if (path.startsWith(Constants.API_NOTIFICATIONS_V_1_0)) {
                                 nPathObjectBuilder.add(mangle(path), pathValue);
                             }
-                            if (path.startsWith("/api/integrations/v1.0")) {
+                            if (path.startsWith(Constants.API_INTEGRATIONS_V_1_0)) {
                                 iPathObjectBuilder.add(mangle(path), pathValue);
                             }
                         }
@@ -141,11 +143,11 @@ public class OApiSplitter {
 
     private static String mangle(String in) {
         String out = null;
-        if (in.startsWith("/api/integrations/v1.0")) {
-            out = in.substring("/api/integrations/v1.0".length());
+        if (in.startsWith(Constants.API_INTEGRATIONS_V_1_0)) {
+            out = in.substring(Constants.API_INTEGRATIONS_V_1_0.length());
         }
-        if (in.startsWith("/api/notifications/v1.0")) {
-            out = in.substring("/api/notifications/v1.0".length());
+        if (in.startsWith(Constants.API_NOTIFICATIONS_V_1_0)) {
+            out = in.substring(Constants.API_NOTIFICATIONS_V_1_0.length());
         }
         if (out != null && out.isEmpty()) {
             out = "/";
