@@ -103,3 +103,6 @@ CREATE TABLE public.endpoint_defaults
 WITH (
     OIDS = FALSE
 );
+
+ALTER TABLE public.endpoint_webhooks
+    ADD COLUMN basic_authentication jsonb;
