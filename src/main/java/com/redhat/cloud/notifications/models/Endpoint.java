@@ -47,14 +47,15 @@ public class Endpoint {
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Date updated;
 
-    @Schema(oneOf = { WebhookAttributes.class, EmailAttributes.class })
+    @Schema(oneOf = { WebhookAttributes.class, EmailAttributes.class, DefaultAttributes.class })
     @JsonTypeInfo(
             use = JsonTypeInfo.Id.NAME,
             property = "type",
             include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
     @JsonSubTypes({
             @JsonSubTypes.Type(value = WebhookAttributes.class, name = "webhook"),
-            @JsonSubTypes.Type(value = EmailAttributes.class, name = "email")
+            @JsonSubTypes.Type(value = EmailAttributes.class, name = "email"),
+            @JsonSubTypes.Type(value = DefaultAttributes.class, name = "default")
     })
 //    @NotNull
     @Valid
