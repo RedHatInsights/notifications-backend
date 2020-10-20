@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URL;
 
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.when;
+
 /**
  * Do some basic verification of the created
  * openapi.*.json files
@@ -32,6 +35,9 @@ public class OpenApi2Test {
     @TestHTTPResource(TestConstants.API_INTEGRATIONS_V_1 + "/openapi.json")
     URL iUrl1;
 
+    @TestHTTPResource("/api/doesNotExist/v1.0/openapi.json")
+    URL badUrl;
+
     @Test
     public void validateOpenApi() throws Exception {
 
@@ -47,5 +53,16 @@ public class OpenApi2Test {
                 Assert.fail("OpenAPI spec is not valid");
             }
         }
+    }
+
+    @Test
+    void testIgnoreUnknownWhat() {
+
+        given()
+                .accept("application/json")
+            .when()
+                .get(badUrl)
+            .then()
+                .statusCode(404);
     }
 }

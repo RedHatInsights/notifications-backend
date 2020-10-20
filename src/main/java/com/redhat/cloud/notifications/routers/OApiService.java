@@ -1,16 +1,18 @@
 package com.redhat.cloud.notifications.routers;
 
 import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.core.Vertx;
 
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 /**
  * Serve the final OpenAPI documents.
@@ -18,25 +20,28 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 @Path("/api")
 public class OApiService {
 
+    static List<String> whats = new ArrayList<>(2);
+
+    static {
+        whats.add("integrations");
+        whats.add("notifications");
+    }
+
+    @Inject
+    Vertx vertx;
+
     @GET
     @Path("/{what}/v1.0/openapi.json")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<String> serveOpenAPI(@PathParam("what") String what) {
 
-        String resourceName = "/openapi." + what + ".json";
+        if (!whats.contains(what)) {
+            throw new WebApplicationException(404);
+        }
 
-        return Uni.createFrom().item(resourceName)
-                .onItem().transform(n ->
-                        getClass().getResourceAsStream(n)
-                )
-                .onItem().ifNull().failWith(new WebApplicationException(resourceName, NOT_FOUND))
-                .onItem().transform(j -> {
-                    try {
-                        return j.readAllBytes();
-                    } catch (IOException e) {
-                        return new byte[1];
-                    }
-                })
-                .onItem().transform(String::new);
+        String resourceName = "openapi." + what + ".json";
+
+        return vertx.fileSystem().readFile(resourceName)
+                .onItem().transform(b -> b.toString("UTF-8"));
     }
 }
