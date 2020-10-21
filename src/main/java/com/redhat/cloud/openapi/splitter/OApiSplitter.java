@@ -1,4 +1,4 @@
-package com.redhat.cloud.oapi_splitter;
+package com.redhat.cloud.openapi.splitter;
 
 import com.redhat.cloud.notifications.Constants;
 

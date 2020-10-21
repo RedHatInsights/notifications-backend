@@ -5,14 +5,14 @@ import com.reprezen.kaizen.oasparser.model3.OpenApi3;
 import com.reprezen.kaizen.oasparser.val.ValidationResults;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.net.URL;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.when;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Do some basic verification of the created
@@ -44,13 +44,12 @@ public class OpenApi2Test {
         URL[] urls = {nUrl, iUrl, nUrl1, iUrl1};
 
         for (URL url : urls) {
-            System.out.printf("Validating OpenAPI Model at %s\n", url);
             OpenApi3 model = new OpenApi3Parser().parse(url, true);
             if (!model.isValid()) {
                 for (ValidationResults.ValidationItem item : model.getValidationItems()) {
                     System.err.println(item);
                 }
-                Assert.fail("OpenAPI spec is not valid");
+                fail("OpenAPI spec is not valid");
             }
         }
     }

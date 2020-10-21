@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
@@ -18,7 +17,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.util.UUID;
 
-@Path(Constants.API_INTEGRATIONS_V_1_0 + "/applications")
+@Path("/applications")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class ApplicationService {

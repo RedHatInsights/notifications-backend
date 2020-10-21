@@ -25,6 +25,7 @@
     <mockserver-client-java.version>5.5.4</mockserver-client-java.version> <!-- not the newest, but matches what is in org.testcontainers:mockserver -->
     <version.cloud-commons>0.1.1</version.cloud-commons>
     <openapi-parser.version>4.0.4</openapi-parser.version>
+    <maven-exec-plugin.version>3.0.0</maven-exec-plugin.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -252,7 +253,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>${maven-exec-plugin.version}</version>
         <executions>
           <execution>
             <id>split-oapi</id>
@@ -263,7 +264,7 @@
           </execution>
         </executions>
         <configuration>
-          <mainClass>com.redhat.cloud.oapi_splitter.OApiSplitter</mainClass>
+          <mainClass>com.redhat.cloud.openapi.splitter.OApiSplitter</mainClass>
           <workingDirectory>${project.basedir}</workingDirectory>
           <arguments>
             <argument>target/openapi.json</argument>
