@@ -23,7 +23,12 @@ jobs:
       - name: Build with Maven
         run: mvn package
       - uses: actions/upload-artifact@v2
-        name: Upload openapi.json
+        name: Upload notifications openapi.json
         with:
-          name: openapi.json
-          path: target/openapi.json
+          name: openapi.notifications.json
+          path: target/classes/openapi.notifications.json
+      - uses: actions/upload-artifact@v2
+        name: Upload integrations openapi.json
+        with:
+          name: openapi.integrations.json
+          path: target/classes/openapi.integrations.json

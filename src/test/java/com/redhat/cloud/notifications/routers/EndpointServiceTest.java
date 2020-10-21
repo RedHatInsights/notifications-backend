@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -9,10 +10,12 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.Json;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -30,6 +33,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class EndpointServiceTest {
+
+    @BeforeEach
+    void beforeEach() {
+        RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
+    }
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;

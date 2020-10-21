@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
@@ -39,7 +40,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.UUID;
 
-@Path("/endpoints")
+@Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 // Email endpoints are not added at this point

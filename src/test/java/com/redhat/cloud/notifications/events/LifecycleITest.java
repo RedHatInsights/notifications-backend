@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.EndpointResources;
@@ -12,6 +13,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
@@ -20,8 +22,8 @@ import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -48,6 +50,11 @@ import static org.mockserver.model.HttpResponse.response;
 @TestMethodOrder(MethodOrderer.Alphanumeric.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LifecycleITest {
+
+    @BeforeEach
+    void beforeEach() {
+        RestAssured.basePath = com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
+    }
 
     private Header identityHeader;
 
@@ -80,6 +87,7 @@ public class LifecycleITest {
         Response response = given()
                 .when()
                 .contentType(ContentType.JSON)
+                .basePath("/")
                 .body(Json.encode(app))
                 .post("/applications")
                 .then()
@@ -97,6 +105,7 @@ public class LifecycleITest {
         response = given()
                 .when()
                 .contentType(ContentType.JSON)
+                .basePath("/")
                 .body(Json.encode(eventType))
                 .post(String.format("/applications/%s/eventTypes", appResponse.getId()))
                 .then()
@@ -162,6 +171,7 @@ public class LifecycleITest {
 
         for (Endpoint endpointLink : List.of(endpoint, endpointFail)) {
             given()
+                    .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                     .header(identityHeader)
                     .when()
                     .contentType(ContentType.JSON)
@@ -270,6 +280,7 @@ public class LifecycleITest {
     @Test
     void t04_getUIDetailsAndUnlink() {
         Response response = given()
+                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                 .when()
                 .header(identityHeader)
                 .contentType(ContentType.JSON)
@@ -293,6 +304,7 @@ public class LifecycleITest {
 
         // Fetch the list
         response = given()
+                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .when().get(String.format("/notifications/eventTypes/%d", policiesAll.getId()))
@@ -305,6 +317,7 @@ public class LifecycleITest {
 
         for (Endpoint endpoint : endpoints) {
             given()
+                    .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                     .header(identityHeader)
                     .when()
                     .delete(String.format("/notifications/eventTypes/%d/%s", policiesAll.getId(), endpoint.getId()))
@@ -314,6 +327,7 @@ public class LifecycleITest {
 
         // Fetch the list again
         response = given()
+                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .when().get(String.format("/notifications/eventTypes/%d", policiesAll.getId()))
