@@ -423,7 +423,7 @@ public class EndpointResources extends DatasourceProvider {
                                         return updateWebhooksStatement(endpoint, conn);
                                     }
                                     return Mono.empty();
-                        }),
+                                }),
                         PostgresqlConnection::close);
 
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), endpointMono);

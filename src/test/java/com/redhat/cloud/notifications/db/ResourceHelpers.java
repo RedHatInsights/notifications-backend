@@ -26,7 +26,7 @@ public class ResourceHelpers {
         app.setDescription("...");
         Application added = appResources.createApplication(app).await().indefinitely();
 
-        for(int i = 0; i < 100; i++) {
+        for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
             eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
             eventType.setDescription("... -> " + i);
@@ -37,14 +37,14 @@ public class ResourceHelpers {
     public int[] createTestEndpoints(String tenant, int count) {
         int[] statsValues = new int[3];
         statsValues[0] = count;
-        for(int i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++) {
             // Add new endpoints
             WebhookAttributes webAttr = new WebhookAttributes();
             webAttr.setMethod(WebhookAttributes.HttpType.POST);
             webAttr.setUrl("https://localhost");
 
             Endpoint ep = new Endpoint();
-            if(i > 0) {
+            if (i > 0) {
                 ep.setType(Endpoint.EndpointType.WEBHOOK);
                 ep.setName(String.format("Endpoint %d", count - i));
             } else {
@@ -53,11 +53,11 @@ public class ResourceHelpers {
             }
             ep.setDescription("Automatically generated");
             boolean enabled = (i % (count / 5)) != 0;
-            if(!enabled) {
+            if (!enabled) {
                 statsValues[1]++;
             }
             ep.setEnabled(enabled);
-            if(i > 0) {
+            if (i > 0) {
                 statsValues[2]++;
                 ep.setProperties(webAttr);
             }

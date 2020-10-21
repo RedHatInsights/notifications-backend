@@ -40,8 +40,7 @@ public class MockServerClientConfig {
                 .respond(response()
                         .withStatusCode(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody(access.getPayload())
-                );
+                        .withBody(access.getPayload()));
     }
 
     public void addHttpTestEndpoint(HttpRequest request, HttpResponse response, boolean secure) {

@@ -12,6 +12,6 @@ import javax.ws.rs.ext.Provider;
 public class JaxRsExceptionMapper implements ExceptionMapper<BadRequestException> {
     @Override
     public Response toResponse(BadRequestException exception) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(exception.getMessage()).build();
+        return Response.status(Response.Status.BAD_REQUEST).entity(exception.getMessage()).build();
     }
 }
