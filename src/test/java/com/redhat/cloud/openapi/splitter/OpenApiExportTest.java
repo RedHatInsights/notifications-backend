@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications;
+package com.redhat.cloud.openapi.splitter;
 
 import com.reprezen.kaizen.oasparser.OpenApi3Parser;
 import com.reprezen.kaizen.oasparser.model3.OpenApi3;
@@ -6,7 +6,6 @@ import com.reprezen.kaizen.oasparser.val.ValidationResults;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

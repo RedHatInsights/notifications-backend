@@ -23,7 +23,6 @@ import java.util.Set;
  */
 public class OApiSplitter {
 
-
     public static void main(String[] args) throws Exception {
 
         if (args.length < 2) {

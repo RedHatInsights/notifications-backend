@@ -210,7 +210,7 @@ public class LifecycleITest {
         String inputJson = IOUtils.toString(is, StandardCharsets.UTF_8);
         ingressChan.send(inputJson);
 
-        if(!latch.await(5, TimeUnit.SECONDS)) {
+        if (!latch.await(5, TimeUnit.SECONDS)) {
             fail("HttpServer never received the requests");
 //            mockServerConfig.getMockServerClient().verify(postReq, VerificationTimes.exactly(2));
             HttpRequest[] httpRequests = mockServerConfig.getMockServerClient().retrieveRecordedRequests(postReq);
@@ -233,7 +233,7 @@ public class LifecycleITest {
         Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
         assertEquals(2, endpoints.length);
 
-        for(Endpoint ep : endpoints) {
+        for (Endpoint ep : endpoints) {
             // Fetch the notification history for the endpoints
             response = given()
                     .header(identityHeader)
@@ -249,7 +249,7 @@ public class LifecycleITest {
 
             for (NotificationHistory history : histories) {
                 // Sort first?
-                if(ep.getName().startsWith("negative")) {
+                if (ep.getName().startsWith("negative")) {
                     // TODO Validate that we actually reach this part
                     assertFalse(history.isInvocationResult());
                     WebhookAttributes attr = (WebhookAttributes) ep.getProperties();
@@ -294,7 +294,7 @@ public class LifecycleITest {
 
         EventType policiesAll = null;
         for (EventType eventType : typesResponse) {
-            if(eventType.getName().equals("All") && eventType.getApplication().getName().equals("Policies")) {
+            if (eventType.getName().equals("All") && eventType.getApplication().getName().equals("Policies")) {
                 policiesAll = eventType;
                 break;
             }
