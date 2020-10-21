@@ -54,6 +54,10 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
             req.putHeader(TOKEN_HEADER, properties.getSecretToken());
         }
 
+        if (properties.getBasicAuthentication() != null) {
+            req.basicAuthentication(properties.getBasicAuthentication().getUsername(), properties.getBasicAuthentication().getPassword());
+        }
+
         final long startTime = System.currentTimeMillis();
 
         // Note, transformer may not block! Otherwise, use a Uni<> and send that when ready

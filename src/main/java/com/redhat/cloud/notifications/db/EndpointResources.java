@@ -8,6 +8,7 @@ import io.r2dbc.postgresql.api.PostgresqlStatement;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.converters.uni.UniReactorConverters;
+import io.vertx.core.json.Json;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -71,7 +72,7 @@ public class EndpointResources extends DatasourceProvider {
 
     private Flux<Endpoint> insertWebhooksStatement(Endpoint endpoint, PostgresqlConnection conn) {
         WebhookAttributes attr = (WebhookAttributes) endpoint.getProperties();
-        PostgresqlStatement bind = conn.createStatement("INSERT INTO public.endpoint_webhooks (endpoint_id, url, method, disable_ssl_verification, secret_token) VALUES ($1, $2, $3, $4, $5)")
+        PostgresqlStatement bind = conn.createStatement("INSERT INTO public.endpoint_webhooks (endpoint_id, url, method, disable_ssl_verification, secret_token, basic_authentication) VALUES ($1, $2, $3, $4, $5, $6)")
                 .bind("$1", endpoint.getId())
                 .bind("$2", attr.getUrl())
                 .bind("$3", attr.getMethod().toString())
@@ -81,6 +82,13 @@ public class EndpointResources extends DatasourceProvider {
             bind.bind("$5", attr.getSecretToken());
         } else {
             bind.bindNull("$5", String.class);
+        }
+
+        if (attr.getBasicAuthentication() != null) {
+            String encodedJson = Json.encode(attr.getBasicAuthentication());
+            bind.bind("$6", io.r2dbc.postgresql.codec.Json.of(encodedJson));
+        } else {
+            bind.bindNull("$6", io.r2dbc.postgresql.codec.Json.class);
         }
 
         Flux<PostgresqlResult> execute = bind
@@ -96,7 +104,7 @@ public class EndpointResources extends DatasourceProvider {
     }
 
     private static final String basicEndpointSelectQuery = "SELECT e.account_id, e.id AS endpoint_id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated";
-    private static final String webhookEndpointSelectQuery = ", ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token";
+    private static final String webhookEndpointSelectQuery = ", ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token, ew.basic_authentication";
     private static final String basicEndpointGetQuery = basicEndpointSelectQuery + webhookEndpointSelectQuery + " FROM public.endpoints AS e LEFT JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id ";
 
     public Multi<Endpoint> getEndpointsPerType(String tenant, Endpoint.EndpointType type, boolean activeOnly) {
@@ -200,6 +208,12 @@ public class EndpointResources extends DatasourceProvider {
                     String method = row.get("method", String.class);
                     attr.setMethod(WebhookAttributes.HttpType.valueOf(method));
                     attr.setUrl(row.get("url", String.class));
+
+                    String basicAuthentication = row.get("basic_authentication", String.class);
+                    if (basicAuthentication != null) {
+                        attr.setBasicAuthentication(Json.decodeValue(basicAuthentication, WebhookAttributes.BasicAuthentication.class));
+                    }
+
                     endpoint.setProperties(attr);
                     break;
                 default:

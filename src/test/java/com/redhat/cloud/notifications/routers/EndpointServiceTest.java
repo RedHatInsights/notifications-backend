@@ -590,6 +590,56 @@ public class EndpointServiceTest {
         assertEquals("Endpoint 26", endpoints[0].getName());
     }
 
+    @Test
+    void testWebhookAttributes() {
+        String tenant = "testWebhookAttributes";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        // Add new endpoints
+        WebhookAttributes webAttr = new WebhookAttributes();
+        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setDisableSSLVerification(false);
+        webAttr.setSecretToken("my-super-secret-token");
+        webAttr.setBasicAuthentication(new WebhookAttributes.BasicAuthentication("myuser", "mypassword"));
+        webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+
+        Endpoint ep = new Endpoint();
+        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setName("endpoint to find");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(webAttr);
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
+        assertNotNull(responsePoint.getId());
+
+        // Fetch single endpoint also and verify
+        Endpoint responsePointSingle = fetchSingle(responsePoint.getId(), identityHeader);
+
+        assertNotNull(responsePoint.getProperties());
+        assertTrue(responsePointSingle.isEnabled());
+        assertNotNull(responsePointSingle.getProperties());
+        assertTrue(responsePointSingle.getProperties() instanceof WebhookAttributes);
+
+        WebhookAttributes attr = (WebhookAttributes) responsePointSingle.getProperties();
+        assertNotNull(attr.getBasicAuthentication());
+        assertEquals("mypassword", attr.getBasicAuthentication().getPassword());
+    }
+
     //    @Test
     void testConnectionCount() {
         String tenant = "count";

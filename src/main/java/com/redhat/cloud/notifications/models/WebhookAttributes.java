@@ -7,6 +7,26 @@ import javax.validation.constraints.NotNull;
 
 public class WebhookAttributes extends Attributes {
 
+    public static class BasicAuthentication {
+        private String username;
+        private String password;
+
+        public BasicAuthentication() { }
+
+        public BasicAuthentication(String username, String password) {
+            this.username = username;
+            this.password = password;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+    }
+
     public enum HttpType {
         GET, POST, PUT
     }
@@ -24,6 +44,9 @@ public class WebhookAttributes extends Attributes {
 
     @JsonProperty("secret_token")
     private String secretToken; // TODO Should be optional
+
+    @JsonProperty("basic_authentication")
+    private BasicAuthentication basicAuthentication;
 
     public WebhookAttributes() {
     }
@@ -62,6 +85,14 @@ public class WebhookAttributes extends Attributes {
 
     public String getSecretToken() {
         return secretToken;
+    }
+
+    public BasicAuthentication getBasicAuthentication() {
+        return basicAuthentication;
+    }
+
+    public void setBasicAuthentication(BasicAuthentication basicAuthentication) {
+        this.basicAuthentication = basicAuthentication;
     }
 
     @Override
