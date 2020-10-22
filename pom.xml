@@ -216,23 +216,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
                 <configuration>
-                    <excludedGroups>integration</excludedGroups>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                     </systemPropertyVariables>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>integration-test</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration>
-                            <excludedGroups>!integration</excludedGroups>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -262,28 +249,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>${maven-exec-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>split-oapi</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <mainClass>com.redhat.cloud.openapi.splitter.OApiSplitter</mainClass>
-                    <workingDirectory>${project.basedir}</workingDirectory>
-                    <arguments>
-                        <argument>target/openapi.json</argument>
-                        <argument>target/classes/</argument>
-                    </arguments>
-                </configuration>
             </plugin>
         </plugins>
     </build>
