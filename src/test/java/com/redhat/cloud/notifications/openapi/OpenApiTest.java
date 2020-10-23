@@ -1,4 +1,4 @@
-package com.redhat.cloud.openapi.splitter;
+package com.redhat.cloud.notifications.openapi;
 
 import com.redhat.cloud.notifications.TestConstants;
 import com.reprezen.kaizen.oasparser.OpenApi3Parser;
@@ -6,10 +6,13 @@ import com.reprezen.kaizen.oasparser.model3.OpenApi3;
 import com.reprezen.kaizen.oasparser.val.ValidationResults;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -19,8 +22,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * openapi.*.json files
  */
 @QuarkusTest
-@Tag("integration")
-public class OpenApi2Test {
+public class OpenApiTest {
 
     // QuarkusTest will inject the host+port for us.
     @TestHTTPResource(TestConstants.API_NOTIFICATIONS_V_1_0 + "/openapi.json")
@@ -62,5 +64,17 @@ public class OpenApi2Test {
                 .get(badUrl)
                 .then()
                 .statusCode(404);
+    }
+
+    @Test
+    void exportOpenApiFile() throws Exception {
+
+        InputStream in = nUrl.openStream();
+        Files.copy(in, Paths.get("./target/openapi.notifications.json"), StandardCopyOption.REPLACE_EXISTING);
+        in.close();
+
+        in = iUrl.openStream();
+        Files.copy(in, Paths.get("./target/openapi.integrations.json"), StandardCopyOption.REPLACE_EXISTING);
+        in.close();
     }
 }
