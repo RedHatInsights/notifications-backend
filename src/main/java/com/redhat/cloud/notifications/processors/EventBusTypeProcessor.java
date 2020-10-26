@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors;
 
 import com.redhat.cloud.notifications.models.Notification;
+import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Vertx;
 
@@ -12,7 +13,7 @@ public class EventBusTypeProcessor implements EndpointTypeProcessor {
     @Inject
     Vertx vertx;
 
-    public Uni<Void> process(Notification notification) {
+    public Uni<NotificationHistory> process(Notification notification) {
         return Uni.createFrom().nullItem();
 //        return vertx.eventBus().publisher(getAddress(notification.getTenant())).write(notification.toString());
     }

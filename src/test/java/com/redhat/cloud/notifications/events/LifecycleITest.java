@@ -56,6 +56,9 @@ import static org.mockserver.model.HttpResponse.response;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LifecycleITest {
 
+    private static final String APP_NAME = "PoliciesLifecycleTest";
+    private static final String EVENT_TYPE_NAME = "All";
+
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
@@ -86,7 +89,7 @@ public class LifecycleITest {
     @Test
     void t01_testAdding() {
         Application app = new Application();
-        app.setName("Policies");
+        app.setName(APP_NAME);
         app.setDescription("The best app in the life");
 
         Response response = given()
@@ -104,7 +107,7 @@ public class LifecycleITest {
 
         // Create eventType
         EventType eventType = new EventType();
-        eventType.setName("All");
+        eventType.setName(EVENT_TYPE_NAME);
         eventType.setDescription("Policies will take care of the rules");
 
         response = given()
@@ -212,10 +215,10 @@ public class LifecycleITest {
 
         // Read the input file and send it
         Action targetAction = new Action();
-        targetAction.setApplication("Policies");
+        targetAction.setApplication(APP_NAME);
         targetAction.setTimestamp(LocalDateTime.now());
         targetAction.setEventId(UUID.randomUUID().toString());
-        targetAction.setEventType("Any");
+        targetAction.setEventType(EVENT_TYPE_NAME);
         targetAction.setTags(new ArrayList<>());
 
         Context context = new Context();
@@ -320,7 +323,7 @@ public class LifecycleITest {
 
         EventType policiesAll = null;
         for (EventType eventType : typesResponse) {
-            if (eventType.getName().equals("All") && eventType.getApplication().getName().equals("Policies")) {
+            if (eventType.getName().equals(EVENT_TYPE_NAME) && eventType.getApplication().getName().equals(APP_NAME)) {
                 policiesAll = eventType;
                 break;
             }
@@ -366,7 +369,7 @@ public class LifecycleITest {
     }
 
     @Test
-    void t05_addEmptyDefaultSettings() throws Exception {
+    void t05_addEmptyDefaultSettings() {
         // Create default endpoint
         Endpoint ep = new Endpoint();
         ep.setType(Endpoint.EndpointType.DEFAULT);
@@ -401,7 +404,7 @@ public class LifecycleITest {
         EventType[] eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
         EventType targetType = null;
         for (EventType eventType : eventTypes) {
-            if (eventType.getApplication().getName().equals("Policies") && eventType.getName().equals("All")) {
+            if (eventType.getApplication().getName().equals(APP_NAME) && eventType.getName().equals(EVENT_TYPE_NAME)) {
                 targetType = eventType;
             }
         }

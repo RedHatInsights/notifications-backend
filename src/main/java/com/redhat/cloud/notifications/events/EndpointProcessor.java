@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.db.EndpointResources;
+import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
+import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.EventBusTypeProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
@@ -28,27 +30,35 @@ public class EndpointProcessor {
     DefaultProcessor defaultProcessor;
 
     @Inject
+    NotificationResources notifResources;
+
+    @Inject
     WebhookTypeProcessor webhooks;
 
-    public Uni<Void> process(Action action) {
-        // TODO ApplicationName and eventType are going to be extracted from the new input model - from another PR
-        //      We also need to add the original message's unique id to the notification
+    /*
+    TODO:
+        - Email output: Extend WebhookTypeProcessor
+        - EndpointProcessor: Move the NotificationHistory store as last stage
+            - Add Endpoint data to the "NotificationHistory" object so we know when to store the data
+     */
 
-        Uni<Void> endpointsCallResult = getEndpoints(action.getEvent().getAccountId(), "Policies", "All")
+    public Uni<Void> process(Action action) {
+        Multi<NotificationHistory> endpointsCallResult = getEndpoints(action.getEvent().getAccountId(), action.getApplication(), action.getEventType())
                 .onItem()
                 .transformToUni(endpoint -> {
                     Notification endpointNotif = new Notification(action, endpoint);
                     return endpointTypeToProcessor(endpoint.getType()).process(endpointNotif);
                 })
                 .merge()
-                .onItem()
-                .ignoreAsUni();
+                .transform().byFilteringItemsWith(nh -> nh.getEndpoint().getType() == Endpoint.EndpointType.WEBHOOK)
+                .onItem().transformToUni(history -> notifResources.createNotificationHistory(history))
+                .merge();
 
-        // Notification is an endpoint type as well? Must it be created manually each time?
+        // Should this be a separate endpoint type as well (since it is configurable) ?
         Notification notification = new Notification(action, null);
-        Uni<Void> notificationResult = notificationProcessor.process(notification);
+        Uni<NotificationHistory> notificationResult = notificationProcessor.process(notification);
 
-        return Uni.combine().all().unis(endpointsCallResult, notificationResult).discardItems();
+        return Uni.combine().all().unis(endpointsCallResult.onItem().ignoreAsUni(), notificationResult).discardItems();
     }
 
     public EndpointTypeProcessor endpointTypeToProcessor(Endpoint.EndpointType endpointType) {
