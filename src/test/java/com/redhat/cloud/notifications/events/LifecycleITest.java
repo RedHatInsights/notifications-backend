@@ -53,7 +53,7 @@ public class LifecycleITest {
 
     @BeforeEach
     void beforeEach() {
-        RestAssured.basePath = com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
+        RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
     }
 
     private Header identityHeader;
@@ -217,6 +217,8 @@ public class LifecycleITest {
             assertEquals(2, httpRequests.length);
             // Verify calls were correct, sort first?
         }
+
+        mockServerConfig.getMockServerClient().clear(postReq);
     }
 
     @Test
@@ -337,5 +339,108 @@ public class LifecycleITest {
 
         endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
         assertEquals(0, endpoints.length);
+    }
+
+    @Test
+    void t05_addEmptyDefaultSettings() throws Exception {
+        // Create default endpoint
+        Endpoint ep = new Endpoint();
+        ep.setType(Endpoint.EndpointType.DEFAULT);
+        ep.setName("Default endpoint");
+        ep.setDescription("The ultimate fallback");
+        ep.setEnabled(true);
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint defaultEndpoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
+        assertNotNull(defaultEndpoint.getId());
+
+        // Get the eventTypeId
+        response = given()
+                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
+                .when()
+                .header(identityHeader)
+                .contentType(ContentType.JSON)
+                .get("/notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        EventType[] eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        EventType targetType = null;
+        for (EventType eventType : eventTypes) {
+            if (eventType.getApplication().getName().equals("Policies") && eventType.getName().equals("All")) {
+                targetType = eventType;
+            }
+        }
+        assertNotNull(targetType);
+
+        // Link default to eventType
+        given()
+                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .put(String.format("/notifications/eventTypes/%d/%s", targetType.getId(), defaultEndpoint.getId()))
+                .then()
+                .statusCode(200);
+
+        // Get existing endpoints
+        // Link them to the default
+    }
+
+//    @Test
+//    void t06_testEmptyDefaultTrigger() throws Exception {
+//        // Send event there, expect it to be processed but nothing is sent and no error happens
+//        InputStream is = getClass().getClassLoader().getResourceAsStream("input/platform.notifications.ingress.json");
+//        String inputJson = IOUtils.toString(is, StandardCharsets.UTF_8);
+//        ingressChan.send(inputJson);
+//
+//        // How do we check the process was completed and no errors appeared? We have no metrics yet
+//
+//        // Basically repeat t02_pushMessage
+//        // The end result should be the same
+//
+//        // TODO Delete DefaultAttributes and that sort of stuff to ensure it doesn't mess up anything
+//        // TODO Add Micrometer metrics here also and update Quarkus?
+//    }
+
+    @Test
+    void t06_linkEndpointsAndTest() throws Exception {
+        // Get the existing endpoints (not attached to anything)
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        assertEquals(3, endpoints.length);
+
+        for (Endpoint endpoint : endpoints) {
+            if (endpoint.getType() != Endpoint.EndpointType.DEFAULT) {
+                given()
+                        .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
+                        .header(identityHeader)
+                        .when()
+                        .contentType(ContentType.JSON)
+                        .put(String.format("/notifications/defaults/%s", endpoint.getId()))
+                        .then()
+                        .statusCode(200);
+            }
+        }
+
+        t02_pushMessage();
     }
 }

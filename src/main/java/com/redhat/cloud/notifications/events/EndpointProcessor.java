@@ -63,6 +63,7 @@ public class EndpointProcessor {
     public Multi<Endpoint> getEndpoints(String tenant, String applicationName, String eventTypeName) {
         return resources.getTargetEndpoints(tenant, applicationName, eventTypeName)
                 .flatMap((Function<Endpoint, Publisher<Endpoint>>) endpoint -> {
+                    // If the tenant has a default endpoint for the eventType, then add the target endpoints here
                     if (endpoint.getType() == Endpoint.EndpointType.DEFAULT) {
                         return defaultProcessor.getDefaultEndpoints(endpoint);
                     }
