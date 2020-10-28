@@ -7,18 +7,24 @@ import com.redhat.cloud.notifications.models.WebhookAttributes;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.List;
 
 @ApplicationScoped
 public class ResourceHelpers {
 
     public static final String TEST_APP_NAME = "Tester";
-    public static final String TEST_EVENT_TYPE_FORMAT = "EventType%d";
+    public static final String TEST_APP_NAME_2 = "MyOtherTester";
+    public static final String TEST_EVENT_TYPE_FORMAT = "%s_EventType%d";
 
     @Inject
     EndpointResources resources;
 
     @Inject
     ApplicationResources appResources;
+
+    public List<Application> getApplications() {
+        return appResources.getApplications().collectItems().asList().await().indefinitely();
+    }
 
     public void createTestAppAndEventTypes() {
         Application app = new Application();
@@ -28,9 +34,21 @@ public class ResourceHelpers {
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
-            eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
+            eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, TEST_APP_NAME, i));
             eventType.setDescription("... -> " + i);
             appResources.addEventTypeToApplication(added.getId(), eventType).await().indefinitely();
+        }
+
+        Application app2 = new Application();
+        app2.setName(TEST_APP_NAME_2);
+        app2.setDescription("...");
+        Application added2 = appResources.createApplication(app2).await().indefinitely();
+
+        for (int i = 0; i < 100; i++) {
+            EventType eventType = new EventType();
+            eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, TEST_APP_NAME_2, i));
+            eventType.setDescription("... -> " + i);
+            appResources.addEventTypeToApplication(added2.getId(), eventType).await().indefinitely();
         }
     }
 

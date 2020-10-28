@@ -26,6 +26,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -89,8 +90,8 @@ public class NotificationService {
     @GET
     @Path("/eventTypes")
     @RolesAllowed("read")
-    public Multi<EventType> getEventTypes(@BeanParam Query query) {
-        return apps.getEventTypes(query);
+    public Multi<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationId") UUID applicationId) {
+        return apps.getEventTypes(query, applicationId);
     }
 
     @PUT

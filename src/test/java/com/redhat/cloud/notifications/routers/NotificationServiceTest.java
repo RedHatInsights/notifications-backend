@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -20,6 +21,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import javax.inject.Inject;
+
+import java.util.List;
+import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -65,11 +69,34 @@ public class NotificationServiceTest {
                 .extract().response();
 
         EventType[] eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
-        assertTrue(eventTypes.length >= 100); // Depending on the test order, we might have existing application types also
+        assertTrue(eventTypes.length >= 200); // Depending on the test order, we might have existing application types also
 
         EventType policiesAll = eventTypes[0];
         assertNotNull(policiesAll.getId());
         assertNotNull(policiesAll.getApplication());
         assertNotNull(policiesAll.getApplication().getId());
+    }
+
+    @Test
+    void testEventTypeFetchingByApplication() {
+
+        List<Application> applications = this.helpers.getApplications();
+        UUID firstApplicationId = applications.get(0).getId();
+
+        Response response = given()
+                .when()
+                .header(identityHeader)
+                .contentType(ContentType.JSON)
+                .get("/notifications/eventTypes?applicationId=" + firstApplicationId)
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        EventType[] eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        for (EventType ev : eventTypes) {
+            assertTrue(ev.getApplication().getId().equals(firstApplicationId));
+        }
+
+        assertTrue(eventTypes.length >= 100); // Depending on the test order, we might have existing application types also
     }
 }
