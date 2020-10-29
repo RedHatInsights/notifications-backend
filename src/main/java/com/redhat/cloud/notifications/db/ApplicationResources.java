@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
+import io.r2dbc.postgresql.api.PostgresqlStatement;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import reactor.core.publisher.Flux;
@@ -142,17 +143,30 @@ public class ApplicationResources {
     }
 
     public Multi<EventType> getEventTypes(Query limiter) {
+        return this.getEventTypes(limiter, null);
+    }
+
+    public Multi<EventType> getEventTypes(Query limiter, UUID applicationId) {
         String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.description AS et_desc, a.id AS a_id, a.name AS a_name, a.description as a_description FROM public.event_type et " +
                 "JOIN public.application_event_type aet ON aet.event_type_id = et.id " +
                 "JOIN public.applications a ON a.id = aet.application_id";
+
+        if (applicationId != null) {
+            basicQuery += " WHERE a.id = $1";
+        }
 
         String query = limiter.getModifiedQuery(basicQuery);
 
         return connectionPublisher.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
-                            Flux<PostgresqlResult> execute = c2.createStatement(query)
-                                    .execute();
+                            PostgresqlStatement statement = c2.createStatement(query);
+
+                            if (applicationId != null) {
+                                statement = statement.bind("$1", applicationId);
+                            }
+
+                            Flux<PostgresqlResult> execute = statement.execute();
 
                             return mapResultSetToEventTypes(execute);
                         })
