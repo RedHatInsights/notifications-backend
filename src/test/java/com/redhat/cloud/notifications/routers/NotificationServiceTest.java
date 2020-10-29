@@ -81,20 +81,20 @@ public class NotificationServiceTest {
     void testEventTypeFetchingByApplication() {
 
         List<Application> applications = this.helpers.getApplications();
-        UUID firstApplicationId = applications.get(0).getId();
+        UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getId();
 
         Response response = given()
                 .when()
                 .header(identityHeader)
                 .contentType(ContentType.JSON)
-                .get("/notifications/eventTypes?applicationId=" + firstApplicationId)
+                .get("/notifications/eventTypes?applicationId=" + myOtherTesterApplicationId)
                 .then()
                 .statusCode(200)
                 .extract().response();
 
         EventType[] eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
         for (EventType ev : eventTypes) {
-            assertTrue(ev.getApplication().getId().equals(firstApplicationId));
+            assertTrue(ev.getApplication().getId().equals(myOtherTesterApplicationId));
         }
 
         assertTrue(eventTypes.length >= 100); // Depending on the test order, we might have existing application types also
