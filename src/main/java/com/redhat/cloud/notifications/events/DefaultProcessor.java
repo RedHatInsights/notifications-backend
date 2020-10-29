@@ -13,6 +13,7 @@ public class DefaultProcessor {
     EndpointResources resources;
 
     public Multi<Endpoint> getDefaultEndpoints(Endpoint defaultEndpoint) {
-        return resources.getDefaultEndpoints(defaultEndpoint.getTenant());
+        return resources.getDefaultEndpoints(defaultEndpoint.getTenant())
+                .transform().byFilteringItemsWith(Endpoint::isEnabled);
     }
 }
