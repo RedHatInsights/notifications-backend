@@ -14,7 +14,7 @@ public class ResourceHelpers {
 
     public static final String TEST_APP_NAME = "Tester";
     public static final String TEST_APP_NAME_2 = "MyOtherTester";
-    public static final String TEST_EVENT_TYPE_FORMAT = "%s_EventType%d";
+    public static final String TEST_EVENT_TYPE_FORMAT = "EventType%d";
 
     @Inject
     EndpointResources resources;
@@ -34,7 +34,7 @@ public class ResourceHelpers {
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
-            eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, TEST_APP_NAME, i));
+            eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
             eventType.setDescription("... -> " + i);
             appResources.addEventTypeToApplication(added.getId(), eventType).await().indefinitely();
         }
@@ -46,7 +46,7 @@ public class ResourceHelpers {
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
-            eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, TEST_APP_NAME_2, i));
+            eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
             eventType.setDescription("... -> " + i);
             appResources.addEventTypeToApplication(added2.getId(), eventType).await().indefinitely();
         }
