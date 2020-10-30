@@ -9,10 +9,13 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.EventBusTypeProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.reactivestreams.Publisher;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.function.Function;
@@ -35,14 +38,18 @@ public class EndpointProcessor {
     @Inject
     WebhookTypeProcessor webhooks;
 
-    /*
-    TODO:
-        - Email output: Extend WebhookTypeProcessor
-        - EndpointProcessor: Move the NotificationHistory store as last stage
-            - Add Endpoint data to the "NotificationHistory" object so we know when to store the data
-     */
+    @Inject
+    MeterRegistry registry;
+
+    private Counter processedItems;
+
+    @PostConstruct
+    void init() {
+        processedItems = registry.counter("processor.input.processed");
+    }
 
     public Uni<Void> process(Action action) {
+        processedItems.increment();
         Multi<NotificationHistory> endpointsCallResult = getEndpoints(action.getEvent().getAccountId(), action.getApplication(), action.getEventType())
                 .onItem()
                 .transformToUni(endpoint -> {
