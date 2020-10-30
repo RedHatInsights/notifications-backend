@@ -38,7 +38,11 @@ public class EventConsumer {
                                 .transformToUni(action -> destinations.process(action))
                         // Receive only notification of completion
                 )
-                .onFailure().invoke(Throwable::printStackTrace) // TODO Proper error handling
+                .onFailure().invokeUni(m -> {
+                    // TODO This will now simply forfeit the message, despite the error (internal or external)
+                    CompletionStage<Void> ack = input.ack();
+                    return Uni.createFrom().completionStage(ack);
+                })
                 // Third pipeline stage - handle failures (nothing should be here) and ack the Kafka topic
                 .onItem().transformToUni(m -> {
                     CompletionStage<Void> ack = input.ack();
