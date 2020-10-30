@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications.processors.webhooks;
 
-import com.redhat.cloud.notifications.db.EndpointResources;
-import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -11,6 +9,7 @@ import com.redhat.cloud.notifications.processors.webhooks.transformers.PoliciesT
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
+import io.vertx.ext.web.client.impl.HttpRequestImpl;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
@@ -30,15 +29,9 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     Vertx vertx;
 
     @Inject
-    EndpointResources resources;
-
-    @Inject
-    NotificationResources notifResources;
-
-    @Inject
     PoliciesTransformer transformer;
 
-    public Uni<Void> process(Notification item) {
+    public Uni<NotificationHistory> process(Notification item) {
         Endpoint endpoint = item.getEndpoint();
         WebhookAttributes properties = (WebhookAttributes) endpoint.getProperties();
 
@@ -57,10 +50,13 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
             req.basicAuthentication(properties.getBasicAuthentication().getUsername(), properties.getBasicAuthentication().getPassword());
         }
 
-        final long startTime = System.currentTimeMillis();
+        Uni<String> payload = transformer.transform(item.getAction());
 
-        // Note, transformer may not block! Otherwise, use a Uni<> and send that when ready
-        Uni<JsonObject> payload = transformer.transform(item.getAction());
+        return doHttpRequest(item, req, payload);
+    }
+
+    public Uni<NotificationHistory> doHttpRequest(Notification item, HttpRequest<Buffer> req, Uni<String> payload) {
+        final long startTime = System.currentTimeMillis();
 
         return payload.onItem()
                 .transformToUni(json -> req.sendJson(json)
@@ -82,27 +78,30 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                                 history.setInvocationResult(false);
                             }
 
+                            HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
+
                             if (!history.isInvocationResult()) {
                                 JsonObject details = new JsonObject();
-                                details.put("url", properties.getUrl());
-                                details.put("method", properties.getMethod());
+                                details.put("url", getCallUrl(reqImpl));
+                                details.put("method", reqImpl.rawMethod());
                                 details.put("code", resp.statusCode());
                                 // This isn't async body reading, lets hope vertx handles it async underneath before calling this apply method
                                 details.put("response_body", resp.bodyAsString());
                                 history.setDetails(details);
                             }
 
-                            // TODO Add input item's unique ID to the NotificationHistory
                             return history;
                         }).onFailure().recoverWithItem(t -> {
                             // TODO Duplicate code with the success part
                             final long endTime = System.currentTimeMillis();
                             NotificationHistory history = getHistoryStub(item, endTime - startTime);
 
+                            HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
+
                             // TODO Duplicate code with the error return code part
                             JsonObject details = new JsonObject();
-                            details.put("url", properties.getUrl());
-                            details.put("method", properties.getMethod());
+                            details.put("url", reqImpl.uri());
+                            details.put("method", reqImpl.method());
                             details.put("error_message", t.getMessage()); // TODO This message isn't always the most descriptive..
                             history.setDetails(details);
 
@@ -116,15 +115,24 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                             // io.netty.channel.ConnectTimeoutException: connection timed out: webhook.site/46.4.105.116:443
                             return history;
                         })
-                )
-                .onItem().transformToUni(history -> notifResources.createNotificationHistory(history))
-                .onItem().ignore().andContinueWithNull();
+                );
+    }
+
+    private String getCallUrl(HttpRequestImpl<Buffer> reqImpl) {
+        String protocol;
+        if (reqImpl.ssl()) {
+            protocol = "https";
+        } else {
+            protocol = "http";
+        }
+
+        return protocol + "://" + reqImpl.host() + ":" + reqImpl.port() + reqImpl.uri();
     }
 
     private NotificationHistory getHistoryStub(Notification item, long invocationTime) {
         NotificationHistory history = new NotificationHistory();
         history.setInvocationTime(invocationTime);
-        history.setEndpointId(item.getEndpoint().getId());
+        history.setEndpoint(item.getEndpoint());
         history.setTenant(item.getEndpoint().getTenant());
         history.setEventId(item.getEventId());
         history.setInvocationResult(false);

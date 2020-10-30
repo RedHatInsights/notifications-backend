@@ -11,6 +11,10 @@ public class NotificationHistory {
     private Integer id;
     private UUID endpointId;
 
+    // Internally we use Endpoint, but for the REST interface only endpointId is returned
+    @JsonIgnore
+    private Endpoint endpoint;
+
     @JsonIgnore
     private String tenant;
 
@@ -84,5 +88,13 @@ public class NotificationHistory {
 
     public void setEventId(String eventId) {
         this.eventId = eventId;
+    }
+
+    public Endpoint getEndpoint() {
+        return endpoint;
+    }
+
+    public void setEndpoint(Endpoint endpoint) {
+        this.endpoint = endpoint;
     }
 }

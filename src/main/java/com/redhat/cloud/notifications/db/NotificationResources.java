@@ -35,7 +35,7 @@ public class NotificationResources {
 
                     PostgresqlStatement st = conn.createStatement(query)
                             .bind("$1", history.getTenant())
-                            .bind("$2", history.getEndpointId())
+                            .bind("$2", history.getEndpoint().getId())
                             .bind("$3", history.getInvocationTime())
                             .bind("$4", history.isInvocationResult())
                             .bind("$5", history.getEventId());
