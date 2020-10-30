@@ -1,0 +1,76 @@
+{
+  "namespace": "com.redhat.cloud.notifications.ingress",
+  "type": "record",
+  "name": "Action",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "local-timestamp-millis"
+      }
+    },
+    {
+      "name": "event_type",
+      "type": "string"
+    },
+    {
+      "name": "application",
+      "type": "string"
+    },
+    {
+      "name": "endpoint_id",
+      "type": [
+        "null",
+        "string"
+      ],
+      "logicalType": "uuid"
+    },
+    {
+      "name": "tags",
+      "type": {
+        "type": "array",
+        "items": {
+          "name": "Tag",
+          "type": "record",
+          "fields": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "value",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "default": []
+    },
+    {
+      "name": "event",
+      "type": {
+        "type": "record",
+        "name": "Context",
+        "fields": [
+          {
+            "name": "account_id",
+            "type": "string"
+          },
+          {
+            "name": "message",
+            "type": {
+              "name": "MessageFields",
+              "type": "map",
+              "values": "string"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

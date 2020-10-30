@@ -31,20 +31,19 @@ public class NotificationResources {
     public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {
         Flux<NotificationHistory> notificationHistoryFlux = Flux.usingWhen(connectionPublisher.get(),
                 conn -> {
-                    String query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result) VALUES ($1, $2, $3, $4)";
-                    if (!history.isInvocationResult()) {
-                        // Negative result
-                        query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result, details) VALUES ($1, $2, $3, $4, $5)";
-                    }
+                    String query = "INSERT INTO public.notification_history (account_id, endpoint_id, invocation_time, invocation_result, event_id, details) VALUES ($1, $2, $3, $4, $5, $6)";
 
                     PostgresqlStatement st = conn.createStatement(query)
                             .bind("$1", history.getTenant())
                             .bind("$2", history.getEndpointId())
                             .bind("$3", history.getInvocationTime())
-                            .bind("$4", history.isInvocationResult());
+                            .bind("$4", history.isInvocationResult())
+                            .bind("$5", history.getEventId());
 
-                    if (!history.isInvocationResult()) {
-                        st = st.bind("$5", Json.of(history.getDetails().encode()));
+                    if (history.getDetails() != null) {
+                        st.bind("$6", Json.of(history.getDetails().encode()));
+                    } else {
+                        st.bindNull("$6", Json.class);
                     }
                     Flux<PostgresqlResult> execute = st.returnGeneratedValues("id", "created").execute();
                     return execute.flatMap(res -> res.map((row, rowMetadata) -> {
@@ -59,7 +58,7 @@ public class NotificationResources {
     }
 
     public Multi<NotificationHistory> getNotificationHistory(String tenant, UUID endpoint) {
-        String query = "SELECT id, endpoint_id, created, invocation_time, invocation_result FROM public.notification_history WHERE account_id = $1 AND endpoint_id = $2";
+        String query = "SELECT id, endpoint_id, created, invocation_time, invocation_result, event_id FROM public.notification_history WHERE account_id = $1 AND endpoint_id = $2";
         Flux<NotificationHistory> endpointFlux = Flux.usingWhen(connectionPublisher.get(),
                 conn -> {
                     Flux<PostgresqlResult> resultFlux = conn.createStatement(query)
@@ -81,6 +80,7 @@ public class NotificationResources {
             history.setEndpointId(row.get("endpoint_id", UUID.class));
             history.setInvocationResult(row.get("invocation_result", Boolean.class));
             history.setInvocationTime(row.get("invocation_time", Integer.class));
+            history.setEventId(row.get("event_id", String.class));
 
             return history;
         }));

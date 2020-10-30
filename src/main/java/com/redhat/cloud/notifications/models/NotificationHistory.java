@@ -20,6 +20,8 @@ public class NotificationHistory {
     private Date created;
     private JsonObject details;
 
+    private String eventId;
+
     public Integer getId() {
         return id;
     }
@@ -74,5 +76,13 @@ public class NotificationHistory {
 
     public void setDetails(JsonObject details) {
         this.details = details;
+    }
+
+    public String getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
     }
 }

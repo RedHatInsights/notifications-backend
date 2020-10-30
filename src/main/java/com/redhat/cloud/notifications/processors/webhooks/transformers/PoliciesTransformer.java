@@ -1,17 +1,11 @@
 package com.redhat.cloud.notifications.processors.webhooks.transformers;
 
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
-import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.condition.ConditionEval;
-import org.hawkular.alerts.api.model.condition.EventConditionEval;
-import org.hawkular.alerts.api.model.trigger.Trigger;
 
 import javax.enterprise.context.ApplicationScoped;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Set;
 
 @ApplicationScoped
 public class PoliciesTransformer {
@@ -19,6 +13,9 @@ public class PoliciesTransformer {
     private JsonObject createMessage(Action action) {
         JsonObject message = new JsonObject();
 
+        Context context = action.getEvent();
+        context.getMessage().forEach(message::put);
+/*
         Trigger trigger = action.getEvent().getTrigger();
         message.put("policy_id", trigger.getId());
         message.put("policy_name", trigger.getName());
@@ -37,19 +34,17 @@ public class PoliciesTransformer {
                 }
             }
         }
-
+*/
         return message;
     }
 
     public Uni<JsonObject> transform(Action action) {
         // Fields and terminology straight from the target project
-        LocalDateTime ts = Instant.ofEpochMilli(action.getCtime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
-
         JsonObject message = new JsonObject();
         String APPLICATION_NAME = "policies";
         message.put("application", APPLICATION_NAME);
-        message.put("account_id", action.getTenantId());
-        message.put("timestamp", ts.toString());
+        message.put("account_id", action.getEvent().getAccountId());
+        message.put("timestamp", action.getTimestamp().toString());
         message.put("message", createMessage(action));
 
         return Uni.createFrom().item(message);
