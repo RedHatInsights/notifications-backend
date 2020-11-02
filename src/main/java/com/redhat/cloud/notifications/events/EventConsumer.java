@@ -56,11 +56,13 @@ public class EventConsumer {
                                 .onFailure().invoke(t -> processingErrorCount.increment())
                         // Receive only notification of completion
                 )
-                // Third pipeline stage - handle failures (nothing should be here) and ack the Kafka topic
+                // Third pipeline stage - ack the Kafka topic
                 .onItemOrFailure()
                 .transformToUni((unused, t) -> {
                     // Log the throwable ?
-                    log.errorf("Could not process the payload: %s", t.getMessage());
+                    if (t != null) {
+                        log.errorf("Could not process the payload: %s", t.getMessage());
+                    }
                     CompletionStage<Void> ack = input.ack();
                     return Uni.createFrom().completionStage(ack);
                 });
