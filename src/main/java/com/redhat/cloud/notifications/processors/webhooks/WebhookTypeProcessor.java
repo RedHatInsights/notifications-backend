@@ -6,6 +6,8 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.transformers.PoliciesTransformer;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -31,7 +33,17 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     @Inject
     PoliciesTransformer transformer;
 
+    MeterRegistry registry;
+
+    private Counter processedCount;
+
+    public WebhookTypeProcessor(MeterRegistry registry) {
+        this.registry = registry;
+        processedCount = registry.counter("processor.webhook.processed");
+    }
+
     public Uni<NotificationHistory> process(Notification item) {
+        processedCount.increment();
         Endpoint endpoint = item.getEndpoint();
         WebhookAttributes properties = (WebhookAttributes) endpoint.getProperties();
 

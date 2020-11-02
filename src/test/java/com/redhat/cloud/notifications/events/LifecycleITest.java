@@ -13,6 +13,8 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -74,6 +76,9 @@ public class LifecycleITest {
 
     @Inject
     EndpointResources resources;
+
+    @Inject
+    MeterRegistry meterRegistry;
 
     @BeforeAll
     void setup() {
@@ -246,6 +251,8 @@ public class LifecycleITest {
         }
 
         mockServerConfig.getMockServerClient().clear(postReq);
+        Counter rejectedCount = meterRegistry.find("input.rejected").counter();
+        assertEquals(0, rejectedCount.count());
     }
 
     @Test
