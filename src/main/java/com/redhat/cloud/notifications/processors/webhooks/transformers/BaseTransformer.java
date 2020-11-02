@@ -8,7 +8,7 @@ import io.vertx.core.json.JsonObject;
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class PoliciesTransformer {
+public class BaseTransformer {
 
     private JsonObject createMessage(Action action) {
         JsonObject message = new JsonObject();
