@@ -42,10 +42,12 @@ public class EndpointProcessor {
     MeterRegistry registry;
 
     private Counter processedItems;
+    private Counter endpointTargeted;
 
     @PostConstruct
     void init() {
         processedItems = registry.counter("processor.input.processed");
+        endpointTargeted = registry.counter("processor.input.endpoint.processed");
     }
 
     public Uni<Void> process(Action action) {
@@ -53,6 +55,7 @@ public class EndpointProcessor {
         Multi<NotificationHistory> endpointsCallResult = getEndpoints(action.getEvent().getAccountId(), action.getApplication(), action.getEventType())
                 .onItem()
                 .transformToUni(endpoint -> {
+                    endpointTargeted.increment();
                     Notification endpointNotif = new Notification(action, endpoint);
                     return endpointTypeToProcessor(endpoint.getType()).process(endpointNotif);
                 })
