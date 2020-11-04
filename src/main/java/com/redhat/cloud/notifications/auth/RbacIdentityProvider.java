@@ -6,6 +6,7 @@ import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -20,6 +21,9 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     @RestClient
     RbacServer rbacServer;
 
+    @ConfigProperty(name = "rbac.enabled", defaultValue = "true")
+    Boolean isRbacEnabled;
+
     @Override
     public Class<RhIdentityAuthenticationRequest> getRequestType() {
         return RhIdentityAuthenticationRequest.class;
@@ -27,6 +31,13 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
 
     @Override
     public Uni<SecurityIdentity> authenticate(RhIdentityAuthenticationRequest rhAuthReq, AuthenticationRequestContext authenticationRequestContext) {
+        if (!isRbacEnabled) {
+            return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
+                    .addRole("read")
+                    .addRole("write")
+                    .build());
+        }
+        // TODO Modify to allow integrations & notifications as application type
         return rbacServer.getRbacInfo("notifications", rhAuthReq.getxRhIdentity())
                 .onItem()
                 .transform(raw -> {
