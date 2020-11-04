@@ -7,7 +7,7 @@ import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.bop.Email;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
@@ -63,7 +63,7 @@ public class EmailTypeProcessor implements EndpointTypeProcessor {
         Emails emails = new Emails();
 
         // TODO Implement BOPTransformer (payload, topic creation, recipients handling, etc..)
-        Uni<String> payload = Uni.createFrom().item(Json.encode(emails));
+        Uni<JsonObject> payload = Uni.createFrom().item(JsonObject.mapFrom(emails));
 
         // TODO Add recipients processing from policies-notifications processing
         return webhook.doHttpRequest(item, req, payload);

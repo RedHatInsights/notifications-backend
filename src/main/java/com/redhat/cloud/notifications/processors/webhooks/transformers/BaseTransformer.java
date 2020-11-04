@@ -19,7 +19,7 @@ public class BaseTransformer {
         return message;
     }
 
-    public Uni<String> transform(Action action) {
+    public Uni<JsonObject> transform(Action action) {
         // Fields and terminology straight from the target project
         JsonObject message = new JsonObject();
         message.put("application", action.getApplication());
@@ -27,6 +27,6 @@ public class BaseTransformer {
         message.put("timestamp", action.getTimestamp().toString());
         message.put("message", createMessage(action));
 
-        return Uni.createFrom().item(message.encode());
+        return Uni.createFrom().item(message);
     }
 }
