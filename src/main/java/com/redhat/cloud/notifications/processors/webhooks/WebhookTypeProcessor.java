@@ -62,16 +62,16 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
             req.basicAuthentication(properties.getBasicAuthentication().getUsername(), properties.getBasicAuthentication().getPassword());
         }
 
-        Uni<String> payload = transformer.transform(item.getAction());
+        Uni<JsonObject> payload = transformer.transform(item.getAction());
 
         return doHttpRequest(item, req, payload);
     }
 
-    public Uni<NotificationHistory> doHttpRequest(Notification item, HttpRequest<Buffer> req, Uni<String> payload) {
+    public Uni<NotificationHistory> doHttpRequest(Notification item, HttpRequest<Buffer> req, Uni<JsonObject> payload) {
         final long startTime = System.currentTimeMillis();
 
         return payload.onItem()
-                .transformToUni(json -> req.sendJson(json)
+                .transformToUni(json -> req.sendJsonObject(json)
                         .onItem().transform(resp -> {
                             final long endTime = System.currentTimeMillis();
                             // Default result is false
