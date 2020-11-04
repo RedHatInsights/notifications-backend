@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.FilterOption;
 import com.redhat.cloud.notifications.models.Notification;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -147,5 +148,11 @@ public class NotificationService {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.deleteEndpointFromDefaults(principal.getAccount(), endpointId)
                 .onItem().transform(ignored -> Response.ok().build());
+    }
+
+    @GET
+    @Path("/filterOptions/applications")
+    public Multi<FilterOption> getFilterOptionsApplications(@Context SecurityContext sec) {
+        return apps.getApplications().onItem().transform(a -> new FilterOption(a.getName(), a.getId().toString()));
     }
 }
