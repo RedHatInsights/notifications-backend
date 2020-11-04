@@ -168,39 +168,6 @@ public class EndpointServiceTest {
     }
 
     @Test
-    void testEndpointRoles() {
-        String tenant = "empty";
-        String userName = "testEndpointRoles";
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
-
-        // Fetch endpoint without any Rbac details - errors cause 401
-        given()
-                // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get("/endpoints")
-                .then()
-                .statusCode(401);
-
-        // Fetch endpoint with no access - Rbac succeed returns 403
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.NO_ACCESS);
-
-        given()
-                // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get("/endpoints")
-                .then()
-                .statusCode(403);
-
-        // Test bogus x-rh-identity header that fails Base64 decoding
-        given()
-                .header(new Header("x-rh-identity", "00000"))
-                .when().get("/endpoints")
-                .then()
-                .statusCode(401);
-    }
-
-    @Test
     void testEndpointValidation() {
         String tenant = "validation";
         String userName = "testEndpointValidation";
