@@ -92,7 +92,7 @@ public class NotificationService {
     @GET
     @Path("/eventTypes")
     @RolesAllowed("read")
-    public Uni<List<EventType>> getEventTypes(@BeanParam Query query, @QueryParam("applicationId") UUID applicationId) {
+    public Uni<List<EventType>> getEventTypes(@BeanParam Query query, @QueryParam("applicationId") List<UUID> applicationId) {
         return apps.getEventTypes(query, applicationId).collectItems().asList();
     }
 
