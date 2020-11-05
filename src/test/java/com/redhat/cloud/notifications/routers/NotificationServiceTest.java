@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -99,5 +100,49 @@ public class NotificationServiceTest {
         }
 
         assertTrue(eventTypes.length >= 100); // Depending on the test order, we might have existing application types also
+    }
+
+    @Test
+    void testNonExistantDefaults() {
+        String tenant = "testNonExistantDefaults";
+        String userName = "user";
+        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
+        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        // Add non-existant endpointId to an account without default created
+        given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
+                .then()
+                .statusCode(400);
+
+        // Create default endpoint
+        Endpoint ep = new Endpoint();
+        ep.setType(Endpoint.EndpointType.DEFAULT);
+        ep.setName("Default endpoint");
+        ep.setDescription("The ultimate fallback");
+        ep.setEnabled(true);
+
+        given()
+                .basePath(TestConstants.API_INTEGRATIONS_V_1_0)
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200);
+
+        // Send non-existant UUID again
+        given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
+                .then()
+                .statusCode(400);
     }
 }
