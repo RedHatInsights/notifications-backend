@@ -88,7 +88,7 @@ public class NotificationServiceTest {
                 .when()
                 .header(identityHeader)
                 .contentType(ContentType.JSON)
-                .queryParam("applicationId", myOtherTesterApplicationId)
+                .queryParam("applicationIds", myOtherTesterApplicationId)
                 .get("/notifications/eventTypes")
                 .then()
                 .statusCode(200)
