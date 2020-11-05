@@ -13,7 +13,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -147,7 +147,7 @@ public class ApplicationResources {
         return this.getEventTypes(limiter, null);
     }
 
-    public Multi<EventType> getEventTypes(Query limiter, List<UUID> applicationId) {
+    public Multi<EventType> getEventTypes(Query limiter, Set<UUID> applicationId) {
         String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.description AS et_desc, a.id AS a_id, a.name AS a_name, a.description as a_description FROM public.event_type et " +
                 "JOIN public.application_event_type aet ON aet.event_type_id = et.id " +
                 "JOIN public.applications a ON a.id = aet.application_id";
