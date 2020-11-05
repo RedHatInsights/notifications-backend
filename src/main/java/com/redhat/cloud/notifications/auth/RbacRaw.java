@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.auth;
 import java.util.List;
 import java.util.Map;
 
-// TODO Use this from insights-common-java
 public class RbacRaw {
     public Map<String, String> links;
     public Map<String, Integer> meta;
