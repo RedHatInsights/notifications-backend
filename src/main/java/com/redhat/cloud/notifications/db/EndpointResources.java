@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
 import io.r2dbc.postgresql.api.PostgresqlStatement;
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.converters.uni.UniReactorConverters;
@@ -15,6 +16,7 @@ import reactor.core.publisher.Mono;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.ws.rs.BadRequestException;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
@@ -390,7 +392,14 @@ public class EndpointResources extends DatasourceProvider {
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
                         }))
-                .toUni();
+                .toUni()
+                .onFailure()
+                .transform(t -> {
+                    if (t instanceof R2dbcDataIntegrityViolationException) {
+                        return new BadRequestException("Given endpoint id can not be linked to default");
+                    }
+                    return t;
+                });
     }
 
     public Uni<Boolean> deleteEndpointFromDefaults(String tenant, UUID endpointId) {
