@@ -2,11 +2,14 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
+import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.routers.models.SubscriptionSettings;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -52,6 +55,9 @@ public class EndpointService {
 
     @Inject
     NotificationResources notifResources;
+
+    @Inject
+    EndpointEmailSubscriptionResources emailSubscriptionResources;
 
     @GET
     @RolesAllowed("read")
@@ -190,5 +196,41 @@ public class EndpointService {
                     }
                     return Response.ok(json).build();
                 });
+    }
+
+    @POST
+    @Path("/email/subscription")
+    @RolesAllowed("read")
+    public Uni<Response> updateEmailSubscription(@Context SecurityContext sec, @NotNull @Valid SubscriptionSettings subscriptionSettings) {
+
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+
+        if (subscriptionSettings.instantEmail) {
+            emailSubscriptionResources.subscribe(
+                    principal.getAccount(),
+                    principal.getName(),
+                    EmailSubscription.INSTANT
+            );
+        } else {
+            emailSubscriptionResources.unsubscribe(
+                    principal.getAccount(),
+                    principal.getName(),
+                    EmailSubscription.INSTANT
+            );
+        }
+
+        if (subscriptionSettings.dailyEmail) {
+            emailSubscriptionResources.subscribe(
+                    principal.getAccount(),
+                    principal.getName(),
+                    EmailSubscription.DAILY
+            );
+        } else {
+            emailSubscriptionResources.unsubscribe(
+                    principal.getAccount(),
+                    principal.getName(),
+                    EmailSubscription.DAILY
+            );
+        }
     }
 }

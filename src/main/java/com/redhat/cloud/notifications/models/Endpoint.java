@@ -15,12 +15,14 @@ import java.util.UUID;
 
 public class Endpoint {
 
-    @Schema(enumeration = { "webhook", "email", "default" })
+    @Schema(enumeration = { "webhook", "email", "email_subscription", "default" })
     public enum EndpointType {
         @JsonProperty("webhook")
         WEBHOOK,
         @JsonProperty("email")
         EMAIL,
+        @JsonProperty("email_subscription")
+        EMAIL_SUBSCRIPTION,
         @JsonProperty("default")
         DEFAULT
     }
@@ -54,7 +56,8 @@ public class Endpoint {
             include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
     @JsonSubTypes({
             @JsonSubTypes.Type(value = WebhookAttributes.class, name = "webhook"),
-            @JsonSubTypes.Type(value = EmailAttributes.class, name = "email")
+            @JsonSubTypes.Type(value = EmailAttributes.class, name = "email"),
+            @JsonSubTypes.Type(value = EmailSubscriptionAttributes.class)
     })
 //    @NotNull
     @Valid
