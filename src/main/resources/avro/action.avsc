@@ -5,7 +5,8 @@
   "fields": [
     {
       "name": "event_id",
-      "type": "string"
+      "type": "string",
+      "default": ""
     },
     {
       "name": "timestamp",
@@ -28,6 +29,7 @@
         "null",
         "string"
       ],
+      "default": null,
       "logicalType": "uuid"
     },
     {
