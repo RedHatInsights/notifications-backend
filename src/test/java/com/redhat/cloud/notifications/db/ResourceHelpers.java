@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
@@ -22,8 +23,15 @@ public class ResourceHelpers {
     @Inject
     ApplicationResources appResources;
 
+    @Inject
+    EndpointEmailSubscriptionResources subscriptionResources;
+
     public List<Application> getApplications() {
         return appResources.getApplications().collectItems().asList().await().indefinitely();
+    }
+
+    public EmailSubscription getSubscription(String accountNumber, String username, EmailSubscription.EmailSubscriptionType type) {
+        return subscriptionResources.getEmailSubscription(accountNumber, username, type).await().indefinitely();
     }
 
     public void createTestAppAndEventTypes() {

@@ -208,7 +208,7 @@ public class EndpointService {
         Uni<Boolean> instantEmail;
         Uni<Boolean> dailyEmail;
 
-        if (subscriptionSettings.instantEmail) {
+        if (subscriptionSettings.isInstantEmail()) {
             instantEmail = emailSubscriptionResources.subscribe(
                     principal.getAccount(),
                     principal.getName(),
@@ -222,7 +222,7 @@ public class EndpointService {
             );
         }
 
-        if (subscriptionSettings.dailyEmail) {
+        if (subscriptionSettings.isDailyEmail()) {
             dailyEmail = emailSubscriptionResources.subscribe(
                     principal.getAccount(),
                     principal.getName(),

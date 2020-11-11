@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
+import io.r2dbc.spi.R2dbcDataIntegrityViolationException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import reactor.core.publisher.Flux;
@@ -20,14 +21,13 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
 
     public Uni<Boolean> subscribe(String accountNumber, String username, EmailSubscriptionType type) {
         String query = "INSERT INTO public.endpoint_email_subscriptions(account_id, user_id, subscription_type) VALUES($1, $2, $3)";
-
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
                             Flux<PostgresqlResult> execute = c2.createStatement(query)
                                     .bind("$1", accountNumber)
                                     .bind("$2", username)
-                                    .bind("$3", type)
+                                    .bind("$3", type.toString())
                                     .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated)
                                     .map(i -> i > 0).next();
@@ -35,6 +35,8 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
                         })
+                        // The value is already on the database, this is OK
+                        .onFailure(R2dbcDataIntegrityViolationException.class).recoverWithItem(true)
                 ).toUni();
     }
 
@@ -47,7 +49,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                             Flux<PostgresqlResult> execute = c2.createStatement(query)
                                     .bind("$1", accountNumber)
                                     .bind("$2", username)
-                                    .bind("$3", type)
+                                    .bind("$3", type.toString())
                                     .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated)
                                     .map(i -> i > 0).next();
@@ -67,7 +69,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                             Flux<PostgresqlResult> execute =  c2.createStatement(query)
                                     .bind("$1", accountNumber)
                                     .bind("$2", username)
-                                    .bind("$3", type)
+                                    .bind("$3", type.toString())
                                     .execute();
                             return this.mapResultSetToEmailSubscription(execute);
                         })
@@ -85,7 +87,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                         c2 -> {
                             Flux<PostgresqlResult> execute =  c2.createStatement(query)
                                     .bind("$1", accountNumber)
-                                    .bind("$2", type)
+                                    .bind("$2", type.toString())
                                     .execute();
                             return this.mapResultSetToEmailSubscription(execute);
                         })
