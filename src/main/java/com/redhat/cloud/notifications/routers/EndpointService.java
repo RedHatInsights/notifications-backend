@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -38,6 +37,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.util.List;
 import java.util.UUID;
 
 @Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
@@ -69,15 +69,15 @@ public class EndpointService {
                     schema = @Schema(type = SchemaType.INTEGER)
             )
     })
-    public Multi<Endpoint> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") @DefaultValue("false") boolean activeOnly) {
+    public Uni<List<Endpoint>> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") @DefaultValue("false") boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
         if (targetType != null) {
             Endpoint.EndpointType endpointType = Endpoint.EndpointType.valueOf(targetType.toUpperCase());
-            return resources.getEndpointsPerType(principal.getAccount(), endpointType, activeOnly);
+            return resources.getEndpointsPerType(principal.getAccount(), endpointType, activeOnly).collectItems().asList();
         }
 
-        return resources.getEndpoints(principal.getAccount(), query);
+        return resources.getEndpoints(principal.getAccount(), query).collectItems().asList();
     }
 
     @POST
@@ -155,10 +155,10 @@ public class EndpointService {
     @GET
     @Path("/{id}/history")
     @RolesAllowed("read")
-    public Multi<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    public Uni<List<NotificationHistory>> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id) {
         // TODO We need globally limitations (Paging support and limits etc)
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return notifResources.getNotificationHistory(principal.getAccount(), id);
+        return notifResources.getNotificationHistory(principal.getAccount(), id).collectItems().asList();
     }
 
     @GET

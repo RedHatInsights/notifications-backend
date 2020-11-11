@@ -32,6 +32,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.List;
 import java.util.UUID;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
@@ -91,8 +92,8 @@ public class NotificationService {
     @GET
     @Path("/eventTypes")
     @RolesAllowed("read")
-    public Multi<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationId") UUID applicationId) {
-        return apps.getEventTypes(query, applicationId);
+    public Uni<List<EventType>> getEventTypes(@BeanParam Query query, @QueryParam("applicationId") UUID applicationId) {
+        return apps.getEventTypes(query, applicationId).collectItems().asList();
     }
 
     @PUT
@@ -118,17 +119,17 @@ public class NotificationService {
     @GET
     @Path("/eventTypes/{eventTypeId}")
     @RolesAllowed("read")
-    public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
+    public Uni<List<Endpoint>> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query);
+        return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query).collectItems().asList();
     }
 
     @GET
     @Path("/defaults")
     @RolesAllowed("read")
-    public Multi<Endpoint> getEndpointsForDefaults(@Context SecurityContext sec) {
+    public Uni<List<Endpoint>> getEndpointsForDefaults(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getDefaultEndpoints(principal.getAccount());
+        return resources.getDefaultEndpoints(principal.getAccount()).collectItems().asList();
     }
 
     @PUT
