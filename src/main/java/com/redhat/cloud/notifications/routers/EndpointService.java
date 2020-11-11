@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -42,7 +41,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.util.List;
 import java.util.UUID;
 
 @Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
@@ -206,7 +204,9 @@ public class EndpointService {
     public Uni<Response> updateEmailSubscription(@Context SecurityContext sec, @NotNull @Valid SubscriptionSettings subscriptionSettings) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        Uni<Boolean> instantEmail, dailyEmail;
+        Uni<Boolean> instantEmail;
+        Uni<Boolean> dailyEmail;
+
         if (subscriptionSettings.instantEmail) {
             instantEmail = emailSubscriptionResources.subscribe(
                     principal.getAccount(),

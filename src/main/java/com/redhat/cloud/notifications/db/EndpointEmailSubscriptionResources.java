@@ -7,7 +7,6 @@ import io.r2dbc.postgresql.api.PostgresqlResult;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
