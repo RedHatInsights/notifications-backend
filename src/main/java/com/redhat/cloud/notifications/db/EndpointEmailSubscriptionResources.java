@@ -8,9 +8,11 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import reactor.core.publisher.Flux;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+@ApplicationScoped
 public class EndpointEmailSubscriptionResources extends DatasourceProvider {
 
     @Inject
@@ -76,7 +78,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
     }
 
     public Multi<EmailSubscription> getEmailSubscribers(String accountNumber, EmailSubscriptionType type) {
-        String query = "SELECT account_id, user_id, subscription_type FROM public.endpoint_email_subscriptions where account_id = $1 AND subscription_type = $2 LIMIT 1";
+        String query = "SELECT account_id, user_id, subscription_type FROM public.endpoint_email_subscriptions where account_id = $1 AND subscription_type = $2";
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
