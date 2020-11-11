@@ -57,7 +57,7 @@ public class Endpoint {
     @JsonSubTypes({
             @JsonSubTypes.Type(value = WebhookAttributes.class, name = "webhook"),
             @JsonSubTypes.Type(value = EmailAttributes.class, name = "email"),
-            @JsonSubTypes.Type(value = EmailSubscriptionAttributes.class)
+            @JsonSubTypes.Type(value = EmailSubscriptionAttributes.class, name = "email_subscription")
     })
 //    @NotNull
     @Valid
