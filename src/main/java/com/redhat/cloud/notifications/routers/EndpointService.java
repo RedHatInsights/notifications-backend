@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.EmailSubscription;
+import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.routers.models.SubscriptionSettings;
@@ -41,6 +42,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.util.List;
 import java.util.UUID;
 
 @Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
@@ -202,35 +204,41 @@ public class EndpointService {
     @Path("/email/subscription")
     @RolesAllowed("read")
     public Uni<Response> updateEmailSubscription(@Context SecurityContext sec, @NotNull @Valid SubscriptionSettings subscriptionSettings) {
-
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
+        Uni<Boolean> instantEmail, dailyEmail;
         if (subscriptionSettings.instantEmail) {
-            emailSubscriptionResources.subscribe(
+            instantEmail = emailSubscriptionResources.subscribe(
                     principal.getAccount(),
                     principal.getName(),
-                    EmailSubscription.INSTANT
+                    EmailSubscriptionType.INSTANT
             );
         } else {
-            emailSubscriptionResources.unsubscribe(
+            instantEmail = emailSubscriptionResources.unsubscribe(
                     principal.getAccount(),
                     principal.getName(),
-                    EmailSubscription.INSTANT
+                    EmailSubscriptionType.INSTANT
             );
         }
 
         if (subscriptionSettings.dailyEmail) {
-            emailSubscriptionResources.subscribe(
+            dailyEmail = emailSubscriptionResources.subscribe(
                     principal.getAccount(),
                     principal.getName(),
-                    EmailSubscription.DAILY
+                    EmailSubscriptionType.DAILY
             );
         } else {
-            emailSubscriptionResources.unsubscribe(
+            dailyEmail = emailSubscriptionResources.unsubscribe(
                     principal.getAccount(),
                     principal.getName(),
-                    EmailSubscription.DAILY
+                    EmailSubscriptionType.DAILY
             );
         }
+
+        return Multi.createBy().merging()
+                .streams(instantEmail.toMulti(), dailyEmail.toMulti())
+                .collectItems().asList()
+                .onItem().transform(changedList -> Response.ok().build())
+                .onFailure().recoverWithItem(Response.serverError().build());
     }
 }
