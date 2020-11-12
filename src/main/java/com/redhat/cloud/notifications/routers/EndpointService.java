@@ -236,10 +236,8 @@ public class EndpointService {
             );
         }
 
-        return Multi.createBy().merging()
-                .streams(instantEmail.toMulti(), dailyEmail.toMulti())
-                .collectItems().asList()
-                .onItem().transform(changedList -> Response.ok().build())
+        return Uni.combine().all().unis(instantEmail, dailyEmail).discardItems()
+                .onItem().transform(aVoid -> Response.ok().build())
                 .onFailure().recoverWithItem(Response.serverError().build());
     }
 }
