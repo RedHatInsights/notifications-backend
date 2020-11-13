@@ -26,9 +26,9 @@ public class ApplicationService {
     ApplicationResources appResources;
 
     @GET
-    public Uni<List<Application>> getApplications() {
+    public List<Application> getApplications() {
         // Return configured with types?
-        return appResources.getApplications().collectItems().asList();
+        return appResources.getApplications().collectItems().asList().await().indefinitely();
     }
 
     @POST
@@ -51,7 +51,7 @@ public class ApplicationService {
 
     @GET
     @Path("/{id}/eventTypes")
-    public Uni<List<EventType>> getEventTypes(@PathParam("id") UUID applicationId) {
-        return appResources.getEventTypes(applicationId).collectItems().asList();
+    public List<EventType> getEventTypes(@PathParam("id") UUID applicationId) {
+        return appResources.getEventTypes(applicationId).collectItems().asList().await().indefinitely();
     }
 }
