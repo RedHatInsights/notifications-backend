@@ -1,0 +1,4 @@
+{@java.time.LocalDateTime timestamp}
+{@com.redhat.cloud.notifications.ingress.PoliciesParams params}
+{@java.util.List<com.redhat.cloud.notifications.ingress.Tag> tags}
+{timestamp} - {params.triggers.size()} {#if params.triggers.size() is 1}policy{#else}policies{/if} triggered on {tags.getFirst("display_name")}

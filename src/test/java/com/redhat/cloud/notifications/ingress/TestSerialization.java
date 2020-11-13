@@ -29,6 +29,12 @@ public class TestSerialization {
         targetAction.setEventId(UUID.randomUUID().toString()); // UUID probably isn't what we want..
         targetAction.setEventType("Any");
         targetAction.setTags(new ArrayList<>());
+        // targetAction.setParams(PoliciesParams.newBuilder().setTriggers(new HashMap<>()).build());
+
+        PoliciesParams params = new PoliciesParams();
+        Map<String, String> triggers = new HashMap<>();
+        params.setTriggers(triggers);
+        targetAction.setParams(params);
 
         Context context = new Context();
         context.setAccountId("testTenant");

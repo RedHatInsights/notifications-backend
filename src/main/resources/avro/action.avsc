@@ -54,6 +54,25 @@
       "default": []
     },
     {
+      "name": "params",
+      "type": [
+        {
+          "type": "record",
+          "name": "PoliciesParams",
+          "fields": [
+            {
+                "name": "Triggers",
+                "type": {
+                    "name": "Trigger",
+                    "type": "map",
+                    "values": "string"
+                }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "event",
       "type": {
         "type": "record",

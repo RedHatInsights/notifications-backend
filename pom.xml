@@ -104,6 +104,10 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-cache</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-resteasy-qute</artifactId>
+        </dependency>
 
         <!-- Related to Quarkus, but outside the Quarkus namespace -->
         <!-- https://github.com/quarkusio/quarkus/issues/12913 -->

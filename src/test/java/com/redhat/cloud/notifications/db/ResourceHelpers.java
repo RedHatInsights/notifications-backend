@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EmailSubscription;
+import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
@@ -92,5 +93,13 @@ public class ResourceHelpers {
             resources.createEndpoint(ep).await().indefinitely();
         }
         return statsValues;
+    }
+
+    public void createSubscription(String tenant, String username, EmailSubscriptionType type) {
+        subscriptionResources.subscribe(tenant, username, type).await().indefinitely();
+    }
+
+    public void removeSubscription(String tenant, String username, EmailSubscriptionType type) {
+        subscriptionResources.unsubscribe(tenant, username, type).await().indefinitely();
     }
 }
