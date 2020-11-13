@@ -129,8 +129,7 @@ public class NotificationService {
     @RolesAllowed("read")
     public List<Endpoint> getEndpointsForDefaults(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getDefaultEndpoints(principal.getAccount()).collectItems().asList()
-              await().indefinitely();
+        return resources.getDefaultEndpoints(principal.getAccount()).collectItems().asList().await().indefinitely();
     }
 
     @PUT
