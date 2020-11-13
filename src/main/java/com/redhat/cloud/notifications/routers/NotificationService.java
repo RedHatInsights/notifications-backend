@@ -127,10 +127,10 @@ public class NotificationService {
     @GET
     @Path("/defaults")
     @RolesAllowed("read")
-    public Uni<List<Endpoint>> getEndpointsForDefaults(@Context SecurityContext sec) {
+    public List<Endpoint> getEndpointsForDefaults(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.getDefaultEndpoints(principal.getAccount()).collectItems().asList()
-              .onItem().invoke(list -> System.out.println("List is: " + list));
+              await().indefinitely();
     }
 
     @PUT
