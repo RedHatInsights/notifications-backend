@@ -74,10 +74,10 @@ public class EndpointService {
 
         if (targetType != null) {
             Endpoint.EndpointType endpointType = Endpoint.EndpointType.valueOf(targetType.toUpperCase());
-            return resources.getEndpointsPerType(principal.getAccount(), endpointType, activeOnly).collectItems().asList().await().indefinitely();;
+            return resources.getEndpointsPerType(principal.getAccount(), endpointType, activeOnly).collectItems().asList().await().indefinitely();
         }
 
-        return resources.getEndpoints(principal.getAccount(), query).collectItems().asList().await().indefinitely();;
+        return resources.getEndpoints(principal.getAccount(), query).collectItems().asList().await().indefinitely();
     }
 
     @POST
@@ -158,7 +158,7 @@ public class EndpointService {
     public Uni<List<NotificationHistory>> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id) {
         // TODO We need globally limitations (Paging support and limits etc)
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return notifResources.getNotificationHistory(principal.getAccount(), id).collectItems().asList().await().indefinitely();;
+        return notifResources.getNotificationHistory(principal.getAccount(), id).collectItems().asList().await().indefinitely();
     }
 
     @GET
