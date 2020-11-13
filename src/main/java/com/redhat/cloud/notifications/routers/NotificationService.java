@@ -92,7 +92,7 @@ public class NotificationService {
     @GET
     @Path("/eventTypes")
     @RolesAllowed("read")
-    public Uni<List<EventType>> getEventTypes(@BeanParam Query query, @QueryParam("applicationId") UUID applicationId) {
+    public List<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationId") UUID applicationId) {
         return apps.getEventTypes(query, applicationId).collectItems().asList().await().indefinitely();
     }
 
@@ -119,7 +119,7 @@ public class NotificationService {
     @GET
     @Path("/eventTypes/{eventTypeId}")
     @RolesAllowed("read")
-    public Uni<List<Endpoint>> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
+    public List<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query).collectItems().asList().await().indefinitely();
     }
