@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.routers.models.SubscriptionSettings;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -198,45 +197,51 @@ public class EndpointService {
                 });
     }
 
-    @POST
-    @Path("/email/subscription")
-    @RolesAllowed("read")
-    public Uni<Response> updateEmailSubscription(@Context SecurityContext sec, @NotNull @Valid SubscriptionSettings subscriptionSettings) {
+    @PUT
+    @Path("/email/subscription/instant")
+    @RolesAllowed("write")
+    public Uni<Boolean> subscribeInstantEmail(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return emailSubscriptionResources.subscribe(
+                principal.getAccount(),
+                principal.getName(),
+                EmailSubscriptionType.INSTANT
+        );
+    }
 
-        Uni<Boolean> instantEmail;
-        Uni<Boolean> dailyEmail;
+    @DELETE
+    @Path("/email/subscription/instant")
+    @RolesAllowed("write")
+    public Uni<Boolean> unsubscribeInstantEmail(@Context SecurityContext sec) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return emailSubscriptionResources.unsubscribe(
+                principal.getAccount(),
+                principal.getName(),
+                EmailSubscriptionType.INSTANT
+        );
+    }
 
-        if (subscriptionSettings.isInstantEmail()) {
-            instantEmail = emailSubscriptionResources.subscribe(
-                    principal.getAccount(),
-                    principal.getName(),
-                    EmailSubscriptionType.INSTANT
-            );
-        } else {
-            instantEmail = emailSubscriptionResources.unsubscribe(
-                    principal.getAccount(),
-                    principal.getName(),
-                    EmailSubscriptionType.INSTANT
-            );
-        }
+    @PUT
+    @Path("/email/subscription/daily")
+    @RolesAllowed("write")
+    public Uni<Boolean> subscribeDailyEmail(@Context SecurityContext sec) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return emailSubscriptionResources.subscribe(
+                principal.getAccount(),
+                principal.getName(),
+                EmailSubscriptionType.DAILY
+        );
+    }
 
-        if (subscriptionSettings.isDailyEmail()) {
-            dailyEmail = emailSubscriptionResources.subscribe(
-                    principal.getAccount(),
-                    principal.getName(),
-                    EmailSubscriptionType.DAILY
-            );
-        } else {
-            dailyEmail = emailSubscriptionResources.unsubscribe(
-                    principal.getAccount(),
-                    principal.getName(),
-                    EmailSubscriptionType.DAILY
-            );
-        }
-
-        return Uni.combine().all().unis(instantEmail, dailyEmail).discardItems()
-                .onItem().transform(aVoid -> Response.ok().build())
-                .onFailure().recoverWithItem(Response.serverError().build());
+    @DELETE
+    @Path("/email/subscription/daily")
+    @RolesAllowed("write")
+    public Uni<Boolean> unsubscribeDailyEmail(@Context SecurityContext sec) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return emailSubscriptionResources.unsubscribe(
+                principal.getAccount(),
+                principal.getName(),
+                EmailSubscriptionType.DAILY
+        );
     }
 }

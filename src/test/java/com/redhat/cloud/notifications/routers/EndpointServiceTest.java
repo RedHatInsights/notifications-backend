@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
-import com.redhat.cloud.notifications.routers.models.SubscriptionSettings;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -618,69 +617,64 @@ public class EndpointServiceTest {
         Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        // Enable daily and instant
-        SubscriptionSettings settingsBothTrue = new SubscriptionSettings();
-        settingsBothTrue.setDailyEmail(true);
-        settingsBothTrue.setInstantEmail(true);
+        // Disable all as preparation.
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .delete("/endpoints/email/subscription/instant")
+                .then().statusCode(200);
 
         given()
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .body(Json.encode(settingsBothTrue))
-                .post("/endpoints/email/subscription")
+                .delete("/endpoints/email/subscription/daily")
+                .then().statusCode(200);
+
+        assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.DAILY));
+        assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.INSTANT));
+
+        // Enable instant
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .put("/endpoints/email/subscription/instant")
+                .then().statusCode(200);
+
+        assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.DAILY));
+        assertNotNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.INSTANT));
+
+        // Enable daily
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .put("/endpoints/email/subscription/daily")
                 .then().statusCode(200);
 
         assertNotNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.DAILY));
         assertNotNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.INSTANT));
 
-        // Only daily
-        SubscriptionSettings onlyDaily = new SubscriptionSettings();
-        onlyDaily.setDailyEmail(true);
-        onlyDaily.setInstantEmail(false);
-
+        // Disable daily
         given()
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .body(Json.encode(onlyDaily))
-                .post("/endpoints/email/subscription")
-                .then()
-                .statusCode(200);
-
-        assertNotNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.DAILY));
-        assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.INSTANT));
-
-        // Only instant
-        SubscriptionSettings onlyInstant = new SubscriptionSettings();
-        onlyInstant.setDailyEmail(false);
-        onlyInstant.setInstantEmail(true);
-
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(ContentType.JSON)
-                .body(Json.encode(onlyInstant))
-                .post("/endpoints/email/subscription")
-                .then()
-                .statusCode(200);
+                .delete("/endpoints/email/subscription/daily")
+                .then().statusCode(200);
 
         assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.DAILY));
         assertNotNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.INSTANT));
 
-        // None
-        SubscriptionSettings none = new SubscriptionSettings();
-        none.setDailyEmail(false);
-        none.setInstantEmail(false);
-
+        // Disable instant
         given()
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .body(Json.encode(none))
-                .post("/endpoints/email/subscription")
-                .then()
-                .statusCode(200);
+                .delete("/endpoints/email/subscription/instant")
+                .then().statusCode(200);
 
         assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.DAILY));
         assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.INSTANT));
