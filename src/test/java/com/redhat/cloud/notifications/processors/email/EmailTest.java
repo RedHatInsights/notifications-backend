@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
-import com.redhat.cloud.notifications.ingress.PoliciesParams;
 import com.redhat.cloud.notifications.ingress.Tag;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EmailSubscriptionAttributes;
@@ -129,7 +128,10 @@ public class EmailTest {
         triggers.put("abcd-efghi-jkl-lmn", "Foobar");
         triggers.put("0123-456-789-5721f", "Latest foo is installed");
 
-        emailActionMessage.setParams(PoliciesParams.newBuilder().setTriggers(triggers).build());
+        Map<String, Object> params = new HashMap<>();
+        params.put("triggers", triggers);
+
+        emailActionMessage.setParams(params);
 
         // TODO Modify this to match current email requirements
         Context context = new Context();

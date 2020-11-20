@@ -64,8 +64,6 @@ public class EndpointProcessor {
                     return endpointTypeToProcessor(endpoint.getType()).process(endpointNotif);
                 })
                 .merge()
-                // Todo: Remove this filtering once we are ready to send emails too
-                .transform().byFilteringItemsWith(nh -> nh.getEndpoint().getType() == Endpoint.EndpointType.WEBHOOK)
                 .onItem().transformToUni(history -> notifResources.createNotificationHistory(history))
                 .merge();
 

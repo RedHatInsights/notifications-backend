@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
-import com.redhat.cloud.notifications.ingress.PoliciesParams;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
@@ -226,7 +225,10 @@ public class LifecycleITest {
         targetAction.setEventId(UUID.randomUUID().toString());
         targetAction.setEventType(EVENT_TYPE_NAME);
         targetAction.setTags(new ArrayList<>());
-        targetAction.setParams(PoliciesParams.newBuilder().setTriggers(new HashMap<>()).build());
+
+        Map params = new HashMap();
+        params.put("triggers", new HashMap());
+        targetAction.setParams(params);
 
         Context context = new Context();
         context.setAccountId("tenant");

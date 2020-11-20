@@ -222,6 +222,26 @@
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>generate-avro-extensions</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>com/redhat/cloud/notifications/avro/*.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -268,8 +288,11 @@
                 <configuration>
                     <stringType>String</stringType>
                     <customConversions>
-                        org.apache.avro.Conversions$UUIDConversion,org.apache.avro.data.TimeConversions$LocalTimestampMillisConversion
+                        org.apache.avro.Conversions$UUIDConversion,org.apache.avro.data.TimeConversions$LocalTimestampMillisConversion,com.redhat.cloud.notifications.avro.JsonObjectConversion
                     </customConversions>
+                    <customLogicalTypeFactories>
+                        com.redhat.cloud.notifications.avro.NotificationLogicalTypeFactory
+                    </customLogicalTypeFactories>
                 </configuration>
                 <executions>
                     <execution>
