@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -229,7 +230,7 @@ public class EndpointServiceTest {
 
         // Type and attributes don't match
         webAttr.setMethod(WebhookAttributes.HttpType.POST);
-        ep.setType(Endpoint.EndpointType.EMAIL);
+        ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
         given()
                 .header(identityHeader)
