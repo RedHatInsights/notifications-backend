@@ -52,6 +52,8 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                     return (SecurityIdentity) builder.build();
                 })
                 .onFailure()
-                .transform(AuthenticationFailedException::new);
+                .transform(raw -> {
+                    throw new AuthenticationFailedException(raw.getMessage());
+                });
     }
 }

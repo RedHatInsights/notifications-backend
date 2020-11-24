@@ -16,6 +16,7 @@ import javax.enterprise.context.ApplicationScoped;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Implements Jakarta EE JSR-375 (Security API) HttpAuthenticationMechanism for the insight's
@@ -25,6 +26,8 @@ import java.util.Set;
 public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
 
     public static final String IDENTITY_HEADER = "x-rh-identity";
+
+    private final Logger log = Logger.getLogger(this.getClass().getSimpleName());
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {
@@ -37,6 +40,10 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
 
         RhIdentityAuthenticationRequest authReq = new RhIdentityAuthenticationRequest(xRhIdentityHeaderValue);
         Uni<SecurityIdentity> identityUni = identityProviderManager.authenticate(authReq);
+        identityUni.onFailure()
+                .invoke(throwable -> {
+                    log.warning("RBAC failed: " + throwable.getMessage());
+                });
 
         Uni<QuarkusSecurityIdentity.Builder> identityBuilderUni = Uni.createFrom().item(() -> getRhIdentityFromString(xRhIdentityHeaderValue))
                 .onFailure().transform(AuthenticationFailedException::new)
