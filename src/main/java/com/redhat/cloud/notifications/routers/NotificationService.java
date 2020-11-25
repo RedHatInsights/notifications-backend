@@ -7,7 +7,7 @@ import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.FilterOption;
+import com.redhat.cloud.notifications.models.ApplicationFacet;
 import com.redhat.cloud.notifications.models.Notification;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -151,8 +151,8 @@ public class NotificationService {
     }
 
     @GET
-    @Path("/filterOptions/applications")
-    public Multi<FilterOption> getFilterOptionsApplications(@Context SecurityContext sec) {
-        return apps.getApplications().onItem().transform(a -> new FilterOption(a.getName(), a.getId().toString()));
+    @Path("/facets/applications")
+    public Multi<ApplicationFacet> getApplicationsFacets(@Context SecurityContext sec) {
+        return apps.getApplications().onItem().transform(a -> new ApplicationFacet(a.getName(), a.getId().toString()));
     }
 }

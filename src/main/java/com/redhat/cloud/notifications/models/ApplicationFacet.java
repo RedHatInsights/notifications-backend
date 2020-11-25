@@ -2,13 +2,13 @@ package com.redhat.cloud.notifications.models;
 
 import javax.validation.constraints.NotNull;
 
-public class FilterOption {
+public class ApplicationFacet {
     @NotNull
     private final String label;
     @NotNull
     private final String value;
 
-    public FilterOption(@NotNull String label, @NotNull String value) {
+    public ApplicationFacet(@NotNull String label, @NotNull String value) {
         this.label = label;
         this.value = value;
     }
