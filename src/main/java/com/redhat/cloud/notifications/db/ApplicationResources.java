@@ -13,6 +13,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import java.util.Date;
+import java.util.Set;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -146,13 +147,13 @@ public class ApplicationResources {
         return this.getEventTypes(limiter, null);
     }
 
-    public Multi<EventType> getEventTypes(Query limiter, UUID applicationId) {
+    public Multi<EventType> getEventTypes(Query limiter, Set<UUID> applicationId) {
         String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.description AS et_desc, a.id AS a_id, a.name AS a_name, a.description as a_description FROM public.event_type et " +
                 "JOIN public.application_event_type aet ON aet.event_type_id = et.id " +
                 "JOIN public.applications a ON a.id = aet.application_id";
 
-        if (applicationId != null) {
-            basicQuery += " WHERE a.id = $1";
+        if (applicationId != null && applicationId.size() > 0) {
+            basicQuery += " WHERE a.id = ANY ($1)";
         }
 
         String query = limiter.getModifiedQuery(basicQuery);
@@ -162,8 +163,8 @@ public class ApplicationResources {
                         c2 -> {
                             PostgresqlStatement statement = c2.createStatement(query);
 
-                            if (applicationId != null) {
-                                statement = statement.bind("$1", applicationId);
+                            if (applicationId != null && applicationId.size() > 0) {
+                                statement = statement.bind("$1", applicationId.toArray(new UUID[applicationId.size()]));
                             }
 
                             Flux<PostgresqlResult> execute = statement.execute();

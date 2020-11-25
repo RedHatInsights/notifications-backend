@@ -33,6 +33,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
@@ -92,8 +93,8 @@ public class NotificationService {
     @GET
     @Path("/eventTypes")
     @RolesAllowed("read")
-    public List<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationId") UUID applicationId) {
-        return apps.getEventTypes(query, applicationId).collectItems().asList().await().indefinitely();
+    public List<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds) {
+        return apps.getEventTypes(query, applicationIds).collectItems().asList().await().indefinitely();
     }
 
     @PUT
