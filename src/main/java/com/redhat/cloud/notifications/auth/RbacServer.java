@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.auth;
 
 import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import javax.ws.rs.Consumes;
@@ -13,6 +14,8 @@ import javax.ws.rs.QueryParam;
 
 @Path("/api/rbac/v1")
 @RegisterRestClient(configKey = "rbac")
+@RegisterProvider(RbacRestClientRequestFilter.class)
+@RegisterProvider(RbacClientResponseFilter.class)
 public interface RbacServer {
 
     @GET

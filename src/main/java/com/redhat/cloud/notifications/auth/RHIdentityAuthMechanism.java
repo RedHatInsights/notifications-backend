@@ -16,7 +16,6 @@ import javax.enterprise.context.ApplicationScoped;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Implements Jakarta EE JSR-375 (Security API) HttpAuthenticationMechanism for the insight's
@@ -27,23 +26,36 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
 
     public static final String IDENTITY_HEADER = "x-rh-identity";
 
-    private final Logger log = Logger.getLogger(this.getClass().getSimpleName());
-
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {
         String xRhIdentityHeaderValue = routingContext.request().getHeader(IDENTITY_HEADER);
 
-        // Access from outside the 3Scale
+        // Access that did not go through 3Scale (e.g internal API)
         if (xRhIdentityHeaderValue == null) {
-            return Uni.createFrom().item(QuarkusSecurityIdentity.builder().build());
+            String path = routingContext.normalisedPath();
+            boolean good = false;
+
+            // We block access unless the openapi file is requested.
+            if (path.startsWith("/api/notifications") || path.startsWith("/api/integrations")) {
+                if (path.endsWith("openapi.json")) {
+                    good = true;
+                }
+            } else if (path.startsWith("/openapi.json") || path.startsWith("/applications")) {
+                good = true;
+            }
+
+            if (!good) {
+                return Uni.createFrom().failure(new AuthenticationFailedException("No " + IDENTITY_HEADER + " provided"));
+            } else {
+                return Uni.createFrom().item(QuarkusSecurityIdentity.builder()
+                        // Set a dummy principal, but add no roles.
+                        .setPrincipal(new RhIdPrincipal("-noauth-", "-1"))
+                        .build());
+            }
         }
 
         RhIdentityAuthenticationRequest authReq = new RhIdentityAuthenticationRequest(xRhIdentityHeaderValue);
         Uni<SecurityIdentity> identityUni = identityProviderManager.authenticate(authReq);
-        identityUni.onFailure()
-                .invoke(throwable -> {
-                    log.warning("RBAC failed: " + throwable.getMessage());
-                });
 
         Uni<QuarkusSecurityIdentity.Builder> identityBuilderUni = Uni.createFrom().item(() -> getRhIdentityFromString(xRhIdentityHeaderValue))
                 .onFailure().transform(AuthenticationFailedException::new)
