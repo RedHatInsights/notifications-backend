@@ -63,7 +63,7 @@ public class OpenApiTest {
                 .when()
                 .get(badUrl)
                 .then()
-                .statusCode(404);
+                .statusCode(401); // We do credential checks before path check.
     }
 
     @Test

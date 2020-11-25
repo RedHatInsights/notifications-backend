@@ -33,12 +33,12 @@ public class AuthenticationTest {
         String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
         Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
 
-        // Fetch endpoint without any Rbac details - errors cause 403
+        // Fetch endpoint without any Rbac details - errors cause 401 -- unauthorized
         given()
                 // Don't set the header at all
                 .when().get("/endpoints")
                 .then()
-                .statusCode(403);
+                .statusCode(401);
 
         // Fetch endpoint without any Rbac details - errors cause 401
         given()
