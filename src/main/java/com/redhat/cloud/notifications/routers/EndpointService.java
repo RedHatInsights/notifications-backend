@@ -74,15 +74,15 @@ public class EndpointService {
                     schema = @Schema(type = SchemaType.INTEGER)
             )
     })
-    public List<Endpoint> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") @DefaultValue("false") boolean activeOnly) {
+    public Uni<List<Endpoint>> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") @DefaultValue("false") boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
         if (targetType != null) {
             Endpoint.EndpointType endpointType = Endpoint.EndpointType.valueOf(targetType.toUpperCase());
-            return resources.getEndpointsPerType(principal.getAccount(), endpointType, activeOnly).collectItems().asList().await().indefinitely();
+            return resources.getEndpointsPerType(principal.getAccount(), endpointType, activeOnly).collectItems().asList();
         }
 
-        return resources.getEndpoints(principal.getAccount(), query).collectItems().asList().await().indefinitely();
+        return resources.getEndpoints(principal.getAccount(), query).collectItems().asList();
     }
 
     @POST
@@ -160,10 +160,10 @@ public class EndpointService {
     @GET
     @Path("/{id}/history")
     @RolesAllowed("read")
-    public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    public Uni<List<NotificationHistory>> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id) {
         // TODO We need globally limitations (Paging support and limits etc)
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return notifResources.getNotificationHistory(principal.getAccount(), id).collectItems().asList().await().indefinitely();
+        return notifResources.getNotificationHistory(principal.getAccount(), id).collectItems().asList();
     }
 
     @GET
