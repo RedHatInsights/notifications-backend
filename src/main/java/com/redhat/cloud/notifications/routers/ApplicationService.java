@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
 import javax.inject.Inject;
@@ -14,7 +15,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
 import java.util.UUID;
 
 @Path("/applications")
@@ -26,9 +26,9 @@ public class ApplicationService {
     ApplicationResources appResources;
 
     @GET
-    public List<Application> getApplications() {
+    public Multi<Application> getApplications() {
         // Return configured with types?
-        return appResources.getApplications().collectItems().asList().await().indefinitely();
+        return appResources.getApplications();
     }
 
     @POST
@@ -51,7 +51,7 @@ public class ApplicationService {
 
     @GET
     @Path("/{id}/eventTypes")
-    public List<EventType> getEventTypes(@PathParam("id") UUID applicationId) {
-        return appResources.getEventTypes(applicationId).collectItems().asList().await().indefinitely();
+    public Multi<EventType> getEventTypes(@PathParam("id") UUID applicationId) {
+        return appResources.getEventTypes(applicationId);
     }
 }

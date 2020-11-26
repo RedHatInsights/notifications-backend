@@ -32,7 +32,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -46,9 +45,6 @@ public class NotificationService {
 
     @Inject
     ApplicationResources apps;
-
-    @Inject
-    EndpointService endpointService;
 
     @Inject
     EndpointResources resources;
@@ -93,8 +89,8 @@ public class NotificationService {
     @GET
     @Path("/eventTypes")
     @RolesAllowed("read")
-    public List<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds) {
-        return apps.getEventTypes(query, applicationIds).collectItems().asList().await().indefinitely();
+    public Multi<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds) {
+        return apps.getEventTypes(query, applicationIds);
     }
 
     @PUT
@@ -120,17 +116,17 @@ public class NotificationService {
     @GET
     @Path("/eventTypes/{eventTypeId}")
     @RolesAllowed("read")
-    public List<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
+    public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query).collectItems().asList().await().indefinitely();
+        return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query);
     }
 
     @GET
     @Path("/defaults")
     @RolesAllowed("read")
-    public List<Endpoint> getEndpointsForDefaults(@Context SecurityContext sec) {
+    public Multi<Endpoint> getEndpointsForDefaults(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getDefaultEndpoints(principal.getAccount()).collectItems().asList().await().indefinitely();
+        return resources.getDefaultEndpoints(principal.getAccount());
     }
 
     @PUT
