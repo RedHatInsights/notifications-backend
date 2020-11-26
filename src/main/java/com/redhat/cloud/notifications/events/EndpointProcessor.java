@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.EventBusTypeProcessor;
+import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -39,6 +40,9 @@ public class EndpointProcessor {
     WebhookTypeProcessor webhooks;
 
     @Inject
+    EmailSubscriptionTypeProcessor emails;
+
+    @Inject
     MeterRegistry registry;
 
     private Counter processedItems;
@@ -60,7 +64,6 @@ public class EndpointProcessor {
                     return endpointTypeToProcessor(endpoint.getType()).process(endpointNotif);
                 })
                 .merge()
-                .transform().byFilteringItemsWith(nh -> nh.getEndpoint().getType() == Endpoint.EndpointType.WEBHOOK)
                 .onItem().transformToUni(history -> notifResources.createNotificationHistory(history))
                 .merge();
 
@@ -75,6 +78,8 @@ public class EndpointProcessor {
         switch (endpointType) {
             case WEBHOOK:
                 return webhooks;
+            case EMAIL_SUBSCRIPTION:
+                return emails;
             default:
                 return notificationProcessor;
         }

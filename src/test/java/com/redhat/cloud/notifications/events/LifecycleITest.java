@@ -226,6 +226,10 @@ public class LifecycleITest {
         targetAction.setEventType(EVENT_TYPE_NAME);
         targetAction.setTags(new ArrayList<>());
 
+        Map params = new HashMap();
+        params.put("triggers", new HashMap());
+        targetAction.setParams(params);
+
         Context context = new Context();
         context.setAccountId("tenant");
         Map<String, String> values = new HashMap<>();

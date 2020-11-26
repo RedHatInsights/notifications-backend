@@ -2,9 +2,11 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
+import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Uni;
@@ -52,6 +54,9 @@ public class EndpointService {
 
     @Inject
     NotificationResources notifResources;
+
+    @Inject
+    EndpointEmailSubscriptionResources emailSubscriptionResources;
 
     @GET
     @RolesAllowed("read")
@@ -190,5 +195,53 @@ public class EndpointService {
                     }
                     return Response.ok(json).build();
                 });
+    }
+
+    @PUT
+    @Path("/email/subscription/instant")
+    @RolesAllowed("write")
+    public Uni<Boolean> subscribeInstantEmail(@Context SecurityContext sec) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return emailSubscriptionResources.subscribe(
+                principal.getAccount(),
+                principal.getName(),
+                EmailSubscriptionType.INSTANT
+        );
+    }
+
+    @DELETE
+    @Path("/email/subscription/instant")
+    @RolesAllowed("write")
+    public Uni<Boolean> unsubscribeInstantEmail(@Context SecurityContext sec) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return emailSubscriptionResources.unsubscribe(
+                principal.getAccount(),
+                principal.getName(),
+                EmailSubscriptionType.INSTANT
+        );
+    }
+
+    @PUT
+    @Path("/email/subscription/daily")
+    @RolesAllowed("write")
+    public Uni<Boolean> subscribeDailyEmail(@Context SecurityContext sec) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return emailSubscriptionResources.subscribe(
+                principal.getAccount(),
+                principal.getName(),
+                EmailSubscriptionType.DAILY
+        );
+    }
+
+    @DELETE
+    @Path("/email/subscription/daily")
+    @RolesAllowed("write")
+    public Uni<Boolean> unsubscribeDailyEmail(@Context SecurityContext sec) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return emailSubscriptionResources.unsubscribe(
+                principal.getAccount(),
+                principal.getName(),
+                EmailSubscriptionType.DAILY
+        );
     }
 }

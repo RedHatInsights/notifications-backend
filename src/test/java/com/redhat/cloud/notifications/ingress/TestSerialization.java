@@ -29,6 +29,7 @@ public class TestSerialization {
         targetAction.setEventId(UUID.randomUUID().toString()); // UUID probably isn't what we want..
         targetAction.setEventType("Any");
         targetAction.setTags(new ArrayList<>());
+        targetAction.setParams(new HashMap());
 
         Context context = new Context();
         context.setAccountId("testTenant");

@@ -6,7 +6,10 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.models.EmailSubscription;
+import com.redhat.cloud.notifications.models.EmailSubscriptionAttributes;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -28,6 +31,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -227,7 +231,7 @@ public class EndpointServiceTest {
 
         // Type and attributes don't match
         webAttr.setMethod(WebhookAttributes.HttpType.POST);
-        ep.setType(Endpoint.EndpointType.EMAIL);
+        ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
         given()
                 .header(identityHeader)
@@ -605,6 +609,117 @@ public class EndpointServiceTest {
         WebhookAttributes attr = (WebhookAttributes) responsePointSingle.getProperties();
         assertNotNull(attr.getBasicAuthentication());
         assertEquals("mypassword", attr.getBasicAuthentication().getPassword());
+    }
+
+    @Test
+    void testAddEndpointEmailSubscription() {
+        String tenant = "adding-email-subscription";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        // Add new EmailSubscriptionEndpoint
+        EmailSubscriptionAttributes attributes = new EmailSubscriptionAttributes();
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        ep.setName("Endpoint: EmailSubscription");
+        ep.setDescription("Subscribe!");
+        ep.setEnabled(true);
+        ep.setProperties(attributes);
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
+        assertNotNull(responsePoint.getId());
+
+        // Delete
+        given()
+                .header(identityHeader)
+                .when().delete("/endpoints/" + responsePoint.getId())
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    void testEmailSubscription() {
+        String tenant = "test-subscription";
+        String username = "test-user";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        // Disable all as preparation.
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .delete("/endpoints/email/subscription/instant")
+                .then().statusCode(200);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .delete("/endpoints/email/subscription/daily")
+                .then().statusCode(200);
+
+        assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.DAILY));
+        assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.INSTANT));
+
+        // Enable instant
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .put("/endpoints/email/subscription/instant")
+                .then().statusCode(200);
+
+        assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.DAILY));
+        assertNotNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.INSTANT));
+
+        // Enable daily
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .put("/endpoints/email/subscription/daily")
+                .then().statusCode(200);
+
+        assertNotNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.DAILY));
+        assertNotNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.INSTANT));
+
+        // Disable daily
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .delete("/endpoints/email/subscription/daily")
+                .then().statusCode(200);
+
+        assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.DAILY));
+        assertNotNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.INSTANT));
+
+        // Disable instant
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .delete("/endpoints/email/subscription/instant")
+                .then().statusCode(200);
+
+        assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.DAILY));
+        assertNull(this.helpers.getSubscription(tenant, username, EmailSubscription.EmailSubscriptionType.INSTANT));
     }
 
     //    @Test

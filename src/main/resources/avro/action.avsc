@@ -27,10 +27,12 @@
       "name": "endpoint_id",
       "type": [
         "null",
-        "string"
+        {
+            "type": "string",
+            "logicalType": "uuid"
+        }
       ],
-      "default": null,
-      "logicalType": "uuid"
+      "default": null
     },
     {
       "name": "tags",
@@ -52,6 +54,14 @@
         }
       },
       "default": []
+    },
+    {
+      "name": "params",
+      "type": {
+          "type": "string",
+          "logicalType": "json-object"
+      },
+      "default": "{}"
     },
     {
       "name": "event",
