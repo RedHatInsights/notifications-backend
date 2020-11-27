@@ -58,7 +58,12 @@ public class MockServerClientConfig {
         return mockServerClient;
     }
 
+    public String getRunningAddress() {
+        return String.format("%s:%d", mockServerClient.remoteAddress().getHostName(), mockServerClient.remoteAddress().getPort());
+    }
+
     public String getRunningHostname() {
         return String.format("%s", mockServerClient.remoteAddress().getHostName());
     }
+
 }
