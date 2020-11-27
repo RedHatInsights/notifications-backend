@@ -86,13 +86,13 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                                 history.setInvocationResult(true);
                             } else if (resp.statusCode() > 500) {
                                 // Temporary error, allow retry
-                                log.warning("Target endpoint server error: " + resp.statusCode() + " " + resp.statusMessage());
+                                log.fine("Target endpoint server error: " + resp.statusCode() + " " + resp.statusMessage());
                                 history.setInvocationResult(false);
                             } else {
                                 // Disable the target endpoint, it's not working correctly for us (such as 400)
                                 // must be manually re-enabled
                                 // Redirects etc should have been followed by the vertx (test this)
-                                log.warning("Target endpoint error: " + resp.statusCode() + " " + resp.statusMessage());
+                                log.fine("Target endpoint error: " + resp.statusCode() + " " + resp.statusMessage());
                                 history.setInvocationResult(false);
                             }
 
@@ -117,7 +117,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
                             HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
 
-                            log.warning("Failed: " + t.getMessage());
+                            log.fine("Failed: " + t.getMessage());
 
                             // TODO Duplicate code with the error return code part
                             JsonObject details = new JsonObject();
