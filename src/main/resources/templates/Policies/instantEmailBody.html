@@ -61,7 +61,7 @@
                                                 {#with params.triggers}
                                                     {#for key in keySet}
                                                     <tr style="font-size: 14px;">
-                                                        <td style="padding:10px 10px;border: 1px solid #f5f5f5;"><a href="https://cloud.redhat.com/insights/policies/policy/{key}" target="_blank">{get(key)}</a></td>
+                                                        <td style="padding:10px 10px;border: 1px solid #f5f5f5;"><a href="https://cloud.redhat.com/insights/policies/policy/{key}" target="_blank">{params.triggers.get(key)}</a></td>
                                                     </tr>
                                                     {/for}
                                                 {/with}

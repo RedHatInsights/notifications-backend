@@ -194,7 +194,7 @@ public class EmailTest {
         for (String key : triggers.keySet()) {
             String value = triggers.get(key);
             assertTrue(bodyRequest.contains(key), "Body should contain trigger key" + key);
-            assertTrue(bodyRequest.contains(key), "Body should contain trigger value" + value);
+            assertTrue(bodyRequest.contains(value), "Body should contain trigger value" + value);
         }
 
         // Display name
