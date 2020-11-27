@@ -16,7 +16,6 @@ import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -26,8 +25,6 @@ import java.net.UnknownHostException;
 
 @ApplicationScoped
 public class WebhookTypeProcessor implements EndpointTypeProcessor {
-
-    private static final Logger LOG = Logger.getLogger(WebhookTypeProcessor.class);
 
     private static final String TOKEN_HEADER = "X-Insight-Token";
 
@@ -74,10 +71,12 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     public Uni<NotificationHistory> doHttpRequest(Notification item, HttpRequest<Buffer> req, Uni<JsonObject> payload) {
         final long startTime = System.currentTimeMillis();
 
+        HttpRequestImpl<Buffer> reqImpl_debug = (HttpRequestImpl<Buffer>) req.getDelegate();
+        System.out.println("Host: " + reqImpl_debug.host() + ":" + reqImpl_debug.port() + " URI" + reqImpl_debug.uri() + " " + reqImpl_debug.rawMethod() + " SSL:" + reqImpl_debug.ssl());
+
         return payload.onItem()
                 .transformToUni(json -> req.sendJsonObject(json)
                         .onItem().transform(resp -> {
-                            System.out.println("Calling webhook");
                             final long endTime = System.currentTimeMillis();
                             // Default result is false
                             NotificationHistory history = getHistoryStub(item, endTime - startTime);
@@ -87,15 +86,11 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                                 history.setInvocationResult(true);
                             } else if (resp.statusCode() > 500) {
                                 // Temporary error, allow retry
-                                System.out.println("Couldn't send EMail " + resp.statusCode() + " " + resp.body());
-                                LOG.warn("Failed to send: " + json + " Response: " + resp.statusCode() + " " + resp.body());
                                 history.setInvocationResult(false);
                             } else {
                                 // Disable the target endpoint, it's not working correctly for us (such as 400)
                                 // must eb manually re-enabled
                                 // Redirects etc should have been followed by the vertx (test this)
-                                System.out.println("Couldn't send EMail " + resp.statusCode() + " " + resp.body());
-                                LOG.warn("Failed to send: " + json + " Response: " + resp.statusCode() + " " + resp.body());
                                 history.setInvocationResult(false);
                             }
 
