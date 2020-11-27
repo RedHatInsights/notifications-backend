@@ -12,7 +12,6 @@ import com.redhat.cloud.notifications.templates.Policies;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
-import io.vertx.ext.web.client.impl.HttpRequestImpl;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
@@ -40,11 +39,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Inject
     WebhookTypeProcessor webhookSender;
 
-    @ConfigProperty(name = "processor.email.bop_host")
-    String bopHost;
-
-    @ConfigProperty(name = "processor.email.bop_port")
-    int bopPort;
+    @ConfigProperty(name = "processor.email.bop_url")
+    String bopUrl;
 
     @ConfigProperty(name = "processor.email.bop_apitoken")
     String bopApiToken;
@@ -60,15 +56,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     protected HttpRequest<Buffer> buildBOPHttpRequest() {
         WebClientOptions options = new WebClientOptions()
-                .setSsl(true)
                 .setTrustAll(true)
                 .setConnectTimeout(3000);
 
-        System.out.println("Options SSL: " + options.isSsl());
-        System.out.println("Options Redirect: " + options.isFollowRedirects());
-
         return WebClient.create(vertx, options)
-                .post(bopPort, bopHost, "/v1/sendEmails")
+                .postAbs(bopUrl)
                 .putHeader(BOP_APITOKEN_HEADER, bopApiToken)
                 .putHeader(BOP_CLIENT_ID_HEADER, bopClientId)
                 .putHeader(BOP_ENV_HEADER, bopEnv);
@@ -107,10 +99,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     public Uni<NotificationHistory> process(Notification item) {
         final String accountId = item.getTenant();
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
-
-        HttpRequestImpl<Buffer> reqImpl_debug = (HttpRequestImpl<Buffer>) bopRequest.getDelegate();
-        System.out.println("ReqImpl SSL:" + reqImpl_debug.ssl());
-        System.out.println("ReqImpl FollowRedirect: " + reqImpl_debug.followRedirects());
 
         return this.subscriptionResources.getEmailSubscribers(accountId, EmailSubscriptionType.INSTANT)
                 .onItem().transform(emailSubscription -> emailSubscription.getUsername())
