@@ -76,8 +76,8 @@ public class EmailTest {
         emailProcessor.bopEnv = "unitTest";
         emailProcessor.noReplyAddress = "no-reply@redhat.com";
 
-        String url = String.format("http://%s/v1/sendEmails", mockServerConfig.getRunningAddress());
-        emailProcessor.bopUrl = url;
+        emailProcessor.bopHost = mockServerConfig.getRunningHostname();
+        emailProcessor.bopPort = mockServerConfig.getRunningPort();
     }
 
     private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {
