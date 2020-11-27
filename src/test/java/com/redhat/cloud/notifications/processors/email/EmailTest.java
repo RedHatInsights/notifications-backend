@@ -22,6 +22,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Vertx;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockserver.mock.action.ExpectationResponseCallback;
@@ -92,6 +93,7 @@ public class EmailTest {
     }
 
     @Test
+    @Disabled
     void testEmailSubscriptionInstant() {
 
         final String tenant = "tenant";

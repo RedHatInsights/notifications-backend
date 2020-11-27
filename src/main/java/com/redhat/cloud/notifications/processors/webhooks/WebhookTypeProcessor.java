@@ -21,10 +21,13 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.util.logging.Logger;
 
 
 @ApplicationScoped
 public class WebhookTypeProcessor implements EndpointTypeProcessor {
+
+    private final Logger log = Logger.getLogger(this.getClass().getSimpleName());
 
     private static final String TOKEN_HEADER = "X-Insight-Token";
 
@@ -71,9 +74,6 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     public Uni<NotificationHistory> doHttpRequest(Notification item, HttpRequest<Buffer> req, Uni<JsonObject> payload) {
         final long startTime = System.currentTimeMillis();
 
-        HttpRequestImpl<Buffer> reqImpl_debug = (HttpRequestImpl<Buffer>) req.getDelegate();
-        System.out.println("Host: " + reqImpl_debug.host() + ":" + reqImpl_debug.port() + " URI" + reqImpl_debug.uri() + " " + reqImpl_debug.rawMethod() + " SSL:" + reqImpl_debug.ssl());
-
         return payload.onItem()
                 .transformToUni(json -> req.sendJsonObject(json)
                         .onItem().transform(resp -> {
@@ -86,11 +86,13 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                                 history.setInvocationResult(true);
                             } else if (resp.statusCode() > 500) {
                                 // Temporary error, allow retry
+                                log.warning("Target endpoint server error: " + resp.statusCode() + " " + resp.statusMessage());
                                 history.setInvocationResult(false);
                             } else {
                                 // Disable the target endpoint, it's not working correctly for us (such as 400)
-                                // must eb manually re-enabled
+                                // must be manually re-enabled
                                 // Redirects etc should have been followed by the vertx (test this)
+                                log.warning("Target endpoint error: " + resp.statusCode() + " " + resp.statusMessage());
                                 history.setInvocationResult(false);
                             }
 
@@ -108,11 +110,14 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
                             return history;
                         }).onFailure().recoverWithItem(t -> {
+
                             // TODO Duplicate code with the success part
                             final long endTime = System.currentTimeMillis();
                             NotificationHistory history = getHistoryStub(item, endTime - startTime);
 
                             HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
+
+                            log.warning("Failed: " + t.getMessage());
 
                             // TODO Duplicate code with the error return code part
                             JsonObject details = new JsonObject();

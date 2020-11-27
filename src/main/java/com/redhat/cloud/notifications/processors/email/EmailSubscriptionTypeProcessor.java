@@ -60,7 +60,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     protected HttpRequest<Buffer> buildBOPHttpRequest() {
         WebClientOptions options = new WebClientOptions()
-                .setSsl(false)
+                .setSsl(true)
+                .setTrustAll(true)
                 .setConnectTimeout(3000);
 
         System.out.println("Options SSL: " + options.isSsl());
