@@ -76,7 +76,7 @@ public class EmailTest {
         emailProcessor.bopEnv = "unitTest";
         emailProcessor.noReplyAddress = "no-reply@redhat.com";
 
-        String host = String.format("%s", mockServerConfig.getRunningAddress());
+        String host = String.format("%s", mockServerConfig.getRunningHostname());
         emailProcessor.bopHost = host;
     }
 
