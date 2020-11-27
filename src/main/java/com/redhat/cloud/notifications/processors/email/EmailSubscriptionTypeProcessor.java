@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.templates.Policies;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
+import io.vertx.ext.web.client.impl.HttpRequestImpl;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
@@ -59,6 +60,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 .setSsl(false)
                 .setConnectTimeout(3000);
 
+        System.out.println("Options SSL: " + options.isSsl());
+
         return WebClient.create(vertx, options)
                 .rawAbs("POST", bopUrl)
                 .putHeader(BOP_APITOKEN_HEADER, bopApiToken)
@@ -98,7 +101,10 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Override
     public Uni<NotificationHistory> process(Notification item) {
         final String accountId = item.getTenant();
-        final HttpRequest<Buffer> bobRequest = this.buildBOPHttpRequest();
+        final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
+
+        HttpRequestImpl<Buffer> reqImpl_debug = (HttpRequestImpl<Buffer>) bopRequest.getDelegate();
+        System.out.println("ReqImpl SSL" + reqImpl_debug.ssl());
 
         return this.subscriptionResources.getEmailSubscribers(accountId, EmailSubscriptionType.INSTANT)
                 .onItem().transform(emailSubscription -> emailSubscription.getUsername())
@@ -155,7 +161,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
                     // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
                     //      also add metrics for these failures
-                    return webhookSender.doHttpRequest(item, bobRequest, payload);
+                    return webhookSender.doHttpRequest(item, bopRequest, payload);
                 });
     }
 
