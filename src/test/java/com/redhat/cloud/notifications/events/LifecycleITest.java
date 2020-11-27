@@ -356,13 +356,16 @@ public class LifecycleITest {
         assertEquals(2, endpoints.length);
 
         for (Endpoint endpoint : endpoints) {
-            given()
+            String body =
+                given()
                     .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                     .header(identityHeader)
                     .when()
                     .delete(String.format("/notifications/eventTypes/%d/%s", policiesAll.getId(), endpoint.getId()))
                     .then()
-                    .statusCode(200);
+                    .statusCode(204)
+                    .extract().body().asString();
+            assertEquals(0, body.length());
         }
 
         // Fetch the list again

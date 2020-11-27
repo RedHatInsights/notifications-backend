@@ -112,11 +112,14 @@ public class EndpointServiceTest {
         assertTrue(responsePointSingle.isEnabled());
 
         // Disable and fetch
-        given()
+        String body =
+            given()
                 .header(identityHeader)
                 .when().delete("/endpoints/" + responsePoint.getId() + "/enable")
                 .then()
-                .statusCode(200);
+                .statusCode(204)
+                .extract().body().asString();
+        assertEquals(0, body.length());
 
         responsePointSingle = fetchSingle(responsePoint.getId(), identityHeader);
         assertNotNull(responsePoint.getProperties());
@@ -134,11 +137,14 @@ public class EndpointServiceTest {
         assertTrue(responsePointSingle.isEnabled());
 
         // Delete
-        given()
+        body =
+            given()
                 .header(identityHeader)
                 .when().delete("/endpoints/" + responsePoint.getId())
                 .then()
-                .statusCode(200);
+                .statusCode(204)
+                .extract().body().asString();
+        assertEquals(0, body.length());
 
         // Fetch single
         given()
@@ -644,11 +650,14 @@ public class EndpointServiceTest {
         assertNotNull(responsePoint.getId());
 
         // Delete
-        given()
+        String body =
+            given()
                 .header(identityHeader)
                 .when().delete("/endpoints/" + responsePoint.getId())
                 .then()
-                .statusCode(200);
+                .statusCode(204)
+                .extract().body().asString();
+        assertEquals(0, body.length());
     }
 
     @Test
