@@ -60,10 +60,12 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     protected HttpRequest<Buffer> buildBOPHttpRequest() {
         WebClientOptions options = new WebClientOptions()
-                .setSsl(false)
+                .setSsl(true)
+                .setTrustAll(true)
                 .setConnectTimeout(3000);
 
         System.out.println("Options SSL: " + options.isSsl());
+        System.out.println("Options Redirect: " + options.isFollowRedirects());
 
         return WebClient.create(vertx, options)
                 .post(bopPort, bopHost, "/v1/sendEmails")
@@ -107,7 +109,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
         HttpRequestImpl<Buffer> reqImpl_debug = (HttpRequestImpl<Buffer>) bopRequest.getDelegate();
-        System.out.println("ReqImpl SSL" + reqImpl_debug.ssl());
+        System.out.println("ReqImpl SSL:" + reqImpl_debug.ssl());
+        System.out.println("ReqImpl FollowRedirect: " + reqImpl_debug.followRedirects());
 
         return this.subscriptionResources.getEmailSubscribers(accountId, EmailSubscriptionType.INSTANT)
                 .onItem().transform(emailSubscription -> emailSubscription.getUsername())
