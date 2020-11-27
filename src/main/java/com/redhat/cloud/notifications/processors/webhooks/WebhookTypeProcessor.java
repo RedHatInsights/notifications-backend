@@ -52,7 +52,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         WebhookAttributes properties = (WebhookAttributes) endpoint.getProperties();
 
         WebClientOptions options = new WebClientOptions()
-                .setSsl(!properties.isDisableSSLVerification())
+                .setTrustAll(properties.isDisableSSLVerification())
                 .setConnectTimeout(3000); // TODO Should this be configurable by the system? We need a maximum in any case
 
         final HttpRequest<Buffer> req = WebClient.create(vertx, options)
