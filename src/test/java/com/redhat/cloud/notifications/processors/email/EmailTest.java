@@ -76,8 +76,8 @@ public class EmailTest {
         emailProcessor.bopEnv = "unitTest";
         emailProcessor.noReplyAddress = "no-reply@redhat.com";
 
-        String url = String.format("http://%s/v1/sendEmails", mockServerConfig.getRunningAddress());
-        emailProcessor.bopUrl = url;
+        String host = String.format("%s", mockServerConfig.getRunningAddress());
+        emailProcessor.bopHost = host;
     }
 
     private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {
@@ -157,7 +157,7 @@ public class EmailTest {
         try {
             Uni<NotificationHistory> process = emailProcessor.process(notif);
             NotificationHistory history = process.await().indefinitely();
-            // assertTrue(history.isInvocationResult());
+            assertTrue(history.isInvocationResult());
         } catch (Exception e) {
             e.printStackTrace();
             fail(e);

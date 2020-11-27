@@ -40,8 +40,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Inject
     WebhookTypeProcessor webhookSender;
 
-    @ConfigProperty(name = "processor.email.bop_url")
-    String bopUrl;
+    @ConfigProperty(name = "processor.email.bop_host")
+    String bopHost;
 
     @ConfigProperty(name = "processor.email.bop_apitoken")
     String bopApiToken;
@@ -63,7 +63,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         System.out.println("Options SSL: " + options.isSsl());
 
         return WebClient.create(vertx, options)
-                .post("backoffice-proxy-insights-services.ext.us-east.aws.preprod.paas.redhat.com", "/v1/sendEmails")
+                .post(bopHost, "/v1/sendEmails")
                 .putHeader(BOP_APITOKEN_HEADER, bopApiToken)
                 .putHeader(BOP_CLIENT_ID_HEADER, bopClientId)
                 .putHeader(BOP_ENV_HEADER, bopEnv);
