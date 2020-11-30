@@ -93,7 +93,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                                 // Disable the target endpoint, it's not working correctly for us (such as 400)
                                 // must be manually re-enabled
                                 // Redirects etc should have been followed by the vertx (test this)
-                                log.fine("Target endpoint error: " + resp.statusCode() + " " + resp.statusMessage());
+                                log.fine("Target endpoint error: " + resp.statusCode() + " " + resp.statusMessage() + " " + json);
                                 history.setInvocationResult(false);
                             }
 
