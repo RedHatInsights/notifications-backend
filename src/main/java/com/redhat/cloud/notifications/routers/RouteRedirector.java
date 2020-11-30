@@ -17,7 +17,7 @@ public class RouteRedirector {
 
     Pattern p = Pattern.compile("/api/(integrations|notifications)/v1/(.*)");
 
-    Logger log = Logger.getLogger(this.getClass().getSimpleName());
+    Logger log = Logger.getLogger(this.getClass().getName());
 
     /**
      * If the requested route is the one with major version only,

@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
-    private final Logger log = Logger.getLogger(this.getClass().getSimpleName());
+    private final Logger log = Logger.getLogger(this.getClass().getName());
 
     private static final String TOKEN_HEADER = "X-Insight-Token";
 
@@ -83,6 +83,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
                             if (resp.statusCode() >= 200 && resp.statusCode() <= 300) {
                                 // Accepted
+                                log.fine("Target endpoint successful: " + resp.statusCode());
                                 history.setInvocationResult(true);
                             } else if (resp.statusCode() > 500) {
                                 // Temporary error, allow retry
