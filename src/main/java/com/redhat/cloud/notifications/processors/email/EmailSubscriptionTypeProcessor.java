@@ -22,10 +22,13 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
+
+    private final Logger log = Logger.getLogger(this.getClass().getName());
 
     static final String BOP_APITOKEN_HEADER = "x-rh-apitoken";
     static final String BOP_CLIENT_ID_HEADER = "x-rh-clientid";
@@ -146,6 +149,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     return email;
                 })
                 .onItem().transformToUni(email -> {
+                    if (email == null) {
+                        log.fine("No subscribers for type: instant_email. Skipping EmailSubscription email for endpoint: " + item.getEndpoint().getId());
+                        return null;
+                    }
+
                     Emails emails = new Emails();
                     emails.addEmail(email);
                     Uni<JsonObject> payload = Uni.createFrom().item(JsonObject.mapFrom(emails));
