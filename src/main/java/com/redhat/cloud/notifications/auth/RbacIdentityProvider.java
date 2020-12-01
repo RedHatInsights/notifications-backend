@@ -11,12 +11,20 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.logging.Logger;
 
 /**
  * Authorizes the data from the insight's RBAC-server and adds the appropriate roles
  */
 @ApplicationScoped
 public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenticationRequest> {
+
+    public static final String RBAC_READ_NOTIFICATIONS = "read:notifications";
+    public static final String RBAC_WRITE_NOTIFICATIONS = "write:notifications";
+    public static final String RBAC_READ_INTEGRATIONS = "read:integrations";
+    public static final String RBAC_WRITE_INTEGRATIONS = "write:integrations";
+    private final Logger log = Logger.getLogger(this.getClass().getSimpleName());
+
     @Inject
     @RestClient
     RbacServer rbacServer;
@@ -37,22 +45,28 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                     .addRole("write")
                     .build());
         }
-        // TODO Modify to allow integrations & notifications as application type
-        return rbacServer.getRbacInfo("notifications", rhAuthReq.getxRhIdentity())
+        return rbacServer.getRbacInfo("notifications,integrations", rhAuthReq.getxRhIdentity())
                 .onItem()
                 .transform(raw -> {
                     QuarkusSecurityIdentity.Builder builder = QuarkusSecurityIdentity.builder();
-                    if (raw.canReadAll()) {
-                        builder.addRole("read");
+                    if (raw.canRead("notifications")) {
+                        builder.addRole(RBAC_READ_NOTIFICATIONS);
                     }
-                    if (raw.canWriteAll()) {
-                        builder.addRole("write");
+                    if (raw.canWrite("notifications")) {
+                        builder.addRole(RBAC_WRITE_NOTIFICATIONS);
+                    }
+                    if (raw.canRead("integrations")) {
+                        builder.addRole(RBAC_READ_INTEGRATIONS);
+                    }
+                    if (raw.canWrite("integrations")) {
+                        builder.addRole(RBAC_WRITE_INTEGRATIONS);
                     }
 
                     return (SecurityIdentity) builder.build();
                 })
                 .onFailure()
                 .transform(raw -> {
+                    log.warning("RBAC call failed: " + raw.getMessage());
                     throw new AuthenticationFailedException(raw.getMessage());
                 });
     }

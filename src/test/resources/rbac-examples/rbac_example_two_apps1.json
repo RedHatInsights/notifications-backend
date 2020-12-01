@@ -12,11 +12,15 @@
   },
   "data": [
     {
-      "permission": "notifications:*:*",
+      "permission": "notifications:*:execute",
       "resourceDefinitions": []
     },
     {
-      "permission": "integrations:*:*",
+      "permission": "integrations:*:read",
+      "resourceDefinitions": []
+    },
+    {
+      "permission": "integrations:admin:execute",
       "resourceDefinitions": []
     }
   ]
