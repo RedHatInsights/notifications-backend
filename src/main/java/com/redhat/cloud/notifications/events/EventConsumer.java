@@ -41,7 +41,6 @@ public class EventConsumer {
 //    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
     // Can be modified to use Multi<Message<String>> input also for more concurrency
     public Uni<Void> processAsync(Message<String> input) {
-        System.out.println("Processing");
         if (log.isLoggable(Level.FINE)) {
             log.fine("Processing: " + input.getPayload());
         }
