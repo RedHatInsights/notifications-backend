@@ -10,17 +10,18 @@ import org.apache.avro.io.JsonDecoder;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.concurrent.CompletionStage;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @ApplicationScoped
 public class EventConsumer {
 
-    private static final Logger log = Logger.getLogger(EventConsumer.class);
+    private static final Logger log = Logger.getLogger(EventConsumer.class.getName());
 
     MeterRegistry registry;
 
@@ -40,6 +41,10 @@ public class EventConsumer {
 //    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
     // Can be modified to use Multi<Message<String>> input also for more concurrency
     public Uni<Void> processAsync(Message<String> input) {
+        System.out.println("Processing");
+        if (log.isLoggable(Level.FINE)) {
+            log.fine("Processing: " + input.getPayload());
+        }
         return Uni.createFrom()
                 .item(input)
                 .stage(self -> self
@@ -61,7 +66,7 @@ public class EventConsumer {
                 .transformToUni((unused, t) -> {
                     // Log the throwable ?
                     if (t != null) {
-                        log.errorf("Could not process the payload: %s", t.getMessage());
+                        log.severe("Could not process the payload: " +  t.getMessage());
                     }
                     CompletionStage<Void> ack = input.ack();
                     return Uni.createFrom().completionStage(ack);
