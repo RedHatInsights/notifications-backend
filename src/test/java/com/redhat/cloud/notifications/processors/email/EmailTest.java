@@ -115,7 +115,7 @@ public class EmailTest {
 
         Action emailActionMessage = new Action();
         emailActionMessage.setApplication("EmailTest");
-        emailActionMessage.setTimestamp(LocalDateTime.now());
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 8, 3, 15, 22, 13, 25));
         emailActionMessage.setEventId(UUID.randomUUID().toString());
         emailActionMessage.setEventType("testEmailSubscriptionInstant");
 
@@ -197,5 +197,8 @@ public class EmailTest {
 
         // Display name
         assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
+
+        // Formatted date
+        assertTrue(bodyRequest.contains("03 Aug 2020 15:22 UTC"));
     }
 }
