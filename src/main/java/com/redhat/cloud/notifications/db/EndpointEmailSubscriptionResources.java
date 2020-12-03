@@ -20,7 +20,8 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
     Provider<Uni<PostgresqlConnection>> connectionPublisherUni;
 
     public Uni<Boolean> subscribe(String accountNumber, String username, EmailSubscriptionType type) {
-        String query = "INSERT INTO public.endpoint_email_subscriptions(account_id, user_id, subscription_type) VALUES($1, $2, $3)";
+        String query = "INSERT INTO public.endpoint_email_subscriptions(account_id, user_id, subscription_type) VALUES($1, $2, $3) " +
+                "ON CONFLICT (account_id, user_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
@@ -30,13 +31,11 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                                     .bind("$3", type.toString())
                                     .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated)
-                                    .map(i -> i > 0).next();
+                                    .map(i -> true).next();
                         })
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
                         })
-                        // The value is already on the database, this is OK
-                        .onFailure(R2dbcDataIntegrityViolationException.class).recoverWithItem(true)
                 ).toUni();
     }
 
