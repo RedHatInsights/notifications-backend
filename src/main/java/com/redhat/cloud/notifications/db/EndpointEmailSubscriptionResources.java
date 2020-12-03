@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
-import io.r2dbc.spi.R2dbcDataIntegrityViolationException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import reactor.core.publisher.Flux;
