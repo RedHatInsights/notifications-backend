@@ -5,8 +5,8 @@ import org.apache.avro.Schema;
 
 public class JsonObjectLogicalType extends LogicalType {
 
-    public static final String JSON_OBJECT_LOGICAL_TYPE_NAME = "json-object";
-    public static final JsonObjectLogicalType INSTANCE = new JsonObjectLogicalType();
+    static final String JSON_OBJECT_LOGICAL_TYPE_NAME = "json-object";
+    static final JsonObjectLogicalType INSTANCE = new JsonObjectLogicalType();
 
     private JsonObjectLogicalType() {
         super(JSON_OBJECT_LOGICAL_TYPE_NAME);

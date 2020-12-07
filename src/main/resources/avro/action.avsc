@@ -4,85 +4,31 @@
   "name": "Action",
   "fields": [
     {
-      "name": "event_id",
-      "type": "string",
-      "default": ""
-    },
-    {
-      "name": "timestamp",
-      "type": {
-        "type": "long",
-        "logicalType": "local-timestamp-millis"
-      }
+      "name": "application",
+      "type": "string"
     },
     {
       "name": "event_type",
       "type": "string"
     },
     {
-      "name": "application",
+      "name": "timestamp",
+      "type": {
+        "type": "string",
+        "logicalType": "iso-8601"
+      }
+    },
+    {
+      "name": "account_id",
       "type": "string"
     },
     {
-      "name": "endpoint_id",
-      "type": [
-        "null",
-        {
-            "type": "string",
-            "logicalType": "uuid"
-        }
-      ],
-      "default": null
-    },
-    {
-      "name": "tags",
-      "type": {
-        "type": "array",
-        "items": {
-          "name": "Tag",
-          "type": "record",
-          "fields": [
-            {
-              "name": "name",
-              "type": "string"
-            },
-            {
-              "name": "value",
-              "type": "string"
-            }
-          ]
-        }
-      },
-      "default": []
-    },
-    {
-      "name": "params",
+      "name": "payload",
       "type": {
           "type": "string",
           "logicalType": "json-object"
       },
       "default": "{}"
-    },
-    {
-      "name": "event",
-      "type": {
-        "type": "record",
-        "name": "Context",
-        "fields": [
-          {
-            "name": "account_id",
-            "type": "string"
-          },
-          {
-            "name": "message",
-            "type": {
-              "name": "MessageFields",
-              "type": "map",
-              "values": "string"
-            }
-          }
-        ]
-      }
     }
   ]
 }

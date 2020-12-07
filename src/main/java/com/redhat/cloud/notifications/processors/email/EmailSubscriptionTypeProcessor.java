@@ -126,20 +126,14 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         return Uni.createFrom().nullItem();
                     }
 
-                    String timestamp = item.getAction().getTimestamp().format(this.dateFormatter);
-
                     Uni<String> title = Policies.Templates
                             .instantEmailTitle()
-                            .data("tags", item.getAction().getTags())
-                            .data("params", item.getAction().getParams())
-                            .data("timestamp", timestamp)
+                            .data("payload", item.getAction().getPayload())
                             .createMulti().collectItems().with(Collectors.joining());
 
                     Uni<String> body = Policies.Templates
                             .instantEmailBody()
-                            .data("tags", item.getAction().getTags())
-                            .data("params", item.getAction().getParams())
-                            .data("timestamp", timestamp)
+                            .data("payload", item.getAction().getPayload())
                             .createMulti().collectItems().with(Collectors.joining());
 
                     return Uni.combine().all()

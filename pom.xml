@@ -288,10 +288,10 @@
                 <configuration>
                     <stringType>String</stringType>
                     <customConversions>
-                        org.apache.avro.Conversions$UUIDConversion,org.apache.avro.data.TimeConversions$LocalTimestampMillisConversion,com.redhat.cloud.notifications.avro.JsonObjectConversion
+                        org.apache.avro.Conversions$UUIDConversion,org.apache.avro.data.TimeConversions$LocalTimestampMillisConversion,com.redhat.cloud.notifications.avro.JsonObjectConversion,com.redhat.cloud.notifications.avro.Iso8601Conversion
                     </customConversions>
                     <customLogicalTypeFactories>
-                        com.redhat.cloud.notifications.avro.NotificationLogicalTypeFactory
+                        com.redhat.cloud.notifications.avro.JsonObjectFactory,com.redhat.cloud.notifications.avro.Iso8601Factory
                     </customLogicalTypeFactories>
                 </configuration>
                 <executions>

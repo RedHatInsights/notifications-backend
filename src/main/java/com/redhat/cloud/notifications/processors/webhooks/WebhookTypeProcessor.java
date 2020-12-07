@@ -156,7 +156,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         history.setInvocationTime(invocationTime);
         history.setEndpoint(item.getEndpoint());
         history.setTenant(item.getEndpoint().getTenant());
-        history.setEventId(item.getEventId());
+        history.setEventId("");
         history.setInvocationResult(false);
         return history;
     }
