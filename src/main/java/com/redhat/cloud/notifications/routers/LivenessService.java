@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.StuffHolder;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.health.HealthCheck;
@@ -47,8 +48,15 @@ public class LivenessService implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
-        HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications Engine readiness check")
-                .state(postgresConnectionHealth().await().indefinitely());
+
+        boolean adminDown = StuffHolder.getInstance().isAdminDown();
+
+        HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications Engine readiness check");
+        if (adminDown) {
+            response.down().withData("status", "admin-down");
+        } else {
+            response.state(postgresConnectionHealth().await().indefinitely());
+        }
 
         return response.build();
     }
