@@ -147,7 +147,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 .onItem().transformToUni(email -> {
                     if (email == null) {
                         log.fine("No subscribers for type: instant_email. Skipping EmailSubscription email for endpoint: " + item.getEndpoint().getId());
-                        return null;
+                        return Uni.createFrom().nullItem();
                     }
 
                     Emails emails = new Emails();
