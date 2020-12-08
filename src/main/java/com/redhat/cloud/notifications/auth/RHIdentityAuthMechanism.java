@@ -40,7 +40,8 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
                 if (path.endsWith("openapi.json")) {
                     good = true;
                 }
-            } else if (path.startsWith("/openapi.json") || path.startsWith("/applications")) {
+            } else if (path.startsWith("/openapi.json") || path.startsWith("/applications")
+                    || path.startsWith("/admin") || path.startsWith("/health")) {
                 good = true;
             }
 
