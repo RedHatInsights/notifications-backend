@@ -123,8 +123,8 @@ public class EmailTest {
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("triggers", triggers);
-        payload.put("displayName", "My test machine");
-        payload.put("systemCheckIn", "03 Aug 2020 15:22 UTC");
+        payload.put("display_name", "My test machine");
+        payload.put("system_check_in", "2020-08-03T15:22:42.199046");
         emailActionMessage.setPayload(payload);
         emailActionMessage.setAccountId("tenant");
 

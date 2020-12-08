@@ -19,15 +19,15 @@ public class TestPoliciesTemplate {
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("triggers", triggers);
-        payload.put("displayName", "FooMachine");
-        payload.put("systemCheckIn", "2020 123 UTC");
+        payload.put("display_name", "FooMachine");
+        payload.put("system_check_in", "2020-04-16T16:10:42.199046");
 
         String result = Policies.Templates.instantEmailTitle()
                 .data("payload", payload)
                 .render();
 
         assertTrue(result.contains("2"), "Title contains the number of policies triggered");
-        assertTrue(result.contains("FooMachine"), "Body should contain the displayName");
+        assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
     }
 
     @Test
@@ -39,8 +39,8 @@ public class TestPoliciesTemplate {
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("triggers", triggers);
-        payload.put("displayName", "FooMachine");
-        payload.put("systemCheckIn", "2020 123 UTC");
+        payload.put("display_name", "FooMachine");
+        payload.put("system_check_in", "2020-04-16T16:10:42.199046");
 
         String result = Policies.Templates.instantEmailBody()
                 .data("payload", payload)
@@ -53,6 +53,6 @@ public class TestPoliciesTemplate {
         }
 
         // Display name
-        assertTrue(result.contains("FooMachine"), "Body should contain the displayName");
+        assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
     }
 }
