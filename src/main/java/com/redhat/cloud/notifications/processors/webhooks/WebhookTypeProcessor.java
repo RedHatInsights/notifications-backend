@@ -152,6 +152,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     }
 
     private NotificationHistory getHistoryStub(Notification item, long invocationTime) {
+        // Fixing Cricket
         NotificationHistory history = new NotificationHistory();
         history.setInvocationTime(invocationTime);
         history.setEndpoint(item.getEndpoint());
