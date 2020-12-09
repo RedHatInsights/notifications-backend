@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.processors.webhooks.transformers;
 
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 
@@ -10,12 +9,8 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class BaseTransformer {
 
-    private JsonObject createMessage(Action action) {
-        JsonObject message = new JsonObject();
-
-        Context context = action.getEvent();
-        context.getMessage().forEach(message::put);
-
+    private JsonObject createPayload(Action action) {
+        JsonObject message = new JsonObject(action.getPayload());
         return message;
     }
 
@@ -23,9 +18,9 @@ public class BaseTransformer {
         // Fields and terminology straight from the target project
         JsonObject message = new JsonObject();
         message.put("application", action.getApplication());
-        message.put("account_id", action.getEvent().getAccountId());
+        message.put("account_id", action.getAccountId());
         message.put("timestamp", action.getTimestamp().toString());
-        message.put("message", createMessage(action));
+        message.put("payload", createPayload(action));
 
         return Uni.createFrom().item(message);
     }

@@ -1,3 +1,4 @@
-{@java.lang.String timestamp}
-{@java.util.List<com.redhat.cloud.notifications.ingress.Tag> tags}
-{timestamp} - {params.triggers.size()} {#if params.triggers.size() is 1}policy{#else}policies{/if} triggered on {tags.getFirst("display_name")}
+{@java.lang.String payload.system_check_in}
+{@java.lang.String payload.display_name}
+{@java.util.Map<java.lang.String, java.lang.String> payload.triggers}
+{payload.system_check_in.toUtcFormat()} - {payload.triggers.size()} {#if payload.triggers.size() is 1}policy{#else}policies{/if} triggered on {payload.display_name}

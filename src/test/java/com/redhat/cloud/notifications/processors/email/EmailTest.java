@@ -6,8 +6,6 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
-import com.redhat.cloud.notifications.ingress.Tag;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EmailSubscriptionAttributes;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -35,7 +33,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
@@ -115,33 +112,21 @@ public class EmailTest {
 
         Action emailActionMessage = new Action();
         emailActionMessage.setApplication("EmailTest");
-        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 8, 3, 15, 22, 13, 25));
-        emailActionMessage.setEventId(UUID.randomUUID().toString());
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        // Disabling event id until we need it
+        // emailActionMessage.setEventId(UUID.randomUUID().toString());
         emailActionMessage.setEventType("testEmailSubscriptionInstant");
-
-        List<Tag> tags = new ArrayList<>();
-        tags.add(new Tag("display_name", "My test machine"));
-
-        emailActionMessage.setTags(tags);
 
         Map<String, String> triggers = new HashMap<>();
         triggers.put("abcd-efghi-jkl-lmn", "Foobar");
         triggers.put("0123-456-789-5721f", "Latest foo is installed");
 
-        Map<String, Object> params = new HashMap<>();
-        params.put("triggers", triggers);
-
-        emailActionMessage.setParams(params);
-
-        // TODO Modify this to match current email requirements
-        Context context = new Context();
-        context.setAccountId("tenant");
-        Map<String, String> values = new HashMap<>();
-        values.put("k", "v");
-        values.put("k2", "v2");
-        values.put("k3", "v");
-        context.setMessage(values);
-        emailActionMessage.setEvent(context);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("triggers", triggers);
+        payload.put("display_name", "My test machine");
+        payload.put("system_check_in", "2020-08-03T15:22:42.199046");
+        emailActionMessage.setPayload(payload);
+        emailActionMessage.setAccountId("tenant");
 
         EmailSubscriptionAttributes emailAttr = new EmailSubscriptionAttributes();
 

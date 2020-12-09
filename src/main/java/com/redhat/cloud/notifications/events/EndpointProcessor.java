@@ -56,7 +56,7 @@ public class EndpointProcessor {
 
     public Uni<Void> process(Action action) {
         processedItems.increment();
-        Multi<NotificationHistory> endpointsCallResult = getEndpoints(action.getEvent().getAccountId(), action.getApplication(), action.getEventType())
+        Multi<NotificationHistory> endpointsCallResult = getEndpoints(action.getAccountId(), action.getApplication(), action.getEventType())
                 .onItem()
                 .transformToUni(endpoint -> {
                     endpointTargeted.increment();

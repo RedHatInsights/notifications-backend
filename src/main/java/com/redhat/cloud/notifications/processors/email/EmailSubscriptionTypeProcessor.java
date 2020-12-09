@@ -20,7 +20,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -57,13 +56,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @ConfigProperty(name = "processor.email.no_reply")
     String noReplyAddress;
-
-    private DateTimeFormatter dateFormatter;
-
-    {
-        // 01 Dec 2020 06:06 UTC
-        this.dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm 'UTC'");
-    }
 
     protected HttpRequest<Buffer> buildBOPHttpRequest() {
         WebClientOptions options = new WebClientOptions()
@@ -126,20 +118,14 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         return Uni.createFrom().nullItem();
                     }
 
-                    String timestamp = item.getAction().getTimestamp().format(this.dateFormatter);
-
                     Uni<String> title = Policies.Templates
                             .instantEmailTitle()
-                            .data("tags", item.getAction().getTags())
-                            .data("params", item.getAction().getParams())
-                            .data("timestamp", timestamp)
+                            .data("payload", item.getAction().getPayload())
                             .createMulti().collectItems().with(Collectors.joining());
 
                     Uni<String> body = Policies.Templates
                             .instantEmailBody()
-                            .data("tags", item.getAction().getTags())
-                            .data("params", item.getAction().getParams())
-                            .data("timestamp", timestamp)
+                            .data("payload", item.getAction().getPayload())
                             .createMulti().collectItems().with(Collectors.joining());
 
                     return Uni.combine().all()
@@ -161,7 +147,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 .onItem().transformToUni(email -> {
                     if (email == null) {
                         log.fine("No subscribers for type: instant_email. Skipping EmailSubscription email for endpoint: " + item.getEndpoint().getId());
-                        return null;
+                        return Uni.createFrom().nullItem();
                     }
 
                     Emails emails = new Emails();

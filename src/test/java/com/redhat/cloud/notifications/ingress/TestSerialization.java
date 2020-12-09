@@ -6,10 +6,8 @@ import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,26 +24,19 @@ public class TestSerialization {
         Action targetAction = new Action();
         targetAction.setApplication("Policies");
         targetAction.setTimestamp(LocalDateTime.now());
-        targetAction.setEventId(UUID.randomUUID().toString()); // UUID probably isn't what we want..
         targetAction.setEventType("Any");
-        targetAction.setTags(new ArrayList<>());
-        targetAction.setParams(new HashMap());
+        targetAction.setAccountId("testTenant");
+        Map<String, String> payload = new HashMap<>();
+        payload.put("k", "v");
+        payload.put("k2", "v2");
+        payload.put("k3", "v");
+        targetAction.setPayload(payload);
 
-        Context context = new Context();
-        context.setAccountId("testTenant");
-        Map<String, String> values = new HashMap<>();
-        values.put("k", "v");
-        values.put("k2", "v2");
-        values.put("k3", "v");
-        context.setMessage(values);
-        targetAction.setEvent(context);
+        String serializedAction = serializeAction(targetAction);
 
-        String payload = serializeAction(targetAction);
-
-        Action action = eventConsumer.extractPayload(payload);
+        Action action = eventConsumer.extractPayload(serializedAction);
         assertNotNull(action);
-        assertEquals(targetAction.getEventId(), action.getEventId());
-        assertEquals(targetAction.getEvent().getAccountId(), action.getEvent().getAccountId());
-        assertEquals(targetAction.getEvent().getMessage().get("k3"), action.getEvent().getMessage().get("k3"));
+        assertEquals(targetAction.getAccountId(), action.getAccountId());
+        assertEquals(targetAction.getPayload().get("k3"), action.getPayload().get("k3"));
     }
 }
