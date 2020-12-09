@@ -8,13 +8,14 @@ import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.JsonDecoder;
 import org.apache.avro.specific.SpecificDatumReader;
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.concurrent.CompletionStage;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,7 +39,7 @@ public class EventConsumer {
     }
 
     @Incoming("ingress")
-//    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
+    @Acknowledgment(Strategy.PRE_PROCESSING)
     // Can be modified to use Multi<Message<String>> input also for more concurrency
     public Uni<Void> processAsync(Message<String> input) {
         if (log.isLoggable(Level.FINE)) {
@@ -67,8 +68,8 @@ public class EventConsumer {
                     if (t != null) {
                         log.severe("Could not process the payload: " +  t.getMessage());
                     }
-                    CompletionStage<Void> ack = input.ack();
-                    return Uni.createFrom().completionStage(ack);
+
+                    return Uni.createFrom().voidItem();
                 });
     }
 
