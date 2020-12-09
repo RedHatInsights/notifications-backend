@@ -28,6 +28,7 @@ public class DefaultProcessor {
     }
 
     public Multi<Endpoint> getDefaultEndpoints(Endpoint defaultEndpoint) {
+        // Fix cricket
         processedItems.increment();
         return resources.getDefaultEndpoints(defaultEndpoint.getTenant())
                 .transform().byFilteringItemsWith(Endpoint::isEnabled)
