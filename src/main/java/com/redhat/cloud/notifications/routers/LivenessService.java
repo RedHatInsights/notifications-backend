@@ -2,11 +2,14 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.StuffHolder;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
+import io.r2dbc.postgresql.api.PostgresqlResult;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
+import reactor.core.publisher.Flux;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -39,10 +42,16 @@ public class LivenessService implements HealthCheck {
 
     Uni<Boolean> postgresConnectionHealth() {
         return connectionPublisherUni.toMulti()
-                .onItem().transform(conn -> conn.createStatement("SELECT COUNT(1)").execute())
-                .flatMap(flux -> flux
-                        .flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> true)))
-                .toUni()
+                .onItem().transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement("SELECT COUNT(1)").execute();
+
+                            return execute.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> true));
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }))
+                .merge().toUni()
                 .onFailure().recoverWithItem(false);
     }
 
@@ -51,11 +60,12 @@ public class LivenessService implements HealthCheck {
 
         boolean adminDown = StuffHolder.getInstance().isAdminDown();
 
-        HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications Engine readiness check");
+        HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications readiness check");
         if (adminDown) {
             response.down().withData("status", "admin-down");
         } else {
-            response.state(postgresConnectionHealth().await().indefinitely());
+            boolean dbState = postgresConnectionHealth().await().indefinitely();
+            response.state(dbState).withData("reactive-db-check", dbState);
         }
 
         return response.build();

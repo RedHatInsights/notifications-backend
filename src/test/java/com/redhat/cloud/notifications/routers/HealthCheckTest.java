@@ -44,8 +44,6 @@ public class HealthCheckTest {
                             .then()
                             .statusCode(503)
                             .extract().asString();
-            System.out.println(body);
-            System.out.flush();
             Assertions.assertTrue(body.contains("admin-down"));
         } finally {
             with()
