@@ -8,14 +8,14 @@ import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
-import org.eclipse.microprofile.health.Readiness;
+import org.eclipse.microprofile.health.Liveness;
 import reactor.core.publisher.Flux;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 @ApplicationScoped
-@Readiness
+@Liveness
 public class LivenessService implements HealthCheck {
 
 //    @Inject
