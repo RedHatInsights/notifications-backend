@@ -20,7 +20,7 @@ import java.util.Optional;
 /**
  * Stuff around admin of the service and debugging
  */
-@Path("/admin")
+@Path("/internal/admin")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class AdminService {
