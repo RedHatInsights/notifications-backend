@@ -34,7 +34,7 @@ public class ApplicationServiceTest {
         // All of these are without identityHeader
         given()
                 // Set header to x-rh-identity
-                .when().get("/applications")
+                .when().get("/internal/applications")
                 .then()
                 .statusCode(200);
 
@@ -42,7 +42,7 @@ public class ApplicationServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(app))
-                .post("/applications")
+                .post("/internal/applications")
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -61,7 +61,7 @@ public class ApplicationServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(eventType))
-                .post(String.format("/applications/%s/eventTypes", appResponse.getId()))
+                .post(String.format("/internal/applications/%s/eventTypes", appResponse.getId()))
                 .then()
                 .statusCode(200)
                 .extract().response();

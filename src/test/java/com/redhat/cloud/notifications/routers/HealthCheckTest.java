@@ -33,7 +33,7 @@ public class HealthCheckTest {
                 .accept("application/json")
                 .contentType("application/json")
                 .when()
-                .post("/admin/status")
+                .post("/internal/admin/status")
                 .then()
                 .statusCode(200);
 
@@ -53,7 +53,7 @@ public class HealthCheckTest {
                     .accept("application/json")
                     .contentType("application/json")
                     .when()
-                    .post("/admin/status")
+                    .post("/internal/admin/status")
                     .then()
                     .statusCode(200);
         }

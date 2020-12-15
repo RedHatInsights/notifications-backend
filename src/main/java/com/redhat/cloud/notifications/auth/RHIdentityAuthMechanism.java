@@ -33,7 +33,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
 
         // Those two come via Turnpike and have a different identity header.
         // Skip the header check for now
-        if (path.startsWith("/applications") || path.startsWith("/admin")) {
+        if (path.startsWith("/internal/")) {
             return Uni.createFrom().item(QuarkusSecurityIdentity.builder()
                 // Set a dummy principal, but add no roles.
                 .setPrincipal(new RhIdPrincipal("-noauth-", "-1"))
@@ -50,7 +50,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
                 if (path.endsWith("openapi.json")) {
                     good = true;
                 }
-            } else if (path.startsWith("/openapi.json") || path.startsWith("/applications")
+            } else if (path.startsWith("/openapi.json") || path.startsWith("/internal")
                     || path.startsWith("/admin") || path.startsWith("/health")) {
                 good = true;
             }
