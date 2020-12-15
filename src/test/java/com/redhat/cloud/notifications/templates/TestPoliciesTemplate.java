@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -54,5 +55,6 @@ public class TestPoliciesTemplate {
 
         // Display name
         assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
+        assertFalse(result.contains("NOT_FOUND"), "A replacement was not correctly done");
     }
 }
