@@ -29,7 +29,7 @@ public class ApplicationServiceTest {
     void testPoliciesApplicationAdding() {
         Application app = new Application();
         app.setName(APP_NAME);
-        app.setDescription("The best app");
+        app.setDisplay_name("The best app");
 
         // All of these are without identityHeader
         given()
@@ -55,7 +55,7 @@ public class ApplicationServiceTest {
         // Create eventType
         EventType eventType = new EventType();
         eventType.setName(EVENT_TYPE_NAME);
-        eventType.setDescription("Policies will take care of the rules");
+        eventType.setDisplay_name("Policies will take care of the rules");
 
         response = given()
                 .when()

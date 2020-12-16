@@ -92,7 +92,7 @@ public class LifecycleITest {
     void t01_testAdding() {
         Application app = new Application();
         app.setName(APP_NAME);
-        app.setDescription("The best app in the life");
+        app.setDisplay_name("The best app in the life");
 
         Response response = given()
                 .when()
@@ -110,7 +110,7 @@ public class LifecycleITest {
         // Create eventType
         EventType eventType = new EventType();
         eventType.setName(EVENT_TYPE_NAME);
-        eventType.setDescription("Policies will take care of the rules");
+        eventType.setDisplay_name("Policies will take care of the rules");
 
         response = given()
                 .when()
