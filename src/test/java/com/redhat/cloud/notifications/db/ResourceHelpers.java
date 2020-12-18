@@ -38,25 +38,25 @@ public class ResourceHelpers {
     public void createTestAppAndEventTypes() {
         Application app = new Application();
         app.setName(TEST_APP_NAME);
-        app.setDescription("...");
+        app.setDisplay_name("...");
         Application added = appResources.createApplication(app).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
             eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
-            eventType.setDescription("... -> " + i);
+            eventType.setDisplay_name("... -> " + i);
             appResources.addEventTypeToApplication(added.getId(), eventType).await().indefinitely();
         }
 
         Application app2 = new Application();
         app2.setName(TEST_APP_NAME_2);
-        app2.setDescription("...");
+        app2.setDisplay_name("...");
         Application added2 = appResources.createApplication(app2).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
             eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
-            eventType.setDescription("... -> " + i);
+            eventType.setDisplay_name("... -> " + i);
             appResources.addEventTypeToApplication(added2.getId(), eventType).await().indefinitely();
         }
     }
