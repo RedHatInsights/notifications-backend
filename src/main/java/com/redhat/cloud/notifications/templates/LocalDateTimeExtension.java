@@ -4,11 +4,12 @@ import io.quarkus.qute.TemplateExtension;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 @TemplateExtension
 public class LocalDateTimeExtension {
 
-    private static final DateTimeFormatter utcDateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm 'UTC'");
+    private static final DateTimeFormatter utcDateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm 'UTC'").withLocale(Locale.US);
 
     public static String toUtcFormat(LocalDateTime date) {
         return date.format(utcDateFormatter);
