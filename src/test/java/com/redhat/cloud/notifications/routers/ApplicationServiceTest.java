@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class ApplicationServiceTest {
 
     static final String APP_NAME = "PoliciesApplicationServiceTest";
-    static final String EVENT_TYPE_NAME = "All";
+    static final String EVENT_TYPE_NAME = "policy-triggered";
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
