@@ -18,11 +18,11 @@ public class Endpoint {
     @Schema(enumeration = { "webhook", "email_subscription", "default" })
     public enum EndpointType {
         @JsonProperty("webhook")
-        WEBHOOK,
+        WEBHOOK, // 0
         @JsonProperty("email_subscription")
-        EMAIL_SUBSCRIPTION,
+        EMAIL_SUBSCRIPTION, // 1
         @JsonProperty("default")
-        DEFAULT
+        DEFAULT // 2
     }
 
     private UUID id; // Should be UUID
