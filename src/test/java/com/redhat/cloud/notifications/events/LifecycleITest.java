@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
+import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -258,7 +259,7 @@ public class LifecycleITest {
                 .statusCode(200)
                 .extract().response();
 
-        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), EndpointPage.class).getData().toArray(new Endpoint[0]);
         assertEquals(2, endpoints.length);
 
         for (Endpoint ep : endpoints) {
@@ -451,7 +452,7 @@ public class LifecycleITest {
                 .statusCode(200)
                 .extract().response();
 
-        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), EndpointPage.class).getData().toArray(new Endpoint[0]);
         assertEquals(3, endpoints.length);
 
         for (Endpoint endpoint : endpoints) {

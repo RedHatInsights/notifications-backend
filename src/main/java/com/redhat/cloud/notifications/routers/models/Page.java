@@ -15,6 +15,10 @@ public class Page<T> {
     @NotNull
     private Meta meta;
 
+    public Page() {
+
+    }
+
     public Page(@NotNull List<T> data, @NotNull Map<String, String> links, @NotNull Meta meta) {
         this.data = data;
         this.links = links;
@@ -31,5 +35,17 @@ public class Page<T> {
 
     public Meta getMeta() {
         return meta;
+    }
+
+    public void setData(List<T> data) {
+        this.data = data;
+    }
+
+    public void setLinks(Map<String, String> links) {
+        this.links = links;
+    }
+
+    public void setMeta(Meta meta) {
+        this.meta = meta;
     }
 }
