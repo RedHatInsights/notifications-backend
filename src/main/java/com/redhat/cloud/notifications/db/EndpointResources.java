@@ -108,8 +108,9 @@ public class EndpointResources extends DatasourceProvider {
     private static final String basicEndpointSelectQuery = "SELECT e.account_id, e.id AS endpoint_id, e.endpoint_type, e.enabled, e.name, e.description, e.created, e.updated";
     private static final String webhookEndpointSelectQuery = ", ew.id AS webhook_id, ew.url, ew.method, ew.disable_ssl_verification, ew.secret_token, ew.basic_authentication";
     private static final String basicEndpointGetQuery = basicEndpointSelectQuery + webhookEndpointSelectQuery + " FROM public.endpoints AS e LEFT JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id ";
+    private static final String basicEndpointCountQuery = "SELECT count(e.id) as count FROM public.endpoints AS e ";
 
-    public Multi<Endpoint> getEndpointsPerType(String tenant, Endpoint.EndpointType type, boolean activeOnly) {
+    public Multi<Endpoint> getEndpointsPerType(String tenant, Endpoint.EndpointType type, boolean activeOnly, Query limiter) {
         // TODO Modify the parameter to take a vararg of Functions that modify the query
         // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
         StringBuilder queryBuilder = new StringBuilder();
@@ -121,7 +122,7 @@ public class EndpointResources extends DatasourceProvider {
             queryBuilder.append(" AND e.enabled = true");
         }
 
-        final String query = queryBuilder.toString();
+        final String query = limiter == null ? queryBuilder.toString() : limiter.getModifiedQuery(queryBuilder.toString());
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
@@ -135,6 +136,33 @@ public class EndpointResources extends DatasourceProvider {
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
                         }));
+    }
+
+    public Uni<Integer> getEndpointsCountPerType(String tenant, Endpoint.EndpointType type, boolean activeOnly) {
+        StringBuilder queryBuilder = new StringBuilder();
+        queryBuilder
+                .append(basicEndpointCountQuery)
+                .append("WHERE e.account_id = $1 AND e.endpoint_type = $2");
+
+        if (activeOnly) {
+            queryBuilder.append(" AND e.enabled = true");
+        }
+
+        final String query = queryBuilder.toString();
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .bind("$2", type.ordinal())
+                                    .execute();
+                            return execute.flatMap(r -> r.map((row, rowMetadata) -> row.get(0, Integer.class)));
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }))
+                .toUni();
     }
 
     public Multi<Endpoint> getTargetEndpoints(String tenant, String applicationName, String eventTypeName) {
@@ -185,6 +213,23 @@ public class EndpointResources extends DatasourceProvider {
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
                         }));
+    }
+
+    public Uni<Integer> getEndpointsCount(String tenant) {
+        String query = basicEndpointCountQuery + " WHERE e.account_id = $1";
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .execute();
+                            return execute.flatMap(r -> r.map((row, rowMetadata) -> row.get(0, Integer.class)));
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }))
+                .toUni();
     }
 
     private Flux<Endpoint> mapResultSetToEndpoint(Flux<PostgresqlResult> resultFlux) {
