@@ -392,6 +392,7 @@ public class EndpointServiceTest {
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
         List<Endpoint> endpoints = endpointPage.getData();
         assertEquals(10, endpoints.size());
+        assertEquals(29, endpointPage.getMeta().getCount());
 
         // Fetch the list, page 3
         response = given()
@@ -407,6 +408,7 @@ public class EndpointServiceTest {
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
         endpoints = endpointPage.getData();
         assertEquals(9, endpoints.size());
+        assertEquals(29, endpointPage.getMeta().getCount());
     }
 
     @Test
@@ -454,6 +456,7 @@ public class EndpointServiceTest {
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
         assertEquals(1, endpointPage.getData().size());
+        assertEquals(1, endpointPage.getMeta().getCount());
         assertEquals(responsePoint.getId(), endpointPage.getData().get(0).getId());
         assertEquals(Endpoint.EndpointType.DEFAULT, responsePoint.getType());
 
