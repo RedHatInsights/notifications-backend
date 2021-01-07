@@ -101,22 +101,27 @@ public class EndpointService {
 
     @POST
     @RolesAllowed("write")
-    public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
+    @APIResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = Endpoint.class)))
+    public Uni<Response> createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setTenant(principal.getAccount());
+
+        Uni<Endpoint> endpointUni;
 
         if (endpoint.getType() != Endpoint.EndpointType.DEFAULT && endpoint.getProperties() == null) {
             throw new BadRequestException("Properties is required");
         } else if (endpoint.getType() == Endpoint.EndpointType.DEFAULT) {
             // Only a single default endpoint is allowed
-            return resources.getEndpointsPerType(principal.getAccount(), Endpoint.EndpointType.DEFAULT, false, null)
+            endpointUni = resources.getEndpointsPerType(principal.getAccount(), Endpoint.EndpointType.DEFAULT, false, null)
                     .toUni()
                     .onItem()
                     .ifNull()
                     .switchTo(resources.createEndpoint(endpoint));
+        } else {
+            endpointUni = resources.createEndpoint(endpoint);
         }
 
-        return resources.createEndpoint(endpoint);
+        return endpointUni.onItem().transform(e -> Response.created(null).entity(e).build());
     }
 
     @GET
