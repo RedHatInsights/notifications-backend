@@ -42,7 +42,6 @@ public class UserConfigService {
         Uni<Boolean> dailyNotification;
         Uni<Boolean> instantNotification;
 
-
         if (values.instantNotification) {
             instantNotification = emailSubscriptionResources.subscribe(account, name, EmailSubscriptionType.INSTANT);
         } else {
