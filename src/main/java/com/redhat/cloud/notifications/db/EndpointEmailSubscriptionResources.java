@@ -50,7 +50,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                                     .bind("$3", type.toString())
                                     .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated)
-                                    .map(i -> i > 0).next();
+                                    .map(i -> true).next();
                         })
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
