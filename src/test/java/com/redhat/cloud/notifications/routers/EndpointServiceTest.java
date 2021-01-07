@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionAttributes;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
+import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -65,7 +66,7 @@ public class EndpointServiceTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200) // TODO Maybe 204 here instead?
-                .body(is("[]"));
+                .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
         // Add new endpoints
         WebhookAttributes webAttr = new WebhookAttributes();
@@ -103,7 +104,8 @@ public class EndpointServiceTest {
                 .statusCode(200)
                 .extract().response();
 
-        List<Endpoint> endpoints = Json.decodeValue(response.getBody().asString(), List.class);
+        EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        List<Endpoint> endpoints = endpointPage.getData();
         assertEquals(1, endpoints.size());
 
         // Fetch single endpoint also and verify
@@ -155,7 +157,7 @@ public class EndpointServiceTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200)
-                .body(is("[]"));
+                .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
     }
 
     private Endpoint fetchSingle(UUID id, Header identityHeader) {
@@ -259,7 +261,7 @@ public class EndpointServiceTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200) // TODO Maybe 204 here instead?
-                .body(is("[]"));
+                .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
         // Add new endpoints
         WebhookAttributes webAttr = new WebhookAttributes();
@@ -298,7 +300,8 @@ public class EndpointServiceTest {
                 .statusCode(200)
                 .extract().response();
 
-        List<Endpoint> endpoints = Json.decodeValue(response.getBody().asString(), List.class);
+        EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        List<Endpoint> endpoints = endpointPage.getData();
         assertEquals(1, endpoints.size());
 
         // Fetch single endpoint also and verify
@@ -386,8 +389,10 @@ public class EndpointServiceTest {
                 .statusCode(200)
                 .extract().response();
 
-        List<Endpoint> endpoints = Json.decodeValue(response.getBody().asString(), List.class);
+        EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        List<Endpoint> endpoints = endpointPage.getData();
         assertEquals(10, endpoints.size());
+        assertEquals(29, endpointPage.getMeta().getCount());
 
         // Fetch the list, page 3
         response = given()
@@ -400,8 +405,10 @@ public class EndpointServiceTest {
                 .statusCode(200)
                 .extract().response();
 
-        endpoints = Json.decodeValue(response.getBody().asString(), List.class);
+        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        endpoints = endpointPage.getData();
         assertEquals(9, endpoints.size());
+        assertEquals(29, endpointPage.getMeta().getCount());
     }
 
     @Test
@@ -447,9 +454,10 @@ public class EndpointServiceTest {
                 .statusCode(200)
                 .extract().response();
 
-        Endpoint[] defEndpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
-        assertEquals(1, defEndpoints.length);
-        assertEquals(responsePoint.getId(), defEndpoints[0].getId());
+        EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        assertEquals(1, endpointPage.getData().size());
+        assertEquals(1, endpointPage.getMeta().getCount());
+        assertEquals(responsePoint.getId(), endpointPage.getData().get(0).getId());
         assertEquals(Endpoint.EndpointType.DEFAULT, responsePoint.getType());
 
         // Add another type as well
@@ -494,9 +502,9 @@ public class EndpointServiceTest {
                 .statusCode(200)
                 .extract().response();
 
-        defEndpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
-        assertEquals(1, defEndpoints.length);
-        assertEquals(responsePoint.getId(), defEndpoints[0].getId());
+        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        assertEquals(1, endpointPage.getData().size());
+        assertEquals(responsePoint.getId(), endpointPage.getData().get(0).getId());
         assertEquals(Endpoint.EndpointType.DEFAULT, responsePoint.getType());
     }
 
@@ -523,7 +531,8 @@ public class EndpointServiceTest {
                 .statusCode(200)
                 .extract().response();
 
-        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        Endpoint[] endpoints = endpointPage.getData().toArray(new Endpoint[0]);
         assertEquals(stats[0], endpoints.length);
 
         response = given()
@@ -536,7 +545,8 @@ public class EndpointServiceTest {
                 .statusCode(200)
                 .extract().response();
 
-        endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        endpoints = endpointPage.getData().toArray(new Endpoint[0]);
         assertFalse(endpoints[0].isEnabled());
         assertFalse(endpoints[disableCount - 1].isEnabled());
         assertTrue(endpoints[disableCount].isEnabled());
@@ -554,7 +564,8 @@ public class EndpointServiceTest {
                 .statusCode(200)
                 .extract().response();
 
-        endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        endpoints = endpointPage.getData().toArray(new Endpoint[0]);
         assertEquals(20, endpoints.length);
         assertEquals("Default endpoint", endpoints[endpoints.length - 1].getName());
         assertEquals("Endpoint 1", endpoints[endpoints.length - 2].getName());
@@ -738,7 +749,7 @@ public class EndpointServiceTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200) // TODO Maybe 204 here instead?
-                .body(is("[]"));
+                .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
         for (int i = 0; i < 200; i++) {
             // Add new endpoints
