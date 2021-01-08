@@ -108,7 +108,7 @@ public class EndpointService {
             throw new BadRequestException("Properties is required");
         } else if (endpoint.getType() == Endpoint.EndpointType.DEFAULT) {
             // Only a single default endpoint is allowed
-            return resources.getEndpointsPerType(principal.getAccount(), Endpoint.EndpointType.DEFAULT, false, null)
+            return resources.getEndpointsPerType(principal.getAccount(), Endpoint.EndpointType.DEFAULT, null, null)
                     .toUni()
                     .onItem()
                     .ifNull()
