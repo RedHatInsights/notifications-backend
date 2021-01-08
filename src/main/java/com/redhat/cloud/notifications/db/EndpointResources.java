@@ -110,7 +110,7 @@ public class EndpointResources extends DatasourceProvider {
     private static final String basicEndpointGetQuery = basicEndpointSelectQuery + webhookEndpointSelectQuery + " FROM public.endpoints AS e LEFT JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id ";
     private static final String basicEndpointCountQuery = "SELECT count(e.id) as count FROM public.endpoints AS e ";
 
-    public Multi<Endpoint> getEndpointsPerType(String tenant, Endpoint.EndpointType type, boolean activeOnly, Query limiter) {
+    public Multi<Endpoint> getEndpointsPerType(String tenant, Endpoint.EndpointType type, Boolean activeOnly, Query limiter) {
         // TODO Modify the parameter to take a vararg of Functions that modify the query
         // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
         StringBuilder queryBuilder = new StringBuilder();
@@ -118,8 +118,8 @@ public class EndpointResources extends DatasourceProvider {
                 .append(basicEndpointGetQuery)
                 .append("WHERE e.account_id = $1 AND e.endpoint_type = $2");
 
-        if (activeOnly) {
-            queryBuilder.append(" AND e.enabled = true");
+        if (activeOnly != null) {
+            queryBuilder.append(" AND e.enabled = $3");
         }
 
         final String query = limiter == null ? queryBuilder.toString() : limiter.getModifiedQuery(queryBuilder.toString());
@@ -127,10 +127,15 @@ public class EndpointResources extends DatasourceProvider {
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
-                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                            PostgresqlStatement statement = c.createStatement(query)
                                     .bind("$1", tenant)
-                                    .bind("$2", type.ordinal())
-                                    .execute();
+                                    .bind("$2", type.ordinal());
+
+                            if (activeOnly != null) {
+                                statement = statement.bind("$3", activeOnly);
+                            }
+
+                            Flux<PostgresqlResult> execute = statement.execute();
                             return this.mapResultSetToEndpoint(execute);
                         })
                         .withFinalizer(postgresqlConnection -> {
@@ -138,14 +143,14 @@ public class EndpointResources extends DatasourceProvider {
                         }));
     }
 
-    public Uni<Integer> getEndpointsCountPerType(String tenant, Endpoint.EndpointType type, boolean activeOnly) {
+    public Uni<Integer> getEndpointsCountPerType(String tenant, Endpoint.EndpointType type, Boolean activeOnly) {
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder
                 .append(basicEndpointCountQuery)
                 .append("WHERE e.account_id = $1 AND e.endpoint_type = $2");
 
-        if (activeOnly) {
-            queryBuilder.append(" AND e.enabled = true");
+        if (activeOnly != null) {
+            queryBuilder.append(" AND e.enabled = $3");
         }
 
         final String query = queryBuilder.toString();
@@ -153,10 +158,15 @@ public class EndpointResources extends DatasourceProvider {
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
-                            Flux<PostgresqlResult> execute = c.createStatement(query)
+                            PostgresqlStatement statement = c.createStatement(query)
                                     .bind("$1", tenant)
-                                    .bind("$2", type.ordinal())
-                                    .execute();
+                                    .bind("$2", type.ordinal());
+
+                            if (activeOnly != null) {
+                                statement = statement.bind("$3", activeOnly);
+                            }
+
+                            Flux<PostgresqlResult> execute = statement.execute();
                             return execute.flatMap(r -> r.map((row, rowMetadata) -> row.get(0, Integer.class)));
                         })
                         .withFinalizer(postgresqlConnection -> {

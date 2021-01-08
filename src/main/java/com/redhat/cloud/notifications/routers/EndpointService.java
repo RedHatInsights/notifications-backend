@@ -77,7 +77,7 @@ public class EndpointService {
                     schema = @Schema(type = SchemaType.INTEGER)
             )
     })
-    public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") @DefaultValue("false") boolean activeOnly) {
+    public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") Boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
         Multi<Endpoint> endpoints;
