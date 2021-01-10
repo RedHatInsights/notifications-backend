@@ -89,7 +89,7 @@ public class EndpointServiceTest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(201)
                 .extract().response();
 
         Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
@@ -284,7 +284,7 @@ public class EndpointServiceTest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(201)
                 .extract().response();
 
         Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
@@ -371,7 +371,7 @@ public class EndpointServiceTest {
                     .body(Json.encode(ep))
                     .post("/endpoints")
                     .then()
-                    .statusCode(200)
+                    .statusCode(201)
                     .extract().response();
 
             Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
@@ -433,7 +433,7 @@ public class EndpointServiceTest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(201)
                 .extract().response();
 
         Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
@@ -479,7 +479,7 @@ public class EndpointServiceTest {
                 .body(Json.encode(another))
                 .post("/endpoints")
                 .then()
-                .statusCode(200);
+                .statusCode(201);
 
         // Ensure that there's only a single default endpoint
         // This second insert should return the original one without modifications
@@ -490,7 +490,7 @@ public class EndpointServiceTest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200);
+                .statusCode(201);
 
         response = given()
                 .header(identityHeader)
@@ -603,7 +603,7 @@ public class EndpointServiceTest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(201)
                 .extract().response();
 
         Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
@@ -648,7 +648,7 @@ public class EndpointServiceTest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(201)
                 .extract().response();
 
         Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
@@ -773,7 +773,7 @@ public class EndpointServiceTest {
                     .body(Json.encode(ep))
                     .post("/endpoints")
                     .then()
-                    .statusCode(200)
+                    .statusCode(201)
                     .extract().response();
 
             Endpoint responsePoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);

@@ -134,7 +134,7 @@ public class NotificationServiceTest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200);
+                .statusCode(201);
 
         // Send non-existant UUID again
         given()

@@ -147,7 +147,7 @@ public class LifecycleITest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(201)
                 .extract().response();
 
         Endpoint endpoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
@@ -172,7 +172,7 @@ public class LifecycleITest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(201)
                 .extract().response();
 
         Endpoint endpointFail = Json.decodeValue(response.getBody().asString(), Endpoint.class);
@@ -384,7 +384,7 @@ public class LifecycleITest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(201)
                 .extract().response();
 
         Endpoint defaultEndpoint = Json.decodeValue(response.getBody().asString(), Endpoint.class);
