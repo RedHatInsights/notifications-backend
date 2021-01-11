@@ -50,7 +50,8 @@ public class RbacParsingTest {
         assert rbac.canRead("notifications");
         assert !rbac.canRead("dummy");
         assert rbac.canWrite("notifications");
-        assert rbac.canWrite("integrations");
+        assert rbac.canWrite("integrations", "endpoints");
+        assert rbac.canWrite("integrations", "does-not-exist");
         assert !rbac.canWrite("dummy");
     }
 
@@ -76,11 +77,16 @@ public class RbacParsingTest {
         RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
 
         assert !rbac.canRead("notifications");
-        assert rbac.canRead("integrations", "dummy");
-        assert rbac.canRead("integrations");
         assert !rbac.canWrite("notifications");
         assert rbac.canDo("notifications", "execute");
-        assert rbac.canDo("integrations", "read");
+
+        assert rbac.canRead("integrations", "endpoints");
+        assert !rbac.canWrite("integrations", "endpoints");
+        // We have no * item
+        assert !rbac.canRead("integrations");
+        assert !rbac.canWrite("integrations");
+
+        assert !rbac.canDo("integrations", "read");
         assert !rbac.canDo("integrations", "execute");
         assert rbac.canDo("integrations", "admin", "execute");
     }

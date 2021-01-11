@@ -16,7 +16,7 @@
       "resourceDefinitions": []
     },
     {
-      "permission": "integrations:*:read",
+      "permission": "integrations:endpoints:read",
       "resourceDefinitions": []
     },
     {

@@ -21,8 +21,8 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
 
     public static final String RBAC_READ_NOTIFICATIONS = "read:notifications";
     public static final String RBAC_WRITE_NOTIFICATIONS = "write:notifications";
-    public static final String RBAC_READ_INTEGRATIONS = "read:integrations";
-    public static final String RBAC_WRITE_INTEGRATIONS = "write:integrations";
+    public static final String RBAC_READ_INTEGRATIONS_ENDPOINTS = "read:integrations_ep";
+    public static final String RBAC_WRITE_INTEGRATIONS_ENDPOINTS = "write:integrations_ep";
     private final Logger log = Logger.getLogger(this.getClass().getSimpleName());
 
     @Inject
@@ -55,11 +55,11 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                     if (raw.canWrite("notifications")) {
                         builder.addRole(RBAC_WRITE_NOTIFICATIONS);
                     }
-                    if (raw.canRead("integrations")) {
-                        builder.addRole(RBAC_READ_INTEGRATIONS);
+                    if (raw.canRead("integrations", "endpoints")) {
+                        builder.addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS);
                     }
-                    if (raw.canWrite("integrations")) {
-                        builder.addRole(RBAC_WRITE_INTEGRATIONS);
+                    if (raw.canWrite("integrations", "endpoints")) {
+                        builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
                     }
 
                     return (SecurityIdentity) builder.build();
