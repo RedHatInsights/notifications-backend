@@ -16,6 +16,7 @@ import java.io.FileNotFoundException;
 public class RbacParsingTest {
 
     private static final String BASE = "src/test/resources/rbac-examples/";
+    public static final String ALL = "*";
 
     @Test
     void testParseExample() throws Exception {
@@ -25,9 +26,9 @@ public class RbacParsingTest {
         assert rbac.data.size() == 2;
 
         assert rbac.canWrite("bar", "resname");
-        assert !rbac.canRead("resname");
-        assert !rbac.canWrite("*");
-        assert !rbac.canWrite("no-perm");
+        assert !rbac.canRead("resname", ALL);
+        assert !rbac.canWrite(ALL, ALL);
+        assert !rbac.canWrite("no-perm", ALL);
 
     }
 
@@ -37,8 +38,8 @@ public class RbacParsingTest {
         Jsonb jb = JsonbBuilder.create();
         RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
 
-        assert !rbac.canRead("*");
-        assert !rbac.canWrite("*");
+        assert !rbac.canRead(ALL, ALL);
+        assert !rbac.canWrite(ALL, ALL);
     }
 
     @Test
@@ -47,12 +48,30 @@ public class RbacParsingTest {
         Jsonb jb = JsonbBuilder.create();
         RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
 
-        assert rbac.canRead("notifications");
-        assert !rbac.canRead("dummy");
-        assert rbac.canWrite("notifications");
+        assert rbac.canRead("notifications", ALL);
+        assert !rbac.canRead("dummy", ALL);
+        assert rbac.canWrite("notifications", ALL);
         assert rbac.canWrite("integrations", "endpoints");
         assert rbac.canWrite("integrations", "does-not-exist");
-        assert !rbac.canWrite("dummy");
+        assert !rbac.canWrite("dummy", ALL);
+    }
+
+    @Test
+    void testNIRead() throws Exception {
+        File file = new File(BASE + "rbac_n_i_read.json");
+        Jsonb jb = JsonbBuilder.create();
+        RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
+
+        assert rbac.canRead("notifications", "notifications");
+        assert rbac.canDo("notifications", "notifications", "read");
+        assert !rbac.canRead("notifications", ALL);
+        assert !rbac.canRead("notifications", "does-not-exist");
+        assert !rbac.canWrite("notifications", ALL);
+        assert !rbac.canRead("dummy", ALL);
+        assert rbac.canRead("integrations", "endpoints");
+        assert !rbac.canRead("integrations", "does-not-exist");
+        assert !rbac.canWrite("integrations", "does-not-exist");
+        assert !rbac.canWrite("dummy", ALL);
     }
 
     @Test
@@ -61,13 +80,12 @@ public class RbacParsingTest {
         Jsonb jb = JsonbBuilder.create();
         RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
 
-        assert rbac.canRead("policies");
-        assert !rbac.canRead("dummy");
-        assert !rbac.canWrite("policies");
-        assert !rbac.canWrite("dummy");
-        assert rbac.canDo("policies", "execute");
-        assert rbac.canDo("policies", "*", "execute");
-        assert !rbac.canDo("policies", "*", "list");
+        assert rbac.canRead("policies", ALL);
+        assert !rbac.canRead("dummy", ALL);
+        assert !rbac.canWrite("policies", ALL);
+        assert !rbac.canWrite("dummy", ALL);
+        assert rbac.canDo("policies", ALL, "execute");
+        assert !rbac.canDo("policies", ALL, "list");
     }
 
     @Test
@@ -76,18 +94,18 @@ public class RbacParsingTest {
         Jsonb jb = JsonbBuilder.create();
         RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
 
-        assert !rbac.canRead("notifications");
-        assert !rbac.canWrite("notifications");
-        assert rbac.canDo("notifications", "execute");
+        assert !rbac.canRead("notifications", ALL);
+        assert !rbac.canWrite("notifications", ALL);
+        assert rbac.canDo("notifications", ALL, "execute");
 
         assert rbac.canRead("integrations", "endpoints");
         assert !rbac.canWrite("integrations", "endpoints");
         // We have no * item
-        assert !rbac.canRead("integrations");
-        assert !rbac.canWrite("integrations");
+        assert !rbac.canRead("integrations", ALL);
+        assert !rbac.canWrite("integrations", ALL);
 
-        assert !rbac.canDo("integrations", "read");
-        assert !rbac.canDo("integrations", "execute");
+        assert !rbac.canDo("integrations", ALL, "read");
+        assert !rbac.canDo("integrations", ALL, "execute");
         assert rbac.canDo("integrations", "admin", "execute");
     }
 }

@@ -49,10 +49,10 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                 .onItem()
                 .transform(raw -> {
                     QuarkusSecurityIdentity.Builder builder = QuarkusSecurityIdentity.builder();
-                    if (raw.canRead("notifications")) {
+                    if (raw.canRead("notifications", "notifications")) {
                         builder.addRole(RBAC_READ_NOTIFICATIONS);
                     }
-                    if (raw.canWrite("notifications")) {
+                    if (raw.canWrite("notifications", "notifications")) {
                         builder.addRole(RBAC_WRITE_NOTIFICATIONS);
                     }
                     if (raw.canRead("integrations", "endpoints")) {

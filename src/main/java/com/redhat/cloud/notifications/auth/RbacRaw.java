@@ -8,32 +8,17 @@ public class RbacRaw {
     public Map<String, Integer> meta;
     public List<Map<String, Object>> data;
 
-    public boolean canRead(String application) {
-        return findPermission(application, "read");
-    }
 
     public boolean canRead(String application, String item) {
         return findPermission(application, item, "read");
-    }
-
-    public boolean canWrite(String application) {
-        return findPermission(application, "write");
     }
 
     public boolean canWrite(String application, String item) {
         return findPermission(application, item, "write");
     }
 
-    public boolean canDo(String application, String permission) {
-        return findPermission(application, permission);
-    }
-
     public boolean canDo(String application, String item, String permission) {
         return findPermission(application, item, permission);
-    }
-
-    private boolean findPermission(String application, String what) {
-        return findPermission(application, "*", what);
     }
 
     private boolean findPermission(String application, String item, String what) {
