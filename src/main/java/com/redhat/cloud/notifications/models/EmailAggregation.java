@@ -4,7 +4,6 @@ import io.vertx.core.json.JsonObject;
 
 import javax.validation.constraints.NotNull;
 import java.util.Date;
-import java.util.UUID;
 
 public class EmailAggregation {
 
@@ -18,7 +17,7 @@ public class EmailAggregation {
     private Date created;
 
     @NotNull
-    private UUID applicationId;
+    private String application;
 
     @NotNull
     private JsonObject payload;
@@ -51,12 +50,12 @@ public class EmailAggregation {
         this.created = created;
     }
 
-    public UUID getApplicationId() {
-        return applicationId;
+    public String getApplication() {
+        return application;
     }
 
-    public void setApplicationId(UUID applicationId) {
-        this.applicationId = applicationId;
+    public void setApplication(String application) {
+        this.application = application;
     }
 
     public JsonObject getPayload() {

@@ -24,7 +24,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -112,7 +111,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setAccountId(item.getAction().getAccountId());
-        aggregation.setApplicationId(UUID.fromString(item.getAction().getApplication()));
+        aggregation.setApplication(item.getAction().getApplication());
         aggregation.setPayload(JsonObject.mapFrom(item.getAction().getPayload()));
 
         return this.emailAggregationResources.addEmailAggregation(aggregation)

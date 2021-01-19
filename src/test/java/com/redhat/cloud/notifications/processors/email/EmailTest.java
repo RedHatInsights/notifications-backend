@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -51,6 +52,9 @@ public class EmailTest {
     @Inject
     WebhookTypeProcessor webhookTypeProcessor;
 
+    @Inject
+    EmailAggregationResources emailAggregationResources;
+
     EmailSubscriptionTypeProcessor emailProcessor;
 
     @Inject
@@ -67,6 +71,7 @@ public class EmailTest {
         emailProcessor = new EmailSubscriptionTypeProcessor();
         emailProcessor.vertx = vertx;
         emailProcessor.webhookSender = webhookTypeProcessor;
+        emailProcessor.emailAggregationResources = emailAggregationResources;
         emailProcessor.subscriptionResources = subscriptionResources;
         emailProcessor.bopApiToken = "test-token";
         emailProcessor.bopClientId = "emailTest";
