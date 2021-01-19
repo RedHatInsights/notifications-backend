@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -22,6 +24,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -41,6 +44,12 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     WebhookTypeProcessor webhookSender;
+
+    @Inject
+    EndpointEmailSubscriptionResources subscriptionResources;
+
+    @Inject
+    EmailAggregationResources emailAggregationResources;
 
     @ConfigProperty(name = "processor.email.bop_url")
     String bopUrl;
@@ -95,15 +104,19 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         }
     }
 
-    @Inject
-    EndpointEmailSubscriptionResources subscriptionResources;
 
     @Override
     public Uni<NotificationHistory> process(Notification item) {
         final String accountId = item.getTenant();
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
-        return this.subscriptionResources.getEmailSubscribers(accountId, EmailSubscriptionType.INSTANT)
+        EmailAggregation aggregation = new EmailAggregation();
+        aggregation.setAccountId(item.getAction().getAccountId());
+        aggregation.setApplicationId(UUID.fromString(item.getAction().getApplication()));
+        aggregation.setPayload(JsonObject.mapFrom(item.getAction().getPayload()));
+
+        return this.emailAggregationResources.addEmailAggregation(aggregation)
+                .onItem().transformToMulti(aVoid -> this.subscriptionResources.getEmailSubscribers(accountId, EmailSubscriptionType.INSTANT))
                 .onItem().transform(emailSubscription -> emailSubscription.getUsername())
                 .collectItems().with(Collectors.toSet())
                 .onItem().transform(userSet -> {
