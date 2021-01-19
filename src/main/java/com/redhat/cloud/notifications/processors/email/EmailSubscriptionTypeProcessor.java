@@ -11,6 +11,8 @@ import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.bop.Email;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.templates.Policies;
+import io.quarkus.scheduler.Scheduled;
+import io.quarkus.scheduler.ScheduledExecution;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -22,6 +24,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -107,7 +111,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Override
     public Uni<NotificationHistory> process(Notification item) {
         final String accountId = item.getTenant();
-        final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setAccountId(item.getAction().getAccountId());
@@ -115,8 +118,15 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         aggregation.setPayload(JsonObject.mapFrom(item.getAction().getPayload()));
 
         return this.emailAggregationResources.addEmailAggregation(aggregation)
-                .onItem().transformToMulti(aVoid -> this.subscriptionResources.getEmailSubscribers(accountId, EmailSubscriptionType.INSTANT))
-                .onItem().transform(emailSubscription -> emailSubscription.getUsername())
+                .onItem().ignore()
+                .andSwitchTo(sendEmail(item, EmailSubscriptionType.INSTANT));
+    }
+
+    private Uni<NotificationHistory> sendEmail(Notification item, EmailSubscriptionType emailSubscriptionType) {
+        final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
+
+        this.subscriptionResources.getEmailSubscribers(item.getTenant(), emailSubscriptionType)
+        .onItem().transform(emailSubscription -> emailSubscription.getUsername())
                 .collectItems().with(Collectors.toSet())
                 .onItem().transform(userSet -> {
                     if (userSet.size() > 0) {
@@ -158,7 +168,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 })
                 .onItem().transformToUni(email -> {
                     if (email == null) {
-                        log.fine("No subscribers for type: instant_email. Skipping EmailSubscription email for endpoint: " + item.getEndpoint().getId());
+                        log.fine("No subscribers for type:"  + emailSubscriptionType.toString());
                         return Uni.createFrom().nullItem();
                     }
 
@@ -173,6 +183,15 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     //      also add metrics for these failures
                     return webhookSender.doHttpRequest(item, bopRequest, payload);
                 });
+    }
+
+
+    @Scheduled(identity = "dailyEmailProcessor", every = "10s")
+    public void processDailyEmail(ScheduledExecution se) {
+        Instant scheduledFireTime = se.getScheduledFireTime();
+        Instant yesterdayScheduledFireTime = scheduledFireTime.minus(Duration.ofDays(1));
+
+        System.out.println("hello world");
     }
 
 }
