@@ -22,7 +22,7 @@ public class EmailAggregationResources extends DatasourceProvider {
     Provider<Uni<PostgresqlConnection>> connectionPublisherUni;
 
 
-    public Uni<Void> addEmailAggregation(EmailAggregation aggregation) {
+    public Uni<Boolean> addEmailAggregation(EmailAggregation aggregation) {
         String query = "INSERT INTO public.email_aggregation(account_id, application, payload) " +
                 "VALUES ($1, $2, $3)";
 
@@ -34,12 +34,12 @@ public class EmailAggregationResources extends DatasourceProvider {
                                 .bind("$2", aggregation.getApplication())
                                 .bind("$3", Json.of(aggregation.getPayload().encode()))
                                 .execute();
-                            return execute;
+                            return execute.flatMap(PostgresqlResult::getRowsUpdated).map(i -> i > 0);
                         })
                         .withFinalizer(psqlConnection -> {
                             psqlConnection.close().subscribe();
                         })
-                ).toUni().onItem().ignore().andSwitchTo(Uni.createFrom().voidItem());
+                ).toUni();
     }
 
     public Multi<String> getAccountIdsWithPendingAggregation(String application, LocalDateTime start, LocalDateTime end) {
@@ -94,7 +94,7 @@ public class EmailAggregationResources extends DatasourceProvider {
     }
 
     public Uni<Integer> purgeOldAggregation(Date lastUsedTime) {
-        String query = "DELETE FROM public.email_aggregation WHERE created <= $1";
+        String query = "DELETE FROM public.email_aggregation WHERE created <= timestamp $1";
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {

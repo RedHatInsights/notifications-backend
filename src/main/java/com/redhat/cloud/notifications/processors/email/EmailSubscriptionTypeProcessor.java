@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.bop.Email;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.templates.Policies;
+import io.quarkus.qute.TemplateInstance;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.ScheduledExecution;
 import io.smallrye.mutiny.Uni;
@@ -28,6 +29,7 @@ import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -112,16 +114,35 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @Override
     public Uni<NotificationHistory> process(Notification item) {
-        final String accountId = item.getTenant();
-
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setAccountId(item.getAction().getAccountId());
         aggregation.setApplication(item.getAction().getApplication());
         aggregation.setPayload(JsonObject.mapFrom(item.getAction().getPayload()));
 
         return this.emailAggregationResources.addEmailAggregation(aggregation)
-                .onItem().ignore()
-                .andSwitchTo(sendEmail(item, EmailSubscriptionType.INSTANT));
+                .onItem().transformToUni(aBoolean -> sendEmail(item, EmailSubscriptionType.INSTANT));
+    }
+
+    private TemplateInstance templateTitleForSubscriptionType(EmailSubscriptionType subscriptionType) {
+        switch (subscriptionType) {
+            case DAILY:
+                return Policies.Templates.dailyEmailTitle();
+            case INSTANT:
+                return Policies.Templates.instantEmailTitle();
+            default:
+                throw new IllegalArgumentException("Unknown EmailSubscriptionType:" + subscriptionType);
+        }
+    }
+
+    private TemplateInstance templateBodyForSubscriptionType(EmailSubscriptionType subscriptionType) {
+        switch (subscriptionType) {
+            case DAILY:
+                return Policies.Templates.dailyEmailBody();
+            case INSTANT:
+                return Policies.Templates.instantEmailBody();
+            default:
+                throw new IllegalArgumentException("Unknown EmailSubscriptionType:" + subscriptionType);
+        }
     }
 
     private Uni<NotificationHistory> sendEmail(Notification item, EmailSubscriptionType emailSubscriptionType) {
@@ -142,13 +163,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         return Uni.createFrom().nullItem();
                     }
 
-                    Uni<String> title = Policies.Templates
-                            .instantEmailTitle()
+                    Uni<String> title = templateTitleForSubscriptionType(emailSubscriptionType)
                             .data("payload", item.getAction().getPayload())
                             .createMulti().collectItems().with(Collectors.joining());
 
-                    Uni<String> body = Policies.Templates
-                            .instantEmailBody()
+                    Uni<String> body = templateBodyForSubscriptionType(emailSubscriptionType)
                             .data("payload", item.getAction().getPayload())
                             .createMulti().collectItems().with(Collectors.joining());
 
@@ -187,39 +206,47 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 });
     }
 
-    @Scheduled(identity = "dailyEmailProcessor", every = "10h")
+    @Scheduled(identity = "dailyEmailProcessor", every = "10s")
     public void processDailyEmail(ScheduledExecution se) {
         Instant scheduledFireTime = se.getScheduledFireTime();
         Instant yesterdayScheduledFireTime = scheduledFireTime.minus(Duration.ofDays(1));
 
-        LocalDateTime to = LocalDateTime.from(scheduledFireTime);
-        LocalDateTime from = LocalDateTime.from(yesterdayScheduledFireTime);
+        // Is this the correct zone id?
+        ZoneId zoneId = ZoneId.of("UTC");
+
+        LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, zoneId);
+        LocalDateTime startTime = LocalDateTime.ofInstant(yesterdayScheduledFireTime, zoneId);
 
         final String application = "policies";
-
+        System.out.println("Running processDailyEmail");
         // Currently only processing aggregations from policies
-        emailAggregationResources.getAccountIdsWithPendingAggregation(application, to, from)
-                .onItem().transformToUni(accountId -> {
-                    return emailAggregationResources.getEmailAggregation(accountId, application, to, from)
-                    .collectItems().in(DailyEmailPayloadAggregator::new, DailyEmailPayloadAggregator::aggregate)
-                    .onItem().transform(aggregator -> {
-                        JsonObject payload = aggregator.getPayload();
-                        Action action = new Action();
-                        action.setPayload(payload.getMap());
-                        action.setApplication(application);
+        emailAggregationResources.getAccountIdsWithPendingAggregation(application, startTime, endTime)
+                // Todo: Remove next line
+                .onItem().transform(s -> { System.out.println("account " + s); return s; })
+                .onItem().transformToMulti(accountId -> {
+                    // Check if there is any user for this accountId on this subscription_type, no need to aggregate if there is no one
+                    return emailAggregationResources.getEmailAggregation(accountId, application, startTime, endTime)
+                            .collectItems().in(DailyEmailPayloadAggregator::new, DailyEmailPayloadAggregator::aggregate)
+                            .onItem().transformToMulti(aggregator -> {
+                                aggregator.setStartTime(startTime);
+                                aggregator.setEndTimeKey(endTime);
+                                Action action = new Action();
+                                action.setPayload(aggregator.getPayload());
+                                action.setApplication(application);
 
-                        // We don't have a eventtype, this aggregates over multiple event types
-                        action.setEventType(null);
-                        action.setTimestamp(LocalDateTime.now());
-                        action.setAccountId(accountId);
+                                // We don't have a eventtype, this aggregates over multiple event types
+                                action.setEventType(null);
+                                action.setTimestamp(LocalDateTime.now());
+                                action.setAccountId(accountId);
 
-                        // We don't have any endpoint as this aggregates multiple endpoints
-                        Notification item = new Notification(action, null);
+                                // We don't have any endpoint as this aggregates multiple endpoints
+                                Notification item = new Notification(action, null);
 
-                        return sendEmail(item, EmailSubscriptionType.DAILY);
-                    });
-                });
+                                return sendEmail(item, EmailSubscriptionType.DAILY).toMulti();
+                            });
+                }).concatenate().collectItems().asList().await().indefinitely();
 
+        // Todo: Delete all previous aggregates
     }
 
 }

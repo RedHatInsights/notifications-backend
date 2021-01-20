@@ -1,0 +1,1 @@
+{payload.start_time.toUtcFormat()} - {payload.policies.size()} {#if payload.policies.size() == 1}policy{#else}policies{/if} triggered on {payload.unique_system_count} {#if payload.unique_system_count== 1}system{#else}unique systems{/if}
