@@ -12,6 +12,7 @@ import reactor.core.publisher.Flux;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @ApplicationScoped
@@ -41,7 +42,7 @@ public class EmailAggregationResources extends DatasourceProvider {
                 ).toUni().onItem().ignore().andSwitchTo(Uni.createFrom().voidItem());
     }
 
-    public Multi<String> getAccountIdsWithPendingAggregation(String application, Date start, Date end) {
+    public Multi<String> getAccountIdsWithPendingAggregation(String application, LocalDateTime start, LocalDateTime end) {
         String query = "SELECT DISTINCT account_id FROM public.email_aggregation " +
                 "WHERE application = $1 AND created > $2 AND created <= $3";
 
@@ -61,7 +62,7 @@ public class EmailAggregationResources extends DatasourceProvider {
                 );
     }
 
-    public Multi<EmailAggregation> getEmailAggregation(String accountId, String application, Date start, Date end) {
+    public Multi<EmailAggregation> getEmailAggregation(String accountId, String application, LocalDateTime start, LocalDateTime end) {
         String query = "SELECT id, account_id, application, created, payload FROM public.email_aggregation " +
                 "WHERE account_id = $1 AND application = $2 AND created > $3 AND created <= $4 " +
                 "ORDER BY created";

@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Notification;
@@ -26,6 +27,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -125,8 +127,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     private Uni<NotificationHistory> sendEmail(Notification item, EmailSubscriptionType emailSubscriptionType) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
-        this.subscriptionResources.getEmailSubscribers(item.getTenant(), emailSubscriptionType)
-        .onItem().transform(emailSubscription -> emailSubscription.getUsername())
+        return this.subscriptionResources.getEmailSubscribers(item.getTenant(), emailSubscriptionType)
+            .onItem().transform(emailSubscription -> emailSubscription.getUsername())
                 .collectItems().with(Collectors.toSet())
                 .onItem().transform(userSet -> {
                     if (userSet.size() > 0) {
@@ -185,13 +187,39 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 });
     }
 
-
-    @Scheduled(identity = "dailyEmailProcessor", every = "10s")
+    @Scheduled(identity = "dailyEmailProcessor", every = "10h")
     public void processDailyEmail(ScheduledExecution se) {
         Instant scheduledFireTime = se.getScheduledFireTime();
         Instant yesterdayScheduledFireTime = scheduledFireTime.minus(Duration.ofDays(1));
 
-        System.out.println("hello world");
+        LocalDateTime to = LocalDateTime.from(scheduledFireTime);
+        LocalDateTime from = LocalDateTime.from(yesterdayScheduledFireTime);
+
+        final String application = "policies";
+
+        // Currently only processing aggregations from policies
+        emailAggregationResources.getAccountIdsWithPendingAggregation(application, to, from)
+                .onItem().transformToUni(accountId -> {
+                    return emailAggregationResources.getEmailAggregation(accountId, application, to, from)
+                    .collectItems().in(DailyEmailPayloadAggregator::new, DailyEmailPayloadAggregator::aggregate)
+                    .onItem().transform(aggregator -> {
+                        JsonObject payload = aggregator.getPayload();
+                        Action action = new Action();
+                        action.setPayload(payload.getMap());
+                        action.setApplication(application);
+
+                        // We don't have a eventtype, this aggregates over multiple event types
+                        action.setEventType(null);
+                        action.setTimestamp(LocalDateTime.now());
+                        action.setAccountId(accountId);
+
+                        // We don't have any endpoint as this aggregates multiple endpoints
+                        Notification item = new Notification(action, null);
+
+                        return sendEmail(item, EmailSubscriptionType.DAILY);
+                    });
+                });
+
     }
 
 }
