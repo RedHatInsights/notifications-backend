@@ -13,7 +13,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @ApplicationScoped
 public class EmailAggregationResources extends DatasourceProvider {
@@ -80,7 +79,7 @@ public class EmailAggregationResources extends DatasourceProvider {
                                 EmailAggregation emailAggregation = new EmailAggregation();
                                 emailAggregation.setId(row.get("id", Integer.class));
                                 emailAggregation.setAccountId(row.get("account_id", String.class));
-                                emailAggregation.setCreated(row.get("created", Date.class));
+                                emailAggregation.setCreated(row.get("created", LocalDateTime.class));
                                 emailAggregation.setApplication(row.get("application", String.class));
                                 emailAggregation.setPayload(new JsonObject(row.get("payload", String.class)));
 
@@ -93,13 +92,37 @@ public class EmailAggregationResources extends DatasourceProvider {
                 );
     }
 
-    public Uni<Integer> purgeOldAggregation(Date lastUsedTime) {
-        String query = "DELETE FROM public.email_aggregation WHERE created <= timestamp $1";
+    public Uni<Integer> getEmailAggregationCount(String accountId, String application, LocalDateTime start, LocalDateTime end) {
+        String query = "SELECT count(id) FROM public.email_aggregation " +
+                "WHERE account_id = $1 AND application = $2 AND created > $3 AND created <= $4 " +
+                "ORDER BY created";
+
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
                             Flux<PostgresqlResult> execute = c2.createStatement(query)
-                                    .bind("$1", lastUsedTime)
+                                    .bind("$1", accountId)
+                                    .bind("$2", application)
+                                    .bind("$3", start)
+                                    .bind("$4", end)
+                                    .execute();
+                            return execute.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> row.get(0, Integer.class)));
+                        })
+                        .withFinalizer(psqlConnection -> {
+                            psqlConnection.close().subscribe();
+                        })
+                ).toUni();
+    }
+
+    public Uni<Integer> purgeOldAggregation(String accountId, String application, LocalDateTime lastUsedTime) {
+        String query = "DELETE FROM public.email_aggregation WHERE account_id = $1 AND application = $2 AND created <= $3";
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", accountId)
+                                    .bind("$2", application)
+                                    .bind("$3", lastUsedTime)
                                     .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated);
                         })

@@ -33,6 +33,7 @@ public class DailyEmailPayloadAggregator {
     private HashMap<String, HashSet<String>> uniqueHostPerPolicy = new HashMap<>();
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private String accountId;
 
     DailyEmailPayloadAggregator() {
         payload.put(POLICIES_KEY, new JsonObject());
@@ -50,6 +51,12 @@ public class DailyEmailPayloadAggregator {
         JsonObject aggregationPayload = aggregation.getPayload();
         String policyId = aggregationPayload.getString(POLICY_ID);
         JsonObject policies = payload.getJsonObject(POLICIES_KEY);
+
+        if (accountId == null) {
+            accountId = aggregation.getAccountId();
+        } else if (!accountId.equals(aggregation.getAccountId())) {
+            throw new RuntimeException("Invalid aggregation using different accountIds");
+        }
 
         if (!policies.containsKey(policyId)) {
             JsonObject newPolicy = new JsonObject();
@@ -80,6 +87,10 @@ public class DailyEmailPayloadAggregator {
         this.payload.put(UNIQUE_SYSTEM_COUNT, this.uniqueHosts.size());
     }
 
+    Integer getUniqueHostCount() {
+        return this.uniqueHosts.size();
+    }
+
     private void copyStringField(JsonObject to, JsonObject from, final String field) {
         to.put(field, from.getString(field));
     }
@@ -92,4 +103,7 @@ public class DailyEmailPayloadAggregator {
         return payload;
     }
 
+    public String getAccountId() {
+        return accountId;
+    }
 }

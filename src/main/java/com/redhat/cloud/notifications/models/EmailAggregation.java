@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.models;
 import io.vertx.core.json.JsonObject;
 
 import javax.validation.constraints.NotNull;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 public class EmailAggregation {
 
@@ -14,7 +14,7 @@ public class EmailAggregation {
     private String accountId;
 
     @NotNull
-    private Date created;
+    private LocalDateTime created;
 
     @NotNull
     private String application;
@@ -42,11 +42,11 @@ public class EmailAggregation {
         this.accountId = accountId;
     }
 
-    public Date getCreated() {
+    public LocalDateTime getCreated() {
         return created;
     }
 
-    public void setCreated(Date created) {
+    public void setCreated(LocalDateTime created) {
         this.created = created;
     }
 
