@@ -292,8 +292,17 @@ public class EmailTest {
             // 2 email, as no user is subscribed for noSubscribedUsersTenant
             assertEquals(2, bodyRequests.size());
 
+            // Emails could arrive in any order
+            int firstEmailIndex = 0;
+            int secondEmailIndex = 1;
+            // Only the tenant1 has this user
+            if (bodyRequests.get(1).contains("admin")) {
+                firstEmailIndex = 1;
+                secondEmailIndex = 0;
+            }
+
             // First email
-            email = emailRequestIsOK(bodyRequests.get(0), tenant1Usernames);
+            email = emailRequestIsOK(bodyRequests.get(firstEmailIndex), tenant1Usernames);
             assertTrue(
                     email.getJsonArray("emails").getJsonObject(0).getString("subject").contains(
                             "3 policies triggered on 6 system"
@@ -304,7 +313,7 @@ public class EmailTest {
             assertTrue(email.getJsonArray("emails").getJsonObject(0).getString("body").contains("policyid-03"));
 
             // Second email
-            email = emailRequestIsOK(bodyRequests.get(1), tenant2Usernames);
+            email = emailRequestIsOK(bodyRequests.get(secondEmailIndex), tenant2Usernames);
             assertTrue(
                     email.getJsonArray("emails").getJsonObject(0).getString("subject").contains(
                             "1 policy triggered on 3 system"
