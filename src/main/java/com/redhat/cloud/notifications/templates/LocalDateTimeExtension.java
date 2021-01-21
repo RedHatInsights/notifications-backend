@@ -8,14 +8,20 @@ import java.time.format.DateTimeFormatter;
 @TemplateExtension
 public class LocalDateTimeExtension {
 
-    private static final DateTimeFormatter utcDateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm 'UTC'");
+    private static final DateTimeFormatter utcDateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm 'UTC'");
+    private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
+
 
     public static String toUtcFormat(LocalDateTime date) {
-        return date.format(utcDateFormatter);
+        return date.format(utcDateTimeFormatter);
     }
 
     public static String toUtcFormat(String date) {
         return toUtcFormat(fromIsoLocalDateTime(date));
+    }
+
+    public static String toStringFormat(LocalDateTime date) {
+        return date.format(dateFormatter);
     }
 
     public static LocalDateTime fromIsoLocalDateTime(String date) {

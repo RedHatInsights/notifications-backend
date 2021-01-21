@@ -25,7 +25,7 @@
                         <td bgcolor="#2c2c2" width="600" valign="top">
                             <div width="100%" align="center"
                                  style="padding:20px 20px 20px 20px;color:#ffffff;font-size:18px;font-weight:bold">
-                                Daily Policy Summary - {payload.start_time.toUtcFormat()}
+                                Daily Policy Summary - {payload.start_time.toStringFormat()}
                             </div>
                         </td>
                     </tr>
@@ -36,7 +36,7 @@
                                 <tbody>
                                 <tr>
                                     <td bgcolor="ffffff" style="padding:24px 20px 20px 20px;font-size:16px">
-                                        Daily policy summary for <strong>{payload.start_time.toUtcFormat()}</strong> from Red Hat Insights.<br>
+                                        Daily policy summary for <strong>{payload.start_time.toStringFormat()}</strong> from Red Hat Insights.<br>
                                         <strong>{payload.policies.size()} {#if payload.policies.size() == 1}policy{#else}policies{/if}</strong> triggered on <strong>{payload.unique_system_count} {#if payload.unique_system_count== 1}system{#else}unique systems{/if}</strong>.
                                     </td>
                                 </tr>
