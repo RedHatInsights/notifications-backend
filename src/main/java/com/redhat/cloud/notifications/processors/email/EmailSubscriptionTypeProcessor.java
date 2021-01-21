@@ -227,7 +227,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 .onItem().transformToMulti(accountAndCount -> {
                     String accountId = accountAndCount.getItem1();
 
-                    if (accountAndCount.getItem2() > 0) {
+                    if (accountAndCount.getItem2() > 0 || delete) {
                         // Group by accountId
                         return emailAggregationResources.getEmailAggregation(accountId, application, startTime, endTime)
                         .collectItems().in(DailyEmailPayloadAggregator::new, DailyEmailPayloadAggregator::aggregate).toMulti();
@@ -237,7 +237,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 }).merge()
                 .onItem().transformToMulti(aggregator -> {
                     String accountId = aggregator.getAccountId();
-                    System.out.println("Aggregator account id " + accountId);
                     if (accountId == null || aggregator.getUniqueHostCount() == 0) {
                         return Multi.createFrom().empty();
                     }
