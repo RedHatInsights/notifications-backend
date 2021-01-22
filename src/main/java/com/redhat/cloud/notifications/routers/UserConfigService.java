@@ -105,17 +105,16 @@ public class UserConfigService {
                     "    \"component\": \"descriptiveCheckbox\",\n" +
                     "    \"validate\": []\n" +
                     "  }\n" +
-                    // Hiding daily notifications for now as they are not supported
-                    // "  ,\n" +
-                    // "  {\n" +
-                    // "    \"name\": \"dailyNotification\",\n" +
-                    // "    \"label\": \"Daily digest\",\n" +
-                    // "    \"description\": \"Daily summary of triggered application events in 24 hours span. See notification settings for configuration.\",\n" +
-                    // "    \"initialValue\": %2,\n" +
-                    // "    \"component\": \"descriptiveCheckbox\",\n" +
-                    // "    \"validate\": []\n" +
-                    // "\n" +
-                    // "  }\n" +
+                    "  ,\n" +
+                    "  {\n" +
+                    "    \"name\": \"dailyNotification\",\n" +
+                    "    \"label\": \"Daily digest\",\n" +
+                    "    \"description\": \"Daily summary of triggered application events in 24 hours span. See notification settings for configuration.\",\n" +
+                    "    \"initialValue\": %2,\n" +
+                    "    \"component\": \"descriptiveCheckbox\",\n" +
+                    "    \"validate\": []\n" +
+                    "\n" +
+                    "  }\n" +
                     "  ]\n" +
                     "}]";
 }

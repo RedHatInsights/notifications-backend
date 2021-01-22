@@ -47,8 +47,8 @@ public class UserConfigServiceTest {
                 .extract().response();
 
         assertEquals(
-                "[false]",
-                response.jsonPath().getString(valuePathFor("instantNotification"))
+                "[false, false]",
+                response.jsonPath().getString("[0].fields.initialValue")
         );
 
         // Set instantNotification to true
@@ -72,8 +72,8 @@ public class UserConfigServiceTest {
                 .extract().response();
 
         assertEquals(
-                "[true]",
-                response.jsonPath().getString(valuePathFor("instantNotification"))
+                "[true, false]",
+                response.jsonPath().getString("[0].fields.initialValue")
         );
 
         // Set instantNotification to false
@@ -96,13 +96,38 @@ public class UserConfigServiceTest {
                 .statusCode(200)
                 .extract().response();
 
+        System.out.println(response.toString());
+
         assertEquals(
-                "[false]",
-                response.jsonPath().getString(valuePathFor("instantNotification"))
+                "[false, false]",
+                response.jsonPath().getString("[0].fields.initialValue")
+        );
+
+        // Set instantNotification and dailyNotification to true
+        settingsValues = new SettingsValues();
+        settingsValues.instantNotification = true;
+        settingsValues.dailyNotification = true;
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(settingsValues))
+                .post("/user-config/email-preference")
+                .then()
+                .statusCode(200);
+
+        // Check again with the api
+        response = given()
+                .header(identityHeader)
+                .when().get("/user-config/email-preference")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        assertEquals(
+                "[true, true]",
+                response.jsonPath().getString("[0].fields.initialValue")
         );
     }
 
-    private String valuePathFor(String field) {
-        return String.format("findAll { e -> e.fields.findAll { f -> f.name.equals(\"%s\") } }[0].fields.initialValue ", field);
-    }
 }

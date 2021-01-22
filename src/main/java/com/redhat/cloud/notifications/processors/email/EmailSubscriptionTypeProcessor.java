@@ -1,7 +1,10 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -9,7 +12,12 @@ import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.bop.Email;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.templates.Policies;
+import io.quarkus.qute.TemplateInstance;
+import io.quarkus.scheduler.Scheduled;
+import io.quarkus.scheduler.ScheduledExecution;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Tuple2;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.Vertx;
@@ -20,6 +28,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -29,6 +40,7 @@ import java.util.stream.Collectors;
 public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     private final Logger log = Logger.getLogger(this.getClass().getName());
+    private final ZoneId zoneId = ZoneId.systemDefault();
 
     static final String BOP_APITOKEN_HEADER = "x-rh-apitoken";
     static final String BOP_CLIENT_ID_HEADER = "x-rh-clientid";
@@ -41,6 +53,12 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     WebhookTypeProcessor webhookSender;
+
+    @Inject
+    EndpointEmailSubscriptionResources subscriptionResources;
+
+    @Inject
+    EmailAggregationResources emailAggregationResources;
 
     @ConfigProperty(name = "processor.email.bop_url")
     String bopUrl;
@@ -95,16 +113,45 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         }
     }
 
-    @Inject
-    EndpointEmailSubscriptionResources subscriptionResources;
 
     @Override
     public Uni<NotificationHistory> process(Notification item) {
-        final String accountId = item.getTenant();
+        EmailAggregation aggregation = new EmailAggregation();
+        aggregation.setAccountId(item.getAction().getAccountId());
+        aggregation.setApplication(item.getAction().getApplication());
+        aggregation.setPayload(JsonObject.mapFrom(item.getAction().getPayload()));
+
+        return this.emailAggregationResources.addEmailAggregation(aggregation)
+                .onItem().transformToUni(aBoolean -> sendEmail(item, EmailSubscriptionType.INSTANT));
+    }
+
+    private TemplateInstance templateTitleForSubscriptionType(EmailSubscriptionType subscriptionType) {
+        switch (subscriptionType) {
+            case DAILY:
+                return Policies.Templates.dailyEmailTitle();
+            case INSTANT:
+                return Policies.Templates.instantEmailTitle();
+            default:
+                throw new IllegalArgumentException("Unknown EmailSubscriptionType:" + subscriptionType);
+        }
+    }
+
+    private TemplateInstance templateBodyForSubscriptionType(EmailSubscriptionType subscriptionType) {
+        switch (subscriptionType) {
+            case DAILY:
+                return Policies.Templates.dailyEmailBody();
+            case INSTANT:
+                return Policies.Templates.instantEmailBody();
+            default:
+                throw new IllegalArgumentException("Unknown EmailSubscriptionType:" + subscriptionType);
+        }
+    }
+
+    private Uni<NotificationHistory> sendEmail(Notification item, EmailSubscriptionType emailSubscriptionType) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
-        return this.subscriptionResources.getEmailSubscribers(accountId, EmailSubscriptionType.INSTANT)
-                .onItem().transform(emailSubscription -> emailSubscription.getUsername())
+        return this.subscriptionResources.getEmailSubscribers(item.getTenant(), emailSubscriptionType)
+            .onItem().transform(emailSubscription -> emailSubscription.getUsername())
                 .collectItems().with(Collectors.toSet())
                 .onItem().transform(userSet -> {
                     if (userSet.size() > 0) {
@@ -118,13 +165,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         return Uni.createFrom().nullItem();
                     }
 
-                    Uni<String> title = Policies.Templates
-                            .instantEmailTitle()
+                    Uni<String> title = templateTitleForSubscriptionType(emailSubscriptionType)
                             .data("payload", item.getAction().getPayload())
                             .createMulti().collectItems().with(Collectors.joining());
 
-                    Uni<String> body = Policies.Templates
-                            .instantEmailBody()
+                    Uni<String> body = templateBodyForSubscriptionType(emailSubscriptionType)
                             .data("payload", item.getAction().getPayload())
                             .createMulti().collectItems().with(Collectors.joining());
 
@@ -146,7 +191,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 })
                 .onItem().transformToUni(email -> {
                     if (email == null) {
-                        log.fine("No subscribers for type: instant_email. Skipping EmailSubscription email for endpoint: " + item.getEndpoint().getId());
+                        log.fine("No subscribers for type:"  + emailSubscriptionType.toString());
                         return Uni.createFrom().nullItem();
                     }
 
@@ -161,6 +206,78 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     //      also add metrics for these failures
                     return webhookSender.doHttpRequest(item, bopRequest, payload);
                 });
+    }
+
+    public Multi<Tuple2<NotificationHistory, String>> processAggregateEmails(Instant scheduledFireTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
+        Instant yesterdayScheduledFireTime = scheduledFireTime.minus(emailSubscriptionType.getDuration());
+
+        LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, zoneId);
+        LocalDateTime startTime = LocalDateTime.ofInstant(yesterdayScheduledFireTime, zoneId);
+
+        final String application = "policies";
+        System.out.println("Running processDailyEmail");
+        // Currently only processing aggregations from policies
+        return emailAggregationResources.getAccountIdsWithPendingAggregation(application, startTime, endTime)
+                // Todo: Remove next line
+                .onItem().transform(s -> { System.out.println("account " + s); return s; })
+                .onItem().transformToUni(accountId ->  Uni.combine().all().unis(
+                    Uni.createFrom().item(accountId),
+                    subscriptionResources.getEmailSubscribersCount(accountId, emailSubscriptionType)
+                ).asTuple()).merge()
+                .onItem().transformToMulti(accountAndCount -> {
+                    String accountId = accountAndCount.getItem1();
+
+                    if (accountAndCount.getItem2() > 0 || delete) {
+                        // Group by accountId
+                        return emailAggregationResources.getEmailAggregation(accountId, application, startTime, endTime)
+                        .collectItems().in(DailyEmailPayloadAggregator::new, DailyEmailPayloadAggregator::aggregate).toMulti();
+                    }
+
+                    return Multi.createFrom().empty();
+                }).merge()
+                .onItem().transformToMulti(aggregator -> {
+                    String accountId = aggregator.getAccountId();
+                    if (accountId == null || aggregator.getUniqueHostCount() == 0) {
+                        return Multi.createFrom().empty();
+                    }
+
+                    aggregator.setStartTime(startTime);
+                    aggregator.setEndTimeKey(endTime);
+                    Action action = new Action();
+                    action.setPayload(aggregator.getPayload());
+                    action.setApplication(application);
+
+                    // We don't have a eventtype, this aggregates over multiple event types
+                    action.setEventType(null);
+                    action.setTimestamp(LocalDateTime.now());
+                    action.setAccountId(accountId);
+
+                    // We don't have any endpoint as this aggregates multiple endpoints
+                    Notification item = new Notification(action, null);
+
+                    return sendEmail(item, emailSubscriptionType).onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, accountId)));
+                }).merge()
+                .onItem().transformToMulti(result -> {
+                    if (delete) {
+                        return emailAggregationResources.purgeOldAggregation(result.getItem2(), application, endTime)
+                                .toMulti()
+                                .onItem().transform(integer -> result);
+                    }
+
+                    return Multi.createFrom().item(result);
+                }).merge();
+    }
+
+    @Scheduled(identity = "dailyEmailProcessor", cron = "{email.subscription.daily.cron}")
+    public void processDailyEmail(ScheduledExecution se) {
+        // Only delete on the largest aggregate time frame. Currently daily.
+        processAggregateEmails(se.getScheduledFireTime(), EmailSubscriptionType.DAILY, true).onItem().transform(result -> {
+            // if (result.getItem1() == null) {
+                // Todo: If we want to save the NotificationHistory, this could be a good place to do so. We would probably require a special EndpointType
+                // Nothing was processed, there wasn't any user subscribed or the accounts had no emails to aggregate in this period.
+            // }
+            return result;
+        }).collectItems().asList().await().indefinitely();
     }
 
 }
