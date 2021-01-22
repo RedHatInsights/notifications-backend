@@ -155,7 +155,7 @@ public class TestPoliciesTemplate {
                 .data("payload", payload)
                 .render();
 
-        assertTrue(result.contains("22 Apr 2021 - 3 policies triggered on 3 unique systems"));
+        assertTrue(result.contains("<strong>3 policies</strong> triggered on <strong>3 unique systems</strong>"));
     }
 
     @Test
@@ -181,7 +181,7 @@ public class TestPoliciesTemplate {
                 .data("payload", payload)
                 .render();
 
-        assertTrue(result.contains("22 Apr 2021 - 1 policy triggered on 1 system"));
+        assertTrue(result.contains("<strong>1 policy</strong> triggered on <strong>1 system</strong>"));
     }
 
 }
