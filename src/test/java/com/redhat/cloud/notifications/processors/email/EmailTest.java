@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
+import com.redhat.cloud.notifications.templates.LocalDateTimeExtension;
 import io.quarkus.scheduler.ScheduledExecution;
 import io.quarkus.scheduler.Trigger;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -29,8 +30,10 @@ import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
 
 import javax.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -218,7 +221,11 @@ public class EmailTest {
             helpers.removeSubscription(noSubscribedUsersTenant, username, EmailSubscriptionType.DAILY);
         }
 
-        ScheduledExecution nowPlus10S = new ScheduledExecution() {
+        final Instant nowPlus5HoursInstant = Instant.now().plus(Duration.ofHours(5));
+        final LocalDateTime startTime = LocalDateTime.ofInstant(nowPlus5HoursInstant.minus(Duration.ofDays(1)), ZoneId.systemDefault());
+        final LocalDateTime endTime = LocalDateTime.ofInstant(nowPlus5HoursInstant, ZoneId.systemDefault());
+
+        ScheduledExecution nowPlus5Hours = new ScheduledExecution() {
             @Override
             public Trigger getTrigger() {
                 return null;
@@ -231,7 +238,7 @@ public class EmailTest {
 
             @Override
             public Instant getScheduledFireTime() {
-                return Instant.now().plusSeconds(10);
+                return nowPlus5HoursInstant;
             }
         };
 
@@ -254,14 +261,13 @@ public class EmailTest {
             helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-04");
             helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-05");
             helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-06");
-            emailProcessor.processDailyEmail(nowPlus10S);
+            emailProcessor.processDailyEmail(nowPlus5Hours);
             // Only 1 email, as no aggregation for tenant2
             assertEquals(1, bodyRequests.size());
             JsonObject email = emailRequestIsOK(bodyRequests.get(0), tenant1Usernames);
-            assertTrue(
-                    email.getJsonArray("emails").getJsonObject(0).getString("subject").contains(
-                            "3 policies triggered on 6 system"
-                    )
+            assertEquals(
+                    String.format("%s - 3 policies triggered on 6 unique systems", LocalDateTimeExtension.toStringFormat(startTime)),
+                    email.getJsonArray("emails").getJsonObject(0).getString("subject")
             );
             assertTrue(email.getJsonArray("emails").getJsonObject(0).getString("body").contains("policyid-01"));
             assertTrue(email.getJsonArray("emails").getJsonObject(0).getString("body").contains("policyid-02"));
@@ -269,7 +275,7 @@ public class EmailTest {
 
             bodyRequests.clear();
 
-            emailProcessor.processDailyEmail(nowPlus10S);
+            emailProcessor.processDailyEmail(nowPlus5Hours);
             // 0 emails; previous aggregations were deleted in this step
             assertEquals(0, bodyRequests.size());
 
@@ -288,7 +294,7 @@ public class EmailTest {
             helpers.addEmailAggregation(noSubscribedUsersTenant, application, "policyid-21", "hostid-25");
             helpers.addEmailAggregation(noSubscribedUsersTenant, application, "policyid-21", "hostid-26");
 
-            emailProcessor.processDailyEmail(nowPlus10S);
+            emailProcessor.processDailyEmail(nowPlus5Hours);
             // 2 email, as no user is subscribed for noSubscribedUsersTenant
             assertEquals(2, bodyRequests.size());
 
@@ -303,10 +309,9 @@ public class EmailTest {
 
             // First email
             email = emailRequestIsOK(bodyRequests.get(firstEmailIndex), tenant1Usernames);
-            assertTrue(
-                    email.getJsonArray("emails").getJsonObject(0).getString("subject").contains(
-                            "3 policies triggered on 6 system"
-                    )
+            assertEquals(
+                    String.format("%s - 3 policies triggered on 6 unique systems", LocalDateTimeExtension.toStringFormat(startTime)),
+                    email.getJsonArray("emails").getJsonObject(0).getString("subject")
             );
             assertTrue(email.getJsonArray("emails").getJsonObject(0).getString("body").contains("policyid-01"));
             assertTrue(email.getJsonArray("emails").getJsonObject(0).getString("body").contains("policyid-02"));
@@ -314,16 +319,15 @@ public class EmailTest {
 
             // Second email
             email = emailRequestIsOK(bodyRequests.get(secondEmailIndex), tenant2Usernames);
-            assertTrue(
-                    email.getJsonArray("emails").getJsonObject(0).getString("subject").contains(
-                            "1 policy triggered on 3 system"
-                    )
+            assertEquals(
+                    String.format("%s - 1 policy triggered on 3 unique systems", LocalDateTimeExtension.toStringFormat(startTime)),
+                    email.getJsonArray("emails").getJsonObject(0).getString("subject")
             );
             assertTrue(email.getJsonArray("emails").getJsonObject(0).getString("body").contains("policyid-11"));
             bodyRequests.clear();
 
             helpers.createSubscription(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], EmailSubscriptionType.DAILY);
-            emailProcessor.processDailyEmail(nowPlus10S);
+            emailProcessor.processDailyEmail(nowPlus5Hours);
             // 0 emails; previous aggregations were deleted in this step, even if no one was subscribed by that time
             assertEquals(0, bodyRequests.size());
             helpers.removeSubscription(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], EmailSubscriptionType.DAILY);
