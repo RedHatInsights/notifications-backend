@@ -1,11 +1,14 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -27,6 +30,9 @@ public class ResourceHelpers {
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
 
+    @Inject
+    EmailAggregationResources emailAggregationResources;
+
     public List<Application> getApplications() {
         return appResources.getApplications().collectItems().asList().await().indefinitely();
     }
@@ -38,25 +44,25 @@ public class ResourceHelpers {
     public void createTestAppAndEventTypes() {
         Application app = new Application();
         app.setName(TEST_APP_NAME);
-        app.setDescription("...");
+        app.setDisplay_name("...");
         Application added = appResources.createApplication(app).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
             eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
-            eventType.setDescription("... -> " + i);
+            eventType.setDisplay_name("... -> " + i);
             appResources.addEventTypeToApplication(added.getId(), eventType).await().indefinitely();
         }
 
         Application app2 = new Application();
         app2.setName(TEST_APP_NAME_2);
-        app2.setDescription("...");
+        app2.setDisplay_name("...");
         Application added2 = appResources.createApplication(app2).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
             eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
-            eventType.setDescription("... -> " + i);
+            eventType.setDisplay_name("... -> " + i);
             appResources.addEventTypeToApplication(added2.getId(), eventType).await().indefinitely();
         }
     }
@@ -101,5 +107,24 @@ public class ResourceHelpers {
 
     public void removeSubscription(String tenant, String username, EmailSubscriptionType type) {
         subscriptionResources.unsubscribe(tenant, username, type).await().indefinitely();
+    }
+
+    public void addEmailAggregation(String tenant, String application, String policyId, String insightsId) {
+        EmailAggregation aggregation = new EmailAggregation();
+        aggregation.setApplication(application);
+        aggregation.setAccountId(tenant);
+
+        JsonObject payload = new JsonObject();
+        payload.put("policy_id", policyId);
+        payload.put("policy_name", "not-used-name");
+        payload.put("policy_description", "not-used-desc");
+        payload.put("policy_condition", "not-used-condition");
+        payload.put("display_name", "not-used-display-name");
+        payload.put("insights_id", insightsId);
+        payload.put("tags", new JsonArray());
+
+        aggregation.setPayload(payload);
+
+        emailAggregationResources.addEmailAggregation(aggregation).await().indefinitely();
     }
 }

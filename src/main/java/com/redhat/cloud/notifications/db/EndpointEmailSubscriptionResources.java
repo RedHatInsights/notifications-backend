@@ -50,7 +50,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                                     .bind("$3", type.toString())
                                     .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated)
-                                    .map(i -> i > 0).next();
+                                    .map(i -> true).next();
                         })
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
@@ -75,6 +75,24 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                             postgresqlConnection.close().subscribe();
                         })
                 ).toUni();
+    }
+
+    public Uni<Integer> getEmailSubscribersCount(String accountNumber, EmailSubscriptionType type) {
+        String query = "SELECT count(user_id) FROM public.endpoint_email_subscriptions where account_id = $1 AND subscription_type = $2";
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                    c2 -> {
+                        Flux<PostgresqlResult> execute =  c2.createStatement(query)
+                                .bind("$1", accountNumber)
+                                .bind("$2", type.toString())
+                                .execute();
+                        return execute.flatMap(r -> r.map((row, rowMetadata) -> row.get(0, Integer.class)));
+                    })
+                    .withFinalizer(postgresqlConnection -> {
+                        postgresqlConnection.close().subscribe();
+                    })
+        ).toUni();
     }
 
     public Multi<EmailSubscription> getEmailSubscribers(String accountNumber, EmailSubscriptionType type) {

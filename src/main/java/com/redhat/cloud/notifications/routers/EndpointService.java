@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
+import com.redhat.cloud.notifications.auth.RbacIdentityProvider;
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
@@ -9,6 +10,8 @@ import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.routers.models.EndpointPage;
+import com.redhat.cloud.notifications.routers.models.Meta;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -40,6 +43,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.util.HashMap;
 import java.util.UUID;
 
 @Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
@@ -59,7 +63,7 @@ public class EndpointService {
     EndpointEmailSubscriptionResources emailSubscriptionResources;
 
     @GET
-    @RolesAllowed("read")
+    @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Parameters({
             @Parameter(
                     name = "limit",
@@ -74,19 +78,30 @@ public class EndpointService {
                     schema = @Schema(type = SchemaType.INTEGER)
             )
     })
-    public Multi<Endpoint> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") @DefaultValue("false") boolean activeOnly) {
+    public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") @DefaultValue("false") boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+
+        Multi<Endpoint> endpoints;
+        Uni<Integer> count;
 
         if (targetType != null) {
             Endpoint.EndpointType endpointType = Endpoint.EndpointType.valueOf(targetType.toUpperCase());
-            return resources.getEndpointsPerType(principal.getAccount(), endpointType, activeOnly);
+            endpoints = resources
+                    .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query);
+            count = resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly);
+        } else {
+            endpoints = resources.getEndpoints(principal.getAccount(), query);
+            count = resources.getEndpointsCount(principal.getAccount());
         }
 
-        return resources.getEndpoints(principal.getAccount(), query);
+        return Uni.combine().all().unis(
+                endpoints.collectItems().asList(),
+                count
+        ).asTuple().onItem().transform(t -> new EndpointPage(t.getItem1(), new HashMap<>(), new Meta(t.getItem2())));
     }
 
     @POST
-    @RolesAllowed("write")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setTenant(principal.getAccount());
@@ -95,7 +110,7 @@ public class EndpointService {
             throw new BadRequestException("Properties is required");
         } else if (endpoint.getType() == Endpoint.EndpointType.DEFAULT) {
             // Only a single default endpoint is allowed
-            return resources.getEndpointsPerType(principal.getAccount(), Endpoint.EndpointType.DEFAULT, false)
+            return resources.getEndpointsPerType(principal.getAccount(), Endpoint.EndpointType.DEFAULT, false, null)
                     .toUni()
                     .onItem()
                     .ifNull()
@@ -107,7 +122,7 @@ public class EndpointService {
 
     @GET
     @Path("/{id}")
-    @RolesAllowed("read")
+    @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     public Uni<Endpoint> getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.getEndpoint(principal.getAccount(), id)
@@ -116,7 +131,7 @@ public class EndpointService {
 
     @DELETE
     @Path("/{id}")
-    @RolesAllowed("write")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -127,7 +142,7 @@ public class EndpointService {
 
     @PUT
     @Path("/{id}/enable")
-    @RolesAllowed("write")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -137,7 +152,7 @@ public class EndpointService {
 
     @DELETE
     @Path("/{id}/enable")
-    @RolesAllowed("write")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -147,7 +162,7 @@ public class EndpointService {
 
     @PUT
     @Path("/{id}")
-    @RolesAllowed("write")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> updateEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -159,7 +174,7 @@ public class EndpointService {
 
     @GET
     @Path("/{id}/history")
-    @RolesAllowed("read")
+    @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     public Multi<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id) {
         // TODO We need globally limitations (Paging support and limits etc)
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -168,7 +183,7 @@ public class EndpointService {
 
     @GET
     @Path("/{id}/history/{history_id}/details")
-    @RolesAllowed("read")
+    @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Parameters({
             @Parameter(
                     name = "pageSize",
@@ -199,7 +214,7 @@ public class EndpointService {
 
     @PUT
     @Path("/email/subscription/instant")
-    @RolesAllowed("write")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Boolean> subscribeInstantEmail(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return emailSubscriptionResources.subscribe(
@@ -211,7 +226,7 @@ public class EndpointService {
 
     @DELETE
     @Path("/email/subscription/instant")
-    @RolesAllowed("write")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Boolean> unsubscribeInstantEmail(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return emailSubscriptionResources.unsubscribe(
@@ -223,7 +238,7 @@ public class EndpointService {
 
     @PUT
     @Path("/email/subscription/daily")
-    @RolesAllowed("write")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Boolean> subscribeDailyEmail(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return emailSubscriptionResources.subscribe(
@@ -235,7 +250,7 @@ public class EndpointService {
 
     @DELETE
     @Path("/email/subscription/daily")
-    @RolesAllowed("write")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Boolean> unsubscribeDailyEmail(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return emailSubscriptionResources.unsubscribe(

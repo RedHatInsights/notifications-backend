@@ -94,6 +94,10 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-scheduler</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-logging-sentry</artifactId>
         </dependency>
         <dependency>
@@ -198,6 +202,16 @@
             <groupId>com.reprezen.kaizen</groupId>
             <artifactId>openapi-parser</artifactId>
             <version>${openapi-parser.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.json.bind</groupId>
+            <artifactId>jakarta.json.bind-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse</groupId>
+            <artifactId>yasson</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

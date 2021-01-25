@@ -12,11 +12,11 @@
   },
   "data": [
     {
-      "permission": "notifications:*:*",
+      "permission": "notifications:notifications:read",
       "resourceDefinitions": []
     },
     {
-      "permission": "integrations:*:*",
+      "permission": "integrations:endpoints:read",
       "resourceDefinitions": []
     }
   ]
