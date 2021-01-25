@@ -31,7 +31,9 @@ import javax.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -208,18 +210,18 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 });
     }
 
-    public Multi<Tuple2<NotificationHistory, String>> processAggregateEmails(Instant scheduledFireTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
+    public Uni<List<Tuple2<NotificationHistory, String>>> processAggregateEmails(Instant scheduledFireTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
         Instant yesterdayScheduledFireTime = scheduledFireTime.minus(emailSubscriptionType.getDuration());
 
         LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, zoneId);
         LocalDateTime startTime = LocalDateTime.ofInstant(yesterdayScheduledFireTime, zoneId);
+        final LocalDateTime aggregateStarted = LocalDateTime.now();
+
+        log.info(String.format("Running %s email aggregation for period (%s, %s)", emailSubscriptionType.toString(), startTime.toString(), endTime.toString()));
 
         final String application = "policies";
-        System.out.println("Running processDailyEmail");
         // Currently only processing aggregations from policies
         return emailAggregationResources.getAccountIdsWithPendingAggregation(application, startTime, endTime)
-                // Todo: Remove next line
-                .onItem().transform(s -> { System.out.println("account " + s); return s; })
                 .onItem().transformToUni(accountId ->  Uni.combine().all().unis(
                     Uni.createFrom().item(accountId),
                     subscriptionResources.getEmailSubscribersCount(accountId, emailSubscriptionType)
@@ -265,19 +267,29 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     }
 
                     return Multi.createFrom().item(result);
-                }).merge();
+                }).merge()
+                // Todo: If we want to save the NotificationHistory, this could be a good place to do so. We would probably require a special EndpointType
+                // .onItem().invoke(result -> { })
+                .collectItems().asList()
+                .onItem().invoke(result -> {
+                    final LocalDateTime aggregateFinished = LocalDateTime.now();
+                    log.info(
+                            String.format(
+                                    "Finished running %s email aggregation for period (%s, %s) after %d seconds. %d accountIds were processed",
+                                    emailSubscriptionType.toString(),
+                                    startTime.toString(),
+                                    endTime.toString(),
+                                    ChronoUnit.SECONDS.between(aggregateStarted, aggregateFinished),
+                                    result.size()
+                            )
+                    );
+                });
     }
 
     @Scheduled(identity = "dailyEmailProcessor", cron = "{email.subscription.daily.cron}")
     public void processDailyEmail(ScheduledExecution se) {
         // Only delete on the largest aggregate time frame. Currently daily.
-        processAggregateEmails(se.getScheduledFireTime(), EmailSubscriptionType.DAILY, true).onItem().transform(result -> {
-            // if (result.getItem1() == null) {
-                // Todo: If we want to save the NotificationHistory, this could be a good place to do so. We would probably require a special EndpointType
-                // Nothing was processed, there wasn't any user subscribed or the accounts had no emails to aggregate in this period.
-            // }
-            return result;
-        }).collectItems().asList().await().indefinitely();
+        processAggregateEmails(se.getScheduledFireTime(), EmailSubscriptionType.DAILY, true).await().indefinitely();
     }
 
 }
