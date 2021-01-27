@@ -23,13 +23,13 @@ public class ApplicationResources {
     Provider<Uni<PostgresqlConnection>> connectionPublisher;
 
     public Uni<Application> createApplication(Application app) {
-        String query = "INSERT INTO public.applications (name, description) VALUES ($1, $2)";
+        String query = "INSERT INTO public.applications (name, display_name) VALUES ($1, $2)";
         // Return filled with id
         return connectionPublisher.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> c2.createStatement(query)
                                 .bind("$1", app.getName())
-                                .bind("$2", app.getDescription())
+                                .bind("$2", app.getDisplay_name())
                                 .returnGeneratedValues("id", "created")
                                 .execute()
                                 .flatMap(res -> res.map((row, rowMetadata) -> {
@@ -44,7 +44,7 @@ public class ApplicationResources {
     }
 
     public Uni<EventType> addEventTypeToApplication(UUID applicationId, EventType type) {
-        String insertQuery = "INSERT INTO public.event_type (name, description) VALUES ($1, $2)";
+        String insertQuery = "INSERT INTO public.event_type (name, display_name) VALUES ($1, $2)";
         String linkQuery = "INSERT INTO public.application_event_type (application_id, event_type_id) VALUES ($1, $2)";
 
         return connectionPublisher.get().onItem()
@@ -52,7 +52,7 @@ public class ApplicationResources {
                         c2 -> {
                             Flux<EventType> eventTypeFlux = c2.createStatement(insertQuery)
                                     .bind("$1", type.getName())
-                                    .bind("$2", type.getDescription())
+                                    .bind("$2", type.getDisplay_name())
                                     .returnGeneratedValues("id")
                                     .execute()
                                     .flatMap(res -> res.map((row, rowMetadata) -> {
@@ -73,7 +73,7 @@ public class ApplicationResources {
                 .toUni();
     }
 
-    private static final String APPLICATION_QUERY = "SELECT a.id, a.name, a.description, a.created, a.updated FROM public.applications a";
+    private static final String APPLICATION_QUERY = "SELECT a.id, a.name, a.display_name, a.created, a.updated FROM public.applications a";
 
 
     public Multi<Application> getApplications() {
@@ -95,7 +95,7 @@ public class ApplicationResources {
             Application app = new Application();
             app.setId(row.get("id", UUID.class));
             app.setName(row.get("name", String.class));
-            app.setDescription(row.get("description", String.class));
+            app.setDisplay_name(row.get("display_name", String.class));
             app.setCreated(row.get("created", Date.class));
             app.setUpdated(row.get("updated", Date.class));
             return app;
@@ -119,7 +119,7 @@ public class ApplicationResources {
     }
 
     public Multi<EventType> getEventTypes(UUID applicationId) {
-        String query = "SELECT et.id, et.name, et.description FROM public.event_type et " +
+        String query = "SELECT et.id, et.name, et.display_name FROM public.event_type et " +
                 "JOIN public.application_event_type aet ON aet.event_type_id = et.id " +
                 "WHERE aet.application_id = $1";
 
@@ -134,7 +134,7 @@ public class ApplicationResources {
                                 EventType eventType = new EventType();
                                 eventType.setId(row.get("id", Integer.class));
                                 eventType.setName(row.get("name", String.class));
-                                eventType.setDescription(row.get("description", String.class));
+                                eventType.setDisplay_name(row.get("display_name", String.class));
                                 return eventType;
                             }));
                         })
@@ -148,7 +148,7 @@ public class ApplicationResources {
     }
 
     public Multi<EventType> getEventTypes(Query limiter, Set<UUID> applicationId) {
-        String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.description AS et_desc, a.id AS a_id, a.name AS a_name, a.description as a_description FROM public.event_type et " +
+        String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.display_name AS et_din, a.id AS a_id, a.name AS a_name, a.display_name as a_displayName FROM public.event_type et " +
                 "JOIN public.application_event_type aet ON aet.event_type_id = et.id " +
                 "JOIN public.applications a ON a.id = aet.application_id";
 
@@ -181,12 +181,12 @@ public class ApplicationResources {
             Application app = new Application();
             app.setId(row.get("a_id", UUID.class));
             app.setName(row.get("a_name", String.class));
-            app.setDescription(row.get("a_description", String.class));
+            app.setDisplay_name(row.get("a_displayName", String.class));
 
             EventType eventType = new EventType();
             eventType.setId(row.get("et_id", Integer.class));
             eventType.setName(row.get("et_name", String.class));
-            eventType.setDescription(row.get("et_desc", String.class));
+            eventType.setDisplay_name(row.get("et_din", String.class));
 
             eventType.setApplication(app);
 

@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
-import io.r2dbc.spi.R2dbcDataIntegrityViolationException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import reactor.core.publisher.Flux;
@@ -20,7 +19,8 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
     Provider<Uni<PostgresqlConnection>> connectionPublisherUni;
 
     public Uni<Boolean> subscribe(String accountNumber, String username, EmailSubscriptionType type) {
-        String query = "INSERT INTO public.endpoint_email_subscriptions(account_id, user_id, subscription_type) VALUES($1, $2, $3)";
+        String query = "INSERT INTO public.endpoint_email_subscriptions(account_id, user_id, subscription_type) VALUES($1, $2, $3) " +
+                "ON CONFLICT (account_id, user_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
@@ -30,13 +30,11 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                                     .bind("$3", type.toString())
                                     .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated)
-                                    .map(i -> i > 0).next();
+                                    .map(i -> true).next();
                         })
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
                         })
-                        // The value is already on the database, this is OK
-                        .onFailure(R2dbcDataIntegrityViolationException.class).recoverWithItem(true)
                 ).toUni();
     }
 
@@ -52,7 +50,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                                     .bind("$3", type.toString())
                                     .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated)
-                                    .map(i -> i > 0).next();
+                                    .map(i -> true).next();
                         })
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
@@ -77,6 +75,24 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                             postgresqlConnection.close().subscribe();
                         })
                 ).toUni();
+    }
+
+    public Uni<Integer> getEmailSubscribersCount(String accountNumber, EmailSubscriptionType type) {
+        String query = "SELECT count(user_id) FROM public.endpoint_email_subscriptions where account_id = $1 AND subscription_type = $2";
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                    c2 -> {
+                        Flux<PostgresqlResult> execute =  c2.createStatement(query)
+                                .bind("$1", accountNumber)
+                                .bind("$2", type.toString())
+                                .execute();
+                        return execute.flatMap(r -> r.map((row, rowMetadata) -> row.get(0, Integer.class)));
+                    })
+                    .withFinalizer(postgresqlConnection -> {
+                        postgresqlConnection.close().subscribe();
+                    })
+        ).toUni();
     }
 
     public Multi<EmailSubscription> getEmailSubscribers(String accountNumber, EmailSubscriptionType type) {

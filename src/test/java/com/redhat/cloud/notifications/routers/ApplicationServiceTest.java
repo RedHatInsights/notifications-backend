@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class ApplicationServiceTest {
 
     static final String APP_NAME = "PoliciesApplicationServiceTest";
-    static final String EVENT_TYPE_NAME = "All";
+    static final String EVENT_TYPE_NAME = "policy-triggered";
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
@@ -29,12 +29,12 @@ public class ApplicationServiceTest {
     void testPoliciesApplicationAdding() {
         Application app = new Application();
         app.setName(APP_NAME);
-        app.setDescription("The best app");
+        app.setDisplay_name("The best app");
 
         // All of these are without identityHeader
         given()
                 // Set header to x-rh-identity
-                .when().get("/applications")
+                .when().get("/internal/applications")
                 .then()
                 .statusCode(200);
 
@@ -42,7 +42,7 @@ public class ApplicationServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(app))
-                .post("/applications")
+                .post("/internal/applications")
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -55,13 +55,13 @@ public class ApplicationServiceTest {
         // Create eventType
         EventType eventType = new EventType();
         eventType.setName(EVENT_TYPE_NAME);
-        eventType.setDescription("Policies will take care of the rules");
+        eventType.setDisplay_name("Policies will take care of the rules");
 
         response = given()
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(eventType))
-                .post(String.format("/applications/%s/eventTypes", appResponse.getId()))
+                .post(String.format("/internal/applications/%s/eventTypes", appResponse.getId()))
                 .then()
                 .statusCode(200)
                 .extract().response();

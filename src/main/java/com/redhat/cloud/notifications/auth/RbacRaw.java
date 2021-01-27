@@ -8,27 +8,20 @@ public class RbacRaw {
     public Map<String, Integer> meta;
     public List<Map<String, Object>> data;
 
-    public boolean canRead(String path) {
-        return findPermission(path, "read");
+
+    public boolean canRead(String application, String item) {
+        return findPermission(application, item, "read");
     }
 
-    public boolean canWrite(String path) {
-        return findPermission(path, "write");
+    public boolean canWrite(String application, String item) {
+        return findPermission(application, item, "write");
     }
 
-    public boolean canReadAll() {
-        return canRead("*");
+    public boolean canDo(String application, String item, String permission) {
+        return findPermission(application, item, permission);
     }
 
-    public boolean canWriteAll() {
-        return canWrite("*");
-    }
-
-    public boolean canDo(String path, String permission) {
-        return findPermission(path, permission);
-    }
-
-    private boolean findPermission(String path, String what) {
+    private boolean findPermission(String application, String item, String what) {
         if (data == null || data.size() == 0) {
             return false;
         }
@@ -38,9 +31,11 @@ public class RbacRaw {
             if (fields.length < 3) {
                 return false;
             }
-            if (fields[1].equals(path)) {
-                if (fields[2].equals(what) || fields[2].equals("*")) {
-                    return true;
+            if (fields[0].equals(application)) {
+                if (fields[1].equals(item) || fields[1].equals("*")) {
+                    if (fields[2].equals(what) || fields[2].equals("*")) {
+                        return true;
+                    }
                 }
             }
         }

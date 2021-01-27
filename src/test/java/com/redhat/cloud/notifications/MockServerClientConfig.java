@@ -34,7 +34,7 @@ public class MockServerClientConfig {
         this.mockServerClient
                 .when(request()
                         .withPath("/api/rbac/v1/access/")
-                        .withQueryStringParameter("application", "notifications")
+                        .withQueryStringParameter("application", "notifications,integrations")
                         .withHeader(RHIdentityAuthMechanism.IDENTITY_HEADER, xRhIdentity)
                 )
                 .respond(response()
@@ -61,4 +61,5 @@ public class MockServerClientConfig {
     public String getRunningAddress() {
         return String.format("%s:%d", mockServerClient.remoteAddress().getHostName(), mockServerClient.remoteAddress().getPort());
     }
+
 }

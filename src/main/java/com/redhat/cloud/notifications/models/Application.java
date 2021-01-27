@@ -18,7 +18,7 @@ public class Application {
 
     @NotNull
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String description;
+    private String display_name;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -51,12 +51,12 @@ public class Application {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
+    public String getDisplay_name() {
+        return display_name;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setDisplay_name(String display_name) {
+        this.display_name = display_name;
     }
 
     @JsonProperty

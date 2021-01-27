@@ -12,7 +12,7 @@ public class EventType {
     private String name;
 
     @NotNull
-    private String description;
+    private String display_name;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Application application;
@@ -42,12 +42,12 @@ public class EventType {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
+    public String getDisplay_name() {
+        return display_name;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setDisplay_name(String display_name) {
+        this.display_name = display_name;
     }
 
     public Application getApplication() {

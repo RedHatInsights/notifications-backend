@@ -17,14 +17,11 @@ public class Notification {
     }
 
     public String getTenant() {
-        return action.getEvent().getAccountId();
+        return action.getAccountId();
     }
 
     public Endpoint getEndpoint() {
         return endpoint;
     }
 
-    public String getEventId() {
-        return action.getEventId();
-    }
 }

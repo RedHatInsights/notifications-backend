@@ -1,16 +1,19 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
+import com.redhat.cloud.notifications.auth.RbacIdentityProvider;
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.models.ApplicationFacet;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.Notification;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Vertx;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -88,14 +91,14 @@ public class NotificationService {
 
     @GET
     @Path("/eventTypes")
-    @RolesAllowed("read")
+    @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Multi<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds) {
         return apps.getEventTypes(query, applicationIds);
     }
 
     @PUT
     @Path("/eventTypes/{eventTypeId}/{endpointId}")
-    @RolesAllowed("write")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> linkEndpointToEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -105,7 +108,7 @@ public class NotificationService {
 
     @DELETE
     @Path("/eventTypes/{eventTypeId}/{endpointId}")
-    @RolesAllowed("write")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> unlinkEndpointFromEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -115,7 +118,7 @@ public class NotificationService {
 
     @GET
     @Path("/eventTypes/{eventTypeId}")
-    @RolesAllowed("read")
+    @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query);
@@ -123,7 +126,8 @@ public class NotificationService {
 
     @GET
     @Path("/defaults")
-    @RolesAllowed("read")
+    @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    @Operation(summary = "Retrieve all integrations of the configured default actions.")
     public Multi<Endpoint> getEndpointsForDefaults(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.getDefaultEndpoints(principal.getAccount());
@@ -131,6 +135,7 @@ public class NotificationService {
 
     @PUT
     @Path("/defaults/{endpointId}")
+    @Operation(summary = "Add an integration to the list of configured default actions.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> addEndpointToDefaults(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -140,10 +145,18 @@ public class NotificationService {
 
     @DELETE
     @Path("/defaults/{endpointId}")
+    @Operation(summary = "Remove an integration from the list of configured default actions.")
     @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> deleteEndpointFromDefaults(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.deleteEndpointFromDefaults(principal.getAccount(), endpointId)
                 .onItem().transform(ignored -> Response.noContent().build());
+    }
+
+    @GET
+    @Path("/facets/applications")
+    @Operation(summary = "Return a thin list of configured applications. This can be used to configure a filter in the UI")
+    public Multi<ApplicationFacet> getApplicationsFacets(@Context SecurityContext sec) {
+        return apps.getApplications().onItem().transform(a -> new ApplicationFacet(a.getName(), a.getId().toString()));
     }
 }

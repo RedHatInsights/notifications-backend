@@ -7,12 +7,12 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
+import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -35,11 +35,9 @@ import org.mockserver.model.HttpRequest;
 
 import javax.inject.Inject;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -95,14 +93,14 @@ public class LifecycleITest {
     void t01_testAdding() {
         Application app = new Application();
         app.setName(APP_NAME);
-        app.setDescription("The best app in the life");
+        app.setDisplay_name("The best app in the life");
 
         Response response = given()
                 .when()
                 .contentType(ContentType.JSON)
                 .basePath("/")
                 .body(Json.encode(app))
-                .post("/applications")
+                .post("/internal/applications")
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -113,14 +111,14 @@ public class LifecycleITest {
         // Create eventType
         EventType eventType = new EventType();
         eventType.setName(EVENT_TYPE_NAME);
-        eventType.setDescription("Policies will take care of the rules");
+        eventType.setDisplay_name("Policies will take care of the rules");
 
         response = given()
                 .when()
                 .contentType(ContentType.JSON)
                 .basePath("/")
                 .body(Json.encode(eventType))
-                .post(String.format("/applications/%s/eventTypes", appResponse.getId()))
+                .post(String.format("/internal/applications/%s/eventTypes", appResponse.getId()))
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -222,22 +220,13 @@ public class LifecycleITest {
         Action targetAction = new Action();
         targetAction.setApplication(APP_NAME);
         targetAction.setTimestamp(LocalDateTime.now());
-        targetAction.setEventId(UUID.randomUUID().toString());
         targetAction.setEventType(EVENT_TYPE_NAME);
-        targetAction.setTags(new ArrayList<>());
 
         Map params = new HashMap();
         params.put("triggers", new HashMap());
-        targetAction.setParams(params);
+        targetAction.setPayload(params);
 
-        Context context = new Context();
-        context.setAccountId("tenant");
-        Map<String, String> values = new HashMap<>();
-        values.put("k", "v");
-        values.put("k2", "v2");
-        values.put("k3", "v");
-        context.setMessage(values);
-        targetAction.setEvent(context);
+        targetAction.setAccountId("tenant");
 
         String payload = serializeAction(targetAction);
         ingressChan.send(payload);
@@ -270,7 +259,7 @@ public class LifecycleITest {
                 .statusCode(200)
                 .extract().response();
 
-        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), EndpointPage.class).getData().toArray(new Endpoint[0]);
         assertEquals(2, endpoints.length);
 
         for (Endpoint ep : endpoints) {
@@ -466,7 +455,7 @@ public class LifecycleITest {
                 .statusCode(200)
                 .extract().response();
 
-        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), Endpoint[].class);
+        Endpoint[] endpoints = Json.decodeValue(response.getBody().asString(), EndpointPage.class).getData().toArray(new Endpoint[0]);
         assertEquals(3, endpoints.length);
 
         for (Endpoint endpoint : endpoints) {

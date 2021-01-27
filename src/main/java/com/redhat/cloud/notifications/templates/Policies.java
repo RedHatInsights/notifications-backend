@@ -12,6 +12,10 @@ public class Policies {
         public static native TemplateInstance instantEmailTitle();
 
         public static native TemplateInstance instantEmailBody();
+
+        public static native TemplateInstance dailyEmailTitle();
+
+        public static native TemplateInstance dailyEmailBody();
     }
 
 }

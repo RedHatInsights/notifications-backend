@@ -11,12 +11,7 @@ import java.util.Map;
 
 public class JsonObjectConversion extends Conversion<Map> {
 
-    private ObjectMapper mapper = new ObjectMapper();
-
-    public JsonObjectConversion() {
-        super();
-    }
-
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public Schema getRecommendedSchema() {
@@ -35,7 +30,6 @@ public class JsonObjectConversion extends Conversion<Map> {
 
     @Override
     public Map fromCharSequence(CharSequence value, Schema schema, LogicalType type) {
-        ObjectMapper mapper = new ObjectMapper();
         try {
             return mapper.readValue(value.toString(), Map.class);
         } catch (JsonProcessingException jpe) {

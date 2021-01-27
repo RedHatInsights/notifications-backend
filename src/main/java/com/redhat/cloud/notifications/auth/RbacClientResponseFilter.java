@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  */
 public class RbacClientResponseFilter implements ClientResponseFilter {
 
-    private final Logger log = Logger.getLogger(this.getClass().getSimpleName());
+    private final Logger log = Logger.getLogger(this.getClass().getName());
 
     @Override
     public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {

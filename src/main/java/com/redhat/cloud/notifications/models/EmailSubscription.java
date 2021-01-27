@@ -1,15 +1,23 @@
 package com.redhat.cloud.notifications.models;
 
+import java.time.Duration;
+
 public class EmailSubscription {
 
     public enum EmailSubscriptionType {
-        INSTANT("INSTANT"),
-        DAILY("DAILY");
+        INSTANT("INSTANT", null),
+        DAILY("DAILY", Duration.ofDays(1));
 
         private String name;
+        private Duration duration;
 
-        EmailSubscriptionType(String name) {
+        EmailSubscriptionType(String name, Duration duration) {
             this.name = name;
+            this.duration = duration;
+        }
+
+        public Duration getDuration() {
+            return this.duration;
         }
 
         public String toString() {

@@ -12,7 +12,11 @@
   },
   "data": [
     {
-      "permission": "policies:*:*",
+      "permission": "notifications:*:*",
+      "resourceDefinitions": []
+    },
+    {
+      "permission": "integrations:*:*",
       "resourceDefinitions": []
     }
   ]

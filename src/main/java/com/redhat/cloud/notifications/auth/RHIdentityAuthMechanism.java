@@ -29,10 +29,20 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {
         String xRhIdentityHeaderValue = routingContext.request().getHeader(IDENTITY_HEADER);
+        String path = routingContext.normalisedPath();
+
+        // Those two come via Turnpike and have a different identity header.
+        // Skip the header check for now
+        if (path.startsWith("/internal/")) {
+            return Uni.createFrom().item(QuarkusSecurityIdentity.builder()
+                // Set a dummy principal, but add no roles.
+                .setPrincipal(new RhIdPrincipal("-noauth-", "-1"))
+                .build());
+        }
 
         // Access that did not go through 3Scale (e.g internal API)
         if (xRhIdentityHeaderValue == null) {
-            String path = routingContext.normalisedPath();
+
             boolean good = false;
 
             // We block access unless the openapi file is requested.
@@ -40,7 +50,8 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
                 if (path.endsWith("openapi.json")) {
                     good = true;
                 }
-            } else if (path.startsWith("/openapi.json") || path.startsWith("/applications")) {
+            } else if (path.startsWith("/openapi.json") || path.startsWith("/internal")
+                    || path.startsWith("/admin") || path.startsWith("/health")) {
                 good = true;
             }
 

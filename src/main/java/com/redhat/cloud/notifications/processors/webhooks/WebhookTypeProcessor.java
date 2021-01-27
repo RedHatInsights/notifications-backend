@@ -21,10 +21,13 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.util.logging.Logger;
 
 
 @ApplicationScoped
 public class WebhookTypeProcessor implements EndpointTypeProcessor {
+
+    private final Logger log = Logger.getLogger(this.getClass().getName());
 
     private static final String TOKEN_HEADER = "X-Insight-Token";
 
@@ -49,7 +52,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         WebhookAttributes properties = (WebhookAttributes) endpoint.getProperties();
 
         WebClientOptions options = new WebClientOptions()
-                .setSsl(!properties.isDisableSSLVerification())
+                .setTrustAll(properties.isDisableSSLVerification())
                 .setConnectTimeout(3000); // TODO Should this be configurable by the system? We need a maximum in any case
 
         final HttpRequest<Buffer> req = WebClient.create(vertx, options)
@@ -71,9 +74,6 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     public Uni<NotificationHistory> doHttpRequest(Notification item, HttpRequest<Buffer> req, Uni<JsonObject> payload) {
         final long startTime = System.currentTimeMillis();
 
-        HttpRequestImpl<Buffer> reqImpl_debug = (HttpRequestImpl<Buffer>) req.getDelegate();
-        System.out.println("Host: " + reqImpl_debug.host() + ":" + reqImpl_debug.port() + " URI" + reqImpl_debug.uri() + " " + reqImpl_debug.rawMethod() + " SSL:" + reqImpl_debug.ssl());
-
         return payload.onItem()
                 .transformToUni(json -> req.sendJsonObject(json)
                         .onItem().transform(resp -> {
@@ -83,14 +83,17 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
                             if (resp.statusCode() >= 200 && resp.statusCode() <= 300) {
                                 // Accepted
+                                log.fine("Target endpoint successful: " + resp.statusCode());
                                 history.setInvocationResult(true);
                             } else if (resp.statusCode() > 500) {
                                 // Temporary error, allow retry
+                                log.fine("Target endpoint server error: " + resp.statusCode() + " " + resp.statusMessage());
                                 history.setInvocationResult(false);
                             } else {
                                 // Disable the target endpoint, it's not working correctly for us (such as 400)
-                                // must eb manually re-enabled
+                                // must be manually re-enabled
                                 // Redirects etc should have been followed by the vertx (test this)
+                                log.fine("Target endpoint error: " + resp.statusCode() + " " + resp.statusMessage() + " " + json);
                                 history.setInvocationResult(false);
                             }
 
@@ -108,11 +111,14 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
                             return history;
                         }).onFailure().recoverWithItem(t -> {
+
                             // TODO Duplicate code with the success part
                             final long endTime = System.currentTimeMillis();
                             NotificationHistory history = getHistoryStub(item, endTime - startTime);
 
                             HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
+
+                            log.fine("Failed: " + t.getMessage());
 
                             // TODO Duplicate code with the error return code part
                             JsonObject details = new JsonObject();
@@ -149,8 +155,8 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         NotificationHistory history = new NotificationHistory();
         history.setInvocationTime(invocationTime);
         history.setEndpoint(item.getEndpoint());
-        history.setTenant(item.getEndpoint().getTenant());
-        history.setEventId(item.getEventId());
+        history.setTenant(item.getTenant());
+        history.setEventId("");
         history.setInvocationResult(false);
         return history;
     }
