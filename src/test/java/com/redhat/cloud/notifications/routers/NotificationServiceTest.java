@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -145,4 +146,133 @@ public class NotificationServiceTest {
                 .then()
                 .statusCode(400);
     }
+
+    @Test
+    void testGetEventTypesAffectedByEndpoint() {
+        String tenant = "testGetEventTypesAffectedByEndpoint";
+        String userName = "user";
+        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
+        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        List<Application> applications = this.helpers.getApplications();
+        UUID ep1 = this.helpers.createWebhookEndpoint(tenant);
+        UUID ep2 = this.helpers.createWebhookEndpoint(tenant);
+        UUID defaultEp = this.helpers.getDefaultEndpointId(tenant);
+        List<EventType> eventTypesFromApp1 = this.helpers.getEventTypesForApplication(applications.get(1).getId());
+        EventType ev0 = eventTypesFromApp1.get(0);
+        EventType ev1 = eventTypesFromApp1.get(1);
+
+        // ep1 assigned to ev0; ep2 not assigned; default not assigned.
+        this.helpers.assignEndpointToEventType(tenant, ep1, ev0.getId());
+        Response response = given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        EventType[] eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        assertEquals(1, eventTypes.length);
+        assertEquals(ev0.getId(), eventTypes[0].getId());
+
+        response = given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        assertEquals(0, eventTypes.length);
+
+        // ep1 assigned to event ev0; ep2 assigned to default; default not assigned
+        this.helpers.assignEndpointToDefault(tenant, ep2);
+        response = given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        assertEquals(1, eventTypes.length);
+        assertEquals(ev0.getId(), eventTypes[0].getId());
+
+        response = given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        assertEquals(0, eventTypes.length);
+
+        // ep1 assigned to ev0; ep2 assigned to default; default assigned to ev1
+        this.helpers.assignEndpointToEventType(tenant, defaultEp, ev1.getId());
+        response = given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        assertEquals(1, eventTypes.length);
+        assertEquals(ev0.getId(), eventTypes[0].getId());
+
+        response = given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        assertEquals(1, eventTypes.length);
+        assertEquals(ev1.getId(), eventTypes[0].getId());
+
+        // ep1 assigned to event app[0][0]; ep2 assigned to default; default assigned to app[0][1] & app[0][0]
+        this.helpers.assignEndpointToEventType(tenant, defaultEp, ev0.getId());
+        response = given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        assertEquals(1, eventTypes.length);
+        assertEquals(ev0.getId(), eventTypes[0].getId());
+
+        response = given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        assertEquals(2, eventTypes.length);
+        assertEquals(ev0.getId(), eventTypes[1].getId());
+        assertEquals(ev1.getId(), eventTypes[0].getId());
+    }
+
 }
