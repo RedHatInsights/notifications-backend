@@ -12,6 +12,7 @@ import reactor.core.publisher.Flux;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.validation.constraints.NotNull;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
@@ -168,6 +169,28 @@ public class ApplicationResources {
                             }
 
                             Flux<PostgresqlResult> execute = statement.execute();
+
+                            return mapResultSetToEventTypes(execute);
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        }));
+    }
+
+    public Multi<EventType> getEventTypesByEndpointId(@NotNull String accountId, @NotNull UUID endpointId) {
+        String query = "SELECT et.id AS et_id, et.name AS et_name, et.display_name AS et_din, a.id AS a_id, a.name AS a_name, a.display_name as a_displayName FROM public.event_type et " +
+                "JOIN public.application_event_type aet ON aet.event_type_id = et.id " +
+                "JOIN public.applications a ON a.id = aet.application_id " +
+                "JOIN public.endpoint_targets endt ON  endt.event_type_id = et.id " +
+                "WHERE endt.endpoint_id = $1 AND endt.account_id = $2";
+
+        return connectionPublisher.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", endpointId)
+                                    .bind("$2", accountId)
+                                    .execute();
 
                             return mapResultSetToEventTypes(execute);
                         })

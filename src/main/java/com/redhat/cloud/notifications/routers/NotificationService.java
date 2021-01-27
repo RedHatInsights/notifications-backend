@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.ApplicationFacet;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.Notification;
 import io.smallrye.mutiny.Multi;
@@ -94,6 +95,27 @@ public class NotificationService {
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Multi<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds) {
         return apps.getEventTypes(query, applicationIds);
+    }
+
+    @GET
+    @Path("/eventTypes/affectedByRemovalOfEndpoint/{endpointId}")
+    @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    public Multi<EventType> getEventTypesAffectedByEndpointId(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+
+        Multi<EventType> directlyAffected = apps.getEventTypesByEndpointId(principal.getAccount(), endpointId);
+        Multi<EventType> indirectlyAffected = resources.getEndpointsPerType(principal.getAccount(), EndpointType.DEFAULT, false, null).toUni().onItem().transformToMulti(defaultEndpoint ->
+            resources.endpointInDefaults(principal.getAccount(), endpointId)
+                    .onItem().transformToMulti(exists -> {
+                        if (exists) {
+                            return apps.getEventTypesByEndpointId(principal.getAccount(), defaultEndpoint.getId());
+                        }
+
+                        return Multi.createFrom().empty();
+                    })
+        );
+
+        return Multi.createBy().merging().streams(directlyAffected, indirectlyAffected);
     }
 
     @PUT
