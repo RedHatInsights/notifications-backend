@@ -132,12 +132,12 @@ public class EndpointService {
     @DELETE
     @Path("/{id}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.deleteEndpoint(principal.getAccount(), id)
                 // onFailure() ?
-                .onItem().transform(ignored -> Response.ok().build());
+                .onItem().transform(ignored -> Response.noContent().build());
     }
 
     @PUT
@@ -153,11 +153,11 @@ public class EndpointService {
     @DELETE
     @Path("/{id}/enable")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.disableEndpoint(principal.getAccount(), id)
-                .onItem().transform(ignored -> Response.ok().build());
+                .onItem().transform(ignored -> Response.noContent().build());
     }
 
     @PUT

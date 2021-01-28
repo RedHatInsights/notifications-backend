@@ -71,7 +71,7 @@ public class NotificationService {
 
     @DELETE
     @Path("/{id}")
-    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> markRead(@Context SecurityContext sec, Integer id) {
         // Mark the notification id for <tenantId><userId> 's subscription as read
         return Uni.createFrom().nullItem();
@@ -109,11 +109,11 @@ public class NotificationService {
     @DELETE
     @Path("/eventTypes/{eventTypeId}/{endpointId}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> unlinkEndpointFromEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.unlinkEndpoint(principal.getAccount(), endpointId, eventTypeId)
-                .onItem().transform(ignored -> Response.ok().build());
+                .onItem().transform(ignored -> Response.noContent().build());
     }
 
     @GET
@@ -146,11 +146,11 @@ public class NotificationService {
     @DELETE
     @Path("/defaults/{endpointId}")
     @Operation(summary = "Remove an integration from the list of configured default actions.")
-    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> deleteEndpointFromDefaults(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.deleteEndpointFromDefaults(principal.getAccount(), endpointId)
-                .onItem().transform(ignored -> Response.ok().build());
+                .onItem().transform(ignored -> Response.noContent().build());
     }
 
     @GET
