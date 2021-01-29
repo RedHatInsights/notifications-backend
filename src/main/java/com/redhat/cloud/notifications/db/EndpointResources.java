@@ -421,6 +421,24 @@ public class EndpointResources extends DatasourceProvider {
                         }));
     }
 
+    public Uni<Boolean> endpointInDefaults(String tenant, UUID endpointId) {
+        String query = "SELECT count(endpoint_id) FROM public.endpoint_defaults WHERE account_id = $1 and endpoint_id = $2";
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", tenant)
+                                    .bind("$2", endpointId)
+                                    .execute();
+
+                            return execute.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> row.get(0, Integer.class) > 0));
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        })).toUni();
+    }
+
     public Uni<Boolean> addEndpointToDefaults(String tenant, UUID endpointId) {
         String query = "INSERT INTO public.endpoint_defaults (account_id, endpoint_id) VALUES ($1, $2)";
 

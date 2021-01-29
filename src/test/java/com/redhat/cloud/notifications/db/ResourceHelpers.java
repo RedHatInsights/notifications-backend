@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.vertx.core.json.JsonArray;
@@ -13,6 +14,7 @@ import io.vertx.core.json.JsonObject;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
+import java.util.UUID;
 
 @ApplicationScoped
 public class ResourceHelpers {
@@ -101,6 +103,38 @@ public class ResourceHelpers {
         return statsValues;
     }
 
+    public UUID createWebhookEndpoint(String tenant) {
+        WebhookAttributes webAttr = new WebhookAttributes();
+        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setUrl("https://localhost");
+        Endpoint ep = new Endpoint();
+        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setName(String.format("Endpoint %s", UUID.randomUUID().toString()));
+        ep.setDescription("Automatically generated");
+        ep.setEnabled(true);
+        ep.setTenant(tenant);
+        return resources.createEndpoint(ep).await().indefinitely().getId();
+    }
+
+    public void assignEndpointToEventType(String tenant, UUID endpointId, long eventTypeId) {
+        resources.linkEndpoint(tenant, endpointId, eventTypeId).await().indefinitely();
+    }
+
+    public UUID getDefaultEndpointId(String tenant) {
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.DEFAULT);
+        ep.setName(String.format("Endpoint %s", UUID.randomUUID().toString()));
+        ep.setDescription("Automatically generated");
+        ep.setEnabled(true);
+        ep.setTenant(tenant);
+
+        return resources.createEndpoint(ep).await().indefinitely().getId();
+    }
+
+    public void assignEndpointToDefault(String tenant, UUID endpointId) {
+        resources.addEndpointToDefaults(tenant, endpointId).await().indefinitely();
+    }
+
     public void createSubscription(String tenant, String username, EmailSubscriptionType type) {
         subscriptionResources.subscribe(tenant, username, type).await().indefinitely();
     }
@@ -126,5 +160,9 @@ public class ResourceHelpers {
         aggregation.setPayload(payload);
 
         emailAggregationResources.addEmailAggregation(aggregation).await().indefinitely();
+    }
+
+    public List<EventType> getEventTypesForApplication(UUID applicationId) {
+        return appResources.getEventTypes(applicationId).collectItems().asList().await().indefinitely();
     }
 }
