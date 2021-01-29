@@ -155,11 +155,11 @@ public class NotificationServiceTest {
         Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
         mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        List<Application> applications = this.helpers.getApplications();
+        UUID applicationId = this.helpers.getApplications().stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getId();
         UUID ep1 = this.helpers.createWebhookEndpoint(tenant);
         UUID ep2 = this.helpers.createWebhookEndpoint(tenant);
         UUID defaultEp = this.helpers.getDefaultEndpointId(tenant);
-        List<EventType> eventTypesFromApp1 = this.helpers.getEventTypesForApplication(applications.get(1).getId());
+        List<EventType> eventTypesFromApp1 = this.helpers.getEventTypesForApplication(applicationId);
         EventType ev0 = eventTypesFromApp1.get(0);
         EventType ev1 = eventTypesFromApp1.get(1);
 
