@@ -104,7 +104,7 @@ public class NotificationService {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
         Multi<EventType> directlyAffected = apps.getEventTypesByEndpointId(principal.getAccount(), endpointId);
-        Multi<EventType> indirectlyAffected = resources.getEndpointsPerType(principal.getAccount(), EndpointType.DEFAULT, false, null).toUni().onItem().transformToMulti(defaultEndpoint ->
+        Multi<EventType> indirectlyAffected = resources.getEndpointsPerType(principal.getAccount(), EndpointType.DEFAULT, null, null).toUni().onItem().transformToMulti(defaultEndpoint ->
             resources.endpointInDefaults(principal.getAccount(), endpointId)
                     .onItem().transformToMulti(exists -> {
                         if (exists) {
