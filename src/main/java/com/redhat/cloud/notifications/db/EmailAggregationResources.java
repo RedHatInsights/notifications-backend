@@ -42,6 +42,24 @@ public class EmailAggregationResources extends DatasourceProvider {
                 ).toUni();
     }
 
+    public Multi<String> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
+        String query = "SELECT DISTINCT application FROM public.email_aggregation " +
+                "WHERE created > $1 AND created <= $2";
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", start)
+                                    .bind("$2", end)
+                                    .execute();
+                            return execute.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> row.get("application", String.class)));
+                        })
+                        .withFinalizer(psqlConnection -> {
+                            psqlConnection.close().subscribe();
+                        })
+                );
+    }
+
     public Multi<String> getAccountIdsWithPendingAggregation(String bundle, String application, LocalDateTime start, LocalDateTime end) {
         String query = "SELECT DISTINCT account_id FROM public.email_aggregation " +
                 "WHERE bundle = $4 AND application = $1 AND created > $2 AND created <= $3";

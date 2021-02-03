@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.processors.email.aggregators.PoliciesEmailPayloadAggregator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
@@ -8,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-public class DailyEmailPayloadAggregatorTest {
+public class PoliciesEmailPayloadAggregatorTest {
 
     private EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
         EmailAggregation aggregation = new EmailAggregation();
@@ -30,20 +31,20 @@ public class DailyEmailPayloadAggregatorTest {
         return aggregation;
     }
 
-    private Integer getUniqueHostForPolicy(DailyEmailPayloadAggregator aggregator, String policy) {
+    private Integer getUniqueHostForPolicy(PoliciesEmailPayloadAggregator aggregator, String policy) {
         Map<String, Map> policies = (Map<String, Map>) aggregator.getPayload().get("policies");
         return (Integer) policies.get(policy).get("unique_system_count");
     }
 
     @Test
     void emptyAggregatorHasNoAccountId() {
-        DailyEmailPayloadAggregator aggregator = new DailyEmailPayloadAggregator();
+        PoliciesEmailPayloadAggregator aggregator = new PoliciesEmailPayloadAggregator();
         Assertions.assertEquals(null, aggregator.getAccountId(), "Empty aggregator has no accountId");
     }
 
     @Test
     void aggregatorTests() {
-        DailyEmailPayloadAggregator aggregator = new DailyEmailPayloadAggregator();
+        PoliciesEmailPayloadAggregator aggregator = new PoliciesEmailPayloadAggregator();
         aggregator.aggregate(createEmailAggregation("tenant", "insights", "policies", "policy-01", "host-01"));
         Assertions.assertEquals("tenant", aggregator.getAccountId());
 
@@ -69,7 +70,7 @@ public class DailyEmailPayloadAggregatorTest {
 
     @Test
     void emailWithDifferentTenantThrowsError() {
-        DailyEmailPayloadAggregator aggregator = new DailyEmailPayloadAggregator();
+        PoliciesEmailPayloadAggregator aggregator = new PoliciesEmailPayloadAggregator();
 
         Assertions.assertThrows(RuntimeException.class, () -> {
             aggregator.aggregate(createEmailAggregation("tenant1", "insights", "policies", "policy-02", "host-01"));

@@ -9,10 +9,12 @@ import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscription
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregator;
+import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.processors.email.bop.Email;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
-import com.redhat.cloud.notifications.templates.Policies;
-import io.quarkus.qute.TemplateInstance;
+import com.redhat.cloud.notifications.templates.EmailTemplate;
+import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.ScheduledExecution;
 import io.smallrye.mutiny.Multi;
@@ -32,6 +34,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -124,30 +127,18 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         aggregation.setBundle(item.getAction().getBundle());
         aggregation.setPayload(JsonObject.mapFrom(item.getAction().getPayload()));
 
-        return this.emailAggregationResources.addEmailAggregation(aggregation)
-                .onItem().transformToUni(aBoolean -> sendEmail(item, EmailSubscriptionType.INSTANT));
-    }
+        final EmailTemplate template = EmailTemplateFactory.get(item.getAction().getApplication());
+        final boolean shouldSaveAggregation = Arrays.asList(EmailSubscriptionType.values())
+                .stream()
+                .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
+                .anyMatch(emailSubscriptionType -> template.isSupported(item.getAction().getEventType(), emailSubscriptionType));
 
-    private TemplateInstance templateTitleForSubscriptionType(EmailSubscriptionType subscriptionType) {
-        switch (subscriptionType) {
-            case DAILY:
-                return Policies.Templates.dailyEmailTitle();
-            case INSTANT:
-                return Policies.Templates.instantEmailTitle();
-            default:
-                throw new IllegalArgumentException("Unknown EmailSubscriptionType:" + subscriptionType);
+        if (shouldSaveAggregation) {
+            return this.emailAggregationResources.addEmailAggregation(aggregation)
+                    .onItem().transformToUni(aBoolean -> sendEmail(item, EmailSubscriptionType.INSTANT));
         }
-    }
 
-    private TemplateInstance templateBodyForSubscriptionType(EmailSubscriptionType subscriptionType) {
-        switch (subscriptionType) {
-            case DAILY:
-                return Policies.Templates.dailyEmailBody();
-            case INSTANT:
-                return Policies.Templates.instantEmailBody();
-            default:
-                throw new IllegalArgumentException("Unknown EmailSubscriptionType:" + subscriptionType);
-        }
+        return sendEmail(item, EmailSubscriptionType.INSTANT);
     }
 
     private Uni<NotificationHistory> sendEmail(Notification item, EmailSubscriptionType emailSubscriptionType) {
@@ -168,33 +159,77 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         return Uni.createFrom().nullItem();
                     }
 
-                    Uni<String> title = templateTitleForSubscriptionType(emailSubscriptionType)
-                            .data("payload", item.getAction().getPayload())
-                            .createMulti().collectItems().with(Collectors.joining());
+                    EmailTemplate emailTemplate = EmailTemplateFactory.get(item.getAction().getApplication());
 
-                    Uni<String> body = templateBodyForSubscriptionType(emailSubscriptionType)
-                            .data("payload", item.getAction().getPayload())
-                            .createMulti().collectItems().with(Collectors.joining());
+                    if (emailTemplate.isSupported(item.getAction().getEventType(), emailSubscriptionType)) {
+                        Uni<String> title = emailTemplate.getTitle(item.getAction().getEventType(), emailSubscriptionType)
+                                .data("payload", item.getAction().getPayload())
+                                .createMulti()
+                                .collectItems().with(Collectors.joining())
+                                .onFailure()
+                                .recoverWithItem(templateEx -> {
+                                    log.warning(
+                                            String.format(
+                                                    "Unable to render template title for application: [%s], eventType: [%s], subscriptionType: [%s]. Error: %s",
+                                                    item.getAction().getApplication(),
+                                                    item.getAction().getEventType(),
+                                                    emailSubscriptionType,
+                                                    templateEx.getMessage()
+                                            )
+                                    );
+                                    return null;
+                                });
 
-                    return Uni.combine().all()
-                            .unis(
-                                    Uni.createFrom().item(email),
-                                    title,
-                                    body
-                            ).asTuple();
+                        Uni<String> body = emailTemplate.getBody(item.getAction().getEventType(), emailSubscriptionType)
+                                .data("payload", item.getAction().getPayload())
+                                .createMulti()
+                                .collectItems().with(Collectors.joining())
+                                .onFailure()
+                                .recoverWithItem(templateEx -> {
+                                    log.warning(
+                                            String.format(
+                                                    "Unable to render template body for application: [%s], eventType: [%s], subscriptionType: [%s]. Error: %s",
+                                                    item.getAction().getApplication(),
+                                                    item.getAction().getEventType(),
+                                                    emailSubscriptionType,
+                                                    templateEx.getMessage()
+                                            )
+                                    );
+                                    return null;
+                                });
+
+                        return Uni.combine().all()
+                                .unis(
+                                        Uni.createFrom().item(email),
+                                        title,
+                                        body
+                                ).asTuple()
+                                .onItem().transform(objects -> {
+                                    if (objects == null || objects.getItem1() == null || objects.getItem2() == null || objects.getItem3() == null) {
+                                        return null;
+                                    }
+
+                                    return objects;
+                                });
+                    }
+
+                    return Uni.createFrom().nullItem();
                 })
-                .onItem().ifNotNull().transform(data -> {
-                    Email email = data.getItem1();
-                    String title = data.getItem2();
-                    String body = data.getItem3();
-                    email.setSubject(title);
-                    email.setBody(body);
+                .onItem().transform(data -> {
+                    if (data != null) {
+                        Email email = data.getItem1();
+                        String title = data.getItem2();
+                        String body = data.getItem3();
+                        email.setSubject(title);
+                        email.setBody(body);
 
-                    return email;
+                        return email;
+                    }
+
+                    return null;
                 })
                 .onItem().transformToUni(email -> {
                     if (email == null) {
-                        log.fine("No subscribers for type:"  + emailSubscriptionType.toString());
                         return Uni.createFrom().nullItem();
                     }
 
@@ -211,37 +246,38 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 });
     }
 
-    public Uni<List<Tuple2<NotificationHistory, String>>> processAggregateEmails(Instant scheduledFireTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
-        Instant yesterdayScheduledFireTime = scheduledFireTime.minus(emailSubscriptionType.getDuration());
 
-        LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, zoneId);
-        LocalDateTime startTime = LocalDateTime.ofInstant(yesterdayScheduledFireTime, zoneId);
-        final LocalDateTime aggregateStarted = LocalDateTime.now();
-
-        log.info(String.format("Running %s email aggregation for period (%s, %s)", emailSubscriptionType.toString(), startTime.toString(), endTime.toString()));
-
+    private Multi<Tuple2<NotificationHistory, String>> processAggregateEmailsByApplication(String application, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
         final String bundle = "insights";
-        final String application = "policies";
-        // Currently only processing aggregations from policies
+
         return emailAggregationResources.getAccountIdsWithPendingAggregation(bundle, application, startTime, endTime)
                 .onItem().transformToUni(accountId ->  Uni.combine().all().unis(
-                    Uni.createFrom().item(accountId),
-                    subscriptionResources.getEmailSubscribersCount(accountId, emailSubscriptionType)
+                        Uni.createFrom().item(accountId),
+                        subscriptionResources.getEmailSubscribersCount(accountId, emailSubscriptionType)
                 ).asTuple()).merge()
                 .onItem().transformToMulti(accountAndCount -> {
                     String accountId = accountAndCount.getItem1();
 
-                    if (accountAndCount.getItem2() > 0 || delete) {
+                    EmailPayloadAggregator aggregator = EmailPayloadAggregatorFactory.by(application);
+
+                    if (accountAndCount.getItem2() > 0 && aggregator != null) {
                         // Group by accountId
                         return emailAggregationResources.getEmailAggregation(accountId, bundle, application, startTime, endTime)
-                        .collectItems().in(DailyEmailPayloadAggregator::new, DailyEmailPayloadAggregator::aggregate).toMulti();
+                                .collectItems().in(() -> aggregator, EmailPayloadAggregator::aggregate).toMulti();
+                    }
+
+                    if (delete) {
+                        // Nothing to do, delete them right away.
+                        return emailAggregationResources.purgeOldAggregation(accountId, bundle, application, endTime)
+                                .toMulti()
+                                .onItem().transformToMultiAndMerge(integer -> Multi.createFrom().empty());
                     }
 
                     return Multi.createFrom().empty();
                 }).merge()
                 .onItem().transformToMulti(aggregator -> {
                     String accountId = aggregator.getAccountId();
-                    if (accountId == null || aggregator.getUniqueHostCount() == 0) {
+                    if (aggregator.getProcessedAggregations() == 0) {
                         return Multi.createFrom().empty();
                     }
 
@@ -269,15 +305,33 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     }
 
                     return Multi.createFrom().item(result);
-                }).merge()
+                }).merge();
                 // Todo: If we want to save the NotificationHistory, this could be a good place to do so. We would probably require a special EndpointType
                 // .onItem().invoke(result -> { })
-                .collectItems().asList()
+    }
+
+    public Uni<List<Tuple2<NotificationHistory, String>>> processAggregateEmails(Instant scheduledFireTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
+        Instant yesterdayScheduledFireTime = scheduledFireTime.minus(emailSubscriptionType.getDuration());
+
+        LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, zoneId);
+        LocalDateTime startTime = LocalDateTime.ofInstant(yesterdayScheduledFireTime, zoneId);
+        final LocalDateTime aggregateStarted = LocalDateTime.now();
+
+        log.info(String.format("Running %s email aggregation for period (%s, %s)", emailSubscriptionType.toString(), startTime.toString(), endTime.toString()));
+
+        return emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
+                .onItem().transformToMulti(application -> processAggregateEmailsByApplication(
+                    application,
+                    startTime,
+                    endTime,
+                    emailSubscriptionType,
+                    delete
+                )).merge().collectItems().asList()
                 .onItem().invoke(result -> {
                     final LocalDateTime aggregateFinished = LocalDateTime.now();
                     log.info(
                             String.format(
-                                    "Finished running %s email aggregation for period (%s, %s) after %d seconds. %d accountIds were processed",
+                                    "Finished running %s email aggregation for period (%s, %s) after %d seconds. %d (accountIds, applications) pairs were processed",
                                     emailSubscriptionType.toString(),
                                     startTime.toString(),
                                     endTime.toString(),

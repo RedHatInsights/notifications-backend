@@ -44,6 +44,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpResponse.response;
@@ -102,7 +103,7 @@ public class EmailTest {
     @Test
     void testEmailSubscriptionInstant() {
 
-        final String tenant = "tenant";
+        final String tenant = "instant-email-tenant";
         final String[] usernames = {"foo", "bar", "admin"};
 
         for (String username : usernames) {
@@ -123,7 +124,7 @@ public class EmailTest {
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle("insights");
-        emailActionMessage.setApplication("EmailTest");
+        emailActionMessage.setApplication("policies");
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         // Disabling event id until we need it
         // emailActionMessage.setEventId(UUID.randomUUID().toString());
@@ -137,8 +138,15 @@ public class EmailTest {
         payload.put("triggers", triggers);
         payload.put("display_name", "My test machine");
         payload.put("system_check_in", "2020-08-03T15:22:42.199046");
+        payload.put("policy_id", "0123-456-789-5721f");
+        payload.put("policy_name", "not-used-name");
+        payload.put("policy_description", "not-used-desc");
+        payload.put("policy_condition", "not-used-condition");
+        payload.put("insights_id", "host-01");
+        payload.put("tags", new JsonArray());
+
         emailActionMessage.setPayload(payload);
-        emailActionMessage.setAccountId("tenant");
+        emailActionMessage.setAccountId(tenant);
 
         EmailSubscriptionAttributes emailAttr = new EmailSubscriptionAttributes();
 
@@ -197,6 +205,76 @@ public class EmailTest {
 
         // Formatted date
         assertTrue(bodyRequest.contains("03 Aug 2020 15:22 UTC"));
+    }
+
+    @Test
+    void testEmailSubscriptionInstantWrongPayload() {
+
+        final String tenant = "instant-email-tenant-wrong-payload";
+        final String[] usernames = {"foo", "bar", "admin"};
+
+        for (String username : usernames) {
+            helpers.createSubscription(tenant, username, EmailSubscriptionType.INSTANT);
+        }
+
+        final List<String> bodyRequests = new ArrayList<>();
+
+        ExpectationResponseCallback verifyEmptyRequest = req -> {
+            assertEquals(emailProcessor.bopApiToken, req.getHeader(EmailSubscriptionTypeProcessor.BOP_APITOKEN_HEADER).get(0));
+            assertEquals(emailProcessor.bopClientId, req.getHeader(EmailSubscriptionTypeProcessor.BOP_CLIENT_ID_HEADER).get(0));
+            assertEquals(emailProcessor.bopEnv, req.getHeader(EmailSubscriptionTypeProcessor.BOP_ENV_HEADER).get(0));
+            bodyRequests.add(req.getBodyAsString());
+            return response().withStatusCode(200);
+        };
+
+        HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
+
+        Action emailActionMessage = new Action();
+        emailActionMessage.setApplication("policies");
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        // Disabling event id until we need it
+        // emailActionMessage.setEventId(UUID.randomUUID().toString());
+        emailActionMessage.setEventType("testEmailSubscriptionInstant");
+
+        // No triggers (currently required by instant email)
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("display_name", "My test machine");
+        payload.put("system_check_in", "2020-08-03T15:22:42.199046");
+        payload.put("policy_id", "0123-456-789-5721f");
+        payload.put("policy_name", "not-used-name");
+        payload.put("policy_description", "not-used-desc");
+        payload.put("policy_condition", "not-used-condition");
+        payload.put("insights_id", "host-01");
+        payload.put("tags", new JsonArray());
+
+        emailActionMessage.setPayload(payload);
+        emailActionMessage.setAccountId(tenant);
+
+        EmailSubscriptionAttributes emailAttr = new EmailSubscriptionAttributes();
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        ep.setName("positive feeling");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(emailAttr);
+
+        Notification notif = new Notification(emailActionMessage, ep);
+
+        try {
+            Uni<NotificationHistory> process = emailProcessor.process(notif);
+            NotificationHistory history = process.await().indefinitely();
+            assertNull(history);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail(e);
+        } finally {
+            // Remove expectations
+            mockServerConfig.getMockServerClient().clear(postReq);
+        }
+
+        // No email, invalid payload
+        assertEquals(0, bodyRequests.size());
     }
 
     @Test
@@ -267,6 +345,28 @@ public class EmailTest {
             // Only 1 email, as no aggregation for tenant2
             assertEquals(1, bodyRequests.size());
             JsonObject email = emailRequestIsOK(bodyRequests.get(0), tenant1Usernames);
+            assertEquals(
+                    String.format("%s - 3 policies triggered on 6 unique systems", LocalDateTimeExtension.toStringFormat(startTime)),
+                    email.getJsonArray("emails").getJsonObject(0).getString("subject")
+            );
+            assertTrue(email.getJsonArray("emails").getJsonObject(0).getString("body").contains("policyid-01"));
+            assertTrue(email.getJsonArray("emails").getJsonObject(0).getString("body").contains("policyid-02"));
+            assertTrue(email.getJsonArray("emails").getJsonObject(0).getString("body").contains("policyid-03"));
+
+            bodyRequests.clear();
+
+            // applications without template or aggregations do not break the process
+            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-01");
+            helpers.addEmailAggregation(tenant1, application, "policyid-02", "hostid-02");
+            helpers.addEmailAggregation(tenant1, application, "policyid-03", "hostid-03");
+            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-04");
+            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-05");
+            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-06");
+            helpers.addEmailAggregation(tenant1, "unknown-application", "policyid-01", "hostid-06");
+            emailProcessor.processDailyEmail(nowPlus5Hours);
+            // Only 1 email, as no aggregation for tenant2
+            assertEquals(1, bodyRequests.size());
+            email = emailRequestIsOK(bodyRequests.get(0), tenant1Usernames);
             assertEquals(
                     String.format("%s - 3 policies triggered on 6 unique systems", LocalDateTimeExtension.toStringFormat(startTime)),
                     email.getJsonArray("emails").getJsonObject(0).getString("subject")
