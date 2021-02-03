@@ -18,6 +18,7 @@ public class BaseTransformer {
         // Fields and terminology straight from the target project
         JsonObject message = new JsonObject();
         message.put("application", action.getApplication());
+        message.put("event_type", action.getEventType());
         message.put("account_id", action.getAccountId());
         message.put("timestamp", action.getTimestamp().toString());
         message.put("payload", createPayload(action));
