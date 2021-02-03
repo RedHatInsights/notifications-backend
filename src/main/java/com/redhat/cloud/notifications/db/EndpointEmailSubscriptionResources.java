@@ -18,9 +18,9 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
     @Inject
     Provider<Uni<PostgresqlConnection>> connectionPublisherUni;
 
-    public Uni<Boolean> subscribe(String accountNumber, String username, EmailSubscriptionType type) {
+    public Uni<Boolean> subscribe(String accountNumber, String username, String application, EmailSubscriptionType type) {
         String query = "INSERT INTO public.endpoint_email_subscriptions(account_id, user_id, subscription_type) VALUES($1, $2, $3) " +
-                "ON CONFLICT (account_id, user_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
+                "ON CONFLICT (account_id, user_id, subscription_type, application) DO NOTHING"; // The value is already on the database, this is OK
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
@@ -28,6 +28,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                                     .bind("$1", accountNumber)
                                     .bind("$2", username)
                                     .bind("$3", type.toString())
+                                    .bind("$4", application)
                                     .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated)
                                     .map(i -> true).next();
@@ -38,8 +39,8 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                 ).toUni();
     }
 
-    public Uni<Boolean> unsubscribe(String accountNumber, String username, EmailSubscriptionType type) {
-        String query = "DELETE FROM public.endpoint_email_subscriptions where account_id = $1 AND user_id = $2 AND subscription_type = $3";
+    public Uni<Boolean> unsubscribe(String accountNumber, String username, String application, EmailSubscriptionType type) {
+        String query = "DELETE FROM public.endpoint_email_subscriptions where account_id = $1 AND user_id = $2 AND subscription_type = $3 AND application = $4";
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
@@ -48,6 +49,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                                     .bind("$1", accountNumber)
                                     .bind("$2", username)
                                     .bind("$3", type.toString())
+                                    .bind("$4", application)
                                     .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated)
                                     .map(i -> true).next();
@@ -58,7 +60,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                 ).toUni();
     }
 
-    public Uni<EmailSubscription> getEmailSubscription(String accountNumber, String username, EmailSubscriptionType type) {
+    public Uni<EmailSubscription> getEmailSubscription(String accountNumber, String username, String application, EmailSubscriptionType type) {
         String query = "SELECT account_id, user_id, subscription_type FROM public.endpoint_email_subscriptions where account_id = $1 AND user_id = $2 AND subscription_type = $3 LIMIT 1";
 
         return connectionPublisherUni.get().onItem()
@@ -68,6 +70,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                                     .bind("$1", accountNumber)
                                     .bind("$2", username)
                                     .bind("$3", type.toString())
+                                    .bind("$4", application)
                                     .execute();
                             return this.mapResultSetToEmailSubscription(execute);
                         })
@@ -77,8 +80,8 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                 ).toUni();
     }
 
-    public Uni<Integer> getEmailSubscribersCount(String accountNumber, EmailSubscriptionType type) {
-        String query = "SELECT count(user_id) FROM public.endpoint_email_subscriptions where account_id = $1 AND subscription_type = $2";
+    public Uni<Integer> getEmailSubscribersCount(String accountNumber, String application, EmailSubscriptionType type) {
+        String query = "SELECT count(user_id) FROM public.endpoint_email_subscriptions where account_id = $1 AND subscription_type = $2 AND application = $3";
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
@@ -86,6 +89,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                         Flux<PostgresqlResult> execute =  c2.createStatement(query)
                                 .bind("$1", accountNumber)
                                 .bind("$2", type.toString())
+                                .bind("$3", application)
                                 .execute();
                         return execute.flatMap(r -> r.map((row, rowMetadata) -> row.get(0, Integer.class)));
                     })
@@ -95,8 +99,8 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
         ).toUni();
     }
 
-    public Multi<EmailSubscription> getEmailSubscribers(String accountNumber, EmailSubscriptionType type) {
-        String query = "SELECT account_id, user_id, subscription_type FROM public.endpoint_email_subscriptions where account_id = $1 AND subscription_type = $2";
+    public Multi<EmailSubscription> getEmailSubscribers(String accountNumber, String application, EmailSubscriptionType type) {
+        String query = "SELECT account_id, user_id, subscription_type FROM public.endpoint_email_subscriptions where account_id = $1 AND subscription_type = $2 AND application = $3";
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
@@ -104,6 +108,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                             Flux<PostgresqlResult> execute =  c2.createStatement(query)
                                     .bind("$1", accountNumber)
                                     .bind("$2", type.toString())
+                                    .bind("$3", application)
                                     .execute();
                             return this.mapResultSetToEmailSubscription(execute);
                         })
@@ -120,6 +125,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
 
             emailSubscription.setAccountId(row.get("account_id", String.class));
             emailSubscription.setUsername(row.get("user_id", String.class));
+            emailSubscription.setApplication(row.get("application", String.class));
             emailSubscription.setType(subscriptionType);
 
             return emailSubscription;

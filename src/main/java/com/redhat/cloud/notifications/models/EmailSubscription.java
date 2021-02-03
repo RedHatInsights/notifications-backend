@@ -27,6 +27,7 @@ public class EmailSubscription {
 
     private String accountId;
     private String username;
+    private String application;
     private EmailSubscriptionType type;
 
     public String getAccountId() {
@@ -43,6 +44,14 @@ public class EmailSubscription {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getApplication() {
+        return application;
+    }
+
+    public void setApplication(String application) {
+        this.application = application;
     }
 
     public EmailSubscriptionType getType() {
