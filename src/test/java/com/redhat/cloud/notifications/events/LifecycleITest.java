@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -78,6 +79,8 @@ public class LifecycleITest {
     @Inject
     MeterRegistry meterRegistry;
 
+    Bundle theBundle;
+
     @BeforeAll
     void setup() {
         // Create Rbacs
@@ -87,6 +90,22 @@ public class LifecycleITest {
         identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+    }
+
+    @Test
+    void t00_setupBundle() {
+        Bundle bundle = new Bundle("my-bundle", "A bundle");
+        theBundle =
+            given()
+                .body(bundle)
+                .contentType(ContentType.JSON)
+                .basePath("/")
+            .when()
+                    .post("/internal/bundles")
+            .then()
+                .statusCode(200)
+            .extract().body().as(Bundle.class);
     }
 
     @Test
@@ -94,6 +113,7 @@ public class LifecycleITest {
         Application app = new Application();
         app.setName(APP_NAME);
         app.setDisplay_name("The best app in the life");
+        app.setBundleId(theBundle.getId());
 
         Response response = given()
                 .when()
@@ -107,6 +127,7 @@ public class LifecycleITest {
 
         Application appResponse = Json.decodeValue(response.getBody().asString(), Application.class);
         assertNotNull(appResponse.getId());
+        assertEquals(theBundle.getId(), appResponse.getBundleId());
 
         // Create eventType
         EventType eventType = new EventType();

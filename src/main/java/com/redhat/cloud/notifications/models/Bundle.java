@@ -1,24 +1,26 @@
 package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.NotNull;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
-public class Application {
-    private UUID id;
+/**
+ * A bundle is an aggregation of applications.
+ */
+public class Bundle {
+
+    UUID id;
 
     @NotNull
-    private String name;
+    String name;
 
     @NotNull
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String display_name;
+    String display_name;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -29,15 +31,14 @@ public class Application {
     private Date updated;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Set<EventType> eventTypes; // optional
+    private Set<Application> applications;
 
-    @NotNull
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("bundle_id")
-    private UUID bundleId;
+    public Bundle() {
+    }
 
-    public Application() {
-
+    public Bundle(String bundleName, String display_name) {
+        this.name = bundleName;
+        this.display_name = display_name;
     }
 
     public UUID getId() {
@@ -64,31 +65,27 @@ public class Application {
         this.display_name = display_name;
     }
 
-    @JsonProperty
     public Date getCreated() {
         return created;
     }
 
-    @JsonIgnore
     public void setCreated(Date created) {
         this.created = created;
     }
 
-    @JsonProperty
     public Date getUpdated() {
         return updated;
     }
 
-    @JsonIgnore
     public void setUpdated(Date updated) {
         this.updated = updated;
     }
 
-    public UUID getBundleId() {
-        return bundleId;
+    public Set<Application> getApplications() {
+        return applications;
     }
 
-    public void setBundleId(UUID bundleId) {
-        this.bundleId = bundleId;
+    public void setApplications(Set<Application> applications) {
+        this.applications = applications;
     }
 }

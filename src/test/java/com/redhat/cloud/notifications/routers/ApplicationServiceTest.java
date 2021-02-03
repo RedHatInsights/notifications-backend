@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -13,6 +14,7 @@ import io.vertx.core.json.Json;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
@@ -27,9 +29,22 @@ public class ApplicationServiceTest {
 
     @Test
     void testPoliciesApplicationAdding() {
+        Bundle bundle = new Bundle();
+        bundle.setName("insights");
+        bundle.setDisplay_name("Insights");
+        Bundle returnedBundle =
+            given()
+                    .body(bundle)
+                    .contentType(ContentType.JSON)
+                .when().post("/internal/bundles")
+                .then()
+                    .statusCode(200)
+                .extract().body().as(Bundle.class);
+
         Application app = new Application();
         app.setName(APP_NAME);
         app.setDisplay_name("The best app");
+        app.setBundleId(returnedBundle.getId());
 
         // All of these are without identityHeader
         given()
@@ -49,6 +64,7 @@ public class ApplicationServiceTest {
 
         Application appResponse = Json.decodeValue(response.getBody().asString(), Application.class);
         assertNotNull(appResponse.getId());
+        assertEquals(returnedBundle.getId(), appResponse.getBundleId());
 
         // Fetch the applications to check they were really added
 

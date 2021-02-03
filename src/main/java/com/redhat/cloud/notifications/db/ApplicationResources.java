@@ -18,19 +18,21 @@ import java.util.Set;
 import java.util.UUID;
 
 @ApplicationScoped
-public class ApplicationResources {
+public class ApplicationResources extends AbstractGenericResource {
 
+    private static final String APPLICATION_QUERY = "SELECT a.id, a.name, a.display_name, a.created, a.updated FROM public.applications a";
     @Inject
     Provider<Uni<PostgresqlConnection>> connectionPublisher;
 
     public Uni<Application> createApplication(Application app) {
-        String query = "INSERT INTO public.applications (name, display_name) VALUES ($1, $2)";
+        String query = "INSERT INTO public.applications (name, display_name, bundle_id) VALUES ($1, $2, $3)";
         // Return filled with id
         return connectionPublisher.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> c2.createStatement(query)
                                 .bind("$1", app.getName())
                                 .bind("$2", app.getDisplay_name())
+                                .bind("$3", app.getBundleId())
                                 .returnGeneratedValues("id", "created")
                                 .execute()
                                 .flatMap(res -> res.map((row, rowMetadata) -> {
@@ -42,6 +44,12 @@ public class ApplicationResources {
                             postgresqlConnection.close().subscribe();
                         }))
                 .toUni();
+    }
+
+    public Uni<Boolean> deleteApplication(UUID applicationId) {
+        String query = "DELETE FROM public.applications WHERE id = $1";
+
+        return runDeleteQuery(applicationId, query);
     }
 
     public Uni<EventType> addEventTypeToApplication(UUID applicationId, EventType type) {
@@ -64,9 +72,6 @@ public class ApplicationResources {
                         }))
                 .toUni();
     }
-
-    private static final String APPLICATION_QUERY = "SELECT a.id, a.name, a.display_name, a.created, a.updated FROM public.applications a";
-
 
     public Multi<Application> getApplications() {
         return connectionPublisher.get().onItem()
@@ -132,6 +137,13 @@ public class ApplicationResources {
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
                         }));
+    }
+
+    public Uni<Boolean> deleteEventTypeById(UUID eventTypeId) {
+        String query = "DELETE FROM public.event_type WHERE id = $1";
+
+        return runDeleteQuery(eventTypeId, query);
+
     }
 
     public Multi<EventType> getEventTypes(Query limiter) {

@@ -9,6 +9,7 @@ import io.smallrye.mutiny.Uni;
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -37,6 +38,12 @@ public class ApplicationService {
         return appResources.createApplication(application);
     }
 
+    @DELETE
+    @Path("/{id}")
+    public Uni<Boolean> deleteApplication(@PathParam("id") UUID id) {
+        return appResources.deleteApplication(id);
+    }
+
     @GET
     @Path("/{id}")
     public Uni<Application> getApplication(@PathParam("id") UUID id) {
@@ -53,5 +60,11 @@ public class ApplicationService {
     @Path("/{id}/eventTypes")
     public Multi<EventType> getEventTypes(@PathParam("id") UUID applicationId) {
         return appResources.getEventTypes(applicationId);
+    }
+
+    @DELETE
+    @Path("/eventType")
+    public Uni<Boolean> deleteEventTypeById(@PathParam("eid") UUID endTypeId) {
+        return appResources.deleteEventTypeById(endTypeId);
     }
 }
