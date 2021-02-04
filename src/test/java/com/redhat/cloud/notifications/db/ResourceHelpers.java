@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
@@ -22,12 +23,16 @@ public class ResourceHelpers {
     public static final String TEST_APP_NAME = "Tester";
     public static final String TEST_APP_NAME_2 = "MyOtherTester";
     public static final String TEST_EVENT_TYPE_FORMAT = "EventType%d";
+    private static final String TEST_BUNDLE_NAME = "TestBundle";
 
     @Inject
     EndpointResources resources;
 
     @Inject
     ApplicationResources appResources;
+
+    @Inject
+    BundleResources bundleResources;
 
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
@@ -44,9 +49,13 @@ public class ResourceHelpers {
     }
 
     public void createTestAppAndEventTypes() {
+        Bundle bundle = new Bundle(TEST_BUNDLE_NAME, "...");
+        Bundle b = bundleResources.createBundle(bundle).await().indefinitely();
+
         Application app = new Application();
         app.setName(TEST_APP_NAME);
         app.setDisplay_name("...");
+        app.setBundleId(b.getId());
         Application added = appResources.createApplication(app).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
@@ -59,6 +68,7 @@ public class ResourceHelpers {
         Application app2 = new Application();
         app2.setName(TEST_APP_NAME_2);
         app2.setDisplay_name("...");
+        app2.setBundleId(b.getId());
         Application added2 = appResources.createApplication(app2).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
