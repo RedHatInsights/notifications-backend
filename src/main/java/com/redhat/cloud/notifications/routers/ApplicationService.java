@@ -15,7 +15,9 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.UUID;
 
 @Path("/internal/applications")
@@ -27,9 +29,14 @@ public class ApplicationService {
     ApplicationResources appResources;
 
     @GET
-    public Multi<Application> getApplications() {
+    public Multi<Response> getApplications(@QueryParam("bundleName") String bundleName) {
         // Return configured with types?
-        return appResources.getApplications();
+        if (bundleName == null || bundleName.isBlank()) {
+            return Multi.createFrom().failure(new IllegalArgumentException());
+        }
+        // TODO how can we find out there is nothing to send and return a 404 ?
+        return appResources.getApplications(bundleName).onItem()
+                .transform(app -> { return Response.ok(app).build(); });
     }
 
     @POST

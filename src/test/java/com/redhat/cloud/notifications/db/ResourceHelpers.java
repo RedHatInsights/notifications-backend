@@ -23,7 +23,7 @@ public class ResourceHelpers {
     public static final String TEST_APP_NAME = "Tester";
     public static final String TEST_APP_NAME_2 = "MyOtherTester";
     public static final String TEST_EVENT_TYPE_FORMAT = "EventType%d";
-    private static final String TEST_BUNDLE_NAME = "TestBundle";
+    public static final String TEST_BUNDLE_NAME = "TestBundle";
 
     @Inject
     EndpointResources resources;
@@ -40,8 +40,8 @@ public class ResourceHelpers {
     @Inject
     EmailAggregationResources emailAggregationResources;
 
-    public List<Application> getApplications() {
-        return appResources.getApplications().collectItems().asList().await().indefinitely();
+    public List<Application> getApplications(String bundleName) {
+        return appResources.getApplications(bundleName).collectItems().asList().await().indefinitely();
     }
 
     public EmailSubscription getSubscription(String accountNumber, String username, EmailSubscription.EmailSubscriptionType type) {

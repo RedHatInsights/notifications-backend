@@ -82,7 +82,7 @@ public class NotificationServiceTest {
     @Test
     void testEventTypeFetchingByApplication() {
 
-        List<Application> applications = this.helpers.getApplications();
+        List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
         UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getId();
 
         Response response = given()
@@ -155,7 +155,7 @@ public class NotificationServiceTest {
         Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
         mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        UUID applicationId = this.helpers.getApplications().stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getId();
+        UUID applicationId = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME).stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getId();
         UUID ep1 = this.helpers.createWebhookEndpoint(tenant);
         UUID ep2 = this.helpers.createWebhookEndpoint(tenant);
         UUID defaultEp = this.helpers.getDefaultEndpointId(tenant);

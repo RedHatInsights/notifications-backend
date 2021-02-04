@@ -23,6 +23,7 @@ public class ApplicationServiceTest {
 
     static final String APP_NAME = "policies-application-service-test";
     static final String EVENT_TYPE_NAME = "policy-triggered";
+    public static final String BUNDLE_NAME = "insights-test";
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
@@ -30,7 +31,7 @@ public class ApplicationServiceTest {
     @Test
     void testPoliciesApplicationAdding() {
         Bundle bundle = new Bundle();
-        bundle.setName("insights-test");
+        bundle.setName(BUNDLE_NAME);
         bundle.setDisplay_name("Insights");
         Bundle returnedBundle =
             given()
@@ -51,7 +52,7 @@ public class ApplicationServiceTest {
                 // Set header to x-rh-identity
                 .when().get("/internal/applications")
                 .then()
-                .statusCode(200);
+                .statusCode(500);
 
         Response response = given()
                 .when()
@@ -65,6 +66,12 @@ public class ApplicationServiceTest {
         Application appResponse = Json.decodeValue(response.getBody().asString(), Application.class);
         assertNotNull(appResponse.getId());
         assertEquals(returnedBundle.getId(), appResponse.getBundleId());
+
+        given()
+                // Set header to x-rh-identity
+                .when().get("/internal/applications?bundleName=" + BUNDLE_NAME)
+                .then()
+                .statusCode(200);
 
         // Fetch the applications to check they were really added
 

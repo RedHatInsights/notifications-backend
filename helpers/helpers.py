@@ -8,34 +8,37 @@ def set_path_prefix(base_path):
     bundles_prefix = base_path + "/internal/bundles"
 
 
-def find_application(name):
+def find_application(app_name, bundle_name):
     """Find an application by name and return its UUID or return None
     :param name: Name of the application
     """
-    r = requests.get(applications_prefix)
+    r = requests.get(applications_prefix + "?bundleName=" + bundle_name)
     if r.status_code != 200:
         return None
 
     j = r.json()
     for app in j:
-        if app["name"] == name:
+        if app["name"] == app_name:
             return app["id"]
 
     return None
 
-def add_application(name, display_name, bundle_id):
+
+def add_application(name, display_name, bundle_name):
     """Adds an application if it does not yet exist
-    :param bundle_id:
+    :param bundle_name: name of the bundle we add the application to
     :param name: Name of the application, [a-z0-9-]+
     :param display_name: Display name of the application
     """
 
     # First try to find it.
-    ret = find_application(name)
+    ret = find_application(name,bundle_name)
     if ret is not None:
         return ret
 
-    # It does not yet exist, so try to create
+    bundle_id = find_bundle(bundle_name)
+
+    # The app does not yet exist, so try to create
     app_json = {"name": name,
                 "display_name": display_name,
                 "bundle_id": bundle_id}

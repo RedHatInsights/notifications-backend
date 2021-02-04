@@ -73,7 +73,7 @@ public class ApplicationResources extends AbstractGenericResource {
                 .toUni();
     }
 
-    public Multi<Application> getApplications() {
+    public Multi<Application> getApplications(String bundleName) {
         return connectionPublisher.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
