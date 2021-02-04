@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class ApplicationServiceTest {
 
-    static final String APP_NAME = "PoliciesApplicationServiceTest";
+    static final String APP_NAME = "policies-application-service-test";
     static final String EVENT_TYPE_NAME = "policy-triggered";
 
     @MockServerConfig

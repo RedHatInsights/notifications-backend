@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
@@ -14,6 +15,7 @@ public class Application {
     private UUID id;
 
     @NotNull
+    @Pattern(regexp = "[a-z][a-z_0-9-]*")
     private String name;
 
     @NotNull

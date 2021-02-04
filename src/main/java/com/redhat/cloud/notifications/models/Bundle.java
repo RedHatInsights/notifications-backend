@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
@@ -16,6 +17,7 @@ public class Bundle {
     UUID id;
 
     @NotNull
+    @Pattern(regexp = "[a-z][a-z_0-9-]*")
     String name;
 
     @NotNull

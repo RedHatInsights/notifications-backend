@@ -3,11 +3,13 @@ package com.redhat.cloud.notifications.models;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.util.Set;
 
 public class EventType {
     private Integer id;
 
+    @Pattern(regexp = "[a-z][a-z_0-9-]*")
     @NotNull
     private String name;
 

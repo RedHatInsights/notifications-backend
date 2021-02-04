@@ -57,8 +57,8 @@ import static org.mockserver.model.HttpResponse.response;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LifecycleITest {
 
-    private static final String APP_NAME = "PoliciesLifecycleTest";
-    private static final String EVENT_TYPE_NAME = "All";
+    private static final String APP_NAME = "policies-lifecycle-test";
+    private static final String EVENT_TYPE_NAME = "all";
 
     @BeforeEach
     void beforeEach() {
