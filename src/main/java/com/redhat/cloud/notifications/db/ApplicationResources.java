@@ -20,7 +20,7 @@ import java.util.UUID;
 @ApplicationScoped
 public class ApplicationResources extends AbstractGenericResource {
 
-    private static final String APPLICATION_QUERY = "SELECT a.id, a.name, a.display_name, a.created, a.updated FROM public.applications a";
+    private static final String APPLICATION_QUERY = "SELECT a.id, a.name, a.display_name, a.created, a.updated, a.bundle_id FROM public.applications a";
     @Inject
     Provider<Uni<PostgresqlConnection>> connectionPublisher;
 
@@ -91,6 +91,7 @@ public class ApplicationResources extends AbstractGenericResource {
         return resultFlux.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> {
             Application app = new Application();
             app.setId(row.get("id", UUID.class));
+            app.setBundleId(row.get("bundle_id", UUID.class));
             app.setName(row.get("name", String.class));
             app.setDisplay_name(row.get("display_name", String.class));
             app.setCreated(row.get("created", Date.class));
@@ -151,7 +152,7 @@ public class ApplicationResources extends AbstractGenericResource {
     }
 
     public Multi<EventType> getEventTypes(Query limiter, Set<UUID> applicationId) {
-        String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.display_name AS et_din, a.id AS a_id, a.name AS a_name, a.display_name as a_displayName FROM public.event_type et " +
+        String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.display_name AS et_din, a.id AS a_id, a.name AS a_name, a.display_name as a_displayName, a.bundle_id as a_bundle_id FROM public.event_type et " +
                 "JOIN public.applications a ON a.id = et.application_id";
 
         if (applicationId != null && applicationId.size() > 0) {
@@ -179,7 +180,7 @@ public class ApplicationResources extends AbstractGenericResource {
     }
 
     public Multi<EventType> getEventTypesByEndpointId(@NotNull String accountId, @NotNull UUID endpointId) {
-        String query = "SELECT et.id AS et_id, et.name AS et_name, et.display_name AS et_din, a.id AS a_id, a.name AS a_name, a.display_name as a_displayName FROM public.event_type et " +
+        String query = "SELECT et.id AS et_id, et.name AS et_name, et.display_name AS et_din, a.id AS a_id, a.name AS a_name, a.display_name as a_displayName, a.bundle_id as a_bundle_id FROM public.event_type et " +
                 "JOIN public.applications a ON a.id = et.application_id " +
                 "JOIN public.endpoint_targets endt ON  endt.event_type_id = et.id " +
                 "WHERE endt.endpoint_id = $1 AND endt.account_id = $2";
@@ -202,6 +203,7 @@ public class ApplicationResources extends AbstractGenericResource {
     private Flux<EventType> mapResultSetToEventTypes(Flux<PostgresqlResult> resultFlux) {
         return resultFlux.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> {
             Application app = new Application();
+            app.setBundleId(row.get("a_bundle_id", UUID.class));
             app.setId(row.get("a_id", UUID.class));
             app.setName(row.get("a_name", String.class));
             app.setDisplay_name(row.get("a_displayName", String.class));
