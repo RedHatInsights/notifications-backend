@@ -30,7 +30,7 @@ public class ApplicationServiceTest {
     @Test
     void testPoliciesApplicationAdding() {
         Bundle bundle = new Bundle();
-        bundle.setName("insights");
+        bundle.setName("insights-test");
         bundle.setDisplay_name("Insights");
         Bundle returnedBundle =
             given()

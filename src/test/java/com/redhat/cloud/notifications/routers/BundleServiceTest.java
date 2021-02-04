@@ -51,16 +51,16 @@ public class BundleServiceTest {
 
     @Test
     void testAddTwoBundles() {
-        Bundle b1 = null, b2 = null;
+        Bundle b1 = null;
+        Bundle b2 = null;
         try {
             b1 = createBundle("b1", 200);
             b2 = createBundle("b2", 200);
-        }
-        finally {
-            if (b1!=null) {
+        } finally {
+            if (b1 != null) {
                 deleteBundleById(b1.getId());
             }
-            if (b2!=null) {
+            if (b2 != null) {
                 deleteBundleById(b2.getId());
             }
         }
@@ -68,13 +68,12 @@ public class BundleServiceTest {
 
     @Test
     void testNoAddSameBundleTwice() {
-        Bundle b1 = null, b2 = null;
+        Bundle b1 = null;
         try {
             b1 = createBundle("b1", 200);
-            b2 = createBundle("b1", 500);
-        }
-        finally {
-            if (b1!=null) {
+            createBundle("b1", 500);
+        } finally {
+            if (b1 != null) {
                 deleteBundleById(b1.getId());
             }
         }
@@ -92,7 +91,7 @@ public class BundleServiceTest {
 
         try {
             Application created =
-            given()
+                given()
                     .body(app)
                     .contentType(ContentType.JSON)
                 .when()
@@ -101,8 +100,7 @@ public class BundleServiceTest {
                     .statusCode(200)
                     .extract().body().as(Application.class);
             app.setBundleId(created.getBundleId());
-        }
-        finally {
+        } finally {
             deleteBundleById(returnedBundle.getId());
 
             when()
@@ -136,8 +134,7 @@ public class BundleServiceTest {
                     .when().post("/internal/bundles/" + returnedBundle.getId() + "/applications")
                     .then()
                     .statusCode(500);
-        }
-        finally {
+        } finally {
             deleteBundleById(returnedBundle.getId());
         }
     }
@@ -172,8 +169,7 @@ public class BundleServiceTest {
                     .when().post("/internal/bundles/" + returnedBundle2.getId() + "/applications")
                     .then()
                     .statusCode(200);
-        }
-        finally {
+        } finally {
             deleteBundleById(returnedBundle1.getId());
             deleteBundleById(returnedBundle2.getId());
         }
@@ -192,7 +188,7 @@ public class BundleServiceTest {
                 .statusCode(expectedReturnCode)
                 .extract();
 
-        if (expectedReturnCode==200) {
+        if (expectedReturnCode == 200) {
             Bundle returned = response
                     .body().as(Bundle.class);
             return returned;
