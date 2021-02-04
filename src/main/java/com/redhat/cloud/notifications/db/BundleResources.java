@@ -19,8 +19,11 @@ import java.util.UUID;
 @ApplicationScoped
 public class BundleResources extends  AbstractGenericResource {
 
+    public static final String PUBLIC_APPLICATIONS = "public.applications";
+    public static final String PUBLIC_BUNDLES = "public.bundles";
+
     public Uni<Bundle> createBundle(Bundle bundle) {
-        String query = "INSERT INTO public.bundles (name, display_name) VALUES ($1, $2)";
+        String query = "INSERT INTO " + PUBLIC_BUNDLES + " (name, display_name) VALUES ($1, $2)";
         // Return filled with id
         return connectionPublisher.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
@@ -40,7 +43,7 @@ public class BundleResources extends  AbstractGenericResource {
                 .toUni();
     }
 
-    private static final String BUNDLE_QUERY = "SELECT b.id, b.name, b.display_name, b.created, b.updated FROM public.bundles b";
+    private static final String BUNDLE_QUERY = "SELECT b.id, b.name, b.display_name, b.created, b.updated FROM " + PUBLIC_BUNDLES + " b";
 
     public Multi<Bundle> getBundles() {
         return connectionPublisher.get().onItem()
@@ -85,14 +88,14 @@ public class BundleResources extends  AbstractGenericResource {
     }
 
     public Uni<Boolean> deleteBundle(UUID bundleId) {
-        String query = "DELETE FROM public.bundles WHERE id = $1";
+        String query = "DELETE FROM " + PUBLIC_BUNDLES + " WHERE id = $1";
 
         return runDeleteQuery(bundleId, query);
     }
 
 
     public Multi<Application> getApplications(UUID bundleId) {
-        String query = "SELECT et.id, et.name, et.display_name FROM public.applications et " +
+        String query = "SELECT et.id, et.name, et.display_name FROM " + PUBLIC_APPLICATIONS + " et " +
                 "WHERE et.bundle_id = $1";
 
         return connectionPublisher.get().onItem()
@@ -117,7 +120,7 @@ public class BundleResources extends  AbstractGenericResource {
     }
 
     public Uni<Application> addApplicationToBundle(UUID bundleId, Application app) {
-        String insertQuery = "INSERT INTO public.application (name, display_name, bundleId) VALUES ($1, $2, $3)";
+        String insertQuery = "INSERT INTO " + PUBLIC_APPLICATIONS + " (name, display_name, bundle_Id) VALUES ($1, $2, $3)";
 
         return connectionPublisher.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,

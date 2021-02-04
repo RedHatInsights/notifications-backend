@@ -11,11 +11,13 @@ import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.UUID;
 
 /**
@@ -50,7 +52,9 @@ public class BundlesService {
     @GET
     @Path("/{id}")
     public Uni<Bundle> getBundle(@PathParam("id") UUID id) {
-        return bundleResources.getBundle(id);
+        Uni<Bundle> bundleUni = bundleResources.getBundle(id);
+
+        return bundleUni.onItem().ifNull().failWith(new NotFoundException(id.toString()));
     }
 
     @POST
