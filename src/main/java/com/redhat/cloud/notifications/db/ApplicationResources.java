@@ -13,7 +13,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.validation.constraints.NotNull;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
