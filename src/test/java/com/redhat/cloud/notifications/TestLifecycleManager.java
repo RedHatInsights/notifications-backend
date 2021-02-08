@@ -74,6 +74,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         String jdbcUrl = postgreSQLContainer.getJdbcUrl();
         String dbUrl = jdbcUrl.substring(jdbcUrl.indexOf(':') + 1);
         String classicJdbcUrl = "jdbc:" /* + "tracing:" */ + dbUrl;
+        classicJdbcUrl = classicJdbcUrl.replace("localhost", "127.0.0.1");
         props.put("quarkus.datasource.jdbc.url", classicJdbcUrl);
         String vertxJdbcUrl = "vertx-reactive:" + dbUrl;
         props.put("quarkus.datasource.reactive.url", "vertx-reactive:" + vertxJdbcUrl);
