@@ -13,6 +13,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.validation.constraints.NotNull;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
@@ -21,6 +22,7 @@ import java.util.UUID;
 public class ApplicationResources extends AbstractGenericResource {
 
     private static final String APPLICATION_QUERY = "SELECT a.id, a.name, a.display_name, a.created, a.updated, a.bundle_id FROM public.applications a";
+    private static final String APPLICATION_QUERY_BY_BUNDLE_NAME = APPLICATION_QUERY + " JOIN bundles AS b ON a.bundle_id = b.id WHERE b.name = $1";
     @Inject
     Provider<Uni<PostgresqlConnection>> connectionPublisher;
 
@@ -77,7 +79,8 @@ public class ApplicationResources extends AbstractGenericResource {
         return connectionPublisher.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
-                            Flux<PostgresqlResult> execute = c2.createStatement(APPLICATION_QUERY)
+                            Flux<PostgresqlResult> execute = c2.createStatement(APPLICATION_QUERY_BY_BUNDLE_NAME)
+                                    .bind("$1", bundleName)
                                     .execute();
 
                             return mapResultSetToApplication(execute);
