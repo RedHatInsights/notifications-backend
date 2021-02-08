@@ -178,7 +178,7 @@ public class NotificationService {
     @GET
     @Path("/facets/applications")
     @Operation(summary = "Return a thin list of configured applications. This can be used to configure a filter in the UI")
-    public Multi<ApplicationFacet> getApplicationsFacets(@Context SecurityContext sec) {
-        return apps.getApplications().onItem().transform(a -> new ApplicationFacet(a.getName(), a.getId().toString()));
+    public Multi<ApplicationFacet> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
+        return apps.getApplications(bundleName).onItem().transform(a -> new ApplicationFacet(a.getName(), a.getId().toString()));
     }
 }
