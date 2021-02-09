@@ -344,7 +344,7 @@ public class EndpointResources extends DatasourceProvider {
         return Uni.createFrom().converter(UniReactorConverters.fromMono(), monoResult);
     }
 
-    public Uni<Boolean> linkEndpoint(String tenant, UUID endpointId, long eventTypeId) {
+    public Uni<Boolean> linkEndpoint(String tenant, UUID endpointId, UUID eventTypeId) {
         String query = "INSERT INTO public.endpoint_targets (account_id, event_type_id, endpoint_id) VALUES ($1, $2, $3)";
 
         return connectionPublisherUni.get().onItem()
@@ -364,7 +364,7 @@ public class EndpointResources extends DatasourceProvider {
                 .toUni();
     }
 
-    public Uni<Boolean> unlinkEndpoint(String tenant, UUID endpointId, long eventTypeId) {
+    public Uni<Boolean> unlinkEndpoint(String tenant, UUID endpointId, UUID eventTypeId) {
         String query = "DELETE FROM public.endpoint_targets WHERE account_id = $1 AND event_type_id = $2 AND endpoint_id = $3";
 
         return connectionPublisherUni.get().onItem()
@@ -384,7 +384,7 @@ public class EndpointResources extends DatasourceProvider {
                 .toUni();
     }
 
-    public Multi<Endpoint> getLinkedEndpoints(String tenant, long eventTypeId, Query limiter) {
+    public Multi<Endpoint> getLinkedEndpoints(String tenant, UUID eventTypeId, Query limiter) {
         String basicQuery = basicEndpointGetQuery +
                 "JOIN public.endpoint_targets et ON et.endpoint_id = e.id " +
                 "WHERE et.account_id = $1 AND et.event_type_id = $2";

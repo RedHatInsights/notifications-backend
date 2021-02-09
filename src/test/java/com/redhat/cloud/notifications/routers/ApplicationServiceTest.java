@@ -87,6 +87,7 @@ public class ApplicationServiceTest {
         EventType eventType = new EventType();
         eventType.setName(EVENT_TYPE_NAME);
         eventType.setDisplay_name("Policies will take care of the rules");
+        eventType.setDescription("This is the description of the rule");
 
         response = given()
                 .when()
@@ -99,6 +100,7 @@ public class ApplicationServiceTest {
 
         EventType typeResponse = Json.decodeValue(response.getBody().asString(), EventType.class);
         assertNotNull(typeResponse.getId());
+        assertEquals(eventType.getDescription(), typeResponse.getDescription());
     }
 
     @Test

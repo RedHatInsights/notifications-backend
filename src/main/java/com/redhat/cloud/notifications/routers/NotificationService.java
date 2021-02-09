@@ -122,7 +122,7 @@ public class NotificationService {
     @Path("/eventTypes/{eventTypeId}/{endpointId}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> linkEndpointToEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
+    public Uni<Response> linkEndpointToEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") UUID eventTypeId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.linkEndpoint(principal.getAccount(), endpointId, eventTypeId)
                 .onItem().transform(ignored -> Response.ok().build());
@@ -132,7 +132,7 @@ public class NotificationService {
     @Path("/eventTypes/{eventTypeId}/{endpointId}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> unlinkEndpointFromEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") Integer eventTypeId) {
+    public Uni<Response> unlinkEndpointFromEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") UUID eventTypeId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.unlinkEndpoint(principal.getAccount(), endpointId, eventTypeId)
                 .onItem().transform(ignored -> Response.noContent().build());
@@ -141,7 +141,7 @@ public class NotificationService {
     @GET
     @Path("/eventTypes/{eventTypeId}")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") Integer eventTypeId, @BeanParam Query query) {
+    public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query);
     }

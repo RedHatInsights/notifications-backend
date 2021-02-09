@@ -5,9 +5,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.util.Set;
+import java.util.UUID;
 
 public class EventType {
-    private Integer id;
+    private UUID id;
 
     @Pattern(regexp = "[a-z][a-z_0-9-]*")
     @NotNull
@@ -24,15 +25,18 @@ public class EventType {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Set<Endpoint> endpoints;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String description;
+
     public EventType() {
 
     }
 
-    public Integer getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -58,5 +62,13 @@ public class EventType {
 
     public void setApplication(Application application) {
         this.application = application;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

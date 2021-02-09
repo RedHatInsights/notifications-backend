@@ -11,7 +11,7 @@ bundle_name = "a-bundle"
 bundle_description = "My Bundle"
 app_name = "my-app"
 app_display_name = "My application"
-event_type = "ET1"
+event_type = "et1"
 event_type_display_name = "First Event Type"
 
 

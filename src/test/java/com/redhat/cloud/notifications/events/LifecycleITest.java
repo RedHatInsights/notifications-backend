@@ -133,6 +133,7 @@ public class LifecycleITest {
         EventType eventType = new EventType();
         eventType.setName(EVENT_TYPE_NAME);
         eventType.setDisplay_name("Policies will take care of the rules");
+        eventType.setDescription("Policies is super cool, you should use it");
 
         response = given()
                 .when()
@@ -146,6 +147,7 @@ public class LifecycleITest {
 
         EventType typeResponse = Json.decodeValue(response.getBody().asString(), EventType.class);
         assertNotNull(typeResponse.getId());
+        assertEquals(eventType.getDescription(), typeResponse.getDescription());
 
         // Add new endpoints
         WebhookAttributes webAttr = new WebhookAttributes();
@@ -207,7 +209,7 @@ public class LifecycleITest {
                     .header(identityHeader)
                     .when()
                     .contentType(ContentType.JSON)
-                    .put(String.format("/notifications/eventTypes/%d/%s", typeResponse.getId(), endpointLink.getId()))
+                    .put(String.format("/notifications/eventTypes/%s/%s", typeResponse.getId().toString(), endpointLink.getId()))
                     .then()
                     .statusCode(200);
         }
@@ -357,7 +359,7 @@ public class LifecycleITest {
                 .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .when().get(String.format("/notifications/eventTypes/%d", policiesAll.getId()))
+                .when().get(String.format("/notifications/eventTypes/%s", policiesAll.getId()))
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -371,7 +373,7 @@ public class LifecycleITest {
                     .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                     .header(identityHeader)
                     .when()
-                    .delete(String.format("/notifications/eventTypes/%d/%s", policiesAll.getId(), endpoint.getId()))
+                    .delete(String.format("/notifications/eventTypes/%s/%s", policiesAll.getId(), endpoint.getId()))
                     .then()
                     .statusCode(204)
                     .extract().body().asString();
@@ -383,7 +385,7 @@ public class LifecycleITest {
                 .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .when().get(String.format("/notifications/eventTypes/%d", policiesAll.getId()))
+                .when().get(String.format("/notifications/eventTypes/%s", policiesAll.getId()))
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -440,7 +442,7 @@ public class LifecycleITest {
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .put(String.format("/notifications/eventTypes/%d/%s", targetType.getId(), defaultEndpoint.getId()))
+                .put(String.format("/notifications/eventTypes/%s/%s", targetType.getId(), defaultEndpoint.getId()))
                 .then()
                 .statusCode(200);
 

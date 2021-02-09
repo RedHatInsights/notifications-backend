@@ -54,20 +54,31 @@ public class ApplicationResources extends AbstractGenericResource {
     }
 
     public Uni<EventType> addEventTypeToApplication(UUID applicationId, EventType type) {
-        String insertQuery = "INSERT INTO public.event_type (name, display_name, application_id) VALUES ($1, $2, $3)";
+        String insertQuery = "INSERT INTO public.event_type (name, display_name, application_id, description) VALUES ($1, $2, $3, $4)";
 
         return connectionPublisher.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
-                        c2 -> c2.createStatement(insertQuery)
+                        c2 -> {
+                            PostgresqlStatement bind = c2.createStatement(insertQuery)
                                     .bind("$1", type.getName())
                                     .bind("$2", type.getDisplay_name())
                                     .bind("$3", applicationId)
-                                    .returnGeneratedValues("id")
+
+                                    .returnGeneratedValues("id");
+
+                            if (type.getDescription() != null) {
+                                bind.bind("$4", type.getDescription());
+                            } else {
+                                bind.bindNull("$4", String.class);
+                            }
+
+                            return bind
                                     .execute()
                                     .flatMap(res -> res.map((row, rowMetadata) -> {
-                                        type.setId(row.get("id", Integer.class));
+                                        type.setId(row.get("id", UUID.class));
                                         return type;
-                                    })))
+                                    }));
+                        })
                         .withFinalizer(postgresqlConnection -> {
                             postgresqlConnection.close().subscribe();
                         }))
@@ -131,7 +142,7 @@ public class ApplicationResources extends AbstractGenericResource {
 
                             return execute.flatMap(res -> res.map((row, rowMetadata) -> {
                                 EventType eventType = new EventType();
-                                eventType.setId(row.get("id", Integer.class));
+                                eventType.setId(row.get("id", UUID.class));
                                 eventType.setName(row.get("name", String.class));
                                 eventType.setDisplay_name(row.get("display_name", String.class));
                                 return eventType;
@@ -154,7 +165,7 @@ public class ApplicationResources extends AbstractGenericResource {
     }
 
     public Multi<EventType> getEventTypes(Query limiter, Set<UUID> applicationId) {
-        String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.display_name AS et_din, a.id AS a_id, a.name AS a_name, a.display_name as a_displayName, a.bundle_id as a_bundle_id FROM public.event_type et " +
+        String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.display_name AS et_din, et.description AS et_description, a.id AS a_id, a.name AS a_name, a.display_name as a_displayName, a.bundle_id as a_bundle_id FROM public.event_type et " +
                 "JOIN public.applications a ON a.id = et.application_id";
 
         if (applicationId != null && applicationId.size() > 0) {
@@ -182,7 +193,7 @@ public class ApplicationResources extends AbstractGenericResource {
     }
 
     public Multi<EventType> getEventTypesByEndpointId(@NotNull String accountId, @NotNull UUID endpointId) {
-        String query = "SELECT et.id AS et_id, et.name AS et_name, et.display_name AS et_din, a.id AS a_id, a.name AS a_name, a.display_name as a_displayName, a.bundle_id as a_bundle_id FROM public.event_type et " +
+        String query = "SELECT et.id AS et_id, et.name AS et_name, et.display_name AS et_din, et.description AS et_description, a.id AS a_id, a.name AS a_name, a.display_name as a_displayName, a.bundle_id as a_bundle_id FROM public.event_type et " +
                 "JOIN public.applications a ON a.id = et.application_id " +
                 "JOIN public.endpoint_targets endt ON  endt.event_type_id = et.id " +
                 "WHERE endt.endpoint_id = $1 AND endt.account_id = $2";
@@ -211,9 +222,10 @@ public class ApplicationResources extends AbstractGenericResource {
             app.setDisplay_name(row.get("a_displayName", String.class));
 
             EventType eventType = new EventType();
-            eventType.setId(row.get("et_id", Integer.class));
+            eventType.setId(row.get("et_id", UUID.class));
             eventType.setName(row.get("et_name", String.class));
             eventType.setDisplay_name(row.get("et_din", String.class));
+            eventType.setDescription(row.get("et_description", String.class));
 
             eventType.setApplication(app);
 
