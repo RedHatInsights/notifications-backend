@@ -62,6 +62,7 @@ public class ResourceHelpers {
             EventType eventType = new EventType();
             eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
             eventType.setDisplay_name("... -> " + i);
+            eventType.setDescription("Desc .. --> " + i);
             appResources.addEventTypeToApplication(added.getId(), eventType).await().indefinitely();
         }
 
@@ -126,7 +127,7 @@ public class ResourceHelpers {
         return resources.createEndpoint(ep).await().indefinitely().getId();
     }
 
-    public void assignEndpointToEventType(String tenant, UUID endpointId, long eventTypeId) {
+    public void assignEndpointToEventType(String tenant, UUID endpointId, UUID eventTypeId) {
         resources.linkEndpoint(tenant, endpointId, eventTypeId).await().indefinitely();
     }
 

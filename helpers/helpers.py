@@ -17,7 +17,8 @@ def find_application(app_name, bundle_name):
         return None
 
     j = r.json()
-    for app in j:
+    for entity in j:
+        app = entity['entity']
         if app["name"] == app_name:
             return app["id"]
 
@@ -32,7 +33,7 @@ def add_application(name, display_name, bundle_name):
     """
 
     # First try to find it.
-    ret = find_application(name,bundle_name)
+    ret = find_application(name, bundle_name)
     if ret is not None:
         return ret
 
@@ -70,10 +71,13 @@ def add_event_type(application_id, name, display_name):
     et_json = {"name": name, "display_name": display_name}
     r = requests.post(applications_prefix + "/" + application_id + "/eventTypes",
                       json=et_json)
-    if r.status_code / 10 != 20:
-        exit(2)
     response_json = r.json()
     print(response_json)
+    if r.status_code / 10 != 20:
+        exit(2)
+
+    return response_json['id']
+
 
 
 def add_bundle(name, display_name):
