@@ -2,7 +2,7 @@
 
 set -exv
 
-IMAGE="quay.io/notifications-backend"
+IMAGE="quay.io/cloudservices/notifications-backend"
 IMAGE_TAG=$(git rev-parse --short=7 HEAD)
 
 if [[ -z "$QUAY_USER" || -z "$QUAY_TOKEN" ]]; then
