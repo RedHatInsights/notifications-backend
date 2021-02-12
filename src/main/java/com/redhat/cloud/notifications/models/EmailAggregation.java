@@ -17,6 +17,9 @@ public class EmailAggregation {
     private LocalDateTime created;
 
     @NotNull
+    private String bundle;
+
+    @NotNull
     private String application;
 
     @NotNull
@@ -48,6 +51,14 @@ public class EmailAggregation {
 
     public void setCreated(LocalDateTime created) {
         this.created = created;
+    }
+
+    public String getBundle() {
+        return bundle;
+    }
+
+    public void setBundle(String bundle) {
+        this.bundle = bundle;
     }
 
     public String getApplication() {

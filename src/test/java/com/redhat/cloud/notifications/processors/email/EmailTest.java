@@ -122,6 +122,7 @@ public class EmailTest {
         HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
         Action emailActionMessage = new Action();
+        emailActionMessage.setBundle("insights");
         emailActionMessage.setApplication("EmailTest");
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         // Disabling event id until we need it
@@ -207,6 +208,7 @@ public class EmailTest {
         final String[] tenant1Usernames = {"foo", "bar", "admin"};
         final String[] tenant2Usernames = {"baz", "bar"};
         final String[] noSubscribedUsersTenantTestUser = {"test"};
+        final String bundle = "insights";
         final String application = "policies";
 
         for (String username : tenant1Usernames) {
@@ -255,12 +257,12 @@ public class EmailTest {
         HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
         try {
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-01");
-            helpers.addEmailAggregation(tenant1, application, "policyid-02", "hostid-02");
-            helpers.addEmailAggregation(tenant1, application, "policyid-03", "hostid-03");
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-04");
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-05");
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-06");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-02", "hostid-02");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-03", "hostid-03");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-04");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-05");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-06");
             emailProcessor.processDailyEmail(nowPlus5Hours);
             // Only 1 email, as no aggregation for tenant2
             assertEquals(1, bodyRequests.size());
@@ -279,20 +281,20 @@ public class EmailTest {
             // 0 emails; previous aggregations were deleted in this step
             assertEquals(0, bodyRequests.size());
 
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-01");
-            helpers.addEmailAggregation(tenant1, application, "policyid-02", "hostid-02");
-            helpers.addEmailAggregation(tenant1, application, "policyid-03", "hostid-03");
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-04");
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-05");
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-06");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-02", "hostid-02");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-03", "hostid-03");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-04");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-05");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-06");
 
-            helpers.addEmailAggregation(tenant2, application, "policyid-11", "hostid-11");
-            helpers.addEmailAggregation(tenant2, application, "policyid-11", "hostid-15");
-            helpers.addEmailAggregation(tenant2, application, "policyid-11", "hostid-16");
+            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-11");
+            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-15");
+            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-16");
 
-            helpers.addEmailAggregation(noSubscribedUsersTenant, application, "policyid-21", "hostid-21");
-            helpers.addEmailAggregation(noSubscribedUsersTenant, application, "policyid-21", "hostid-25");
-            helpers.addEmailAggregation(noSubscribedUsersTenant, application, "policyid-21", "hostid-26");
+            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-21");
+            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-25");
+            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-26");
 
             emailProcessor.processDailyEmail(nowPlus5Hours);
             // 2 email, as no user is subscribed for noSubscribedUsersTenant

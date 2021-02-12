@@ -10,8 +10,9 @@ import java.util.Map;
 
 public class DailyEmailPayloadAggregatorTest {
 
-    private EmailAggregation createEmailAggregation(String tenant, String application, String policyId, String insightsId) {
+    private EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
         EmailAggregation aggregation = new EmailAggregation();
+        aggregation.setBundle(bundle);
         aggregation.setApplication(application);
         aggregation.setAccountId(tenant);
 
@@ -43,21 +44,21 @@ public class DailyEmailPayloadAggregatorTest {
     @Test
     void aggregatorTests() {
         DailyEmailPayloadAggregator aggregator = new DailyEmailPayloadAggregator();
-        aggregator.aggregate(createEmailAggregation("tenant", "policies", "policy-01", "host-01"));
+        aggregator.aggregate(createEmailAggregation("tenant", "insights", "policies", "policy-01", "host-01"));
         Assertions.assertEquals("tenant", aggregator.getAccountId());
 
         // 1 host
         Assertions.assertEquals(1, aggregator.getUniqueHostCount());
 
-        aggregator.aggregate(createEmailAggregation("tenant", "policies", "policy-02", "host-01"));
+        aggregator.aggregate(createEmailAggregation("tenant", "insights", "policies", "policy-02", "host-01"));
 
         // 1 host (even if two policies)
         Assertions.assertEquals(1, aggregator.getUniqueHostCount());
         Assertions.assertEquals(1, getUniqueHostForPolicy(aggregator, "policy-01"));
         Assertions.assertEquals(1, getUniqueHostForPolicy(aggregator, "policy-02"));
 
-        aggregator.aggregate(createEmailAggregation("tenant", "policies", "policy-03", "host-02"));
-        aggregator.aggregate(createEmailAggregation("tenant", "policies", "policy-03", "host-03"));
+        aggregator.aggregate(createEmailAggregation("tenant", "insights", "policies", "policy-03", "host-02"));
+        aggregator.aggregate(createEmailAggregation("tenant", "insights", "policies", "policy-03", "host-03"));
 
         // 3 hosts
         Assertions.assertEquals(3, aggregator.getUniqueHostCount());
@@ -71,8 +72,8 @@ public class DailyEmailPayloadAggregatorTest {
         DailyEmailPayloadAggregator aggregator = new DailyEmailPayloadAggregator();
 
         Assertions.assertThrows(RuntimeException.class, () -> {
-            aggregator.aggregate(createEmailAggregation("tenant1", "policies", "policy-02", "host-01"));
-            aggregator.aggregate(createEmailAggregation("tenant2", "policies", "policy-02", "host-01"));
+            aggregator.aggregate(createEmailAggregation("tenant1", "insights", "policies", "policy-02", "host-01"));
+            aggregator.aggregate(createEmailAggregation("tenant2", "insights", "policies", "policy-02", "host-01"));
         });
     }
 }
