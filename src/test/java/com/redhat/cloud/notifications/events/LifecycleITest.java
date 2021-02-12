@@ -58,6 +58,7 @@ import static org.mockserver.model.HttpResponse.response;
 public class LifecycleITest {
 
     private static final String APP_NAME = "policies-lifecycle-test";
+    private static final String BUNDLE_NAME = "my-bundle";
     private static final String EVENT_TYPE_NAME = "all";
 
     @BeforeEach
@@ -95,7 +96,7 @@ public class LifecycleITest {
 
     @Test
     void t00_setupBundle() {
-        Bundle bundle = new Bundle("my-bundle", "A bundle");
+        Bundle bundle = new Bundle(BUNDLE_NAME, "A bundle");
         theBundle =
             given()
                 .body(bundle)
@@ -242,6 +243,7 @@ public class LifecycleITest {
         // Read the input file and send it
         Action targetAction = new Action();
         targetAction.setApplication(APP_NAME);
+        targetAction.setBundle(BUNDLE_NAME);
         targetAction.setTimestamp(LocalDateTime.now());
         targetAction.setEventType(EVENT_TYPE_NAME);
 

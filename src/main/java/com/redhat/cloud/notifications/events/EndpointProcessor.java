@@ -56,7 +56,11 @@ public class EndpointProcessor {
 
     public Uni<Void> process(Action action) {
         processedItems.increment();
-        Multi<NotificationHistory> endpointsCallResult = getEndpoints(action.getAccountId(), action.getApplication(), action.getEventType())
+        Multi<NotificationHistory> endpointsCallResult = getEndpoints(
+                action.getAccountId(),
+                action.getBundle(),
+                action.getApplication(),
+                action.getEventType())
                 .onItem()
                 .transformToUni(endpoint -> {
                     endpointTargeted.increment();
@@ -85,8 +89,8 @@ public class EndpointProcessor {
         }
     }
 
-    public Multi<Endpoint> getEndpoints(String tenant, String applicationName, String eventTypeName) {
-        return resources.getTargetEndpoints(tenant, applicationName, eventTypeName)
+    public Multi<Endpoint> getEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
+        return resources.getTargetEndpoints(tenant, bundleName, applicationName, eventTypeName)
                 .flatMap((Function<Endpoint, Publisher<Endpoint>>) endpoint -> {
                     // If the tenant has a default endpoint for the eventType, then add the target endpoints here
                     if (endpoint.getType() == Endpoint.EndpointType.DEFAULT) {

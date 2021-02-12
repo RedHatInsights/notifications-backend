@@ -22,6 +22,7 @@ public class TestSerialization {
     @Test
     void testActionSerialization() throws Exception {
         Action targetAction = new Action();
+        targetAction.setBundle("my-bundle");
         targetAction.setApplication("Policies");
         targetAction.setTimestamp(LocalDateTime.now());
         targetAction.setEventType("Any");
