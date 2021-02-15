@@ -128,7 +128,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         aggregation.setBundle(item.getAction().getBundle());
         aggregation.setPayload(JsonObject.mapFrom(item.getAction().getPayload()));
 
-        final EmailTemplate template = EmailTemplateFactory.get(item.getAction().getApplication());
+        final EmailTemplate template = EmailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
         final boolean shouldSaveAggregation = Arrays.asList(EmailSubscriptionType.values())
                 .stream()
                 .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
@@ -160,7 +160,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         return Uni.createFrom().nullItem();
                     }
 
-                    EmailTemplate emailTemplate = EmailTemplateFactory.get(item.getAction().getApplication());
+                    EmailTemplate emailTemplate = EmailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
 
                     if (emailTemplate.isSupported(item.getAction().getEventType(), emailSubscriptionType)) {
                         Uni<String> title = emailTemplate.getTitle(item.getAction().getEventType(), emailSubscriptionType)

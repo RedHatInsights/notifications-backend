@@ -8,13 +8,12 @@ public class EmailTemplateFactory {
 
     }
 
-    public static EmailTemplate get(String application) {
-        switch (application.toLowerCase()) {
-            case "policies":
-                return new Policies();
-            default:
-                return new EmailTemplateNotSupported();
+    public static EmailTemplate get(String bundle, String application) {
+        if (bundle.toLowerCase().equals("insights") && application.toLowerCase().equals("policies")) {
+            return new Policies();
         }
+
+        return new EmailTemplateNotSupported();
     }
 }
 
