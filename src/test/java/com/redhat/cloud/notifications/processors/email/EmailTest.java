@@ -230,6 +230,7 @@ public class EmailTest {
         HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
         Action emailActionMessage = new Action();
+        emailActionMessage.setBundle("insights");
         emailActionMessage.setApplication("policies");
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         // Disabling event id until we need it
@@ -356,13 +357,15 @@ public class EmailTest {
             bodyRequests.clear();
 
             // applications without template or aggregations do not break the process
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-01");
-            helpers.addEmailAggregation(tenant1, application, "policyid-02", "hostid-02");
-            helpers.addEmailAggregation(tenant1, application, "policyid-03", "hostid-03");
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-04");
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-05");
-            helpers.addEmailAggregation(tenant1, application, "policyid-01", "hostid-06");
-            helpers.addEmailAggregation(tenant1, "unknown-application", "policyid-01", "hostid-06");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-02", "hostid-02");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-03", "hostid-03");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-04");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-05");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-06");
+            helpers.addEmailAggregation(tenant1, bundle, "unknown-application", "policyid-01", "hostid-06");
+            helpers.addEmailAggregation(tenant1, "unknown-bundle", application, "policyid-01", "hostid-06");
+            helpers.addEmailAggregation(tenant1, "unknown-bundle", "unknown-application", "policyid-01", "hostid-06");
             emailProcessor.processDailyEmail(nowPlus5Hours);
             // Only 1 email, as no aggregation for tenant2
             assertEquals(1, bodyRequests.size());

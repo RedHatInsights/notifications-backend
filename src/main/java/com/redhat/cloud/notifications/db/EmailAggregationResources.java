@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
 import io.r2dbc.postgresql.codec.Json;
@@ -42,9 +43,9 @@ public class EmailAggregationResources extends DatasourceProvider {
                 ).toUni();
     }
 
-    public Multi<String> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
-        String query = "SELECT DISTINCT application FROM public.email_aggregation " +
-                "WHERE created > $1 AND created <= $2";
+    public Multi<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
+        String query = "SELECT DISTINCT account_id, bundle, application FROM public.email_aggregation " +
+                "WHERE created > $1 AND created <= $2 ";
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
@@ -52,7 +53,13 @@ public class EmailAggregationResources extends DatasourceProvider {
                                     .bind("$1", start)
                                     .bind("$2", end)
                                     .execute();
-                            return execute.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> row.get("application", String.class)));
+                            return execute.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> {
+                                EmailAggregationKey key = new EmailAggregationKey();
+                                key.setApplication(row.get("application", String.class));
+                                key.setBundle(row.get("bundle", String.class));
+                                key.setAccountId(row.get("account_id", String.class));
+                                return key;
+                            }));
                         })
                         .withFinalizer(psqlConnection -> {
                             psqlConnection.close().subscribe();
@@ -60,28 +67,7 @@ public class EmailAggregationResources extends DatasourceProvider {
                 );
     }
 
-    public Multi<String> getAccountIdsWithPendingAggregation(String bundle, String application, LocalDateTime start, LocalDateTime end) {
-        String query = "SELECT DISTINCT account_id FROM public.email_aggregation " +
-                "WHERE bundle = $4 AND application = $1 AND created > $2 AND created <= $3";
-
-        return connectionPublisherUni.get().onItem()
-                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
-                        c2 -> {
-                            Flux<PostgresqlResult> execute = c2.createStatement(query)
-                                    .bind("$1", application)
-                                    .bind("$2", start)
-                                    .bind("$3", end)
-                                    .bind("$4", bundle)
-                                    .execute();
-                            return execute.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> row.get("account_id", String.class)));
-                        })
-                        .withFinalizer(psqlConnection -> {
-                            psqlConnection.close().subscribe();
-                        })
-                );
-    }
-
-    public Multi<EmailAggregation> getEmailAggregation(String accountId, String bundle, String application, LocalDateTime start, LocalDateTime end) {
+    public Multi<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
         String query = "SELECT id, account_id, bundle, application, created, payload FROM public.email_aggregation " +
                 "WHERE account_id = $1 AND bundle = $5 AND application = $2 AND created > $3 AND created <= $4 " +
                 "ORDER BY created";
@@ -90,11 +76,11 @@ public class EmailAggregationResources extends DatasourceProvider {
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
                             Flux<PostgresqlResult> execute = c2.createStatement(query)
-                                    .bind("$1", accountId)
-                                    .bind("$2", application)
+                                    .bind("$1", key.getAccountId())
+                                    .bind("$2", key.getApplication())
                                     .bind("$3", start)
                                     .bind("$4", end)
-                                    .bind("$5", bundle)
+                                    .bind("$5", key.getBundle())
                                     .execute();
                             return execute.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> {
                                 EmailAggregation emailAggregation = new EmailAggregation();
@@ -114,39 +100,16 @@ public class EmailAggregationResources extends DatasourceProvider {
                 );
     }
 
-    public Uni<Integer> getEmailAggregationCount(String accountId, String bundle, String application, LocalDateTime start, LocalDateTime end) {
-        String query = "SELECT count(id) FROM public.email_aggregation " +
-                "WHERE account_id = $1 AND bundle = $5 AND application = $2 AND created > $3 AND created <= $4 " +
-                "ORDER BY created";
-
-        return connectionPublisherUni.get().onItem()
-                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
-                        c2 -> {
-                            Flux<PostgresqlResult> execute = c2.createStatement(query)
-                                    .bind("$1", accountId)
-                                    .bind("$2", application)
-                                    .bind("$3", start)
-                                    .bind("$4", end)
-                                    .bind("$5", bundle)
-                                    .execute();
-                            return execute.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> row.get(0, Integer.class)));
-                        })
-                        .withFinalizer(psqlConnection -> {
-                            psqlConnection.close().subscribe();
-                        })
-                ).toUni();
-    }
-
-    public Uni<Integer> purgeOldAggregation(String accountId, String bundle, String application, LocalDateTime lastUsedTime) {
+    public Uni<Integer> purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
         String query = "DELETE FROM public.email_aggregation WHERE account_id = $1 AND bundle = $4 AND application = $2 AND created <= $3";
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
                             Flux<PostgresqlResult> execute = c2.createStatement(query)
-                                    .bind("$1", accountId)
-                                    .bind("$2", application)
+                                    .bind("$1", key.getAccountId())
+                                    .bind("$2", key.getApplication())
                                     .bind("$3", lastUsedTime)
-                                    .bind("$4", bundle)
+                                    .bind("$4", key.getBundle())
                                     .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated);
                         })

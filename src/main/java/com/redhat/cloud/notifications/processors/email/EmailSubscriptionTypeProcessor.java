@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -247,36 +248,31 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
 
-    private Multi<Tuple2<NotificationHistory, String>> processAggregateEmailsByApplication(String application, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
-        final String bundle = "insights";
+    private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
 
-        return emailAggregationResources.getAccountIdsWithPendingAggregation(bundle, application, startTime, endTime)
-                .onItem().transformToUni(accountId ->  Uni.combine().all().unis(
-                        Uni.createFrom().item(accountId),
-                        subscriptionResources.getEmailSubscribersCount(accountId, emailSubscriptionType)
-                ).asTuple()).merge()
-                .onItem().transformToMulti(accountAndCount -> {
-                    String accountId = accountAndCount.getItem1();
+        return subscriptionResources.getEmailSubscribersCount(aggregationKey.getAccountId(), emailSubscriptionType)
+                .onItem().transformToMulti(subscriberCount -> {
+                    EmailPayloadAggregator aggregator = EmailPayloadAggregatorFactory.by(aggregationKey);
 
-                    EmailPayloadAggregator aggregator = EmailPayloadAggregatorFactory.by(application);
-
-                    if (accountAndCount.getItem2() > 0 && aggregator != null) {
-                        // Group by accountId
-                        return emailAggregationResources.getEmailAggregation(accountId, bundle, application, startTime, endTime)
+                    if (subscriberCount > 0 && aggregator != null) {
+                        return emailAggregationResources.getEmailAggregation(aggregationKey, startTime, endTime)
                                 .collectItems().in(() -> aggregator, EmailPayloadAggregator::aggregate).toMulti();
                     }
 
                     if (delete) {
                         // Nothing to do, delete them right away.
-                        return emailAggregationResources.purgeOldAggregation(accountId, bundle, application, endTime)
+                        return emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
                                 .toMulti()
-                                .onItem().transformToMultiAndMerge(integer -> Multi.createFrom().empty());
+                                .onItem().transformToMultiAndMerge(i -> Multi.createFrom().empty());
                     }
 
                     return Multi.createFrom().empty();
-                }).merge()
+                })
                 .onItem().transformToMulti(aggregator -> {
-                    String accountId = aggregator.getAccountId();
+                    String accountId = aggregationKey.getAccountId();
+                    String bundle = aggregationKey.getBundle();
+                    String application = aggregationKey.getApplication();
+
                     if (aggregator.getProcessedAggregations() == 0) {
                         return Multi.createFrom().empty();
                     }
@@ -285,21 +281,22 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     aggregator.setEndTimeKey(endTime);
                     Action action = new Action();
                     action.setPayload(aggregator.getPayload());
+                    action.setAccountId(accountId);
                     action.setApplication(application);
+                    action.setBundle(bundle);
 
                     // We don't have a eventtype, this aggregates over multiple event types
                     action.setEventType(null);
                     action.setTimestamp(LocalDateTime.now());
-                    action.setAccountId(accountId);
 
                     // We don't have any endpoint as this aggregates multiple endpoints
                     Notification item = new Notification(action, null);
 
-                    return sendEmail(item, emailSubscriptionType).onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, accountId)));
+                    return sendEmail(item, emailSubscriptionType).onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
                 }).merge()
                 .onItem().transformToMulti(result -> {
                     if (delete) {
-                        return emailAggregationResources.purgeOldAggregation(result.getItem2(), bundle, application, endTime)
+                        return emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
                                 .toMulti()
                                 .onItem().transform(integer -> result);
                     }
@@ -310,7 +307,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 // .onItem().invoke(result -> { })
     }
 
-    public Uni<List<Tuple2<NotificationHistory, String>>> processAggregateEmails(Instant scheduledFireTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
+    public Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
         Instant yesterdayScheduledFireTime = scheduledFireTime.minus(emailSubscriptionType.getDuration());
 
         LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, zoneId);
@@ -320,13 +317,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         log.info(String.format("Running %s email aggregation for period (%s, %s)", emailSubscriptionType.toString(), startTime.toString(), endTime.toString()));
 
         return emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
-                .onItem().transformToMulti(application -> processAggregateEmailsByApplication(
-                    application,
-                    startTime,
-                    endTime,
-                    emailSubscriptionType,
-                    delete
-                )).merge().collectItems().asList()
+                .onItem().transformToMulti(aggregationKey -> processAggregateEmailsByAggregationKey(aggregationKey, startTime, endTime, emailSubscriptionType, delete))
+                .merge().collectItems().asList()
                 .onItem().invoke(result -> {
                     final LocalDateTime aggregateFinished = LocalDateTime.now();
                     log.info(
