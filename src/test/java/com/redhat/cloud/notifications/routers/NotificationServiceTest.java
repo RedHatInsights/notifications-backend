@@ -104,6 +104,57 @@ public class NotificationServiceTest {
     }
 
     @Test
+    void testEventTypeFetchingByBundle() {
+
+        List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
+        UUID myBundleId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
+
+        Response response = given()
+                .when()
+                .header(identityHeader)
+                .contentType(ContentType.JSON)
+                .queryParam("bundleId", myBundleId)
+                .get("/notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        EventType[] eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        for (EventType ev : eventTypes) {
+            assertTrue(ev.getApplication().getBundleId().equals(myBundleId));
+        }
+
+        assertTrue(eventTypes.length >= 100); // Depending on the test order, we might have existing application types also
+    }
+
+    @Test
+    void testEventTypeFetchingByBundleAndApplicationId() {
+
+        List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
+        UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getId();
+        UUID myBundleId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
+
+        Response response = given()
+                .when()
+                .header(identityHeader)
+                .contentType(ContentType.JSON)
+                .queryParam("bundleId", myBundleId)
+                .queryParam("applicationIds", myOtherTesterApplicationId)
+                .get("/notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        EventType[] eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
+        for (EventType ev : eventTypes) {
+            assertTrue(ev.getApplication().getBundleId().equals(myBundleId));
+            assertTrue(ev.getApplication().getId().equals(myOtherTesterApplicationId));
+        }
+
+        assertTrue(eventTypes.length >= 100); // Depending on the test order, we might have existing application types also
+    }
+
+    @Test
     void testNonExistantDefaults() {
         String tenant = "testNonExistantDefaults";
         String userName = "user";

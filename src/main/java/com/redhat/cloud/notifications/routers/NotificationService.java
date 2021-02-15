@@ -93,8 +93,8 @@ public class NotificationService {
     @GET
     @Path("/eventTypes")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Multi<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds) {
-        return apps.getEventTypes(query, applicationIds);
+    public Multi<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId) {
+        return apps.getEventTypes(query, applicationIds, bundleId);
     }
 
     @GET

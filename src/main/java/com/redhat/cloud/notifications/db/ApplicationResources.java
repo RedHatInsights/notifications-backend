@@ -161,18 +161,37 @@ public class ApplicationResources extends AbstractGenericResource {
     }
 
     public Multi<EventType> getEventTypes(Query limiter) {
-        return this.getEventTypes(limiter, null);
+        return this.getEventTypes(limiter, null, null);
     }
 
-    public Multi<EventType> getEventTypes(Query limiter, Set<UUID> applicationId) {
+    public Multi<EventType> getEventTypes(Query limiter, Set<UUID> applicationId, UUID bundleId) {
         String basicQuery = "SELECT et.id AS et_id, et.name AS et_name, et.display_name AS et_din, et.description AS et_description, a.id AS a_id, a.name AS a_name, a.display_name as a_displayName, a.bundle_id as a_bundle_id FROM public.event_type et " +
-                "JOIN public.applications a ON a.id = et.application_id";
+                "JOIN public.applications a ON a.id = et.application_id ";
+
+        String whereClause = "";
+        boolean hasWhere = false;
+        String bundleIdParam = "$1";
 
         if (applicationId != null && applicationId.size() > 0) {
-            basicQuery += " WHERE a.id = ANY ($1)";
+            whereClause += " a.id = ANY ($1) ";
+            bundleIdParam = "$2";
+            hasWhere = true;
+        }
+
+        if (bundleId != null) {
+            if (hasWhere) {
+                whereClause += " AND ";
+            }
+            whereClause += " a.bundle_id = " + bundleIdParam + " ";
+        }
+
+        if (!whereClause.equals("")) {
+            basicQuery += " WHERE " + whereClause;
         }
 
         String query = limiter.getModifiedQuery(basicQuery);
+
+        final String finalBundleIdParam = bundleIdParam;
 
         return connectionPublisher.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
@@ -181,6 +200,10 @@ public class ApplicationResources extends AbstractGenericResource {
 
                             if (applicationId != null && applicationId.size() > 0) {
                                 statement = statement.bind("$1", applicationId.toArray(new UUID[applicationId.size()]));
+                            }
+
+                            if (bundleId != null) {
+                                statement = statement.bind(finalBundleIdParam, bundleId);
                             }
 
                             Flux<PostgresqlResult> execute = statement.execute();
