@@ -154,8 +154,9 @@ public class ResourceHelpers {
         subscriptionResources.unsubscribe(tenant, username, type).await().indefinitely();
     }
 
-    public void addEmailAggregation(String tenant, String application, String policyId, String insightsId) {
+    public void addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
         EmailAggregation aggregation = new EmailAggregation();
+        aggregation.setBundle(bundle);
         aggregation.setApplication(application);
         aggregation.setAccountId(tenant);
 

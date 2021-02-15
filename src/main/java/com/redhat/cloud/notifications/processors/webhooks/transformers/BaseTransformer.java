@@ -17,6 +17,7 @@ public class BaseTransformer {
     public Uni<JsonObject> transform(Action action) {
         // Fields and terminology straight from the target project
         JsonObject message = new JsonObject();
+        message.put("bundle", action.getBundle());
         message.put("application", action.getApplication());
         message.put("event_type", action.getEventType());
         message.put("account_id", action.getAccountId());

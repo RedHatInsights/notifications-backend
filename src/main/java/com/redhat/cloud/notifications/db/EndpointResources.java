@@ -175,12 +175,13 @@ public class EndpointResources extends DatasourceProvider {
                 .toUni();
     }
 
-    public Multi<Endpoint> getTargetEndpoints(String tenant, String applicationName, String eventTypeName) {
+    public Multi<Endpoint> getTargetEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
         // TODO Add UNION JOIN for different endpoint types here
         String query = "WITH accepted_event_types AS ( " +
                 "SELECT et.id FROM public.event_type et " +
                 "JOIN public.applications a ON a.id = et.application_id " +
-                "WHERE a.name = $1 AND et.name = $2) " +
+                "JOIN public.bundles b ON b.id = a.bundle_id " +
+                "WHERE a.name = $1 AND et.name = $2 AND b.name = $4) " +
                 basicEndpointGetQuery +
                 "JOIN public.endpoint_targets et ON et.endpoint_id = e.id " +
                 "JOIN accepted_event_types aet ON aet.id = et.event_type_id " +
@@ -193,6 +194,7 @@ public class EndpointResources extends DatasourceProvider {
                                     .bind("$1", applicationName)
                                     .bind("$2", eventTypeName)
                                     .bind("$3", tenant)
+                                    .bind("$4", bundleName)
                                     .execute();
 
                             return this.mapResultSetToEndpoint(execute);

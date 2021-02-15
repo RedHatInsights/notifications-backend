@@ -79,6 +79,7 @@ public class WebhookTest {
         HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
         Action webhookActionMessage = new Action();
+        webhookActionMessage.setBundle("mybundle");
         webhookActionMessage.setApplication("WebhookTest");
         webhookActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         webhookActionMessage.setEventType("testWebhook");
@@ -117,6 +118,7 @@ public class WebhookTest {
         assertEquals(1, bodyRequests.size());
         JsonObject webhookInput = new JsonObject(bodyRequests.get(0));
 
+        assertEquals("mybundle", webhookInput.getString("bundle"));
         assertEquals("WebhookTest", webhookInput.getString("application"));
         assertEquals("testWebhook", webhookInput.getString("event_type"));
         assertEquals("tenant", webhookInput.getString("account_id"));

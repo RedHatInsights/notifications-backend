@@ -121,6 +121,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setAccountId(item.getAction().getAccountId());
         aggregation.setApplication(item.getAction().getApplication());
+        aggregation.setBundle(item.getAction().getBundle());
         aggregation.setPayload(JsonObject.mapFrom(item.getAction().getPayload()));
 
         return this.emailAggregationResources.addEmailAggregation(aggregation)
@@ -219,9 +220,10 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
         log.info(String.format("Running %s email aggregation for period (%s, %s)", emailSubscriptionType.toString(), startTime.toString(), endTime.toString()));
 
+        final String bundle = "insights";
         final String application = "policies";
         // Currently only processing aggregations from policies
-        return emailAggregationResources.getAccountIdsWithPendingAggregation(application, startTime, endTime)
+        return emailAggregationResources.getAccountIdsWithPendingAggregation(bundle, application, startTime, endTime)
                 .onItem().transformToUni(accountId ->  Uni.combine().all().unis(
                     Uni.createFrom().item(accountId),
                     subscriptionResources.getEmailSubscribersCount(accountId, emailSubscriptionType)
@@ -231,7 +233,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
                     if (accountAndCount.getItem2() > 0 || delete) {
                         // Group by accountId
-                        return emailAggregationResources.getEmailAggregation(accountId, application, startTime, endTime)
+                        return emailAggregationResources.getEmailAggregation(accountId, bundle, application, startTime, endTime)
                         .collectItems().in(DailyEmailPayloadAggregator::new, DailyEmailPayloadAggregator::aggregate).toMulti();
                     }
 
@@ -261,7 +263,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 }).merge()
                 .onItem().transformToMulti(result -> {
                     if (delete) {
-                        return emailAggregationResources.purgeOldAggregation(result.getItem2(), application, endTime)
+                        return emailAggregationResources.purgeOldAggregation(result.getItem2(), bundle, application, endTime)
                                 .toMulti()
                                 .onItem().transform(integer -> result);
                     }
