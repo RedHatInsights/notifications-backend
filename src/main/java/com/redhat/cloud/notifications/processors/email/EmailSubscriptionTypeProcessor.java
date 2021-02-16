@@ -10,11 +10,11 @@ import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscription
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
-import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregator;
+import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.processors.email.bop.Email;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
-import com.redhat.cloud.notifications.templates.EmailTemplate;
+import com.redhat.cloud.notifications.templates.AbstractEmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.ScheduledExecution;
@@ -128,7 +128,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         aggregation.setBundle(item.getAction().getBundle());
         aggregation.setPayload(JsonObject.mapFrom(item.getAction().getPayload()));
 
-        final EmailTemplate template = EmailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
+        final AbstractEmailTemplate template = EmailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
         final boolean shouldSaveAggregation = Arrays.asList(EmailSubscriptionType.values())
                 .stream()
                 .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
@@ -160,7 +160,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         return Uni.createFrom().nullItem();
                     }
 
-                    EmailTemplate emailTemplate = EmailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
+                    AbstractEmailTemplate emailTemplate = EmailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
 
                     if (emailTemplate.isSupported(item.getAction().getEventType(), emailSubscriptionType)) {
                         Uni<String> title = emailTemplate.getTitle(item.getAction().getEventType(), emailSubscriptionType)
@@ -252,11 +252,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
         return subscriptionResources.getEmailSubscribersCount(aggregationKey.getAccountId(), emailSubscriptionType)
                 .onItem().transformToMulti(subscriberCount -> {
-                    EmailPayloadAggregator aggregator = EmailPayloadAggregatorFactory.by(aggregationKey);
+                    AbstractEmailPayloadAggregator aggregator = EmailPayloadAggregatorFactory.by(aggregationKey);
 
                     if (subscriberCount > 0 && aggregator != null) {
                         return emailAggregationResources.getEmailAggregation(aggregationKey, startTime, endTime)
-                                .collectItems().in(() -> aggregator, EmailPayloadAggregator::aggregate).toMulti();
+                                .collectItems().in(() -> aggregator, AbstractEmailPayloadAggregator::aggregate).toMulti();
                     }
 
                     if (delete) {

@@ -7,7 +7,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class PoliciesEmailPayloadAggregator extends EmailPayloadAggregator {
+public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
 
     private static final String POLICIES_KEY = "policies";
     private static final String HOST_KEY = "hosts";

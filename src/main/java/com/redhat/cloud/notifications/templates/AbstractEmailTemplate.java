@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.templates;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import io.quarkus.qute.TemplateInstance;
 
-public abstract class EmailTemplate {
+public abstract class AbstractEmailTemplate {
 
     public abstract TemplateInstance getTitle(String eventType, EmailSubscriptionType type);
 

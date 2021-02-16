@@ -5,7 +5,7 @@ import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.api.CheckedTemplate;
 
 // Name needs to be "Policies" to read templates from resources/templates/Policies
-public class Policies extends EmailTemplate {
+public class Policies extends AbstractEmailTemplate {
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {

@@ -6,7 +6,7 @@ import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-public abstract class EmailPayloadAggregator {
+public abstract class AbstractEmailPayloadAggregator {
 
     private static final String START_TIME_KEY = "start_time";
     private static final String END_TIME_KEY = "end_time";

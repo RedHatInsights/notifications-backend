@@ -8,7 +8,7 @@ public class EmailTemplateFactory {
 
     }
 
-    public static EmailTemplate get(String bundle, String application) {
+    public static AbstractEmailTemplate get(String bundle, String application) {
         if (bundle.toLowerCase().equals("insights") && application.toLowerCase().equals("policies")) {
             return new Policies();
         }
@@ -17,7 +17,7 @@ public class EmailTemplateFactory {
     }
 }
 
-class EmailTemplateNotSupported extends EmailTemplate {
+class EmailTemplateNotSupported extends AbstractEmailTemplate {
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         throw new RuntimeException("Not supported");
