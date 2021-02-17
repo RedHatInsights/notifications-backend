@@ -27,11 +27,11 @@ public class Iso8601Conversion extends Conversion<LocalDateTime> {
 
     @Override
     public LocalDateTime fromCharSequence(CharSequence value, Schema schema, LogicalType type) {
-        return LocalDateTime.parse(value.toString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        return LocalDateTime.parse(value.toString(), DateTimeFormatter.ISO_DATE_TIME);
     }
 
     @Override
     public CharSequence toCharSequence(LocalDateTime value, Schema schema, LogicalType type) {
-        return value.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        return value.format(DateTimeFormatter.ISO_DATE_TIME);
     }
 }
