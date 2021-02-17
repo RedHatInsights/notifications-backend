@@ -1,0 +1,22 @@
+diff --git a/Action.java b/Action.java
+index 0a2ac87..9fdb97b 100644
+--- a/Action.java
++++ b/Action.java
+@@ -15,6 +15,17 @@ import org.apache.avro.message.SchemaStore;
+ @org.apache.avro.specific.AvroGenerated
+ public class Action extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+   private static final long serialVersionUID = -3675686353663277755L;
++
++  // ---- Automatically added using a maven patch plugin ----
++  // This code needs to happen before the declaration (and initialization) of SCHEMAS or else it won't work.
++  static {
++    if (Action.SCHEMA$ != null) {
++      throw new RuntimeException("Application was not able to update before initializing the SCHEMA");
++    }
++    com.redhat.cloud.notifications.avro.AvroInit.init();
++  }
++  // ---- End of added code ----s
++
+   public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Action\",\"namespace\":\"com.redhat.cloud.notifications.ingress\",\"fields\":[{\"name\":\"bundle\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"application\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"event_type\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"timestamp\",\"type\":{\"type\":\"string\",\"logicalType\":\"iso-8601\"}},{\"name\":\"account_id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"payload\",\"type\":{\"type\":\"string\",\"logicalType\":\"json-object\"},\"default\":\"{}\"}]}");
+   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
+ 

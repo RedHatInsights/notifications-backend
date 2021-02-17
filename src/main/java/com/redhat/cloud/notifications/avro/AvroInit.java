@@ -1,21 +1,16 @@
 package com.redhat.cloud.notifications.avro;
 
-import io.quarkus.runtime.Startup;
-import io.quarkus.runtime.StartupEvent;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.LogicalTypes.LogicalTypeFactory;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
+public class AvroInit {
 
-@ApplicationScoped
-@Startup
-public class NotificationLogicalTypeFactory {
+    private AvroInit() {
 
-    void onStart(@Observes StartupEvent ev) {
+    }
 
+    public static void init() {
         LogicalTypeFactory[] logicalTypeFactories = {new JsonObjectFactory(), new Iso8601Factory()};
-
         for (LogicalTypeFactory ltf : logicalTypeFactories) {
             LogicalTypes.register(ltf.getTypeName(), ltf);
         }

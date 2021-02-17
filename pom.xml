@@ -258,6 +258,27 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-patch-plugin</artifactId>
+                <version>1.2</version>
+                <configuration>
+                    <originalFile>target/generated-sources/avro/com/redhat/cloud/notifications/ingress/Action.java</originalFile>
+                    <patchDirectory>src/main/resources/avro</patchDirectory>
+                    <patches>
+                        <patch>Action.java.patch</patch>
+                    </patches>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>patch</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>apply</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
                 <configuration>
