@@ -1,10 +1,34 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.api.CheckedTemplate;
 
+// Name needs to be "Policies" to read templates from resources/templates/Policies
+public class Policies extends AbstractEmailTemplate {
 
-public class Policies {
+    @Override
+    public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
+        if (type == EmailSubscriptionType.INSTANT) {
+            return Templates.instantEmailTitle();
+        }
+
+        return Templates.dailyEmailTitle();
+    }
+
+    @Override
+    public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
+        if (type == EmailSubscriptionType.INSTANT) {
+            return Templates.instantEmailBody();
+        }
+
+        return Templates.dailyEmailBody();
+    }
+
+    @Override
+    public boolean isSupported(String eventType, EmailSubscriptionType type) {
+        return true;
+    }
 
     @CheckedTemplate
     public static class Templates {

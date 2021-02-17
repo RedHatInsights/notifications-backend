@@ -1,20 +1,16 @@
-package com.redhat.cloud.notifications.processors.email;
+package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 
-public class DailyEmailPayloadAggregator {
+public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
 
     private static final String POLICIES_KEY = "policies";
     private static final String HOST_KEY = "hosts";
-    private static final String START_TIME_KEY = "start_time";
-    private static final String END_TIME_KEY = "end_time";
     private static final String UNIQUE_SYSTEM_COUNT = "unique_system_count";
 
     // Policy related
@@ -28,35 +24,19 @@ public class DailyEmailPayloadAggregator {
     private static final String INSIGHTS_ID = "insights_id";
     private static final String TAGS = "tags";
 
-    private JsonObject payload = new JsonObject();
     private HashSet<String> uniqueHosts = new HashSet<>();
     private HashMap<String, HashSet<String>> uniqueHostPerPolicy = new HashMap<>();
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
-    private String accountId;
 
-    DailyEmailPayloadAggregator() {
+
+    public PoliciesEmailPayloadAggregator() {
         payload.put(POLICIES_KEY, new JsonObject());
     }
 
-    void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
-    }
-
-    void setEndTimeKey(LocalDateTime endTime) {
-        this.endTime = endTime;
-    }
-
-    void aggregate(EmailAggregation aggregation) {
+    public void processEmailAggregation(EmailAggregation aggregation) {
         JsonObject aggregationPayload = aggregation.getPayload();
+        //Todo: Validate payload before processing
         String policyId = aggregationPayload.getString(POLICY_ID);
         JsonObject policies = payload.getJsonObject(POLICIES_KEY);
-
-        if (accountId == null) {
-            accountId = aggregation.getAccountId();
-        } else if (!accountId.equals(aggregation.getAccountId())) {
-            throw new RuntimeException("Invalid aggregation using different accountIds");
-        }
 
         if (!policies.containsKey(policyId)) {
             JsonObject newPolicy = new JsonObject();
@@ -87,23 +67,7 @@ public class DailyEmailPayloadAggregator {
         this.payload.put(UNIQUE_SYSTEM_COUNT, this.uniqueHosts.size());
     }
 
-    Integer getUniqueHostCount() {
+    public Integer getUniqueHostCount() {
         return this.uniqueHosts.size();
-    }
-
-    private void copyStringField(JsonObject to, JsonObject from, final String field) {
-        to.put(field, from.getString(field));
-    }
-
-    Map<String, Object> getPayload() {
-        Map<String, Object> payload = this.payload.mapTo(Map.class);
-        payload.put(START_TIME_KEY, this.startTime);
-        payload.put(END_TIME_KEY, this.endTime);
-
-        return payload;
-    }
-
-    public String getAccountId() {
-        return accountId;
     }
 }
