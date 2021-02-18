@@ -29,7 +29,7 @@
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <maven-exec-plugin.version>3.0.0</maven-exec-plugin.version>
-        <avro.version>1.10.0</avro.version>
+        <insights-notification-schemas-java.version>0.1-SNAPSHOT</insights-notification-schemas-java.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -43,6 +43,13 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <!-- Insights -->
+        <dependency>
+            <groupId>com.redhat.cloud.common</groupId>
+            <artifactId>insights-notification-schemas-java</artifactId>
+            <version>${insights-notification-schemas-java.version}</version>
+        </dependency>
+
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -132,13 +139,6 @@
             <groupId>io.smallrye.reactive</groupId>
             <artifactId>mutiny-reactor</artifactId>
             <version>${mutiny-reactor.version}</version>
-        </dependency>
-
-        <!-- Schema management -->
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-            <version>${avro.version}</version>
         </dependency>
 
         <!-- Flyway specific dependencies -->
@@ -243,18 +243,6 @@
                             <goal>compile</goal>
                         </goals>
                     </execution>
-                    <execution>
-                        <id>generate-avro-extensions</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>com/redhat/cloud/notifications/avro/*.java</include>
-                            </includes>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -292,32 +280,6 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro-maven-plugin</artifactId>
-                <version>${avro.version}</version>
-                <configuration>
-                    <stringType>String</stringType>
-                    <customConversions>
-                        org.apache.avro.Conversions$UUIDConversion,org.apache.avro.data.TimeConversions$LocalTimestampMillisConversion,com.redhat.cloud.notifications.avro.JsonObjectConversion,com.redhat.cloud.notifications.avro.Iso8601Conversion
-                    </customConversions>
-                    <customLogicalTypeFactories>
-                        com.redhat.cloud.notifications.avro.JsonObjectFactory,com.redhat.cloud.notifications.avro.Iso8601Factory
-                    </customLogicalTypeFactories>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>schema</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/generated-sources/avro/</outputDirectory>
-                            <sourceDirectory>${project.basedir}/src/main/resources/avro/</sourceDirectory>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
