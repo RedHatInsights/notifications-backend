@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.Application;
@@ -12,9 +13,11 @@ import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.jackson.JacksonCodec;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
@@ -145,6 +148,99 @@ public class ApplicationServiceTest extends DbIsolatedTest {
         assertEquals(0, list.size());
 
     }
+
+
+    @Test
+    void testPoliciesEventTypeDelete() {
+        Bundle bundle = new Bundle();
+        bundle.setName(BUNDLE_NAME);
+        bundle.setDisplayName("Insights");
+        Bundle returnedBundle =
+            given()
+                .body(bundle)
+                .contentType(ContentType.JSON)
+                .when().post("/internal/bundles")
+                .then()
+                .statusCode(200)
+                .extract().body().as(Bundle.class);
+
+        Application app = new Application();
+        app.setName(APP_NAME);
+        app.setDisplayName("The best app");
+        app.setBundleId(returnedBundle.getId());
+
+        // All of these are without identityHeader
+
+        // Now create an application
+        Response response = given()
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(app))
+                .post("/internal/applications")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        Application appResponse = Json.decodeValue(response.getBody().asString(), Application.class);
+
+        // Fetch the applications to check they were really added
+        Response resp =
+            given()
+                    // Set header to x-rh-identity
+                    .when()
+                    .get("/internal/applications?bundleName=" + BUNDLE_NAME)
+                    .then()
+                    .statusCode(200)
+                    .extract().response();
+        List apps = Json.decodeValue(resp.getBody().asString(), List.class);
+        Map<String, Object> map = (Map<String, Object>) apps.get(0);
+        Map<String, Object> appMap = (Map<String, Object>) map.get("entity");
+
+        // Create eventType
+        EventType eventType = new EventType();
+        eventType.setName(EVENT_TYPE_NAME);
+        eventType.setDisplayName("Policies will take care of the rules");
+        eventType.setDescription("This is the description of the rule");
+
+        response = given()
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(eventType))
+                .post(String.format("/internal/applications/%s/eventTypes", appResponse.getId()))
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        EventType typeResponse = Json.decodeValue(response.getBody().asString(), EventType.class);
+
+        response = given()
+        .when()
+        .get(String.format("/internal/applications/%s/eventTypes", appResponse.getId()))
+        .then()
+        .statusCode(200)
+        .extract().response();
+
+        List<EventType> list = JacksonCodec.decodeValue(response.getBody().asString(), new TypeReference<List<EventType>>() {});
+        assertEquals(list.size(), 1);
+
+        given()
+            .when()
+            .delete(String.format("/internal/applications/%s/eventTypes/%s", appResponse.getId(), typeResponse.getId()))
+            .then()
+            .statusCode(200)
+            .extract().response();
+
+        response = given()
+                .when()
+                .get(String.format("/internal/applications/%s/eventTypes", appResponse.getId()))
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        list = JacksonCodec.decodeValue(response.getBody().asString(), new TypeReference<List<EventType>>() {});
+        assertEquals(list.size(), 0);
+    }
+
 
     @Test
     void testGetApplicationsRequiresBundleName() {
