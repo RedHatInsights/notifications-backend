@@ -220,7 +220,7 @@ public class ApplicationServiceTest extends DbIsolatedTest {
         .statusCode(200)
         .extract().response();
 
-        List<EventType> list = JacksonCodec.decodeValue(response.getBody().asString(), new TypeReference<List<EventType>>() {});
+        List<EventType> list = JacksonCodec.decodeValue(response.getBody().asString(), new TypeReference<List<EventType>>() { });
         assertEquals(list.size(), 1);
 
         given()
@@ -237,7 +237,7 @@ public class ApplicationServiceTest extends DbIsolatedTest {
                 .statusCode(200)
                 .extract().response();
 
-        list = JacksonCodec.decodeValue(response.getBody().asString(), new TypeReference<List<EventType>>() {});
+        list = JacksonCodec.decodeValue(response.getBody().asString(), new TypeReference<List<EventType>>() { });
         assertEquals(list.size(), 0);
     }
 
