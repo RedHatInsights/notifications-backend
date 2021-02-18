@@ -17,7 +17,6 @@ import io.vertx.core.json.jackson.JacksonCodec;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
@@ -152,9 +151,10 @@ public class ApplicationServiceTest extends DbIsolatedTest {
 
     @Test
     void testPoliciesEventTypeDelete() {
+        // Create a bundle
         Bundle bundle = new Bundle();
-        bundle.setName(BUNDLE_NAME);
-        bundle.setDisplayName("Insights");
+        bundle.setName("bundle-delete");
+        bundle.setDisplayName("blah");
         Bundle returnedBundle =
             given()
                 .body(bundle)
@@ -166,10 +166,8 @@ public class ApplicationServiceTest extends DbIsolatedTest {
 
         Application app = new Application();
         app.setName(APP_NAME);
-        app.setDisplayName("The best app");
+        app.setDisplayName("blah");
         app.setBundleId(returnedBundle.getId());
-
-        // All of these are without identityHeader
 
         // Now create an application
         Response response = given()
@@ -183,24 +181,11 @@ public class ApplicationServiceTest extends DbIsolatedTest {
 
         Application appResponse = Json.decodeValue(response.getBody().asString(), Application.class);
 
-        // Fetch the applications to check they were really added
-        Response resp =
-            given()
-                    // Set header to x-rh-identity
-                    .when()
-                    .get("/internal/applications?bundleName=" + BUNDLE_NAME)
-                    .then()
-                    .statusCode(200)
-                    .extract().response();
-        List apps = Json.decodeValue(resp.getBody().asString(), List.class);
-        Map<String, Object> map = (Map<String, Object>) apps.get(0);
-        Map<String, Object> appMap = (Map<String, Object>) map.get("entity");
-
         // Create eventType
         EventType eventType = new EventType();
         eventType.setName(EVENT_TYPE_NAME);
-        eventType.setDisplayName("Policies will take care of the rules");
-        eventType.setDescription("This is the description of the rule");
+        eventType.setDisplayName("Blah");
+        eventType.setDescription("Blah");
 
         response = given()
                 .when()
@@ -220,6 +205,7 @@ public class ApplicationServiceTest extends DbIsolatedTest {
         .statusCode(200)
         .extract().response();
 
+        // Make sure there is 1 eventtype before we delete
         List<EventType> list = JacksonCodec.decodeValue(response.getBody().asString(), new TypeReference<List<EventType>>() { });
         assertEquals(list.size(), 1);
 
@@ -238,6 +224,7 @@ public class ApplicationServiceTest extends DbIsolatedTest {
                 .extract().response();
 
         list = JacksonCodec.decodeValue(response.getBody().asString(), new TypeReference<List<EventType>>() { });
+        // Make sure there is no event type anymore
         assertEquals(list.size(), 0);
     }
 
