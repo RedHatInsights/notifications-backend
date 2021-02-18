@@ -20,7 +20,7 @@ objects:
           failureThreshold: 3
           httpGet:
             path: /health/live
-            port: 8000
+            port: 8080
             scheme: HTTP
           initialDelaySeconds: 40
           periodSeconds: 10
@@ -30,7 +30,7 @@ objects:
           failureThreshold: 3
           httpGet:
             path: /health/ready
-            port: 8000
+            port: 8080
             scheme: HTTP
           initialDelaySeconds: 40
           periodSeconds: 10
@@ -44,8 +44,8 @@ objects:
             cpu: ${CPU_LIMIT}
             memory: ${MEMORY_LIMIT}
           requests:
-            cpu: 500m
-            memory: 500Mi
+            cpu: ${CPU_REQUEST}
+            memory: ${MEMORY_REQUEST}
         volumes:
         - emptyDir: {}
           name: tmpdir
@@ -69,6 +69,12 @@ parameters:
 - description: memory limit of service
   name: MEMORY_LIMIT
   value: 500Mi
+- name: CPU_REQUEST
+  description: The cpu request
+  value: 500m
+- name: MEMORY_REQUEST
+  description: The memory request
+  value: 250Mi
 - name: MIN_REPLICAS
   value: '1'
 - description: Image tag
