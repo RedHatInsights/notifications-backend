@@ -19,23 +19,23 @@ objects:
         livenessProbe:
           failureThreshold: 3
           httpGet:
-            path: /
+            path: /health/live
             port: 8000
             scheme: HTTP
-          initialDelaySeconds: 35
-          periodSeconds: 5
+          initialDelaySeconds: 40
+          periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 120
+          timeoutSeconds: 1
         readinessProbe:
           failureThreshold: 3
           httpGet:
-            path: /
+            path: /health/ready
             port: 8000
             scheme: HTTP
-          initialDelaySeconds: 35
-          periodSeconds: 5
+          initialDelaySeconds: 40
+          periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 120
+          timeoutSeconds: 1
         env:
         - name: CLOWDER_ENABLED
           value: ${CLOWDER_ENABLED}
@@ -44,8 +44,8 @@ objects:
             cpu: ${CPU_LIMIT}
             memory: ${MEMORY_LIMIT}
           requests:
-            cpu: 200m
-            memory: 256Mi
+            cpu: 500m
+            memory: 500Mi
         volumes:
         - emptyDir: {}
           name: tmpdir
@@ -82,4 +82,4 @@ parameters:
   value: "false"
 - description: ClowdEnv Name
   name: ENV_NAME
-  requred: false
+  required: false
