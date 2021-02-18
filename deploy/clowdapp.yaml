@@ -68,7 +68,7 @@ parameters:
   value: 500m
 - description: memory limit of service
   name: MEMORY_LIMIT
-  value: 512Mi
+  value: 500Mi
 - name: MIN_REPLICAS
   value: '1'
 - description: Image tag
