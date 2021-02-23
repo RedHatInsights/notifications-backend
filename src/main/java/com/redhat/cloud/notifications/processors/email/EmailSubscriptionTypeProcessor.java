@@ -145,7 +145,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     private Uni<NotificationHistory> sendEmail(Notification item, EmailSubscriptionType emailSubscriptionType) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
-        return this.subscriptionResources.getEmailSubscribers(item.getTenant(), emailSubscriptionType)
+        return this.subscriptionResources.getEmailSubscribers(item.getTenant(), item.getAction().getBundle(), item.getAction().getApplication(), emailSubscriptionType)
             .onItem().transform(emailSubscription -> emailSubscription.getUsername())
                 .collectItems().with(Collectors.toSet())
                 .onItem().transform(userSet -> {
@@ -250,7 +250,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
 
-        return subscriptionResources.getEmailSubscribersCount(aggregationKey.getAccountId(), emailSubscriptionType)
+        return subscriptionResources.getEmailSubscribersCount(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType)
                 .onItem().transformToMulti(subscriberCount -> {
                     AbstractEmailPayloadAggregator aggregator = EmailPayloadAggregatorFactory.by(aggregationKey);
 

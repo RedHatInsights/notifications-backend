@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
@@ -211,6 +210,7 @@ public class EndpointService {
                 });
     }
 
+    /*
     @PUT
     @Path("/email/subscription/instant")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
@@ -258,4 +258,5 @@ public class EndpointService {
                 EmailSubscriptionType.DAILY
         );
     }
+    */
 }
