@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.auth.RHIdentityAuthMechanism;
 import org.mockserver.client.MockServerClient;
+import org.mockserver.model.ClearType;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 
@@ -13,6 +14,7 @@ public class MockServerClientConfig {
 
     public enum RbacAccess {
         FULL_ACCESS(TestHelpers.getFileAsString("rbac-examples/rbac_example_full_access.json")),
+        READ_ACCESS(TestHelpers.getFileAsString("rbac-examples/rbac_example_read_access.json")),
         NO_ACCESS(TestHelpers.getFileAsString("rbac-examples/rbac_example_no_access.json"));
 
         private String payload;
@@ -48,6 +50,13 @@ public class MockServerClientConfig {
                 .withSecure(secure)
                 .when(request)
                 .respond(response);
+    }
+
+    public void clearRbac() {
+        this.mockServerClient.clear(request()
+                .withPath("/api/rbac/v1/access/"),
+                ClearType.EXPECTATIONS
+        );
     }
 
     public void removeHttpTestEndpoint(HttpRequest request) {

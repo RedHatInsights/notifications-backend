@@ -46,17 +46,20 @@ public class NotificationServiceTest {
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
+
+        // Add mock-rbac-full access before each test, as some will clear this out,
+        // as they only need partial access
+        String tenant = "NotificationServiceTest";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
     }
 
     @BeforeAll
     void init() {
         helpers.createTestAppAndEventTypes();
-        String tenant = "NotificationServiceTest";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
-
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
     }
 
     @Test
@@ -83,7 +86,7 @@ public class NotificationServiceTest {
     void testEventTypeFetchingByApplication() {
 
         List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
-        UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getId();
+        UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
 
         Response response = given()
                 .when()
@@ -97,7 +100,7 @@ public class NotificationServiceTest {
 
         EventType[] eventTypes = Json.decodeValue(response.getBody().asString(), EventType[].class);
         for (EventType ev : eventTypes) {
-            assertTrue(ev.getApplication().getId().equals(myOtherTesterApplicationId));
+            assertEquals(myOtherTesterApplicationId, ev.getApplication().getId());
         }
 
         assertTrue(eventTypes.length >= 100); // Depending on the test order, we might have existing application types also
@@ -154,6 +157,55 @@ public class NotificationServiceTest {
         assertTrue(eventTypes.length >= 100); // Depending on the test order, we might have existing application types also
     }
 
+    void testCreateSecuredDefaults() {
+        // We need to clear out full access first
+        mockServerConfig.clearRbac();
+
+        String tenant = "testNonExistantDefaults";
+        String userName = "user";
+        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
+        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.READ_ACCESS);
+
+        try {
+            // Add non-existent endpointId to an account without default created
+            given()
+                    .header(localIdentityHeader)
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
+                    .then()
+                    .statusCode(403);
+        } finally {
+            mockServerConfig.clearRbac();
+        }
+    }
+
+    @Test
+    void testDeleteSecuredDefaults() {
+        // We need to clear out full access first
+        mockServerConfig.clearRbac();
+
+        String tenant = "testNonExistantDefaults";
+        String userName = "user";
+        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
+        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.READ_ACCESS);
+
+        try {
+            // Add non-existant endpointId to an account without default created
+            given()
+                    .header(localIdentityHeader)
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .delete(String.format("/notifications/defaults/%s", UUID.randomUUID()))
+                    .then()
+                    .statusCode(403);
+        } finally {
+            mockServerConfig.clearRbac();
+        }
+    }
+
     @Test
     void testNonExistantDefaults() {
         String tenant = "testNonExistantDefaults";
@@ -206,7 +258,7 @@ public class NotificationServiceTest {
         Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
         mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        UUID applicationId = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME).stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getId();
+        UUID applicationId = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME).stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
         UUID ep1 = this.helpers.createWebhookEndpoint(tenant);
         UUID ep2 = this.helpers.createWebhookEndpoint(tenant);
         UUID defaultEp = this.helpers.getDefaultEndpointId(tenant);
