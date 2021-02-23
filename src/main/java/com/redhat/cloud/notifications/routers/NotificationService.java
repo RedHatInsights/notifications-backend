@@ -159,6 +159,7 @@ public class NotificationService {
     @Path("/defaults/{endpointId}")
     @Operation(summary = "Add an integration to the list of configured default actions.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<Response> addEndpointToDefaults(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.addEndpointToDefaults(principal.getAccount(), endpointId)
@@ -169,6 +170,7 @@ public class NotificationService {
     @Path("/defaults/{endpointId}")
     @Operation(summary = "Remove an integration from the list of configured default actions.")
     @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<Response> deleteEndpointFromDefaults(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.deleteEndpointFromDefaults(principal.getAccount(), endpointId)
