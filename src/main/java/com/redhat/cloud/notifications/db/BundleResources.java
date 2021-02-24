@@ -88,6 +88,8 @@ public class BundleResources extends  AbstractGenericResource {
     }
 
     public Uni<Boolean> deleteBundle(UUID bundleId) {
+
+        // TODO delete endpoint_targets first
         String query = "DELETE FROM " + PUBLIC_BUNDLES + " WHERE id = $1";
 
         return runDeleteQuery(bundleId, query);

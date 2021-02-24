@@ -48,9 +48,13 @@ public class ApplicationResources extends AbstractGenericResource {
     }
 
     public Uni<Boolean> deleteApplication(UUID applicationId) {
-        String query = "DELETE FROM public.applications WHERE id = $1";
+        // We need to first delete endpoints that point to
+        // event types that are linked to this application
 
-        return runDeleteQuery(applicationId, query);
+        String ep_query = "DELETE FROM endpoint_targets et USING event_type ev  WHERE et.event_type_id = ev.id AND ev.application_id = $1";
+        String app_query = "DELETE FROM public.applications WHERE id = $1";
+
+        return runDeleteQuery(applicationId, ep_query).onItem().call(i -> runDeleteQuery(applicationId, app_query));
     }
 
     public Uni<EventType> addEventTypeToApplication(UUID applicationId, EventType type) {
@@ -172,10 +176,12 @@ public class ApplicationResources extends AbstractGenericResource {
     }
 
     public Uni<Boolean> deleteEventTypeById(UUID eventTypeId) {
-        String query = "DELETE FROM public.event_type WHERE id = $1";
 
-        return runDeleteQuery(eventTypeId, query);
+        // first remove endpoints for the eventType, then the type itself
 
+        String ep_query = "DELETE FROM endpoint_targets WHERE event_type_id = $1";
+        String et_query = "DELETE FROM public.event_type WHERE id = $1";
+        return runDeleteQuery(eventTypeId, ep_query).onItem().call(i -> runDeleteQuery(eventTypeId, et_query));
     }
 
     public Multi<EventType> getEventTypes(Query limiter) {
