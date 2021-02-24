@@ -129,6 +129,24 @@ public class ApplicationResources extends AbstractGenericResource {
                         })).toUni();
     }
 
+    public Uni<Application> getApplication(String bundleName, String applicationName) {
+        final String query = APPLICATION_QUERY_BY_BUNDLE_NAME + " AND a.name = $2";
+
+        return connectionPublisher.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", bundleName)
+                                    .bind("$2", applicationName)
+                                    .execute();
+
+                            return mapResultSetToApplication(execute);
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        })).toUni();
+    }
+
     public Multi<EventType> getEventTypes(UUID applicationId) {
         String query = "SELECT et.id, et.name, et.display_name FROM public.event_type et " +
                 "WHERE et.application_id = $1";

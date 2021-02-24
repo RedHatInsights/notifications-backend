@@ -3,10 +3,12 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.RbacIdentityProvider;
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
+import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
@@ -59,6 +61,9 @@ public class EndpointService {
 
     @Inject
     EndpointEmailSubscriptionResources emailSubscriptionResources;
+
+    @Inject
+    ApplicationResources applicationResources;
 
     @GET
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
@@ -210,53 +215,42 @@ public class EndpointService {
                 });
     }
 
-    /*
     @PUT
-    @Path("/email/subscription/instant")
+    @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Uni<Boolean> subscribeInstantEmail(@Context SecurityContext sec) {
+    public Uni<Boolean> subscribeInstantEmail(
+            @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName,
+            @PathParam("type") EmailSubscriptionType type) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return emailSubscriptionResources.subscribe(
-                principal.getAccount(),
-                principal.getName(),
-                EmailSubscriptionType.INSTANT
-        );
+
+        return applicationResources.getApplication(bundleName, applicationName)
+                .onItem().ifNull().failWith(new NotFoundException())
+                .onItem().transformToUni(application -> emailSubscriptionResources.subscribe(
+                        principal.getAccount(),
+                        principal.getName(),
+                        bundleName,
+                        applicationName,
+                        type
+                ));
     }
 
     @DELETE
-    @Path("/email/subscription/instant")
+    @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Uni<Boolean> unsubscribeInstantEmail(@Context SecurityContext sec) {
+    public Uni<Boolean> unsubscribeInstantEmail(
+            @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName,
+            @PathParam("type") EmailSubscriptionType type) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return emailSubscriptionResources.unsubscribe(
-                principal.getAccount(),
-                principal.getName(),
-                EmailSubscriptionType.INSTANT
-        );
+
+        return applicationResources.getApplication(bundleName, applicationName)
+                .onItem().ifNull().failWith(new NotFoundException())
+                .onItem().transformToUni(application -> emailSubscriptionResources.unsubscribe(
+                        principal.getAccount(),
+                        principal.getName(),
+                        bundleName,
+                        applicationName,
+                        type
+                ));
     }
 
-    @PUT
-    @Path("/email/subscription/daily")
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Uni<Boolean> subscribeDailyEmail(@Context SecurityContext sec) {
-        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return emailSubscriptionResources.subscribe(
-                principal.getAccount(),
-                principal.getName(),
-                EmailSubscriptionType.DAILY
-        );
-    }
-
-    @DELETE
-    @Path("/email/subscription/daily")
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Uni<Boolean> unsubscribeDailyEmail(@Context SecurityContext sec) {
-        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return emailSubscriptionResources.unsubscribe(
-                principal.getAccount(),
-                principal.getName(),
-                EmailSubscriptionType.DAILY
-        );
-    }
-    */
 }

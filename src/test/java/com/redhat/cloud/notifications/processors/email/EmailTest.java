@@ -105,9 +105,11 @@ public class EmailTest {
 
         final String tenant = "instant-email-tenant";
         final String[] usernames = {"foo", "bar", "admin"};
+        String bundle = "insights";
+        String application = "policies";
 
         for (String username : usernames) {
-            helpers.createSubscription(tenant, username, EmailSubscriptionType.INSTANT);
+            helpers.createSubscription(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
         }
 
         final List<String> bodyRequests = new ArrayList<>();
@@ -123,8 +125,8 @@ public class EmailTest {
         HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
         Action emailActionMessage = new Action();
-        emailActionMessage.setBundle("insights");
-        emailActionMessage.setApplication("policies");
+        emailActionMessage.setBundle(bundle);
+        emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         // Disabling event id until we need it
         // emailActionMessage.setEventId(UUID.randomUUID().toString());
@@ -212,9 +214,11 @@ public class EmailTest {
 
         final String tenant = "instant-email-tenant-wrong-payload";
         final String[] usernames = {"foo", "bar", "admin"};
+        String bundle = "insights";
+        String application = "policies";
 
         for (String username : usernames) {
-            helpers.createSubscription(tenant, username, EmailSubscriptionType.INSTANT);
+            helpers.createSubscription(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
         }
 
         final List<String> bodyRequests = new ArrayList<>();
@@ -230,8 +234,8 @@ public class EmailTest {
         HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
         Action emailActionMessage = new Action();
-        emailActionMessage.setBundle("insights");
-        emailActionMessage.setApplication("policies");
+        emailActionMessage.setBundle(bundle);
+        emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         // Disabling event id until we need it
         // emailActionMessage.setEventId(UUID.randomUUID().toString());
@@ -291,15 +295,15 @@ public class EmailTest {
         final String application = "policies";
 
         for (String username : tenant1Usernames) {
-            helpers.createSubscription(tenant1, username, EmailSubscriptionType.DAILY);
+            helpers.createSubscription(tenant1, username, bundle, application, EmailSubscriptionType.DAILY);
         }
 
         for (String username : tenant2Usernames) {
-            helpers.createSubscription(tenant2, username, EmailSubscriptionType.DAILY);
+            helpers.createSubscription(tenant2, username, bundle, application, EmailSubscriptionType.DAILY);
         }
 
         for (String username : noSubscribedUsersTenantTestUser) {
-            helpers.removeSubscription(noSubscribedUsersTenant, username, EmailSubscriptionType.DAILY);
+            helpers.removeSubscription(noSubscribedUsersTenant, username, bundle, application, EmailSubscriptionType.DAILY);
         }
 
         final Instant nowPlus5HoursInstant = Instant.now().plus(Duration.ofHours(5));
@@ -431,11 +435,11 @@ public class EmailTest {
             assertTrue(email.getJsonArray("emails").getJsonObject(0).getString("body").contains("policyid-11"));
             bodyRequests.clear();
 
-            helpers.createSubscription(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], EmailSubscriptionType.DAILY);
+            helpers.createSubscription(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
             emailProcessor.processDailyEmail(nowPlus5Hours);
             // 0 emails; previous aggregations were deleted in this step, even if no one was subscribed by that time
             assertEquals(0, bodyRequests.size());
-            helpers.removeSubscription(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], EmailSubscriptionType.DAILY);
+            helpers.removeSubscription(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
 
         } catch (Exception e) {
             e.printStackTrace();

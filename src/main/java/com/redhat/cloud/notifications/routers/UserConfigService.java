@@ -13,7 +13,6 @@ import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationS
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 
 import javax.enterprise.context.RequestScoped;
@@ -30,7 +29,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Path("/api/notifications/v1.0/user-config")
 @Produces("application/json")
@@ -150,26 +148,4 @@ public class UserConfigService {
                 });
     }
 
-    private static final String settingsString =
-            "[{\n" +
-                    "  \"fields\": [ {\n" +
-                    "    \"name\": \"instantNotification\",\n" +
-                    "    \"label\": \"Instant notification\",\n" +
-                    "    \"description\": \"Immediate email for each triggered application event. See notification settings for configuration.\",\n" +
-                    "    \"initialValue\": %1,\n" +
-                    "    \"component\": \"descriptiveCheckbox\",\n" +
-                    "    \"validate\": []\n" +
-                    "  }\n" +
-                    "  ,\n" +
-                    "  {\n" +
-                    "    \"name\": \"dailyNotification\",\n" +
-                    "    \"label\": \"Daily digest\",\n" +
-                    "    \"description\": \"Daily summary of triggered application events in 24 hours span. See notification settings for configuration.\",\n" +
-                    "    \"initialValue\": %2,\n" +
-                    "    \"component\": \"descriptiveCheckbox\",\n" +
-                    "    \"validate\": []\n" +
-                    "\n" +
-                    "  }\n" +
-                    "  ]\n" +
-                    "}]";
 }

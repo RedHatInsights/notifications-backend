@@ -15,21 +15,21 @@ public class SettingsValueJsonForm {
     private static String COMPONENT_SUBSCRIPTION = "descriptiveCheckbox";
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
-    static class Field {
-        private String name;
-        private String label;
+    public static class Field {
+        public String name;
+        public String label;
         @JsonInclude(Include.NON_NULL)
-        private String description;
+        public String description;
         @JsonInclude(Include.NON_NULL)
-        private Object initialValue;
-        private String component;
+        public Object initialValue;
+        public String component;
         @JsonInclude(Include.NON_NULL)
-        private List<Object> validate;
+        public List<Object> validate;
         @JsonInclude(Include.NON_NULL)
-        private List<Field> fields;
+        public List<Field> fields;
     }
 
-    private List<Field> fields = new ArrayList<>();
+    public List<Field> fields = new ArrayList<>();
 
     public static List<SettingsValueJsonForm> fromSettingsValue(SettingsValues values) {
         ArrayList<SettingsValueJsonForm> forms = new ArrayList<>();

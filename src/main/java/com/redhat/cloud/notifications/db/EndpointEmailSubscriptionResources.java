@@ -22,7 +22,7 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
 
     public Uni<Boolean> subscribe(String accountNumber, String username, String bundle, String application, EmailSubscriptionType type) {
         String query = "INSERT INTO public.endpoint_email_subscriptions(account_id, user_id, bundle, application, subscription_type) VALUES($1, $2, $3, $4, $5) " +
-                "ON CONFLICT (account_id, user_id, subscription_type, application) DO NOTHING"; // The value is already on the database, this is OK
+                "ON CONFLICT (account_id, user_id, bundle, application, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
         return this.executeBooleanQuery(query, accountNumber, username, bundle, application, type);
     }
 
@@ -32,8 +32,28 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
         return this.executeBooleanQuery(query, accountNumber, username, bundle, application, type);
     }
 
+    public Uni<EmailSubscription> getEmailSubscription(String accountNumber, String username, String bundle, String application, EmailSubscriptionType type) {
+        String query = "SELECT account_id, bundle, application, user_id, subscription_type FROM public.endpoint_email_subscriptions " + COMMON_WHERE_FILTER + " AND user_id = $5 LIMIT 1";
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute =  c2.createStatement(query)
+                                    .bind("$1", accountNumber)
+                                    .bind("$2", bundle)
+                                    .bind("$3", application)
+                                    .bind("$4", type.toString())
+                                    .bind("$5", username)
+                                    .execute();
+                            return this.mapResultSetToEmailSubscription(execute);
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        })
+                ).toUni();
+    }
+
     public Multi<EmailSubscription> getEmailSubscriptionsForUser(String accountNumber, String username) {
-        String query = "SELECT account_id, user_id, subscription_type FROM public.endpoint_email_subscriptions WHERE account_id = $1 AND user_id = $2";
+        String query = "SELECT account_id, bundle, application, user_id, subscription_type FROM public.endpoint_email_subscriptions WHERE account_id = $1 AND user_id = $2";
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,

@@ -23,6 +23,16 @@ public class EmailSubscription {
         public String toString() {
             return this.name;
         }
+
+        public static EmailSubscriptionType fromString(String value) {
+            for (EmailSubscriptionType type : EmailSubscriptionType.values()) {
+                if (type.toString().equals(value.toUpperCase())) {
+                    return type;
+                }
+            }
+
+            throw new RuntimeException("Unknow EmailSubscriptionType " + value);
+        }
     }
 
     private String accountId;
