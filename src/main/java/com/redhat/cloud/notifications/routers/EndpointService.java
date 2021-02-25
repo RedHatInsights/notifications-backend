@@ -218,7 +218,7 @@ public class EndpointService {
     @PUT
     @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Uni<Boolean> subscribeInstantEmail(
+    public Uni<Boolean> subscribeEmail(
             @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName,
             @PathParam("type") EmailSubscriptionType type) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -237,7 +237,7 @@ public class EndpointService {
     @DELETE
     @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Uni<Boolean> unsubscribeInstantEmail(
+    public Uni<Boolean> unsubscribeEmail(
             @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName,
             @PathParam("type") EmailSubscriptionType type) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
