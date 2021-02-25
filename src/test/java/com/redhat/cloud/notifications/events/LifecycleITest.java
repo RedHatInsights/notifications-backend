@@ -498,4 +498,14 @@ public class LifecycleITest {
 
         t02_pushMessage();
     }
+
+    @Test
+    void t10_deleteBundle() {
+        given()
+                .basePath("/")
+                .when()
+                .delete("/internal/bundles/" + theBundle.getId())
+                .then()
+                .statusCode(200);
+    }
 }

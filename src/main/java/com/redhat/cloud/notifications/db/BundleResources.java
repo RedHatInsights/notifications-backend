@@ -8,6 +8,7 @@ import io.smallrye.mutiny.Uni;
 import reactor.core.publisher.Flux;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.util.Date;
 import java.util.UUID;
 
@@ -18,6 +19,9 @@ import java.util.UUID;
  */
 @ApplicationScoped
 public class BundleResources extends  AbstractGenericResource {
+
+    @Inject
+    ApplicationResources appResources;
 
     public static final String PUBLIC_APPLICATIONS = "public.applications";
     public static final String PUBLIC_BUNDLES = "public.bundles";
@@ -89,10 +93,13 @@ public class BundleResources extends  AbstractGenericResource {
 
     public Uni<Boolean> deleteBundle(UUID bundleId) {
 
-        // TODO delete endpoint_targets first
         String query = "DELETE FROM " + PUBLIC_BUNDLES + " WHERE id = $1";
-
-        return runDeleteQuery(bundleId, query);
+        Multi<Application> appsMulti = getApplications(bundleId);
+        Multi<Boolean> multi = appsMulti.onItem()
+                .transformToUni(app -> appResources.deleteApplication(app.getId())).concatenate()
+                .onCompletion().continueWith(true); // SQL Query did not return, so set outcome to true
+        return multi
+                .onItem().call(i -> runDeleteQuery(bundleId, query)).toUni();
     }
 
 

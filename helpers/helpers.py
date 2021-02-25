@@ -66,6 +66,12 @@ def delete_application(app_id):
     print(r.status_code)
 
 
+def delete_bundle(bundle_id):
+    """Delets a bundle by its id"""
+    r = requests.delete(bundles_prefix + "/" + bundle_id)
+    print(r.status_code)
+
+
 def add_event_type(application_id, name, display_name):
     """Add an EventType by name
     :param application_id: UUID of the application
@@ -186,4 +192,5 @@ def add_endpoint_to_event_type(event_type_id, endpoint_id, xrhid):
                      headers=headers)
 
     print(r.status_code)
+
 
