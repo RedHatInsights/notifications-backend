@@ -15,6 +15,7 @@ import io.vertx.core.json.JsonObject;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -44,11 +45,20 @@ public class ResourceHelpers {
         return appResources.getApplications(bundleName).collectItems().asList().await().indefinitely();
     }
 
-    public EmailSubscription getSubscription(String accountNumber, String username, EmailSubscription.EmailSubscriptionType type) {
-        return subscriptionResources.getEmailSubscription(accountNumber, username, type).await().indefinitely();
+    public EmailSubscription getSubscription(String accountNumber, String username, String bundle, String application, EmailSubscription.EmailSubscriptionType type) {
+        return subscriptionResources.getEmailSubscription(accountNumber, username, bundle, application, type).await().indefinitely();
     }
 
     public void createTestAppAndEventTypes() {
+        // Delete TEST_BUNDLE if it exists
+        Optional<Bundle> existingBundle = bundleResources
+                .getBundles().collectItems().asList().await().indefinitely()
+                .stream().filter(bundle -> bundle.getName().equals(TEST_BUNDLE_NAME)).findFirst();
+
+        if (existingBundle.isPresent()) {
+            bundleResources.deleteBundle(existingBundle.get().getId()).await().indefinitely();
+        }
+
         Bundle bundle = new Bundle(TEST_BUNDLE_NAME, "...");
         Bundle b = bundleResources.createBundle(bundle).await().indefinitely();
 
@@ -146,12 +156,12 @@ public class ResourceHelpers {
         resources.addEndpointToDefaults(tenant, endpointId).await().indefinitely();
     }
 
-    public void createSubscription(String tenant, String username, EmailSubscriptionType type) {
-        subscriptionResources.subscribe(tenant, username, type).await().indefinitely();
+    public void createSubscription(String tenant, String username, String bundle, String application, EmailSubscriptionType type) {
+        subscriptionResources.subscribe(tenant, username, bundle, application, type).await().indefinitely();
     }
 
-    public void removeSubscription(String tenant, String username, EmailSubscriptionType type) {
-        subscriptionResources.unsubscribe(tenant, username, type).await().indefinitely();
+    public void removeSubscription(String tenant, String username, String bundle, String application, EmailSubscriptionType type) {
+        subscriptionResources.unsubscribe(tenant, username, bundle, application, type).await().indefinitely();
     }
 
     public void addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {

@@ -21,7 +21,7 @@ jobs:
         with:
           java-version: 11
       - name: Build with Maven
-        run: mvn package
+        run: mvn install
       - uses: actions/upload-artifact@v2
         name: Upload notifications openapi.json
         with:

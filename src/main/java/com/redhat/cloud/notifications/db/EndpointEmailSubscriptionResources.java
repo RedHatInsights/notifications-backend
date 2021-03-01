@@ -15,59 +15,34 @@ import javax.inject.Provider;
 @ApplicationScoped
 public class EndpointEmailSubscriptionResources extends DatasourceProvider {
 
+    private final String COMMON_WHERE_FILTER = " WHERE account_id = $1 AND bundle = $2 AND application = $3 AND subscription_type = $4 ";
+
     @Inject
     Provider<Uni<PostgresqlConnection>> connectionPublisherUni;
 
-    public Uni<Boolean> subscribe(String accountNumber, String username, EmailSubscriptionType type) {
-        String query = "INSERT INTO public.endpoint_email_subscriptions(account_id, user_id, subscription_type) VALUES($1, $2, $3) " +
-                "ON CONFLICT (account_id, user_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
-        return connectionPublisherUni.get().onItem()
-                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
-                        c2 -> {
-                            Flux<PostgresqlResult> execute = c2.createStatement(query)
-                                    .bind("$1", accountNumber)
-                                    .bind("$2", username)
-                                    .bind("$3", type.toString())
-                                    .execute();
-                            return execute.flatMap(PostgresqlResult::getRowsUpdated)
-                                    .map(i -> true).next();
-                        })
-                        .withFinalizer(postgresqlConnection -> {
-                            postgresqlConnection.close().subscribe();
-                        })
-                ).toUni();
+    public Uni<Boolean> subscribe(String accountNumber, String username, String bundle, String application, EmailSubscriptionType type) {
+        String query = "INSERT INTO public.endpoint_email_subscriptions(account_id, user_id, bundle, application, subscription_type) VALUES($1, $2, $3, $4, $5) " +
+                "ON CONFLICT (account_id, user_id, bundle, application, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
+        return this.executeBooleanQuery(query, accountNumber, username, bundle, application, type);
     }
 
-    public Uni<Boolean> unsubscribe(String accountNumber, String username, EmailSubscriptionType type) {
-        String query = "DELETE FROM public.endpoint_email_subscriptions where account_id = $1 AND user_id = $2 AND subscription_type = $3";
+    public Uni<Boolean> unsubscribe(String accountNumber, String username, String bundle, String application, EmailSubscriptionType type) {
+        String query = "DELETE FROM public.endpoint_email_subscriptions where account_id = $1 AND user_id = $2 AND bundle = $3 AND application = $4 AND subscription_type = $5";
 
-        return connectionPublisherUni.get().onItem()
-                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
-                        c2 -> {
-                            Flux<PostgresqlResult> execute = c2.createStatement(query)
-                                    .bind("$1", accountNumber)
-                                    .bind("$2", username)
-                                    .bind("$3", type.toString())
-                                    .execute();
-                            return execute.flatMap(PostgresqlResult::getRowsUpdated)
-                                    .map(i -> true).next();
-                        })
-                        .withFinalizer(postgresqlConnection -> {
-                            postgresqlConnection.close().subscribe();
-                        })
-                ).toUni();
+        return this.executeBooleanQuery(query, accountNumber, username, bundle, application, type);
     }
 
-    public Uni<EmailSubscription> getEmailSubscription(String accountNumber, String username, EmailSubscriptionType type) {
-        String query = "SELECT account_id, user_id, subscription_type FROM public.endpoint_email_subscriptions where account_id = $1 AND user_id = $2 AND subscription_type = $3 LIMIT 1";
-
+    public Uni<EmailSubscription> getEmailSubscription(String accountNumber, String username, String bundle, String application, EmailSubscriptionType type) {
+        String query = "SELECT account_id, bundle, application, user_id, subscription_type FROM public.endpoint_email_subscriptions " + COMMON_WHERE_FILTER + " AND user_id = $5 LIMIT 1";
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
                             Flux<PostgresqlResult> execute =  c2.createStatement(query)
                                     .bind("$1", accountNumber)
-                                    .bind("$2", username)
-                                    .bind("$3", type.toString())
+                                    .bind("$2", bundle)
+                                    .bind("$3", application)
+                                    .bind("$4", type.toString())
+                                    .bind("$5", username)
                                     .execute();
                             return this.mapResultSetToEmailSubscription(execute);
                         })
@@ -77,15 +52,35 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
                 ).toUni();
     }
 
-    public Uni<Integer> getEmailSubscribersCount(String accountNumber, EmailSubscriptionType type) {
-        String query = "SELECT count(user_id) FROM public.endpoint_email_subscriptions where account_id = $1 AND subscription_type = $2";
+    public Multi<EmailSubscription> getEmailSubscriptionsForUser(String accountNumber, String username) {
+        String query = "SELECT account_id, bundle, application, user_id, subscription_type FROM public.endpoint_email_subscriptions WHERE account_id = $1 AND user_id = $2";
+
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute =  c2.createStatement(query)
+                                    .bind("$1", accountNumber)
+                                    .bind("$2", username)
+                                    .execute();
+                            return this.mapResultSetToEmailSubscription(execute);
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        })
+                );
+    }
+
+    public Uni<Integer> getEmailSubscribersCount(String accountNumber, String bundle, String application, EmailSubscriptionType type) {
+        String query = "SELECT count(user_id) FROM public.endpoint_email_subscriptions " + COMMON_WHERE_FILTER;
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                     c2 -> {
                         Flux<PostgresqlResult> execute =  c2.createStatement(query)
                                 .bind("$1", accountNumber)
-                                .bind("$2", type.toString())
+                                .bind("$2", bundle)
+                                .bind("$3", application)
+                                .bind("$4", type.toString())
                                 .execute();
                         return execute.flatMap(r -> r.map((row, rowMetadata) -> row.get(0, Integer.class)));
                     })
@@ -95,15 +90,17 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
         ).toUni();
     }
 
-    public Multi<EmailSubscription> getEmailSubscribers(String accountNumber, EmailSubscriptionType type) {
-        String query = "SELECT account_id, user_id, subscription_type FROM public.endpoint_email_subscriptions where account_id = $1 AND subscription_type = $2";
+    public Multi<EmailSubscription> getEmailSubscribers(String accountNumber, String bundle, String application, EmailSubscriptionType type) {
+        String query = "SELECT account_id, bundle, application, user_id, subscription_type FROM public.endpoint_email_subscriptions " + COMMON_WHERE_FILTER;
 
         return connectionPublisherUni.get().onItem()
                 .transformToMulti(c -> Multi.createFrom().resource(() -> c,
                         c2 -> {
                             Flux<PostgresqlResult> execute =  c2.createStatement(query)
                                     .bind("$1", accountNumber)
-                                    .bind("$2", type.toString())
+                                    .bind("$2", bundle)
+                                    .bind("$3", application)
+                                    .bind("$4", type.toString())
                                     .execute();
                             return this.mapResultSetToEmailSubscription(execute);
                         })
@@ -120,10 +117,32 @@ public class EndpointEmailSubscriptionResources extends DatasourceProvider {
 
             emailSubscription.setAccountId(row.get("account_id", String.class));
             emailSubscription.setUsername(row.get("user_id", String.class));
+            emailSubscription.setBundle(row.get("bundle", String.class));
+            emailSubscription.setApplication(row.get("application", String.class));
             emailSubscription.setType(subscriptionType);
 
             return emailSubscription;
         }));
+    }
+
+    private Uni<Boolean> executeBooleanQuery(String query, String accountNumber, String username, String bundle, String application, EmailSubscriptionType type) {
+        return connectionPublisherUni.get().onItem()
+                .transformToMulti(c -> Multi.createFrom().resource(() -> c,
+                        c2 -> {
+                            Flux<PostgresqlResult> execute = c2.createStatement(query)
+                                    .bind("$1", accountNumber)
+                                    .bind("$2", username)
+                                    .bind("$3", bundle)
+                                    .bind("$4", application)
+                                    .bind("$5", type.toString())
+                                    .execute();
+                            return execute.flatMap(PostgresqlResult::getRowsUpdated)
+                                    .map(i -> true).next();
+                        })
+                        .withFinalizer(postgresqlConnection -> {
+                            postgresqlConnection.close().subscribe();
+                        })
+                ).toUni();
     }
 
 }

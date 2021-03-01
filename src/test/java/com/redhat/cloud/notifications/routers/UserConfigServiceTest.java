@@ -5,19 +5,28 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
+import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
+import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm.Field;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
+import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
+import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
-import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -31,6 +40,46 @@ public class UserConfigServiceTest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
+
+    private SettingsValueJsonForm insightsPolicyForm(List<SettingsValueJsonForm> jsonForms) {
+        for (SettingsValueJsonForm settingsValueJsonForm : jsonForms) {
+            for (Field field : settingsValueJsonForm.fields) {
+                if (field.name != null && field.name.startsWith("[insights][policies]")) {
+                    return settingsValueJsonForm;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private Map<EmailSubscriptionType, Boolean> extractNotificationValues(SettingsValueJsonForm settingsValueJsonForm, String bundle, String application) {
+        Map<EmailSubscriptionType, Boolean> result = new HashMap<>();
+        for (Field field : settingsValueJsonForm.fields) {
+            for (EmailSubscriptionType type : EmailSubscriptionType.values()) {
+                if (field.name != null && field.name.equals(String.format("[%s][%s][%s]", bundle, application, type))) {
+                    result.put(type, (Boolean) field.initialValue);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private SettingsValues createSettingsValue(String bundle, String application, Boolean daily, Boolean instant) {
+        ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
+        applicationSettingsValue.notifications.put(EmailSubscriptionType.DAILY, daily);
+        applicationSettingsValue.notifications.put(EmailSubscriptionType.INSTANT, instant);
+
+        BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
+        bundleSettingsValue.applications.put(application, applicationSettingsValue);
+
+        SettingsValues settingsValues = new SettingsValues();
+        settingsValues.bundles.put(bundle, bundleSettingsValue);
+
+        return settingsValues;
+    }
+
     @Test
     void testSettings() {
         String tenant = "empty";
@@ -39,21 +88,20 @@ public class UserConfigServiceTest {
         Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        Response response = given()
+        String bundle = "insights";
+        String application = "policies";
+
+        List<SettingsValueJsonForm> jsonForms = given()
                 .header(identityHeader)
                 .when().get("/user-config/email-preference")
                 .then()
                 .statusCode(200)
-                .extract().response();
+                .extract().body().jsonPath().getList(".", SettingsValueJsonForm.class);
 
-        assertEquals(
-                "[false, false]",
-                response.jsonPath().getString("[0].fields.initialValue")
-        );
+        SettingsValueJsonForm insightsPolicy = insightsPolicyForm(jsonForms);
+        assertNotNull(insightsPolicy, "Insights policies not found");
 
-        // Set instantNotification to true
-        SettingsValues settingsValues = new SettingsValues();
-        settingsValues.instantNotification = true;
+        SettingsValues settingsValues = createSettingsValue(bundle, application, false, false);
         given()
                 .header(identityHeader)
                 .when()
@@ -62,23 +110,20 @@ public class UserConfigServiceTest {
                 .post("/user-config/email-preference")
                 .then()
                 .statusCode(200);
-
-        // Check again with the api
-        response = given()
+        jsonForms = given()
                 .header(identityHeader)
                 .when().get("/user-config/email-preference")
                 .then()
                 .statusCode(200)
-                .extract().response();
+                .extract().body().jsonPath().getList(".", SettingsValueJsonForm.class);
+        insightsPolicy = insightsPolicyForm(jsonForms);
+        assertNotNull(insightsPolicy, "Insights policies not found");
+        Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(insightsPolicy, bundle, application);
 
-        assertEquals(
-                "[true, false]",
-                response.jsonPath().getString("[0].fields.initialValue")
-        );
+        assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
 
-        // Set instantNotification to false
-        settingsValues = new SettingsValues();
-        settingsValues.instantNotification = false;
+        // Daily to true
+        settingsValues = createSettingsValue(bundle, application, true, false);
         given()
                 .header(identityHeader)
                 .when()
@@ -87,26 +132,20 @@ public class UserConfigServiceTest {
                 .post("/user-config/email-preference")
                 .then()
                 .statusCode(200);
-
-        // Check again with the api
-        response = given()
+        jsonForms = given()
                 .header(identityHeader)
                 .when().get("/user-config/email-preference")
                 .then()
                 .statusCode(200)
-                .extract().response();
+                .extract().body().jsonPath().getList(".", SettingsValueJsonForm.class);
+        insightsPolicy = insightsPolicyForm(jsonForms);
+        assertNotNull(insightsPolicy, "Insights policies not found");
+        initialValues = extractNotificationValues(insightsPolicy, bundle, application);
 
-        System.out.println(response.toString());
+        assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
 
-        assertEquals(
-                "[false, false]",
-                response.jsonPath().getString("[0].fields.initialValue")
-        );
-
-        // Set instantNotification and dailyNotification to true
-        settingsValues = new SettingsValues();
-        settingsValues.instantNotification = true;
-        settingsValues.dailyNotification = true;
+        // Instant to true
+        settingsValues = createSettingsValue(bundle, application, false, true);
         given()
                 .header(identityHeader)
                 .when()
@@ -115,19 +154,39 @@ public class UserConfigServiceTest {
                 .post("/user-config/email-preference")
                 .then()
                 .statusCode(200);
-
-        // Check again with the api
-        response = given()
+        jsonForms = given()
                 .header(identityHeader)
                 .when().get("/user-config/email-preference")
                 .then()
                 .statusCode(200)
-                .extract().response();
+                .extract().body().jsonPath().getList(".", SettingsValueJsonForm.class);
+        insightsPolicy = insightsPolicyForm(jsonForms);
+        assertNotNull(insightsPolicy, "Insights policies not found");
+        initialValues = extractNotificationValues(insightsPolicy, bundle, application);
 
-        assertEquals(
-                "[true, true]",
-                response.jsonPath().getString("[0].fields.initialValue")
-        );
+        assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
+
+        // Both to true
+        settingsValues = createSettingsValue(bundle, application, true, true);
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(settingsValues))
+                .post("/user-config/email-preference")
+                .then()
+                .statusCode(200);
+        jsonForms = given()
+                .header(identityHeader)
+                .when().get("/user-config/email-preference")
+                .then()
+                .statusCode(200)
+                .extract().body().jsonPath().getList(".", SettingsValueJsonForm.class);
+        insightsPolicy = insightsPolicyForm(jsonForms);
+        assertNotNull(insightsPolicy, "Insights policies not found");
+        initialValues = extractNotificationValues(insightsPolicy, bundle, application);
+
+        assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
     }
 
 }

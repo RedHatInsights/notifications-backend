@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
 import com.redhat.cloud.notifications.models.Notification;
@@ -62,13 +61,7 @@ public class WebhookTest {
 
     @Test
     void testWebhook() {
-        final String tenant = "tenant";
-        final String[] usernames = {"foo", "bar", "admin"};
         String url = String.format("http://%s/foobar", mockServerConfig.getRunningAddress());
-
-        for (String username : usernames) {
-            helpers.createSubscription(tenant, username, EmailSubscriptionType.INSTANT);
-        }
 
         final List<String> bodyRequests = new ArrayList<>();
         ExpectationResponseCallback verifyEmptyRequest = req -> {

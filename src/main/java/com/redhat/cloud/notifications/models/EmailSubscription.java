@@ -23,10 +23,22 @@ public class EmailSubscription {
         public String toString() {
             return this.name;
         }
+
+        public static EmailSubscriptionType fromString(String value) {
+            for (EmailSubscriptionType type : EmailSubscriptionType.values()) {
+                if (type.toString().equals(value.toUpperCase())) {
+                    return type;
+                }
+            }
+
+            throw new RuntimeException("Unknow EmailSubscriptionType " + value);
+        }
     }
 
     private String accountId;
     private String username;
+    private String bundle;
+    private String application;
     private EmailSubscriptionType type;
 
     public String getAccountId() {
@@ -43,6 +55,22 @@ public class EmailSubscription {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getBundle() {
+        return bundle;
+    }
+
+    public void setBundle(String bundle) {
+        this.bundle = bundle;
+    }
+
+    public String getApplication() {
+        return application;
+    }
+
+    public void setApplication(String application) {
+        this.application = application;
     }
 
     public EmailSubscriptionType getType() {
