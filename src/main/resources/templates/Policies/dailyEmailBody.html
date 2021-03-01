@@ -1,105 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Policy Notification</title>
-</head>
-<body>
-<div width="100%" style="margin:0;padding:0!important;font-family:overpass,arial;font-size:20px;box-sizing:border-box">
-    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-        <tbody>
-        <tr>
-            <td>
-                <table align="center" border="0" cellpadding="0" cellspacing="0" width="600"
-                       style="border-collapse:collapse">
-                    <tbody>
-                    <tr>
-                        <td align="center" bgcolor="#000000" style="padding:20px 0 20px 0">
-                            <a href="https://cloud.redhat.com/insights/" style="display:block">
-                                <img src="https://cloud.redhat.com/apps/insights/images/email/rh-insights-logo.png"
-                                     alt="Red Hat Insights logo" width="152" height="60" style="display:block">
-                            </a>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td bgcolor="#2c2c2" width="600" valign="top">
-                            <div width="100%" align="center"
-                                 style="padding:20px 20px 20px 20px;color:#ffffff;font-size:18px;font-weight:bold">
-                                Daily Policy Summary - {payload.start_time.toStringFormat()}
-                            </div>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td bgcolor="#f5f5f5" style="padding:20px 20px 0 20px">
-                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                                <tbody>
-                                <tr>
-                                    <td bgcolor="ffffff" style="padding:24px 20px 20px 20px;font-size:16px">
-                                        Daily policy summary for <strong>{payload.start_time.toStringFormat()}</strong> from Red Hat Insights.<br>
-                                        <strong>{payload.policies.size()} {#if payload.policies.size() == 1}policy{#else}policies{/if}</strong> triggered on <strong>{payload.unique_system_count} {#if payload.unique_system_count == 1}system{#else}unique systems{/if}</strong>.
-                                    </td>
-                                </tr>
-
-                                <tr style="background-color:#fff">
-                                    <td align="center"
-                                        style="padding:20px 20px 24px 20px;font-size:18px;text-decoration:none;font-family:interstatecondensed,arial,sans-serif">
-                                        <table text-align="left" width="100%" style="border-collapse: collapse;">
-                                            <thead style="text-align: left">
-                                            <tr style="background-color: #ddf3ff;text-transform: uppercase;font-size: 14px;">
-                                                <th style="padding:10px 10px;border: 1px solid #f5f5f5;">POLICY</th>
-                                                <th style="padding:10px 10px;border: 1px solid #f5f5f5;">SYSTEMS AFFECTED</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                                {#for key in payload.policies.keySet()}
-                                                    <tr style="font-size: 14px;">
-                                                        <td style="padding:10px 10px;border: 1px solid #f5f5f5;"><a href="https://cloud.redhat.com/insights/policies/policy/{key}" target="_blank">{payload.policies.get(key).policy_name}</a></td>
-                                                        <td style="padding:10px 10px;border: 1px solid #f5f5f5;">{payload.policies.get(key).unique_system_count}</td>
-                                                    </tr>
-                                                {/for}
-                                            </tbody>
-                                        </table>
-                                    </td>
-                                </tr>
-
-                                <tr style="background-color:#fff">
-                                    <td align="center"
-                                        style="padding:20px 20px 24px 20px;color:#ffffff;font-size:18px;text-decoration:none;font-family:interstatecondensed,arial,sans-serif;font-weight:bold">
-                                        <table align="center">
-                                            <tbody>
-                                            <tr>
-                                                <td bgcolor="#0066cc"
-                                                    style="padding:8px 8px;background-color:#0066cc"
-                                                    align="center">
-                                                    <a href="https://cloud.redhat.com/insights/policies"
-                                                       style="color:#ffffff;text-decoration:none;display:block;display:inline-block;background:#0066cc;border-radius:4px;font-size:18px;text-decoration:none;font-family:'interstatecondensed',arial,sans-serif;font-weight:bold;width:100%;height:100%"
-                                                       target="_blank">
-                                                        Open Policies in Insights
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td bgcolor="#f5f5f5" style="padding:20px 0px;font-size:12px">
-                                        This alert was sent by Red Hat Insights | <a href="https://cloud.redhat.com/user-preferences/email" style="color:#551a8b"
-                                                                                     target="_blank">Manage email preferences</a>.
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </td>
-        </tr>
-        </tbody>
-    </table>
-</div>
-</body>
-</html>
+{#include insightsEmailBody}
+{#content-title}Daily Policy Summary - {payload.start_time.toStringFormat()}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-content__block">
+        <p>Daily policy summary for <b>{payload.start_time.toStringFormat()}</b> from Red Hat Insights. <b>{payload.policies.size()} {#if payload.policies.size() == 1}policy{#else}policies{/if}</b> triggered on <b>{payload.unique_system_count} {#if payload.unique_system_count == 1}system{#else}unique systems{/if}</b>.</p>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table class="rh-data-table rh-m-bordered">
+            <thead>
+            <tr>
+                <th>Policy</th>
+                <th>Systems</th>
+            </tr>
+            </thead>
+            <tbody>
+            {#for key in payload.policies.keySet()}
+            <tr>
+                <td><a href="https://cloud.redhat.com/insights/policies/policy/{payload.policies.get(key).policy_id}" target="_blank">{payload.policies.get(key).policy_name}</a></td>
+                <td>{payload.policies.get(key).unique_system_count}</td>
+            </tr>
+            {/for}
+            </tbody>
+        </table>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table align="center">
+            <tr>
+                <td class="rh-cta-link" align="center">
+                    <a target="_blank" href="https://cloud.redhat.com/insights/policies">
+                                <span>
+                                  Open Policies in Insights
+                                </span>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
+{/content-body}
+{/include}

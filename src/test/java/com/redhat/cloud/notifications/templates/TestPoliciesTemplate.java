@@ -44,6 +44,7 @@ public class TestPoliciesTemplate {
         payload.put("triggers", triggers);
         payload.put("display_name", "FooMachine");
         payload.put("system_check_in", "2020-04-16T16:10:42.199046");
+        payload.put("insights_id", "this-is-my-id");
 
         String result = Policies.Templates.instantEmailBody()
                 .data("payload", payload)
@@ -104,6 +105,7 @@ public class TestPoliciesTemplate {
 
         Map<String, Object> policy01 = new HashMap<>();
         policy01.put("policy_id", "policy-01");
+        policy01.put("policy_name", "My policy 01");
         policy01.put("unique_system_count", 1);
 
         Map<String, Object> policies = new HashMap<>();
@@ -130,15 +132,18 @@ public class TestPoliciesTemplate {
 
         Map<String, Object> policy01 = new HashMap<>();
         policy01.put("policy_id", "policy-01");
+        policy01.put("policy_name", "My policy 01");
         policy01.put("unique_system_count", 2);
 
         Map<String, Object> policy02 = new HashMap<>();
-        policy01.put("policy_id", "policy-02");
-        policy01.put("unique_system_count", 1);
+        policy02.put("policy_id", "policy-02");
+        policy02.put("policy_name", "My policy 02");
+        policy02.put("unique_system_count", 1);
 
         Map<String, Object> policy03 = new HashMap<>();
-        policy01.put("policy_id", "policy-03");
-        policy01.put("unique_system_count", 1);
+        policy03.put("policy_id", "policy-03");
+        policy03.put("policy_name", "My policy 03");
+        policy03.put("unique_system_count", 1);
 
         Map<String, Object> policies = new HashMap<>();
         policies.put("policy-01", policy01);
@@ -155,7 +160,8 @@ public class TestPoliciesTemplate {
                 .data("payload", payload)
                 .render();
 
-        assertTrue(result.contains("<strong>3 policies</strong> triggered on <strong>3 unique systems</strong>"));
+        assertTrue(result.contains("<b>3 policies</b> triggered on <b>3 unique systems</b>"));
+        assertFalse(result.contains("NOT_FOUND"), "A replacement was not correctly done");
     }
 
     @Test
@@ -166,6 +172,7 @@ public class TestPoliciesTemplate {
 
         Map<String, Object> policy01 = new HashMap<>();
         policy01.put("policy_id", "policy-01");
+        policy01.put("policy_name", "My policy 01");
         policy01.put("unique_system_count", 1);
 
         Map<String, Object> policies = new HashMap<>();
@@ -181,7 +188,8 @@ public class TestPoliciesTemplate {
                 .data("payload", payload)
                 .render();
 
-        assertTrue(result.contains("<strong>1 policy</strong> triggered on <strong>1 system</strong>"));
+        assertTrue(result.contains("<b>1 policy</b> triggered on <b>1 system</b>"));
+        assertFalse(result.contains("NOT_FOUND"), "A replacement was not correctly done");
     }
 
 }
