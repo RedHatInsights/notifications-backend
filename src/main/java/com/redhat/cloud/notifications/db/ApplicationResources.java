@@ -173,9 +173,7 @@ public class ApplicationResources extends AbstractGenericResource {
 
     public Uni<Boolean> deleteEventTypeById(UUID eventTypeId) {
         String query = "DELETE FROM public.event_type WHERE id = $1";
-
         return runDeleteQuery(eventTypeId, query);
-
     }
 
     public Multi<EventType> getEventTypes(Query limiter) {

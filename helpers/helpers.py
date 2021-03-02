@@ -1,11 +1,16 @@
 import requests
+import uuid
 
 
 def set_path_prefix(base_path):
     global applications_prefix
     global bundles_prefix
+    global integrations_prefix
+    global notifications_prefix
     applications_prefix = base_path + "/internal/applications"
     bundles_prefix = base_path + "/internal/bundles"
+    integrations_prefix = base_path + "/api/integrations/v1.0"
+    notifications_prefix = base_path + "/api/notifications/v1.0"
 
 
 def find_application(app_name, bundle_name):
@@ -52,6 +57,19 @@ def add_application(name, display_name, bundle_name):
         exit(1)
     aid = response_json['id']
     return aid
+
+
+def delete_application(app_id):
+    """Deletes an application by its id"""
+
+    r = requests.delete(applications_prefix + "/" + app_id)
+    print(r.status_code)
+
+
+def delete_bundle(bundle_id):
+    """Delets a bundle by its id"""
+    r = requests.delete(bundles_prefix + "/" + bundle_id)
+    print(r.status_code)
 
 
 def add_event_type(application_id, name, display_name):
@@ -134,4 +152,45 @@ def find_event_type(application_id, name):
             return et["id"]
 
     return None
+
+
+def create_endpoint(name, xrhid):
+    """Creates a default endpoint"""
+
+    ep_uuid = uuid.uuid4()
+    ep_id = str(ep_uuid)
+    ep_json = {"name": name,
+               "description": name,
+               "enabled": True,
+               "properties": {
+                   "endpointId": ep_id,
+                   "url": "http://localhost:8085",
+                   "method": "PUT",
+                   "secret_token": "bla-token"
+               },
+               "type": "webhook"}
+
+    h = {"x-rh-identity": xrhid}
+
+    r = requests.post(integrations_prefix + "/endpoints", json=ep_json, headers=h)
+    print(r.status_code)
+    if r.status_code / 100 != 2:
+        print(r.reason)
+        exit(1)
+
+    response_json = r.json();
+    epid = response_json["id"]
+    print(epid)
+
+    return epid
+
+
+def add_endpoint_to_event_type(event_type_id, endpoint_id, xrhid):
+
+    headers = {"x-rh-identity": xrhid}
+    r = requests.put(notifications_prefix+ "/notifications/eventTypes/" + event_type_id + "/" + endpoint_id,
+                     headers=headers)
+
+    print(r.status_code)
+
 

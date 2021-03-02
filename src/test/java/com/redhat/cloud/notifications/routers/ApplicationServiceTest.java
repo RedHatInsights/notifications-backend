@@ -32,7 +32,7 @@ public class ApplicationServiceTest {
     MockServerClientConfig mockServerConfig;
 
     @Test
-    void testPoliciesApplicationAdding() {
+    void testPoliciesApplicationAddingAndDeletion() {
         Bundle bundle = new Bundle();
         bundle.setName(BUNDLE_NAME);
         bundle.setDisplay_name("Insights");
@@ -83,6 +83,13 @@ public class ApplicationServiceTest {
         assertEquals(returnedBundle.getId().toString(), appMap.get("bundle_id"));
         assertEquals(appResponse.getId().toString(), appMap.get("id"));
 
+        // Check, we can get it by its id.
+        given()
+                .when()
+                .get("/internal/applications/" + appResponse.getId())
+                .then()
+                .statusCode(200);
+
         // Create eventType
         EventType eventType = new EventType();
         eventType.setName(EVENT_TYPE_NAME);
@@ -101,6 +108,32 @@ public class ApplicationServiceTest {
         EventType typeResponse = Json.decodeValue(response.getBody().asString(), EventType.class);
         assertNotNull(typeResponse.getId());
         assertEquals(eventType.getDescription(), typeResponse.getDescription());
+
+        // Now delete the app and verify that it is gone along with the eventType
+        given()
+                .when()
+                .delete("/internal/applications/" + appResponse.getId())
+                .then()
+                .statusCode(200);
+
+        // Check that get by Id does not return a 200, as it is gone.
+        given()
+                .when()
+                .get("/internal/applications/" + appResponse.getId())
+                .then()
+                .statusCode(204); // TODO api reports a 204 "empty response", but should return a 404
+
+        // Now check that the eventTypes for that id is also empty
+        List list =
+            given()
+                    .when()
+                    .get("/internal/applications/" + appResponse.getId() + "/eventTypes")
+                    .then()
+                    .statusCode(200)
+                    .extract().as(List.class);
+
+        assertEquals(0, list.size());
+
     }
 
     @Test
