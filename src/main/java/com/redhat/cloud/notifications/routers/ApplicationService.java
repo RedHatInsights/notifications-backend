@@ -29,14 +29,14 @@ public class ApplicationService {
     ApplicationResources appResources;
 
     @GET
-    public Multi<Response> getApplications(@QueryParam("bundleName") String bundleName) {
+    public Uni<Response> getApplications(@QueryParam("bundleName") String bundleName) {
         // Return configured with types?
         if (bundleName == null || bundleName.isBlank()) {
-            return Multi.createFrom().failure(new IllegalArgumentException("there is no bundle name given. Try ?bundleName=xxx"));
+            return Uni.createFrom().failure(new IllegalArgumentException("there is no bundle name given. Try ?bundleName=xxx"));
         }
         // TODO how can we find out there is nothing to send and return a 404 ?
-        return appResources.getApplications(bundleName).onItem()
-                .transform(app -> { return Response.ok(app).build(); });
+        return appResources.getApplications(bundleName)
+                .collectItems().asList().onItem().transform(apps -> Response.ok(apps).build());
     }
 
     @POST
