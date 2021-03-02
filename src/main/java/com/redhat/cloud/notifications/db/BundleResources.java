@@ -8,7 +8,6 @@ import io.smallrye.mutiny.Uni;
 import reactor.core.publisher.Flux;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.Date;
 import java.util.UUID;
 
@@ -19,9 +18,6 @@ import java.util.UUID;
  */
 @ApplicationScoped
 public class BundleResources extends  AbstractGenericResource {
-
-    @Inject
-    ApplicationResources appResources;
 
     public static final String PUBLIC_APPLICATIONS = "public.applications";
     public static final String PUBLIC_BUNDLES = "public.bundles";
