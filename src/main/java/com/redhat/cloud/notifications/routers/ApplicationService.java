@@ -8,6 +8,7 @@ import io.smallrye.mutiny.Uni;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -33,7 +34,7 @@ public class ApplicationService {
     public Uni<List<Application>> getApplications(@QueryParam("bundleName") String bundleName) {
         // Return configured with types?
         if (bundleName == null || bundleName.isBlank()) {
-            return Uni.createFrom().failure(new IllegalArgumentException("there is no bundle name given. Try ?bundleName=xxx"));
+            throw new BadRequestException("There is no bundle name given. Try ?bundleName=xxx");
         }
 
         return appResources.getApplications(bundleName).collectItems().asList().onItem().invoke(applications -> {

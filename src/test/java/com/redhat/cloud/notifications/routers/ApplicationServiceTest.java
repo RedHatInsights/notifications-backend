@@ -142,8 +142,7 @@ public class ApplicationServiceTest {
                 .when()
                 .get("/internal/applications")
                 .then()
-                .statusCode(500);
-
+                .statusCode(400);
     }
 
     @Test
