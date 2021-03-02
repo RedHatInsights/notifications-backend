@@ -194,4 +194,28 @@ public class ApplicationServiceTest {
         });
 
     }
+
+    @Test
+    void testGetApplicationsReturn404WhenNotFound() {
+        String LOCAL_BUNDLE_NAME = "bundle-without-apps";
+
+        Bundle bundle = new Bundle();
+        bundle.setName(LOCAL_BUNDLE_NAME);
+        bundle.setDisplay_name("Insights");
+        Bundle returnedBundle =
+                given()
+                        .body(bundle)
+                        .contentType(ContentType.JSON)
+                        .when().post("/internal/bundles")
+                        .then()
+                        .statusCode(200)
+                        .extract().body().as(Bundle.class);
+
+        given()
+                // Set header to x-rh-identity
+                .when()
+                .get("/internal/applications?bundleName=" + LOCAL_BUNDLE_NAME)
+                .then()
+                .statusCode(404);
+    }
 }
