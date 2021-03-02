@@ -35,8 +35,7 @@ public class ApplicationService {
             return Uni.createFrom().failure(new IllegalArgumentException("there is no bundle name given. Try ?bundleName=xxx"));
         }
         // TODO how can we find out there is nothing to send and return a 404 ?
-        return appResources.getApplications(bundleName)
-                .collectItems().asList().onItem().transform(apps -> Response.ok(apps).build());
+        return appResources.getApplications(bundleName).collectItems().asList();
     }
 
     @POST
