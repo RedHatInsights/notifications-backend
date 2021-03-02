@@ -14,9 +14,9 @@ import io.vertx.core.json.Json;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -67,7 +67,7 @@ public class ApplicationServiceTest {
         assertEquals(returnedBundle.getId(), appResponse.getBundleId());
 
         // Fetch the applications to check they were really added
-        Response resp =
+        response =
             given()
                     // Set header to x-rh-identity
                     .when()
@@ -75,13 +75,11 @@ public class ApplicationServiceTest {
                     .then()
                     .statusCode(200)
                     .extract().response();
-        assertNotNull(resp);
-        List apps = Json.decodeValue(resp.getBody().asString(), List.class);
+        assertNotNull(response);
+        List<Application> apps = response.jsonPath().getList(".", Application.class);
         assertEquals(1, apps.size());
-        Map<String, Object> map = (Map<String, Object>) apps.get(0);
-        Map<String, Object> appMap = (Map<String, Object>) map.get("entity");
-        assertEquals(returnedBundle.getId().toString(), appMap.get("bundle_id"));
-        assertEquals(appResponse.getId().toString(), appMap.get("id"));
+        assertEquals(returnedBundle.getId().toString(), apps.get(0).getBundleId().toString());
+        assertEquals(appResponse.getId().toString(), apps.get(0).getId().toString());
 
         // Check, we can get it by its id.
         given()
@@ -144,7 +142,79 @@ public class ApplicationServiceTest {
                 .when()
                 .get("/internal/applications")
                 .then()
-                .statusCode(500);
+                .statusCode(400);
+    }
 
+    @Test
+    void testGetApplicationsReturnApplications() {
+        String LOCAL_BUNDLE_NAME = "insights-return-app";
+
+        Bundle bundle = new Bundle();
+        bundle.setName(LOCAL_BUNDLE_NAME);
+        bundle.setDisplay_name("Insights");
+        Bundle returnedBundle =
+                given()
+                        .body(bundle)
+                        .contentType(ContentType.JSON)
+                        .when().post("/internal/bundles")
+                        .then()
+                        .statusCode(200)
+                        .extract().body().as(Bundle.class);
+
+        for (int i = 0; i < 10; ++i) {
+            String LOCAL_APP_NAME = "my-app-" + i;
+            Application app = new Application();
+            app.setName(LOCAL_APP_NAME);
+            app.setDisplay_name("The best app");
+            app.setBundleId(returnedBundle.getId());
+
+            given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .body(Json.encode(app))
+                    .post("/internal/applications")
+                    .then()
+                    .statusCode(200);
+        }
+
+        assertDoesNotThrow(() -> {
+            Response response = given()
+                            // Set header to x-rh-identity
+                            .when()
+                            .get("/internal/applications?bundleName=" + LOCAL_BUNDLE_NAME)
+                            .then()
+                            .statusCode(200)
+                            .extract().response();
+
+            List<Application> applications = response.jsonPath().getList(".", Application.class);
+
+            assertNotNull(applications);
+            assertEquals(10, applications.size());
+        });
+
+    }
+
+    @Test
+    void testGetApplicationsReturn404WhenNotFound() {
+        String LOCAL_BUNDLE_NAME = "bundle-without-apps";
+
+        Bundle bundle = new Bundle();
+        bundle.setName(LOCAL_BUNDLE_NAME);
+        bundle.setDisplay_name("Insights");
+        Bundle returnedBundle =
+                given()
+                        .body(bundle)
+                        .contentType(ContentType.JSON)
+                        .when().post("/internal/bundles")
+                        .then()
+                        .statusCode(200)
+                        .extract().body().as(Bundle.class);
+
+        given()
+                // Set header to x-rh-identity
+                .when()
+                .get("/internal/applications?bundleName=" + LOCAL_BUNDLE_NAME)
+                .then()
+                .statusCode(404);
     }
 }

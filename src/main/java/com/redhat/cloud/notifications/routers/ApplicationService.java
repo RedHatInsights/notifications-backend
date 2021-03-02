@@ -8,16 +8,18 @@ import io.smallrye.mutiny.Uni;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import java.util.List;
 import java.util.UUID;
 
 @Path("/internal/applications")
@@ -29,14 +31,17 @@ public class ApplicationService {
     ApplicationResources appResources;
 
     @GET
-    public Multi<Response> getApplications(@QueryParam("bundleName") String bundleName) {
+    public Uni<List<Application>> getApplications(@QueryParam("bundleName") String bundleName) {
         // Return configured with types?
         if (bundleName == null || bundleName.isBlank()) {
-            return Multi.createFrom().failure(new IllegalArgumentException("there is no bundle name given. Try ?bundleName=xxx"));
+            throw new BadRequestException("There is no bundle name given. Try ?bundleName=xxx");
         }
-        // TODO how can we find out there is nothing to send and return a 404 ?
-        return appResources.getApplications(bundleName).onItem()
-                .transform(app -> { return Response.ok(app).build(); });
+
+        return appResources.getApplications(bundleName).collectItems().asList().onItem().invoke(applications -> {
+            if (applications.size() == 0) {
+                throw new NotFoundException();
+            }
+        });
     }
 
     @POST
