@@ -13,7 +13,7 @@ app_display_name = "My application"
 event_type = "et1"
 event_type_display_name = "First Event Type"
 
-f = open("/Users/hrupp/insights/policies-ui-backend/server/src/test/resources/rhid_heiko.txt", "r")
+f = open("rhid.txt", "r")
 
 line = f.readline()
 # strip eventual \n at the end

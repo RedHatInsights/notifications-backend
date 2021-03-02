@@ -94,12 +94,7 @@ public class BundleResources extends  AbstractGenericResource {
     public Uni<Boolean> deleteBundle(UUID bundleId) {
 
         String query = "DELETE FROM " + PUBLIC_BUNDLES + " WHERE id = $1";
-        Multi<Application> appsMulti = getApplications(bundleId);
-        Multi<Boolean> multi = appsMulti.onItem()
-                .transformToUni(app -> appResources.deleteApplication(app.getId())).concatenate()
-                .onCompletion().continueWith(true); // SQL Query did not return, so set outcome to true
-        return multi
-                .onItem().call(i -> runDeleteQuery(bundleId, query)).toUni();
+        return runDeleteQuery(bundleId, query);
     }
 
 
