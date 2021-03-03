@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.routers.models;
 
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Meta;
+import com.redhat.cloud.notifications.models.Page;
 
 import java.util.List;
 import java.util.Map;

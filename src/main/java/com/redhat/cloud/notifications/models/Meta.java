@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers.models;
+package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
