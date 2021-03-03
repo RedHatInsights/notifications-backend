@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.models;
+package com.redhat.cloud.notifications.models.endpoint.attributes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

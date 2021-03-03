@@ -8,7 +8,7 @@ import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscription
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.WebhookAttributes;
+import com.redhat.cloud.notifications.models.endpoint.attributes.WebhookAttributes;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 

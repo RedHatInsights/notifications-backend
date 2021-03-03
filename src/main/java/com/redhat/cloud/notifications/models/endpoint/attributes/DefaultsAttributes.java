@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.models;
+package com.redhat.cloud.notifications.models.endpoint.attributes;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;

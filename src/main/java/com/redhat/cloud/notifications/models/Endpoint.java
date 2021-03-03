@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.redhat.cloud.notifications.models.endpoint.attributes.Attributes;
+import com.redhat.cloud.notifications.models.endpoint.attributes.EmailSubscriptionAttributes;
+import com.redhat.cloud.notifications.models.endpoint.attributes.WebhookAttributes;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.validation.Valid;
