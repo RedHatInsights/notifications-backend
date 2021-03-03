@@ -25,7 +25,6 @@ public class RbacServiceToServiceAuthRequestFilterTest {
         ClientRequestContext context = new ClientRequestContextImpl(invocation);
         try {
             requestFilter.filter(context);
-            System.out.println(context.getHeaders());
             Assertions.assertEquals("this-is-a-secret-token", context.getHeaderString("x-rh-rbac-psk"));
             Assertions.assertEquals("My nice app", context.getHeaderString("x-rh-rbac-client-id"));
             Assertions.assertNull(context.getHeaderString("Authorization"));
@@ -49,7 +48,6 @@ public class RbacServiceToServiceAuthRequestFilterTest {
 
         try {
             requestFilter.filter(context);
-            System.out.println(context.getHeaders());
             Assertions.assertNull(context.getHeaderString("x-rh-rbac-psk"));
             Assertions.assertNull(context.getHeaderString("x-rh-rbac-client-id"));
             Assertions.assertNull(context.getHeaderString("x-rh-rbac-account"));

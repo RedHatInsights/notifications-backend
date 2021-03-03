@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.util.List;
+import java.util.UUID;
 
 @JsonSerialize
 public class EmailSubscriptionAttributes extends Attributes {
@@ -11,7 +12,7 @@ public class EmailSubscriptionAttributes extends Attributes {
     public static class Recipient {
         private Boolean onlyAdmins;
         private Boolean ignorePreferences;
-        private String groupId;
+        private UUID groupId;
 
 
         public Boolean getOnlyAdmins() {
@@ -30,11 +31,11 @@ public class EmailSubscriptionAttributes extends Attributes {
             this.ignorePreferences = ignorePreferences;
         }
 
-        public String getGroupId() {
+        public UUID getGroupId() {
             return groupId;
         }
 
-        public void setGroupId(String groupId) {
+        public void setGroupId(UUID groupId) {
             this.groupId = groupId;
         }
     }

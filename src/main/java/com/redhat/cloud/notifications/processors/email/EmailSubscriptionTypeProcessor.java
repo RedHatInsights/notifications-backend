@@ -7,13 +7,19 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.Page;
+import com.redhat.cloud.notifications.models.endpoint.attributes.EmailSubscriptionAttributes;
+import com.redhat.cloud.notifications.models.endpoint.attributes.EmailSubscriptionAttributes.Recipient;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.processors.email.bop.Email;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
+import com.redhat.cloud.notifications.rbac.RbacServiceToService;
+import com.redhat.cloud.notifications.rbac.RbacUser;
 import com.redhat.cloud.notifications.templates.AbstractEmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.scheduler.Scheduled;
@@ -28,6 +34,8 @@ import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.reactivestreams.Publisher;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -35,10 +43,14 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -65,6 +77,10 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     EmailAggregationResources emailAggregationResources;
+
+    @Inject
+    @RestClient
+    RbacServiceToService rbacServiceToService;
 
     @ConfigProperty(name = "processor.email.bop_url")
     String bopUrl;
@@ -142,12 +158,68 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         return sendEmail(item, EmailSubscriptionType.INSTANT);
     }
 
+    private Multi<RbacUser> fetchUsers(Function<Integer, CompletionStage<Page<RbacUser>>> fetcher) {
+        return Multi.createBy().repeating()
+                .completionStage(
+                    AtomicInteger::new,
+                    state -> fetcher.apply(state.getAndIncrement())
+                )
+                .until(page -> page.getData().isEmpty())
+                .onItem().transform(Page::getData)
+                .onItem().disjoint();
+    }
+
+    private Uni<Set<String>> recipientsForNotifcation(Notification item, EmailSubscriptionType emailSubscriptionType) {
+        final EmailSubscriptionAttributes properties = (EmailSubscriptionAttributes) item.getEndpoint().getProperties();
+        final List<Publisher<Set<String>>> userSources = new ArrayList<>();
+        final int ELEMENTS_PER_PAGE = 40;
+
+        final Uni<HashSet<String>> subscriptions = this.subscriptionResources.getEmailSubscribers(item.getTenant(), item.getAction().getBundle(), item.getAction().getApplication(), emailSubscriptionType)
+                .collectItems().in(HashSet<String>::new, (usernames, emailSubscription) -> usernames.add(emailSubscription.getUsername())).memoize().indefinitely();
+
+        for (Recipient recipient : properties.getRecipients()) {
+            Multi<RbacUser> users;
+            if (recipient.getGroupId() == null) {
+                users = fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), ELEMENTS_PER_PAGE, ELEMENTS_PER_PAGE * page).subscribeAsCompletionStage());
+            } else {
+                // Todo: `getGroupUsers` does not support "onlyAdmins" here. We would need to ask for support if we want it or filter manually here.
+                users = rbacServiceToService.getGroup(item.getTenant(), recipient.getGroupId())
+                        .onItem().transformToMulti(rbacGroup -> {
+                            if (rbacGroup.platformDefault) {
+                                // Platform default groups do not have the users in the `getGroupUsers` function.
+                                return fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), ELEMENTS_PER_PAGE, ELEMENTS_PER_PAGE * page).subscribeAsCompletionStage());
+                            }
+
+                            return fetchUsers(page -> rbacServiceToService.getGroupUsers(item.getTenant(), recipient.getGroupId(), ELEMENTS_PER_PAGE, ELEMENTS_PER_PAGE * page).subscribeAsCompletionStage());
+                        });
+            }
+
+            Uni<Set<String>> usernames = users.onItem()
+                    .transform(rbacUser -> rbacUser.username).collectItems().asList()
+                    .onItem().transform(HashSet::new)
+                    .onItem().transformToUni(rbacUsers -> {
+                        if (recipient.getIgnorePreferences()) {
+                            return Uni.createFrom().item(rbacUsers);
+                        }
+
+                        return subscriptions.onItem().transform(subscribedUsers -> {
+                            Set<String> intersection = new HashSet<>(rbacUsers);
+                            intersection.retainAll(subscribedUsers);
+                            return intersection;
+                        });
+
+                    });
+
+            userSources.add(usernames.toMulti());
+        }
+
+        return Multi.createBy().merging().streams(userSources).collectItems().in(HashSet::new, Set::addAll);
+    }
+
     private Uni<NotificationHistory> sendEmail(Notification item, EmailSubscriptionType emailSubscriptionType) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
-        return this.subscriptionResources.getEmailSubscribers(item.getTenant(), item.getAction().getBundle(), item.getAction().getApplication(), emailSubscriptionType)
-            .onItem().transform(emailSubscription -> emailSubscription.getUsername())
-                .collectItems().with(Collectors.toSet())
+        return recipientsForNotifcation(item, emailSubscriptionType)
                 .onItem().transform(userSet -> {
                     if (userSet.size() > 0) {
                         return this.buildEmail(userSet);
@@ -250,6 +322,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
 
+        // Todo: This process multiple aggregations over eventTypes: Currently there is no way to know specifics on to who send it? (other than use the subscription)
+        // In the future we will have a EmailSubscriptionDaily endpoint which can be added to the EmailAggregation to know how to process
+        // We will have to build the report for each user but at notification time we will build what to send and when.
         return subscriptionResources.getEmailSubscribersCount(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType)
                 .onItem().transformToMulti(subscriberCount -> {
                     AbstractEmailPayloadAggregator aggregator = EmailPayloadAggregatorFactory.by(aggregationKey);
@@ -288,6 +363,18 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     // We don't have a eventtype, this aggregates over multiple event types
                     action.setEventType(null);
                     action.setTimestamp(LocalDateTime.now());
+
+                    // Configure a default endpoint that sends to subscribed users
+                    // Todo: We need to add an endpoint to the Aggregation and update this logic.
+                    Endpoint endpoint = new Endpoint();
+                    EmailSubscriptionAttributes emailSubscriptionAttributes = new EmailSubscriptionAttributes();
+                    Recipient recipient = new Recipient();
+                    recipient.setGroupId(null);
+                    recipient.getIgnorePreferences(false);
+                    recipient.setOnlyAdmins(false);
+
+                    emailSubscriptionAttributes.setRecipients(List.of(recipient));
+                    endpoint.setProperties(emailSubscriptionAttributes);
 
                     // We don't have any endpoint as this aggregates multiple endpoints
                     Notification item = new Notification(action, null);
