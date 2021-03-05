@@ -13,8 +13,8 @@ public class PoliciesEmailPayloadAggregatorTest {
 
     private EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
         EmailAggregation aggregation = new EmailAggregation();
-        aggregation.setBundle(bundle);
-        aggregation.setApplication(application);
+        aggregation.setBundleName(bundle);
+        aggregation.setApplicationName(application);
         aggregation.setAccountId(tenant);
 
         JsonObject payload = new JsonObject();

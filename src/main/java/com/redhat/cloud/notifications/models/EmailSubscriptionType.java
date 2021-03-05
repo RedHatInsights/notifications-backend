@@ -3,14 +3,12 @@ package com.redhat.cloud.notifications.models;
 import java.time.Duration;
 
 public enum EmailSubscriptionType {
-    INSTANT("INSTANT", null),
-    DAILY("DAILY", Duration.ofDays(1));
+    INSTANT(null),
+    DAILY(Duration.ofDays(1));
 
-    private String name;
     private Duration duration;
 
-    EmailSubscriptionType(String name, Duration duration) {
-        this.name = name;
+    EmailSubscriptionType(Duration duration) {
         this.duration = duration;
     }
 
@@ -18,17 +16,8 @@ public enum EmailSubscriptionType {
         return this.duration;
     }
 
-    public String toString() {
-        return this.name;
-    }
-
+    // This may seem unused but it is actually required for a RestEasy request parameter deserialization.
     public static EmailSubscriptionType fromString(String value) {
-        for (EmailSubscriptionType type : EmailSubscriptionType.values()) {
-            if (type.toString().equals(value.toUpperCase())) {
-                return type;
-            }
-        }
-
-        throw new RuntimeException("Unknow EmailSubscriptionType " + value);
+        return EmailSubscriptionType.valueOf(value.toUpperCase());
     }
 }

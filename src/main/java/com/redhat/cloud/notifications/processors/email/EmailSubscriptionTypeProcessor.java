@@ -119,13 +119,12 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         }
     }
 
-
     @Override
     public Uni<NotificationHistory> process(Notification item) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setAccountId(item.getAction().getAccountId());
-        aggregation.setApplication(item.getAction().getApplication());
-        aggregation.setBundle(item.getAction().getBundle());
+        aggregation.setApplicationName(item.getAction().getApplication());
+        aggregation.setBundleName(item.getAction().getBundle());
         aggregation.setPayload(JsonObject.mapFrom(item.getAction().getPayload()));
 
         final AbstractEmailTemplate template = EmailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
@@ -146,7 +145,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
         return this.subscriptionResources.getEmailSubscribers(item.getTenant(), item.getAction().getBundle(), item.getAction().getApplication(), emailSubscriptionType)
-            .onItem().transform(emailSubscription -> emailSubscription.getUsername())
+            .onItem().transform(emailSubscription -> emailSubscription.getUserId())
                 .collectItems().with(Collectors.toSet())
                 .onItem().transform(userSet -> {
                     if (userSet.size() > 0) {

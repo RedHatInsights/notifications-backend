@@ -1,36 +1,69 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
+import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
+
+@Entity
+@Table(name = "event_type")
+@JsonNaming(SnakeCaseStrategy.class)
+@JsonFilter(ApiResponseFilter.NAME)
 public class EventType {
+
+    @Id
+    @GeneratedValue
+    @JsonProperty(access = READ_ONLY)
     private UUID id;
 
-    @Pattern(regexp = "[a-z][a-z_0-9-]*")
     @NotNull
+    @Pattern(regexp = "[a-z][a-z_0-9-]*")
+    @Size(max = 255)
     private String name;
 
     @NotNull
-    private String display_name;
+    @Schema(name = "display_name")
+    private String displayName;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Application application;
-
-    // These endpoints are set per tenant - not application!
-    // optional
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Set<Endpoint> endpoints;
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(NON_NULL)
     private String description;
 
-    public EventType() {
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "application_id")
+    @JsonInclude(NON_NULL)
+    private Application application;
 
-    }
+    @Transient
+    @JsonIgnore
+    private boolean filterOutApplication;
+
+    @OneToMany(mappedBy = "eventType", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Set<EndpointTarget> targets;
 
     public UUID getId() {
         return id;
@@ -48,12 +81,20 @@ public class EventType {
         this.name = name;
     }
 
-    public String getDisplay_name() {
-        return display_name;
+    public String getDisplayName() {
+        return displayName;
     }
 
-    public void setDisplay_name(String display_name) {
-        this.display_name = display_name;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Application getApplication() {
@@ -64,11 +105,37 @@ public class EventType {
         this.application = application;
     }
 
-    public String getDescription() {
-        return description;
+    public boolean isFilterOutApplication() {
+        return filterOutApplication;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public EventType filterOutApplication() {
+        filterOutApplication = true;
+        return this;
+    }
+
+    public Set<EndpointTarget> getTargets() {
+        return targets;
+    }
+
+    public void setTargets(Set<EndpointTarget> targets) {
+        this.targets = targets;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof EventType) {
+            EventType other = (EventType) o;
+            return Objects.equals(id, other.id);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

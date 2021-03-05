@@ -22,10 +22,10 @@ import java.util.UUID;
 @ApplicationScoped
 public class ResourceHelpers {
 
-    public static final String TEST_APP_NAME = "Tester";
-    public static final String TEST_APP_NAME_2 = "MyOtherTester";
-    public static final String TEST_EVENT_TYPE_FORMAT = "EventType%d";
-    public static final String TEST_BUNDLE_NAME = "TestBundle";
+    public static final String TEST_APP_NAME = "tester";
+    public static final String TEST_APP_NAME_2 = "myothertester";
+    public static final String TEST_EVENT_TYPE_FORMAT = "eventtype%d";
+    public static final String TEST_BUNDLE_NAME = "testbundle";
 
     @Inject
     EndpointResources resources;
@@ -65,28 +65,28 @@ public class ResourceHelpers {
 
         Application app = new Application();
         app.setName(TEST_APP_NAME);
-        app.setDisplay_name("...");
+        app.setDisplayName("...");
         app.setBundleId(b.getId());
         Application added = appResources.createApplication(app).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
             eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
-            eventType.setDisplay_name("... -> " + i);
+            eventType.setDisplayName("... -> " + i);
             eventType.setDescription("Desc .. --> " + i);
             appResources.addEventTypeToApplication(added.getId(), eventType).await().indefinitely();
         }
 
         Application app2 = new Application();
         app2.setName(TEST_APP_NAME_2);
-        app2.setDisplay_name("...");
+        app2.setDisplayName("...");
         app2.setBundleId(b.getId());
         Application added2 = appResources.createApplication(app2).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
             eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
-            eventType.setDisplay_name("... -> " + i);
+            eventType.setDisplayName("... -> " + i);
             appResources.addEventTypeToApplication(added2.getId(), eventType).await().indefinitely();
         }
     }
@@ -119,7 +119,7 @@ public class ResourceHelpers {
                 ep.setProperties(webAttr);
             }
 
-            ep.setTenant(tenant);
+            ep.setAccountId(tenant);
             resources.createEndpoint(ep).await().indefinitely();
         }
         return statsValues;
@@ -134,7 +134,7 @@ public class ResourceHelpers {
         ep.setName(String.format("Endpoint %s", UUID.randomUUID().toString()));
         ep.setDescription("Automatically generated");
         ep.setEnabled(true);
-        ep.setTenant(tenant);
+        ep.setAccountId(tenant);
         return resources.createEndpoint(ep).await().indefinitely().getId();
     }
 
@@ -148,7 +148,7 @@ public class ResourceHelpers {
         ep.setName(String.format("Endpoint %s", UUID.randomUUID().toString()));
         ep.setDescription("Automatically generated");
         ep.setEnabled(true);
-        ep.setTenant(tenant);
+        ep.setAccountId(tenant);
 
         return resources.createEndpoint(ep).await().indefinitely().getId();
     }
@@ -167,8 +167,8 @@ public class ResourceHelpers {
 
     public void addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
         EmailAggregation aggregation = new EmailAggregation();
-        aggregation.setBundle(bundle);
-        aggregation.setApplication(application);
+        aggregation.setBundleName(bundle);
+        aggregation.setApplicationName(application);
         aggregation.setAccountId(tenant);
 
         JsonObject payload = new JsonObject();

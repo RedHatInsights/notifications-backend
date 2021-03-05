@@ -1,7 +1,13 @@
 package com.redhat.cloud.notifications;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
+import io.vertx.core.json.jackson.DatabindCodec;
 import org.mockserver.client.MockServerClient;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.MockServerContainer;
@@ -24,6 +30,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     @Override
     public Map<String, String> start() {
         System.out.println("++++  TestLifecycleManager start +++");
+        configureObjectMapper();
         Map<String, String> properties = new HashMap<>();
         try {
             setupPostgres(properties);
@@ -40,6 +47,13 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
         System.out.println(" -- Running with properties: " + properties);
         return properties;
+    }
+
+    private void configureObjectMapper() {
+        FilterProvider filterProvider = new SimpleFilterProvider().addFilter(ApiResponseFilter.NAME, new ApiResponseFilter());
+        ObjectMapper mapper = DatabindCodec.mapper();
+        mapper.setFilterProvider(filterProvider);
+        mapper.registerModule(new JavaTimeModule());
     }
 
     @Override
@@ -80,12 +94,8 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         // quarkus.datasource.driver=io.opentracing.contrib.jdbc.TracingDriver
         // Driver needs a 'tracing' in the middle like jdbc:tracing:postgresql://localhost:5432/postgres
         String jdbcUrl = postgreSQLContainer.getJdbcUrl();
-        String dbUrl = jdbcUrl.substring(jdbcUrl.indexOf(':') + 1);
-        String classicJdbcUrl = "jdbc:" /* + "tracing:" */ + dbUrl;
-        classicJdbcUrl = classicJdbcUrl.replace("localhost", "127.0.0.1");
-        props.put("quarkus.datasource.jdbc.url", classicJdbcUrl);
-        String vertxJdbcUrl = "vertx-reactive:" + dbUrl;
-        props.put("quarkus.datasource.reactive.url", "vertx-reactive:" + vertxJdbcUrl);
+        String dbUrl = jdbcUrl.substring(jdbcUrl.indexOf(':') + 1).replace("jdbc:", "");
+        props.put("quarkus.datasource.reactive.url", dbUrl);
         props.put("quarkus.datasource.username", "test");
         props.put("quarkus.datasource.password", "test");
         props.put("quarkus.datasource.db-kind", "postgresql");

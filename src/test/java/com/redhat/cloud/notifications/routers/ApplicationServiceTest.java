@@ -45,7 +45,7 @@ public class ApplicationServiceTest {
     void testPoliciesApplicationAddingAndDeletion() {
         Bundle bundle = new Bundle();
         bundle.setName(BUNDLE_NAME);
-        bundle.setDisplay_name("Insights");
+        bundle.setDisplayName("Insights");
         Response response =
                 given()
                         .body(bundle)
@@ -59,7 +59,7 @@ public class ApplicationServiceTest {
 
         Application app = new Application();
         app.setName(APP_NAME);
-        app.setDisplay_name("The best app");
+        app.setDisplayName("The best app");
         app.setBundleId(UUID.fromString(returnedBundle.getString("id")));
 
         // All of these are without identityHeader
@@ -105,7 +105,7 @@ public class ApplicationServiceTest {
         // Create eventType
         EventType eventType = new EventType();
         eventType.setName(EVENT_TYPE_NAME);
-        eventType.setDisplay_name("Policies will take care of the rules");
+        eventType.setDisplayName("Policies will take care of the rules");
         eventType.setDescription("This is the description of the rule");
 
         response = given()
@@ -167,7 +167,7 @@ public class ApplicationServiceTest {
 
         Bundle bundle = new Bundle();
         bundle.setName(LOCAL_BUNDLE_NAME);
-        bundle.setDisplay_name("Insights");
+        bundle.setDisplayName("Insights");
         Response bundleResponse =
                 given()
                         .body(bundle)
@@ -183,7 +183,7 @@ public class ApplicationServiceTest {
             String LOCAL_APP_NAME = "my-app-" + i;
             Application app = new Application();
             app.setName(LOCAL_APP_NAME);
-            app.setDisplay_name("The best app");
+            app.setDisplayName("The best app");
             app.setBundleId(UUID.fromString(returnedBundle.getString("id")));
 
             given()
@@ -218,7 +218,7 @@ public class ApplicationServiceTest {
 
         Bundle bundle = new Bundle();
         bundle.setName(LOCAL_BUNDLE_NAME);
-        bundle.setDisplay_name("Insights");
+        bundle.setDisplayName("Insights");
         Bundle returnedBundle =
                 given()
                         .body(bundle)

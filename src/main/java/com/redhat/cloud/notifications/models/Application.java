@@ -1,46 +1,62 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import java.util.Date;
+import javax.validation.constraints.Size;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-public class Application {
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
+import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
+
+@Entity
+@Table(name = "applications")
+@JsonNaming(SnakeCaseStrategy.class)
+public class Application extends CreationUpdateTimestamped {
+
+    @Id
+    @GeneratedValue
+    @JsonProperty(access = READ_ONLY)
     private UUID id;
 
     @NotNull
     @Pattern(regexp = "[a-z][a-z_0-9-]*")
+    @Size(max = 255)
     private String name;
 
     @NotNull
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String display_name;
-
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Date created;
-
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Date updated;
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Set<EventType> eventTypes; // optional
+    @Schema(name = "display_name")
+    private String displayName;
 
     @NotNull
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("bundle_id")
+    @Transient
+    @Schema(name = "bundle_id")
     private UUID bundleId;
 
-    public Application() {
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "bundle_id")
+    @JsonIgnore
+    private Bundle bundle;
 
-    }
+    @OneToMany(mappedBy = "application", cascade = CascadeType.REMOVE)
+    @JsonIgnore
+    private Set<EventType> eventTypes;
 
     public UUID getId() {
         return id;
@@ -58,39 +74,55 @@ public class Application {
         this.name = name;
     }
 
-    public String getDisplay_name() {
-        return display_name;
+    public String getDisplayName() {
+        return displayName;
     }
 
-    public void setDisplay_name(String display_name) {
-        this.display_name = display_name;
-    }
-
-    @JsonProperty
-    public Date getCreated() {
-        return created;
-    }
-
-    @JsonIgnore
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-
-    @JsonProperty
-    public Date getUpdated() {
-        return updated;
-    }
-
-    @JsonIgnore
-    public void setUpdated(Date updated) {
-        this.updated = updated;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public UUID getBundleId() {
+        if (bundleId == null && bundle != null) {
+            bundleId = bundle.getId();
+        }
         return bundleId;
     }
 
     public void setBundleId(UUID bundleId) {
         this.bundleId = bundleId;
+    }
+
+    public Bundle getBundle() {
+        return bundle;
+    }
+
+    public void setBundle(Bundle bundle) {
+        this.bundle = bundle;
+    }
+
+    public Set<EventType> getEventTypes() {
+        return eventTypes;
+    }
+
+    public void setEventTypes(Set<EventType> eventTypes) {
+        this.eventTypes = eventTypes;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof Application) {
+            Application other = (Application) o;
+            return Objects.equals(id, other.id);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
