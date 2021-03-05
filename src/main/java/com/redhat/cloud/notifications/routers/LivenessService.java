@@ -1,15 +1,12 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.StuffHolder;
-import io.r2dbc.postgresql.api.PostgresqlConnection;
-import io.r2dbc.postgresql.api.PostgresqlResult;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Liveness;
-import reactor.core.publisher.Flux;
+import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -22,7 +19,7 @@ public class LivenessService implements HealthCheck {
 //    HealthCenter messagingHealth;
 
     @Inject
-    Uni<PostgresqlConnection> connectionPublisherUni;
+    Mutiny.Session session;
 
 //    public Uni<Boolean> getLiveness() {
 //        Uni<Boolean> postgresHealth = postgresConnectionHealth();
@@ -41,18 +38,10 @@ public class LivenessService implements HealthCheck {
 //    }
 
     Uni<Boolean> postgresConnectionHealth() {
-        return connectionPublisherUni.toMulti()
-                .onItem().transformToMulti(c -> Multi.createFrom().resource(() -> c,
-                        c2 -> {
-                            Flux<PostgresqlResult> execute = c2.createStatement("SELECT COUNT(1)").execute();
-
-                            return execute.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> true));
-                        })
-                        .withFinalizer(postgresqlConnection -> {
-                            postgresqlConnection.close().subscribe();
-                        }))
-                .merge().toUni()
-                .onFailure().recoverWithItem(false);
+        return session.createNativeQuery("SELECT 1")
+                .getSingleResult()
+                .replaceWith(Boolean.TRUE)
+                .onFailure().recoverWithItem(Boolean.FALSE);
     }
 
     @Override

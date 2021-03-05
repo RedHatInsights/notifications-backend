@@ -84,23 +84,24 @@ public class EndpointService {
     public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") Boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        Multi<Endpoint> endpoints;
-        Uni<Integer> count;
-
         if (targetType != null) {
             Endpoint.EndpointType endpointType = Endpoint.EndpointType.valueOf(targetType.toUpperCase());
-            endpoints = resources
-                    .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query);
-            count = resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly);
+            return resources
+                    .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query)
+                    .collect().asList()
+                    .onItem().transformToUni(endpoints ->
+                        resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly)
+                                .onItem().transform(count -> new EndpointPage(endpoints, new HashMap<>(), new Meta(count)))
+                    );
         } else {
-            endpoints = resources.getEndpoints(principal.getAccount(), query);
-            count = resources.getEndpointsCount(principal.getAccount());
+            return resources.getEndpoints(principal.getAccount(), query)
+                    .collect().asList()
+                    .onItem().transformToUni(endpoints ->
+                        resources.getEndpointsCount(principal.getAccount())
+                                .onItem().transform(count -> new EndpointPage(endpoints, new HashMap<>(), new Meta(count)))
+                    );
         }
 
-        return Uni.combine().all().unis(
-                endpoints.collectItems().asList(),
-                count
-        ).asTuple().onItem().transform(t -> new EndpointPage(t.getItem1(), new HashMap<>(), new Meta(t.getItem2())));
     }
 
     @POST

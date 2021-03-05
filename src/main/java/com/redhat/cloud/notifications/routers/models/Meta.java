@@ -7,21 +7,21 @@ import javax.validation.constraints.NotNull;
 @JsonSerialize
 public class Meta {
     @NotNull
-    private Integer count;
+    private Long count;
 
     public Meta() {
 
     }
 
-    public Meta(@NotNull Integer count) {
+    public Meta(@NotNull Long count) {
         this.count = count;
     }
 
-    public Integer getCount() {
+    public Long getCount() {
         return this.count;
     }
 
-    public void setCount(Integer count) {
+    public void setCount(Long count) {
         this.count = count;
     }
 }

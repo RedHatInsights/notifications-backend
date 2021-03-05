@@ -21,10 +21,10 @@ import java.util.UUID;
 @ApplicationScoped
 public class ResourceHelpers {
 
-    public static final String TEST_APP_NAME = "Tester";
-    public static final String TEST_APP_NAME_2 = "MyOtherTester";
-    public static final String TEST_EVENT_TYPE_FORMAT = "EventType%d";
-    public static final String TEST_BUNDLE_NAME = "TestBundle";
+    public static final String TEST_APP_NAME = "tester";
+    public static final String TEST_APP_NAME_2 = "myothertester";
+    public static final String TEST_EVENT_TYPE_FORMAT = "eventtype%d";
+    public static final String TEST_BUNDLE_NAME = "testbundle";
 
     @Inject
     EndpointResources resources;

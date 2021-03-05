@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 
 import java.util.List;
@@ -61,6 +62,7 @@ public class NotificationServiceTest {
     }
 
     @BeforeAll
+    @ActivateRequestContext // FIXME This may be required because of a Quarkus bug... to be investigated
     void init() {
         helpers.createTestAppAndEventTypes();
     }

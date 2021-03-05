@@ -75,7 +75,10 @@ public class EndpointProcessor {
         Notification notification = new Notification(action, null);
         Uni<NotificationHistory> notificationResult = notificationProcessor.process(notification);
 
-        return Uni.combine().all().unis(endpointsCallResult.onItem().ignoreAsUni(), notificationResult).discardItems();
+        return endpointsCallResult
+                .onItem().ignoreAsUni()
+                .replaceWith(notificationResult)
+                .replaceWith(Uni.createFrom().voidItem());
     }
 
     public EndpointTypeProcessor endpointTypeToProcessor(Endpoint.EndpointType endpointType) {

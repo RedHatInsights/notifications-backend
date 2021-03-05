@@ -2,12 +2,15 @@ package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
+
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 
 /**
  * A bundle is an aggregation of applications.
@@ -24,13 +27,15 @@ public class Bundle {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     String display_name;
 
+    @JsonProperty(access = READ_ONLY)
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Date created;
+    private LocalDateTime created;
 
+    @JsonProperty(access = READ_ONLY)
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Date updated;
+    private LocalDateTime updated;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Set<Application> applications;
@@ -67,19 +72,19 @@ public class Bundle {
         this.display_name = display_name;
     }
 
-    public Date getCreated() {
+    public LocalDateTime getCreated() {
         return created;
     }
 
-    public void setCreated(Date created) {
+    public void setCreated(LocalDateTime created) {
         this.created = created;
     }
 
-    public Date getUpdated() {
+    public LocalDateTime getUpdated() {
         return updated;
     }
 
-    public void setUpdated(Date updated) {
+    public void setUpdated(LocalDateTime updated) {
         this.updated = updated;
     }
 

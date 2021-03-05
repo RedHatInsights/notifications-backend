@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.models;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -21,7 +21,7 @@ public class NotificationHistory {
     private long invocationTime;
     private boolean invocationResult;
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private Date created;
+    private LocalDateTime created;
     private Map<String, Object> details;
 
     private String eventId;
@@ -66,11 +66,11 @@ public class NotificationHistory {
         this.invocationResult = invocationResult;
     }
 
-    public Date getCreated() {
+    public LocalDateTime getCreated() {
         return created;
     }
 
-    public void setCreated(Date created) {
+    public void setCreated(LocalDateTime created) {
         this.created = created;
     }
 

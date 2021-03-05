@@ -10,7 +10,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class Endpoint {
@@ -45,10 +45,10 @@ public class Endpoint {
     private EndpointType type;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private Date created;
+    private LocalDateTime created;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private Date updated;
+    private LocalDateTime updated;
 
     @Schema(oneOf = { WebhookAttributes.class, EmailSubscriptionAttributes.class })
     @JsonTypeInfo(
@@ -112,22 +112,22 @@ public class Endpoint {
     }
 
     @JsonProperty
-    public Date getCreated() {
+    public LocalDateTime getCreated() {
         return created;
     }
 
     @JsonProperty
-    public Date getUpdated() {
+    public LocalDateTime getUpdated() {
         return updated;
     }
 
     @JsonIgnore
-    public void setCreated(Date created) {
+    public void setCreated(LocalDateTime created) {
         this.created = created;
     }
 
     @JsonIgnore
-    public void setUpdated(Date updated) {
+    public void setUpdated(LocalDateTime updated) {
         this.updated = updated;
     }
 

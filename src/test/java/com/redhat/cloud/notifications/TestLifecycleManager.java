@@ -76,8 +76,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         String classicJdbcUrl = "jdbc:" /* + "tracing:" */ + dbUrl;
         classicJdbcUrl = classicJdbcUrl.replace("localhost", "127.0.0.1");
         props.put("quarkus.datasource.jdbc.url", classicJdbcUrl);
-        String vertxJdbcUrl = "vertx-reactive:" + dbUrl;
-        props.put("quarkus.datasource.reactive.url", "vertx-reactive:" + vertxJdbcUrl);
+        props.put("quarkus.datasource.reactive.url", dbUrl);
         props.put("quarkus.datasource.username", "test");
         props.put("quarkus.datasource.password", "test");
         props.put("quarkus.datasource.db-kind", "postgresql");

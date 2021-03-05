@@ -13,17 +13,13 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.platform.version>1.10.1.Final</quarkus.platform.version>
+        <quarkus.platform.version>1.12.1.Final</quarkus.platform.version>
         <quarkus-plugin.version>${quarkus.platform.version}</quarkus-plugin.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
         <surefire-plugin.version>2.22.1</surefire-plugin.version>
-        <!-- r2dbc versions do not necessarily align -->
-        <r2dbc-postgres.version>0.8.6.RELEASE</r2dbc-postgres.version>
-        <r2dbc-pool.version>0.8.5.RELEASE</r2dbc-pool.version>
         <checkstyle-plugin.version>3.1.1</checkstyle-plugin.version>
         <checkstyle.version>8.36.2</checkstyle.version>
-        <mutiny-reactor.version>0.10.0</mutiny-reactor.version>
         <testcontainers.version>1.15.1</testcontainers.version>
         <mockserver-client-java.version>5.5.4</mockserver-client-java.version> <!-- not the newest, but matches what is in org.testcontainers:mockserver -->
         <version.cloud-commons>0.1.1</version.cloud-commons>
@@ -119,6 +115,14 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy-qute</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-hibernate-reactive</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-reactive-pg-client</artifactId>
+        </dependency>
 
         <!-- Related to Quarkus, but outside the Quarkus namespace -->
         <!-- https://github.com/quarkusio/quarkus/issues/12913 -->
@@ -135,11 +139,6 @@
             <groupId>io.smallrye.reactive</groupId>
             <artifactId>smallrye-mutiny-vertx-web-client</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.smallrye.reactive</groupId>
-            <artifactId>mutiny-reactor</artifactId>
-            <version>${mutiny-reactor.version}</version>
-        </dependency>
 
         <!-- Flyway specific dependencies -->
         <dependency>
@@ -149,18 +148,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-postgresql</artifactId>
-        </dependency>
-
-        <!-- R2DBC dependencies -->
-        <dependency>
-            <groupId>io.r2dbc</groupId> <!-- org.postgresql after 0.9.* -->
-            <artifactId>r2dbc-postgresql</artifactId>
-            <version>${r2dbc-postgres.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.r2dbc</groupId>
-            <artifactId>r2dbc-pool</artifactId>
-            <version>${r2dbc-pool.version}</version>
         </dependency>
 
         <!-- Test dependencies -->
