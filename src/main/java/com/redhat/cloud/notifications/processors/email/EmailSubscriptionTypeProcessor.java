@@ -165,7 +165,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     state -> fetcher.apply(state.getAndIncrement())
                 )
                 .until(page -> page.getData().isEmpty())
-                .onItem().transform(Page::getData)
+                .onItem().transform(p -> {
+                    return p.getData();
+                })
                 .onItem().disjoint();
     }
 
@@ -180,17 +182,17 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         for (Recipient recipient : properties.getRecipients()) {
             Multi<RbacUser> users;
             if (recipient.getGroupId() == null) {
-                users = fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), ELEMENTS_PER_PAGE, ELEMENTS_PER_PAGE * page).subscribeAsCompletionStage());
+                users = fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), ELEMENTS_PER_PAGE * page, ELEMENTS_PER_PAGE).subscribeAsCompletionStage());
             } else {
                 // Todo: `getGroupUsers` does not support "onlyAdmins" here. We would need to ask for support if we want it or filter manually here.
                 users = rbacServiceToService.getGroup(item.getTenant(), recipient.getGroupId())
                         .onItem().transformToMulti(rbacGroup -> {
                             if (rbacGroup.platformDefault) {
                                 // Platform default groups do not have the users in the `getGroupUsers` function.
-                                return fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), ELEMENTS_PER_PAGE, ELEMENTS_PER_PAGE * page).subscribeAsCompletionStage());
+                                return fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), ELEMENTS_PER_PAGE * page, ELEMENTS_PER_PAGE).subscribeAsCompletionStage());
                             }
 
-                            return fetchUsers(page -> rbacServiceToService.getGroupUsers(item.getTenant(), recipient.getGroupId(), ELEMENTS_PER_PAGE, ELEMENTS_PER_PAGE * page).subscribeAsCompletionStage());
+                            return fetchUsers(page -> rbacServiceToService.getGroupUsers(item.getTenant(), recipient.getGroupId(), ELEMENTS_PER_PAGE * page, ELEMENTS_PER_PAGE).subscribeAsCompletionStage());
                         });
             }
 
@@ -370,7 +372,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     EmailSubscriptionAttributes emailSubscriptionAttributes = new EmailSubscriptionAttributes();
                     Recipient recipient = new Recipient();
                     recipient.setGroupId(null);
-                    recipient.getIgnorePreferences(false);
+                    recipient.setIgnorePreferences(false);
                     recipient.setOnlyAdmins(false);
 
                     emailSubscriptionAttributes.setRecipients(List.of(recipient));

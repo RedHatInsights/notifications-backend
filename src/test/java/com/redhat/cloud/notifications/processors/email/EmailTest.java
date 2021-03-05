@@ -10,22 +10,30 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
+import com.redhat.cloud.notifications.models.Meta;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.Page;
 import com.redhat.cloud.notifications.models.endpoint.attributes.EmailSubscriptionAttributes;
+import com.redhat.cloud.notifications.models.endpoint.attributes.EmailSubscriptionAttributes.Recipient;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
+import com.redhat.cloud.notifications.rbac.RbacServiceToService;
+import com.redhat.cloud.notifications.rbac.RbacUser;
 import com.redhat.cloud.notifications.templates.LocalDateTimeExtension;
 import io.quarkus.scheduler.ScheduledExecution;
 import io.quarkus.scheduler.Trigger;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Vertx;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.mockito.Mockito;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
 
@@ -40,6 +48,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
@@ -73,9 +82,14 @@ public class EmailTest {
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
 
+    @InjectMock
+    @RestClient
+    RbacServiceToService rbacServiceToService;
+
     @BeforeAll
     void init() {
         emailProcessor = new EmailSubscriptionTypeProcessor();
+        emailProcessor.rbacServiceToService = rbacServiceToService;
         emailProcessor.vertx = vertx;
         emailProcessor.webhookSender = webhookTypeProcessor;
         emailProcessor.emailAggregationResources = emailAggregationResources;
@@ -151,6 +165,13 @@ public class EmailTest {
         emailActionMessage.setAccountId(tenant);
 
         EmailSubscriptionAttributes emailAttr = new EmailSubscriptionAttributes();
+        Recipient emailRecipient = new Recipient();
+
+        // Send to subscribed users
+        emailRecipient.setOnlyAdmins(false);
+        emailRecipient.setGroupId(null);
+        emailRecipient.setIgnorePreferences(false);
+        emailAttr.setRecipients(List.of(emailRecipient));
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
@@ -158,6 +179,17 @@ public class EmailTest {
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
         ep.setProperties(emailAttr);
+
+        List<RbacUser> rbacUsers = List.of(usernames).stream().map(s -> {
+            RbacUser rbacUser = new RbacUser();
+            rbacUser.username = "";
+            return rbacUser;
+        }).collect(Collectors.toList());
+
+        Mockito.when(rbacServiceToService.getUsers(tenant, false, 0, 40)).thenReturn(Uni.createFrom().item(new Page<>(rbacUsers, new HashMap<>(), new Meta())));
+        Mockito.when(rbacServiceToService.getUsers(tenant, false, 40, 40)).thenReturn(Uni.createFrom().item(new Page<>(List.of(), new HashMap<>(), new Meta())));
+
+        Page<RbacUser> user = rbacServiceToService.getUsers(tenant, false, 0, 40).await().indefinitely();
 
         Notification notif = new Notification(emailActionMessage, ep);
 

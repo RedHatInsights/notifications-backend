@@ -5,6 +5,7 @@ import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @Path("/api/rbac/v1")
 @RegisterRestClient(configKey = "rbac")
 @RegisterProvider(RbacServiceToServiceAuthRequestFilter.class)
+@ApplicationScoped
 public interface RbacServiceToService {
 
     @GET
