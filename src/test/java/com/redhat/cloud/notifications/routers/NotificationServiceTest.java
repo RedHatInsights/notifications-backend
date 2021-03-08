@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.MockServerClientConfig;
+import com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -376,6 +377,38 @@ public class NotificationServiceTest {
         assertEquals(2, eventTypes.length);
         assertEquals(ev0.getId(), eventTypes[1].getId());
         assertEquals(ev1.getId(), eventTypes[0].getId());
+    }
+
+    @Test
+    void testGetApplicationFacets() {
+        String tenant = "test";
+        String userName = "user";
+        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
+        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, RbacAccess.READ_ACCESS);
+        given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/facets/applications?bundleName=insights")
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    void testGetBundlesFacets() {
+        String tenant = "test";
+        String userName = "user";
+        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
+        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, RbacAccess.READ_ACCESS);
+        given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/facets/bundles")
+                .then()
+                .statusCode(200);
     }
 
 }

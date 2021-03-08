@@ -4,13 +4,14 @@ import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.RbacIdentityProvider;
 import com.redhat.cloud.notifications.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.models.ApplicationFacet;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.Notification;
+import com.redhat.cloud.notifications.routers.models.Facet;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Vertx;
@@ -46,6 +47,9 @@ public class NotificationService {
 
     @Inject
     Vertx vertx;
+
+    @Inject
+    BundleResources bundleResources;
 
     @Inject
     ApplicationResources apps;
@@ -180,7 +184,14 @@ public class NotificationService {
     @GET
     @Path("/facets/applications")
     @Operation(summary = "Return a thin list of configured applications. This can be used to configure a filter in the UI")
-    public Multi<ApplicationFacet> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
-        return apps.getApplications(bundleName).onItem().transform(a -> new ApplicationFacet(a.getName(), a.getId().toString()));
+    public Multi<Facet> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
+        return apps.getApplications(bundleName).onItem().transform(a -> new Facet(a.getId().toString(), a.getName(), a.getDisplay_name()));
+    }
+
+    @GET
+    @Path("/facets/bundles")
+    @Operation(summary = "Return a thin list of configured bundles. This can be used to configure a filter in the UI")
+    public Multi<Facet> getBundleFacets(@Context SecurityContext sec) {
+        return bundleResources.getBundles().onItem().transform(b -> new Facet(b.getId().toString(), b.getName(), b.getDisplay_name()));
     }
 }
