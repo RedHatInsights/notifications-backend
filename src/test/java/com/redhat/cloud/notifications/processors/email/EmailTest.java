@@ -129,6 +129,12 @@ public class EmailTest {
             helpers.createSubscription(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
         }
 
+        String[] validUsers = new String[]{"foo", "admin", "abc", "cdf"};
+        // bar does not exist, abc and cdf are not subscribed
+        String[] targetUsers = new String[]{"foo", "admin"};
+
+        mockUsersFromTenant(tenant, validUsers);
+
         final List<String> bodyRequests = new ArrayList<>();
 
         ExpectationResponseCallback verifyEmptyRequest = req -> {
@@ -183,14 +189,123 @@ public class EmailTest {
         ep.setEnabled(true);
         ep.setProperties(emailAttr);
 
-        List<RbacUser> rbacUsers = List.of(usernames).stream().map(s -> {
-            RbacUser rbacUser = new RbacUser();
-            rbacUser.username = "";
-            return rbacUser;
-        }).collect(Collectors.toList());
+        Notification notif = new Notification(emailActionMessage, ep);
 
-        Mockito.when(rbacServiceToService.getUsers(tenant, false, 0, rbacElementsPerPage)).thenReturn(Uni.createFrom().item(new Page<>(rbacUsers, new HashMap<>(), new Meta())));
-        Mockito.when(rbacServiceToService.getUsers(tenant, false, rbacElementsPerPage, rbacElementsPerPage)).thenReturn(Uni.createFrom().item(new Page<>(List.of(), new HashMap<>(), new Meta())));
+        try {
+            Uni<NotificationHistory> process = emailProcessor.process(notif);
+            NotificationHistory history = process.await().indefinitely();
+            assertTrue(history.isInvocationResult());
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail(e);
+        } finally {
+            // Remove expectations
+            mockServerConfig.getMockServerClient().clear(postReq);
+        }
+
+        assertEquals(1, bodyRequests.size());
+        JsonObject body = new JsonObject(bodyRequests.get(0));
+        JsonArray emails = body.getJsonArray("emails");
+        assertNotNull(emails);
+        assertEquals(1, emails.size());
+        JsonObject firstEmail = emails.getJsonObject(0);
+        JsonArray recipients = firstEmail.getJsonArray("recipients");
+        assertEquals(1, recipients.size());
+        assertEquals("no-reply@redhat.com", recipients.getString(0));
+
+        JsonArray bccList = firstEmail.getJsonArray("bccList");
+        assertEquals(targetUsers.length, bccList.size());
+
+        List<String> sortedUsernames = Arrays.asList(targetUsers);
+        sortedUsernames.sort(Comparator.naturalOrder());
+
+        List<String> sortedBccList = new ArrayList<String>(bccList.getList());
+        sortedBccList.sort(Comparator.naturalOrder());
+
+        assertIterableEquals(sortedUsernames, sortedBccList);
+
+        String bodyRequest = bodyRequests.get(0);
+
+        for (String key : triggers.keySet()) {
+            String value = triggers.get(key);
+            assertTrue(bodyRequest.contains(key), "Body should contain trigger key" + key);
+            assertTrue(bodyRequest.contains(value), "Body should contain trigger value" + value);
+        }
+
+        // Display name
+        assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
+
+        // Formatted date
+        assertTrue(bodyRequest.contains("03 Aug 2020 15:22 UTC"));
+    }
+
+    @Test
+    void testEmailSubscriptionInstantSkipSubscription() {
+
+        final String tenant = "instant-email-tenant-skip";
+        final String[] usernames = {"foo", "bar", "admin"};
+        String bundle = "insights";
+        String application = "policies";
+
+        for (String username : usernames) {
+            helpers.createSubscription(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
+        }
+
+        // bar is no longer a user
+        // abc and def are not subscribed
+        String[] targetUsers = new String[]{"abc", "def", "admin", "foo"};
+        mockUsersFromTenant(tenant, targetUsers);
+        final List<String> bodyRequests = new ArrayList<>();
+
+        ExpectationResponseCallback verifyEmptyRequest = req -> {
+            assertEquals(emailProcessor.bopApiToken, req.getHeader(EmailSubscriptionTypeProcessor.BOP_APITOKEN_HEADER).get(0));
+            assertEquals(emailProcessor.bopClientId, req.getHeader(EmailSubscriptionTypeProcessor.BOP_CLIENT_ID_HEADER).get(0));
+            assertEquals(emailProcessor.bopEnv, req.getHeader(EmailSubscriptionTypeProcessor.BOP_ENV_HEADER).get(0));
+            bodyRequests.add(req.getBodyAsString());
+            return response().withStatusCode(200);
+        };
+
+        HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
+
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle(bundle);
+        emailActionMessage.setApplication(application);
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        emailActionMessage.setEventType("testEmailSubscriptionInstant");
+
+        Map<String, String> triggers = new HashMap<>();
+        triggers.put("abcd-efghi-jkl-lmn", "Foobar");
+        triggers.put("0123-456-789-5721f", "Latest foo is installed");
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("triggers", triggers);
+        payload.put("display_name", "My test machine");
+        payload.put("system_check_in", "2020-08-03T15:22:42.199046");
+        payload.put("policy_id", "0123-456-789-5721f");
+        payload.put("policy_name", "not-used-name");
+        payload.put("policy_description", "not-used-desc");
+        payload.put("policy_condition", "not-used-condition");
+        payload.put("insights_id", "host-01");
+        payload.put("tags", new JsonArray());
+
+        emailActionMessage.setPayload(payload);
+        emailActionMessage.setAccountId(tenant);
+
+        EmailSubscriptionAttributes emailAttr = new EmailSubscriptionAttributes();
+        Recipient emailRecipient = new Recipient();
+
+        // Send to subscribed users
+        emailRecipient.setOnlyAdmins(false);
+        emailRecipient.setGroupId(null);
+        emailRecipient.setIgnorePreferences(true);
+        emailAttr.setRecipients(List.of(emailRecipient));
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        ep.setName("positive feeling");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(emailAttr);
 
         Notification notif = new Notification(emailActionMessage, ep);
 
@@ -217,9 +332,9 @@ public class EmailTest {
         assertEquals("no-reply@redhat.com", recipients.getString(0));
 
         JsonArray bccList = firstEmail.getJsonArray("bccList");
-        assertEquals(usernames.length, bccList.size());
+        assertEquals(targetUsers.length, bccList.size());
 
-        List<String> sortedUsernames = Arrays.asList(usernames);
+        List<String> sortedUsernames = Arrays.asList(targetUsers);
         sortedUsernames.sort(Comparator.naturalOrder());
 
         List<String> sortedBccList = new ArrayList<String>(bccList.getList());
@@ -289,6 +404,13 @@ public class EmailTest {
         emailActionMessage.setAccountId(tenant);
 
         EmailSubscriptionAttributes emailAttr = new EmailSubscriptionAttributes();
+        Recipient emailRecipient = new Recipient();
+
+        // Send to subscribed users
+        emailRecipient.setOnlyAdmins(false);
+        emailRecipient.setGroupId(null);
+        emailRecipient.setIgnorePreferences(false);
+        emailAttr.setRecipients(List.of(emailRecipient));
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
@@ -296,6 +418,8 @@ public class EmailTest {
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
         ep.setProperties(emailAttr);
+
+        mockUsersFromTenant(tenant, usernames);
 
         Notification notif = new Notification(emailActionMessage, ep);
 
@@ -338,6 +462,10 @@ public class EmailTest {
         for (String username : noSubscribedUsersTenantTestUser) {
             helpers.removeSubscription(noSubscribedUsersTenant, username, bundle, application, EmailSubscriptionType.DAILY);
         }
+
+        mockUsersFromTenant(tenant1, tenant1Usernames);
+        mockUsersFromTenant(tenant2, tenant2Usernames);
+        mockUsersFromTenant(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser);
 
         final Instant nowPlus5HoursInstant = Instant.now().plus(Duration.ofHours(5));
         final LocalDateTime startTime = LocalDateTime.ofInstant(nowPlus5HoursInstant.minus(Duration.ofDays(1)), ZoneId.systemDefault());
@@ -505,5 +633,16 @@ public class EmailTest {
         assertIterableEquals(sortedUsernames, sortedBccList);
 
         return email;
+    }
+
+    private void mockUsersFromTenant(String tenant, String[] usernames) {
+        List<RbacUser> rbacUsers = List.of(usernames).stream().map(s -> {
+            RbacUser rbacUser = new RbacUser();
+            rbacUser.username = s;
+            return rbacUser;
+        }).collect(Collectors.toList());
+
+        Mockito.when(rbacServiceToService.getUsers(tenant, false, 0, rbacElementsPerPage)).thenReturn(Uni.createFrom().item(new Page<>(rbacUsers, new HashMap<>(), new Meta())));
+        Mockito.when(rbacServiceToService.getUsers(tenant, false, rbacElementsPerPage, rbacElementsPerPage)).thenReturn(Uni.createFrom().item(new Page<>(List.of(), new HashMap<>(), new Meta())));
     }
 }

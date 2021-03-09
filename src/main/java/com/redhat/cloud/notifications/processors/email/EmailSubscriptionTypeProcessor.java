@@ -168,9 +168,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     state -> fetcher.apply(state.getAndIncrement())
                 )
                 .until(page -> page.getData().isEmpty())
-                .onItem().transform(p -> {
-                    return p.getData();
-                })
+                .onItem().transform(Page::getData)
                 .onItem().disjoint();
     }
 
@@ -370,6 +368,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
                     // Configure a default endpoint that sends to subscribed users
                     // Todo: We need to add an endpoint to the Aggregation and update this logic.
+                    // In the future we will have a designated endpoint for the daily emails
                     Endpoint endpoint = new Endpoint();
                     EmailSubscriptionAttributes emailSubscriptionAttributes = new EmailSubscriptionAttributes();
                     Recipient recipient = new Recipient();
@@ -381,7 +380,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     endpoint.setProperties(emailSubscriptionAttributes);
 
                     // We don't have any endpoint as this aggregates multiple endpoints
-                    Notification item = new Notification(action, null);
+                    Notification item = new Notification(action, endpoint);
 
                     return sendEmail(item, emailSubscriptionType).onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
                 }).merge()
