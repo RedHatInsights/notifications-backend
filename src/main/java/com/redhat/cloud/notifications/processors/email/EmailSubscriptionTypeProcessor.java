@@ -82,6 +82,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @RestClient
     RbacServiceToService rbacServiceToService;
 
+    @ConfigProperty(name = "processor.email.rbac_elements_per_page")
+    Integer rbacElementsPerPage;
+
     @ConfigProperty(name = "processor.email.bop_url")
     String bopUrl;
 
@@ -174,7 +177,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     private Uni<Set<String>> recipientsForNotifcation(Notification item, EmailSubscriptionType emailSubscriptionType) {
         final EmailSubscriptionAttributes properties = (EmailSubscriptionAttributes) item.getEndpoint().getProperties();
         final List<Publisher<Set<String>>> userSources = new ArrayList<>();
-        final int ELEMENTS_PER_PAGE = 40;
 
         final Uni<HashSet<String>> subscriptions = this.subscriptionResources.getEmailSubscribers(item.getTenant(), item.getAction().getBundle(), item.getAction().getApplication(), emailSubscriptionType)
                 .collectItems().in(HashSet<String>::new, (usernames, emailSubscription) -> usernames.add(emailSubscription.getUsername())).memoize().indefinitely();
@@ -182,17 +184,17 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         for (Recipient recipient : properties.getRecipients()) {
             Multi<RbacUser> users;
             if (recipient.getGroupId() == null) {
-                users = fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), ELEMENTS_PER_PAGE * page, ELEMENTS_PER_PAGE).subscribeAsCompletionStage());
+                users = fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), rbacElementsPerPage * page, rbacElementsPerPage).subscribeAsCompletionStage());
             } else {
                 // Todo: `getGroupUsers` does not support "onlyAdmins" here. We would need to ask for support if we want it or filter manually here.
                 users = rbacServiceToService.getGroup(item.getTenant(), recipient.getGroupId())
                         .onItem().transformToMulti(rbacGroup -> {
                             if (rbacGroup.platformDefault) {
                                 // Platform default groups do not have the users in the `getGroupUsers` function.
-                                return fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), ELEMENTS_PER_PAGE * page, ELEMENTS_PER_PAGE).subscribeAsCompletionStage());
+                                return fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), rbacElementsPerPage * page, rbacElementsPerPage).subscribeAsCompletionStage());
                             }
 
-                            return fetchUsers(page -> rbacServiceToService.getGroupUsers(item.getTenant(), recipient.getGroupId(), ELEMENTS_PER_PAGE * page, ELEMENTS_PER_PAGE).subscribeAsCompletionStage());
+                            return fetchUsers(page -> rbacServiceToService.getGroupUsers(item.getTenant(), recipient.getGroupId(), rbacElementsPerPage * page, rbacElementsPerPage).subscribeAsCompletionStage());
                         });
             }
 

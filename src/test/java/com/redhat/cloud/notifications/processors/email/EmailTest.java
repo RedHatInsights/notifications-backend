@@ -65,6 +65,8 @@ public class EmailTest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
+    Integer rbacElementsPerPage = 40;
+
     @Inject
     WebhookTypeProcessor webhookTypeProcessor;
 
@@ -89,6 +91,7 @@ public class EmailTest {
     @BeforeAll
     void init() {
         emailProcessor = new EmailSubscriptionTypeProcessor();
+        emailProcessor.rbacElementsPerPage = rbacElementsPerPage;
         emailProcessor.rbacServiceToService = rbacServiceToService;
         emailProcessor.vertx = vertx;
         emailProcessor.webhookSender = webhookTypeProcessor;
@@ -186,10 +189,8 @@ public class EmailTest {
             return rbacUser;
         }).collect(Collectors.toList());
 
-        Mockito.when(rbacServiceToService.getUsers(tenant, false, 0, 40)).thenReturn(Uni.createFrom().item(new Page<>(rbacUsers, new HashMap<>(), new Meta())));
-        Mockito.when(rbacServiceToService.getUsers(tenant, false, 40, 40)).thenReturn(Uni.createFrom().item(new Page<>(List.of(), new HashMap<>(), new Meta())));
-
-        Page<RbacUser> user = rbacServiceToService.getUsers(tenant, false, 0, 40).await().indefinitely();
+        Mockito.when(rbacServiceToService.getUsers(tenant, false, 0, rbacElementsPerPage)).thenReturn(Uni.createFrom().item(new Page<>(rbacUsers, new HashMap<>(), new Meta())));
+        Mockito.when(rbacServiceToService.getUsers(tenant, false, rbacElementsPerPage, rbacElementsPerPage)).thenReturn(Uni.createFrom().item(new Page<>(List.of(), new HashMap<>(), new Meta())));
 
         Notification notif = new Notification(emailActionMessage, ep);
 
