@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.routers.models.Facet;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.TestInstance;
 import javax.inject.Inject;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
@@ -386,13 +388,18 @@ public class NotificationServiceTest {
         String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
         Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
         mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, RbacAccess.READ_ACCESS);
-        given()
+        List<Facet> applications = given()
                 .header(localIdentityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/facets/applications?bundleName=insights")
                 .then()
-                .statusCode(200);
+                .statusCode(200).extract().response().jsonPath().getList(".", Facet.class);
+
+        assertTrue(applications.size() > 0);
+        Optional<Facet> policies = applications.stream().filter(facet -> facet.getName().equals("policies")).findFirst();
+        assertTrue(policies.isPresent());
+        assertEquals("Policies", policies.get().getDisplayName());
     }
 
     @Test
@@ -402,13 +409,18 @@ public class NotificationServiceTest {
         String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
         Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
         mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, RbacAccess.READ_ACCESS);
-        given()
+        List<Facet> bundles = given()
                 .header(localIdentityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/facets/bundles")
                 .then()
-                .statusCode(200);
+                .statusCode(200).extract().response().jsonPath().getList(".", Facet.class);
+
+        assertTrue(bundles.size() > 0);
+        Optional<Facet> insights = bundles.stream().filter(facet -> facet.getName().equals("insights")).findFirst();
+        assertTrue(insights.isPresent());
+        assertEquals("Insights", insights.get().getDisplayName());
     }
 
 }
