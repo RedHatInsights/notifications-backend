@@ -29,7 +29,7 @@
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <maven-exec-plugin.version>3.0.0</maven-exec-plugin.version>
-        <insights-notification-schemas-java.version>0.1</insights-notification-schemas-java.version>
+        <insights-notification-schemas-java.version>0.2</insights-notification-schemas-java.version>
     </properties>
     <dependencyManagement>
         <dependencies>
