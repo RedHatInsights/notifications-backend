@@ -2,9 +2,9 @@ package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.vertx.core.json.JsonObject;
 
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 public class NotificationHistory {
@@ -22,7 +22,7 @@ public class NotificationHistory {
     private boolean invocationResult;
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Date created;
-    private JsonObject details;
+    private Map<String, Object> details;
 
     private String eventId;
 
@@ -74,11 +74,11 @@ public class NotificationHistory {
         this.created = created;
     }
 
-    public JsonObject getDetails() {
+    public Map<String, Object> getDetails() {
         return details;
     }
 
-    public void setDetails(JsonObject details) {
+    public void setDetails(Map<String, Object> details) {
         this.details = details;
     }
 

@@ -41,7 +41,7 @@ public class NotificationResources {
                             .bind("$5", history.getEventId());
 
                     if (history.getDetails() != null) {
-                        st.bind("$6", Json.of(history.getDetails().encode()));
+                        st.bind("$6", Json.of(new JsonObject(history.getDetails()).encode()));
                     } else {
                         st.bindNull("$6", Json.class);
                     }

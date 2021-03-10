@@ -106,7 +106,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                                 details.put("code", resp.statusCode());
                                 // This isn't async body reading, lets hope vertx handles it async underneath before calling this apply method
                                 details.put("response_body", resp.bodyAsString());
-                                history.setDetails(details);
+                                history.setDetails(details.getMap());
                             }
 
                             return history;
@@ -125,7 +125,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                             details.put("url", reqImpl.uri());
                             details.put("method", reqImpl.method());
                             details.put("error_message", t.getMessage()); // TODO This message isn't always the most descriptive..
-                            history.setDetails(details);
+                            history.setDetails(details.getMap());
 
                             if (t instanceof ConnectException) {
                                 // Connection refused for example

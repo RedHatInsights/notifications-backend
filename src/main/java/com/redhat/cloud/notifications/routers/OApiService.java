@@ -54,7 +54,7 @@ public class OApiService {
     @GET
     @Path("/{what}/v1.0/openapi.json")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<JsonObject> serveOpenAPI(@PathParam("what") String what) {
+    public Uni<String> serveOpenAPI(@PathParam("what") String what) {
 
         if (!whats.contains(what)) {
             throw new WebApplicationException("No openapi file for [" + what + "] found.", 404);
@@ -65,7 +65,8 @@ public class OApiService {
                 .onItem()
                 .transform(response ->
                         filterJson(response.bodyAsJsonObject(), what)
-                );
+                )
+                .onItem().transform(JsonObject::encode);
     }
 
     private JsonObject filterJson(JsonObject oapiModelJson, String what) {

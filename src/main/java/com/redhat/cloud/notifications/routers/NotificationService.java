@@ -10,7 +10,6 @@ import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.routers.models.Facet;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -57,27 +56,29 @@ public class NotificationService {
     @Inject
     EndpointResources resources;
 
-    @GET
-    @Produces(MediaType.SERVER_SENT_EVENTS)
-    @Path("/updates")
-    public Multi<Notification> getNotificationUpdates(@Context SecurityContext sec) {
-        // TODO Check the Notification type if we want something else
-        // TODO Process:
-        //      - Fetch the last unread notifications (with some limit?)
-        //         - If we're not previously subscribed, add the last n-days of notifications to our unread list?
-        //          - Add subscription to our subscription base to receive future notifications
-        //      - Subscribe to VertX eventBus listening for: notifications<tenantId><userId>
-        return vertx.eventBus().consumer(getAddress(sec.getUserPrincipal()))
-                .toMulti()
-                // TODO Verify that toMulti subscribes to a hot stream, not cold!
-                .onItem()
-                .transform(m -> (Notification) m.body());
-    }
+// We do not yet use this API yet and the return type is polluting the openapi with "internal details" because we are
+// directly using an avro generated code.
+//    @GET
+//    @Produces(MediaType.SERVER_SENT_EVENTS)
+//    @Path("/updates")
+//    public Multi<Notification> getNotificationUpdates(@Context SecurityContext sec) {
+//        // TODO Check the Notification type if we want something else
+//        // TODO Process:
+//        //      - Fetch the last unread notifications (with some limit?)
+//        //         - If we're not previously subscribed, add the last n-days of notifications to our unread list?
+//        //          - Add subscription to our subscription base to receive future notifications
+//        //      - Subscribe to VertX eventBus listening for: notifications<tenantId><userId>
+//        return vertx.eventBus().consumer(getAddress(sec.getUserPrincipal()))
+//                .toMulti()
+//                // TODO Verify that toMulti subscribes to a hot stream, not cold!
+//                .onItem()
+//                .transform(m -> (Notification) m.body());
+//    }
 
     @DELETE
     @Path("/{id}")
-    @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> markRead(@Context SecurityContext sec, Integer id) {
+    @APIResponse(responseCode = "204", description = "Notification has been marked as read", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    public Uni<Response> markRead(@Context SecurityContext sec, @PathParam("id") Integer id) {
         // Mark the notification id for <tenantId><userId> 's subscription as read
         return Uni.createFrom().nullItem();
     }
@@ -135,7 +136,7 @@ public class NotificationService {
     @DELETE
     @Path("/eventTypes/{eventTypeId}/{endpointId}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @APIResponse(responseCode = "204", description = "Integration has been removed from the event type", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> unlinkEndpointFromEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") UUID eventTypeId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.unlinkEndpoint(principal.getAccount(), endpointId, eventTypeId)
@@ -173,7 +174,7 @@ public class NotificationService {
     @DELETE
     @Path("/defaults/{endpointId}")
     @Operation(summary = "Remove an integration from the list of configured default actions.")
-    @APIResponse(responseCode = "204", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @APIResponse(responseCode = "204", description = "Integration has been removed from the default actions", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<Response> deleteEndpointFromDefaults(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
