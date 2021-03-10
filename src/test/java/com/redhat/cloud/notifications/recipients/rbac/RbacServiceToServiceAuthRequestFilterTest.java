@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.rbac;
+package com.redhat.cloud.notifications.recipients.rbac;
 
 import org.jboss.resteasy.client.jaxrs.internal.ClientConfiguration;
 import org.jboss.resteasy.client.jaxrs.internal.ClientInvocation;

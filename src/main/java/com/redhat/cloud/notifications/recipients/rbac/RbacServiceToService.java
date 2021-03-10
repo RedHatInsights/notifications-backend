@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.rbac;
+package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.models.Page;
 import io.smallrye.mutiny.Uni;

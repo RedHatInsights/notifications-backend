@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.rbac;
+package com.redhat.cloud.notifications.recipients.rbac;
 
 public class RbacUser {
 

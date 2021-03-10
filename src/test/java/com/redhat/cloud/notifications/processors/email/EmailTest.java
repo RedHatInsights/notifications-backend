@@ -17,8 +17,9 @@ import com.redhat.cloud.notifications.models.Page;
 import com.redhat.cloud.notifications.models.endpoint.attributes.EmailSubscriptionAttributes;
 import com.redhat.cloud.notifications.models.endpoint.attributes.EmailSubscriptionAttributes.Recipient;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
-import com.redhat.cloud.notifications.rbac.RbacServiceToService;
-import com.redhat.cloud.notifications.rbac.RbacUser;
+import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
+import com.redhat.cloud.notifications.recipients.rbac.RbacServiceToService;
+import com.redhat.cloud.notifications.recipients.rbac.RbacUser;
 import com.redhat.cloud.notifications.templates.LocalDateTimeExtension;
 import io.quarkus.scheduler.ScheduledExecution;
 import io.quarkus.scheduler.Trigger;
@@ -29,6 +30,7 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Vertx;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -65,7 +67,11 @@ public class EmailTest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
-    Integer rbacElementsPerPage = 40;
+    @Inject
+    RbacRecipientUsersProvider recipientUsersProvider;
+
+    @ConfigProperty(name = "recipient_provider.rbac.elements_per_page")
+    Integer rbacElementsPerPage;
 
     @Inject
     WebhookTypeProcessor webhookTypeProcessor;
@@ -91,8 +97,7 @@ public class EmailTest {
     @BeforeAll
     void init() {
         emailProcessor = new EmailSubscriptionTypeProcessor();
-        emailProcessor.rbacElementsPerPage = rbacElementsPerPage;
-        emailProcessor.rbacServiceToService = rbacServiceToService;
+        emailProcessor.recipientUsersProvider = recipientUsersProvider;
         emailProcessor.vertx = vertx;
         emailProcessor.webhookSender = webhookTypeProcessor;
         emailProcessor.emailAggregationResources = emailAggregationResources;

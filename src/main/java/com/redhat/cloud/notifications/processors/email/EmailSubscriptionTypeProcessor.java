@@ -10,7 +10,6 @@ import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscription
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.Page;
 import com.redhat.cloud.notifications.models.endpoint.attributes.EmailSubscriptionAttributes;
 import com.redhat.cloud.notifications.models.endpoint.attributes.EmailSubscriptionAttributes.Recipient;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
@@ -18,8 +17,8 @@ import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmail
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.processors.email.bop.Email;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
-import com.redhat.cloud.notifications.rbac.RbacServiceToService;
-import com.redhat.cloud.notifications.rbac.RbacUser;
+import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import com.redhat.cloud.notifications.templates.AbstractEmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.scheduler.Scheduled;
@@ -34,7 +33,6 @@ import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.reactivestreams.Publisher;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -48,9 +46,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -76,14 +71,10 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     EndpointEmailSubscriptionResources subscriptionResources;
 
     @Inject
-    EmailAggregationResources emailAggregationResources;
+    RbacRecipientUsersProvider recipientUsersProvider;
 
     @Inject
-    @RestClient
-    RbacServiceToService rbacServiceToService;
-
-    @ConfigProperty(name = "processor.email.rbac_elements_per_page")
-    Integer rbacElementsPerPage;
+    EmailAggregationResources emailAggregationResources;
 
     @ConfigProperty(name = "processor.email.bop_url")
     String bopUrl;
@@ -161,17 +152,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         return sendEmail(item, EmailSubscriptionType.INSTANT);
     }
 
-    private Multi<RbacUser> fetchUsers(Function<Integer, CompletionStage<Page<RbacUser>>> fetcher) {
-        return Multi.createBy().repeating()
-                .completionStage(
-                    AtomicInteger::new,
-                    state -> fetcher.apply(state.getAndIncrement())
-                )
-                .until(page -> page.getData().isEmpty())
-                .onItem().transform(Page::getData)
-                .onItem().disjoint();
-    }
-
     private Uni<Set<String>> recipientsForNotifcation(Notification item, EmailSubscriptionType emailSubscriptionType) {
         final EmailSubscriptionAttributes properties = (EmailSubscriptionAttributes) item.getEndpoint().getProperties();
         final List<Publisher<Set<String>>> userSources = new ArrayList<>();
@@ -180,39 +160,30 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 .collectItems().in(HashSet<String>::new, (usernames, emailSubscription) -> usernames.add(emailSubscription.getUsername())).memoize().indefinitely();
 
         for (Recipient recipient : properties.getRecipients()) {
-            Multi<RbacUser> users;
+            Multi<User> multiUsers;
             if (recipient.getGroupId() == null) {
-                users = fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), rbacElementsPerPage * page, rbacElementsPerPage).subscribeAsCompletionStage());
+                multiUsers = recipientUsersProvider.getUsers(item.getTenant(), recipient.getOnlyAdmins());
             } else {
-                // Todo: `getGroupUsers` does not support "onlyAdmins" here. We would need to ask for support if we want it or filter manually here.
-                users = rbacServiceToService.getGroup(item.getTenant(), recipient.getGroupId())
-                        .onItem().transformToMulti(rbacGroup -> {
-                            if (rbacGroup.platformDefault) {
-                                // Platform default groups do not have the users in the `getGroupUsers` function.
-                                return fetchUsers(page -> rbacServiceToService.getUsers(item.getTenant(), recipient.getOnlyAdmins(), rbacElementsPerPage * page, rbacElementsPerPage).subscribeAsCompletionStage());
-                            }
-
-                            return fetchUsers(page -> rbacServiceToService.getGroupUsers(item.getTenant(), recipient.getGroupId(), rbacElementsPerPage * page, rbacElementsPerPage).subscribeAsCompletionStage());
-                        });
+                multiUsers = recipientUsersProvider.getGroupUsers(item.getTenant(), recipient.getOnlyAdmins(), recipient.getGroupId().toString());
             }
 
-            Uni<Set<String>> usernames = users.onItem()
-                    .transform(rbacUser -> rbacUser.username).collectItems().asList()
-                    .onItem().transform(HashSet::new)
-                    .onItem().transformToUni(rbacUsers -> {
-                        if (recipient.getIgnorePreferences()) {
-                            return Uni.createFrom().item(rbacUsers);
-                        }
+            userSources.add(
+                    multiUsers
+                            .onItem()
+                            .transform(user -> user.getUsername()).collectItems().asList()
+                            .onItem().transform(HashSet::new)
+                            .onItem().transformToUni(foundUsers -> {
+                                if (recipient.getIgnorePreferences()) {
+                                    return Uni.createFrom().item(foundUsers);
+                                }
 
-                        return subscriptions.onItem().transform(subscribedUsers -> {
-                            Set<String> intersection = new HashSet<>(rbacUsers);
-                            intersection.retainAll(subscribedUsers);
-                            return intersection;
-                        });
-
-                    });
-
-            userSources.add(usernames.toMulti());
+                                return subscriptions.onItem().transform(subscribedUsers -> {
+                                    Set<String> intersection = new HashSet<>(foundUsers);
+                                    intersection.retainAll(subscribedUsers);
+                                    return intersection;
+                                });
+                            }).toMulti()
+            );
         }
 
         return Multi.createBy().merging().streams(userSources).collectItems().in(HashSet::new, Set::addAll);

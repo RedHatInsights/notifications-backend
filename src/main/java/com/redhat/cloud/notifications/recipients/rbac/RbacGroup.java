@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.rbac;
+package com.redhat.cloud.notifications.recipients.rbac;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
