@@ -72,6 +72,10 @@ public class UserConfigService {
                     }
                 })));
 
+        /*
+         * (Un)subscriptions will be run sequentially because of the concatenation.
+         * This is mandatory because the Hibernate session must not be used concurrently.
+         */
         return Multi.createBy().concatenating().streams(subscriptionRequests)
                 .collect().asList()
                 .onItem().transform(subscriptionResults -> {
