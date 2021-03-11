@@ -73,7 +73,7 @@ public class UserConfigService {
                 })));
 
         return Multi.createBy().concatenating().streams(subscriptionRequests)
-                .collectItems().asList()
+                .collect().asList()
                 .onItem().transform(subscriptionResults -> {
                     boolean allisSuccess = subscriptionResults.stream().allMatch(isTrue -> isTrue instanceof Boolean && ((Boolean) isTrue));
                     Response.ResponseBuilder builder;
