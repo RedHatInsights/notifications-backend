@@ -51,7 +51,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
                     good = true;
                 }
             } else if (path.startsWith("/openapi.json") || path.startsWith("/internal")
-                    || path.startsWith("/admin") || path.startsWith("/health")) {
+                    || path.startsWith("/admin") || path.startsWith("/health") || path.startsWith("/q/health")) {
                 good = true;
             }
 

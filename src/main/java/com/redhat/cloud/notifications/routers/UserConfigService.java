@@ -130,9 +130,9 @@ public class UserConfigService {
                                             .onItem().transformToMulti(emailSubscriptionType -> {
                                                 values.bundles.get(bundle.getName()).applications.get(application.getName()).notifications.put(emailSubscriptionType, false);
                                                 return Multi.createFrom().empty();
-                                            }).concatenate();
-                                }).concatenate();
-                    }).concatenate().collectItems().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
+                                            }).merge();
+                                }).merge();
+                    }).concatenate().collect().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
                     .onItem().transform(emailSubscription -> {
                         values.bundles.get(emailSubscription.getBundle()).applications.get(emailSubscription.getApplication()).notifications.put(emailSubscription.getType(), true);
                         return emailSubscription;

@@ -84,24 +84,22 @@ public class EndpointService {
     public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") Boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
+        Multi<Endpoint> endpoints;
+        Uni<Long> count;
+
         if (targetType != null) {
             Endpoint.EndpointType endpointType = Endpoint.EndpointType.valueOf(targetType.toUpperCase());
-            return resources
-                    .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query)
-                    .collect().asList()
-                    .onItem().transformToUni(endpoints ->
-                        resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly)
-                                .onItem().transform(count -> new EndpointPage(endpoints, new HashMap<>(), new Meta(count)))
-                    );
+            endpoints = resources
+                    .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query);
+            count = resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly);
         } else {
-            return resources.getEndpoints(principal.getAccount(), query)
-                    .collect().asList()
-                    .onItem().transformToUni(endpoints ->
-                        resources.getEndpointsCount(principal.getAccount())
-                                .onItem().transform(count -> new EndpointPage(endpoints, new HashMap<>(), new Meta(count)))
-                    );
+            endpoints = resources.getEndpoints(principal.getAccount(), query);
+            count = resources.getEndpointsCount(principal.getAccount());
         }
 
+        return endpoints.collect().asList()
+                .onItem().transformToUni(endpointsList -> count
+                        .onItem().transform(endpointsCount -> new EndpointPage(endpointsList, new HashMap<>(), new Meta(endpointsCount))));
     }
 
     @POST

@@ -13,6 +13,8 @@ import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.PersistenceException;
+import javax.ws.rs.BadRequestException;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.Endpoint.EndpointType;
@@ -238,8 +240,8 @@ public class EndpointResources {
             return new EndpointDefaultEntity(tenant, endpoint);
         }).flatMap(endpointDefaultEntity -> session.persist(endpointDefaultEntity))
                 .call(() -> session.flush())
+                .onFailure(PersistenceException.class).transform(a -> new BadRequestException("Given endpoint id can not be linked to default"))
                 .replaceWith(Boolean.TRUE);
-        // FIXME Before the Hibernate Reactive migration, an exception was thrown when the given endpoint id could not be linked to default
     }
 
     public Uni<Boolean> deleteEndpointFromDefaults(String tenant, UUID endpointId) {

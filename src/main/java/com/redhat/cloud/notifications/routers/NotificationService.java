@@ -120,7 +120,7 @@ public class NotificationService {
                     })
         );
 
-        return Multi.createBy().merging().streams(directlyAffected, indirectlyAffected);
+        return Multi.createBy().concatenating().streams(directlyAffected, indirectlyAffected);
     }
 
     @PUT
