@@ -107,6 +107,25 @@ public class ApplicationServiceTest {
         assertNotNull(typeResponse.getId());
         assertEquals(eventType.getDescription(), typeResponse.getDescription());
 
+        // Delete the eventType
+        given()
+                .when()
+                .pathParam("id", typeResponse.getId())
+                .delete("/internal/applications/{id}/eventType")
+                .then()
+                .statusCode(200);
+
+        // Recreate it to check its deletion again when the app is deleted a few calls below
+        given()
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(eventType))
+                .pathParam("id", appResponse.getId())
+                .post("/internal/applications/{id}/eventTypes")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
         // Now delete the app and verify that it is gone along with the eventType
         given()
                 .when()

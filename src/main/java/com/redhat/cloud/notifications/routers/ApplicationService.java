@@ -76,7 +76,7 @@ public class ApplicationService {
 
     @DELETE
     @Path("/{id}/eventType")
-    public Uni<Boolean> deleteEventTypeById(@PathParam("eid") UUID endTypeId) {
+    public Uni<Boolean> deleteEventTypeById(@PathParam("id") UUID endTypeId) {
         return appResources.deleteEventTypeById(endTypeId);
     }
 }
