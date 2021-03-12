@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.events;
 
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
@@ -25,7 +24,6 @@ import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.jackson.DatabindCodec;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.junit.jupiter.api.BeforeAll;
@@ -94,7 +92,6 @@ public class LifecycleITest {
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        DatabindCodec.mapper().registerModule(new JavaTimeModule());
     }
 
     @Test

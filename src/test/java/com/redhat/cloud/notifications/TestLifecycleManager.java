@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications;
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import io.vertx.core.json.jackson.DatabindCodec;
 import org.mockserver.client.MockServerClient;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.MockServerContainer;
@@ -23,6 +25,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     @Override
     public Map<String, String> start() {
         System.out.println("++++  TestLifecycleManager start +++");
+        DatabindCodec.mapper().registerModule(new JavaTimeModule());
         Map<String, String> properties = new HashMap<>();
         try {
             setupPostgres(properties);
