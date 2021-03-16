@@ -44,7 +44,7 @@ public class UserConfigServiceTest {
     private SettingsValueJsonForm insightsPolicyForm(List<SettingsValueJsonForm> jsonForms) {
         for (SettingsValueJsonForm settingsValueJsonForm : jsonForms) {
             for (Field field : settingsValueJsonForm.fields) {
-                if (field.name != null && field.name.startsWith("[insights][policies]")) {
+                if (field.name != null && field.name.startsWith("bundles[insights].applications[policies]")) {
                     return settingsValueJsonForm;
                 }
             }
@@ -57,7 +57,7 @@ public class UserConfigServiceTest {
         Map<EmailSubscriptionType, Boolean> result = new HashMap<>();
         for (Field field : settingsValueJsonForm.fields) {
             for (EmailSubscriptionType type : EmailSubscriptionType.values()) {
-                if (field.name != null && field.name.equals(String.format("[%s][%s][%s]", bundle, application, type))) {
+                if (field.name != null && field.name.equals(String.format("bundles[%s].applications[%s].notifications[%s]", bundle, application, type))) {
                     result.put(type, (Boolean) field.initialValue);
                 }
             }
