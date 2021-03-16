@@ -44,7 +44,7 @@ public class SettingsValueJsonForm {
                     // Todo: Check if the bundle/application supports instant/daily emails and remove if they dont
 
                     Field field = new Field();
-                    field.name = String.format("[%s][%s][%s]", bundleName, applicationName, emailSubscriptionType.toString());
+                    field.name = String.format("bundles[%s].applications[%s].notifications[%s]", bundleName, applicationName, emailSubscriptionType.toString());
                     field.initialValue = isSubscribed;
                     field.validate = List.of();
                     field.component = COMPONENT_SUBSCRIPTION;

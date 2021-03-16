@@ -56,7 +56,7 @@ public class UserConfigService {
         final String account = principal.getAccount();
         final String name = principal.getName();
 
-        final List<Uni<Boolean>> subscriptionRequests = new ArrayList<>();
+        final List<Multi<Boolean>> subscriptionRequests = new ArrayList<>();
 
         values.bundles.forEach((bundle, bundleSettingsValue) ->
                 bundleSettingsValue.applications.forEach((application, applicationSettingsValue) ->
@@ -64,26 +64,28 @@ public class UserConfigService {
                     if (value) {
                         subscriptionRequests.add(emailSubscriptionResources.subscribe(
                                 account, name, bundle, application, emailSubscriptionType
-                        ));
+                        ).toMulti());
                     } else {
                         subscriptionRequests.add(emailSubscriptionResources.unsubscribe(
                                 account, name, bundle, application, emailSubscriptionType
-                        ));
+                        ).toMulti());
                     }
                 })));
 
-        return Uni.combine().all().unis(subscriptionRequests).combinedWith(objects -> {
-            boolean allisSuccess = objects.stream().allMatch(isTrue -> isTrue instanceof Boolean && ((Boolean) isTrue));
-            Response.ResponseBuilder builder;
-            if (allisSuccess) {
-                builder = Response.ok();
-            } else {
-                // Prevent from saving
-                builder = Response.serverError().entity("Storing of settings Failed.");
-                builder.type("text/plain");
-            }
-            return builder.build();
-        });
+        return Multi.createBy().concatenating().streams(subscriptionRequests)
+                .collectItems().asList()
+                .onItem().transform(subscriptionResults -> {
+                    boolean allisSuccess = subscriptionResults.stream().allMatch(isTrue -> isTrue instanceof Boolean && ((Boolean) isTrue));
+                    Response.ResponseBuilder builder;
+                    if (allisSuccess) {
+                        builder = Response.ok();
+                    } else {
+                        // Prevent from saving
+                        builder = Response.serverError().entity("Storing of settings Failed.");
+                        builder.type("text/plain");
+                    }
+                    return builder.build();
+                });
     }
 
     @GET
@@ -124,9 +126,9 @@ public class UserConfigService {
                                             .onItem().transformToMulti(emailSubscriptionType -> {
                                                 values.bundles.get(bundle.getName()).applications.get(application.getName()).notifications.put(emailSubscriptionType, false);
                                                 return Multi.createFrom().empty();
-                                            }).merge();
-                                }).merge();
-                    }).merge().collectItems().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
+                                            }).concatenate();
+                                }).concatenate();
+                    }).concatenate().collectItems().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
                     .onItem().transform(emailSubscription -> {
                         values.bundles.get(emailSubscription.getBundle()).applications.get(emailSubscription.getApplication()).notifications.put(emailSubscription.getType(), true);
                         return emailSubscription;
