@@ -11,8 +11,10 @@ import java.util.List;
 @JsonAutoDetect(fieldVisibility = Visibility.ANY)
 public class SettingsValueJsonForm {
 
+    // These component names depends on the values used by UserPreferences UI
     private static String COMPONENT_LABEL = "plain-text";
     private static String COMPONENT_SUBSCRIPTION = "descriptiveCheckbox";
+    private static String COMPONENT_SECTION = "section";
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
     public static class Field {
@@ -29,16 +31,33 @@ public class SettingsValueJsonForm {
         public List<Field> fields;
     }
 
+    public static class Sections extends Field {
+        public List<Field> sections = new ArrayList<>();
+
+        Sections() {
+            name = "notification-preferences";
+            component = COMPONENT_SECTION;
+        }
+    }
+
     public List<Field> fields = new ArrayList<>();
 
-    public static List<SettingsValueJsonForm> fromSettingsValue(SettingsValues values) {
-        ArrayList<SettingsValueJsonForm> forms = new ArrayList<>();
+    public static SettingsValueJsonForm fromSettingsValue(SettingsValues values) {
+        SettingsValueJsonForm form = new SettingsValueJsonForm();
+        Sections sections = new Sections();
+        form.fields.add(sections);
 
         values.bundles.forEach((bundleName, bundleSettingsValue) -> {
             bundleSettingsValue.applications.forEach((applicationName, applicationSettingsValue) -> {
-                SettingsValueJsonForm form = new SettingsValueJsonForm();
-                forms.add(form);
-                createLabelField(String.format("%s - %s", bundleSettingsValue.name, applicationSettingsValue.name), form.fields);
+                Field section = new Field();
+                section.label = applicationSettingsValue.name;
+                section.name = applicationName;
+                section.fields = new ArrayList<>();
+
+                sections.sections.add(section);
+                Field fieldsField = new Field();
+                fieldsField.fields = new ArrayList<>();
+                section.fields.add(fieldsField);
 
                 applicationSettingsValue.notifications.forEach((emailSubscriptionType, isSubscribed) -> {
                     // Todo: Check if the bundle/application supports instant/daily emails and remove if they dont
@@ -60,12 +79,12 @@ public class SettingsValueJsonForm {
                         default:
                             return;
                     }
-                    form.fields.add(field);
+                    fieldsField.fields.add(field);
                 });
             });
         });
 
-        return forms;
+        return form;
     }
 
     private static Field createLabelField(String label, List<Field> parentContainer) {

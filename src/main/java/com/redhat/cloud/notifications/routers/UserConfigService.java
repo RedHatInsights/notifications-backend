@@ -23,6 +23,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
@@ -48,7 +49,7 @@ public class UserConfigService {
     ApplicationResources applicationResources;
 
     @POST
-    @Path("/email-preference")
+    @Path("/notification-preference")
     @Operation(hidden = true)
     public Uni<Response> saveSettings(@Context SecurityContext sec, @Valid SettingsValues values) {
 
@@ -89,15 +90,15 @@ public class UserConfigService {
     }
 
     @GET
-    @Path("/email-preference")
+    @Path("/notification-preference")
     @Operation(hidden = true)
-    public Uni<Response> getSettingsSchema(@Context SecurityContext sec) {
+    public Uni<Response> getSettingsSchema(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
 
         final RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         final String account = principal.getAccount();
         final String name = principal.getName();
 
-        Uni<SettingsValues> settingsValuesUni = getSettingsValueForUser(account, name);
+        Uni<SettingsValues> settingsValuesUni = getSettingsValueForUser(account, name, bundleName);
 
         return settingsValuesToJsonForm(settingsValuesUni).onItem().transform(jsonFormString -> {
             Response.ResponseBuilder builder;
@@ -108,11 +109,13 @@ public class UserConfigService {
         });
     }
 
-    private Uni<SettingsValues> getSettingsValueForUser(String account, String username) {
+    private Uni<SettingsValues> getSettingsValueForUser(String account, String username, String bundleName) {
         return Uni.createFrom().deferred(() -> {
             final SettingsValues values = new SettingsValues();
 
             return bundleResources.getBundles()
+                    // Todo: Create a method that gets the bundle by name
+                    .filter(bundle -> bundle.getName().equals(bundleName))
                     .onItem().transformToMulti(bundle -> {
                         BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
                         bundleSettingsValue.name = bundle.getDisplay_name();
@@ -138,12 +141,12 @@ public class UserConfigService {
 
     private Uni<String> settingsValuesToJsonForm(Uni<SettingsValues> settingsValuesUni) {
         return settingsValuesUni.onItem().transform(settingsValues -> SettingsValueJsonForm.fromSettingsValue(settingsValues))
-                .onItem().transform(settingsValueJsonForms -> {
+                .onItem().transform(settingsValueJsonForm -> {
                     try {
-                        return mapper.writeValueAsString(settingsValueJsonForms);
+                        return mapper.writeValueAsString(settingsValueJsonForm);
                     } catch (JsonProcessingException jpe) {
                         throw new IllegalArgumentException(
-                                String.format("Unable to convert '%s' to String", settingsValueJsonForms),
+                                String.format("Unable to convert '%s' to String", settingsValueJsonForm),
                                 jpe
                         );
                     }
