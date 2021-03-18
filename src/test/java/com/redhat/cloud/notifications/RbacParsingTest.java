@@ -1,13 +1,14 @@
 package com.redhat.cloud.notifications;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.redhat.cloud.notifications.auth.RbacRaw;
 import org.junit.jupiter.api.Test;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Test RBAC parsing.
@@ -15,14 +16,13 @@ import java.io.FileNotFoundException;
  */
 public class RbacParsingTest {
 
+    private static final ObjectReader RBAC_RAW_READER = new ObjectMapper().readerFor(RbacRaw.class);
     private static final String BASE = "src/test/resources/rbac-examples/";
     public static final String ALL = "*";
 
     @Test
     void testParseExample() throws Exception {
-        File file = new File(BASE + "rbac_example.json");
-        Jsonb jb = JsonbBuilder.create();
-        RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
+        RbacRaw rbac = readValueFromFile("rbac_example.json");
         assert rbac.data.size() == 2;
 
         assert rbac.canWrite("bar", "resname");
@@ -34,9 +34,7 @@ public class RbacParsingTest {
 
     @Test
     void testNoAccess() throws Exception {
-        File file = new File(BASE + "rbac_example_no_access.json");
-        Jsonb jb = JsonbBuilder.create();
-        RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
+        RbacRaw rbac = readValueFromFile("rbac_example_no_access.json");
 
         assert !rbac.canRead(ALL, ALL);
         assert !rbac.canWrite(ALL, ALL);
@@ -44,9 +42,7 @@ public class RbacParsingTest {
 
     @Test
     void testFullAccess() throws Exception {
-        File file = new File(BASE + "rbac_example_full_access.json");
-        Jsonb jb = JsonbBuilder.create();
-        RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
+        RbacRaw rbac = readValueFromFile("rbac_example_full_access.json");
 
         assert rbac.canRead("notifications", ALL);
         assert !rbac.canRead("dummy", ALL);
@@ -58,9 +54,7 @@ public class RbacParsingTest {
 
     @Test
     void testNIRead() throws Exception {
-        File file = new File(BASE + "rbac_n_i_read.json");
-        Jsonb jb = JsonbBuilder.create();
-        RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
+        RbacRaw rbac = readValueFromFile("rbac_n_i_read.json");
 
         assert rbac.canRead("notifications", "notifications");
         assert rbac.canDo("notifications", "notifications", "read");
@@ -75,10 +69,8 @@ public class RbacParsingTest {
     }
 
     @Test
-    void testPartialAccess() throws FileNotFoundException {
-        File file = new File(BASE + "rbac_example_partial_access.json");
-        Jsonb jb = JsonbBuilder.create();
-        RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
+    void testPartialAccess() throws IOException {
+        RbacRaw rbac = readValueFromFile("rbac_example_partial_access.json");
 
         assert rbac.canRead("policies", ALL);
         assert !rbac.canRead("dummy", ALL);
@@ -89,10 +81,8 @@ public class RbacParsingTest {
     }
 
     @Test
-    void testTwoApps() throws FileNotFoundException {
-        File file = new File(BASE + "rbac_example_two_apps1.json");
-        Jsonb jb = JsonbBuilder.create();
-        RbacRaw rbac = jb.fromJson(new FileInputStream(file), RbacRaw.class);
+    void testTwoApps() throws IOException {
+        RbacRaw rbac = readValueFromFile("rbac_example_two_apps1.json");
 
         assert !rbac.canRead("notifications", ALL);
         assert !rbac.canWrite("notifications", ALL);
@@ -107,5 +97,11 @@ public class RbacParsingTest {
         assert !rbac.canDo("integrations", ALL, "read");
         assert !rbac.canDo("integrations", ALL, "execute");
         assert rbac.canDo("integrations", "admin", "execute");
+    }
+
+    private RbacRaw readValueFromFile(String fileName) throws IOException {
+        try (InputStream is = new FileInputStream(new File(BASE + fileName))) {
+            return RBAC_RAW_READER.readValue(is);
+        }
     }
 }
