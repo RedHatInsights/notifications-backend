@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
-import io.r2dbc.postgresql.codec.Json;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -33,7 +32,7 @@ public class EmailAggregationResources extends DatasourceProvider {
                                 .bind("$1", aggregation.getAccountId())
                                 .bind("$2", aggregation.getBundle())
                                 .bind("$3", aggregation.getApplication())
-                                .bind("$4", Json.of(aggregation.getPayload().encode()))
+                                .bind("$4", aggregation.getPayload().encode())
                                 .execute();
                             return execute.flatMap(PostgresqlResult::getRowsUpdated).map(i -> i > 0);
                         })
