@@ -31,6 +31,7 @@ public class SettingsValueJsonForm {
         public List<Field> fields;
     }
 
+    @JsonAutoDetect(fieldVisibility = Visibility.ANY)
     public static class Sections extends Field {
         public List<Field> sections = new ArrayList<>();
 
@@ -40,7 +41,7 @@ public class SettingsValueJsonForm {
         }
     }
 
-    public List<Field> fields = new ArrayList<>();
+    public List<Sections> fields = new ArrayList<>();
 
     public static SettingsValueJsonForm fromSettingsValue(SettingsValues values) {
         SettingsValueJsonForm form = new SettingsValueJsonForm();

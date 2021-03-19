@@ -21,7 +21,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
@@ -41,21 +40,19 @@ public class UserConfigServiceTest {
     MockServerClientConfig mockServerConfig;
 
 
-    private SettingsValueJsonForm insightsPolicyForm(List<SettingsValueJsonForm> jsonForms) {
-        for (SettingsValueJsonForm settingsValueJsonForm : jsonForms) {
-            for (Field field : settingsValueJsonForm.fields) {
-                if (field.name != null && field.name.startsWith("bundles[insights].applications[policies]")) {
-                    return settingsValueJsonForm;
-                }
+    private Field insightsPolicyForm(SettingsValueJsonForm jsonForm) {
+        for (Field section : jsonForm.fields.get(0).sections) {
+            if (section.name.equals("policies")) {
+                return section;
             }
         }
 
         return null;
     }
 
-    private Map<EmailSubscriptionType, Boolean> extractNotificationValues(SettingsValueJsonForm settingsValueJsonForm, String bundle, String application) {
+    private Map<EmailSubscriptionType, Boolean> extractNotificationValues(Field sectionField, String bundle, String application) {
         Map<EmailSubscriptionType, Boolean> result = new HashMap<>();
-        for (Field field : settingsValueJsonForm.fields) {
+        for (Field field : sectionField.fields.get(0).fields) {
             for (EmailSubscriptionType type : EmailSubscriptionType.values()) {
                 if (field.name != null && field.name.equals(String.format("bundles[%s].applications[%s].notifications[%s]", bundle, application, type))) {
                     result.put(type, (Boolean) field.initialValue);
@@ -91,14 +88,14 @@ public class UserConfigServiceTest {
         String bundle = "insights";
         String application = "policies";
 
-        List<SettingsValueJsonForm> jsonForms = given()
+        SettingsValueJsonForm jsonForm = given()
                 .header(identityHeader)
-                .when().get("/user-config/email-preference")
+                .when().get("/user-config/notification-preference?bundleName=insights")
                 .then()
                 .statusCode(200)
-                .extract().body().jsonPath().getList(".", SettingsValueJsonForm.class);
+                .extract().body().as(SettingsValueJsonForm.class);
 
-        SettingsValueJsonForm insightsPolicy = insightsPolicyForm(jsonForms);
+        Field insightsPolicy = insightsPolicyForm(jsonForm);
         assertNotNull(insightsPolicy, "Insights policies not found");
 
         SettingsValues settingsValues = createSettingsValue(bundle, application, false, false);
@@ -107,16 +104,16 @@ public class UserConfigServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(settingsValues))
-                .post("/user-config/email-preference")
+                .post("/user-config/notification-preference")
                 .then()
                 .statusCode(200);
-        jsonForms = given()
+        jsonForm = given()
                 .header(identityHeader)
-                .when().get("/user-config/email-preference")
+                .when().get("/user-config/notification-preference?bundleName=insights")
                 .then()
                 .statusCode(200)
-                .extract().body().jsonPath().getList(".", SettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForms);
+                .extract().body().as(SettingsValueJsonForm.class);
+        insightsPolicy = insightsPolicyForm(jsonForm);
         assertNotNull(insightsPolicy, "Insights policies not found");
         Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(insightsPolicy, bundle, application);
 
@@ -129,16 +126,16 @@ public class UserConfigServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(settingsValues))
-                .post("/user-config/email-preference")
+                .post("/user-config/notification-preference")
                 .then()
                 .statusCode(200);
-        jsonForms = given()
+        jsonForm = given()
                 .header(identityHeader)
-                .when().get("/user-config/email-preference")
+                .when().get("/user-config/notification-preference?bundleName=insights")
                 .then()
                 .statusCode(200)
-                .extract().body().jsonPath().getList(".", SettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForms);
+                .extract().body().as(SettingsValueJsonForm.class);
+        insightsPolicy = insightsPolicyForm(jsonForm);
         assertNotNull(insightsPolicy, "Insights policies not found");
         initialValues = extractNotificationValues(insightsPolicy, bundle, application);
 
@@ -151,16 +148,16 @@ public class UserConfigServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(settingsValues))
-                .post("/user-config/email-preference")
+                .post("/user-config/notification-preference")
                 .then()
                 .statusCode(200);
-        jsonForms = given()
+        jsonForm = given()
                 .header(identityHeader)
-                .when().get("/user-config/email-preference")
+                .when().get("/user-config/notification-preference?bundleName=insights")
                 .then()
                 .statusCode(200)
-                .extract().body().jsonPath().getList(".", SettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForms);
+                .extract().body().as(SettingsValueJsonForm.class);
+        insightsPolicy = insightsPolicyForm(jsonForm);
         assertNotNull(insightsPolicy, "Insights policies not found");
         initialValues = extractNotificationValues(insightsPolicy, bundle, application);
 
@@ -173,16 +170,16 @@ public class UserConfigServiceTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(settingsValues))
-                .post("/user-config/email-preference")
+                .post("/user-config/notification-preference")
                 .then()
                 .statusCode(200);
-        jsonForms = given()
+        jsonForm = given()
                 .header(identityHeader)
-                .when().get("/user-config/email-preference")
+                .when().get("/user-config/notification-preference?bundleName=insights")
                 .then()
                 .statusCode(200)
-                .extract().body().jsonPath().getList(".", SettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForms);
+                .extract().body().as(SettingsValueJsonForm.class);
+        insightsPolicy = insightsPolicyForm(jsonForm);
         assertNotNull(insightsPolicy, "Insights policies not found");
         initialValues = extractNotificationValues(insightsPolicy, bundle, application);
 
