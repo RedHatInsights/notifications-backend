@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
 import io.r2dbc.postgresql.api.PostgresqlStatement;
-import io.r2dbc.postgresql.codec.Json;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.converters.multi.MultiReactorConverters;
@@ -41,9 +40,9 @@ public class NotificationResources {
                             .bind("$5", history.getEventId());
 
                     if (history.getDetails() != null) {
-                        st.bind("$6", Json.of(new JsonObject(history.getDetails()).encode()));
+                        st.bind("$6", new JsonObject(history.getDetails()).encode());
                     } else {
-                        st.bindNull("$6", Json.class);
+                        st.bindNull("$6", String.class);
                     }
                     Flux<PostgresqlResult> execute = st.returnGeneratedValues("id", "created").execute();
                     return execute.flatMap(res -> res.map((row, rowMetadata) -> {

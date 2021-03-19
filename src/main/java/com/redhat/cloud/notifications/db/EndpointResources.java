@@ -88,9 +88,9 @@ public class EndpointResources extends DatasourceProvider {
 
         if (attr.getBasicAuthentication() != null) {
             String encodedJson = Json.encode(attr.getBasicAuthentication());
-            bind.bind("$6", io.r2dbc.postgresql.codec.Json.of(encodedJson));
+            bind.bind("$6", encodedJson);
         } else {
-            bind.bindNull("$6", io.r2dbc.postgresql.codec.Json.class);
+            bind.bindNull("$6", String.class);
         }
 
         Flux<PostgresqlResult> execute = bind
