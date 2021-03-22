@@ -8,7 +8,7 @@ import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.Facet;
 import io.smallrye.mutiny.Multi;

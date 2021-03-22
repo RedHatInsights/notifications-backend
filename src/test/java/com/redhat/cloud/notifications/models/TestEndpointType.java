@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.models;
 
-import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 

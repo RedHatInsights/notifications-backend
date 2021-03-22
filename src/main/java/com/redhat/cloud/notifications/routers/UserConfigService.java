@@ -6,7 +6,7 @@ import com.redhat.cloud.notifications.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
-import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;

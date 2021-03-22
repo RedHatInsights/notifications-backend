@@ -1,6 +1,9 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
@@ -39,7 +42,7 @@ public class EndpointResources extends DatasourceProvider {
                         conn -> {
                             Flux<Endpoint> endpointFlux = insertEndpointStatement(endpoint, conn);
                             Flux<Endpoint> endpointFlux1 = endpointFlux.flatMap(ep -> {
-                                if (endpoint.getProperties() != null && ep.getType() == Endpoint.EndpointType.WEBHOOK) {
+                                if (endpoint.getProperties() != null && ep.getType() == EndpointType.WEBHOOK) {
                                     return insertWebhooksStatement(ep, conn);
                                 } else {
                                     // Other types are not supported at this point
@@ -110,7 +113,7 @@ public class EndpointResources extends DatasourceProvider {
     private static final String basicEndpointGetQuery = basicEndpointSelectQuery + webhookEndpointSelectQuery + " FROM public.endpoints AS e LEFT JOIN public.endpoint_webhooks AS ew ON ew.endpoint_id = e.id ";
     private static final String basicEndpointCountQuery = "SELECT count(e.id) as count FROM public.endpoints AS e ";
 
-    public Multi<Endpoint> getEndpointsPerType(String tenant, Endpoint.EndpointType type, Boolean activeOnly, Query limiter) {
+    public Multi<Endpoint> getEndpointsPerType(String tenant, EndpointType type, Boolean activeOnly, Query limiter) {
         // TODO Modify the parameter to take a vararg of Functions that modify the query
         // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
         StringBuilder queryBuilder = new StringBuilder();
@@ -143,7 +146,7 @@ public class EndpointResources extends DatasourceProvider {
                         }));
     }
 
-    public Uni<Integer> getEndpointsCountPerType(String tenant, Endpoint.EndpointType type, Boolean activeOnly) {
+    public Uni<Integer> getEndpointsCountPerType(String tenant, EndpointType type, Boolean activeOnly) {
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder
                 .append(basicEndpointCountQuery)
@@ -244,7 +247,7 @@ public class EndpointResources extends DatasourceProvider {
 
     private Flux<Endpoint> mapResultSetToEndpoint(Flux<PostgresqlResult> resultFlux) {
         return resultFlux.flatMap(postgresqlResult -> postgresqlResult.map((row, rowMetadata) -> {
-            Endpoint.EndpointType endpointType = Endpoint.EndpointType.values()[row.get("endpoint_type", Integer.class)];
+            EndpointType endpointType = EndpointType.values()[row.get("endpoint_type", Integer.class)];
 
             Endpoint endpoint = new Endpoint();
             endpoint.setTenant(row.get("account_id", String.class));
@@ -263,12 +266,12 @@ public class EndpointResources extends DatasourceProvider {
                     attr.setDisableSSLVerification(row.get("disable_ssl_verification", Boolean.class));
                     attr.setSecretToken(row.get("secret_token", String.class));
                     String method = row.get("method", String.class);
-                    attr.setMethod(WebhookAttributes.HttpType.valueOf(method));
+                    attr.setMethod(HttpType.valueOf(method));
                     attr.setUrl(row.get("url", String.class));
 
                     String basicAuthentication = row.get("basic_authentication", String.class);
                     if (basicAuthentication != null) {
-                        attr.setBasicAuthentication(Json.decodeValue(basicAuthentication, WebhookAttributes.BasicAuthentication.class));
+                        attr.setBasicAuthentication(Json.decodeValue(basicAuthentication, BasicAuthentication.class));
                     }
 
                     endpoint.setProperties(attr);
@@ -501,7 +504,7 @@ public class EndpointResources extends DatasourceProvider {
                 Mono.usingWhen(connectionPublisher.get(),
                         conn -> updateEndpointStatement(endpoint, conn)
                                 .flatMap(ep -> {
-                                    if (endpoint.getProperties() != null && endpoint.getType() == Endpoint.EndpointType.WEBHOOK) {
+                                    if (endpoint.getProperties() != null && endpoint.getType() == EndpointType.WEBHOOK) {
                                         return updateWebhooksStatement(endpoint, conn);
                                     }
                                     return Mono.empty();

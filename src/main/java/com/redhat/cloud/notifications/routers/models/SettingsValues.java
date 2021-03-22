@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.routers.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 
 import java.util.HashMap;
 import java.util.Map;

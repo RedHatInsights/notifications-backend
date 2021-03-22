@@ -6,10 +6,12 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.EmailSubscriptionAttributes;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
+import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -70,13 +72,13 @@ public class EndpointServiceTest {
 
         // Add new endpoints
         WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setMethod(HttpType.POST);
         webAttr.setDisableSSLVerification(false);
         webAttr.setSecretToken("my-super-secret-token");
         webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
         Endpoint ep = new Endpoint();
-        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint to find");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
@@ -190,7 +192,7 @@ public class EndpointServiceTest {
 
         // Add new endpoint without properties
         Endpoint ep = new Endpoint();
-        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint with missing properties");
         ep.setDescription("Destined to fail");
         ep.setEnabled(true);
@@ -205,7 +207,7 @@ public class EndpointServiceTest {
                 .statusCode(400);
 
         WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setMethod(HttpType.POST);
         webAttr.setDisableSSLVerification(false);
         webAttr.setSecretToken("my-super-secret-token");
         webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
@@ -224,7 +226,7 @@ public class EndpointServiceTest {
                 .statusCode(400);
 
         // Test with incorrect webhook properties
-        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint with incorrect webhook properties");
         webAttr.setMethod(null);
 
@@ -238,7 +240,7 @@ public class EndpointServiceTest {
                 .statusCode(400);
 
         // Type and attributes don't match
-        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setMethod(HttpType.POST);
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
         given()
@@ -271,13 +273,13 @@ public class EndpointServiceTest {
 
         // Add new endpoints
         WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setMethod(HttpType.POST);
         webAttr.setDisableSSLVerification(false);
         webAttr.setSecretToken("my-super-secret-token");
         webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
         Endpoint ep = new Endpoint();
-        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint to find");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
@@ -358,13 +360,13 @@ public class EndpointServiceTest {
         for (int i = 0; i < 29; i++) {
             // Add new endpoints
             WebhookAttributes webAttr = new WebhookAttributes();
-            webAttr.setMethod(WebhookAttributes.HttpType.POST);
+            webAttr.setMethod(HttpType.POST);
             webAttr.setDisableSSLVerification(false);
             webAttr.setSecretToken("my-super-secret-token");
             webAttr.setUrl(String.format("https://%s/%d", mockServerConfig.getRunningAddress(), i));
 
             Endpoint ep = new Endpoint();
-            ep.setType(Endpoint.EndpointType.WEBHOOK);
+            ep.setType(EndpointType.WEBHOOK);
             ep.setName(String.format("Endpoint %d", i));
             ep.setDescription("Try to find me!");
             ep.setEnabled(true);
@@ -427,7 +429,7 @@ public class EndpointServiceTest {
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
         Endpoint ep = new Endpoint();
-        ep.setType(Endpoint.EndpointType.DEFAULT);
+        ep.setType(EndpointType.DEFAULT);
         ep.setName("Default endpoint");
         ep.setDescription("The ultimate fallback");
         ep.setEnabled(true);
@@ -464,16 +466,16 @@ public class EndpointServiceTest {
         assertEquals(1, endpointPage.getData().size());
         assertEquals(1, endpointPage.getMeta().getCount());
         assertEquals(responsePoint.getId(), endpointPage.getData().get(0).getId());
-        assertEquals(Endpoint.EndpointType.DEFAULT, responsePoint.getType());
+        assertEquals(EndpointType.DEFAULT, responsePoint.getType());
 
         // Add another type as well
         Endpoint another = new Endpoint();
-        another.setType(Endpoint.EndpointType.WEBHOOK);
+        another.setType(EndpointType.WEBHOOK);
         another.setDescription("desc");
         another.setName("name");
 
         WebhookAttributes attr = new WebhookAttributes();
-        attr.setMethod(WebhookAttributes.HttpType.POST);
+        attr.setMethod(HttpType.POST);
         attr.setUrl("http://localhost");
 
         another.setProperties(attr);
@@ -511,7 +513,7 @@ public class EndpointServiceTest {
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
         assertEquals(1, endpointPage.getData().size());
         assertEquals(responsePoint.getId(), endpointPage.getData().get(0).getId());
-        assertEquals(Endpoint.EndpointType.DEFAULT, responsePoint.getType());
+        assertEquals(EndpointType.DEFAULT, responsePoint.getType());
     }
 
     @Test
@@ -589,14 +591,14 @@ public class EndpointServiceTest {
 
         // Add new endpoints
         WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setMethod(HttpType.POST);
         webAttr.setDisableSSLVerification(false);
         webAttr.setSecretToken("my-super-secret-token");
-        webAttr.setBasicAuthentication(new WebhookAttributes.BasicAuthentication("myuser", "mypassword"));
+        webAttr.setBasicAuthentication(new BasicAuthentication("myuser", "mypassword"));
         webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
         Endpoint ep = new Endpoint();
-        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint to find");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
@@ -841,13 +843,13 @@ public class EndpointServiceTest {
         for (int i = 0; i < 200; i++) {
             // Add new endpoints
             WebhookAttributes webAttr = new WebhookAttributes();
-            webAttr.setMethod(WebhookAttributes.HttpType.POST);
+            webAttr.setMethod(HttpType.POST);
             webAttr.setDisableSSLVerification(false);
             webAttr.setSecretToken("my-super-secret-token");
             webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
             Endpoint ep = new Endpoint();
-            ep.setType(Endpoint.EndpointType.WEBHOOK);
+            ep.setType(EndpointType.WEBHOOK);
             ep.setName("endpoint to find" + i);
             ep.setDescription("needle in the haystack" + i);
             ep.setEnabled(true);

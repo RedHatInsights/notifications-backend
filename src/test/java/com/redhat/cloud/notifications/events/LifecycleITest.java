@@ -10,7 +10,9 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
@@ -152,13 +154,13 @@ public class LifecycleITest {
 
         // Add new endpoints
         WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setMethod(HttpType.POST);
         webAttr.setDisableSSLVerification(true);
         webAttr.setSecretToken("super-secret-token");
         webAttr.setUrl(String.format("http://%s/test/lifecycle", mockServerConfig.getRunningAddress()));
 
         Endpoint ep = new Endpoint();
-        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setType(EndpointType.WEBHOOK);
         ep.setName("positive feeling");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
@@ -178,12 +180,12 @@ public class LifecycleITest {
         assertNotNull(endpoint.getId());
 
         webAttr = new WebhookAttributes();
-        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setMethod(HttpType.POST);
         webAttr.setDisableSSLVerification(true);
         webAttr.setUrl(String.format("http://%s/test/lifecycle", mockServerConfig.getRunningAddress()));
 
         ep = new Endpoint();
-        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setType(EndpointType.WEBHOOK);
         ep.setName("negative feeling");
         ep.setDescription("I feel like dying");
         ep.setEnabled(true);
@@ -400,7 +402,7 @@ public class LifecycleITest {
     void t05_addEmptyDefaultSettings() {
         // Create default endpoint
         Endpoint ep = new Endpoint();
-        ep.setType(Endpoint.EndpointType.DEFAULT);
+        ep.setType(EndpointType.DEFAULT);
         ep.setName("Default endpoint");
         ep.setDescription("The ultimate fallback");
         ep.setEnabled(true);
@@ -484,7 +486,7 @@ public class LifecycleITest {
         assertEquals(3, endpoints.length);
 
         for (Endpoint endpoint : endpoints) {
-            if (endpoint.getType() != Endpoint.EndpointType.DEFAULT) {
+            if (endpoint.getType() != EndpointType.DEFAULT) {
                 given()
                         .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                         .header(identityHeader)

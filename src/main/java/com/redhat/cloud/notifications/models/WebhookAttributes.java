@@ -7,30 +7,6 @@ import javax.validation.constraints.NotNull;
 
 public class WebhookAttributes extends Attributes {
 
-    public static class BasicAuthentication {
-        private String username;
-        private String password;
-
-        public BasicAuthentication() { }
-
-        public BasicAuthentication(String username, String password) {
-            this.username = username;
-            this.password = password;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-    }
-
-    public enum HttpType {
-        GET, POST, PUT
-    }
-
     @JsonIgnore
     private Integer id;
 

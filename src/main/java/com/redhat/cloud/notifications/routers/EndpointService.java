@@ -8,8 +8,9 @@ import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
@@ -88,7 +89,7 @@ public class EndpointService {
         Uni<Integer> count;
 
         if (targetType != null) {
-            Endpoint.EndpointType endpointType = Endpoint.EndpointType.valueOf(targetType.toUpperCase());
+            EndpointType endpointType = EndpointType.valueOf(targetType.toUpperCase());
             endpoints = resources
                     .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query);
             count = resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly);
@@ -109,11 +110,11 @@ public class EndpointService {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setTenant(principal.getAccount());
 
-        if (endpoint.getType() != Endpoint.EndpointType.DEFAULT && endpoint.getProperties() == null) {
+        if (endpoint.getType() != EndpointType.DEFAULT && endpoint.getProperties() == null) {
             throw new BadRequestException("Properties is required");
-        } else if (endpoint.getType() == Endpoint.EndpointType.DEFAULT) {
+        } else if (endpoint.getType() == EndpointType.DEFAULT) {
             // Only a single default endpoint is allowed
-            return resources.getEndpointsPerType(principal.getAccount(), Endpoint.EndpointType.DEFAULT, null, null)
+            return resources.getEndpointsPerType(principal.getAccount(), EndpointType.DEFAULT, null, null)
                     .toUni()
                     .onItem()
                     .ifNull()

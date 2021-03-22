@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.templates;
 
-import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.TemplateInstance;
 
 public class EmailTemplateFactory {

@@ -5,7 +5,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm.Field;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;

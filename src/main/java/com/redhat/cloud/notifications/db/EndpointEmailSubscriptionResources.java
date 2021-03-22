@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.EmailSubscription;
-import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.r2dbc.postgresql.api.PostgresqlConnection;
 import io.r2dbc.postgresql.api.PostgresqlResult;
 import io.smallrye.mutiny.Multi;

@@ -4,10 +4,11 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription;
-import com.redhat.cloud.notifications.models.EmailSubscription.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.Endpoint.EndpointType;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -45,7 +46,7 @@ public class ResourceHelpers {
         return appResources.getApplications(bundleName).collectItems().asList().await().indefinitely();
     }
 
-    public EmailSubscription getSubscription(String accountNumber, String username, String bundle, String application, EmailSubscription.EmailSubscriptionType type) {
+    public EmailSubscription getSubscription(String accountNumber, String username, String bundle, String application, EmailSubscriptionType type) {
         return subscriptionResources.getEmailSubscription(accountNumber, username, bundle, application, type).await().indefinitely();
     }
 
@@ -96,15 +97,15 @@ public class ResourceHelpers {
         for (int i = 0; i < count; i++) {
             // Add new endpoints
             WebhookAttributes webAttr = new WebhookAttributes();
-            webAttr.setMethod(WebhookAttributes.HttpType.POST);
+            webAttr.setMethod(HttpType.POST);
             webAttr.setUrl("https://localhost");
 
             Endpoint ep = new Endpoint();
             if (i > 0) {
-                ep.setType(Endpoint.EndpointType.WEBHOOK);
+                ep.setType(EndpointType.WEBHOOK);
                 ep.setName(String.format("Endpoint %d", count - i));
             } else {
-                ep.setType(Endpoint.EndpointType.DEFAULT);
+                ep.setType(EndpointType.DEFAULT);
                 ep.setName("Default endpoint");
             }
             ep.setDescription("Automatically generated");
@@ -126,10 +127,10 @@ public class ResourceHelpers {
 
     public UUID createWebhookEndpoint(String tenant) {
         WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(WebhookAttributes.HttpType.POST);
+        webAttr.setMethod(HttpType.POST);
         webAttr.setUrl("https://localhost");
         Endpoint ep = new Endpoint();
-        ep.setType(Endpoint.EndpointType.WEBHOOK);
+        ep.setType(EndpointType.WEBHOOK);
         ep.setName(String.format("Endpoint %s", UUID.randomUUID().toString()));
         ep.setDescription("Automatically generated");
         ep.setEnabled(true);
