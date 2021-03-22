@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
@@ -78,7 +79,7 @@ public class EndpointProcessor {
         return Uni.combine().all().unis(endpointsCallResult.onItem().ignoreAsUni(), notificationResult).discardItems();
     }
 
-    public EndpointTypeProcessor endpointTypeToProcessor(Endpoint.EndpointType endpointType) {
+    public EndpointTypeProcessor endpointTypeToProcessor(EndpointType endpointType) {
         switch (endpointType) {
             case WEBHOOK:
                 return webhooks;
@@ -93,7 +94,7 @@ public class EndpointProcessor {
         return resources.getTargetEndpoints(tenant, bundleName, applicationName, eventTypeName)
                 .flatMap((Function<Endpoint, Publisher<Endpoint>>) endpoint -> {
                     // If the tenant has a default endpoint for the eventType, then add the target endpoints here
-                    if (endpoint.getType() == Endpoint.EndpointType.DEFAULT) {
+                    if (endpoint.getType() == EndpointType.DEFAULT) {
                         return defaultProcessor.getDefaultEndpoints(endpoint);
                     }
                     return Multi.createFrom().item(endpoint);
