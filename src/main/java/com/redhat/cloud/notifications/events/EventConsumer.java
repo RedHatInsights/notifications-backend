@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.ingress.Action;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.reactive.messaging.annotations.Merge;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.JsonDecoder;
@@ -40,7 +39,6 @@ public class EventConsumer {
     }
 
     @Incoming("ingress")
-    @Merge
     @Acknowledgment(Strategy.PRE_PROCESSING)
     // Can be modified to use Multi<Message<String>> input also for more concurrency
     public Uni<Void> processAsync(Message<String> input) {
