@@ -293,7 +293,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     Notification item = new Notification(action, null);
 
                     return sendEmail(item, emailSubscriptionType).onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
-                }).merge()
+                }).concatenate()
                 .onItem().transformToMulti(result -> {
                     if (delete) {
                         return emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
@@ -302,7 +302,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     }
 
                     return Multi.createFrom().item(result);
-                }).merge();
+                }).concatenate();
                 // Todo: If we want to save the NotificationHistory, this could be a good place to do so. We would probably require a special EndpointType
                 // .onItem().invoke(result -> { })
     }
@@ -318,7 +318,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
         return emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
                 .onItem().transformToMulti(aggregationKey -> processAggregateEmailsByAggregationKey(aggregationKey, startTime, endTime, emailSubscriptionType, delete))
-                .merge().collectItems().asList()
+                .concatenate().collectItems().asList()
                 .onItem().invoke(result -> {
                     final LocalDateTime aggregateFinished = LocalDateTime.now();
                     log.info(
