@@ -62,15 +62,12 @@ public class EndpointProcessor {
                 action.getBundle(),
                 action.getApplication(),
                 action.getEventType())
-                .onItem()
-                .transformToUni(endpoint -> {
+                .onItem().transformToUniAndConcatenate(endpoint -> {
                     endpointTargeted.increment();
                     Notification endpointNotif = new Notification(action, endpoint);
                     return endpointTypeToProcessor(endpoint.getType()).process(endpointNotif);
                 })
-                .concatenate()
-                .onItem().transformToUni(history -> notifResources.createNotificationHistory(history))
-                .concatenate();
+                .onItem().transformToUniAndConcatenate(history -> notifResources.createNotificationHistory(history));
 
         // Should this be a separate endpoint type as well (since it is configurable) ?
         Notification notification = new Notification(action, null);
