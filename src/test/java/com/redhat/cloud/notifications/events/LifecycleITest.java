@@ -23,11 +23,10 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
+import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -36,6 +35,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.mockserver.model.HttpRequest;
 
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -81,8 +81,9 @@ public class LifecycleITest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
-    @Channel("ingress")
-    Emitter<String> ingressChan;
+    @Inject
+    @Any
+    InMemoryConnector inMemoryConnector;
 
     @Inject
     EndpointResources resources;
@@ -269,7 +270,7 @@ public class LifecycleITest {
         targetAction.setAccountId("tenant");
 
         String payload = serializeAction(targetAction);
-        ingressChan.send(payload);
+        inMemoryConnector.source("ingress").send(payload);
 
 //        InputStream is = getClass().getClassLoader().getResourceAsStream("input/platform.notifications.ingress.json");
 //        String inputJson = IOUtils.toString(is, StandardCharsets.UTF_8);
