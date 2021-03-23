@@ -71,6 +71,15 @@ public class ApplicationResources {
                 .getSingleResultOrNull();
     }
 
+    public Uni<EventType> getEventType(String bundleName, String applicationName, String eventTypeName) {
+        final String query = "FROM EventType WHERE name = :eventTypeName AND application.name = :applicationName AND application.bundle.name = :bundleName";
+        return session.createQuery(query, EventType.class)
+                .setParameter("bundleName", bundleName)
+                .setParameter("applicationName", applicationName)
+                .setParameter("eventTypeName", eventTypeName)
+                .getSingleResultOrNull();
+    }
+
     public Multi<EventType> getEventTypes(UUID appId) {
         String query = "FROM EventType WHERE application.id = :appId";
         return session.createQuery(query, EventType.class)
