@@ -26,9 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Produces(MediaType.APPLICATION_JSON)
 public class PoliciesMigrationService {
 
-    private final String BUNDLE = "insights";
-    private final String APPLICATION = "policies";
-    private final String EVENT_TYPE = "policy-triggered";
+    static final String BUNDLE = "insights";
+    static final String APPLICATION = "policies";
+    static final String EVENT_TYPE = "policy-triggered";
+    static final String DAILY_EMAIL_TYPE = "policies-daily-mail";
+    static final String INSTANT_EMAIL_TYPE = "policies-instant-mail";
 
     @Inject
     @RestClient
@@ -43,7 +45,7 @@ public class PoliciesMigrationService {
     @Inject
     ApplicationResources applicationResources;
 
-    class MigrateResponse {
+    static class MigrateResponse {
         public AtomicInteger eventTypesMigrated = new AtomicInteger();
         public AtomicInteger accountsMigrated = new AtomicInteger();
     }
@@ -65,17 +67,17 @@ public class PoliciesMigrationService {
             )
                     .invoke(() -> response.eventTypesMigrated.incrementAndGet())
                     .onItem().transform(subscribed -> pes.accountId).toMulti())
-                    .merge().collectItems().in(HashSet::new, HashSet::add)
+                    .concatenate().collectItems().in(HashSet::new, HashSet::add)
                     .onItem().transformToMulti(accountIds -> Multi.createFrom().iterable(accountIds))
                     .onItem().castTo(String.class)
-                    .onItem().transformToMulti(accountId -> {
+                    .onItem().transformToMultiAndConcatenate(accountId -> {
                         response.accountsMigrated.incrementAndGet();
                         // Remove existing endpoints
                         return endpointResources.getLinkedEndpoints(accountId, eventType.getId(), new Query())
-                        .onItem().transform(endpoint -> endpointResources.unlinkEndpoint(accountId, endpoint.getId(), eventType.getId()))
-                        .collectItems().asList()
+                        .onItem().transformToMultiAndConcatenate(endpoint -> endpointResources.unlinkEndpoint(accountId, endpoint.getId(), eventType.getId()).toMulti())
                         // Create EmailAction (Endpoint) and add it to the eventType
-                        .onItem().transformToMulti(_removed -> {
+                        .collectItems().asList()
+                        .onItem().transformToUni(_removed -> {
                             Endpoint endpoint = new Endpoint();
                             endpoint.setAccountId(accountId);
                             endpoint.setEnabled(true);
@@ -83,17 +85,17 @@ public class PoliciesMigrationService {
                             endpoint.setName("email-endpoint");
                             endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
                             endpoint.setProperties(new EmailSubscriptionAttributes());
-                            return endpointResources.createEndpoint(endpoint).toMulti();
+                            return endpointResources.createEndpoint(endpoint);
                         })
-                        .onItem().transform(endpoint -> endpointResources.linkEndpoint(accountId, endpoint.getId(), eventType.getId()));
-                    }).merge();
+                        .onItem().transformToUni(endpoint -> endpointResources.linkEndpoint(accountId, endpoint.getId(), eventType.getId())).toMulti();
+                    });
         }).collectItems().asList().onItem().transform(objects -> response);
     }
 
     private EmailSubscriptionType fromPoliciesEventType(String eventType) {
-        if (eventType.equals("policies-daily-mail")) {
+        if (eventType.equals(DAILY_EMAIL_TYPE)) {
             return EmailSubscriptionType.DAILY;
-        } else if (eventType.equals("policies-instant-mail")) {
+        } else if (eventType.equals(INSTANT_EMAIL_TYPE)) {
             return EmailSubscriptionType.INSTANT;
         }
         throw new IllegalArgumentException("Unknown policies event type: " + eventType);

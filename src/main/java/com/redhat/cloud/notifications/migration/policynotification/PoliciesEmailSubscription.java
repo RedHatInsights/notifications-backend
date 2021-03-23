@@ -8,4 +8,14 @@ public class PoliciesEmailSubscription {
     public String accountId;
     public String eventType;
     public String userId;
+
+    PoliciesEmailSubscription() {
+
+    }
+
+    PoliciesEmailSubscription(String accountId, String userId, String eventType) {
+        this.accountId = accountId;
+        this.eventType = eventType;
+        this.userId = userId;
+    }
 }
