@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.auth;
 
-import io.quarkus.security.identity.request.AuthenticationRequest;
+import io.quarkus.security.identity.request.BaseAuthenticationRequest;
 
-public class RhIdentityAuthenticationRequest implements AuthenticationRequest {
+public class RhIdentityAuthenticationRequest extends BaseAuthenticationRequest {
     private final String xRhIdentity;
 
     public RhIdentityAuthenticationRequest(String xRhIdentity) {
