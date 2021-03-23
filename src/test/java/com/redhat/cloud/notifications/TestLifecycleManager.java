@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import org.mockserver.client.MockServerClient;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.MockServerContainer;
@@ -31,6 +32,12 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         }
         setupMockEngine(properties);
 
+        /*
+         * We'll use an in-memory Reactive Messaging connector to send payloads.
+         * See https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/2/testing/testing.html
+         */
+        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory("ingress"));
+
         System.out.println(" -- Running with properties: " + properties);
         return properties;
     }
@@ -39,6 +46,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     public void stop() {
         postgreSQLContainer.stop();
         mockEngineServer.stop();
+        InMemoryConnector.clear();
     }
 
 
