@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
+import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm.Field;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
@@ -118,6 +119,15 @@ public class UserConfigServiceTest {
         Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(insightsPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
+        UserConfigPreferences preferences = given()
+                .header(identityHeader)
+                .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
+                .then()
+                .statusCode(200)
+                .extract().body().as(UserConfigPreferences.class);
+
+        assertEquals(false, preferences.getDailyEmail());
+        assertEquals(false, preferences.getInstantEmail());
 
         // Daily to true
         settingsValues = createSettingsValue(bundle, application, true, false);
@@ -140,6 +150,15 @@ public class UserConfigServiceTest {
         initialValues = extractNotificationValues(insightsPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
+        preferences = given()
+                .header(identityHeader)
+                .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
+                .then()
+                .statusCode(200)
+                .extract().body().as(UserConfigPreferences.class);
+
+        assertEquals(true, preferences.getDailyEmail());
+        assertEquals(false, preferences.getInstantEmail());
 
         // Instant to true
         settingsValues = createSettingsValue(bundle, application, false, true);
@@ -162,6 +181,15 @@ public class UserConfigServiceTest {
         initialValues = extractNotificationValues(insightsPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
+        preferences = given()
+                .header(identityHeader)
+                .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
+                .then()
+                .statusCode(200)
+                .extract().body().as(UserConfigPreferences.class);
+
+        assertEquals(false, preferences.getDailyEmail());
+        assertEquals(true, preferences.getInstantEmail());
 
         // Both to true
         settingsValues = createSettingsValue(bundle, application, true, true);
@@ -184,6 +212,15 @@ public class UserConfigServiceTest {
         initialValues = extractNotificationValues(insightsPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
+        preferences = given()
+                .header(identityHeader)
+                .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
+                .then()
+                .statusCode(200)
+                .extract().body().as(UserConfigPreferences.class);
+
+        assertEquals(true, preferences.getDailyEmail());
+        assertEquals(true, preferences.getInstantEmail());
     }
 
 }

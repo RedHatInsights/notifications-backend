@@ -6,8 +6,10 @@ import com.redhat.cloud.notifications.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.OldSettingsValueJsonForm;
+import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
@@ -23,6 +25,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -116,6 +119,28 @@ public class UserConfigService {
                     }
                     return builder.build();
                 });
+    }
+
+    @GET
+    @Path("/notification-preference/{bundleName}/{applicationName}")
+    @Operation(hidden = true)
+    public Uni<UserConfigPreferences> getPreferences(
+            @Context SecurityContext sec,
+            @PathParam("bundleName") String bundleName,
+            @PathParam("applicationName") String applicationName) {
+        final RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        final String account = principal.getAccount();
+        final String name = principal.getName();
+
+        Uni<EmailSubscription> uniDaily = emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.DAILY);
+        Uni<EmailSubscription> uniInstant = emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.INSTANT);
+
+        return Uni.combine().all().unis(uniDaily, uniInstant).combinedWith((daily, instant) -> {
+            UserConfigPreferences preferences = new UserConfigPreferences();
+            preferences.setDailyEmail(daily != null);
+            preferences.setInstantEmail(instant != null);
+            return preferences;
+        });
     }
 
     @GET
