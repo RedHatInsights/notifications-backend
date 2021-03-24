@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
+import com.redhat.cloud.notifications.routers.models.OldSettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
@@ -47,6 +48,34 @@ public class UserConfigService {
 
     @Inject
     ApplicationResources applicationResources;
+
+    // Todo: Remove after all settings are in place for notifications userpreferences section
+    @POST
+    @Path("/email-preference")
+    @Operation(hidden = true)
+    public Uni<Response> oldSaveSettings(@Context SecurityContext sec, @Valid SettingsValues values) {
+        return saveSettings(sec, values);
+    }
+
+    // Todo: Remove after all settings are in place for notifications userpreferences section
+    @GET
+    @Path("/email-preference")
+    @Operation(hidden = true)
+    public Uni<Response> oldGetSettingsSchema(@Context SecurityContext sec) {
+        final RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        final String account = principal.getAccount();
+        final String name = principal.getName();
+
+        Uni<SettingsValues> settingsValuesUni = oldGetSettingsValueForUser(account, name);
+
+        return oldSettingsValuesToJsonForm(settingsValuesUni).onItem().transform(jsonFormString -> {
+            Response.ResponseBuilder builder;
+            builder = Response.ok(jsonFormString);
+            EntityTag etag = new EntityTag(String.valueOf(jsonFormString.hashCode()));
+            builder.header("ETag", etag);
+            return builder.build();
+        });
+    }
 
     @POST
     @Path("/notification-preference")
@@ -109,6 +138,35 @@ public class UserConfigService {
         });
     }
 
+    // Todo: Remove after all settings are in place for notifications userpreferences section
+    private Uni<SettingsValues> oldGetSettingsValueForUser(String account, String username) {
+        return Uni.createFrom().deferred(() -> {
+            final SettingsValues values = new SettingsValues();
+
+            return bundleResources.getBundles()
+                    .onItem().transformToMulti(bundle -> {
+                        BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
+                        bundleSettingsValue.name = bundle.getDisplay_name();
+                        values.bundles.put(bundle.getName(), bundleSettingsValue);
+                        return applicationResources.getApplications(bundle.getName())
+                                .onItem().transformToMulti(application -> {
+                                    ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
+                                    applicationSettingsValue.name = application.getDisplay_name();
+                                    values.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
+                                    return Multi.createFrom().items(EmailSubscriptionType.values())
+                                            .onItem().transformToMulti(emailSubscriptionType -> {
+                                                values.bundles.get(bundle.getName()).applications.get(application.getName()).notifications.put(emailSubscriptionType, false);
+                                                return Multi.createFrom().empty();
+                                            }).concatenate();
+                                }).concatenate();
+                    }).concatenate().collectItems().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
+                    .onItem().transform(emailSubscription -> {
+                        values.bundles.get(emailSubscription.getBundle()).applications.get(emailSubscription.getApplication()).notifications.put(emailSubscription.getType(), true);
+                        return emailSubscription;
+                    }).collectItems().asList().onItem().transform(emailSubscriptions -> values);
+        });
+    }
+
     private Uni<SettingsValues> getSettingsValueForUser(String account, String username, String bundleName) {
         return Uni.createFrom().deferred(() -> {
             final SettingsValues values = new SettingsValues();
@@ -137,6 +195,21 @@ public class UserConfigService {
                         return emailSubscription;
                     }).collectItems().asList().onItem().transform(emailSubscriptions -> values);
         });
+    }
+
+    // Todo: Remove after all settings are in place for notifications userpreferences section
+    private Uni<String> oldSettingsValuesToJsonForm(Uni<SettingsValues> settingsValuesUni) {
+        return settingsValuesUni.onItem().transform(settingsValues -> OldSettingsValueJsonForm.fromSettingsValue(settingsValues))
+                .onItem().transform(settingsValueJsonForm -> {
+                    try {
+                        return mapper.writeValueAsString(settingsValueJsonForm);
+                    } catch (JsonProcessingException jpe) {
+                        throw new IllegalArgumentException(
+                                String.format("Unable to convert '%s' to String", settingsValueJsonForm),
+                                jpe
+                        );
+                    }
+                });
     }
 
     private Uni<String> settingsValuesToJsonForm(Uni<SettingsValues> settingsValuesUni) {
