@@ -188,6 +188,9 @@ public class UserConfigService {
         });
     }
 
+    /**
+     * Pulls the user settings values of an user across all the know applications of a bundle
+     * */
     private Uni<SettingsValues> getSettingsValueForUser(String account, String username, String bundleName) {
         return Uni.createFrom().deferred(() -> {
             final SettingsValues values = new SettingsValues();
