@@ -1,5 +1,9 @@
 package com.redhat.cloud.notifications.routers.models;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy.SnakeCaseStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
+@JsonNaming(SnakeCaseStrategy.class)
 public class UserConfigPreferences {
     private Boolean instantEmail;
     private Boolean dailyEmail;

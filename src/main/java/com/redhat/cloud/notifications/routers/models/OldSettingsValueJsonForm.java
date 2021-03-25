@@ -38,7 +38,7 @@ public class OldSettingsValueJsonForm {
             bundleSettingsValue.applications.forEach((applicationName, applicationSettingsValue) -> {
                 OldSettingsValueJsonForm form = new OldSettingsValueJsonForm();
                 forms.add(form);
-                createLabelField(String.format("%s - %s", bundleSettingsValue.name, applicationSettingsValue.name), form.fields);
+                createLabelField(String.format("%s - %s", bundleSettingsValue.displayName, applicationSettingsValue.displayName), form.fields);
 
                 applicationSettingsValue.notifications.forEach((emailSubscriptionType, isSubscribed) -> {
                     // Todo: Check if the bundle/application supports instant/daily emails and remove if they dont

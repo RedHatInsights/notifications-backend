@@ -43,6 +43,13 @@ public class SettingsValueJsonForm {
 
     public List<Sections> fields = new ArrayList<>();
 
+    /**
+     * This function is in charge of transforming a `SettingsValue` into a data-driven-form [1] object used to render
+     * used by the user-preferences UI.
+     *
+     * Todo: It should be possible to simplify this with qute
+     * [1] https://data-driven-forms.org/
+     */
     public static SettingsValueJsonForm fromSettingsValue(SettingsValues values) {
         SettingsValueJsonForm form = new SettingsValueJsonForm();
         Sections sections = new Sections();
@@ -51,7 +58,7 @@ public class SettingsValueJsonForm {
         values.bundles.forEach((bundleName, bundleSettingsValue) -> {
             bundleSettingsValue.applications.forEach((applicationName, applicationSettingsValue) -> {
                 Field section = new Field();
-                section.label = applicationSettingsValue.name;
+                section.label = applicationSettingsValue.displayName;
                 section.name = applicationName;
                 section.fields = new ArrayList<>();
 
@@ -86,14 +93,6 @@ public class SettingsValueJsonForm {
         });
 
         return form;
-    }
-
-    private static Field createLabelField(String label, List<Field> parentContainer) {
-        Field field = new Field();
-        field.component = COMPONENT_LABEL;
-        field.label = label;
-        parentContainer.add(field);
-        return field;
     }
 
 }

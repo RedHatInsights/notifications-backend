@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.auth.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
-import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.OldSettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
@@ -132,15 +131,12 @@ public class UserConfigService {
         final String account = principal.getAccount();
         final String name = principal.getName();
 
-        Uni<EmailSubscription> uniDaily = emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.DAILY);
-        Uni<EmailSubscription> uniInstant = emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.INSTANT);
-
-        return Uni.combine().all().unis(uniDaily, uniInstant).combinedWith((daily, instant) -> {
-            UserConfigPreferences preferences = new UserConfigPreferences();
-            preferences.setDailyEmail(daily != null);
-            preferences.setInstantEmail(instant != null);
-            return preferences;
-        });
+        final UserConfigPreferences preferences = new UserConfigPreferences();
+        return emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.DAILY)
+                .onItem().invoke(daily -> preferences.setDailyEmail(daily != null))
+                .onItem().transformToUni(_ignored -> emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.INSTANT))
+                .onItem().invoke(instant -> preferences.setInstantEmail(instant != null))
+                .onItem().transform(_ignored -> preferences);
     }
 
     @GET
@@ -171,12 +167,12 @@ public class UserConfigService {
             return bundleResources.getBundles()
                     .onItem().transformToMulti(bundle -> {
                         BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
-                        bundleSettingsValue.name = bundle.getDisplay_name();
+                        bundleSettingsValue.displayName = bundle.getDisplay_name();
                         values.bundles.put(bundle.getName(), bundleSettingsValue);
                         return applicationResources.getApplications(bundle.getName())
                                 .onItem().transformToMulti(application -> {
                                     ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
-                                    applicationSettingsValue.name = application.getDisplay_name();
+                                    applicationSettingsValue.displayName = application.getDisplay_name();
                                     values.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
                                     return Multi.createFrom().items(EmailSubscriptionType.values())
                                             .onItem().transformToMulti(emailSubscriptionType -> {
@@ -201,12 +197,12 @@ public class UserConfigService {
                     .filter(bundle -> bundle.getName().equals(bundleName))
                     .onItem().transformToMulti(bundle -> {
                         BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
-                        bundleSettingsValue.name = bundle.getDisplay_name();
+                        bundleSettingsValue.displayName = bundle.getDisplay_name();
                         values.bundles.put(bundle.getName(), bundleSettingsValue);
                         return applicationResources.getApplications(bundle.getName())
                                 .onItem().transformToMulti(application -> {
                                     ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
-                                    applicationSettingsValue.name = application.getDisplay_name();
+                                    applicationSettingsValue.displayName = application.getDisplay_name();
                                     values.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
                                     return Multi.createFrom().items(EmailSubscriptionType.values())
                                             .onItem().transformToMulti(emailSubscriptionType -> {
