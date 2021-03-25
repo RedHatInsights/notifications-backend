@@ -91,7 +91,8 @@ public class UserConfigServiceTest {
 
         SettingsValueJsonForm jsonForm = given()
                 .header(identityHeader)
-                .when().get("/user-config/notification-preference?bundleName=insights")
+                .queryParam("bundleName", bundle)
+                .when().get("/user-config/notification-preference")
                 .then()
                 .statusCode(200)
                 .extract().body().as(SettingsValueJsonForm.class);
