@@ -69,12 +69,12 @@ public class OpenApiTest {
     @Test
     void exportOpenApiFile() throws Exception {
 
-        InputStream in = nUrl.openStream();
-        Files.copy(in, Paths.get("./target/openapi.notifications.json"), StandardCopyOption.REPLACE_EXISTING);
-        in.close();
+        try (InputStream in = nUrl.openStream()) {
+            Files.copy(in, Paths.get("./target/openapi.notifications.json"), StandardCopyOption.REPLACE_EXISTING);
+        }
 
-        in = iUrl.openStream();
-        Files.copy(in, Paths.get("./target/openapi.integrations.json"), StandardCopyOption.REPLACE_EXISTING);
-        in.close();
+        try (InputStream in = iUrl.openStream()) {
+            Files.copy(in, Paths.get("./target/openapi.integrations.json"), StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 }

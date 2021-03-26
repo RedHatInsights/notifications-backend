@@ -15,6 +15,9 @@ import java.util.regex.Pattern;
 @SuppressWarnings("unused")
 public class RouteRedirector {
 
+    // Prevents the injection of characters that would break the log file pattern and lead to log forging or log poisoning.
+    private static final Pattern ANTI_INJECTION_PATTERN = Pattern.compile("[\n|\r|\t]");
+
     Pattern p = Pattern.compile("/api/(integrations|notifications)/v1/(.*)");
 
     Logger log = Logger.getLogger(this.getClass().getName());
@@ -31,7 +34,8 @@ public class RouteRedirector {
     void myRedirector(RoutingContext rc) {
         String uri = rc.request().uri();
         if (log.isLoggable(Level.FINER)) {
-            log.finer("Incoming uri: " + uri);
+            String sanitizedUri = ANTI_INJECTION_PATTERN.matcher(uri).replaceAll("");
+            log.finer("Incoming uri: " + sanitizedUri);
         }
         Matcher m = p.matcher(uri);
         if (m.matches()) {
