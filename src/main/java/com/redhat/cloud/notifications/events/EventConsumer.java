@@ -42,38 +42,32 @@ public class EventConsumer {
     @Acknowledgment(Strategy.PRE_PROCESSING)
     // Can be modified to use Multi<Message<String>> input also for more concurrency
     public Uni<Void> processAsync(Message<String> input) {
-        if (log.isLoggable(Level.FINE)) {
-            log.fine("Processing: " + input.getPayload());
-        }
-        return Uni.createFrom()
-                .item(input)
+        return Uni.createFrom().item(() -> input.getPayload())
+                .onItem().invoke(payload -> log.fine(() -> "Processing: " + payload))
                 .stage(self -> self
                                 // First pipeline stage - modify from Kafka message to processable entity
-                                .onItem().transform(Message::getPayload)
                                 .onItem().transform(this::extractPayload)
                                 .onFailure().invoke(t -> rejectedCount.increment())
-                        // TODO Handle here and set the counters for broken input data and produce empty message?
                 )
                 .stage(self -> self
                                 // Second pipeline stage - enrich from input to destination (webhook) processor format
                                 .onItem()
-                                .transformToUni(action -> destinations.process(action))
-                                .onFailure().invoke(t -> processingErrorCount.increment())
+                                .transformToUni(action -> destinations.process(action)
+                                        .onFailure().invoke(t -> processingErrorCount.increment())
+                                )
                         // Receive only notification of completion
                 )
                 // Third pipeline stage - ack the Kafka topic
                 .onItemOrFailure()
                 .transformToUni((unused, t) -> {
-                    // Log the throwable ?
                     if (t != null) {
-                        log.severe("Could not process the payload: " +  t.getMessage());
+                        log.log(Level.SEVERE, "Could not process the payload", t);
                     }
-
                     return Uni.createFrom().voidItem();
                 });
     }
 
-    public Action extractPayload(String payload) {
+    private Action extractPayload(String payload) {
         // I need the schema here..
         Action action = new Action();
         try {
@@ -82,7 +76,7 @@ public class EventConsumer {
             DatumReader<Action> reader = new SpecificDatumReader<>(Action.class);
             reader.read(action, jsonDecoder);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new IllegalArgumentException("Payload extraction failed", e);
         }
         return action;
     }
