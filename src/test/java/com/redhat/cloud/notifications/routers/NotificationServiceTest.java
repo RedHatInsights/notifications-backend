@@ -143,7 +143,7 @@ public class NotificationServiceTest {
         for (int i = 0; i < eventTypes.size(); i++) {
             JsonObject ev = eventTypes.getJsonObject(i);
             ev.mapTo(EventType.class);
-            assertTrue(ev.getJsonObject("application").getString("bundle_id").equals(myBundleId.toString()));
+            assertEquals(myBundleId.toString(), ev.getJsonObject("application").getString("bundle_id"));
         }
 
         assertTrue(eventTypes.size() >= 100); // Depending on the test order, we might have existing application types also
@@ -171,8 +171,8 @@ public class NotificationServiceTest {
         for (int i = 0; i < eventTypes.size(); i++) {
             JsonObject ev = eventTypes.getJsonObject(i);
             ev.mapTo(EventType.class);
-            assertTrue(ev.getJsonObject("application").getString("bundle_id").equals(myBundleId.toString()));
-            assertTrue(ev.getJsonObject("application").getString("id").equals(myOtherTesterApplicationId.toString()));
+            assertEquals(myBundleId.toString(), ev.getJsonObject("application").getString("bundle_id"));
+            assertEquals(myOtherTesterApplicationId.toString(), ev.getJsonObject("application").getString("id"));
         }
 
         assertTrue(eventTypes.size() >= 100); // Depending on the test order, we might have existing application types also

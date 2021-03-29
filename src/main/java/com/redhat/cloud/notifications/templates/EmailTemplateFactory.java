@@ -20,12 +20,12 @@ public class EmailTemplateFactory {
 class EmailTemplateNotSupported extends AbstractEmailTemplate {
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
-        throw new RuntimeException("Not supported");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
-        throw new RuntimeException("Not supported");
+        throw new UnsupportedOperationException();
     }
 
     @Override
