@@ -92,7 +92,7 @@ public class EndpointProcessor {
 
     public Multi<Endpoint> getEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
         return resources.getTargetEndpoints(tenant, bundleName, applicationName, eventTypeName)
-                .flatMap((Function<Endpoint, Publisher<Endpoint>>) endpoint -> {
+                .onItem().transformToMultiAndConcatenate((Function<Endpoint, Publisher<Endpoint>>) endpoint -> {
                     // If the tenant has a default endpoint for the eventType, then add the target endpoints here
                     if (endpoint.getType() == EndpointType.DEFAULT) {
                         return defaultProcessor.getDefaultEndpoints(endpoint);
