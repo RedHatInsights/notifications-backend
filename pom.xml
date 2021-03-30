@@ -30,6 +30,7 @@
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <maven-exec-plugin.version>3.0.0</maven-exec-plugin.version>
         <insights-notification-schemas-java.version>0.2</insights-notification-schemas-java.version>
+        <clowder-quarkus-config-source.version>0.1.1</clowder-quarkus-config-source.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -161,6 +162,13 @@
             <groupId>io.r2dbc</groupId>
             <artifactId>r2dbc-pool</artifactId>
             <version>${r2dbc-pool.version}</version>
+        </dependency>
+
+        <!-- Configuration dependencies -->
+        <dependency>
+            <groupId>com.redhat.cloud.common</groupId>
+            <artifactId>clowder-quarkus-config-source</artifactId>
+            <version>${clowder-quarkus-config-source.version}</version>
         </dependency>
 
         <!-- Test dependencies -->
