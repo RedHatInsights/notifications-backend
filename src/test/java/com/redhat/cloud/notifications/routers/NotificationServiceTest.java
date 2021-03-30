@@ -416,7 +416,7 @@ public class NotificationServiceTest {
                 .header(localIdentityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .get("/notifications/facets/applications?bundleName=insights")
+                .get("/notifications/facets/applications?bundleName=rhel")
                 .then()
                 .statusCode(200).extract().response().jsonPath().getList(".", Facet.class);
 
@@ -442,9 +442,9 @@ public class NotificationServiceTest {
                 .statusCode(200).extract().response().jsonPath().getList(".", Facet.class);
 
         assertTrue(bundles.size() > 0);
-        Optional<Facet> insights = bundles.stream().filter(facet -> facet.getName().equals("insights")).findFirst();
-        assertTrue(insights.isPresent());
-        assertEquals("Insights", insights.get().getDisplayName());
+        Optional<Facet> rhel = bundles.stream().filter(facet -> facet.getName().equals("rhel")).findFirst();
+        assertTrue(rhel.isPresent());
+        assertEquals("Red Hat Enterprise Linux", rhel.get().getDisplayName());
     }
 
 }
