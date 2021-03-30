@@ -9,11 +9,9 @@ import io.quarkus.vertx.http.runtime.security.ChallengeData;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.quarkus.vertx.http.runtime.security.HttpCredentialTransport;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
 import javax.enterprise.context.ApplicationScoped;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Set;
 
@@ -51,7 +49,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
                     good = true;
                 }
             } else if (path.startsWith("/openapi.json") || path.startsWith("/internal")
-                    || path.startsWith("/admin") || path.startsWith("/health")) {
+                    || path.startsWith("/admin") || path.startsWith("/health") || path.startsWith("/q/health")) {
                 good = true;
             }
 
@@ -66,15 +64,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
         }
 
         RhIdentityAuthenticationRequest authReq = new RhIdentityAuthenticationRequest(xRhIdentityHeaderValue);
-        Uni<SecurityIdentity> identityUni = identityProviderManager.authenticate(authReq);
-
-        Uni<QuarkusSecurityIdentity.Builder> identityBuilderUni = Uni.createFrom().item(() -> getRhIdentityFromString(xRhIdentityHeaderValue))
-                .onFailure().transform(AuthenticationFailedException::new)
-                .onItem().transform(rhid -> new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(), rhid.getIdentity().getAccountNumber()))
-                .onItem().transform(principal -> QuarkusSecurityIdentity.builder().setPrincipal(principal));
-
-        return identityBuilderUni.onItem().transformToUni(builder -> identityUni.onItem().transform(ide -> builder.addRoles(ide.getRoles())))
-                .onItem().transform(QuarkusSecurityIdentity.Builder::build);
+        return identityProviderManager.authenticate(authReq);
     }
 
     @Override
@@ -90,11 +80,5 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
     @Override
     public HttpCredentialTransport getCredentialTransport() {
         return null;
-    }
-
-    private static RhIdentity getRhIdentityFromString(String xRhIdHeader) {
-        String xRhDecoded = new String(Base64.getDecoder().decode(xRhIdHeader));
-        JsonObject json = new JsonObject(xRhDecoded);
-        return json.mapTo(RhIdentity.class);
     }
 }

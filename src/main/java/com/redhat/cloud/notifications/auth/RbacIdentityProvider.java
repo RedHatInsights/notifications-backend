@@ -6,12 +6,16 @@ import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.Json;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.Base64;
 import java.util.logging.Logger;
+
+import static com.redhat.cloud.notifications.auth.RHIdentityAuthMechanism.IDENTITY_HEADER;
 
 /**
  * Authorizes the data from the insight's RBAC-server and adds the appropriate roles
@@ -47,29 +51,50 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                     .addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
                     .build());
         }
-        return rbacServer.getRbacInfo("notifications,integrations", rhAuthReq.getxRhIdentity())
-                .onItem()
-                .transform(raw -> {
-                    QuarkusSecurityIdentity.Builder builder = QuarkusSecurityIdentity.builder();
-                    if (raw.canRead("notifications", "notifications")) {
-                        builder.addRole(RBAC_READ_NOTIFICATIONS);
-                    }
-                    if (raw.canWrite("notifications", "notifications")) {
-                        builder.addRole(RBAC_WRITE_NOTIFICATIONS);
-                    }
-                    if (raw.canRead("integrations", "endpoints")) {
-                        builder.addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS);
-                    }
-                    if (raw.canWrite("integrations", "endpoints")) {
-                        builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
-                    }
+        // Retrieve the identity header from the authentication request
+        return Uni.createFrom().item(() -> (String) rhAuthReq.getAttribute(IDENTITY_HEADER))
+                .onItem().transformToUni(xRhIdHeader ->
+                        // Start building a QuarkusSecurityIdentity
+                        Uni.createFrom().item(QuarkusSecurityIdentity.builder())
+                                .onItem().transform(builder -> {
+                                    // Decode the header and deserialize the resulting JSON
+                                    RhIdentity rhid = getRhIdentityFromString(xRhIdHeader);
+                                    RhIdPrincipal principal = new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(), rhid.getIdentity().getAccountNumber());
+                                    return builder.setPrincipal(principal);
+                                })
+                                // A decoding or a deserialization failure will cause an authentication failure
+                                .onFailure().transform(AuthenticationFailedException::new)
+                                // Otherwise, we can call the RBAC server
+                                .onItem().transformToUni(builder ->
+                                        rbacServer.getRbacInfo("notifications,integrations", xRhIdHeader)
+                                                // An RBAC server call failure will cause an authentication failure
+                                                // TODO Add retry?
+                                                .onFailure().transform(failure -> {
+                                                    log.warning("RBAC call failed: " + failure.getMessage());
+                                                    throw new AuthenticationFailedException(failure.getMessage());
+                                                })
+                                                // Otherwise, we can finish building the QuarkusSecurityIdentity and return the result
+                                                .onItem().transform(rbacRaw -> {
+                                                    if (rbacRaw.canRead("notifications", "notifications")) {
+                                                        builder.addRole(RBAC_READ_NOTIFICATIONS);
+                                                    }
+                                                    if (rbacRaw.canWrite("notifications", "notifications")) {
+                                                        builder.addRole(RBAC_WRITE_NOTIFICATIONS);
+                                                    }
+                                                    if (rbacRaw.canRead("integrations", "endpoints")) {
+                                                        builder.addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS);
+                                                    }
+                                                    if (rbacRaw.canWrite("integrations", "endpoints")) {
+                                                        builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
+                                                    }
+                                                    return builder.build();
+                                                })
+                                )
+                );
+    }
 
-                    return (SecurityIdentity) builder.build();
-                })
-                .onFailure()
-                .transform(raw -> {
-                    log.warning("RBAC call failed: " + raw.getMessage());
-                    throw new AuthenticationFailedException(raw.getMessage());
-                });
+    private static RhIdentity getRhIdentityFromString(String xRhIdHeader) {
+        String xRhDecoded = new String(Base64.getDecoder().decode(xRhIdHeader));
+        return Json.decodeValue(xRhDecoded, RhIdentity.class);
     }
 }

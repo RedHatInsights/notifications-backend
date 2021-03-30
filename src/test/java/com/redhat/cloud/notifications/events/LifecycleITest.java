@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -84,9 +83,6 @@ public class LifecycleITest {
     @Inject
     @Any
     InMemoryConnector inMemoryConnector;
-
-    @Inject
-    EndpointResources resources;
 
     @Inject
     MeterRegistry meterRegistry;
