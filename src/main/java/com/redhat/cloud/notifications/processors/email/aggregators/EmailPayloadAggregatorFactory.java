@@ -9,7 +9,7 @@ public class EmailPayloadAggregatorFactory {
     }
 
     public static AbstractEmailPayloadAggregator by(EmailAggregationKey aggregationKey) {
-        if (aggregationKey.getBundle().equals("insights") && aggregationKey.getApplication().equals("policies")) {
+        if (aggregationKey.getBundle().equals("rhel") && aggregationKey.getApplication().equals("policies")) {
             return new PoliciesEmailPayloadAggregator();
         }
 
