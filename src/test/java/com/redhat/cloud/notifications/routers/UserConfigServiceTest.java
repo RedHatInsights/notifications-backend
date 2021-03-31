@@ -41,7 +41,7 @@ public class UserConfigServiceTest {
     MockServerClientConfig mockServerConfig;
 
 
-    private Field insightsPolicyForm(SettingsValueJsonForm jsonForm) {
+    private Field rhelPolicyForm(SettingsValueJsonForm jsonForm) {
         for (Field section : jsonForm.fields.get(0).sections) {
             if (section.name.equals("policies")) {
                 return section;
@@ -86,7 +86,7 @@ public class UserConfigServiceTest {
         Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        String bundle = "insights";
+        String bundle = "rhel";
         String application = "policies";
 
         SettingsValueJsonForm jsonForm = given()
@@ -97,8 +97,8 @@ public class UserConfigServiceTest {
                 .statusCode(200)
                 .extract().body().as(SettingsValueJsonForm.class);
 
-        Field insightsPolicy = insightsPolicyForm(jsonForm);
-        assertNotNull(insightsPolicy, "Insights policies not found");
+        Field rhelPolicy = rhelPolicyForm(jsonForm);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
 
         SettingsValues settingsValues = createSettingsValue(bundle, application, false, false);
         given()
@@ -111,13 +111,13 @@ public class UserConfigServiceTest {
                 .statusCode(200);
         jsonForm = given()
                 .header(identityHeader)
-                .when().get("/user-config/notification-preference?bundleName=insights")
+                .when().get("/user-config/notification-preference?bundleName=rhel")
                 .then()
                 .statusCode(200)
                 .extract().body().as(SettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForm);
-        assertNotNull(insightsPolicy, "Insights policies not found");
-        Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(insightsPolicy, bundle, application);
+        rhelPolicy = rhelPolicyForm(jsonForm);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
         UserConfigPreferences preferences = given()
@@ -142,13 +142,13 @@ public class UserConfigServiceTest {
                 .statusCode(200);
         jsonForm = given()
                 .header(identityHeader)
-                .when().get("/user-config/notification-preference?bundleName=insights")
+                .when().get("/user-config/notification-preference?bundleName=rhel")
                 .then()
                 .statusCode(200)
                 .extract().body().as(SettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForm);
-        assertNotNull(insightsPolicy, "Insights policies not found");
-        initialValues = extractNotificationValues(insightsPolicy, bundle, application);
+        rhelPolicy = rhelPolicyForm(jsonForm);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        initialValues = extractNotificationValues(rhelPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
         preferences = given()
@@ -173,13 +173,13 @@ public class UserConfigServiceTest {
                 .statusCode(200);
         jsonForm = given()
                 .header(identityHeader)
-                .when().get("/user-config/notification-preference?bundleName=insights")
+                .when().get("/user-config/notification-preference?bundleName=rhel")
                 .then()
                 .statusCode(200)
                 .extract().body().as(SettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForm);
-        assertNotNull(insightsPolicy, "Insights policies not found");
-        initialValues = extractNotificationValues(insightsPolicy, bundle, application);
+        rhelPolicy = rhelPolicyForm(jsonForm);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        initialValues = extractNotificationValues(rhelPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
         preferences = given()
@@ -204,13 +204,13 @@ public class UserConfigServiceTest {
                 .statusCode(200);
         jsonForm = given()
                 .header(identityHeader)
-                .when().get("/user-config/notification-preference?bundleName=insights")
+                .when().get("/user-config/notification-preference?bundleName=rhel")
                 .then()
                 .statusCode(200)
                 .extract().body().as(SettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForm);
-        assertNotNull(insightsPolicy, "Insights policies not found");
-        initialValues = extractNotificationValues(insightsPolicy, bundle, application);
+        rhelPolicy = rhelPolicyForm(jsonForm);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        initialValues = extractNotificationValues(rhelPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
         preferences = given()

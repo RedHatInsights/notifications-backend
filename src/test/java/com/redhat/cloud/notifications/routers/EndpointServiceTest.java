@@ -722,7 +722,7 @@ public class EndpointServiceTest {
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .delete("/endpoints/email/subscription/insights/" + ResourceHelpers.TEST_APP_NAME + "/instant")
+                .delete("/endpoints/email/subscription/rhel/" + ResourceHelpers.TEST_APP_NAME + "/instant")
                 .then().statusCode(404);
         given()
                 .header(identityHeader)
@@ -734,7 +734,7 @@ public class EndpointServiceTest {
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .put("/endpoints/email/subscription/insights/" + ResourceHelpers.TEST_APP_NAME + "/instant")
+                .put("/endpoints/email/subscription/rhel/" + ResourceHelpers.TEST_APP_NAME + "/instant")
                 .then().statusCode(404);
         given()
                 .header(identityHeader)
@@ -758,13 +758,13 @@ public class EndpointServiceTest {
                 .then().statusCode(404);
 
         // Disable everything as preparation
-        // insights/policies instant and daily
+        // rhel/policies instant and daily
         // TEST_BUNDLE_NAME/TEST_APP_NAME instant and daily
         given()
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .delete("/endpoints/email/subscription/insights/policies/instant")
+                .delete("/endpoints/email/subscription/rhel/policies/instant")
                 .then().statusCode(200);
         given()
                 .header(identityHeader)
@@ -776,7 +776,7 @@ public class EndpointServiceTest {
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .delete("/endpoints/email/subscription/insights/policies/daily")
+                .delete("/endpoints/email/subscription/rhel/policies/daily")
                 .then().statusCode(200);
         given()
                 .header(identityHeader)
@@ -785,34 +785,34 @@ public class EndpointServiceTest {
                 .delete("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/" + ResourceHelpers.TEST_APP_NAME + "/daily")
                 .then().statusCode(200);
 
-        assertNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.INSTANT));
-        assertNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.DAILY));
+        assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
+        assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
         assertNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT));
         assertNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY));
 
-        // Enable instant on insights.policies
+        // Enable instant on rhel.policies
         given()
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .put("/endpoints/email/subscription/insights/policies/instant")
+                .put("/endpoints/email/subscription/rhel/policies/instant")
                 .then().statusCode(200);
 
-        assertNotNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.INSTANT));
-        assertNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.DAILY));
+        assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
+        assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
         assertNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT));
         assertNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY));
 
-        // Enable daily on insights.policies
+        // Enable daily on rhel.policies
         given()
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .put("/endpoints/email/subscription/insights/policies/daily")
+                .put("/endpoints/email/subscription/rhel/policies/daily")
                 .then().statusCode(200);
 
-        assertNotNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.INSTANT));
-        assertNotNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.DAILY));
+        assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
+        assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
         assertNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT));
         assertNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY));
 
@@ -824,34 +824,34 @@ public class EndpointServiceTest {
                 .put("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/" + ResourceHelpers.TEST_APP_NAME + "/instant")
                 .then().statusCode(200);
 
-        assertNotNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.INSTANT));
-        assertNotNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.DAILY));
+        assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
+        assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
         assertNotNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT));
         assertNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY));
 
-        // Disable daily on insights.policies
+        // Disable daily on rhel.policies
         given()
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .delete("/endpoints/email/subscription/insights/policies/daily")
+                .delete("/endpoints/email/subscription/rhel/policies/daily")
                 .then().statusCode(200);
 
-        assertNotNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.INSTANT));
-        assertNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.DAILY));
+        assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
+        assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
         assertNotNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT));
         assertNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY));
 
-        // Disable instant on insights.policies
+        // Disable instant on rhel.policies
         given()
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
-                .delete("/endpoints/email/subscription/insights/policies/instant")
+                .delete("/endpoints/email/subscription/rhel/policies/instant")
                 .then().statusCode(200);
 
-        assertNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.INSTANT));
-        assertNull(this.helpers.getSubscription(tenant, username, "insights", "policies", EmailSubscriptionType.DAILY));
+        assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
+        assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
         assertNotNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT));
         assertNull(this.helpers.getSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY));
     }

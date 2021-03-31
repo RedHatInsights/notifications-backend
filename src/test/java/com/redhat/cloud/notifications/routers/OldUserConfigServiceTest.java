@@ -41,10 +41,10 @@ public class OldUserConfigServiceTest {
     MockServerClientConfig mockServerConfig;
 
 
-    private OldSettingsValueJsonForm insightsPolicyForm(List<OldSettingsValueJsonForm> jsonForms) {
+    private OldSettingsValueJsonForm rhelPolicyForm(List<OldSettingsValueJsonForm> jsonForms) {
         for (OldSettingsValueJsonForm settingsValueJsonForm : jsonForms) {
             for (Field field : settingsValueJsonForm.fields) {
-                if (field.name != null && field.name.startsWith("bundles[insights].applications[policies]")) {
+                if (field.name != null && field.name.startsWith("bundles[rhel].applications[policies]")) {
                     return settingsValueJsonForm;
                 }
             }
@@ -88,7 +88,7 @@ public class OldUserConfigServiceTest {
         Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        String bundle = "insights";
+        String bundle = "rhel";
         String application = "policies";
 
         List<OldSettingsValueJsonForm> jsonForms = given()
@@ -98,8 +98,8 @@ public class OldUserConfigServiceTest {
                 .statusCode(200)
                 .extract().body().jsonPath().getList(".", OldSettingsValueJsonForm.class);
 
-        OldSettingsValueJsonForm insightsPolicy = insightsPolicyForm(jsonForms);
-        assertNotNull(insightsPolicy, "Insights policies not found");
+        OldSettingsValueJsonForm rhelPolicy = rhelPolicyForm(jsonForms);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
 
         SettingsValues settingsValues = createSettingsValue(bundle, application, false, false);
         given()
@@ -116,9 +116,9 @@ public class OldUserConfigServiceTest {
                 .then()
                 .statusCode(200)
                 .extract().body().jsonPath().getList(".", OldSettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForms);
-        assertNotNull(insightsPolicy, "Insights policies not found");
-        Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(insightsPolicy, bundle, application);
+        rhelPolicy = rhelPolicyForm(jsonForms);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
 
@@ -138,9 +138,9 @@ public class OldUserConfigServiceTest {
                 .then()
                 .statusCode(200)
                 .extract().body().jsonPath().getList(".", OldSettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForms);
-        assertNotNull(insightsPolicy, "Insights policies not found");
-        initialValues = extractNotificationValues(insightsPolicy, bundle, application);
+        rhelPolicy = rhelPolicyForm(jsonForms);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        initialValues = extractNotificationValues(rhelPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
 
@@ -160,9 +160,9 @@ public class OldUserConfigServiceTest {
                 .then()
                 .statusCode(200)
                 .extract().body().jsonPath().getList(".", OldSettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForms);
-        assertNotNull(insightsPolicy, "Insights policies not found");
-        initialValues = extractNotificationValues(insightsPolicy, bundle, application);
+        rhelPolicy = rhelPolicyForm(jsonForms);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        initialValues = extractNotificationValues(rhelPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
 
@@ -182,9 +182,9 @@ public class OldUserConfigServiceTest {
                 .then()
                 .statusCode(200)
                 .extract().body().jsonPath().getList(".", OldSettingsValueJsonForm.class);
-        insightsPolicy = insightsPolicyForm(jsonForms);
-        assertNotNull(insightsPolicy, "Insights policies not found");
-        initialValues = extractNotificationValues(insightsPolicy, bundle, application);
+        rhelPolicy = rhelPolicyForm(jsonForms);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        initialValues = extractNotificationValues(rhelPolicy, bundle, application);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
     }
