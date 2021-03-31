@@ -16,6 +16,7 @@ SET bundle = 'rhel'
 WHERE
   bundle = 'insights'
 ;
+
 UPDATE public.email_aggregation
 SET bundle = 'rhel'
 WHERE
