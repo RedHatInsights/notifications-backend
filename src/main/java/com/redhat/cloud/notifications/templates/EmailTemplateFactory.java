@@ -9,7 +9,7 @@ public class EmailTemplateFactory {
     }
 
     public static AbstractEmailTemplate get(String bundle, String application) {
-        if (bundle.toLowerCase().equals("insights") && application.toLowerCase().equals("policies")) {
+        if (bundle.toLowerCase().equals("rhel") && application.toLowerCase().equals("policies")) {
             return new Policies();
         }
 
