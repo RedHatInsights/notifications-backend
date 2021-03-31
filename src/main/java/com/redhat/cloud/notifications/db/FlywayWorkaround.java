@@ -17,7 +17,7 @@ public class FlywayWorkaround {
 
     private static final Logger LOGGER = Logger.getLogger(FlywayWorkaround.class);
 
-    @ConfigProperty(name = "quarkus.datasource.jdbc.url")
+    @ConfigProperty(name = "quarkus.datasource.reactive.url")
     String datasourceUrl;
 
     @ConfigProperty(name = "quarkus.datasource.username")
@@ -28,7 +28,7 @@ public class FlywayWorkaround {
 
     public void runFlywayMigration(@Observes StartupEvent event) {
         LOGGER.warn("Starting Flyway workaround... remove it ASAP!");
-        Flyway flyway = Flyway.configure().dataSource(datasourceUrl, datasourceUsername, datasourcePassword).load();
+        Flyway flyway = Flyway.configure().dataSource("jdbc:" + datasourceUrl, datasourceUsername, datasourcePassword).load();
         flyway.migrate();
     }
 }

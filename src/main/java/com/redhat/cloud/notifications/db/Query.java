@@ -104,13 +104,6 @@ public class Query {
         return sort;
     }
 
-    public static String getLimiterQuery(Limit limiter) {
-        return "LIMIT " +
-                limiter.getLimit() +
-                " OFFSET " +
-                limiter.getOffset();
-    }
-
     public String getModifiedQuery(String basicQuery) {
         // Use the internal Query
         // What's the proper order? SORT first, then LIMIT? COUNT as last one?
@@ -119,21 +112,7 @@ public class Query {
         if (sort != null) {
             query = modifyWithSort(query, sort);
         }
-        Limit limiter = getLimit();
-        if (limiter != null && (limiter.getLimit() > 0)) {
-            query = modifyQueryWithOffsetLimit(query, limiter);
-        }
         return query;
-    }
-
-    private static String modifyQueryWithOffsetLimit(String basicQuery, Query.Limit limiter) {
-        if (limiter != null && limiter.getLimit() > 0) {
-            return basicQuery +
-                    " " +
-                    Query.getLimiterQuery(limiter);
-        }
-
-        return basicQuery;
     }
 
     public static Function<String, String> modifyToCountQuery() {

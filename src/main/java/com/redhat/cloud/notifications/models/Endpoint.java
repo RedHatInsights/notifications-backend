@@ -1,41 +1,62 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.redhat.cloud.notifications.db.converters.EndpointTypeConverter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.Date;
+import javax.validation.constraints.Size;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
-public class Endpoint {
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
+import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
-    private UUID id; // Should be UUID
+@Entity
+@Table(name = "endpoints")
+@JsonNaming(SnakeCaseStrategy.class)
+public class Endpoint extends CreationUpdateTimestamped {
 
+    @Id
+    @GeneratedValue
+    @JsonProperty(access = READ_ONLY)
+    private UUID id;
+
+    @Size(max = 50)
     @JsonIgnore
-    private String tenant;
+    private String accountId;
 
     @NotNull
+    @Size(max = 255)
     private String name;
+
     @NotNull
     private String description;
 
-    private boolean enabled = false;
+    private Boolean enabled = Boolean.FALSE;
 
     // Transform to lower case in JSON
     @NotNull
+    @Column(name = "endpoint_type")
+    @Convert(converter = EndpointTypeConverter.class)
     private EndpointType type;
-
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private Date created;
-
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private Date updated;
 
     @Schema(oneOf = { WebhookAttributes.class, EmailSubscriptionAttributes.class })
     @JsonTypeInfo(
@@ -48,77 +69,88 @@ public class Endpoint {
     })
 //    @NotNull
     @Valid
+    @Transient
     private Attributes properties;
 
-    public Endpoint() {
+    @OneToOne(mappedBy = "endpoint", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JsonIgnore
+    private EndpointWebhook webhook;
+
+    @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Set<EndpointTarget> targets;
+
+    @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Set<EndpointDefault> defaults;
+
+    @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Set<NotificationHistory> notificationHistories;
+
+    public UUID getId() {
+        return id;
     }
 
     public void setId(UUID id) {
         this.id = id;
     }
 
-    public UUID getId() {
-        return id;
+    public String getAccountId() {
+        return accountId;
     }
 
-    public String getTenant() {
-        return tenant;
-    }
-
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 
     public String getName() {
         return name;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public void setDescription(String description) {
         this.description = description;
     }
 
-    public void setEnabled(boolean enabled) {
+    public Boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
 
-    @JsonGetter
     public EndpointType getType() {
         return type;
     }
 
-    @JsonProperty
-    public Date getCreated() {
-        return created;
-    }
-
-    @JsonProperty
-    public Date getUpdated() {
-        return updated;
-    }
-
-    @JsonIgnore
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-
-    @JsonIgnore
-    public void setUpdated(Date updated) {
-        this.updated = updated;
+    public void setType(EndpointType type) {
+        this.type = type;
     }
 
     public Attributes getProperties() {
+        if (properties == null) {
+            switch (type) {
+                case WEBHOOK:
+                    if (webhook != null) {
+                        properties = buildWebhookAttributes(webhook);
+                    }
+                    break;
+                case EMAIL_SUBSCRIPTION:
+                case DEFAULT:
+                default:
+                    // Do nothing for now
+                    break;
+            }
+        }
         return properties;
     }
 
@@ -126,21 +158,77 @@ public class Endpoint {
         this.properties = properties;
     }
 
-    public void setType(EndpointType type) {
-        this.type = type;
+    public EndpointWebhook getWebhook() {
+        return webhook;
+    }
+
+    public void setWebhook(EndpointWebhook webhook) {
+        this.webhook = webhook;
+    }
+
+    public Set<EndpointTarget> getTargets() {
+        return targets;
+    }
+
+    public void setTargets(Set<EndpointTarget> targets) {
+        this.targets = targets;
+    }
+
+    public Set<EndpointDefault> getDefaults() {
+        return defaults;
+    }
+
+    public void setDefaults(Set<EndpointDefault> defaults) {
+        this.defaults = defaults;
+    }
+
+    public Set<NotificationHistory> getNotificationHistories() {
+        return notificationHistories;
+    }
+
+    public void setNotificationHistories(Set<NotificationHistory> notificationHistories) {
+        this.notificationHistories = notificationHistories;
+    }
+
+    private WebhookAttributes buildWebhookAttributes(EndpointWebhook webhook) {
+        WebhookAttributes attr = new WebhookAttributes();
+        attr.setId(webhook.getId());
+        attr.setUrl(webhook.getUrl());
+        attr.setMethod(webhook.getMethod());
+        attr.setDisableSSLVerification(webhook.getDisableSslVerification());
+        attr.setSecretToken(webhook.getSecretToken());
+        attr.setBasicAuthentication(webhook.getBasicAuthentication());
+        return attr;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof Endpoint) {
+            Endpoint other = (Endpoint) o;
+            return Objects.equals(id, other.id);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
     @Override
     public String toString() {
         return "Endpoint{" +
                 "id=" + id +
-                ", tenant='" + tenant + '\'' +
+                ", accountId='" + accountId + '\'' +
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", enabled=" + enabled +
                 ", type=" + type +
-                ", created=" + created +
-                ", updated=" + updated +
+                ", created=" + getCreated() +
+                ", updated=" + getUpdated() +
                 ", properties=" + properties +
                 '}';
     }

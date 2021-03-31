@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 
 import java.util.List;
@@ -72,6 +73,7 @@ public class NotificationServiceTest {
     }
 
     @BeforeAll
+    @ActivateRequestContext
     void init() {
         helpers.createTestAppAndEventTypes();
     }
@@ -178,18 +180,22 @@ public class NotificationServiceTest {
         assertTrue(eventTypes.size() >= 100); // Depending on the test order, we might have existing application types also
     }
 
-    void testCreateSecuredDefaults() {
+    @Test
+    void testAddToDefaultsWithInsufficientPrivileges() {
         // We need to clear out full access first
         mockServerConfig.clearRbac();
 
-        String tenant = "testNonExistantDefaults";
+        String tenant = "testAddToDefaultsWithInsufficientPrivileges";
         String userName = "user";
         String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
         Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
         mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.READ_ACCESS);
 
         try {
-            // Add non-existent endpointId to an account without default created
+            /*
+             * Add an integration to the list of configured default actions without write access.
+             * It should fail because of insufficient privileges.
+             */
             given()
                     .header(localIdentityHeader)
                     .when()
@@ -203,18 +209,21 @@ public class NotificationServiceTest {
     }
 
     @Test
-    void testDeleteSecuredDefaults() {
+    void testDeleteFromDefaultsWithInsufficientPrivileges() {
         // We need to clear out full access first
         mockServerConfig.clearRbac();
 
-        String tenant = "testNonExistantDefaults";
+        String tenant = "testDeleteFromDefaultsWithInsufficientPrivileges";
         String userName = "user";
         String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
         Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
         mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.READ_ACCESS);
 
         try {
-            // Add non-existant endpointId to an account without default created
+            /*
+             * Delete an integration from the list of configured default actions without write access.
+             * It should fail because of insufficient privileges.
+             */
             given()
                     .header(localIdentityHeader)
                     .when()
@@ -269,6 +278,90 @@ public class NotificationServiceTest {
                 .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
                 .then()
                 .statusCode(400);
+    }
+
+    @Test
+    void testPutGetAndDeleteDefaults() {
+        String tenant = "testPutGetAndDeleteDefaults";
+        String userName = "user";
+        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
+        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        // Create default endpoint.
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.DEFAULT);
+        ep.setName("Default endpoint");
+        ep.setDescription("The ultimate fallback");
+        ep.setEnabled(true);
+
+        Response response = given()
+                .basePath(TestConstants.API_INTEGRATIONS_V_1_0)
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
+        JsonObject persistedEndpoint = new JsonObject(response.body().asString());
+        assertNotNull(persistedEndpoint.getString("id"));
+
+        // Add the persisted endpoint to defaults, it should work.
+        given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .pathParam("endpointId", persistedEndpoint.getString("id"))
+                .put("/notifications/defaults/{endpointId}")
+                .then()
+                .statusCode(200);
+
+        // Check if the endpoint appears in the list of defaults.
+        response = given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/defaults")
+                .then()
+                .statusCode(200)
+                .extract().response();
+        JsonArray defaultEndpoints = new JsonArray(response.body().asString());
+        assertEquals(1, defaultEndpoints.size());
+        assertEquals(persistedEndpoint.getString("id"), defaultEndpoints.getJsonObject(0).getString("id"));
+
+        // Add the same endpoint in defaults again, it should fail because it's already in defaults.
+        given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .pathParam("endpointId", persistedEndpoint.getString("id"))
+                .put("/notifications/defaults/{endpointId}")
+                .then()
+                .statusCode(400);
+
+        // Delete the endpoint from defaults, it should work.
+        given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .pathParam("endpointId", persistedEndpoint.getString("id"))
+                .delete("/notifications/defaults/{endpointId}")
+                .then()
+                .statusCode(204);
+
+        // Check if the endpoint was removed from the list of defaults.
+        response = given()
+                .header(localIdentityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .get("/notifications/defaults")
+                .then()
+                .statusCode(200)
+                .extract().response();
+        defaultEndpoints = new JsonArray(response.body().asString());
+        assertEquals(0, defaultEndpoints.size());
     }
 
     @Test

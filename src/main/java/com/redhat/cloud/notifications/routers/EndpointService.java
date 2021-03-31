@@ -86,7 +86,7 @@ public class EndpointService {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
         Multi<Endpoint> endpoints;
-        Uni<Integer> count;
+        Uni<Long> count;
 
         if (targetType != null) {
             EndpointType endpointType = EndpointType.valueOf(targetType.toUpperCase());
@@ -107,7 +107,7 @@ public class EndpointService {
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        endpoint.setTenant(principal.getAccount());
+        endpoint.setAccountId(principal.getAccount());
 
         if (endpoint.getType() != EndpointType.DEFAULT && endpoint.getProperties() == null) {
             throw new BadRequestException("Properties is required");
@@ -169,7 +169,7 @@ public class EndpointService {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> updateEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        endpoint.setTenant(principal.getAccount());
+        endpoint.setAccountId(principal.getAccount());
         endpoint.setId(id);
         return resources.updateEndpoint(endpoint)
                 .onItem().transform(ignored -> Response.ok().build());

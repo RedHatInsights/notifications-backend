@@ -1,51 +1,71 @@
 package com.redhat.cloud.notifications.models;
 
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import java.util.Objects;
+
+@Entity
+@Table(name = "endpoint_email_subscriptions")
 public class EmailSubscription {
 
-    private String accountId;
-    private String username;
-    private String bundle;
-    private String application;
-    private EmailSubscriptionType type;
+    @EmbeddedId
+    private EmailSubscriptionId id;
 
     public String getAccountId() {
-        return accountId;
+        return id.accountId;
     }
 
     public void setAccountId(String accountId) {
-        this.accountId = accountId;
+        id.accountId = accountId;
     }
 
-    public String getUsername() {
-        return username;
+    public String getUserId() {
+        return id.userId;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setUserId(String userId) {
+        id.userId = userId;
     }
 
-    public String getBundle() {
-        return bundle;
+    public String getBundleName() {
+        return id.bundleName;
     }
 
-    public void setBundle(String bundle) {
-        this.bundle = bundle;
+    public void setBundleName(String bundleName) {
+        id.bundleName = bundleName;
     }
 
-    public String getApplication() {
-        return application;
+    public String getApplicationName() {
+        return id.applicationName;
     }
 
-    public void setApplication(String application) {
-        this.application = application;
+    public void setApplicationName(String applicationName) {
+        id.applicationName = applicationName;
     }
 
     public EmailSubscriptionType getType() {
-        return type;
+        return id.subscriptionType;
     }
 
     public void setType(EmailSubscriptionType type) {
-        this.type = type;
+        id.subscriptionType = type;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof EmailSubscription) {
+            EmailSubscription other = (EmailSubscription) o;
+            return Objects.equals(id, other.id);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

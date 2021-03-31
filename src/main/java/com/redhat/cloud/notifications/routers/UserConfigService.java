@@ -167,22 +167,22 @@ public class UserConfigService {
             return bundleResources.getBundles()
                     .onItem().transformToMulti(bundle -> {
                         BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
-                        bundleSettingsValue.displayName = bundle.getDisplay_name();
+                        bundleSettingsValue.displayName = bundle.getDisplayName();
                         values.bundles.put(bundle.getName(), bundleSettingsValue);
                         return applicationResources.getApplications(bundle.getName())
                                 .onItem().transformToMulti(application -> {
                                     ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
-                                    applicationSettingsValue.displayName = application.getDisplay_name();
+                                    applicationSettingsValue.displayName = application.getDisplayName();
                                     values.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
                                     return Multi.createFrom().items(EmailSubscriptionType.values())
                                             .onItem().transformToMulti(emailSubscriptionType -> {
                                                 values.bundles.get(bundle.getName()).applications.get(application.getName()).notifications.put(emailSubscriptionType, false);
                                                 return Multi.createFrom().empty();
-                                            }).concatenate();
-                                }).concatenate();
+                                            }).merge();
+                                }).merge();
                     }).concatenate().collectItems().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
                     .onItem().transform(emailSubscription -> {
-                        values.bundles.get(emailSubscription.getBundle()).applications.get(emailSubscription.getApplication()).notifications.put(emailSubscription.getType(), true);
+                        values.bundles.get(emailSubscription.getBundleName()).applications.get(emailSubscription.getApplicationName()).notifications.put(emailSubscription.getType(), true);
                         return emailSubscription;
                     }).collectItems().asList().onItem().transform(emailSubscriptions -> values);
         });
@@ -200,12 +200,12 @@ public class UserConfigService {
                     .filter(bundle -> bundle.getName().equals(bundleName))
                     .onItem().transformToMulti(bundle -> {
                         BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
-                        bundleSettingsValue.displayName = bundle.getDisplay_name();
+                        bundleSettingsValue.displayName = bundle.getDisplayName();
                         values.bundles.put(bundle.getName(), bundleSettingsValue);
                         return applicationResources.getApplications(bundle.getName())
                                 .onItem().transformToMulti(application -> {
                                     ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
-                                    applicationSettingsValue.displayName = application.getDisplay_name();
+                                    applicationSettingsValue.displayName = application.getDisplayName();
                                     values.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
                                     return Multi.createFrom().items(EmailSubscriptionType.values())
                                             .onItem().transformToMulti(emailSubscriptionType -> {
@@ -215,7 +215,7 @@ public class UserConfigService {
                                 }).concatenate();
                     }).concatenate().collectItems().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
                     .onItem().transform(emailSubscription -> {
-                        values.bundles.get(emailSubscription.getBundle()).applications.get(emailSubscription.getApplication()).notifications.put(emailSubscription.getType(), true);
+                        values.bundles.get(emailSubscription.getBundleName()).applications.get(emailSubscription.getApplicationName()).notifications.put(emailSubscription.getType(), true);
                         return emailSubscription;
                     }).collectItems().asList().onItem().transform(emailSubscriptions -> values);
         });

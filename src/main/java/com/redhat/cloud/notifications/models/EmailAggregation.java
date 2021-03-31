@@ -1,33 +1,50 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.redhat.cloud.notifications.db.converters.JsonObjectConverter;
 import io.vertx.core.json.JsonObject;
 
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
-import java.time.LocalDateTime;
+import javax.validation.constraints.Size;
+import java.util.Objects;
 
-public class EmailAggregation {
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 
-    @NotNull
+@Entity
+@Table(name = "email_aggregation")
+public class EmailAggregation extends CreationTimestamped {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "email_aggregation_id_seq")
+    @JsonProperty(access = READ_ONLY)
     private Integer id;
 
     @NotNull
+    @Size(max = 50)
     private String accountId;
 
     @NotNull
-    private LocalDateTime created;
+    @Size(max = 255)
+    @Column(name = "bundle")
+    @JsonProperty("bundle")
+    private String bundleName;
 
     @NotNull
-    private String bundle;
+    @Size(max = 255)
+    @Column(name = "application")
+    @JsonProperty("application")
+    private String applicationName;
 
     @NotNull
-    private String application;
-
-    @NotNull
+    @Convert(converter = JsonObjectConverter.class)
     private JsonObject payload;
-
-    public EmailAggregation() {
-
-    }
 
     public Integer getId() {
         return id;
@@ -45,35 +62,44 @@ public class EmailAggregation {
         this.accountId = accountId;
     }
 
-    public LocalDateTime getCreated() {
-        return created;
+    public String getBundleName() {
+        return bundleName;
     }
 
-    public void setCreated(LocalDateTime created) {
-        this.created = created;
+    public void setBundleName(String bundleName) {
+        this.bundleName = bundleName;
     }
 
-    public String getBundle() {
-        return bundle;
+    public String getApplicationName() {
+        return applicationName;
     }
 
-    public void setBundle(String bundle) {
-        this.bundle = bundle;
-    }
-
-    public String getApplication() {
-        return application;
-    }
-
-    public void setApplication(String application) {
-        this.application = application;
+    public void setApplicationName(String applicationName) {
+        this.applicationName = applicationName;
     }
 
     public JsonObject getPayload() {
-        return this.payload;
+        return payload;
     }
 
     public void setPayload(JsonObject payload) {
         this.payload = payload;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof EmailAggregation) {
+            EmailAggregation other = (EmailAggregation) o;
+            return Objects.equals(id, other.id);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

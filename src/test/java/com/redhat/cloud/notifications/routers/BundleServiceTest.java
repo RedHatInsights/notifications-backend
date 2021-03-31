@@ -95,7 +95,7 @@ public class BundleServiceTest {
         Application app = new Application();
         app.setBundleId(UUID.fromString(returnedBundle.getString("id")));
         app.setName("test");
-        app.setDisplay_name("..");
+        app.setDisplayName("..");
 
         try {
             Application created =
@@ -126,7 +126,7 @@ public class BundleServiceTest {
         Application app = new Application();
         app.setBundleId(UUID.fromString(returnedBundle.getString("id")));
         app.setName("test");
-        app.setDisplay_name("..");
+        app.setDisplayName("..");
 
         try {
             given()
@@ -156,12 +156,12 @@ public class BundleServiceTest {
         Application app1 = new Application();
         app1.setBundleId(UUID.fromString(returnedBundle1.getString("id")));
         app1.setName("test");
-        app1.setDisplay_name("..");
+        app1.setDisplayName("..");
 
         Application app2 = new Application();
         app2.setBundleId(UUID.fromString(returnedBundle2.getString("id")));
         app2.setName("test");
-        app2.setDisplay_name("..");
+        app2.setDisplayName("..");
 
         try {
             given()
@@ -186,7 +186,7 @@ public class BundleServiceTest {
     private JsonObject createBundle(String bundleName, int expectedReturnCode) {
         Bundle bundle = new Bundle();
         bundle.setName(bundleName);
-        bundle.setDisplay_name(bundleName.toUpperCase());
+        bundle.setDisplayName(bundleName.toUpperCase());
         ExtractableResponse response = given()
                 .body(bundle)
                 .contentType(ContentType.JSON)
