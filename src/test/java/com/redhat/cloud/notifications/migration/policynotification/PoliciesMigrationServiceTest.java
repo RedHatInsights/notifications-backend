@@ -154,9 +154,9 @@ public class PoliciesMigrationServiceTest {
                 .await().indefinitely();
 
         assertEquals(accountId, emailSubscription.getAccountId());
-        assertEquals(userId, emailSubscription.getUsername());
-        assertEquals(PoliciesMigrationService.BUNDLE, emailSubscription.getBundle());
-        assertEquals(PoliciesMigrationService.APPLICATION, emailSubscription.getApplication());
+        assertEquals(userId, emailSubscription.getUserId());
+        assertEquals(PoliciesMigrationService.BUNDLE, emailSubscription.getBundleName());
+        assertEquals(PoliciesMigrationService.APPLICATION, emailSubscription.getApplicationName());
         assertEquals(emailSubscriptionType, emailSubscription.getType());
     }
 
