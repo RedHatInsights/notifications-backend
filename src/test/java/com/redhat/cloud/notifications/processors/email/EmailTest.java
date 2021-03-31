@@ -105,7 +105,7 @@ public class EmailTest {
 
         final String tenant = "instant-email-tenant";
         final String[] usernames = {"foo", "bar", "admin"};
-        String bundle = "insights";
+        String bundle = "rhel";
         String application = "policies";
 
         for (String username : usernames) {
@@ -214,7 +214,7 @@ public class EmailTest {
 
         final String tenant = "instant-email-tenant-wrong-payload";
         final String[] usernames = {"foo", "bar", "admin"};
-        String bundle = "insights";
+        String bundle = "rhel";
         String application = "policies";
 
         for (String username : usernames) {
