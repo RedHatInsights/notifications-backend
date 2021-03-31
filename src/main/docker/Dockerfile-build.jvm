@@ -37,7 +37,7 @@ RUN microdnf install openssl curl ca-certificates ${JAVA_PACKAGE} \
 # Configure the JAVA_OPTIONS, you can add -XshowSettings:vm to also display the heap size.
 ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
-COPY --from=build /home/jboss/target/lib/* /deployments/lib/
+COPY --from=build /home/jboss/target/quarkus-app/lib/* /deployments/lib/
 COPY --from=build /home/jboss/target/quarkus-app/quarkus-run.jar /deployments/app.jar
 
 EXPOSE 8080
