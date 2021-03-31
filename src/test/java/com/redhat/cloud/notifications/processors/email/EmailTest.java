@@ -291,7 +291,7 @@ public class EmailTest {
         final String[] tenant1Usernames = {"foo", "bar", "admin"};
         final String[] tenant2Usernames = {"baz", "bar"};
         final String[] noSubscribedUsersTenantTestUser = {"test"};
-        final String bundle = "insights";
+        final String bundle = "rhel";
         final String application = "policies";
 
         for (String username : tenant1Usernames) {
