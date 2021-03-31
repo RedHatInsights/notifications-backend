@@ -15,6 +15,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import org.hibernate.reactive.mutiny.Mutiny;
 import org.reactivestreams.Publisher;
 
 import javax.annotation.PostConstruct;
@@ -24,6 +25,9 @@ import java.util.function.Function;
 
 @ApplicationScoped
 public class EndpointProcessor {
+
+    @Inject
+    Mutiny.Session session;
 
     @Inject
     EndpointResources resources;
@@ -76,7 +80,8 @@ public class EndpointProcessor {
         return endpointsCallResult
                 .onItem().ignoreAsUni()
                 .replaceWith(notificationResult)
-                .replaceWith(Uni.createFrom().voidItem());
+                .replaceWith(Uni.createFrom().voidItem())
+                .onItem().invoke(ignored -> session.clear());
     }
 
     public EndpointTypeProcessor endpointTypeToProcessor(EndpointType endpointType) {
