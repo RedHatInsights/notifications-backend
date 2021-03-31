@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Produces(MediaType.APPLICATION_JSON)
 public class PoliciesMigrationService {
 
-    static final String BUNDLE = "insights";
+    static final String BUNDLE = "rhel";
     static final String APPLICATION = "policies";
     static final String EVENT_TYPE = "policy-triggered";
     static final String DAILY_EMAIL_TYPE = "policies-daily-mail";
