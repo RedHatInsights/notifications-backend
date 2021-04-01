@@ -8,7 +8,6 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -28,9 +27,9 @@ import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 public class NotificationHistory extends CreationTimestamped {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "notification_history_id_seq")
+    @GeneratedValue
     @JsonProperty(access = READ_ONLY)
-    private Integer id;
+    private UUID id;
 
     @NotNull
     @Size(max = 50)
@@ -60,7 +59,7 @@ public class NotificationHistory extends CreationTimestamped {
     public NotificationHistory() {
     }
 
-    public NotificationHistory(Integer id, String accountId, Long invocationTime, Boolean invocationResult, String eventId, Endpoint endpoint, LocalDateTime created) {
+    public NotificationHistory(UUID id, String accountId, Long invocationTime, Boolean invocationResult, String eventId, Endpoint endpoint, LocalDateTime created) {
         this.id = id;
         this.accountId = accountId;
         this.invocationTime = invocationTime;
@@ -70,11 +69,11 @@ public class NotificationHistory extends CreationTimestamped {
         setCreated(created);
     }
 
-    public Integer getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

@@ -36,7 +36,7 @@ public class NotificationResources {
                 .onItem().transformToMulti(Multi.createFrom()::iterable);
     }
 
-    public Uni<JsonObject> getNotificationDetails(String tenant, Query limiter, UUID endpoint, Integer historyId) {
+    public Uni<JsonObject> getNotificationDetails(String tenant, Query limiter, UUID endpoint, UUID historyId) {
         String query = "SELECT details FROM NotificationHistory WHERE accountId = :accountId AND endpoint.id = :endpointId AND id = :historyId";
         if (limiter != null) {
             query = limiter.getModifiedQuery(query);
