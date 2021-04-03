@@ -43,7 +43,7 @@ public class ResourceHelpers {
     EmailAggregationResources emailAggregationResources;
 
     public List<Application> getApplications(String bundleName) {
-        return appResources.getApplications(bundleName).collectItems().asList().await().indefinitely();
+        return appResources.getApplications(bundleName).collect().asList().await().indefinitely();
     }
 
     public EmailSubscription getSubscription(String accountNumber, String username, String bundle, String application, EmailSubscriptionType type) {
@@ -53,7 +53,7 @@ public class ResourceHelpers {
     public void createTestAppAndEventTypes() {
         // Delete TEST_BUNDLE if it exists
         Optional<Bundle> existingBundle = bundleResources
-                .getBundles().collectItems().asList().await().indefinitely()
+                .getBundles().collect().asList().await().indefinitely()
                 .stream().filter(bundle -> bundle.getName().equals(TEST_BUNDLE_NAME)).findFirst();
 
         if (existingBundle.isPresent()) {
@@ -186,6 +186,6 @@ public class ResourceHelpers {
     }
 
     public List<EventType> getEventTypesForApplication(UUID applicationId) {
-        return appResources.getEventTypes(applicationId).collectItems().asList().await().indefinitely();
+        return appResources.getEventTypes(applicationId).collect().asList().await().indefinitely();
     }
 }

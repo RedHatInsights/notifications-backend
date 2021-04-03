@@ -30,7 +30,7 @@ public class DefaultProcessor {
     public Multi<Endpoint> getDefaultEndpoints(Endpoint defaultEndpoint) {
         processedItems.increment();
         return resources.getDefaultEndpoints(defaultEndpoint.getAccountId())
-                .transform().byFilteringItemsWith(Endpoint::isEnabled)
+                .select().where(Endpoint::isEnabled)
                 .onItem().invoke(() -> enrichedEndpoints.increment());
     }
 }

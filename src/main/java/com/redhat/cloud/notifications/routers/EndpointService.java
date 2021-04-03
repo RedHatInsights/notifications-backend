@@ -98,7 +98,7 @@ public class EndpointService {
             count = resources.getEndpointsCount(principal.getAccount());
         }
 
-        return endpoints.collectItems().asList()
+        return endpoints.collect().asList()
                 .onItem().transformToUni(endpointsList -> count
                         .onItem().transform(endpointsCount -> new EndpointPage(endpointsList, new HashMap<>(), new Meta(endpointsCount))));
     }
