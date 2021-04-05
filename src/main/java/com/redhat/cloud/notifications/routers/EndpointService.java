@@ -109,15 +109,8 @@ public class EndpointService {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setAccountId(principal.getAccount());
 
-        if (endpoint.getType() != EndpointType.DEFAULT && endpoint.getProperties() == null) {
+        if (endpoint.getProperties() == null) {
             throw new BadRequestException("Properties is required");
-        } else if (endpoint.getType() == EndpointType.DEFAULT) {
-            // Only a single default endpoint is allowed
-            return resources.getEndpointsPerType(principal.getAccount(), EndpointType.DEFAULT, null, null)
-                    .toUni()
-                    .onItem()
-                    .ifNull()
-                    .switchTo(resources.createEndpoint(endpoint));
         }
 
         return resources.createEndpoint(endpoint);

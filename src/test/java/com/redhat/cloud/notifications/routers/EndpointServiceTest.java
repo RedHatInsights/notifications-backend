@@ -449,106 +449,6 @@ public class EndpointServiceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testDefaultEndpointRegistering() {
-        String tenant = "defaultRegister";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
-
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
-
-        Endpoint ep = new Endpoint();
-        ep.setType(EndpointType.DEFAULT);
-        ep.setName("Default endpoint");
-        ep.setDescription("The ultimate fallback");
-        ep.setEnabled(true);
-
-        Response response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(ContentType.JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .extract().response();
-
-        JsonObject responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
-        assertNotNull(responsePoint.getString("id"));
-
-        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
-        assertEquals(responsePoint.getString("id"), responsePointSingle.getString("id"));
-        assertEquals(responsePoint.getString("type"), responsePointSingle.getString("type"));
-
-        // Fetch the default endpoint
-        response = given()
-                .header(identityHeader)
-                .queryParam("type", "default")
-                .when()
-                .contentType(ContentType.JSON)
-                .get("/endpoints")
-                .then()
-                .statusCode(200)
-                .extract().response();
-
-        JsonObject endpointPage = new JsonObject(response.getBody().asString());
-        endpointPage.mapTo(EndpointPage.class);
-        assertEquals(1, endpointPage.getJsonArray("data").size());
-        assertEquals(1, endpointPage.getJsonObject("meta").getLong("count"));
-        assertEquals(responsePoint.getString("id"), endpointPage.getJsonArray("data").getJsonObject(0).getString("id"));
-        assertEquals(EndpointType.DEFAULT.name().toLowerCase(), responsePoint.getString("type"));
-
-        // Add another type as well
-        Endpoint another = new Endpoint();
-        another.setType(EndpointType.WEBHOOK);
-        another.setDescription("desc");
-        another.setName("name");
-
-        WebhookAttributes attr = new WebhookAttributes();
-        attr.setMethod(HttpType.POST);
-        attr.setUrl("http://localhost");
-
-        another.setProperties(attr);
-
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(ContentType.JSON)
-                .body(Json.encode(another))
-                .post("/endpoints")
-                .then()
-                .statusCode(200);
-
-        // Ensure that there's only a single default endpoint
-        // This second insert should return the original one without modifications
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(ContentType.JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(200);
-
-        response = given()
-                .header(identityHeader)
-                .queryParam("type", "default")
-                .when()
-                .contentType(ContentType.JSON)
-                .get("/endpoints")
-                .then()
-                .statusCode(200)
-                .extract().response();
-
-        endpointPage = new JsonObject(response.getBody().asString());
-        endpointPage.mapTo(EndpointPage.class);
-        assertEquals(1, endpointPage.getJsonArray("data").size());
-        assertEquals(responsePoint.getString("id"), endpointPage.getJsonArray("data").getJsonObject(0).getString("id"));
-        assertEquals(EndpointType.DEFAULT.name().toLowerCase(), responsePoint.getString("type"));
-    }
-
-    @Test
     void testSortingOrder() {
         String tenant = "testSortingOrder";
         String userName = "user";
@@ -607,9 +507,9 @@ public class EndpointServiceTest extends DbIsolatedTest {
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
         endpoints = endpointPage.getData().toArray(new Endpoint[0]);
         assertEquals(20, endpoints.length);
-        assertEquals("Default endpoint", endpoints[endpoints.length - 1].getName());
-        assertEquals("Endpoint 1", endpoints[endpoints.length - 2].getName());
-        assertEquals("Endpoint 26", endpoints[0].getName());
+        assertEquals("Endpoint 1", endpoints[endpoints.length - 1].getName());
+        assertEquals("Endpoint 10", endpoints[endpoints.length - 2].getName());
+        assertEquals("Endpoint 27", endpoints[0].getName());
     }
 
     @Test

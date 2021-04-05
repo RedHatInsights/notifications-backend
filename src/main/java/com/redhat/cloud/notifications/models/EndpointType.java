@@ -11,7 +11,5 @@ public enum EndpointType {
     @JsonProperty("webhook")
     WEBHOOK, // 0
     @JsonProperty("email_subscription")
-    EMAIL_SUBSCRIPTION, // 1
-    @JsonProperty("default")
-    DEFAULT // 2
+    EMAIL_SUBSCRIPTION // 1
 }

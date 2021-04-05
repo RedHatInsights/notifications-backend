@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription;
@@ -40,6 +41,9 @@ public class ResourceHelpers {
     @Inject
     EmailAggregationResources emailAggregationResources;
 
+    @Inject
+    BehaviorGroupResources behaviorGroupResources;
+
     public List<Application> getApplications(String bundleName) {
         return appResources.getApplications(bundleName).collect().asList().await().indefinitely();
     }
@@ -48,7 +52,7 @@ public class ResourceHelpers {
         return subscriptionResources.getEmailSubscription(accountNumber, username, bundle, application, type).await().indefinitely();
     }
 
-    public void createTestAppAndEventTypes() {
+    public UUID createTestAppAndEventTypes() {
         Bundle bundle = new Bundle(TEST_BUNDLE_NAME, "...");
         Bundle b = bundleResources.createBundle(bundle).await().indefinitely();
 
@@ -78,6 +82,8 @@ public class ResourceHelpers {
             eventType.setDisplayName("... -> " + i);
             appResources.addEventTypeToApplication(added2.getId(), eventType).await().indefinitely();
         }
+
+        return b.getId();
     }
 
     public int[] createTestEndpoints(String tenant, int count) {
@@ -90,13 +96,8 @@ public class ResourceHelpers {
             webAttr.setUrl("https://localhost");
 
             Endpoint ep = new Endpoint();
-            if (i > 0) {
-                ep.setType(EndpointType.WEBHOOK);
-                ep.setName(String.format("Endpoint %d", count - i));
-            } else {
-                ep.setType(EndpointType.DEFAULT);
-                ep.setName("Default endpoint");
-            }
+            ep.setType(EndpointType.WEBHOOK);
+            ep.setName(String.format("Endpoint %d", count - i));
             ep.setDescription("Automatically generated");
             boolean enabled = (i % (count / 5)) != 0;
             if (!enabled) {
@@ -127,24 +128,6 @@ public class ResourceHelpers {
         return resources.createEndpoint(ep).await().indefinitely().getId();
     }
 
-    public void assignEndpointToEventType(String tenant, UUID endpointId, UUID eventTypeId) {
-        resources.linkEndpoint(tenant, endpointId, eventTypeId).await().indefinitely();
-    }
-
-    public UUID getDefaultEndpointId(String tenant) {
-        Endpoint ep = new Endpoint();
-        ep.setType(EndpointType.DEFAULT);
-        ep.setName(String.format("Endpoint %s", UUID.randomUUID().toString()));
-        ep.setDescription("Automatically generated");
-        ep.setEnabled(true);
-        ep.setAccountId(tenant);
-
-        return resources.createEndpoint(ep).await().indefinitely().getId();
-    }
-
-    public void assignEndpointToDefault(String tenant, UUID endpointId) {
-        resources.addEndpointToDefaults(tenant, endpointId).await().indefinitely();
-    }
 
     public void createSubscription(String tenant, String username, String bundle, String application, EmailSubscriptionType type) {
         subscriptionResources.subscribe(tenant, username, bundle, application, type).await().indefinitely();
@@ -161,5 +144,21 @@ public class ResourceHelpers {
 
     public List<EventType> getEventTypesForApplication(UUID applicationId) {
         return appResources.getEventTypes(applicationId).collect().asList().await().indefinitely();
+    }
+
+    public UUID createBehaviorGroup(String accountId, String name, UUID bundleId) {
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setName(name);
+        behaviorGroup.setDisplayName("Behavior group");
+        behaviorGroup.setBundleId(bundleId);
+        return behaviorGroupResources.create(accountId, behaviorGroup).await().indefinitely().getId();
+    }
+
+    public void linkBehaviorGroupToEventType(String accountId, UUID eventTypeId, UUID behaviorGroupId) {
+        behaviorGroupResources.addEventTypeBehavior(accountId, eventTypeId, behaviorGroupId).await().indefinitely();
+    }
+
+    public void addBehaviorGroupAction(String accountId, UUID behaviorGroupId, UUID endpointId) {
+        behaviorGroupResources.addBehaviorGroupAction(accountId, behaviorGroupId, endpointId).await().indefinitely();
     }
 }

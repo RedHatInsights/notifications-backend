@@ -1,14 +1,15 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
+import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointDefault;
-import com.redhat.cloud.notifications.models.EndpointTarget;
 import com.redhat.cloud.notifications.models.EndpointWebhook;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -49,10 +50,11 @@ public class DbCleaner {
         session.withTransaction(transaction -> deleteAllFrom(EmailAggregation.class)
                 .chain(() -> deleteAllFrom(EmailSubscription.class))
                 .chain(() -> deleteAllFrom(NotificationHistory.class))
-                .chain(() -> deleteAllFrom(EndpointDefault.class))
-                .chain(() -> deleteAllFrom(EndpointTarget.class))
+                .chain(() -> deleteAllFrom(BehaviorGroupAction.class))
                 .chain(() -> deleteAllFrom(EndpointWebhook.class))
                 .chain(() -> deleteAllFrom(Endpoint.class))
+                .chain(() -> deleteAllFrom(EventTypeBehavior.class))
+                .chain(() -> deleteAllFrom(BehaviorGroup.class))
                 .chain(() -> deleteAllFrom(EventType.class))
                 .chain(() -> deleteAllFrom(Application.class))
                 .chain(() -> deleteAllFrom(Bundle.class))

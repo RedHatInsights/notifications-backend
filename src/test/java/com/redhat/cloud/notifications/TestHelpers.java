@@ -17,13 +17,12 @@ import org.apache.commons.io.IOUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.fail;
 
 public class TestHelpers {
@@ -43,13 +42,7 @@ public class TestHelpers {
         JsonObject header = new JsonObject();
         header.put("identity", identity);
 
-        String xRhEncoded = null;
-        try {
-            xRhEncoded = new String(Base64.getEncoder().encode(header.encode().getBytes("UTF-8")));
-        } catch (UnsupportedEncodingException e) {
-            fail();
-        }
-        return xRhEncoded;
+        return new String(Base64.getEncoder().encode(header.encode().getBytes(UTF_8)));
     }
 
     public static Header createIdentityHeader(String tenant, String username) {
@@ -63,7 +56,7 @@ public class TestHelpers {
     public static String getFileAsString(String filename) {
         try {
             InputStream is = TestHelpers.class.getClassLoader().getResourceAsStream(filename);
-            return IOUtils.toString(is, StandardCharsets.UTF_8);
+            return IOUtils.toString(is, UTF_8);
         } catch (Exception e) {
             fail("Failed to read rhid example file: " + e.getMessage());
             return "";
@@ -116,7 +109,7 @@ public class TestHelpers {
         writer.write(action, jsonEncoder);
         jsonEncoder.flush();
 
-        return baos.toString(StandardCharsets.UTF_8);
+        return baos.toString(UTF_8);
     }
 
     public static Action createPoliciesAction(String accountId, String bundle, String application, String hostDisplayName) {

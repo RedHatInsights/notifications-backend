@@ -7,29 +7,29 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Embeddable
-public class EndpointDefaultId implements Serializable {
+public class EventTypeBehaviorId implements Serializable {
 
     @NotNull
-    public String accountId;
+    public UUID eventTypeId;
 
     @NotNull
-    public UUID endpointId;
+    public UUID behaviorGroupId;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o instanceof EndpointDefaultId) {
-            EndpointDefaultId other = (EndpointDefaultId) o;
-            return Objects.equals(accountId, other.accountId) &&
-                    Objects.equals(endpointId, other.endpointId);
+        if (o instanceof EventTypeBehaviorId) {
+            EventTypeBehaviorId other = (EventTypeBehaviorId) o;
+            return Objects.equals(eventTypeId, other.eventTypeId) &&
+                    Objects.equals(behaviorGroupId, other.behaviorGroupId);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(accountId, endpointId);
+        return Objects.hash(eventTypeId, behaviorGroupId);
     }
 }

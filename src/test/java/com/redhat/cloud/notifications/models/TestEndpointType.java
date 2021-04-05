@@ -17,9 +17,4 @@ public class TestEndpointType {
     void endpointTypeEmailSubscriptionIs1() {
         assertEquals(1, EndpointType.EMAIL_SUBSCRIPTION.ordinal());
     }
-
-    @Test
-    void endpointTypeDefaultIs2() {
-        assertEquals(2, EndpointType.DEFAULT.ordinal());
-    }
 }

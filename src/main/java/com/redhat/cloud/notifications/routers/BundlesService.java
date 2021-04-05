@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -13,6 +14,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -29,6 +31,9 @@ public class BundlesService {
 
     @Inject
     BundleResources bundleResources;
+
+    @Inject
+    BehaviorGroupResources behaviorGroupResources;
 
     @GET
     public Multi<Bundle> getBundles() {
@@ -68,4 +73,9 @@ public class BundlesService {
         return bundleResources.getApplications(bundleId);
     }
 
+    @PUT
+    @Path("/{id}/behaviorGroups/{behaviorGroupId}/default")
+    public Uni<Boolean> setDefaultBehaviorGroup(@PathParam("id") UUID bundleId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
+        return behaviorGroupResources.setDefaultBehaviorGroup(bundleId, behaviorGroupId);
+    }
 }

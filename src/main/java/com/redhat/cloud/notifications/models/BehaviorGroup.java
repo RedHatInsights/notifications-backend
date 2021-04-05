@@ -1,16 +1,12 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -25,20 +21,23 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
+import static javax.persistence.FetchType.LAZY;
 
 @Entity
-@Table(name = "event_type")
+@Table(name = "behavior_group")
 @JsonNaming(SnakeCaseStrategy.class)
-@JsonFilter(ApiResponseFilter.NAME)
-public class EventType {
+public class BehaviorGroup extends CreationUpdateTimestamped {
 
     @Id
     @GeneratedValue
     @JsonProperty(access = READ_ONLY)
     private UUID id;
+
+    @Size(max = 50)
+    @JsonIgnore
+    private String accountId;
 
     @NotNull
     @Pattern(regexp = "[a-z][a-z_0-9-]*")
@@ -46,22 +45,30 @@ public class EventType {
     private String name;
 
     @NotNull
-    @Schema(name = "display_name")
     private String displayName;
 
-    @JsonInclude(NON_NULL)
-    private String description;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "application_id")
-    @JsonInclude(NON_NULL)
-    private Application application;
-
+    @NotNull
     @Transient
-    @JsonIgnore
-    private boolean filterOutApplication;
+    @Schema(name = "bundle_id")
+    private UUID bundleId;
 
-    @OneToMany(mappedBy = "eventType", cascade = CascadeType.REMOVE)
+    @ManyToOne(fetch = LAZY, optional = false)
+    @JoinColumn(name = "bundle_id")
+    @JsonIgnore
+    private Bundle bundle;
+
+    /*
+     * Is this behavior group the default one for its bundle?
+     * There should never be more than one default behavior group for each bundle.
+     */
+    @JsonProperty(value = "default_behavior", access = READ_ONLY)
+    private boolean defaultBehavior;
+
+    @OneToMany(mappedBy = "behaviorGroup", cascade = CascadeType.REMOVE)
+    @JsonIgnore
+    private Set<BehaviorGroupAction> actions;
+
+    @OneToMany(mappedBy = "behaviorGroup", cascade = CascadeType.REMOVE)
     @JsonIgnore
     private Set<EventTypeBehavior> behaviors;
 
@@ -71,6 +78,14 @@ public class EventType {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 
     public String getName() {
@@ -89,29 +104,39 @@ public class EventType {
         this.displayName = displayName;
     }
 
-    public String getDescription() {
-        return description;
+    public UUID getBundleId() {
+        if (bundleId == null && bundle != null) {
+            bundleId = bundle.getId();
+        }
+        return bundleId;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setBundleId(UUID bundleId) {
+        this.bundleId = bundleId;
     }
 
-    public Application getApplication() {
-        return application;
+    public Bundle getBundle() {
+        return bundle;
     }
 
-    public void setApplication(Application application) {
-        this.application = application;
+    public void setBundle(Bundle bundle) {
+        this.bundle = bundle;
     }
 
-    public boolean isFilterOutApplication() {
-        return filterOutApplication;
+    public Boolean getDefaultBehavior() {
+        return defaultBehavior;
     }
 
-    public EventType filterOutApplication() {
-        filterOutApplication = true;
-        return this;
+    public void setDefaultBehavior(boolean defaultBehavior) {
+        this.defaultBehavior = defaultBehavior;
+    }
+
+    public Set<BehaviorGroupAction> getActions() {
+        return actions;
+    }
+
+    public void setActions(Set<BehaviorGroupAction> actions) {
+        this.actions = actions;
     }
 
     public Set<EventTypeBehavior> getBehaviors() {
@@ -127,8 +152,8 @@ public class EventType {
         if (this == o) {
             return true;
         }
-        if (o instanceof EventType) {
-            EventType other = (EventType) o;
+        if (o instanceof BehaviorGroup) {
+            BehaviorGroup other = (BehaviorGroup) o;
             return Objects.equals(id, other.id);
         }
         return false;

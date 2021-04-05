@@ -9,7 +9,6 @@ import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -133,14 +132,13 @@ public class ApplicationResources {
                 .onItem().transformToMulti(Multi.createFrom()::iterable);
     }
 
-    public Multi<EventType> getEventTypesByEndpointId(@NotNull String accountId, @NotNull UUID endpointId) {
-        String query = "SELECT e FROM EventType e LEFT JOIN FETCH e.application JOIN e.targets t " +
-                "WHERE t.id.accountId = :accountId AND t.endpoint.id = :endpointId";
+    public Uni<List<EventType>> getEventTypesByEndpointId(String accountId, UUID endpointId) {
+        String query = "SELECT e FROM EventType e LEFT JOIN FETCH e.application JOIN e.behaviors b JOIN b.behaviorGroup.actions a " +
+                "WHERE b.behaviorGroup.accountId = :accountId AND a.endpoint.id = :endpointId";
         return session.createQuery(query, EventType.class)
                 .setParameter("accountId", accountId)
                 .setParameter("endpointId", endpointId)
-                .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .getResultList();
     }
 
     /**

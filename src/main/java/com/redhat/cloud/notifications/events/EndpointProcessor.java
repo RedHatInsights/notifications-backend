@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -16,15 +15,16 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
-import org.reactivestreams.Publisher;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.util.function.Function;
 
 @ApplicationScoped
 public class EndpointProcessor {
+
+    public static final String PROCESSED_MESSAGES_COUNTER_NAME = "processor.input.processed";
+    public static final String PROCESSED_ENDPOINTS_COUNTER_NAME = "processor.input.endpoint.processed";
 
     @Inject
     Mutiny.Session session;
@@ -34,9 +34,6 @@ public class EndpointProcessor {
 
     @Inject
     EventBusTypeProcessor notificationProcessor;
-
-    @Inject
-    DefaultProcessor defaultProcessor;
 
     @Inject
     NotificationResources notifResources;
@@ -55,13 +52,13 @@ public class EndpointProcessor {
 
     @PostConstruct
     void init() {
-        processedItems = registry.counter("processor.input.processed");
-        endpointTargeted = registry.counter("processor.input.endpoint.processed");
+        processedItems = registry.counter(PROCESSED_MESSAGES_COUNTER_NAME);
+        endpointTargeted = registry.counter(PROCESSED_ENDPOINTS_COUNTER_NAME);
     }
 
     public Uni<Void> process(Action action) {
         processedItems.increment();
-        Multi<NotificationHistory> endpointsCallResult = getEndpoints(
+        Multi<NotificationHistory> endpointsCallResult = resources.getTargetEndpoints(
                 action.getAccountId(),
                 action.getBundle(),
                 action.getApplication(),
@@ -93,16 +90,5 @@ public class EndpointProcessor {
             default:
                 return notificationProcessor;
         }
-    }
-
-    public Multi<Endpoint> getEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
-        return resources.getTargetEndpoints(tenant, bundleName, applicationName, eventTypeName)
-                .onItem().transformToMultiAndConcatenate((Function<Endpoint, Publisher<Endpoint>>) endpoint -> {
-                    // If the tenant has a default endpoint for the eventType, then add the target endpoints here
-                    if (endpoint.getType() == EndpointType.DEFAULT) {
-                        return defaultProcessor.getDefaultEndpoints(endpoint);
-                    }
-                    return Multi.createFrom().item(endpoint);
-                });
     }
 }

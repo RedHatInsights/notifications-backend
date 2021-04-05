@@ -76,13 +76,9 @@ public class Endpoint extends CreationUpdateTimestamped {
     @JsonIgnore
     private EndpointWebhook webhook;
 
-    @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "endpoint", cascade = CascadeType.REMOVE)
     @JsonIgnore
-    private Set<EndpointTarget> targets;
-
-    @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
-    @JsonIgnore
-    private Set<EndpointDefault> defaults;
+    private Set<BehaviorGroupAction> behaviorGroupActions;
 
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
     @JsonIgnore
@@ -145,7 +141,6 @@ public class Endpoint extends CreationUpdateTimestamped {
                     }
                     break;
                 case EMAIL_SUBSCRIPTION:
-                case DEFAULT:
                 default:
                     // Do nothing for now
                     break;
@@ -166,20 +161,12 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.webhook = webhook;
     }
 
-    public Set<EndpointTarget> getTargets() {
-        return targets;
+    public Set<BehaviorGroupAction> getBehaviorGroupActions() {
+        return behaviorGroupActions;
     }
 
-    public void setTargets(Set<EndpointTarget> targets) {
-        this.targets = targets;
-    }
-
-    public Set<EndpointDefault> getDefaults() {
-        return defaults;
-    }
-
-    public void setDefaults(Set<EndpointDefault> defaults) {
-        this.defaults = defaults;
+    public void setBehaviorGroupActions(Set<BehaviorGroupAction> behaviorGroupActions) {
+        this.behaviorGroupActions = behaviorGroupActions;
     }
 
     public Set<NotificationHistory> getNotificationHistories() {
