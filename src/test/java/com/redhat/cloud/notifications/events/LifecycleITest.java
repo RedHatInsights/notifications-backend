@@ -53,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpResponse.response;
 
+// TODO [BG Phase 2] Delete this file
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

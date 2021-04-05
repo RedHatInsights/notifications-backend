@@ -6,12 +6,11 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
-// TODO [BG Phase 2] Delete this class
 @Embeddable
-public class EndpointDefaultId implements Serializable {
+public class BehaviorGroupActionId implements Serializable {
 
     @NotNull
-    public String accountId;
+    public UUID behaviorGroupId;
 
     @NotNull
     public UUID endpointId;
@@ -21,9 +20,9 @@ public class EndpointDefaultId implements Serializable {
         if (this == o) {
             return true;
         }
-        if (o instanceof EndpointDefaultId) {
-            EndpointDefaultId other = (EndpointDefaultId) o;
-            return Objects.equals(accountId, other.accountId) &&
+        if (o instanceof BehaviorGroupActionId) {
+            BehaviorGroupActionId other = (BehaviorGroupActionId) o;
+            return Objects.equals(behaviorGroupId, other.behaviorGroupId) &&
                     Objects.equals(endpointId, other.endpointId);
         }
         return false;
@@ -31,6 +30,6 @@ public class EndpointDefaultId implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(accountId, endpointId);
+        return Objects.hash(behaviorGroupId, endpointId);
     }
 }

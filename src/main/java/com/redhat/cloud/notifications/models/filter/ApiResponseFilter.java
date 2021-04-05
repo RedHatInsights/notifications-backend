@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.PropertyWriter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.EventType;
 import org.jboss.logging.Logger;
 
@@ -34,6 +35,20 @@ public class ApiResponseFilter extends SimpleBeanPropertyFilter {
                      */
                     if (eventType.isFilterOutApplication()) {
                         logFilterOut(EventType.class.getName(), "application");
+                        // This will prevent the serialization of the property.
+                        return;
+                    }
+                    break;
+                default:
+                    // Do nothing.
+                    break;
+            }
+        } else if (pojo instanceof BehaviorGroup) {
+            BehaviorGroup behaviorGroup = (BehaviorGroup) pojo;
+            switch (writer.getName()) {
+                case "actions":
+                    if (behaviorGroup.isFilterOutActions()) {
+                        logFilterOut(BehaviorGroup.class.getName(), "actions");
                         // This will prevent the serialization of the property.
                         return;
                     }

@@ -12,6 +12,6 @@ public enum EndpointType {
     WEBHOOK, // 0
     @JsonProperty("email_subscription")
     EMAIL_SUBSCRIPTION, // 1
-    @JsonProperty("default")
+    @JsonProperty("default") // TODO [BG Phase 2] Delete the DEFAULT enum member
     DEFAULT // 2
 }

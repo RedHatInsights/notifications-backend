@@ -103,6 +103,7 @@ public class EndpointService {
                         .onItem().transform(endpointsCount -> new EndpointPage(endpointsList, new HashMap<>(), new Meta(endpointsCount))));
     }
 
+    // TODO [BG Phase 2] Delete this method
     @POST
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
@@ -118,6 +119,21 @@ public class EndpointService {
                     .onItem()
                     .ifNull()
                     .switchTo(resources.createEndpoint(endpoint));
+        }
+
+        return resources.createEndpoint(endpoint);
+    }
+
+    @POST
+    @Path("/bg") // TODO [BG Phase 2] Delete this path
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    // TODO [BG Phase 2] Remove '_BG' suffix
+    public Uni<Endpoint> createEndpoint_BG(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        endpoint.setAccountId(principal.getAccount());
+
+        if (endpoint.getProperties() == null) {
+            throw new BadRequestException("Properties is required");
         }
 
         return resources.createEndpoint(endpoint);
