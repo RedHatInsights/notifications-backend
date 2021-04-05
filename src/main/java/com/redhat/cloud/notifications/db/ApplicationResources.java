@@ -8,7 +8,6 @@ import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
@@ -150,25 +149,5 @@ public class ApplicationResources {
         }
 
         return mutinyQuery.getResultList();
-    }
-
-    // TODO [BG Phase 2] Delete this method
-    public Uni<List<EventType>> getEventTypesByEndpointId(@NotNull String accountId, @NotNull UUID endpointId) {
-        String query = "SELECT e FROM EventType e LEFT JOIN FETCH e.application JOIN e.targets t " +
-                "WHERE t.id.accountId = :accountId AND t.endpoint.id = :endpointId";
-        return session.createQuery(query, EventType.class)
-                .setParameter("accountId", accountId)
-                .setParameter("endpointId", endpointId)
-                .getResultList();
-    }
-
-    // TODO [BG Phase 2] Remove '_BG' suffix
-    public Uni<List<EventType>> getEventTypesByEndpointId_BG(String accountId, UUID endpointId) {
-        String query = "SELECT e FROM EventType e LEFT JOIN FETCH e.application JOIN e.behaviors b JOIN b.behaviorGroup.actions a " +
-                "WHERE b.behaviorGroup.accountId = :accountId AND a.endpoint.id = :endpointId";
-        return session.createQuery(query, EventType.class)
-                .setParameter("accountId", accountId)
-                .setParameter("endpointId", endpointId)
-                .getResultList();
     }
 }

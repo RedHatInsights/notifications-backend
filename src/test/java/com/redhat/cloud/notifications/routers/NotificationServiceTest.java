@@ -10,8 +10,6 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
-import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.Facet;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -29,6 +27,7 @@ import javax.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
@@ -181,301 +180,84 @@ public class NotificationServiceTest extends DbIsolatedTest {
         assertEquals(100, eventTypes.size());
     }
 
-    // TODO [BG Phase 2] Delete this test
-    @Test
-    void testAddToDefaultsWithInsufficientPrivileges() {
-        helpers.createTestAppAndEventTypes();
-        Header identityHeader = initRbacMock("testAddToDefaultsWithInsufficientPrivileges", "user", RbacAccess.READ_ACCESS);
-
-        /*
-         * Add an integration to the list of configured default actions without write access.
-         * It should fail because of insufficient privileges.
-         */
-        given()
-                .header(identityHeader)
-                .when()
-                .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
-                .then()
-                .statusCode(403)
-                .contentType(TEXT);
-    }
-
-    // TODO [BG Phase 2] Delete this test
-    @Test
-    void testDeleteFromDefaultsWithInsufficientPrivileges() {
-        helpers.createTestAppAndEventTypes();
-        Header identityHeader = initRbacMock("testDeleteFromDefaultsWithInsufficientPrivileges", "user", RbacAccess.READ_ACCESS);
-
-        /*
-         * Delete an integration from the list of configured default actions without write access.
-         * It should fail because of insufficient privileges.
-         */
-        given()
-                .header(identityHeader)
-                .when()
-                .delete(String.format("/notifications/defaults/%s", UUID.randomUUID()))
-                .then()
-                .statusCode(403);
-    }
-
-    // TODO [BG Phase 2] Delete this test
-    @Test
-    void testNonExistantDefaults() {
-        helpers.createTestAppAndEventTypes();
-        Header identityHeader = initRbacMock("testNonExistantDefaults", "user", RbacAccess.FULL_ACCESS);
-
-        // Add non-existant endpointId to an account without default created
-        given()
-                .header(identityHeader)
-                .when()
-                .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
-                .then()
-                .statusCode(400)
-                .contentType(TEXT);
-
-        // Create default endpoint
-        Endpoint ep = new Endpoint();
-        ep.setType(EndpointType.DEFAULT);
-        ep.setName("Default endpoint");
-        ep.setDescription("The ultimate fallback");
-        ep.setEnabled(true);
-
-        given()
-                .basePath(TestConstants.API_INTEGRATIONS_V_1_0)
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON);
-
-        // Send non-existant UUID again
-        given()
-                .header(identityHeader)
-                .when()
-                .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
-                .then()
-                .statusCode(400)
-                .contentType(TEXT);
-    }
-
-    // TODO [BG Phase 2] Delete this test
-    @Test
-    void testPutGetAndDeleteDefaults() {
-        helpers.createTestAppAndEventTypes();
-        Header identityHeader = initRbacMock("testPutGetAndDeleteDefaults", "user", RbacAccess.FULL_ACCESS);
-
-        // Create default endpoint.
-        Endpoint ep = new Endpoint();
-        ep.setType(EndpointType.DEFAULT);
-        ep.setName("Default endpoint");
-        ep.setDescription("The ultimate fallback");
-        ep.setEnabled(true);
-
-        Response response = given()
-                .basePath(TestConstants.API_INTEGRATIONS_V_1_0)
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-        JsonObject persistedEndpoint = new JsonObject(response.body().asString());
-        assertNotNull(persistedEndpoint.getString("id"));
-
-        // Add the persisted endpoint to defaults, it should work.
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .pathParam("endpointId", persistedEndpoint.getString("id"))
-                .put("/notifications/defaults/{endpointId}")
-                .then()
-                .statusCode(200)
-                .contentType(TEXT);
-
-        // Check if the endpoint appears in the list of defaults.
-        response = given()
-                .header(identityHeader)
-                .when()
-                .get("/notifications/defaults")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-        JsonArray defaultEndpoints = new JsonArray(response.body().asString());
-        assertEquals(1, defaultEndpoints.size());
-        assertEquals(persistedEndpoint.getString("id"), defaultEndpoints.getJsonObject(0).getString("id"));
-
-        // Add the same endpoint in defaults again, it should fail because it's already in defaults.
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .pathParam("endpointId", persistedEndpoint.getString("id"))
-                .put("/notifications/defaults/{endpointId}")
-                .then()
-                .statusCode(400)
-                .contentType(TEXT);
-
-        // Delete the endpoint from defaults, it should work.
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .pathParam("endpointId", persistedEndpoint.getString("id"))
-                .delete("/notifications/defaults/{endpointId}")
-                .then()
-                .statusCode(204);
-
-        // Check if the endpoint was removed from the list of defaults.
-        response = given()
-                .header(identityHeader)
-                .when()
-                .get("/notifications/defaults")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-        defaultEndpoints = new JsonArray(response.body().asString());
-        assertEquals(0, defaultEndpoints.size());
-    }
-
     @Test
     void testGetEventTypesAffectedByEndpoint() {
-        helpers.createTestAppAndEventTypes();
+        UUID bundleId = helpers.createTestAppAndEventTypes();
         String tenant = "testGetEventTypesAffectedByEndpoint";
         Header identityHeader = initRbacMock(tenant, "user", RbacAccess.FULL_ACCESS);
 
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(tenant, "behavior-group-1", bundleId);
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(tenant, "behavior-group-2", bundleId);
         UUID applicationId = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME).stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
         UUID ep1 = this.helpers.createWebhookEndpoint(tenant);
         UUID ep2 = this.helpers.createWebhookEndpoint(tenant);
-        UUID defaultEp = this.helpers.getDefaultEndpointId(tenant);
         List<EventType> eventTypesFromApp1 = this.helpers.getEventTypesForApplication(applicationId);
         EventType ev0 = eventTypesFromApp1.get(0);
         EventType ev1 = eventTypesFromApp1.get(1);
 
-        // ep1 assigned to ev0; ep2 not assigned; default not assigned.
-        this.helpers.assignEndpointToEventType(tenant, ep1, ev0.getId());
-        Response response = given()
+        // ep1 assigned to ev0; ep2 not assigned.
+        helpers.updateEventTypeBehaviors(tenant, ev0.getId(), Set.of(behaviorGroupId1));
+        helpers.updateBehaviorGroupActions(tenant, behaviorGroupId1, List.of(ep1));
+        String responseBody = given()
                 .header(identityHeader)
+                .pathParam("endpointId", ep1.toString())
                 .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
+                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().response();
+                .extract().asString();
 
-        JsonArray eventTypes = new JsonArray(response.getBody().asString());
-        eventTypes.getJsonObject(0).mapTo(EventType.class);
-        assertEquals(1, eventTypes.size());
-        assertEquals(ev0.getId().toString(), eventTypes.getJsonObject(0).getString("id"));
+        JsonArray behaviorGroups = new JsonArray(responseBody);
+        assertEquals(1, behaviorGroups.size());
+        behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
+        assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
 
-        response = given()
+        responseBody = given()
                 .header(identityHeader)
+                .pathParam("endpointId", ep2.toString())
                 .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
+                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().response();
+                .extract().asString();
 
-        eventTypes = new JsonArray(response.getBody().asString());
-        assertEquals(0, eventTypes.size());
+        behaviorGroups = new JsonArray(responseBody);
+        assertEquals(0, behaviorGroups.size());
 
-        // ep1 assigned to event ev0; ep2 assigned to default; default not assigned
-        this.helpers.assignEndpointToDefault(tenant, ep2);
-        response = given()
+        // ep1 assigned to event ev0; ep2 assigned to event ev1
+        helpers.updateEventTypeBehaviors(tenant, ev1.getId(), Set.of(behaviorGroupId2));
+        helpers.updateBehaviorGroupActions(tenant, behaviorGroupId2, List.of(ep2));
+        responseBody = given()
                 .header(identityHeader)
+                .pathParam("endpointId", ep1.toString())
                 .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
+                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().response();
+                .extract().asString();
 
-        eventTypes = new JsonArray(response.getBody().asString());
-        eventTypes.getJsonObject(0).mapTo(EventType.class);
-        assertEquals(1, eventTypes.size());
-        assertEquals(ev0.getId().toString(), eventTypes.getJsonObject(0).getString("id"));
+        behaviorGroups = new JsonArray(responseBody);
+        assertEquals(1, behaviorGroups.size());
+        behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
+        assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
 
-        response = given()
+        responseBody = given()
                 .header(identityHeader)
+                .pathParam("endpointId", ep2.toString())
                 .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
+                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().response();
+                .extract().asString();
 
-        eventTypes = new JsonArray(response.getBody().asString());
-        assertEquals(0, eventTypes.size());
-
-        // ep1 assigned to ev0; ep2 assigned to default; default assigned to ev1
-        this.helpers.assignEndpointToEventType(tenant, defaultEp, ev1.getId());
-        response = given()
-                .header(identityHeader)
-                .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        eventTypes = new JsonArray(response.getBody().asString());
-        eventTypes.getJsonObject(0).mapTo(EventType.class);
-        assertEquals(1, eventTypes.size());
-        assertEquals(ev0.getId().toString(), eventTypes.getJsonObject(0).getString("id"));
-
-        response = given()
-                .header(identityHeader)
-                .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        eventTypes = new JsonArray(response.getBody().asString());
-        eventTypes.getJsonObject(0).mapTo(EventType.class);
-        assertEquals(1, eventTypes.size());
-        assertEquals(ev1.getId().toString(), eventTypes.getJsonObject(0).getString("id"));
-
-        // ep1 assigned to event app[0][0]; ep2 assigned to default; default assigned to app[0][1] & app[0][0]
-        this.helpers.assignEndpointToEventType(tenant, defaultEp, ev0.getId());
-        response = given()
-                .header(identityHeader)
-                .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        eventTypes = new JsonArray(response.getBody().asString());
-        eventTypes.getJsonObject(0).mapTo(EventType.class);
-        assertEquals(1, eventTypes.size());
-        assertEquals(ev0.getId().toString(), eventTypes.getJsonObject(0).getString("id"));
-
-        response = given()
-                .header(identityHeader)
-                .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        eventTypes = new JsonArray(response.getBody().asString());
-        eventTypes.getJsonObject(0).mapTo(EventType.class);
-        assertEquals(2, eventTypes.size());
-        assertEquals(ev0.getId().toString(), eventTypes.getJsonObject(1).getString("id"));
-        assertEquals(ev1.getId().toString(), eventTypes.getJsonObject(0).getString("id"));
+        behaviorGroups = new JsonArray(responseBody);
+        assertEquals(1, behaviorGroups.size());
+        behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
+        assertEquals(behaviorGroupId2.toString(), behaviorGroups.getJsonObject(0).getString("id"));
     }
 
     @Test
@@ -526,19 +308,18 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
         given()
                 .header(noAccessIdentityHeader)
-                .pathParam("endpointId", UUID.randomUUID())
+                .pathParam("behaviorGroupId", UUID.randomUUID())
                 .when()
-                // TODO [BG Phase 2] Remove '/bg' from path
-                .get("/notifications/bg/eventTypes/affectedByRemovalOfEndpoint/{endpointId}")
+                .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
                 .then()
                 .statusCode(403)
                 .contentType(JSON);
 
         given()
                 .header(noAccessIdentityHeader)
-                .pathParam("behaviorGroupId", UUID.randomUUID())
+                .pathParam("endpointId", UUID.randomUUID())
                 .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
+                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
                 .statusCode(403)
                 .contentType(JSON);

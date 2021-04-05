@@ -66,7 +66,7 @@ public class EventType {
     @JsonIgnore
     private boolean filterOutApplication;
 
-    // TODO [BG Phase 2] Delete this attribute
+    // TODO [BG Phase 3] Delete this attribute
     @OneToMany(mappedBy = "eventType", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<EndpointTarget> targets;
@@ -135,12 +135,12 @@ public class EventType {
         return this;
     }
 
-    // TODO [BG Phase 2] Delete this method
+    // TODO [BG Phase 3] Delete this method
     public Set<EndpointTarget> getTargets() {
         return targets;
     }
 
-    // TODO [BG Phase 2] Delete this method
+    // TODO [BG Phase 3] Delete this method
     public void setTargets(Set<EndpointTarget> targets) {
         this.targets = targets;
     }

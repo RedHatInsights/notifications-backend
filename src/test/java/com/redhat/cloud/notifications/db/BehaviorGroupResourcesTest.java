@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -165,17 +166,32 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     public void testAddAndDeleteBehaviorGroupAction() {
         Bundle bundle = createBundle();
-        BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
+        BehaviorGroup behaviorGroup1 = createBehaviorGroup("Behavior group 1", bundle.getId());
+        BehaviorGroup behaviorGroup2 = createBehaviorGroup("Behavior group 2", bundle.getId());
         Endpoint endpoint1 = createEndpoint();
         Endpoint endpoint2 = createEndpoint();
         Endpoint endpoint3 = createEndpoint();
 
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true, endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true, endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true, endpoint1.getId(), endpoint2.getId());
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true, endpoint2.getId());
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true, endpoint3.getId(), endpoint2.getId(), endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true);
+        // At the beginning of the test, endpoint1 shouldn't be linked with any behavior group.
+        findBehaviorGroupsByEndpointId(endpoint1.getId());
+
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true, endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true, endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true, endpoint1.getId(), endpoint2.getId());
+
+        // Now, endpoint1 should be linked with behaviorGroup1.
+        findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId());
+
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup2.getId(), true, endpoint1.getId());
+        // Then, endpoint1 should be linked with both behavior groups.
+        findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId(), behaviorGroup2.getId());
+
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true, endpoint2.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true, endpoint3.getId(), endpoint2.getId(), endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true);
+
+        // The link between endpoint1 and behaviorGroup1 was removed. Let's check it is still linked with behaviorGroup2.
+        findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup2.getId());
     }
 
     @Test
@@ -289,9 +305,15 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
     private List<BehaviorGroupAction> findBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId) {
         List<BehaviorGroup> behaviorGroups = behaviorGroupResources.findByBundleId(accountId, bundleId).await().indefinitely();
-        assertEquals(1, behaviorGroups.size());
         return behaviorGroups
                 .stream().filter(behaviorGroup -> behaviorGroup.getId().equals(behaviorGroupId))
                 .findFirst().get().getActions();
+    }
+
+    private void findBehaviorGroupsByEndpointId(UUID endpointId, UUID... expectedBehaviorGroupIds) {
+        List<UUID> actualBehaviorGroupIds = behaviorGroupResources.findBehaviorGroupsByEndpointId(ACCOUNT_ID, endpointId).await().indefinitely()
+                .stream().map(BehaviorGroup::getId).collect(Collectors.toList());
+        assertEquals(expectedBehaviorGroupIds.length, actualBehaviorGroupIds.size());
+        assertTrue(actualBehaviorGroupIds.containsAll(Arrays.asList(expectedBehaviorGroupIds)));
     }
 }

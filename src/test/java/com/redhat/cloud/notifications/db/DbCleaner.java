@@ -57,8 +57,8 @@ public class DbCleaner {
         return session.withTransaction(transaction -> deleteAllFrom(EmailAggregation.class)
                 .chain(() -> deleteAllFrom(EmailSubscription.class))
                 .chain(() -> deleteAllFrom(NotificationHistory.class))
-                .chain(() -> deleteAllFrom(EndpointDefault.class)) // TODO [BG Phase 2] Delete this line
-                .chain(() -> deleteAllFrom(EndpointTarget.class)) // TODO [BG Phase 2] Delete this line
+                .chain(() -> deleteAllFrom(EndpointDefault.class)) // TODO [BG Phase 3] Delete this line
+                .chain(() -> deleteAllFrom(EndpointTarget.class)) // TODO [BG Phase 3] Delete this line
                 .chain(() -> deleteAllFrom(BehaviorGroupAction.class))
                 .chain(() -> deleteAllFrom(WebhookProperties.class))
                 .chain(() -> deleteAllFrom(Endpoint.class))
