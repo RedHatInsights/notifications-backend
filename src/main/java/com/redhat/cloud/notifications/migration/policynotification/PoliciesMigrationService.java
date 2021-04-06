@@ -67,7 +67,7 @@ public class PoliciesMigrationService {
             )
                     .invoke(() -> response.eventTypesMigrated.incrementAndGet())
                     .onItem().transform(subscribed -> pes.accountId).toMulti())
-                    .concatenate().collectItems().in(HashSet::new, HashSet::add)
+                    .concatenate().collect().in(HashSet::new, HashSet::add)
                     .onItem().transformToMulti(accountIds -> Multi.createFrom().iterable(accountIds))
                     .onItem().castTo(String.class)
                     .onItem().transformToMultiAndConcatenate(accountId -> {
@@ -76,7 +76,7 @@ public class PoliciesMigrationService {
                         return endpointResources.getLinkedEndpoints(accountId, eventType.getId(), new Query())
                         .onItem().transformToMultiAndConcatenate(endpoint -> endpointResources.unlinkEndpoint(accountId, endpoint.getId(), eventType.getId()).toMulti())
                         // Create EmailAction (Endpoint) and add it to the eventType
-                        .collectItems().asList()
+                        .collect().asList()
                         .onItem().transformToUni(_removed -> {
                             Endpoint endpoint = new Endpoint();
                             endpoint.setAccountId(accountId);
@@ -89,7 +89,7 @@ public class PoliciesMigrationService {
                         })
                         .onItem().transformToUni(endpoint -> endpointResources.linkEndpoint(accountId, endpoint.getId(), eventType.getId())).toMulti();
                     });
-        }).collectItems().asList().onItem().transform(objects -> response);
+        }).collect().asList().onItem().transform(objects -> response);
     }
 
     private EmailSubscriptionType fromPoliciesEventType(String eventType) {
