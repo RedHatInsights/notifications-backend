@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.CounterAssertionHelper;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
@@ -14,8 +15,6 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -45,6 +44,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
+import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -85,7 +85,7 @@ public class LifecycleITest {
     InMemoryConnector inMemoryConnector;
 
     @Inject
-    MeterRegistry meterRegistry;
+    CounterAssertionHelper counterAssertionHelper;
 
     JsonObject theBundle;
 
@@ -230,6 +230,8 @@ public class LifecycleITest {
 
     @Test
     void t02_pushMessage() throws Exception {
+        counterAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME);
+
         // These are succesful requests
         HttpRequest postReq = new HttpRequest()
                 .withPath("/test/lifecycle")
@@ -281,8 +283,8 @@ public class LifecycleITest {
         }
 
         mockServerConfig.getMockServerClient().clear(postReq);
-        Counter rejectedCount = meterRegistry.find("input.rejected").counter();
-        assertEquals(0, rejectedCount.count());
+        counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 0);
+        counterAssertionHelper.clear();
     }
 
     @Test

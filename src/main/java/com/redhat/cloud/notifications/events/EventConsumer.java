@@ -13,6 +13,7 @@ import org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
@@ -22,8 +23,12 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class EventConsumer {
 
+    public static final String REJECTED_COUNTER_NAME = "input.rejected";
+    public static final String PROCESSING_ERROR_COUNTER_NAME = "input.processing.error";
+
     private static final Logger log = Logger.getLogger(EventConsumer.class.getName());
 
+    @Inject
     MeterRegistry registry;
 
     @Inject
@@ -32,10 +37,10 @@ public class EventConsumer {
     private Counter rejectedCount;
     private Counter processingErrorCount;
 
-    public EventConsumer(MeterRegistry registry) {
-        this.registry = registry;
-        rejectedCount = registry.counter("input.rejected");
-        processingErrorCount = registry.counter("input.processing.error");
+    @PostConstruct
+    public void init() {
+        rejectedCount = registry.counter(REJECTED_COUNTER_NAME);
+        processingErrorCount = registry.counter(PROCESSING_ERROR_COUNTER_NAME);
     }
 
     @Incoming("ingress")
