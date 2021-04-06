@@ -146,7 +146,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
         return this.subscriptionResources.getEmailSubscribers(item.getTenant(), item.getAction().getBundle(), item.getAction().getApplication(), emailSubscriptionType)
             .onItem().transform(emailSubscription -> emailSubscription.getUserId())
-                .collectItems().with(Collectors.toSet())
+                .collect().with(Collectors.toSet())
                 .onItem().transform(userSet -> {
                     if (userSet.size() > 0) {
                         return this.buildEmail(userSet);
@@ -165,7 +165,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         Uni<String> title = emailTemplate.getTitle(item.getAction().getEventType(), emailSubscriptionType)
                                 .data("payload", item.getAction().getPayload())
                                 .createMulti()
-                                .collectItems().with(Collectors.joining())
+                                .collect().with(Collectors.joining())
                                 .onFailure()
                                 .recoverWithItem(templateEx -> {
                                     log.warning(
@@ -183,7 +183,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         Uni<String> body = emailTemplate.getBody(item.getAction().getEventType(), emailSubscriptionType)
                                 .data("payload", item.getAction().getPayload())
                                 .createMulti()
-                                .collectItems().with(Collectors.joining())
+                                .collect().with(Collectors.joining())
                                 .onFailure()
                                 .recoverWithItem(templateEx -> {
                                     log.warning(
@@ -255,7 +255,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
                     if (subscriberCount > 0 && aggregator != null) {
                         return emailAggregationResources.getEmailAggregation(aggregationKey, startTime, endTime)
-                                .collectItems().in(() -> aggregator, AbstractEmailPayloadAggregator::aggregate).toMulti();
+                                .collect().in(() -> aggregator, AbstractEmailPayloadAggregator::aggregate).toMulti();
                     }
 
                     if (delete) {
@@ -317,7 +317,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
         return emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
                 .onItem().transformToMulti(aggregationKey -> processAggregateEmailsByAggregationKey(aggregationKey, startTime, endTime, emailSubscriptionType, delete))
-                .concatenate().collectItems().asList()
+                .concatenate().collect().asList()
                 .onItem().invoke(result -> {
                     final LocalDateTime aggregateFinished = LocalDateTime.now();
                     log.info(

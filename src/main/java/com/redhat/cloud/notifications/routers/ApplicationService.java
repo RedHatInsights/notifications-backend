@@ -37,7 +37,7 @@ public class ApplicationService {
             throw new BadRequestException("There is no bundle name given. Try ?bundleName=xxx");
         }
 
-        return appResources.getApplications(bundleName).collectItems().asList().onItem().invoke(applications -> {
+        return appResources.getApplications(bundleName).collect().asList().onItem().invoke(applications -> {
             if (applications.size() == 0) {
                 throw new NotFoundException();
             }

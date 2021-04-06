@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
+import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
-import io.quarkus.qute.api.CheckedTemplate;
 
 // Name needs to be "Policies" to read templates from resources/templates/Policies
 public class Policies extends AbstractEmailTemplate {

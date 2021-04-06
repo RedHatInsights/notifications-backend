@@ -105,7 +105,7 @@ public class UserConfigService {
                 })));
 
         return Multi.createBy().concatenating().streams(subscriptionRequests)
-                .collectItems().asList()
+                .collect().asList()
                 .onItem().transform(subscriptionResults -> {
                     boolean allisSuccess = subscriptionResults.stream().allMatch(isTrue -> isTrue instanceof Boolean && ((Boolean) isTrue));
                     Response.ResponseBuilder builder;
@@ -180,11 +180,11 @@ public class UserConfigService {
                                                 return Multi.createFrom().empty();
                                             }).merge();
                                 }).merge();
-                    }).concatenate().collectItems().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
+                    }).concatenate().collect().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
                     .onItem().transform(emailSubscription -> {
                         values.bundles.get(emailSubscription.getBundleName()).applications.get(emailSubscription.getApplicationName()).notifications.put(emailSubscription.getType(), true);
                         return emailSubscription;
-                    }).collectItems().asList().onItem().transform(emailSubscriptions -> values);
+                    }).collect().asList().onItem().transform(emailSubscriptions -> values);
         });
     }
 
@@ -213,11 +213,11 @@ public class UserConfigService {
                                                 return Multi.createFrom().empty();
                                             }).concatenate();
                                 }).concatenate();
-                    }).concatenate().collectItems().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
+                    }).concatenate().collect().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
                     .onItem().transform(emailSubscription -> {
                         values.bundles.get(emailSubscription.getBundleName()).applications.get(emailSubscription.getApplicationName()).notifications.put(emailSubscription.getType(), true);
                         return emailSubscription;
-                    }).collectItems().asList().onItem().transform(emailSubscriptions -> values);
+                    }).collect().asList().onItem().transform(emailSubscriptions -> values);
         });
     }
 
