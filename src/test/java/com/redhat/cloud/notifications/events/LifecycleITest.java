@@ -330,7 +330,7 @@ public class LifecycleITest {
                             .header(identityHeader)
                             .when()
                             .contentType(ContentType.JSON)
-                            .get(String.format("/endpoints/%s/history/%s/details", ep.getString("id"), history.getInteger("id")))
+                            .get(String.format("/endpoints/%s/history/%s/details", ep.getString("id"), history.getString("id")))
                             .then()
                             .statusCode(200)
                             .extract().response();
