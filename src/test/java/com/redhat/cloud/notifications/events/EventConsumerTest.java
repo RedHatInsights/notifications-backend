@@ -3,6 +3,8 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.CounterAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Metadata;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -17,6 +19,8 @@ import javax.inject.Inject;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
@@ -91,7 +95,17 @@ public class EventConsumerTest {
         action.setEventType("Any");
         action.setTimestamp(LocalDateTime.now());
         action.setAccountId("testTenant");
-        action.setPayload(Map.of("k", "v", "k2", "v2", "k3", "v"));
+        action.setEvents(
+                List.of(
+                        Event
+                                .newBuilder()
+                                .setMetadataBuilder(Metadata.newBuilder())
+                                .setPayload(Map.of("k", "v", "k2", "v2", "k3", "v"))
+                                .build()
+                )
+        );
+
+        action.setContext(new HashMap());
         return action;
     }
 }

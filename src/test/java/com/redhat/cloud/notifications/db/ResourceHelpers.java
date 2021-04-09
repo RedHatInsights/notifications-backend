@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
@@ -10,8 +11,6 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -166,22 +165,7 @@ public class ResourceHelpers {
     }
 
     public void addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
-        EmailAggregation aggregation = new EmailAggregation();
-        aggregation.setBundleName(bundle);
-        aggregation.setApplicationName(application);
-        aggregation.setAccountId(tenant);
-
-        JsonObject payload = new JsonObject();
-        payload.put("policy_id", policyId);
-        payload.put("policy_name", "not-used-name");
-        payload.put("policy_description", "not-used-desc");
-        payload.put("policy_condition", "not-used-condition");
-        payload.put("display_name", "not-used-display-name");
-        payload.put("insights_id", insightsId);
-        payload.put("tags", new JsonArray());
-
-        aggregation.setPayload(payload);
-
+        EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, bundle, application, policyId, insightsId);
         emailAggregationResources.addEmailAggregation(aggregation).await().indefinitely();
     }
 

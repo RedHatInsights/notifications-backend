@@ -2,11 +2,14 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.EmailSubscriptionAttributes;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -15,6 +18,7 @@ import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.templates.LocalDateTimeExtension;
+import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.scheduler.ScheduledExecution;
 import io.quarkus.scheduler.Trigger;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -33,11 +37,10 @@ import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -84,6 +87,7 @@ public class EmailTest {
         emailProcessor.bopClientId = "emailTest";
         emailProcessor.bopEnv = "unitTest";
         emailProcessor.noReplyAddress = "no-reply@redhat.com";
+        emailProcessor.baseTransformer = new BaseTransformer();
 
         String url = String.format("http://%s/v1/sendEmails", mockServerConfig.getRunningAddress());
         emailProcessor.bopUrl = url;
@@ -124,31 +128,7 @@ public class EmailTest {
 
         HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
-        Action emailActionMessage = new Action();
-        emailActionMessage.setBundle(bundle);
-        emailActionMessage.setApplication(application);
-        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
-        // Disabling event id until we need it
-        // emailActionMessage.setEventId(UUID.randomUUID().toString());
-        emailActionMessage.setEventType("testEmailSubscriptionInstant");
-
-        Map<String, String> triggers = new HashMap<>();
-        triggers.put("abcd-efghi-jkl-lmn", "Foobar");
-        triggers.put("0123-456-789-5721f", "Latest foo is installed");
-
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("triggers", triggers);
-        payload.put("display_name", "My test machine");
-        payload.put("system_check_in", "2020-08-03T15:22:42.199046");
-        payload.put("policy_id", "0123-456-789-5721f");
-        payload.put("policy_name", "not-used-name");
-        payload.put("policy_description", "not-used-desc");
-        payload.put("policy_condition", "not-used-condition");
-        payload.put("insights_id", "host-01");
-        payload.put("tags", new JsonArray());
-
-        emailActionMessage.setPayload(payload);
-        emailActionMessage.setAccountId(tenant);
+        Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application, "My test machine");
 
         EmailSubscriptionAttributes emailAttr = new EmailSubscriptionAttributes();
 
@@ -196,11 +176,11 @@ public class EmailTest {
 
         String bodyRequest = bodyRequests.get(0);
 
-        for (String key : triggers.keySet()) {
-            String value = triggers.get(key);
-            assertTrue(bodyRequest.contains(key), "Body should contain trigger key" + key);
-            assertTrue(bodyRequest.contains(value), "Body should contain trigger value" + value);
-        }
+        assertTrue(bodyRequest.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
+        assertTrue(bodyRequest.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
+
+        assertTrue(bodyRequest.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
+        assertTrue(bodyRequest.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
 
         // Display name
         assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
@@ -241,18 +221,21 @@ public class EmailTest {
         // emailActionMessage.setEventId(UUID.randomUUID().toString());
         emailActionMessage.setEventType("testEmailSubscriptionInstant");
 
-        // No triggers (currently required by instant email)
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("display_name", "My test machine");
-        payload.put("system_check_in", "2020-08-03T15:22:42.199046");
-        payload.put("policy_id", "0123-456-789-5721f");
-        payload.put("policy_name", "not-used-name");
-        payload.put("policy_description", "not-used-desc");
-        payload.put("policy_condition", "not-used-condition");
-        payload.put("insights_id", "host-01");
-        payload.put("tags", new JsonArray());
+        emailActionMessage.setContext(Map.of(
+                "insights_id-wrong", "host-01",
+                "system_check_in-wrong", "2020-08-03T15:22:42.199046",
+                "display_name-wrong", "My test machine",
+                "tags-what?", List.of()
+        ));
+        emailActionMessage.setEvents(List.of(
+                Event.newBuilder()
+                        .setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(Map.of(
+                                "foo", "bar"
+                        ))
+                        .build()
+        ));
 
-        emailActionMessage.setPayload(payload);
         emailActionMessage.setAccountId(tenant);
 
         EmailSubscriptionAttributes emailAttr = new EmailSubscriptionAttributes();
@@ -307,8 +290,8 @@ public class EmailTest {
         }
 
         final Instant nowPlus5HoursInstant = Instant.now().plus(Duration.ofHours(5));
-        final LocalDateTime startTime = LocalDateTime.ofInstant(nowPlus5HoursInstant.minus(Duration.ofDays(1)), ZoneId.systemDefault());
-        final LocalDateTime endTime = LocalDateTime.ofInstant(nowPlus5HoursInstant, ZoneId.systemDefault());
+        final LocalDateTime startTime = LocalDateTime.ofInstant(nowPlus5HoursInstant.minus(Duration.ofDays(1)), ZoneOffset.UTC);
+        final LocalDateTime endTime = LocalDateTime.ofInstant(nowPlus5HoursInstant, ZoneOffset.UTC);
 
         ScheduledExecution nowPlus5Hours = new ScheduledExecution() {
             @Override

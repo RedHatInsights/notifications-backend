@@ -5,6 +5,8 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
@@ -15,6 +17,7 @@ import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -76,13 +79,34 @@ public class WebhookTest {
         webhookActionMessage.setApplication("WebhookTest");
         webhookActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         webhookActionMessage.setEventType("testWebhook");
-
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("any", "thing");
-        payload.put("we", 1);
-        payload.put("want", "here");
-        webhookActionMessage.setPayload(payload);
         webhookActionMessage.setAccountId("tenant");
+
+        Map<String, Object> payload1 = new HashMap<>();
+        payload1.put("any", "thing");
+        payload1.put("we", 1);
+        payload1.put("want", "here");
+
+        Map<String, Object> context = new HashMap<>();
+        context.put("free", "more");
+        context.put("format", 1);
+        context.put("here", "stuff");
+
+        webhookActionMessage.setEvents(
+                List.of(
+                        Event
+                                .newBuilder()
+                                .setMetadataBuilder(Metadata.newBuilder())
+                                .setPayload(payload1)
+                                .build(),
+                        Event
+                                .newBuilder()
+                                .setMetadataBuilder(Metadata.newBuilder())
+                                .setPayload(new HashMap())
+                                .build()
+                )
+        );
+
+        webhookActionMessage.setContext(context);
 
         WebhookAttributes attributes = new WebhookAttributes();
         attributes.setMethod(HttpType.POST);
@@ -116,10 +140,18 @@ public class WebhookTest {
         assertEquals("testWebhook", webhookInput.getString("event_type"));
         assertEquals("tenant", webhookInput.getString("account_id"));
 
-        JsonObject webhookInputPayload = webhookInput.getJsonObject("payload");
-        assertEquals("thing", webhookInputPayload.getString("any"));
-        assertEquals(1, webhookInputPayload.getInteger("we"));
-        assertEquals("here", webhookInputPayload.getString("want"));
+        JsonObject webhookInputContext = webhookInput.getJsonObject("context");
+        assertEquals("more", webhookInputContext.getString("free"));
+        assertEquals(1, webhookInputContext.getInteger("format"));
+        assertEquals("stuff", webhookInputContext.getString("here"));
+
+        JsonArray webhookInputEvents = webhookInput.getJsonArray("events");
+        assertEquals(2, webhookInputEvents.size());
+
+        JsonObject webhookInputPayload1 = webhookInputEvents.getJsonObject(0).getJsonObject("payload");
+        assertEquals("thing", webhookInputPayload1.getString("any"));
+        assertEquals(1, webhookInputPayload1.getInteger("we"));
+        assertEquals("here", webhookInputPayload1.getString("want"));
 
     }
 

@@ -1,4 +1,1 @@
-{@java.lang.String payload.system_check_in}
-{@java.lang.String payload.display_name}
-{@java.util.Map<java.lang.String, java.lang.String> payload.triggers}
-{payload.system_check_in.toUtcFormat()} - {payload.triggers.size()} {#if payload.triggers.size() is 1}policy{#else}policies{/if} triggered on {payload.display_name}
+{action.context.system_check_in.toUtcFormat()} - {action.events.size()} {#if action.events.size() is 1}policy{#else}policies{/if} triggered on {action.context.display_name}
