@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbCleaner;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -21,12 +22,10 @@ import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
-import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 
 import java.util.List;
@@ -40,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class NotificationServiceTest {
 
     /*
@@ -50,36 +48,41 @@ public class NotificationServiceTest {
      * here. The deserialization is still performed only to verify that the JSON responses data structure is correct.
      */
 
+    private static final String TENANT = "NotificationServiceTest";
+    private static final String USERNAME = "user";
+
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
     @Inject
     ResourceHelpers helpers;
 
-    private Header identityHeader;
+    @Inject
+    DbCleaner dbCleaner;
+
+    @BeforeEach
+    @AfterEach
+    void cleanDatabase() {
+        dbCleaner.clean();
+    }
 
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
-
-        // Add mock-rbac-full access before each test, as some will clear this out,
-        // as they only need partial access
-        String tenant = "NotificationServiceTest";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
-
+        mockServerConfig.clearRbac();
     }
 
-    @BeforeAll
-    @ActivateRequestContext
-    void init() {
-        helpers.createTestAppAndEventTypes();
+    private Header initRbacMock(String tenant, String username, RbacAccess access) {
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, access);
+        return TestHelpers.createIdentityHeader(identityHeaderValue);
     }
 
     @Test
     void testEventTypeFetching() {
+        helpers.createTestAppAndEventTypes();
+        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+
         Response response = given()
                 .when()
                 .header(identityHeader)
@@ -90,7 +93,7 @@ public class NotificationServiceTest {
                 .extract().response();
 
         JsonArray eventTypes = new JsonArray(response.getBody().asString());
-        assertTrue(eventTypes.size() >= 200); // Depending on the test order, we might have existing application types also
+        assertEquals(200, eventTypes.size());
 
         JsonObject policiesAll = eventTypes.getJsonObject(0);
         policiesAll.mapTo(EventType.class);
@@ -101,6 +104,8 @@ public class NotificationServiceTest {
 
     @Test
     void testEventTypeFetchingByApplication() {
+        helpers.createTestAppAndEventTypes();
+        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
         List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
         UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
@@ -122,11 +127,13 @@ public class NotificationServiceTest {
             assertEquals(myOtherTesterApplicationId.toString(), ev.getJsonObject("application").getString("id"));
         }
 
-        assertTrue(eventTypes.size() >= 100); // Depending on the test order, we might have existing application types also
+        assertEquals(100, eventTypes.size());
     }
 
     @Test
     void testEventTypeFetchingByBundle() {
+        helpers.createTestAppAndEventTypes();
+        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
         List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
         UUID myBundleId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
@@ -148,11 +155,13 @@ public class NotificationServiceTest {
             assertEquals(myBundleId.toString(), ev.getJsonObject("application").getString("bundle_id"));
         }
 
-        assertTrue(eventTypes.size() >= 100); // Depending on the test order, we might have existing application types also
+        assertEquals(200, eventTypes.size());
     }
 
     @Test
     void testEventTypeFetchingByBundleAndApplicationId() {
+        helpers.createTestAppAndEventTypes();
+        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
         List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
         UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getId();
@@ -177,76 +186,53 @@ public class NotificationServiceTest {
             assertEquals(myOtherTesterApplicationId.toString(), ev.getJsonObject("application").getString("id"));
         }
 
-        assertTrue(eventTypes.size() >= 100); // Depending on the test order, we might have existing application types also
+        assertEquals(100, eventTypes.size());
     }
 
     @Test
     void testAddToDefaultsWithInsufficientPrivileges() {
-        // We need to clear out full access first
-        mockServerConfig.clearRbac();
+        helpers.createTestAppAndEventTypes();
+        Header identityHeader = initRbacMock("testAddToDefaultsWithInsufficientPrivileges", "user", RbacAccess.READ_ACCESS);
 
-        String tenant = "testAddToDefaultsWithInsufficientPrivileges";
-        String userName = "user";
-        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
-        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.READ_ACCESS);
-
-        try {
-            /*
-             * Add an integration to the list of configured default actions without write access.
-             * It should fail because of insufficient privileges.
-             */
-            given()
-                    .header(localIdentityHeader)
-                    .when()
-                    .contentType(ContentType.JSON)
-                    .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
-                    .then()
-                    .statusCode(403);
-        } finally {
-            mockServerConfig.clearRbac();
-        }
+        /*
+         * Add an integration to the list of configured default actions without write access.
+         * It should fail because of insufficient privileges.
+         */
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
+                .then()
+                .statusCode(403);
     }
 
     @Test
     void testDeleteFromDefaultsWithInsufficientPrivileges() {
-        // We need to clear out full access first
-        mockServerConfig.clearRbac();
+        helpers.createTestAppAndEventTypes();
+        Header identityHeader = initRbacMock("testDeleteFromDefaultsWithInsufficientPrivileges", "user", RbacAccess.READ_ACCESS);
 
-        String tenant = "testDeleteFromDefaultsWithInsufficientPrivileges";
-        String userName = "user";
-        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
-        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.READ_ACCESS);
-
-        try {
-            /*
-             * Delete an integration from the list of configured default actions without write access.
-             * It should fail because of insufficient privileges.
-             */
-            given()
-                    .header(localIdentityHeader)
-                    .when()
-                    .contentType(ContentType.JSON)
-                    .delete(String.format("/notifications/defaults/%s", UUID.randomUUID()))
-                    .then()
-                    .statusCode(403);
-        } finally {
-            mockServerConfig.clearRbac();
-        }
+        /*
+         * Delete an integration from the list of configured default actions without write access.
+         * It should fail because of insufficient privileges.
+         */
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .delete(String.format("/notifications/defaults/%s", UUID.randomUUID()))
+                .then()
+                .statusCode(403);
     }
 
     @Test
     void testNonExistantDefaults() {
-        String tenant = "testNonExistantDefaults";
-        String userName = "user";
-        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
-        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+        helpers.createTestAppAndEventTypes();
+        Header identityHeader = initRbacMock("testNonExistantDefaults", "user", RbacAccess.FULL_ACCESS);
 
         // Add non-existant endpointId to an account without default created
         given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
@@ -262,7 +248,7 @@ public class NotificationServiceTest {
 
         given()
                 .basePath(TestConstants.API_INTEGRATIONS_V_1_0)
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
@@ -272,7 +258,7 @@ public class NotificationServiceTest {
 
         // Send non-existant UUID again
         given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
@@ -282,11 +268,8 @@ public class NotificationServiceTest {
 
     @Test
     void testPutGetAndDeleteDefaults() {
-        String tenant = "testPutGetAndDeleteDefaults";
-        String userName = "user";
-        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
-        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+        helpers.createTestAppAndEventTypes();
+        Header identityHeader = initRbacMock("testPutGetAndDeleteDefaults", "user", RbacAccess.FULL_ACCESS);
 
         // Create default endpoint.
         Endpoint ep = new Endpoint();
@@ -297,7 +280,7 @@ public class NotificationServiceTest {
 
         Response response = given()
                 .basePath(TestConstants.API_INTEGRATIONS_V_1_0)
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(ep))
@@ -310,7 +293,7 @@ public class NotificationServiceTest {
 
         // Add the persisted endpoint to defaults, it should work.
         given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .pathParam("endpointId", persistedEndpoint.getString("id"))
@@ -320,7 +303,7 @@ public class NotificationServiceTest {
 
         // Check if the endpoint appears in the list of defaults.
         response = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/defaults")
@@ -333,7 +316,7 @@ public class NotificationServiceTest {
 
         // Add the same endpoint in defaults again, it should fail because it's already in defaults.
         given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .pathParam("endpointId", persistedEndpoint.getString("id"))
@@ -343,7 +326,7 @@ public class NotificationServiceTest {
 
         // Delete the endpoint from defaults, it should work.
         given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .pathParam("endpointId", persistedEndpoint.getString("id"))
@@ -353,7 +336,7 @@ public class NotificationServiceTest {
 
         // Check if the endpoint was removed from the list of defaults.
         response = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/defaults")
@@ -366,11 +349,9 @@ public class NotificationServiceTest {
 
     @Test
     void testGetEventTypesAffectedByEndpoint() {
+        helpers.createTestAppAndEventTypes();
         String tenant = "testGetEventTypesAffectedByEndpoint";
-        String userName = "user";
-        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
-        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(tenant, "user", RbacAccess.FULL_ACCESS);
 
         UUID applicationId = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME).stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
         UUID ep1 = this.helpers.createWebhookEndpoint(tenant);
@@ -383,7 +364,7 @@ public class NotificationServiceTest {
         // ep1 assigned to ev0; ep2 not assigned; default not assigned.
         this.helpers.assignEndpointToEventType(tenant, ep1, ev0.getId());
         Response response = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
@@ -397,7 +378,7 @@ public class NotificationServiceTest {
         assertEquals(ev0.getId().toString(), eventTypes.getJsonObject(0).getString("id"));
 
         response = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
@@ -411,7 +392,7 @@ public class NotificationServiceTest {
         // ep1 assigned to event ev0; ep2 assigned to default; default not assigned
         this.helpers.assignEndpointToDefault(tenant, ep2);
         response = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
@@ -425,7 +406,7 @@ public class NotificationServiceTest {
         assertEquals(ev0.getId().toString(), eventTypes.getJsonObject(0).getString("id"));
 
         response = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
@@ -439,7 +420,7 @@ public class NotificationServiceTest {
         // ep1 assigned to ev0; ep2 assigned to default; default assigned to ev1
         this.helpers.assignEndpointToEventType(tenant, defaultEp, ev1.getId());
         response = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
@@ -453,7 +434,7 @@ public class NotificationServiceTest {
         assertEquals(ev0.getId().toString(), eventTypes.getJsonObject(0).getString("id"));
 
         response = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
@@ -469,7 +450,7 @@ public class NotificationServiceTest {
         // ep1 assigned to event app[0][0]; ep2 assigned to default; default assigned to app[0][1] & app[0][0]
         this.helpers.assignEndpointToEventType(tenant, defaultEp, ev0.getId());
         response = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
@@ -483,7 +464,7 @@ public class NotificationServiceTest {
         assertEquals(ev0.getId().toString(), eventTypes.getJsonObject(0).getString("id"));
 
         response = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
@@ -500,13 +481,10 @@ public class NotificationServiceTest {
 
     @Test
     void testGetApplicationFacets() {
-        String tenant = "test";
-        String userName = "user";
-        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
-        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, RbacAccess.READ_ACCESS);
+        helpers.createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType();
+        Header identityHeader = initRbacMock("test", "user", RbacAccess.READ_ACCESS);
         List<Facet> applications = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/facets/applications?bundleName=rhel")
@@ -521,13 +499,10 @@ public class NotificationServiceTest {
 
     @Test
     void testGetBundlesFacets() {
-        String tenant = "test";
-        String userName = "user";
-        String localIdentityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        Header localIdentityHeader = TestHelpers.createIdentityHeader(localIdentityHeaderValue);
-        mockServerConfig.addMockRbacAccess(localIdentityHeaderValue, RbacAccess.READ_ACCESS);
+        helpers.createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType();
+        Header identityHeader = initRbacMock("test", "user", RbacAccess.READ_ACCESS);
         List<Facet> bundles = given()
-                .header(localIdentityHeader)
+                .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .get("/notifications/facets/bundles")

@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbCleaner;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -25,12 +26,11 @@ import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.mockserver.model.HttpRequest;
 
 import javax.enterprise.inject.Any;
@@ -55,7 +55,6 @@ import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-@TestMethodOrder(MethodOrderer.MethodName.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LifecycleITest {
 
@@ -101,7 +100,27 @@ public class LifecycleITest {
 
     }
 
+    @Inject
+    DbCleaner dbCleaner;
+
+    @BeforeEach
+    @AfterEach
+    void cleanDatabase() {
+        dbCleaner.clean();
+    }
+
     @Test
+    void test() throws Exception {
+        t00_setupBundle();
+        t01_testAdding();
+        t02_pushMessage();
+        t03_fetchHistory();
+        t04_getUIDetailsAndUnlink();
+        t05_addEmptyDefaultSettings();
+        t06_linkEndpointsAndTest();
+        t10_deleteBundle();
+    }
+
     void t00_setupBundle() {
         Bundle bundle = new Bundle(BUNDLE_NAME, "A bundle");
         Response response = given()
@@ -117,7 +136,6 @@ public class LifecycleITest {
         theBundle.mapTo(Bundle.class);
     }
 
-    @Test
     void t01_testAdding() {
         Application app = new Application();
         app.setName(APP_NAME);
@@ -228,7 +246,6 @@ public class LifecycleITest {
         }
     }
 
-    @Test
     void t02_pushMessage() throws Exception {
         counterAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME);
 
@@ -287,7 +304,6 @@ public class LifecycleITest {
         counterAssertionHelper.clear();
     }
 
-    @Test
     void t03_fetchHistory() {
         Response response = given()
                 .header(identityHeader)
@@ -350,7 +366,6 @@ public class LifecycleITest {
         }
     }
 
-    @Test
     void t04_getUIDetailsAndUnlink() {
         Response response = given()
                 .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
@@ -420,7 +435,6 @@ public class LifecycleITest {
         assertEquals(0, endpoints.size());
     }
 
-    @Test
     void t05_addEmptyDefaultSettings() {
         // Create default endpoint
         Endpoint ep = new Endpoint();
@@ -495,7 +509,6 @@ public class LifecycleITest {
 //        // TODO Add Micrometer metrics here also and update Quarkus?
 //    }
 
-    @Test
     void t06_linkEndpointsAndTest() throws Exception {
         // Get the existing endpoints (not attached to anything)
         Response response = given()
@@ -528,7 +541,6 @@ public class LifecycleITest {
         t02_pushMessage();
     }
 
-    @Test
     void t10_deleteBundle() {
         given()
                 .basePath("/")

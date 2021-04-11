@@ -5,6 +5,8 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbCleaner;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm.Field;
@@ -18,9 +20,11 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.vertx.core.json.Json;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,6 +44,17 @@ public class UserConfigServiceTest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
+    @Inject
+    ResourceHelpers resourceHelpers;
+
+    @Inject
+    DbCleaner dbCleaner;
+
+    @BeforeEach
+    @AfterEach
+    void cleanDatabase() {
+        dbCleaner.clean();
+    }
 
     private Field rhelPolicyForm(SettingsValueJsonForm jsonForm) {
         for (Field section : jsonForm.fields.get(0).sections) {
@@ -80,6 +95,7 @@ public class UserConfigServiceTest {
 
     @Test
     void testSettings() {
+        resourceHelpers.createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType();
         String tenant = "empty";
         String username = "user";
         String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);

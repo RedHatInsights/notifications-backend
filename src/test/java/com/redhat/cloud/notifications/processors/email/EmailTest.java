@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbCleaner;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -23,7 +24,9 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Vertx;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockserver.mock.action.ExpectationResponseCallback;
@@ -72,6 +75,15 @@ public class EmailTest {
 
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
+
+    @Inject
+    DbCleaner dbCleaner;
+
+    @BeforeEach
+    @AfterEach
+    void cleanDatabase() {
+        dbCleaner.clean();
+    }
 
     @BeforeAll
     void init() {

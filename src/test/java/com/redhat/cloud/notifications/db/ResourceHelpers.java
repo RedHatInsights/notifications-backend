@@ -16,7 +16,6 @@ import io.vertx.core.json.JsonObject;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -51,15 +50,6 @@ public class ResourceHelpers {
     }
 
     public void createTestAppAndEventTypes() {
-        // Delete TEST_BUNDLE if it exists
-        Optional<Bundle> existingBundle = bundleResources
-                .getBundles().collect().asList().await().indefinitely()
-                .stream().filter(bundle -> bundle.getName().equals(TEST_BUNDLE_NAME)).findFirst();
-
-        if (existingBundle.isPresent()) {
-            bundleResources.deleteBundle(existingBundle.get().getId()).await().indefinitely();
-        }
-
         Bundle bundle = new Bundle(TEST_BUNDLE_NAME, "...");
         Bundle b = bundleResources.createBundle(bundle).await().indefinitely();
 
@@ -89,6 +79,23 @@ public class ResourceHelpers {
             eventType.setDisplayName("... -> " + i);
             appResources.addEventTypeToApplication(added2.getId(), eventType).await().indefinitely();
         }
+    }
+
+    public void createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType() {
+        Bundle bundle = new Bundle("rhel", "Red Hat Enterprise Linux");
+        Bundle b = bundleResources.createBundle(bundle).await().indefinitely();
+
+        Application app = new Application();
+        app.setName("policies");
+        app.setDisplayName("Policies");
+        app.setBundleId(b.getId());
+        Application a = appResources.createApplication(app).await().indefinitely();
+
+        EventType eventType = new EventType();
+        eventType.setName("policy-triggered");
+        eventType.setDisplayName("");
+        eventType.setDescription("");
+        appResources.addEventTypeToApplication(a.getId(), eventType).await().indefinitely();
     }
 
     public int[] createTestEndpoints(String tenant, int count) {

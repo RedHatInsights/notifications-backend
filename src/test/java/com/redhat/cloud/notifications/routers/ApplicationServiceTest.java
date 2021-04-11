@@ -1,8 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.MockServerClientConfig;
-import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbCleaner;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
@@ -13,8 +12,11 @@ import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,8 +40,14 @@ public class ApplicationServiceTest {
     static final String EVENT_TYPE_NAME = "policy-triggered";
     public static final String BUNDLE_NAME = "insights-test";
 
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
+    @Inject
+    DbCleaner dbCleaner;
+
+    @BeforeEach
+    @AfterEach
+    void cleanDatabase() {
+        dbCleaner.clean();
+    }
 
     @Test
     void testPoliciesApplicationAddingAndDeletion() {

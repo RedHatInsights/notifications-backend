@@ -8,11 +8,11 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
-import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 public class EventConsumerTest {
 
     @Inject
-    @Connector("smallrye-in-memory")
+    @Any
     InMemoryConnector inMemoryConnector;
 
     @InjectMock
