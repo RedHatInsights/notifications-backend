@@ -758,8 +758,6 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .put("/endpoints/email/subscription/idontexist/meneither/instant")
                 .then().statusCode(404);
 
-        helpers.createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType();
-
         // Disable everything as preparation
         // rhel/policies instant and daily
         // TEST_BUNDLE_NAME/TEST_APP_NAME instant and daily

@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.OldSettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.OldSettingsValueJsonForm.Field;
@@ -22,7 +21,6 @@ import io.vertx.core.json.Json;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,9 +40,6 @@ public class OldUserConfigServiceTest extends DbIsolatedTest {
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
-
-    @Inject
-    ResourceHelpers resourceHelpers;
 
     private OldSettingsValueJsonForm rhelPolicyForm(List<OldSettingsValueJsonForm> jsonForms) {
         for (OldSettingsValueJsonForm settingsValueJsonForm : jsonForms) {
@@ -87,7 +82,6 @@ public class OldUserConfigServiceTest extends DbIsolatedTest {
 
     @Test
     void testSettings() {
-        resourceHelpers.createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType();
         String tenant = "empty";
         String username = "user";
         String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);

@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.migration.policynotification.PoliciesMigrationService.MigrateResponse;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -46,12 +45,8 @@ public class PoliciesMigrationServiceTest extends DbIsolatedTest {
     @Inject
     EndpointResources endpointResources;
 
-    @Inject
-    ResourceHelpers resourceHelpers;
-
     @Test
     void testSingleUserMigration() {
-        resourceHelpers.createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType();
         String accountId1 = "single-user-migration-1";
         String userId1 = "user1";
 
@@ -78,7 +73,6 @@ public class PoliciesMigrationServiceTest extends DbIsolatedTest {
 
     @Test
     void testMultipleUsersMigration() {
-        resourceHelpers.createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType();
         String accountId1 = "multi-user-migration-1";
         String[] users = {"user1", "user2", "user3", "user4"};
 
@@ -111,7 +105,6 @@ public class PoliciesMigrationServiceTest extends DbIsolatedTest {
 
     @Test
     void testMultipleUsersAndAccountsMigration() {
-        resourceHelpers.createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType();
 
         List<PoliciesEmailSubscription> policies = new ArrayList<>();
 

@@ -21,15 +21,29 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class DbCleaner {
 
+    private static final String DEFAULT_BUNDLE_NAME = "rhel";
+    private static final String DEFAULT_BUNDLE_DISPLAY_NAME = "Red Hat Enterprise Linux";
+    private static final String DEFAULT_APP_NAME = "policies";
+    private static final String DEFAULT_APP_DISPLAY_NAME = "Policies";
+    private static final String DEFAULT_EVENT_TYPE_NAME = "policy-triggered";
+    private static final String DEFAULT_EVENT_TYPE_DISPLAY_NAME = "Policy triggered";
+    private static final String DEFAULT_EVENT_TYPE_DESCRIPTION = "Matching policy";
+
     @Inject
     Mutiny.Session session;
 
+    @Inject
+    BundleResources bundleResources;
+
+    @Inject
+    ApplicationResources appResources;
+
     /**
-     * Deletes all records from all database tables (except for flyway_schema_history). This method should be called
-     * from a method annotated with <b>both</b> {@link BeforeEach} and {@link AfterEach} in all test classes that
-     * involve SQL queries to guarantee the tests isolation in terms of stored data. Ideally, we should do that with
-     * {@link io.quarkus.test.TestTransaction} but it doesn't work with Hibernate Reactive, so this is a temporary
-     * workaround to make our tests more reliable and easy to maintain.
+     * Deletes all records from all database tables (except for flyway_schema_history) and restores the default records.
+     * This method should be called from a method annotated with <b>both</b> {@link BeforeEach} and {@link AfterEach} in
+     * all test classes that involve SQL queries to guarantee the tests isolation in terms of stored data. Ideally, we
+     * should do that with {@link io.quarkus.test.TestTransaction} but it doesn't work with Hibernate Reactive, so this
+     * is a temporary workaround to make our tests more reliable and easy to maintain.
      */
     public void clean() {
         session.withTransaction(transaction -> deleteAllFrom(EmailAggregation.class)
@@ -42,6 +56,24 @@ public class DbCleaner {
                 .chain(() -> deleteAllFrom(EventType.class))
                 .chain(() -> deleteAllFrom(Application.class))
                 .chain(() -> deleteAllFrom(Bundle.class))
+                .chain(() -> {
+                    Bundle bundle = new Bundle(DEFAULT_BUNDLE_NAME, DEFAULT_BUNDLE_DISPLAY_NAME);
+                    return bundleResources.createBundle(bundle);
+                })
+                .onItem().transformToUni(bundle -> {
+                    Application app = new Application();
+                    app.setName(DEFAULT_APP_NAME);
+                    app.setDisplayName(DEFAULT_APP_DISPLAY_NAME);
+                    app.setBundleId(bundle.getId());
+                    return appResources.createApplication(app);
+                })
+                .onItem().transformToUni(app -> {
+                    EventType eventType = new EventType();
+                    eventType.setName(DEFAULT_EVENT_TYPE_NAME);
+                    eventType.setDisplayName(DEFAULT_EVENT_TYPE_DISPLAY_NAME);
+                    eventType.setDescription(DEFAULT_EVENT_TYPE_DESCRIPTION);
+                    return appResources.addEventTypeToApplication(app.getId(), eventType);
+                })
         ).await().indefinitely();
     }
 

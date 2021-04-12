@@ -83,7 +83,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .extract().response();
 
         JsonArray eventTypes = new JsonArray(response.getBody().asString());
-        assertEquals(200, eventTypes.size());
+        assertEquals(201, eventTypes.size()); // One of the event types is part of the default DB records.
 
         JsonObject policiesAll = eventTypes.getJsonObject(0);
         policiesAll.mapTo(EventType.class);
@@ -471,7 +471,6 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testGetApplicationFacets() {
-        helpers.createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType();
         Header identityHeader = initRbacMock("test", "user", RbacAccess.READ_ACCESS);
         List<Facet> applications = given()
                 .header(identityHeader)
@@ -489,7 +488,6 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testGetBundlesFacets() {
-        helpers.createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType();
         Header identityHeader = initRbacMock("test", "user", RbacAccess.READ_ACCESS);
         List<Facet> bundles = given()
                 .header(identityHeader)

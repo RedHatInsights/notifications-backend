@@ -81,23 +81,6 @@ public class ResourceHelpers {
         }
     }
 
-    public void createRhelBundleAndPoliciesAppAndPolicyTriggeredEventType() {
-        Bundle bundle = new Bundle("rhel", "Red Hat Enterprise Linux");
-        Bundle b = bundleResources.createBundle(bundle).await().indefinitely();
-
-        Application app = new Application();
-        app.setName("policies");
-        app.setDisplayName("Policies");
-        app.setBundleId(b.getId());
-        Application a = appResources.createApplication(app).await().indefinitely();
-
-        EventType eventType = new EventType();
-        eventType.setName("policy-triggered");
-        eventType.setDisplayName("");
-        eventType.setDescription("");
-        appResources.addEventTypeToApplication(a.getId(), eventType).await().indefinitely();
-    }
-
     public int[] createTestEndpoints(String tenant, int count) {
         int[] statsValues = new int[3];
         statsValues[0] = count;
