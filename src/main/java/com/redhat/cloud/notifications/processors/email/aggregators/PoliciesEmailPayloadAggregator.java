@@ -32,13 +32,13 @@ public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregat
 
 
     public PoliciesEmailPayloadAggregator() {
-        payload.put(POLICIES_KEY, new JsonObject());
+        context.put(POLICIES_KEY, new JsonObject());
     }
 
     public void processEmailAggregation(EmailAggregation notification) {
         JsonObject notificationJson = notification.getPayload();
 
-        JsonObject policies = payload.getJsonObject(POLICIES_KEY);
+        JsonObject policies = context.getJsonObject(POLICIES_KEY);
         JsonObject context = notificationJson.getJsonObject(CONTEXT_KEY);
 
         JsonObject host = new JsonObject();
@@ -73,7 +73,7 @@ public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregat
 
         String insightsId = host.getString(INSIGHTS_ID);
         uniqueHosts.add(insightsId);
-        this.payload.put(UNIQUE_SYSTEM_COUNT, this.uniqueHosts.size());
+        this.context.put(UNIQUE_SYSTEM_COUNT, this.uniqueHosts.size());
     }
 
     public Integer getUniqueHostCount() {

@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -176,15 +177,12 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                                 .collect().with(Collectors.joining())
                                 .onFailure()
                                 .recoverWithItem(templateEx -> {
-                                    log.warning(
-                                            String.format(
-                                                    "Unable to render template title for application: [%s], eventType: [%s], subscriptionType: [%s]. Error: %s",
-                                                    item.getAction().getApplication(),
-                                                    item.getAction().getEventType(),
-                                                    emailSubscriptionType,
-                                                    templateEx.getMessage()
-                                            )
-                                    );
+                                    log.log(Level.WARNING, templateEx, () -> String.format(
+                                            "Unable to render template title for application: [%s], eventType: [%s], subscriptionType: [%s].",
+                                            item.getAction().getApplication(),
+                                            item.getAction().getEventType(),
+                                            emailSubscriptionType
+                                    ));
                                     return null;
                                 });
 
@@ -194,15 +192,12 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                                 .collect().with(Collectors.joining())
                                 .onFailure()
                                 .recoverWithItem(templateEx -> {
-                                    log.warning(
-                                            String.format(
-                                                    "Unable to render template body for application: [%s], eventType: [%s], subscriptionType: [%s]. Error: %s",
-                                                    item.getAction().getApplication(),
-                                                    item.getAction().getEventType(),
-                                                    emailSubscriptionType,
-                                                    templateEx.getMessage()
-                                            )
-                                    );
+                                    log.log(Level.WARNING, templateEx, () -> String.format(
+                                            "Unable to render template body for application: [%s], eventType: [%s], subscriptionType: [%s].",
+                                            item.getAction().getApplication(),
+                                            item.getAction().getEventType(),
+                                            emailSubscriptionType
+                                    ));
                                     return null;
                                 });
 
@@ -286,16 +281,17 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     aggregator.setStartTime(startTime);
                     aggregator.setEndTimeKey(endTime);
                     Action action = new Action();
-                    action.setContext(aggregator.getPayload());
+                    action.setContext(aggregator.getContext());
+                    action.setEvents(List.of());
                     action.setAccountId(accountId);
                     action.setApplication(application);
                     action.setBundle(bundle);
 
-                    // We don't have a eventtype, this aggregates over multiple event types
+                    // We don't have a eventtype as this aggregates over multiple event types
                     action.setEventType(null);
-                    action.setTimestamp(LocalDateTime.now());
+                    action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 
-                    // We don't have any endpoint as this aggregates multiple endpoints
+                    // We don't have any endpoint (yet) as this aggregates multiple endpoints
                     Notification item = new Notification(action, null);
 
                     return sendEmail(item, emailSubscriptionType).onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));

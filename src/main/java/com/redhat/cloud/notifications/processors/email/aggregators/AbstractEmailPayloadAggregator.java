@@ -15,7 +15,7 @@ public abstract class AbstractEmailPayloadAggregator {
     private LocalDateTime endTime;
     private String accountId;
     private int processedAggregations;
-    protected JsonObject payload = new JsonObject();
+    protected JsonObject context = new JsonObject();
 
     public void setStartTime(LocalDateTime startTime) {
         this.startTime = startTime;
@@ -44,8 +44,8 @@ public abstract class AbstractEmailPayloadAggregator {
         ++processedAggregations;
     }
 
-    public Map<String, Object> getPayload() {
-        Map<String, Object> payload = this.payload.mapTo(Map.class);
+    public Map<String, Object> getContext() {
+        Map<String, Object> payload = this.context.mapTo(Map.class);
         payload.put(START_TIME_KEY, this.startTime);
         payload.put(END_TIME_KEY, this.endTime);
         return payload;
