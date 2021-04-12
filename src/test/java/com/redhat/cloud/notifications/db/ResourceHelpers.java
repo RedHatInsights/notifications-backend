@@ -16,7 +16,6 @@ import io.vertx.core.json.JsonObject;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -51,15 +50,6 @@ public class ResourceHelpers {
     }
 
     public void createTestAppAndEventTypes() {
-        // Delete TEST_BUNDLE if it exists
-        Optional<Bundle> existingBundle = bundleResources
-                .getBundles().collect().asList().await().indefinitely()
-                .stream().filter(bundle -> bundle.getName().equals(TEST_BUNDLE_NAME)).findFirst();
-
-        if (existingBundle.isPresent()) {
-            bundleResources.deleteBundle(existingBundle.get().getId()).await().indefinitely();
-        }
-
         Bundle bundle = new Bundle(TEST_BUNDLE_NAME, "...");
         Bundle b = bundleResources.createBundle(bundle).await().indefinitely();
 

@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.OldSettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.OldSettingsValueJsonForm.Field;
@@ -30,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class OldUserConfigServiceTest {
+public class OldUserConfigServiceTest extends DbIsolatedTest {
 
     @BeforeEach
     void beforeEach() {
@@ -39,7 +40,6 @@ public class OldUserConfigServiceTest {
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
-
 
     private OldSettingsValueJsonForm rhelPolicyForm(List<OldSettingsValueJsonForm> jsonForms) {
         for (OldSettingsValueJsonForm settingsValueJsonForm : jsonForms) {

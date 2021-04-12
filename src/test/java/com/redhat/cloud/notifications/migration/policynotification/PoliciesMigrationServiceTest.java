@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.migration.policynotification;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
@@ -29,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class PoliciesMigrationServiceTest {
+public class PoliciesMigrationServiceTest extends DbIsolatedTest {
 
     @InjectMock
     @RestClient

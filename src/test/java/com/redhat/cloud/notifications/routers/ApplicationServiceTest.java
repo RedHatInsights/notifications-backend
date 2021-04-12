@@ -1,8 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.MockServerClientConfig;
-import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
@@ -25,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class ApplicationServiceTest {
+public class ApplicationServiceTest extends DbIsolatedTest {
 
     /*
      * In the tests below, most JSON responses are verified using JsonObject/JsonArray instead of deserializing these
@@ -37,9 +36,6 @@ public class ApplicationServiceTest {
     static final String APP_NAME = "policies-application-service-test";
     static final String EVENT_TYPE_NAME = "policy-triggered";
     public static final String BUNDLE_NAME = "insights-test";
-
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
 
     @Test
     void testPoliciesApplicationAddingAndDeletion() {
