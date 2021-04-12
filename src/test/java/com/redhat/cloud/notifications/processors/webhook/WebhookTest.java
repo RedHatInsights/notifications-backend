@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.processors.webhook;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.DbCleaner;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -16,8 +16,6 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
@@ -36,22 +34,13 @@ import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class WebhookTest {
+public class WebhookTest extends DbIsolatedTest {
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
     @Inject
     WebhookTypeProcessor webhookTypeProcessor;
-
-    @Inject
-    DbCleaner dbCleaner;
-
-    @BeforeEach
-    @AfterEach
-    void cleanDatabase() {
-        dbCleaner.clean();
-    }
 
     private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {
         HttpRequest postReq = new HttpRequest()

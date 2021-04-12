@@ -6,7 +6,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.DbCleaner;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -26,7 +26,6 @@ import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,7 +55,7 @@ import static org.mockserver.model.HttpResponse.response;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class LifecycleITest {
+public class LifecycleITest extends DbIsolatedTest {
 
     /*
      * In the tests below, most JSON responses are verified using JsonObject/JsonArray instead of deserializing these
@@ -98,15 +97,6 @@ public class LifecycleITest {
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-    }
-
-    @Inject
-    DbCleaner dbCleaner;
-
-    @BeforeEach
-    @AfterEach
-    void cleanDatabase() {
-        dbCleaner.clean();
     }
 
     @Test

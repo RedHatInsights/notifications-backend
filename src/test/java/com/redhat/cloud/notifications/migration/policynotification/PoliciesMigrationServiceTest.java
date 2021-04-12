@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.migration.policynotification;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ApplicationResources;
-import com.redhat.cloud.notifications.db.DbCleaner;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
@@ -19,8 +19,6 @@ import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.http.ContentType;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -33,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class PoliciesMigrationServiceTest {
+public class PoliciesMigrationServiceTest extends DbIsolatedTest {
 
     @InjectMock
     @RestClient
@@ -50,15 +48,6 @@ public class PoliciesMigrationServiceTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
-
-    @Inject
-    DbCleaner dbCleaner;
-
-    @BeforeEach
-    @AfterEach
-    void cleanDatabase() {
-        dbCleaner.clean();
-    }
 
     @Test
     void testSingleUserMigration() {

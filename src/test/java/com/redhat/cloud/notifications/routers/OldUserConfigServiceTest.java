@@ -5,7 +5,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.DbCleaner;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.OldSettingsValueJsonForm;
@@ -19,7 +19,6 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.vertx.core.json.Json;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class OldUserConfigServiceTest {
+public class OldUserConfigServiceTest extends DbIsolatedTest {
 
     @BeforeEach
     void beforeEach() {
@@ -46,15 +45,6 @@ public class OldUserConfigServiceTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
-
-    @Inject
-    DbCleaner dbCleaner;
-
-    @BeforeEach
-    @AfterEach
-    void cleanDatabase() {
-        dbCleaner.clean();
-    }
 
     private OldSettingsValueJsonForm rhelPolicyForm(List<OldSettingsValueJsonForm> jsonForms) {
         for (OldSettingsValueJsonForm settingsValueJsonForm : jsonForms) {

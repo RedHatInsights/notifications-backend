@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.DbCleaner;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -9,11 +9,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.ExtractableResponse;
 import io.vertx.core.json.JsonObject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.inject.Inject;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
@@ -26,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class BundleServiceTest {
+public class BundleServiceTest extends DbIsolatedTest {
 
     /*
      * In the tests below, most JSON responses are verified using JsonObject/JsonArray instead of deserializing these
@@ -36,15 +33,6 @@ public class BundleServiceTest {
      */
 
     public static final String INSIGHTS_1 = "insights1";
-
-    @Inject
-    DbCleaner dbCleaner;
-
-    @BeforeEach
-    @AfterEach
-    void cleanDatabase() {
-        dbCleaner.clean();
-    }
 
     @Test
     void testAdd() {

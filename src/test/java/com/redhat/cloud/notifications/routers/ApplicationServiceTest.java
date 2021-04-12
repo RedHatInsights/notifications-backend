@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.DbCleaner;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
@@ -12,11 +12,8 @@ import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.inject.Inject;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class ApplicationServiceTest {
+public class ApplicationServiceTest extends DbIsolatedTest {
 
     /*
      * In the tests below, most JSON responses are verified using JsonObject/JsonArray instead of deserializing these
@@ -39,15 +36,6 @@ public class ApplicationServiceTest {
     static final String APP_NAME = "policies-application-service-test";
     static final String EVENT_TYPE_NAME = "policy-triggered";
     public static final String BUNDLE_NAME = "insights-test";
-
-    @Inject
-    DbCleaner dbCleaner;
-
-    @BeforeEach
-    @AfterEach
-    void cleanDatabase() {
-        dbCleaner.clean();
-    }
 
     @Test
     void testPoliciesApplicationAddingAndDeletion() {
