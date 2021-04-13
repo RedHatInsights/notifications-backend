@@ -25,7 +25,7 @@
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <maven-exec-plugin.version>3.0.0</maven-exec-plugin.version>
-        <insights-notification-schemas-java.version>0.2</insights-notification-schemas-java.version>
+        <insights-notification-schemas-java.version>0.3</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>0.1.1</clowder-quarkus-config-source.version>
     </properties>
     <dependencyManagement>

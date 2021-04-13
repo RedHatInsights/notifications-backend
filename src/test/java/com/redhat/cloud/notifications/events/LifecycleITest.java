@@ -8,6 +8,8 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -37,7 +39,6 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -268,9 +269,17 @@ public class LifecycleITest extends DbIsolatedTest {
         targetAction.setTimestamp(LocalDateTime.now());
         targetAction.setEventType(EVENT_TYPE_NAME);
 
-        Map params = new HashMap();
-        params.put("triggers", new HashMap());
-        targetAction.setPayload(params);
+        targetAction.setEvents(
+                List.of(
+                        Event
+                                .newBuilder()
+                                .setMetadataBuilder(Metadata.newBuilder())
+                                .setPayload(new HashMap())
+                                .build()
+                )
+        );
+
+        targetAction.setContext(new HashMap());
 
         targetAction.setAccountId("tenant");
 

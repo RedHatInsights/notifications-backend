@@ -12,6 +12,9 @@ public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregat
     private static final String POLICIES_KEY = "policies";
     private static final String HOST_KEY = "hosts";
     private static final String UNIQUE_SYSTEM_COUNT = "unique_system_count";
+    private static final String CONTEXT_KEY = "context";
+    private static final String EVENTS_KEY = "events";
+    private static final String PAYLOAD_KEY = "payload";
 
     // Policy related
     private static final String POLICY_ID = "policy_id";
@@ -29,42 +32,48 @@ public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregat
 
 
     public PoliciesEmailPayloadAggregator() {
-        payload.put(POLICIES_KEY, new JsonObject());
+        context.put(POLICIES_KEY, new JsonObject());
     }
 
-    public void processEmailAggregation(EmailAggregation aggregation) {
-        JsonObject aggregationPayload = aggregation.getPayload();
-        //Todo: Validate payload before processing
-        String policyId = aggregationPayload.getString(POLICY_ID);
-        JsonObject policies = payload.getJsonObject(POLICIES_KEY);
+    public void processEmailAggregation(EmailAggregation notification) {
+        JsonObject notificationJson = notification.getPayload();
 
-        if (!policies.containsKey(policyId)) {
-            JsonObject newPolicy = new JsonObject();
-            this.copyStringField(newPolicy, aggregationPayload, POLICY_NAME);
-            this.copyStringField(newPolicy, aggregationPayload, POLICY_ID);
-            this.copyStringField(newPolicy, aggregationPayload, POLICY_DESCRIPTION);
-            this.copyStringField(newPolicy, aggregationPayload, POLICY_CONDITION);
-
-            newPolicy.put(HOST_KEY, new JsonArray());
-
-            policies.put(policyId, newPolicy);
-            uniqueHostPerPolicy.put(policyId, new HashSet<>());
-        }
-
-        JsonObject policy = policies.getJsonObject(policyId);
+        JsonObject policies = context.getJsonObject(POLICIES_KEY);
+        JsonObject context = notificationJson.getJsonObject(CONTEXT_KEY);
 
         JsonObject host = new JsonObject();
-        this.copyStringField(host, aggregationPayload, DISPLAY_NAME);
-        this.copyStringField(host, aggregationPayload, INSIGHTS_ID);
-        host.put(TAGS, aggregationPayload.getJsonArray(TAGS));
-        policy.getJsonArray(HOST_KEY).add(host);
+        this.copyStringField(host, context, DISPLAY_NAME);
+        this.copyStringField(host, context, INSIGHTS_ID);
+        host.put(TAGS, context.getJsonArray(TAGS));
+
+        notificationJson.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
+            JsonObject event = (JsonObject) eventObject;
+            JsonObject payload = event.getJsonObject(PAYLOAD_KEY);
+            String policyId = payload.getString(POLICY_ID);
+
+            if (!policies.containsKey(policyId)) {
+                JsonObject newPolicy = new JsonObject();
+                this.copyStringField(newPolicy, payload, POLICY_NAME);
+                this.copyStringField(newPolicy, payload, POLICY_ID);
+                this.copyStringField(newPolicy, payload, POLICY_DESCRIPTION);
+                this.copyStringField(newPolicy, payload, POLICY_CONDITION);
+
+                newPolicy.put(HOST_KEY, new JsonArray());
+
+                policies.put(policyId, newPolicy);
+                uniqueHostPerPolicy.put(policyId, new HashSet<>());
+            }
+
+            JsonObject policy = policies.getJsonObject(policyId);
+            String insightsId = host.getString(INSIGHTS_ID);
+            policy.getJsonArray(HOST_KEY).add(host);
+            uniqueHostPerPolicy.get(policyId).add(insightsId);
+            policy.put(UNIQUE_SYSTEM_COUNT, this.uniqueHostPerPolicy.get(policyId).size());
+        });
 
         String insightsId = host.getString(INSIGHTS_ID);
         uniqueHosts.add(insightsId);
-        uniqueHostPerPolicy.get(policyId).add(insightsId);
-
-        policy.put(UNIQUE_SYSTEM_COUNT, this.uniqueHostPerPolicy.get(policyId).size());
-        this.payload.put(UNIQUE_SYSTEM_COUNT, this.uniqueHosts.size());
+        this.context.put(UNIQUE_SYSTEM_COUNT, this.uniqueHosts.size());
     }
 
     public Integer getUniqueHostCount() {
