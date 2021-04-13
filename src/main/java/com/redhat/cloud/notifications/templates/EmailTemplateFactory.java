@@ -9,8 +9,15 @@ public class EmailTemplateFactory {
     }
 
     public static AbstractEmailTemplate get(String bundle, String application) {
-        if (bundle.toLowerCase().equals("rhel") && application.toLowerCase().equals("policies")) {
-            return new Policies();
+        if (bundle.toLowerCase().equals("rhel")) {
+            switch (application.toLowerCase()) {
+                case "policies":
+                    return new Policies();
+                case "advisor":
+                    return new Advisor();
+                default:
+            }
+
         }
 
         return new EmailTemplateNotSupported();

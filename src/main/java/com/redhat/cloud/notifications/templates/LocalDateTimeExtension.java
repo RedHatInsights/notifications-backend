@@ -24,6 +24,10 @@ public class LocalDateTimeExtension {
         return date.format(dateFormatter);
     }
 
+    public static String toStringFormat(String date) {
+        return toStringFormat(fromIsoLocalDateTime(date));
+    }
+
     public static LocalDateTime fromIsoLocalDateTime(String date) {
         return LocalDateTime.parse(date, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
