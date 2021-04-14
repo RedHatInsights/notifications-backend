@@ -13,7 +13,10 @@ public class Advisor extends AbstractEmailTemplate {
             return Templates.newRecommendationInstantEmailTitle();
         }
 
-        return null;
+        throw new UnsupportedOperationException(String.format(
+                "No email title template for Advisor event_type: %s and EmailSubscription: %s found.",
+                eventType, type
+        ));
     }
 
     @Override
@@ -22,7 +25,10 @@ public class Advisor extends AbstractEmailTemplate {
             return Templates.newRecommendationInstantEmailBody();
         }
 
-        return null;
+        throw new UnsupportedOperationException(String.format(
+                "No email body template for Advisor event_type: %s and EmailSubscription: %s found.",
+                eventType, type
+        ));
     }
 
     @Override

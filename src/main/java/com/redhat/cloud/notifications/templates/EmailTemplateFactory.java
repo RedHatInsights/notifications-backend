@@ -16,6 +16,7 @@ public class EmailTemplateFactory {
                 case "advisor":
                     return new Advisor();
                 default:
+                    break;
             }
 
         }
