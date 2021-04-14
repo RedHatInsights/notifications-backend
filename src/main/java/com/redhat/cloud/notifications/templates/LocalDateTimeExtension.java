@@ -29,6 +29,6 @@ public class LocalDateTimeExtension {
     }
 
     public static LocalDateTime fromIsoLocalDateTime(String date) {
-        return LocalDateTime.parse(date, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        return LocalDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME);
     }
 }
