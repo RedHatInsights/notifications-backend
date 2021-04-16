@@ -38,6 +38,13 @@ public class BundleResources {
         return session.find(Bundle.class, id);
     }
 
+    public Uni<Bundle> getBundle(String name) {
+        String query = "FROM Bundle WHERE name = :name";
+        return session.createQuery(query, Bundle.class)
+                .setParameter("name", name)
+                .getSingleResult();
+    }
+
     public Uni<Boolean> deleteBundle(UUID id) {
         String query = "DELETE FROM Bundle WHERE id = :id";
         return session.createQuery(query)
