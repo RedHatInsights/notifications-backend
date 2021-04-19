@@ -8,27 +8,62 @@ import java.time.LocalDateTime;
 public class TestTimeAgoFormatter {
 
     @Test
-    public void testToday() {
+    public void testSecondsAgo() {
         TimeAgoFormatter formatter = new TimeAgoFormatter();
 
-        Assertions.assertEquals("Today", formatter.format(
+        Assertions.assertEquals("Just now", formatter.format(
+                LocalDateTime.of(2020, 12, 31, 23, 59, 59),
+                LocalDateTime.of(2020, 12, 31, 23, 59, 30)
+        ));
+    }
+
+    @Test
+    public void test1MinuteAgo() {
+        TimeAgoFormatter formatter = new TimeAgoFormatter();
+
+        Assertions.assertEquals("1 minute ago", formatter.format(
+                LocalDateTime.of(2020, 12, 31, 23, 59, 59),
+                LocalDateTime.of(2020, 12, 31, 23, 58, 55)
+        ));
+    }
+
+    @Test
+    public void testMinutesAgo() {
+        TimeAgoFormatter formatter = new TimeAgoFormatter();
+
+        Assertions.assertEquals("29 minutes ago", formatter.format(
+                LocalDateTime.of(2020, 12, 31, 23, 59, 59),
+                LocalDateTime.of(2020, 12, 31, 23, 30, 55)
+        ));
+    }
+
+    @Test
+    public void test1HourAgo() {
+        TimeAgoFormatter formatter = new TimeAgoFormatter();
+
+        Assertions.assertEquals("1 hour ago", formatter.format(
+                LocalDateTime.of(2020, 12, 31, 23, 59, 59),
+                LocalDateTime.of(2020, 12, 31, 22, 56, 55)
+        ));
+    }
+
+    @Test
+    public void testManyHoursAgo() {
+        TimeAgoFormatter formatter = new TimeAgoFormatter();
+
+        Assertions.assertEquals("23 hours ago", formatter.format(
                 LocalDateTime.of(2020, 12, 31, 23, 59, 59),
                 LocalDateTime.of(2020, 12, 31, 1, 12, 10)
         ));
-        Assertions.assertEquals("Today", formatter.format(
+        Assertions.assertEquals("2 hours ago", formatter.format(
                 LocalDateTime.of(2020, 12, 31, 23, 59, 59),
-                LocalDateTime.of(2020, 12, 31, 1, 1, 55)
+                LocalDateTime.of(2020, 12, 31, 22, 1, 55)
         ));
     }
 
     @Test
     public void test1DayAgo() {
         TimeAgoFormatter formatter = new TimeAgoFormatter();
-
-        Assertions.assertEquals("1 day ago", formatter.format(
-                LocalDateTime.of(2020, 12, 31, 23, 59, 59),
-                LocalDateTime.of(2020, 12, 30, 1, 1, 55)
-        ));
 
         Assertions.assertEquals("1 day ago", formatter.format(
                 LocalDateTime.of(2020, 12, 31, 23, 59, 59),
@@ -40,7 +75,13 @@ public class TestTimeAgoFormatter {
     public void testManyDaysAgo() {
         TimeAgoFormatter formatter = new TimeAgoFormatter();
 
-        Assertions.assertEquals("11 days ago", formatter.format(
+        // Close to 2 days ago
+        Assertions.assertEquals("2 days ago", formatter.format(
+                LocalDateTime.of(2020, 12, 31, 23, 59, 59),
+                LocalDateTime.of(2020, 12, 30, 1, 1, 55)
+        ));
+
+        Assertions.assertEquals("12 days ago", formatter.format(
                 LocalDateTime.of(2020, 12, 31, 23, 59, 59),
                 LocalDateTime.of(2020, 12, 20, 1, 1, 55)
         ));
