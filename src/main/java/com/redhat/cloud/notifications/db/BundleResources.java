@@ -42,7 +42,7 @@ public class BundleResources {
         String query = "FROM Bundle WHERE name = :name";
         return session.createQuery(query, Bundle.class)
                 .setParameter("name", name)
-                .getSingleResult();
+                .getSingleResultOrNull();
     }
 
     public Uni<Boolean> deleteBundle(UUID id) {
