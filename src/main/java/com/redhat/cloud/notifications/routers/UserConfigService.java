@@ -20,6 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.validation.Valid;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -202,6 +203,7 @@ public class UserConfigService {
             final SettingsValues values = new SettingsValues();
 
             return bundleResources.getBundle(bundleName)
+                    .onItem().ifNull().failWith(() -> new BadRequestException("bundleName must have a value"))
                     .onItem().transformToMulti(bundle -> {
                         BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
                         bundleSettingsValue.displayName = bundle.getDisplayName();

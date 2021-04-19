@@ -236,10 +236,18 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                     .queryParam("bundleName", bundle)
                     .get("/user-config/notification-preference")
                     .then()
-                    .statusCode(200).extract();
+                    .statusCode(200);
         } finally {
             emailSubscriptionResources.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", EmailSubscriptionType.DAILY).await().indefinitely();
         }
+
+        // Fails if we don't specify the bundleName
+        given()
+                .header(identityHeader)
+                .when()
+                .get("/user-config/notification-preference")
+                .then()
+                .statusCode(400);
 
         // does not add if we try to create unknown bundle/apps
         settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", true, true);
