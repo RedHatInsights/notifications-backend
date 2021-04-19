@@ -96,14 +96,10 @@ public class UserConfigService {
                     if (value) {
                         subscriptionRequests.add(
                                 applicationResources.getApplication(bundleName, applicationName)
-                                .onItem().transformToUni(application -> {
-                                    if (application != null) {
-                                        return emailSubscriptionResources.subscribe(
-                                                account, name, bundleName, applicationName, emailSubscriptionType
-                                        );
-                                    }
-
-                                    return Uni.createFrom().item(true);
+                                .onItem().ifNotNull().transformToUni(application -> {
+                                    return emailSubscriptionResources.subscribe(
+                                            account, name, bundleName, applicationName, emailSubscriptionType
+                                    );
                                 }).toMulti()
                         );
 
