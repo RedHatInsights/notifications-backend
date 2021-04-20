@@ -144,8 +144,12 @@ public class UserConfigService {
         return Uni.createFrom().deferred(() -> {
             final SettingsValues values = new SettingsValues();
 
+            if (bundleName == null || bundleName.equals("")) {
+                throw new BadRequestException("bundleName must have a value");
+            }
+
             return bundleResources.getBundle(bundleName)
-                    .onItem().ifNull().failWith(() -> new BadRequestException("bundleName must have a value"))
+                    .onItem().ifNull().failWith(() -> new BadRequestException("Unknown bundleName: " + bundleName))
                     .onItem().transformToMulti(bundle -> {
                         BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
                         bundleSettingsValue.displayName = bundle.getDisplayName();
