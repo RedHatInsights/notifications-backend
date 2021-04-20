@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm.Field;
@@ -22,12 +23,12 @@ import io.vertx.core.json.Json;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -40,6 +41,9 @@ public class UserConfigServiceTest extends DbIsolatedTest {
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
+
+    @Inject
+    EndpointEmailSubscriptionResources emailSubscriptionResources;
 
     private Field rhelPolicyForm(SettingsValueJsonForm jsonForm) {
         for (Field section : jsonForm.fields.get(0).sections) {
@@ -222,6 +226,51 @@ public class UserConfigServiceTest extends DbIsolatedTest {
 
         assertEquals(true, preferences.getDailyEmail());
         assertEquals(true, preferences.getInstantEmail());
+
+        // does not fail if we have unknown apps in our bundle's settings
+        try {
+            emailSubscriptionResources.subscribe(tenant, username, bundle, "not-found-app", EmailSubscriptionType.DAILY).await().indefinitely();
+            given()
+                    .header(identityHeader)
+                    .when()
+                    .queryParam("bundleName", bundle)
+                    .get("/user-config/notification-preference")
+                    .then()
+                    .statusCode(200);
+        } finally {
+            emailSubscriptionResources.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", EmailSubscriptionType.DAILY).await().indefinitely();
+        }
+
+        // Fails if we don't specify the bundleName
+        given()
+                .header(identityHeader)
+                .when()
+                .get("/user-config/notification-preference")
+                .then()
+                .statusCode(400);
+
+        // does not add if we try to create unknown bundle/apps
+        settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", true, true);
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(settingsValues))
+                .post("/user-config/notification-preference")
+                .then()
+                .statusCode(200);
+
+        assertNull(
+                emailSubscriptionResources
+                        .getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", EmailSubscriptionType.DAILY)
+                        .await().indefinitely()
+        );
+
+        assertNull(
+                emailSubscriptionResources
+                        .getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", EmailSubscriptionType.INSTANT)
+                        .await().indefinitely()
+        );
     }
 
 }
