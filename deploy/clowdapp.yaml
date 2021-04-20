@@ -46,6 +46,9 @@ objects:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+        - name: CLOWDER_FILE
+          value: /cdapp/cdappconfig.json
+          description: default path for cdappconfig file
         - name: CLOWDER_ENABLED
           value: ${CLOWDER_ENABLED}
         resources:
@@ -61,6 +64,7 @@ objects:
         volumeMounts:
         - mountPath: /tmp
           name: tmpdir
+
     kafkaTopics:
     - replicas: 3
       partitions: 64
@@ -98,6 +102,3 @@ parameters:
 - description: ClowdEnv Name
   name: ENV_NAME
   required: true
-- name: CLOWDER_FILE
-  value: $ACG_CONFIG
-  description: cdappconfig file
