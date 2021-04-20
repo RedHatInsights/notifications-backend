@@ -47,8 +47,7 @@ objects:
           timeoutSeconds: 1
         env:
         - name: CLOWDER_FILE
-          value: /cdapp/cdappconfig.json
-          description: default path for cdappconfig file
+          value: ${CLOWDER_FILE}
         - name: CLOWDER_ENABLED
           value: ${CLOWDER_ENABLED}
         resources:
@@ -101,3 +100,6 @@ parameters:
 - description: ClowdEnv Name
   name: ENV_NAME
   required: true
+- name: CLOWDER_FILE
+  value: /cdapp/cdappconfig.json
+  description: default path for cdappconfig file
