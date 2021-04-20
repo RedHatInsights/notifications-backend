@@ -78,7 +78,7 @@
                         <!-- Hi {{user.first_name}},
                         <br>
                         <br> -->
-                        Your system <a href="#" target="_blank">system name</a> has {action.events.size()} new recommendations.
+                        Your system <a href="#" target="_blank">{action.context.display_name}</a> has {action.events.size()} new recommendations.
                     </p>
                 </td>
             </tr>
@@ -161,7 +161,7 @@
                                     <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_critical.png" alt="Critical severity" width="70" border="0">
                                     {/switch}
                                 </td>
-                                <td>{it.payload.publish_date.toStringFormat()}</td>
+                                <td>{it.payload.publish_date.toTimeAgo()}</td>
                             </tr>
                         {/each}
                         </tbody>
