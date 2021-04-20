@@ -4,10 +4,19 @@ kind: Template
 metadata:
   name: notifications
 objects:
+- apiVersion: v1
+  kind: Secret # For ephemeral/local environment
+  metadata:
+    name: notifications-backend-secrets
+    labels:
+      app: notifications-backend
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
   metadata:
     name: notifications
+    labels:
+      app: notifications
+      clowdapp: notifications-backend
   spec:
     envName: ${ENV_NAME}
     deployments:
@@ -88,4 +97,7 @@ parameters:
   value: "false"
 - description: ClowdEnv Name
   name: ENV_NAME
-  required: false
+  required: true
+- name: CLOWDER_FILE
+  value: $ACG_CONFIG
+  description: cdappconfig file
