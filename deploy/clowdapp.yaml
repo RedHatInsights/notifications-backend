@@ -64,7 +64,6 @@ objects:
         volumeMounts:
         - mountPath: /tmp
           name: tmpdir
-
     kafkaTopics:
     - replicas: 3
       partitions: 64
