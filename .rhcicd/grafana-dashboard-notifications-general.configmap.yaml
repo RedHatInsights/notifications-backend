@@ -2334,7 +2334,7 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: grafana-dashboard-insights-notifcations-general
+  name: grafana-dashboard-insights-notifications-general
   labels:
     grafana_dashboard: "true"
   annotations:
