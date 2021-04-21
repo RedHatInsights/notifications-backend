@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.auth.RHIdentityAuthMechanism;
+import com.redhat.cloud.notifications.auth.rhid.RHIdentityAuthMechanism;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.ClearType;
 import org.mockserver.model.HttpRequest;

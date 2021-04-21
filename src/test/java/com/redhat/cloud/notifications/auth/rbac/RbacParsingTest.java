@@ -1,8 +1,7 @@
-package com.redhat.cloud.notifications;
+package com.redhat.cloud.notifications.auth.rbac;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import com.redhat.cloud.notifications.auth.RbacRaw;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -14,7 +13,7 @@ import java.io.InputStream;
  * Test RBAC parsing.
  * Brought over from policies-ui-backend and extended
  */
-public class RbacParsingTest {
+class RbacParsingTest {
 
     private static final ObjectReader RBAC_RAW_READER = new ObjectMapper().readerFor(RbacRaw.class);
     private static final String BASE = "src/test/resources/rbac-examples/";

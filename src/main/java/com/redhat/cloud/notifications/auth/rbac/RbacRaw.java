@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.auth;
+package com.redhat.cloud.notifications.auth.rbac;
 
 import java.util.List;
 import java.util.Map;

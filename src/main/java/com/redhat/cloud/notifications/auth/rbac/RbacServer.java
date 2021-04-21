@@ -1,5 +1,6 @@
-package com.redhat.cloud.notifications.auth;
+package com.redhat.cloud.notifications.auth.rbac;
 
+import com.redhat.cloud.notifications.auth.rhid.RHIdentityAuthMechanism;
 import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;

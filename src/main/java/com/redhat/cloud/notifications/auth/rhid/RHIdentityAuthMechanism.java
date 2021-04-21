@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.auth;
+package com.redhat.cloud.notifications.auth.rhid;
 
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.IdentityProviderManager;
