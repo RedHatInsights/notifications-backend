@@ -15,10 +15,11 @@ import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.Path;
 
-@ApplicationScoped
+@Path("/internal/db-cleaner")
 public class DbCleaner {
 
     private static final String DEFAULT_BUNDLE_NAME = "rhel";
@@ -45,6 +46,7 @@ public class DbCleaner {
      * should do that with {@link io.quarkus.test.TestTransaction} but it doesn't work with Hibernate Reactive, so this
      * is a temporary workaround to make our tests more reliable and easy to maintain.
      */
+    @DELETE
     public void clean() {
         session.withTransaction(transaction -> deleteAllFrom(EmailAggregation.class)
                 .chain(() -> deleteAllFrom(EmailSubscription.class))
