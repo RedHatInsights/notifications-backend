@@ -26,6 +26,9 @@ import java.util.function.Function;
 @ApplicationScoped
 public class EndpointProcessor {
 
+    public static final String PROCESSED_MESSAGES_COUNTER_NAME = "processor.input.processed";
+    public static final String PROCESSED_ENDPOINTS_COUNTER_NAME = "processor.input.endpoint.processed";
+
     @Inject
     Mutiny.Session session;
 
@@ -35,6 +38,7 @@ public class EndpointProcessor {
     @Inject
     EventBusTypeProcessor notificationProcessor;
 
+    // TODO [BG Phase 2] Delete this attribute
     @Inject
     DefaultProcessor defaultProcessor;
 
@@ -55,12 +59,13 @@ public class EndpointProcessor {
 
     @PostConstruct
     void init() {
-        processedItems = registry.counter("processor.input.processed");
-        endpointTargeted = registry.counter("processor.input.endpoint.processed");
+        processedItems = registry.counter(PROCESSED_MESSAGES_COUNTER_NAME);
+        endpointTargeted = registry.counter(PROCESSED_ENDPOINTS_COUNTER_NAME);
     }
 
     public Uni<Void> process(Action action) {
         processedItems.increment();
+        // TODO [BG Phase 2] Use EndpointResources.getEndpoints here
         Multi<NotificationHistory> endpointsCallResult = getEndpoints(
                 action.getAccountId(),
                 action.getBundle(),
@@ -95,6 +100,7 @@ public class EndpointProcessor {
         }
     }
 
+    // TODO [BG Phase 2] Delete this method
     public Multi<Endpoint> getEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
         return resources.getTargetEndpoints(tenant, bundleName, applicationName, eventTypeName)
                 .onItem().transformToMultiAndConcatenate((Function<Endpoint, Publisher<Endpoint>>) endpoint -> {

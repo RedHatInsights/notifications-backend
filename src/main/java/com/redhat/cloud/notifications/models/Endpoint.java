@@ -76,13 +76,19 @@ public class Endpoint extends CreationUpdateTimestamped {
     @JsonIgnore
     private EndpointWebhook webhook;
 
+    // TODO [BG Phase 2] Delete this attribute
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<EndpointTarget> targets;
 
+    // TODO [BG Phase 2] Delete this attribute
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<EndpointDefault> defaults;
+
+    @OneToMany(mappedBy = "endpoint", cascade = CascadeType.REMOVE)
+    @JsonIgnore
+    private Set<BehaviorGroupAction> behaviorGroupActions;
 
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
     @JsonIgnore
@@ -145,7 +151,7 @@ public class Endpoint extends CreationUpdateTimestamped {
                     }
                     break;
                 case EMAIL_SUBSCRIPTION:
-                case DEFAULT:
+                case DEFAULT: // TODO [BG Phase 2] Delete this case
                 default:
                     // Do nothing for now
                     break;
@@ -166,18 +172,30 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.webhook = webhook;
     }
 
+    public Set<BehaviorGroupAction> getBehaviorGroupActions() {
+        return behaviorGroupActions;
+    }
+
+    public void setBehaviorGroupActions(Set<BehaviorGroupAction> behaviorGroupActions) {
+        this.behaviorGroupActions = behaviorGroupActions;
+    }
+
+    // TODO [BG Phase 2] Delete this method
     public Set<EndpointTarget> getTargets() {
         return targets;
     }
 
+    // TODO [BG Phase 2] Delete this method
     public void setTargets(Set<EndpointTarget> targets) {
         this.targets = targets;
     }
 
+    // TODO [BG Phase 2] Delete this method
     public Set<EndpointDefault> getDefaults() {
         return defaults;
     }
 
+    // TODO [BG Phase 2] Delete this method
     public void setDefaults(Set<EndpointDefault> defaults) {
         this.defaults = defaults;
     }

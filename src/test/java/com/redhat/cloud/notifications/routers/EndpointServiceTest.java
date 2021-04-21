@@ -448,6 +448,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         assertEquals(29, endpointPage.getMeta().getCount());
     }
 
+    // TODO [BG Phase 2] Delete this test
     @Test
     void testDefaultEndpointRegistering() {
         String tenant = "defaultRegister";
@@ -607,9 +608,16 @@ public class EndpointServiceTest extends DbIsolatedTest {
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
         endpoints = endpointPage.getData().toArray(new Endpoint[0]);
         assertEquals(20, endpoints.length);
+        // TODO [BG Phase 2] Delete the 3 following lines
         assertEquals("Default endpoint", endpoints[endpoints.length - 1].getName());
         assertEquals("Endpoint 1", endpoints[endpoints.length - 2].getName());
         assertEquals("Endpoint 26", endpoints[0].getName());
+        // TODO [BG Phase 2] Uncomment this:
+        /*
+        assertEquals("Endpoint 1", endpoints[endpoints.length - 1].getName());
+        assertEquals("Endpoint 10", endpoints[endpoints.length - 2].getName());
+        assertEquals("Endpoint 27", endpoints[0].getName());
+        */
     }
 
     @Test

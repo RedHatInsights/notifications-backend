@@ -179,6 +179,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
         assertEquals(100, eventTypes.size());
     }
 
+    // TODO [BG Phase 2] Delete this test
     @Test
     void testAddToDefaultsWithInsufficientPrivileges() {
         helpers.createTestAppAndEventTypes();
@@ -197,6 +198,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .statusCode(403);
     }
 
+    // TODO [BG Phase 2] Delete this test
     @Test
     void testDeleteFromDefaultsWithInsufficientPrivileges() {
         helpers.createTestAppAndEventTypes();
@@ -215,6 +217,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .statusCode(403);
     }
 
+    // TODO [BG Phase 2] Delete this test
     @Test
     void testNonExistantDefaults() {
         helpers.createTestAppAndEventTypes();
@@ -256,6 +259,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .statusCode(400);
     }
 
+    // TODO [BG Phase 2] Delete this test
     @Test
     void testPutGetAndDeleteDefaults() {
         helpers.createTestAppAndEventTypes();
@@ -503,4 +507,120 @@ public class NotificationServiceTest extends DbIsolatedTest {
         assertEquals("Red Hat Enterprise Linux", rhel.get().getDisplayName());
     }
 
+    @Test
+    void testInsufficientPrivileges() {
+        Header noAccessIdentityHeader = initRbacMock("tenant", "noAccess", RbacAccess.NO_ACCESS);
+        Header readAccessIdentityHeader = initRbacMock("tenant", "readAccess", RbacAccess.READ_ACCESS);
+
+        given()
+                .header(noAccessIdentityHeader)
+                .when()
+                .get("/notifications/eventTypes")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(noAccessIdentityHeader)
+                .pathParam("endpointId", UUID.randomUUID())
+                .when()
+                // TODO [BG Phase 2] Remove '/bg' from path
+                .get("/notifications/bg/eventTypes/affectedByRemovalOfEndpoint/{endpointId}")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(noAccessIdentityHeader)
+                .pathParam("behaviorGroupId", UUID.randomUUID())
+                .when()
+                .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(readAccessIdentityHeader)
+                .pathParam("eventTypeId", UUID.randomUUID())
+                .pathParam("behaviorGroupId", UUID.randomUUID())
+                .when()
+                .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(readAccessIdentityHeader)
+                .pathParam("eventTypeId", UUID.randomUUID())
+                .pathParam("behaviorGroupId", UUID.randomUUID())
+                .when()
+                .delete("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(noAccessIdentityHeader)
+                .pathParam("eventTypeId", UUID.randomUUID())
+                .when()
+                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(readAccessIdentityHeader)
+                .pathParam("eventTypeId", UUID.randomUUID())
+                .when()
+                .delete("/notifications/eventTypes/{eventTypeId}/mute")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(readAccessIdentityHeader)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(readAccessIdentityHeader)
+                .contentType(ContentType.JSON)
+                .pathParam("id", UUID.randomUUID())
+                .when()
+                .put("/notifications/behaviorGroups/{id}")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(readAccessIdentityHeader)
+                .pathParam("id", UUID.randomUUID())
+                .when()
+                .delete("/notifications/behaviorGroups/{id}")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(readAccessIdentityHeader)
+                .contentType(ContentType.JSON)
+                .pathParam("behaviorGroupId", UUID.randomUUID())
+                .body(Json.encode(List.of(UUID.randomUUID())))
+                .when()
+                .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(readAccessIdentityHeader)
+                .contentType(ContentType.JSON)
+                .pathParam("behaviorGroupId", UUID.randomUUID())
+                .body(Json.encode(List.of(UUID.randomUUID())))
+                .when()
+                .delete("/notifications/behaviorGroups/{behaviorGroupId}/actions")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(noAccessIdentityHeader)
+                .pathParam("bundleId", UUID.randomUUID())
+                .when()
+                .get("/notifications/bundles/{bundleId}/behaviorGroups")
+                .then()
+                .statusCode(403);
+    }
 }

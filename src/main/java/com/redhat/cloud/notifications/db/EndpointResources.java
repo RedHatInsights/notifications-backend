@@ -78,11 +78,28 @@ public class EndpointResources {
         return mutinyQuery.getSingleResult();
     }
 
+    // TODO [BG Phase 2] Delete this method
     public Multi<Endpoint> getTargetEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
         // TODO Add UNION JOIN for different endpoint types here
         String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.webhook JOIN e.targets t " +
                 "WHERE e.enabled = TRUE AND t.eventType.name = :eventTypeName AND t.id.accountId = :accountId " +
                 "AND t.eventType.application.name = :applicationName AND t.eventType.application.bundle.name = :bundleName";
+
+        return session.createQuery(query, Endpoint.class)
+                .setParameter("applicationName", applicationName)
+                .setParameter("eventTypeName", eventTypeName)
+                .setParameter("accountId", tenant)
+                .setParameter("bundleName", bundleName)
+                .getResultList()
+                .onItem().transformToMulti(Multi.createFrom()::iterable);
+    }
+
+    // TODO [BG Phase 2] Remove '_BG' suffix
+    public Multi<Endpoint> getTargetEndpoints_BG(String tenant, String bundleName, String applicationName, String eventTypeName) {
+        // TODO Add UNION JOIN for different endpoint types here
+        String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.webhook JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
+                "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
+                "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName";
 
         return session.createQuery(query, Endpoint.class)
                 .setParameter("applicationName", applicationName)
@@ -161,6 +178,7 @@ public class EndpointResources {
                 .onItem().transform(rowCount -> rowCount > 0);
     }
 
+    // TODO [BG Phase 2] Delete this method
     public Uni<Boolean> linkEndpoint(String tenant, UUID endpointId, UUID eventTypeId) {
         return Uni.createFrom().item(() -> {
             Endpoint endpoint = session.getReference(Endpoint.class, endpointId);
@@ -173,6 +191,7 @@ public class EndpointResources {
                 .onFailure().recoverWithItem(Boolean.FALSE);
     }
 
+    // TODO [BG Phase 2] Delete this method
     public Uni<Boolean> unlinkEndpoint(String tenant, UUID endpointId, UUID eventTypeId) {
         String query = "DELETE FROM EndpointTarget WHERE id.accountId = :accountId AND eventType.id = :eventTypeId AND endpoint.id = :endpointId";
 
@@ -185,6 +204,7 @@ public class EndpointResources {
                 .onItem().transform(rowCount -> rowCount > 0);
     }
 
+    // TODO [BG Phase 2] Delete this method
     public Multi<Endpoint> getLinkedEndpoints(String tenant, UUID eventTypeId, Query limiter) {
         String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.webhook JOIN e.targets t WHERE t.id.accountId = :accountId AND t.eventType.id = :eventTypeId";
 
@@ -205,6 +225,7 @@ public class EndpointResources {
                 .onItem().transformToMulti(Multi.createFrom()::iterable);
     }
 
+    // TODO [BG Phase 2] Delete this method
     public Multi<Endpoint> getDefaultEndpoints(String tenant) {
         String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.webhook JOIN e.defaults d WHERE d.id.accountId = :accountId";
 
@@ -214,6 +235,7 @@ public class EndpointResources {
                 .onItem().transformToMulti(Multi.createFrom()::iterable);
     }
 
+    // TODO [BG Phase 2] Delete this method
     public Uni<Boolean> endpointInDefaults(String tenant, UUID endpointId) {
         String query = "SELECT COUNT(*) FROM EndpointDefault WHERE id.accountId = :accountId AND endpoint.id = :endpointId";
 
@@ -224,6 +246,7 @@ public class EndpointResources {
                 .onItem().transform(count -> count > 0);
     }
 
+    // TODO [BG Phase 2] Delete this method
     public Uni<Boolean> addEndpointToDefaults(String tenant, UUID endpointId) {
         return Uni.createFrom().item(() -> {
             Endpoint endpoint = session.getReference(Endpoint.class, endpointId);
@@ -235,6 +258,7 @@ public class EndpointResources {
                 .replaceWith(Boolean.TRUE);
     }
 
+    // TODO [BG Phase 2] Delete this method
     public Uni<Boolean> deleteEndpointFromDefaults(String tenant, UUID endpointId) {
         String query = "DELETE FROM EndpointDefault WHERE id.accountId = :accountId AND id.endpointId = :endpointId";
 

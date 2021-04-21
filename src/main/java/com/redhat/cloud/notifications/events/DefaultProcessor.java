@@ -10,6 +10,7 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+// TODO [BG Phase 2] Delete this class
 @ApplicationScoped
 public class DefaultProcessor {
     @Inject
