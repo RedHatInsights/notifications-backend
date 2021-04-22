@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.auth;
+package com.redhat.cloud.notifications.auth.rbac;
 
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;

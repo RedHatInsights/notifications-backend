@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.auth.RHIdentityAuthMechanism;
+import com.redhat.cloud.notifications.auth.rhid.RHIdentityAuthMechanism;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;

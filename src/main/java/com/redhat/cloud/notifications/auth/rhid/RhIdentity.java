@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.auth;
+package com.redhat.cloud.notifications.auth.rhid;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

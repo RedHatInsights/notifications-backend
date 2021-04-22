@@ -1,5 +1,8 @@
-package com.redhat.cloud.notifications.auth;
+package com.redhat.cloud.notifications.auth.rbac;
 
+import com.redhat.cloud.notifications.auth.rhid.RhIdPrincipal;
+import com.redhat.cloud.notifications.auth.rhid.RhIdentity;
+import com.redhat.cloud.notifications.auth.rhid.RhIdentityAuthenticationRequest;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.IdentityProvider;
@@ -15,7 +18,7 @@ import javax.inject.Inject;
 import java.util.Base64;
 import java.util.logging.Logger;
 
-import static com.redhat.cloud.notifications.auth.RHIdentityAuthMechanism.IDENTITY_HEADER;
+import static com.redhat.cloud.notifications.auth.rhid.RHIdentityAuthMechanism.IDENTITY_HEADER;
 
 /**
  * Authorizes the data from the insight's RBAC-server and adds the appropriate roles

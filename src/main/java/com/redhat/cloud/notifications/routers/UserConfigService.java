@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.routers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.auth.RhIdPrincipal;
+import com.redhat.cloud.notifications.auth.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;

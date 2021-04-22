@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.StuffHolder;
-import com.redhat.cloud.notifications.auth.RbacRaw;
-import com.redhat.cloud.notifications.auth.RbacServer;
+import com.redhat.cloud.notifications.auth.rbac.RbacRaw;
+import com.redhat.cloud.notifications.auth.rbac.RbacServer;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
