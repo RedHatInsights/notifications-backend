@@ -146,6 +146,96 @@ public class ApplicationServiceTest extends DbIsolatedTest {
 
     }
 
+
+    @Test
+    void testPoliciesEventTypeDelete() {
+        // Create a bundle
+        Bundle bundle = new Bundle();
+        bundle.setName("bundle-delete");
+        bundle.setDisplayName("blah");
+        String response = given()
+                .body(bundle)
+                .contentType(ContentType.JSON)
+                .when().post("/internal/bundles")
+                .then()
+                .statusCode(200)
+                .extract().body().asString();
+        JsonObject returnedBundle = new JsonObject(response);
+        returnedBundle.mapTo(Bundle.class);
+
+        Application app = new Application();
+        app.setName(APP_NAME);
+        app.setDisplayName("blah");
+        app.setBundleId(UUID.fromString(returnedBundle.getString("id")));
+
+        // Now create an application
+        response = given()
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(app))
+                .post("/internal/applications")
+                .then()
+                .statusCode(200)
+                .extract().body().asString();
+
+        JsonObject appResponse = new JsonObject(response);
+        appResponse.mapTo(Application.class);
+
+        // Create eventType
+        EventType eventType = new EventType();
+        eventType.setName(EVENT_TYPE_NAME);
+        eventType.setDisplayName("Blah");
+        eventType.setDescription("Blah");
+
+        response = given()
+                .when()
+                .contentType(ContentType.JSON)
+                .body(Json.encode(eventType))
+                .pathParam("applicationId", appResponse.getString("id"))
+                .post("/internal/applications/{applicationId}/eventTypes")
+                .then()
+                .statusCode(200)
+                .extract().body().asString();
+
+        JsonObject typeResponse = new JsonObject(response);
+        typeResponse.mapTo(EventType.class);
+
+        response = given()
+                .when()
+                .pathParam("applicationId", appResponse.getString("id"))
+                .get("/internal/applications/{applicationId}/eventTypes")
+                .then()
+                .statusCode(200)
+                .extract().body().asString();
+
+        // Make sure there is 1 eventtype before we delete
+        JsonArray list = new JsonArray(response);
+        assertEquals(list.size(), 1);
+        list.getJsonObject(0).mapTo(EventType.class);
+
+        given()
+                .when()
+                .pathParam("applicationId", appResponse.getString("id"))
+                .pathParam("eventTypeId", typeResponse.getString("id"))
+                .delete("/internal/applications/{applicationId}/eventTypes/{eventTypeId}")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        response = given()
+                .when()
+                .pathParam("applicationId", appResponse.getString("id"))
+                .get("/internal/applications/{applicationId}/eventTypes")
+                .then()
+                .statusCode(200)
+                .extract().body().asString();
+
+        list = new JsonArray(response);
+        // Make sure there is no event type anymore
+        assertEquals(list.size(), 0);
+    }
+
+
     @Test
     void testGetApplicationsRequiresBundleName() {
         // Check that the get applications won't work without bundleName
