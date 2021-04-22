@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.Application;
@@ -13,7 +12,6 @@ import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.jackson.JacksonCodec;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -155,31 +153,33 @@ public class ApplicationServiceTest extends DbIsolatedTest {
         Bundle bundle = new Bundle();
         bundle.setName("bundle-delete");
         bundle.setDisplayName("blah");
-        Bundle returnedBundle =
-            given()
+        String response = given()
                 .body(bundle)
                 .contentType(ContentType.JSON)
                 .when().post("/internal/bundles")
                 .then()
                 .statusCode(200)
-                .extract().body().as(Bundle.class);
+                .extract().body().asString();
+        JsonObject returnedBundle = new JsonObject(response);
+        returnedBundle.mapTo(Bundle.class);
 
         Application app = new Application();
         app.setName(APP_NAME);
         app.setDisplayName("blah");
-        app.setBundleId(returnedBundle.getId());
+        app.setBundleId(UUID.fromString(returnedBundle.getString("id")));
 
         // Now create an application
-        Response response = given()
+        response = given()
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(app))
                 .post("/internal/applications")
                 .then()
                 .statusCode(200)
-                .extract().response();
+                .extract().body().asString();
 
-        Application appResponse = Json.decodeValue(response.getBody().asString(), Application.class);
+        JsonObject appResponse = new JsonObject(response);
+        appResponse.mapTo(Application.class);
 
         // Create eventType
         EventType eventType = new EventType();
@@ -191,39 +191,46 @@ public class ApplicationServiceTest extends DbIsolatedTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .body(Json.encode(eventType))
-                .post(String.format("/internal/applications/%s/eventTypes", appResponse.getId()))
+                .pathParam("applicationId", appResponse.getString("id"))
+                .post("/internal/applications/{applicationId}/eventTypes")
                 .then()
                 .statusCode(200)
-                .extract().response();
+                .extract().body().asString();
 
-        EventType typeResponse = Json.decodeValue(response.getBody().asString(), EventType.class);
-
-        response = given()
-        .when()
-        .get(String.format("/internal/applications/%s/eventTypes", appResponse.getId()))
-        .then()
-        .statusCode(200)
-        .extract().response();
-
-        // Make sure there is 1 eventtype before we delete
-        List<EventType> list = JacksonCodec.decodeValue(response.getBody().asString(), new TypeReference<List<EventType>>() { });
-        assertEquals(list.size(), 1);
-
-        given()
-            .when()
-            .delete(String.format("/internal/applications/%s/eventTypes/%s", appResponse.getId(), typeResponse.getId()))
-            .then()
-            .statusCode(200)
-            .extract().response();
+        JsonObject typeResponse = new JsonObject(response);
+        typeResponse.mapTo(EventType.class);
 
         response = given()
                 .when()
-                .get(String.format("/internal/applications/%s/eventTypes", appResponse.getId()))
+                .pathParam("applicationId", appResponse.getString("id"))
+                .get("/internal/applications/{applicationId}/eventTypes")
+                .then()
+                .statusCode(200)
+                .extract().body().asString();
+
+        // Make sure there is 1 eventtype before we delete
+        JsonArray list = new JsonArray(response);
+        assertEquals(list.size(), 1);
+        list.getJsonObject(0).mapTo(EventType.class);
+
+        given()
+                .when()
+                .pathParam("applicationId", appResponse.getString("id"))
+                .pathParam("eventTypeId", typeResponse.getString("id"))
+                .delete("/internal/applications/{applicationId}/eventTypes/{eventTypeId}")
                 .then()
                 .statusCode(200)
                 .extract().response();
 
-        list = JacksonCodec.decodeValue(response.getBody().asString(), new TypeReference<List<EventType>>() { });
+        response = given()
+                .when()
+                .pathParam("applicationId", appResponse.getString("id"))
+                .get("/internal/applications/{applicationId}/eventTypes")
+                .then()
+                .statusCode(200)
+                .extract().body().asString();
+
+        list = new JsonArray(response);
         // Make sure there is no event type anymore
         assertEquals(list.size(), 0);
     }
