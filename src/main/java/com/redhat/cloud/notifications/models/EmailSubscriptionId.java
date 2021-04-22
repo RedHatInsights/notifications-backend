@@ -2,13 +2,13 @@ package com.redhat.cloud.notifications.models;
 
 import com.redhat.cloud.notifications.db.converters.EmailSubscriptionTypeConverter;
 
-import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 @Embeddable
 public class EmailSubscriptionId implements Serializable {
@@ -21,15 +21,8 @@ public class EmailSubscriptionId implements Serializable {
     @Size(max = 50)
     public String userId;
 
-    @Column(name = "bundle")
     @NotNull
-    @Size(max = 255)
-    public String bundleName;
-
-    @Column(name = "application")
-    @NotNull
-    @Size(max = 255)
-    public String applicationName;
+    public UUID applicationId;
 
     @NotNull
     @Size(max = 50)
@@ -46,14 +39,13 @@ public class EmailSubscriptionId implements Serializable {
             return Objects.equals(accountId, other.accountId) &&
                     Objects.equals(userId, other.userId) &&
                     Objects.equals(subscriptionType, other.subscriptionType) &&
-                    Objects.equals(bundleName, other.bundleName) &&
-                    Objects.equals(applicationName, other.applicationName);
+                    Objects.equals(applicationId, other.applicationId);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(accountId, userId, subscriptionType, applicationName, bundleName);
+        return Objects.hash(accountId, userId, subscriptionType, applicationId);
     }
 }

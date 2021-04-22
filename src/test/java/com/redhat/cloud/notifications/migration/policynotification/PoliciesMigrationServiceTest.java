@@ -156,8 +156,8 @@ public class PoliciesMigrationServiceTest extends DbIsolatedTest {
 
         assertEquals(accountId, emailSubscription.getAccountId());
         assertEquals(userId, emailSubscription.getUserId());
-        assertEquals(PoliciesMigrationService.BUNDLE, emailSubscription.getBundleName());
-        assertEquals(PoliciesMigrationService.APPLICATION, emailSubscription.getApplicationName());
+        assertEquals(PoliciesMigrationService.BUNDLE, emailSubscription.getApplication().getBundle().getName());
+        assertEquals(PoliciesMigrationService.APPLICATION, emailSubscription.getApplication().getName());
         assertEquals(emailSubscriptionType, emailSubscription.getType());
     }
 

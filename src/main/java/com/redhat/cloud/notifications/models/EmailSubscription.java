@@ -2,6 +2,9 @@ package com.redhat.cloud.notifications.models;
 
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapsId;
 import javax.persistence.Table;
 import java.util.Objects;
 
@@ -11,6 +14,11 @@ public class EmailSubscription {
 
     @EmbeddedId
     private EmailSubscriptionId id;
+
+    @ManyToOne
+    @MapsId("applicationId")
+    @JoinColumn(name = "application_id")
+    private Application application;
 
     public String getAccountId() {
         return id.accountId;
@@ -28,28 +36,20 @@ public class EmailSubscription {
         id.userId = userId;
     }
 
-    public String getBundleName() {
-        return id.bundleName;
-    }
-
-    public void setBundleName(String bundleName) {
-        id.bundleName = bundleName;
-    }
-
-    public String getApplicationName() {
-        return id.applicationName;
-    }
-
-    public void setApplicationName(String applicationName) {
-        id.applicationName = applicationName;
-    }
-
     public EmailSubscriptionType getType() {
         return id.subscriptionType;
     }
 
     public void setType(EmailSubscriptionType type) {
         id.subscriptionType = type;
+    }
+
+    public Application getApplication() {
+        return application;
+    }
+
+    public void setApplication(Application application) {
+        this.application = application;
     }
 
     @Override
