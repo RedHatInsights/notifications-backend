@@ -8,23 +8,21 @@ import io.smallrye.mutiny.Uni;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.UUID;
 
 @Path("/internal/applications")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
 public class ApplicationService {
 
     @Inject
@@ -45,9 +43,21 @@ public class ApplicationService {
     }
 
     @POST
-    public Uni<Application> addApplication(@Valid Application application) {
-        // We need to ensure that the x-rh-identity isn't present here
+    public Uni<Application> addApplication(@NotNull @Valid Application application) {
         return appResources.createApplication(application);
+    }
+
+    @PUT
+    @Path("/{id}")
+    public Uni<Response> updateBundle(@PathParam("id") UUID id, @NotNull @Valid Application bundle) {
+        return appResources.updateApplication(id, bundle)
+                .onItem().transform(rowCount -> {
+                    if (rowCount == 0) {
+                        return Response.status(Response.Status.NOT_FOUND).build();
+                    } else {
+                        return Response.ok().build();
+                    }
+                });
     }
 
     @DELETE

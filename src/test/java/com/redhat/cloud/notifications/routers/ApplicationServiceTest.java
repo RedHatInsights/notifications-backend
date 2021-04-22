@@ -118,12 +118,16 @@ public class ApplicationServiceTest extends DbIsolatedTest {
         assertNotNull(typeResponse.getString("id"));
         assertEquals(eventType.getDescription(), typeResponse.getString("description"));
 
+        updateApplication(appResponse.getString("id"), returnedBundle.getString("id"), 200);
+
         // Now delete the app and verify that it is gone along with the eventType
         given()
                 .when()
                 .delete("/internal/applications/" + appResponse.getString("id"))
                 .then()
                 .statusCode(200);
+
+        updateApplication(appResponse.getString("id"), returnedBundle.getString("id"), 404);
 
         // Check that get by Id does not return a 200, as it is gone.
         given()
@@ -320,5 +324,36 @@ public class ApplicationServiceTest extends DbIsolatedTest {
                 .get("/internal/applications?bundleName=" + LOCAL_BUNDLE_NAME)
                 .then()
                 .statusCode(404);
+    }
+
+    private void updateApplication(String id, String bundleId, int expectedStatusCode) {
+        String updatedName = "updated-name";
+        String updatedDisplayName = "updatedDisplayName";
+
+        Application app = new Application();
+        app.setName(updatedName);
+        app.setDisplayName(updatedDisplayName);
+        app.setBundleId(UUID.fromString(bundleId));
+
+        given()
+                .contentType(ContentType.JSON)
+                .pathParam("id", id)
+                .body(Json.encode(app))
+                .put("/internal/applications/{id}")
+                .then()
+                .statusCode(expectedStatusCode);
+
+        if (expectedStatusCode >= 200 && expectedStatusCode < 300) {
+            String responseBody = given()
+                    .pathParam("id", id)
+                    .get("/internal/applications/{id}")
+                    .then()
+                    .statusCode(200)
+                    .extract().body().asString();
+            JsonObject jsonApp = new JsonObject(responseBody);
+            jsonApp.mapTo(Application.class);
+            assertEquals(updatedName, jsonApp.getString("name"));
+            assertEquals(updatedDisplayName, jsonApp.getString("display_name"));
+        }
     }
 }
