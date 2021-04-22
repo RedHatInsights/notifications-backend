@@ -1,0 +1,177 @@
+{#include AdvisorOpenshift/insightsEmailBody}
+{#content-title}Advisor instant notification - {action.timestamp.toUtcFormat()}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-body rh-multi-column">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td>
+                    <!-- start 50 col -->
+                    <!--[if (gte mso 9)|(IE)]>
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-spacing:0;" >
+                        <tr>
+
+                            <td valign="top" style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;">
+                    <![endif]-->
+
+                    <!-- start 50 col -->
+                    <div>
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                            <tbody>
+                            <tr>
+                                <td class="rh-pad">
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                                        <tbody>
+                                        <tr>
+                                            <td class="rh-card">
+                                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="rh-card-metrics">
+                                                    <tbody>
+                                                    <tr>
+                                                        <td class="rh-card__header">
+                                                            <h2>
+                                                                New recommendations
+                                                            </h2>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <span class="rh-metric__count">{action.events.size()}</span>
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- end 50 col -->
+                    <!--[if (gte mso 9)|(IE)]>
+                    </td>
+                    </tr>
+                    </table>
+                    <![endif]-->
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+<!-- Body section -->
+<tr>
+    <td class="rh-body">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <p>
+                        <!-- Hi {{user.first_name}},
+                        <br>
+                        <br> -->
+                        Your cluster <a href="#" target="_blank">{action.context.display_name}</a> has {action.events.size()} new recommendations.
+                    </p>
+                </td>
+            </tr>
+            <!-- end content block -->
+
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" class="rh-button-table">
+                        <tr>
+                            <td class="rh-cta-link" align="center">
+                                <a target="_blank" href="https://cloud.redhat.com/">
+                                        <span>
+                                          Go to cluster page
+                                        </span>
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+<!-- Body section -->
+<tr>
+    <td class="rh-body">
+        <table class="rh-content rh-m-plain" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <b>New recommendations affecting</b>
+                    <br>
+                    <a href="{action.context.host_url}">{action.context.display_name}</a>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+<!-- Body section -->
+<tr>
+    <td class="rh-body">
+        <table class="rh-content rh-m-plain" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <table width:="" 100%;="" class="rh-data-table rh-m-bordered">
+                        <thead>
+                        <tr>
+                            <th>New recommendations</th>
+                            <th>Total risk</th>
+                            <th>Added</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {#each action.events}
+                            <tr>
+                                <td>
+                                    <a href="{it.payload.rule_url}">{it.payload.rule_description}</a>
+                                </td>
+                                <td class="rh-severity">
+                                    {#switch it.payload.total_risk}
+                                    {#case '1'}
+                                    <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_low.png" alt="Low severity" width="55" border="0">
+                                    {#case '2'}
+                                    <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_moderate.png" alt="Moderate severity" width="85" border="0">
+                                    {#case '3'}
+                                    <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_important.png" alt="Important severity" width="86" border="0">
+                                    {#case '4'}
+                                    <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_critical.png" alt="Critical severity" width="70" border="0">
+                                    {/switch}
+                                </td>
+                                <td>{it.payload.publish_date.toTimeAgo()}</td>
+                            </tr>
+                        {/each}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+{/content-body}
+{/include}

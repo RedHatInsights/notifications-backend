@@ -221,4 +221,70 @@ public class TestHelpers {
 
         return emailActionMessage;
     }
+
+    public static Action createAdvisorOpenshiftAction(String accountId, String eventType) {
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle("openshift");
+        emailActionMessage.setApplication("advisor");
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        emailActionMessage.setEventType(eventType);
+        emailActionMessage.setAccountId(accountId);
+
+        emailActionMessage.setContext(Map.of(
+                "context", "TBD",
+                "openshift_version", "4.7"
+        ));
+        emailActionMessage.setEvents(List.of(
+                Event
+                        .newBuilder()
+                        .setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(Map.of(
+                                "rule_id", "rule-id-low-001",
+                                "rule_description", "nice rule with low risk",
+                                "total_risk", "1",
+                                "publish_date", "2020-08-03T15:22:42.199046",
+                                "report_url", "http://the-report-for-rule-id-low-001",
+                                "rule_url", "http://the-rule-id-low-001"
+                        ))
+                        .build(),
+                Event
+                        .newBuilder()
+                        .setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(Map.of(
+                                "rule_id", "rule-id-moderate-001",
+                                "rule_description", "nice rule with moderate risk",
+                                "total_risk", "2",
+                                "publish_date", "2020-08-03T15:22:42.199046",
+                                "report_url", "http://the-report-for-rule-id-moderate-001",
+                                "rule_url", "http://the-rule-id-moderate-001"
+                        ))
+                        .build(),
+                Event
+                        .newBuilder()
+                        .setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(Map.of(
+                                "rule_id", "rule-id-important-001",
+                                "rule_description", "nice rule with important risk",
+                                "total_risk", "3",
+                                "publish_date", "2020-08-03T15:22:42.199046",
+                                "report_url", "http://the-report-for-rule-id-important-001",
+                                "rule_url", "http://the-rule-id-important-001"
+                        ))
+                        .build(),
+                Event
+                        .newBuilder()
+                        .setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(Map.of(
+                                "rule_id", "rule-id-critical-001",
+                                "rule_description", "nice rule with critical risk",
+                                "total_risk", "4",
+                                "publish_date", "2020-08-03T15:22:42.199046",
+                                "report_url", "http://the-report-for-rule-id-critical-001",
+                                "rule_url", "http://the-rule-id-critical-001"
+                        ))
+                        .build()
+        ));
+
+        return emailActionMessage;
+    }
 }
