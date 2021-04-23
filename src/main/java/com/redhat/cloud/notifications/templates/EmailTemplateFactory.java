@@ -18,7 +18,10 @@ public class EmailTemplateFactory {
                 default:
                     break;
             }
-
+        } else if (bundle.toLowerCase().equals("openshift")) {
+            if (application.toLowerCase().equals("advisor")) {
+                return new AdvisorOpenshift();
+            }
         }
 
         return new EmailTemplateNotSupported();
