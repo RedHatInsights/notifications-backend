@@ -326,7 +326,7 @@ public class ApplicationServiceTest extends DbIsolatedTest {
                 .statusCode(404);
     }
 
-    private void updateApplication(String id, String bundleId, int expectedStatusCode) {
+    private void updateApplication(String applicationId, String bundleId, int expectedStatusCode) {
         String updatedName = "updated-name";
         String updatedDisplayName = "updatedDisplayName";
 
@@ -337,7 +337,7 @@ public class ApplicationServiceTest extends DbIsolatedTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .pathParam("id", id)
+                .pathParam("id", applicationId)
                 .body(Json.encode(app))
                 .put("/internal/applications/{id}")
                 .then()
@@ -345,7 +345,7 @@ public class ApplicationServiceTest extends DbIsolatedTest {
 
         if (expectedStatusCode >= 200 && expectedStatusCode < 300) {
             String responseBody = given()
-                    .pathParam("id", id)
+                    .pathParam("id", applicationId)
                     .get("/internal/applications/{id}")
                     .then()
                     .statusCode(200)
