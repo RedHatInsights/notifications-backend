@@ -45,6 +45,16 @@ public class BundleResources {
                 .getSingleResultOrNull();
     }
 
+    public Uni<Integer> updateBundle(UUID id, Bundle bundle) {
+        String query = "UPDATE Bundle SET name = :name, displayName = :displayName WHERE id = :id";
+        return session.createQuery(query)
+                .setParameter("name", bundle.getName())
+                .setParameter("displayName", bundle.getDisplayName())
+                .setParameter("id", id)
+                .executeUpdate()
+                .call(session::flush);
+    }
+
     public Uni<Boolean> deleteBundle(UUID id) {
         String query = "DELETE FROM Bundle WHERE id = :id";
         return session.createQuery(query)

@@ -8,6 +8,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.ExtractableResponse;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +36,7 @@ public class BundleServiceTest extends DbIsolatedTest {
     public static final String INSIGHTS_1 = "insights1";
 
     @Test
-    void testAdd() {
+    void testAddAndUpdateAndDeleteBundle() {
         JsonObject returnedBundle = createBundle(INSIGHTS_1, 200);
 
         String bundleId = returnedBundle.getString("id");
@@ -50,42 +51,28 @@ public class BundleServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(200);
 
+        updateBundle(bundleId, 200);
+
         deleteBundleById(bundleId);
 
         when()
                 .get("/internal/bundles/" + bundleId)
                 .then()
                 .statusCode(404);
+
+        updateBundle(UUID.randomUUID().toString(), 404);
     }
 
     @Test
     void testAddTwoBundles() {
-        JsonObject b1 = null;
-        JsonObject b2 = null;
-        try {
-            b1 = createBundle("b1", 200);
-            b2 = createBundle("b2", 200);
-        } finally {
-            if (b1 != null) {
-                deleteBundleById(b1.getString("id"));
-            }
-            if (b2 != null) {
-                deleteBundleById(b2.getString("id"));
-            }
-        }
+        createBundle("b1", 200);
+        createBundle("b2", 200);
     }
 
     @Test
     void testNoAddSameBundleTwice() {
-        JsonObject b1 = null;
-        try {
-            b1 = createBundle("b1", 200);
-            createBundle("b1", 500);
-        } finally {
-            if (b1 != null) {
-                deleteBundleById(b1.getString("id"));
-            }
-        }
+        createBundle("b1", 200);
+        createBundle("b1", 500);
     }
 
     @Test
@@ -212,5 +199,35 @@ public class BundleServiceTest extends DbIsolatedTest {
                 .delete("/internal/bundles/" + id)
                 .then()
                 .statusCode(200);
+    }
+
+    private void updateBundle(String id, int expectedStatusCode) {
+        String updatedName = "updated-name";
+        String updatedDisplayName = "updatedDisplayName";
+
+        Bundle bundle = new Bundle();
+        bundle.setName(updatedName);
+        bundle.setDisplayName(updatedDisplayName);
+
+        given()
+                .contentType(ContentType.JSON)
+                .pathParam("id", id)
+                .body(Json.encode(bundle))
+                .put("/internal/bundles/{id}")
+                .then()
+                .statusCode(expectedStatusCode);
+
+        if (expectedStatusCode >= 200 && expectedStatusCode < 300) {
+            String responseBody = given()
+                    .pathParam("id", id)
+                    .get("/internal/bundles/{id}")
+                    .then()
+                    .statusCode(200)
+                    .extract().body().asString();
+            JsonObject jsonBundle = new JsonObject(responseBody);
+            jsonBundle.mapTo(Bundle.class);
+            assertEquals(updatedName, jsonBundle.getString("name"));
+            assertEquals(updatedDisplayName, jsonBundle.getString("display_name"));
+        }
     }
 }
