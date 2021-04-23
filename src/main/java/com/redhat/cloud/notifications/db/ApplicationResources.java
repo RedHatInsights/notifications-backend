@@ -30,6 +30,16 @@ public class ApplicationResources {
                 .replaceWith(app);
     }
 
+    public Uni<Integer> updateApplication(UUID id, Application app) {
+        String query = "UPDATE Application SET name = :name, displayName = :displayName WHERE id = :id";
+        return session.createQuery(query)
+                .setParameter("name", app.getName())
+                .setParameter("displayName", app.getDisplayName())
+                .setParameter("id", id)
+                .executeUpdate()
+                .call(session::flush);
+    }
+
     public Uni<Boolean> deleteApplication(UUID id) {
         String query = "DELETE FROM Application WHERE id = :id";
         return session.createQuery(query)
