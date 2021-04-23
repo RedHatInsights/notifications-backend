@@ -223,7 +223,7 @@ public class EmailTest extends DbIsolatedTest {
         emailActionMessage.setEventType("testEmailSubscriptionInstant");
 
         emailActionMessage.setContext(Map.of(
-                "insights_id-wrong", "host-01",
+                "inventory_id-wrong", "host-01",
                 "system_check_in-wrong", "2020-08-03T15:22:42.199046",
                 "display_name-wrong", "My test machine",
                 "tags-what?", List.of()
