@@ -63,7 +63,7 @@ public class TestHelpers {
         }
     }
 
-    public static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
+    public static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String policyId, String inventory_id) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
@@ -76,7 +76,7 @@ public class TestHelpers {
         emailActionMessage.setEventType("testEmailSubscriptionInstant");
 
         emailActionMessage.setContext(Map.of(
-                "insights_id", insightsId,
+                "inventory_id", inventory_id,
                 "system_check_in", "2020-08-03T15:22:42.199046",
                 "display_name", "My test machine",
                 "tags", List.of()
@@ -120,7 +120,7 @@ public class TestHelpers {
         emailActionMessage.setEventType("testEmailSubscriptionInstant");
 
         emailActionMessage.setContext(Map.of(
-                "insights_id", "host-01",
+                "inventory_id", "host-01",
                 "system_check_in", "2020-08-03T15:22:42.199046",
                 "display_name", hostDisplayName,
                 "tags", List.of()

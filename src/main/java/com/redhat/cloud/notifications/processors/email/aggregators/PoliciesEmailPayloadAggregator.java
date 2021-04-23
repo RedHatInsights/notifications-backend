@@ -24,7 +24,7 @@ public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregat
 
     // Host
     private static final String DISPLAY_NAME = "display_name";
-    private static final String INSIGHTS_ID = "insights_id";
+    private static final String INVENTORY_ID = "inventory_id";
     private static final String TAGS = "tags";
 
     private HashSet<String> uniqueHosts = new HashSet<>();
@@ -43,7 +43,7 @@ public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregat
 
         JsonObject host = new JsonObject();
         this.copyStringField(host, context, DISPLAY_NAME);
-        this.copyStringField(host, context, INSIGHTS_ID);
+        this.copyStringField(host, context, INVENTORY_ID);
         host.put(TAGS, context.getJsonArray(TAGS));
 
         notificationJson.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
@@ -65,13 +65,13 @@ public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregat
             }
 
             JsonObject policy = policies.getJsonObject(policyId);
-            String insightsId = host.getString(INSIGHTS_ID);
+            String insightsId = host.getString(INVENTORY_ID);
             policy.getJsonArray(HOST_KEY).add(host);
             uniqueHostPerPolicy.get(policyId).add(insightsId);
             policy.put(UNIQUE_SYSTEM_COUNT, this.uniqueHostPerPolicy.get(policyId).size());
         });
 
-        String insightsId = host.getString(INSIGHTS_ID);
+        String insightsId = host.getString(INVENTORY_ID);
         uniqueHosts.add(insightsId);
         this.context.put(UNIQUE_SYSTEM_COUNT, this.uniqueHosts.size());
     }
