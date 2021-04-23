@@ -15,6 +15,8 @@ public class EmailTemplateFactory {
                     return new Policies();
                 case "advisor":
                     return new Advisor();
+                case "drift":
+                    return new Drift();
                 default:
                     break;
             }
