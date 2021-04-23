@@ -1,0 +1,1 @@
+Drift from baseline notification - {action.timestamp.toUtcFormat()} - System '{action.context.display_name}' drifted from {action.events.size()} baseline{#if action.events.size() > 1}s{/if}
