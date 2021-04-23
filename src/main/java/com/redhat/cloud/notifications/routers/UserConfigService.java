@@ -64,8 +64,8 @@ public class UserConfigService {
 
         values.bundles.forEach((bundleName, bundleSettingsValue) ->
                 bundleSettingsValue.applications.forEach((applicationName, applicationSettingsValue) ->
-                applicationSettingsValue.notifications.forEach((emailSubscriptionType, value) -> {
-                    if (value) {
+                applicationSettingsValue.notifications.forEach((emailSubscriptionType, subscribed) -> {
+                    if (subscribed) {
                         subscriptionRequests.add(
                                 applicationResources.getApplication(bundleName, applicationName)
                                 .onItem().ifNotNull().transformToUni(application -> {
@@ -85,7 +85,7 @@ public class UserConfigService {
         return Multi.createBy().concatenating().streams(subscriptionRequests)
                 .collect().asList()
                 .onItem().transform(subscriptionResults -> {
-                    boolean allisSuccess = subscriptionResults.stream().allMatch(isTrue -> isTrue instanceof Boolean && ((Boolean) isTrue));
+                    boolean allisSuccess = subscriptionResults.stream().allMatch(Boolean.TRUE::equals);
                     Response.ResponseBuilder builder;
                     if (allisSuccess) {
                         builder = Response.ok();
@@ -110,11 +110,12 @@ public class UserConfigService {
         final String name = principal.getName();
 
         final UserConfigPreferences preferences = new UserConfigPreferences();
+        // TODO Get the DAILY and INSTANT subscriptions with a single SQL query and return UserConfigPreferences directly from Hibernate.
         return emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.DAILY)
                 .onItem().invoke(daily -> preferences.setDailyEmail(daily != null))
                 .onItem().transformToUni(_ignored -> emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.INSTANT))
                 .onItem().invoke(instant -> preferences.setInstantEmail(instant != null))
-                .onItem().transform(_ignored -> preferences);
+                .replaceWith(preferences);
     }
 
     @GET
@@ -167,10 +168,10 @@ public class UserConfigService {
                                 }).concatenate();
                     }).collect().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
                     .onItem().transform(emailSubscription -> {
-                        if (values.bundles.containsKey(emailSubscription.getBundleName())) {
-                            BundleSettingsValue bundleSettingsValue = values.bundles.get(emailSubscription.getBundleName());
-                            if (bundleSettingsValue.applications.containsKey(emailSubscription.getApplicationName())) {
-                                bundleSettingsValue.applications.get(emailSubscription.getApplicationName()).notifications.put(emailSubscription.getType(), true);
+                        if (values.bundles.containsKey(emailSubscription.getApplication().getBundle().getName())) {
+                            BundleSettingsValue bundleSettingsValue = values.bundles.get(emailSubscription.getApplication().getBundle().getName());
+                            if (bundleSettingsValue.applications.containsKey(emailSubscription.getApplication().getName())) {
+                                bundleSettingsValue.applications.get(emailSubscription.getApplication().getName()).notifications.put(emailSubscription.getType(), true);
                             }
                         }
                         return emailSubscription;

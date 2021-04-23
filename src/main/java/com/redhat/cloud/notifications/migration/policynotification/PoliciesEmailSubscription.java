@@ -1,7 +1,8 @@
 package com.redhat.cloud.notifications.migration.policynotification;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy.SnakeCaseStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
+import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
 @JsonNaming(SnakeCaseStrategy.class)
 public class PoliciesEmailSubscription {
