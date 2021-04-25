@@ -2,13 +2,13 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,14 +26,13 @@ public class NotificationResources {
                 .replaceWith(history);
     }
 
-    public Multi<NotificationHistory> getNotificationHistory(String tenant, UUID endpoint) {
+    public Uni<List<NotificationHistory>> getNotificationHistory(String tenant, UUID endpoint) {
         String query = "SELECT NEW NotificationHistory(nh.id, nh.accountId, nh.invocationTime, nh.invocationResult, nh.eventId, nh.endpoint, nh.created) " +
                 "FROM NotificationHistory nh WHERE nh.accountId = :accountId AND nh.endpoint.id = :endpointId";
         return session.createQuery(query, NotificationHistory.class)
                 .setParameter("accountId", tenant)
                 .setParameter("endpointId", endpoint)
-                .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .getResultList();
     }
 
     public Uni<JsonObject> getNotificationDetails(String tenant, Query limiter, UUID endpoint, UUID historyId) {

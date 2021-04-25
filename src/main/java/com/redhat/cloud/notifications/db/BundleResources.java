@@ -8,6 +8,7 @@ import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -64,12 +65,11 @@ public class BundleResources {
                 .onItem().transform(rowCount -> rowCount > 0);
     }
 
-    public Multi<Application> getApplications(UUID id) {
+    public Uni<List<Application>> getApplications(UUID id) {
         String query = "FROM Application WHERE bundle.id = :id";
         return session.createQuery(query, Application.class)
                 .setParameter("id", id)
-                .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .getResultList();
     }
 
     public Uni<Application> addApplicationToBundle(UUID bundleId, Application app) {

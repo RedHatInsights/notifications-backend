@@ -115,7 +115,7 @@ public class NotificationService {
     @Path("/eventTypes")
     @Operation(summary = "Retrieve all event types. The returned list can be filtered by bundle or application.")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Multi<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId) {
+    public Uni<List<EventType>> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId) {
         return apps.getEventTypes(query, applicationIds, bundleId);
     }
 

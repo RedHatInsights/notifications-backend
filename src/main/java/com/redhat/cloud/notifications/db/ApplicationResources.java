@@ -108,7 +108,7 @@ public class ApplicationResources {
                 .onItem().transform(rowCount -> rowCount > 0);
     }
 
-    public Multi<EventType> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId) {
+    public Uni<List<EventType>> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId) {
         String query = "SELECT e FROM EventType e LEFT JOIN FETCH e.application";
 
         List<String> conditions = new ArrayList<>();
@@ -139,8 +139,7 @@ public class ApplicationResources {
                     .setFirstResult(limiter.getLimit().getOffset());
         }
 
-        return mutinyQuery.getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+        return mutinyQuery.getResultList();
     }
 
     // TODO [BG Phase 2] Delete this method
