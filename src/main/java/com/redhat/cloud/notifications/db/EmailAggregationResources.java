@@ -47,7 +47,7 @@ public class EmailAggregationResources {
     }
 
     public Uni<Integer> purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        String query = "DELETE FROM EmailAggregation WHERE account_id = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
+        String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
         return session.createQuery(query)
                 .setParameter("accountId", key.getAccountId())
                 .setParameter("bundleName", key.getBundle())
