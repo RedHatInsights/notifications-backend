@@ -1,17 +1,18 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.BehaviorGroup;
-import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -21,6 +22,7 @@ import java.util.logging.Logger;
 public class BehaviorGroupResources {
 
     private static final Logger LOGGER = Logger.getLogger(BehaviorGroupResources.class.getName());
+    private static final ZoneId UTC = ZoneId.of("UTC");
 
     @Inject
     Mutiny.Session session;
@@ -40,8 +42,8 @@ public class BehaviorGroupResources {
 
     public Uni<List<BehaviorGroup>> findByBundleId(String accountId, UUID bundleId) {
         // When PostgreSQL sorts a BOOLEAN column in DESC order, true comes first. That's not true for all DBMS.
-        String query = "FROM BehaviorGroup b LEFT JOIN FETCH b.actions WHERE b.accountId = :accountId AND b.bundle.id = :bundleId " +
-                "ORDER BY b.defaultBehavior DESC, b.created DESC";
+        String query = "FROM BehaviorGroup b LEFT JOIN FETCH b.actions a WHERE b.accountId = :accountId AND b.bundle.id = :bundleId " +
+                "ORDER BY b.defaultBehavior DESC, b.created DESC, a.position ASC";
         return session.createQuery(query, BehaviorGroup.class)
                 .setParameter("accountId", accountId)
                 .setParameter("bundleId", bundleId)
@@ -137,41 +139,62 @@ public class BehaviorGroupResources {
                 .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutActions));
     }
 
-    public Uni<Boolean> addBehaviorGroupAction(String accountId, UUID behaviorGroupId, UUID endpointId) {
-        String query = "SELECT COUNT(*) FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
-        return session.createQuery(query, Long.class)
-                .setParameter("accountId", accountId)
-                .setParameter("id", behaviorGroupId)
-                .getSingleResult()
-                .onItem().transform(count -> {
-                    if (count == 0L) {
-                        throw new NotFoundException("Behavior group not found: " + behaviorGroupId);
-                    } else {
-                        BehaviorGroup behaviorGroup = session.getReference(BehaviorGroup.class, behaviorGroupId);
-                        Endpoint endpoint = session.getReference(Endpoint.class, endpointId);
-                        return new BehaviorGroupAction(behaviorGroup, endpoint);
-                    }
-                })
-                .onItem().transformToUni(session::persist)
-                .onItem().call(session::flush)
-                .replaceWith(Boolean.TRUE)
-                .onFailure().recoverWithItem(failure -> {
-                    LOGGER.log(Level.WARNING, "Behavior group action addition failed", failure);
-                    return Boolean.FALSE;
-                });
+    public Uni<Boolean> updateBehaviorGroupActions(String accountId, UUID behaviorGroupId, List<UUID> endpointIds) {
+        return session.withTransaction(tx -> {
+
+            // First, let's make sure the behavior group exists and is owned by the current account.
+            String checkQuery = "SELECT id FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
+            return session.createQuery(checkQuery, UUID.class)
+                    .setParameter("accountId", accountId)
+                    .setParameter("id", behaviorGroupId)
+                    .getSingleResultOrNull()
+                    .onItem().ifNull().failWith(new NotFoundException("Behavior group not found: " + behaviorGroupId))
+                    .onItem().call(() -> {
+
+                        // All behavior group actions that should no longer exist must be deleted.
+                        String deleteQuery = "DELETE FROM BehaviorGroupAction WHERE behaviorGroup.id = :behaviorGroupId";
+                        if (!endpointIds.isEmpty()) {
+                            deleteQuery += " AND endpoint.id NOT IN (:endpointIds)";
+                        }
+                        Mutiny.Query mutinyQuery = session.createQuery(deleteQuery)
+                                .setParameter("behaviorGroupId", behaviorGroupId);
+                        if (!endpointIds.isEmpty()) {
+                            mutinyQuery = mutinyQuery.setParameter("endpointIds", endpointIds);
+                        }
+                        return mutinyQuery.executeUpdate();
+
+                    })
+                    .onItem().transformToMulti(ignored -> Multi.createFrom().iterable(endpointIds))
+                    .onItem().transformToUniAndConcatenate(endpointId -> {
+
+                        /*
+                         * Then, we'll execute an "upsert" based on the given endpointIds list:
+                         * - if an action already exists, its position will be updated
+                         * - otherwise, the action will be inserted into the database
+                         * In the end, all inserted or updated actions will have the same position than the endpointIds list order.
+                         */
+                        String upsertQuery = "INSERT INTO behavior_group_action (behavior_group_id, endpoint_id, position, created) " +
+                                "VALUES (:behaviorGroupId, :endpointId, :position, :created) " +
+                                "ON CONFLICT (behavior_group_id, endpoint_id) DO UPDATE SET position = :position";
+                        return session.createNativeQuery(upsertQuery)
+                                .setParameter("behaviorGroupId", behaviorGroupId)
+                                .setParameter("endpointId", endpointId)
+                                .setParameter("position", endpointIds.indexOf(endpointId))
+                                .setParameter("created", LocalDateTime.now(UTC))
+                                .executeUpdate();
+
+                    })
+                    .collect().asList()
+                    .replaceWith(Boolean.TRUE)
+                    .onFailure().recoverWithItem(failure -> {
+                        // The transaction is rolled back in case of failure.
+                        tx.markForRollback();
+                        LOGGER.log(Level.WARNING, "Behavior group actions update failed", failure);
+                        return Boolean.FALSE;
+                    });
+        });
     }
 
-    public Uni<Boolean> deleteBehaviorGroupAction(String accountId, UUID behaviorGroupId, UUID endpointId) {
-        String query = "DELETE FROM BehaviorGroupAction WHERE behaviorGroup.id = :behaviorGroupId AND endpoint.id = :endpointId " +
-                "AND behaviorGroup.id IN (SELECT id FROM BehaviorGroup WHERE accountId = :accountId)";
-        return session.createQuery(query)
-                .setParameter("behaviorGroupId", behaviorGroupId)
-                .setParameter("endpointId", endpointId)
-                .setParameter("accountId", accountId)
-                .executeUpdate()
-                .call(session::flush)
-                .onItem().transform(rowCount -> rowCount > 0);
-    }
 
     // This should only be called from an internal API. That's why we don't have to validate the accountId.
     public Uni<Boolean> setDefaultBehaviorGroup(UUID bundleId, UUID behaviorGroupId) {

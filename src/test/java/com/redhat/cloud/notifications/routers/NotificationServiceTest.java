@@ -606,16 +606,6 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .statusCode(403);
 
         given()
-                .header(readAccessIdentityHeader)
-                .contentType(ContentType.JSON)
-                .pathParam("behaviorGroupId", UUID.randomUUID())
-                .body(Json.encode(List.of(UUID.randomUUID())))
-                .when()
-                .delete("/notifications/behaviorGroups/{behaviorGroupId}/actions")
-                .then()
-                .statusCode(403);
-
-        given()
                 .header(noAccessIdentityHeader)
                 .pathParam("bundleId", UUID.randomUUID())
                 .when()

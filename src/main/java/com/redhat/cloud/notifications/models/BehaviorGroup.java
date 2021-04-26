@@ -20,6 +20,7 @@ import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -71,7 +72,7 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     @OneToMany(mappedBy = "behaviorGroup", cascade = CascadeType.REMOVE)
     @JsonInclude(Include.NON_NULL)
-    private Set<BehaviorGroupAction> actions;
+    private List<BehaviorGroupAction> actions;
 
     @Transient
     @JsonIgnore
@@ -140,11 +141,11 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
         this.defaultBehavior = defaultBehavior;
     }
 
-    public Set<BehaviorGroupAction> getActions() {
+    public List<BehaviorGroupAction> getActions() {
         return actions;
     }
 
-    public void setActions(Set<BehaviorGroupAction> actions) {
+    public void setActions(List<BehaviorGroupAction> actions) {
         this.actions = actions;
     }
 

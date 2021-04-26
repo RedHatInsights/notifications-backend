@@ -318,29 +318,13 @@ public class NotificationService {
 
     @PUT
     @Path("/behaviorGroups/{behaviorGroupId}/actions")
-    @Operation(summary = "Add a list of actions to a behavior group.")
+    @Operation(summary = "Update the list of actions of a behavior group.")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> addBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
+    public Uni<Response> updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
         return getAccountId(sec)
-                .onItem().transformToUni(accountId -> Multi.createFrom().iterable(endpointIds)
-                        .onItem().transformToUniAndConcatenate(endpointId -> behaviorGroupResources.addBehaviorGroupAction(accountId, behaviorGroupId, endpointId))
-                        .collect().asList()
-                )
+                .onItem().transformToUni(accountId -> behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds))
                 .replaceWith(Response.ok().build());
-    }
-
-    @DELETE
-    @Path("/behaviorGroups/{behaviorGroupId}/actions")
-    @Operation(summary = "Delete a list of actions from a behavior group.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    public Uni<Boolean> deleteBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
-        return getAccountId(sec)
-                .onItem().transformToUni(accountId -> Multi.createFrom().iterable(endpointIds)
-                        .onItem().transformToUniAndConcatenate(endpointId -> behaviorGroupResources.deleteBehaviorGroupAction(accountId, behaviorGroupId, endpointId))
-                        .collect().asList()
-                        .onItem().transform(deleteResults -> deleteResults.stream().allMatch(Boolean.TRUE::equals))
-                );
     }
 
     @GET

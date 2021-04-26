@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import javax.persistence.EmbeddedId;
@@ -30,6 +31,10 @@ public class BehaviorGroupAction extends CreationTimestamped {
     @MapsId("endpointId")
     @JoinColumn(name = "endpoint_id")
     private Endpoint endpoint;
+
+    // The position determines the display order of a behavior group actions in the UI.
+    @JsonIgnore
+    private int position;
 
     public BehaviorGroupAction() {
     }
@@ -62,6 +67,14 @@ public class BehaviorGroupAction extends CreationTimestamped {
 
     public void setEndpoint(Endpoint endpoint) {
         this.endpoint = endpoint;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
     }
 
     @Override

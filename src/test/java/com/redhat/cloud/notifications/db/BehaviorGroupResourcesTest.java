@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 import javax.validation.ConstraintViolationException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -225,48 +226,24 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     public void testAddAndDeleteBehaviorGroupAction() {
         Bundle bundle = createBundle();
         BehaviorGroup behaviorGroup = createBehaviorGroup("name", "displayName", bundle.getId());
-
-        // Add endpoint1 to behaviorGroup actions.
         Endpoint endpoint1 = createEndpoint();
-        Boolean added = addBehaviorGroupAction(ACCOUNT_ID, behaviorGroup.getId(), endpoint1.getId());
-        assertTrue(added);
-
-        // Doing it again should not throw any exception but return false.
-        added = addBehaviorGroupAction(ACCOUNT_ID, behaviorGroup.getId(), endpoint1.getId());
-        assertFalse(added);
-
-        // Add endpoint2 to behaviorGroup actions.
         Endpoint endpoint2 = createEndpoint();
-        added = addBehaviorGroupAction(ACCOUNT_ID, behaviorGroup.getId(), endpoint2.getId());
-        assertTrue(added);
+        Endpoint endpoint3 = createEndpoint();
 
-        // Check all actions were correctly persisted.
-        List<BehaviorGroupAction> actions = findBehaviorGroupActionsByBehaviorGroupId(behaviorGroup.getId());
-        assertEquals(2, actions.size());
-        assertTrue(actions.stream().anyMatch(action -> action.getId().endpointId.equals(endpoint1.getId())));
-        assertTrue(actions.stream().anyMatch(action -> action.getId().endpointId.equals(endpoint2.getId())));
-
-        // Remove endpoint2 from behaviorGroup actions.
-        Boolean deleted = deleteBehaviorGroupAction(ACCOUNT_ID, behaviorGroup.getId(), endpoint2.getId());
-        assertTrue(deleted);
-        actions = findBehaviorGroupActionsByBehaviorGroupId(behaviorGroup.getId());
-        assertEquals(1, actions.size());
-        assertTrue(actions.stream().noneMatch(action -> action.getId().endpointId.equals(endpoint2.getId())));
-
-        // Doing it again should not throw any exception but return false.
-        deleted = deleteBehaviorGroupAction(ACCOUNT_ID, behaviorGroup.getId(), endpoint2.getId());
-        assertFalse(deleted);
-        actions = findBehaviorGroupActionsByBehaviorGroupId(behaviorGroup.getId());
-        assertEquals(1, actions.size());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true, endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true, endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true, endpoint1.getId(), endpoint2.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true, endpoint2.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true, endpoint3.getId(), endpoint2.getId(), endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), true);
     }
 
     @Test
-    public void testAddBehaviorGroupActionWithWrongAccountId() {
+    public void testUpdateBehaviorGroupActionsWithWrongAccountId() {
         Bundle bundle = createBundle();
         BehaviorGroup behaviorGroup = createBehaviorGroup("name", "displayName", bundle.getId());
         Endpoint endpoint = createEndpoint();
-        Boolean added = addBehaviorGroupAction("unknownAccountId", behaviorGroup.getId(), endpoint.getId());
-        assertFalse(added);
+        updateAndCheckBehaviorGroupActions("unknownAccountId", bundle.getId(), behaviorGroup.getId(), false, endpoint.getId());
     }
 
     private Bundle createBundle() {
@@ -349,19 +326,24 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         return behaviorGroupResources.findBehaviorGroupsByEventTypeId(accountId, eventTypeId, new Query()).await().indefinitely();
     }
 
-    private Boolean addBehaviorGroupAction(String accountId, UUID behaviorGroupId, UUID endpointId) {
-        return behaviorGroupResources.addBehaviorGroupAction(accountId, behaviorGroupId, endpointId).await().indefinitely();
+    private void updateAndCheckBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId, boolean expectedResult, UUID... endpointIds) {
+        Boolean updated = behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, Arrays.asList(endpointIds)).await().indefinitely();
+        // Is the update result the one we expected?
+        assertEquals(expectedResult, updated);
+        if (expectedResult) {
+            session.clear(); // We need to clear the session L1 cache before checking the update result.
+            // If we expected a success, the behavior group actions should match exactly the given endpoint IDs.
+            List<BehaviorGroupAction> actions = findBehaviorGroupActions(accountId, bundleId, behaviorGroupId);
+            assertEquals(endpointIds.length, actions.size());
+            for (int i = 0; i < endpointIds.length; i++) {
+                assertEquals(endpointIds[i], actions.get(i).getEndpoint().getId());
+            }
+        }
     }
 
-    private List<BehaviorGroupAction> findBehaviorGroupActionsByBehaviorGroupId(UUID behaviorGroupId) {
-        String query = "FROM BehaviorGroupAction WHERE behaviorGroup.id = :behaviorGroupId";
-        return session.createQuery(query, BehaviorGroupAction.class)
-                .setParameter("behaviorGroupId", behaviorGroupId)
-                .getResultList()
-                .await().indefinitely();
-    }
-
-    private Boolean deleteBehaviorGroupAction(String accountId, UUID behaviorGroupId, UUID endpointId) {
-        return behaviorGroupResources.deleteBehaviorGroupAction(accountId, behaviorGroupId, endpointId).await().indefinitely();
+    private List<BehaviorGroupAction> findBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId) {
+        return behaviorGroupResources.findByBundleId(accountId, bundleId).await().indefinitely()
+                .stream().filter(behaviorGroup -> behaviorGroup.getId().equals(behaviorGroupId))
+                .findFirst().get().getActions();
     }
 }
