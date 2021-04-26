@@ -45,6 +45,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 @Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
@@ -194,7 +195,7 @@ public class EndpointService {
     @GET
     @Path("/{id}/history")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public Multi<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    public Uni<List<NotificationHistory>> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id) {
         // TODO We need globally limitations (Paging support and limits etc)
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return notifResources.getNotificationHistory(principal.getAccount(), id);
