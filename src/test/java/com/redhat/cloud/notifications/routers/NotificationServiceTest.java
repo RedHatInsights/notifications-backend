@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
@@ -573,6 +574,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
         given()
                 .header(readAccessIdentityHeader)
                 .contentType(ContentType.JSON)
+                // TODO Remove the body when https://github.com/quarkusio/quarkus/issues/16897 is fixed
+                .body(Json.encode(new BehaviorGroup()))
                 .when()
                 .post("/notifications/behaviorGroups")
                 .then()
@@ -582,6 +585,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .header(readAccessIdentityHeader)
                 .contentType(ContentType.JSON)
                 .pathParam("id", UUID.randomUUID())
+                // TODO Remove the body when https://github.com/quarkusio/quarkus/issues/16897 is fixed
+                .body(Json.encode(new BehaviorGroup()))
                 .when()
                 .put("/notifications/behaviorGroups/{id}")
                 .then()
