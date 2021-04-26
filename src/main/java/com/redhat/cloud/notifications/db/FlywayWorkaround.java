@@ -29,7 +29,6 @@ public class FlywayWorkaround {
     public void runFlywayMigration(@Observes StartupEvent event) {
         LOGGER.warn("Starting Flyway workaround... remove it ASAP!");
         Flyway flyway = Flyway.configure().dataSource("jdbc:" + datasourceUrl, datasourceUsername, datasourcePassword).load();
-        flyway.repair();
         flyway.migrate();
     }
 }
