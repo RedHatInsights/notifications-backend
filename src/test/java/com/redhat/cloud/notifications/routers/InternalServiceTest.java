@@ -1,0 +1,526 @@
+package com.redhat.cloud.notifications.routers;
+
+import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.EventType;
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.Test;
+
+import javax.ws.rs.core.Response.Status.Family;
+import java.util.Optional;
+import java.util.UUID;
+
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static javax.ws.rs.core.Response.Status.Family.familyOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+@QuarkusTest
+@QuarkusTestResource(TestLifecycleManager.class)
+public class InternalServiceTest extends DbIsolatedTest {
+
+    /*
+     * In the tests below, most JSON responses are verified using JsonObject/JsonArray instead of deserializing these
+     * responses into model instances and checking their attributes values. That's because the model classes contain
+     * attributes annotated with @JsonProperty(access = READ_ONLY) which can't be deserialized and therefore verified
+     * here. The deserialization is still performed only to verify that the JSON responses data structure is correct.
+     */
+
+    private static final int OK = 200;
+    private static final int BAD_REQUEST = 400;
+    private static final int NOT_FOUND = 404;
+    private static final int INTERNAL_SERVER_ERROR = 500;
+    private static final String NOT_USED = "not-used-in-assertions";
+
+    @Test
+    void testCreateNullBundle() {
+        createBundle(null, BAD_REQUEST);
+    }
+
+    @Test
+    void testCreateNullApp() {
+        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
+        createApp(bundleId, null, BAD_REQUEST);
+    }
+
+    @Test
+    void testCreateNullEventType() {
+        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
+        String appId = createApp(bundleId, "app-name", "App", OK).get();
+        createEventType(appId, null, BAD_REQUEST);
+    }
+
+    @Test
+    void testCreateInvalidBundle() {
+        createBundle(buildBundle(null, "I am valid"), BAD_REQUEST);
+        createBundle(buildBundle("i-am-valid", null), BAD_REQUEST);
+        createBundle(buildBundle("I violate the @Pattern constraint", "I am valid"), BAD_REQUEST);
+    }
+
+    @Test
+    void testCreateInvalidApp() {
+        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
+        createApp(bundleId, buildApp(null, "I am valid"), BAD_REQUEST);
+        createApp(bundleId, buildApp("i-am-valid", null), BAD_REQUEST);
+        createApp(bundleId, buildApp("I violate the @Pattern constraint", "I am valid"), BAD_REQUEST);
+    }
+
+    @Test
+    void testCreateInvalidEventType() {
+        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
+        String appId = createApp(bundleId, "app-name", "App", OK).get();
+        createEventType(appId, buildEventType(null, "I am valid", NOT_USED), BAD_REQUEST);
+        createEventType(appId, buildEventType("i-am-valid", null, NOT_USED), BAD_REQUEST);
+        createEventType(appId, buildEventType("I violate the @Pattern constraint", "I am valid", NOT_USED), BAD_REQUEST);
+    }
+
+    @Test
+    void testBundleNameUniqueSqlConstraint() {
+        // Double bundle creation with the same name.
+        String nonUniqueBundleName = "bundle-1-name";
+        createBundle(nonUniqueBundleName, NOT_USED, OK);
+        createBundle(nonUniqueBundleName, NOT_USED, INTERNAL_SERVER_ERROR);
+        // We create a bundle with an available name and then rename it to an unavailable name.
+        String bundleId = createBundle("bundle-2-name", NOT_USED, OK).get();
+        updateBundle(bundleId, nonUniqueBundleName, NOT_USED, INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    void testAppNameUniqueSqlConstraint() {
+        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
+        // Double app creation with the same name.
+        String nonUniqueAppName = "app-1-name";
+        createApp(bundleId, nonUniqueAppName, NOT_USED, OK);
+        createApp(bundleId, nonUniqueAppName, NOT_USED, INTERNAL_SERVER_ERROR);
+        // We create an app with an available name and then rename it to an unavailable name.
+        String appId = createApp(bundleId, "app-2-name", NOT_USED, OK).get();
+        updateApp(appId, nonUniqueAppName, NOT_USED, INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    void testEventTypeNameUniqueSqlConstraint() {
+        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
+        String appId = createApp(bundleId, "app-name", "App", OK).get();
+        // Double event type creation with the same name.
+        String nonUniqueEventTypeName = "event-type-name";
+        createEventType(appId, nonUniqueEventTypeName, NOT_USED, NOT_USED, OK);
+        createEventType(appId, nonUniqueEventTypeName, NOT_USED, NOT_USED, INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    void testGetUnknownBundle() {
+        String unknownBundleId = UUID.randomUUID().toString();
+        getBundle(unknownBundleId, NOT_USED, NOT_USED, NOT_FOUND);
+    }
+
+    @Test
+    void testGetUnknownApp() {
+        String unknownAppId = UUID.randomUUID().toString();
+        getApp(unknownAppId, NOT_USED, NOT_USED, NOT_FOUND);
+    }
+
+    @Test
+    void testUpdateNullBundle() {
+        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
+        updateBundle(bundleId, null, BAD_REQUEST);
+    }
+
+    @Test
+    void testUpdateNullApp() {
+        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
+        String appId = createApp(bundleId, "app-name", "App", OK).get();
+        updateApp(appId, null, BAD_REQUEST);
+    }
+
+    @Test
+    void testUpdateUnknownBundle() {
+        String unknownBundleId = UUID.randomUUID().toString();
+        updateBundle(unknownBundleId, NOT_USED, NOT_USED, NOT_FOUND);
+    }
+
+    @Test
+    void testUpdateUnknownApp() {
+        String unknownAppId = UUID.randomUUID().toString();
+        updateApp(unknownAppId, NOT_USED, NOT_USED, NOT_FOUND);
+    }
+
+    @Test
+    void testAddAppToUnknownBundle() {
+        String unknownBundleId = UUID.randomUUID().toString();
+        createApp(unknownBundleId, NOT_USED, NOT_USED, NOT_FOUND);
+    }
+
+    @Test
+    void testAddEventTypeToUnknownApp() {
+        String unknownAppId = UUID.randomUUID().toString();
+        createEventType(unknownAppId, NOT_USED, NOT_USED, NOT_USED, NOT_FOUND);
+    }
+
+    @Test
+    void testGetAppsFromUnknownBundle() {
+        String unknownBundleId = UUID.randomUUID().toString();
+        getApps(unknownBundleId, NOT_FOUND, 0);
+    }
+
+    @Test
+    void testGetEventTypesFromUnknownApp() {
+        String unknownAppId = UUID.randomUUID().toString();
+        getEventTypes(unknownAppId, NOT_FOUND, 0);
+    }
+
+    @Test
+    void testCreateAndGetAndUpdateAndDeleteBundle() {
+        // First, we create two bundles with different names. Only the second one will be used after that.
+        createBundle("bundle-1-name", "Bundle 1", OK).get();
+        String bundleId = createBundle("bundle-2-name", "Bundle 2", OK).get();
+
+        // Then the bundle update API is tested.
+        updateBundle(bundleId, "bundle-2-new-name", "Bundle 2 new display name", OK);
+
+        // Same for the bundle delete API.
+        deleteBundle(bundleId, true);
+
+        // Now that we deleted the bundle, all the following APIs calls should "fail".
+        deleteBundle(bundleId, false);
+        getBundle(bundleId, NOT_USED, NOT_USED, NOT_FOUND);
+        updateBundle(bundleId, NOT_USED, NOT_USED, NOT_FOUND);
+    }
+
+    @Test
+    void testCreateAndGetAndUpdateAndDeleteApp() {
+        // We need to persist a bundle for this test.
+        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
+
+        // First, we create two apps with different names. Only the second one will be used after that.
+        createApp(bundleId, "app-1-name", "App 1", OK);
+        String appId = createApp(bundleId, "app-2-name", "App 2", OK).get();
+
+        // The bundle should contain two apps.
+        getApps(bundleId, OK, 2);
+
+        // Let's test the app update API.
+        updateApp(appId, "app-2-new-name", "App 2 new display name", OK);
+
+        // Same for the app delete API.
+        deleteApp(appId, true);
+
+        // Now that we deleted the app, all the following APIs calls should "fail".
+        deleteApp(appId, false);
+        getApp(appId, NOT_USED, NOT_USED, NOT_FOUND);
+        updateApp(appId, NOT_USED, NOT_USED, NOT_FOUND);
+
+        // The bundle should also contain one app now.
+        getApps(bundleId, OK, 1);
+    }
+
+    @Test
+    void testCreateAndGetAndDeleteEventType() {
+        // We need to persist a bundle and an app for this test.
+        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
+        String appId = createApp(bundleId, "app-name", "App", OK).get();
+
+        // First, we create two event types with different names. Only the second one will be used after that.
+        createEventType(appId, "event-type-1-name", "Event type 1", "Description 1", OK);
+        String eventTypeId = createEventType(appId, "event-type-2-name", "Event type 2", "Description 2", OK).get();
+
+        // The app should contain two event types.
+        getEventTypes(appId, OK, 2);
+
+        // Let's test the event type delete API.
+        deleteEventType(eventTypeId, true);
+
+        // Deleting the event type again should not work.
+        deleteEventType(eventTypeId, false);
+
+        // The app should also contain one event type now.
+        getEventTypes(appId, OK, 1);
+    }
+
+    @Test
+    void testSetDefaultBehaviorGroup() {
+        // This test only verifies the SQL query execution. The real API test is in LifecycleITest.
+        String notUsed = UUID.randomUUID().toString();
+        setDefaultBehaviorGroup(notUsed, notUsed, NOT_FOUND);
+    }
+
+    private static Bundle buildBundle(String name, String displayName) {
+        Bundle bundle = new Bundle();
+        bundle.setName(name);
+        bundle.setDisplayName(displayName);
+        return bundle;
+    }
+
+    private static Optional<String> createBundle(String name, String displayName, int expectedStatusCode) {
+        Bundle bundle = buildBundle(name, displayName);
+        return createBundle(bundle, expectedStatusCode);
+    }
+
+    private static Optional<String> createBundle(Bundle bundle, int expectedStatusCode) {
+        String responseBody = given()
+                .contentType(JSON)
+                .body(Json.encode(bundle))
+                .when()
+                .post("/internal/bundles")
+                .then()
+                .statusCode(expectedStatusCode)
+                .extract().body().asString();
+
+        if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
+            JsonObject jsonBundle = new JsonObject(responseBody);
+            jsonBundle.mapTo(Bundle.class);
+            assertNotNull(jsonBundle.getString("id"));
+            assertNotNull(jsonBundle.getString("created"));
+            assertEquals(bundle.getName(), jsonBundle.getString("name"));
+            assertEquals(bundle.getDisplayName(), jsonBundle.getString("display_name"));
+
+            getBundle(jsonBundle.getString("id"), bundle.getName(), bundle.getDisplayName(), OK);
+
+            return Optional.of(jsonBundle.getString("id"));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private static void getBundle(String bundleId, String expectedName, String expectedDisplayName, int expectedStatusCode) {
+        String responseBody = given()
+                .pathParam("bundleId", bundleId)
+                .get("/internal/bundles/{bundleId}")
+                .then()
+                .statusCode(expectedStatusCode)
+                .extract().body().asString();
+
+        if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
+            JsonObject jsonBundle = new JsonObject(responseBody);
+            jsonBundle.mapTo(Bundle.class);
+            assertEquals(bundleId, jsonBundle.getString("id"));
+            assertEquals(expectedName, jsonBundle.getString("name"));
+            assertEquals(expectedDisplayName, jsonBundle.getString("display_name"));
+        }
+    }
+
+    private static void updateBundle(String bundleId, String name, String displayName, int expectedStatusCode) {
+        Bundle bundle = buildBundle(name, displayName);
+        updateBundle(bundleId, bundle, expectedStatusCode);
+    }
+
+    private static void updateBundle(String bundleId, Bundle bundle, int expectedStatusCode) {
+        given()
+                .contentType(JSON)
+                .pathParam("bundleId", bundleId)
+                .body(Json.encode(bundle))
+                .put("/internal/bundles/{bundleId}")
+                .then()
+                .statusCode(expectedStatusCode);
+
+        if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
+            getBundle(bundleId, bundle.getName(), bundle.getDisplayName(), OK);
+        }
+    }
+
+    private static void setDefaultBehaviorGroup(String bundleId, String behaviorGroupId, int expectedStatusCode) {
+        given()
+                .pathParam("bundleId", bundleId)
+                .pathParam("behaviorGroupId", behaviorGroupId)
+                .when()
+                .put("/internal/bundles/{bundleId}/behaviorGroups/{behaviorGroupId}/default")
+                .then()
+                .statusCode(expectedStatusCode);
+    }
+
+    private static void deleteBundle(String bundleId, boolean expectedResult) {
+        Boolean result = given()
+                .pathParam("bundleId", bundleId)
+                .when()
+                .delete("/internal/bundles/{bundleId}")
+                .then()
+                .statusCode(OK)
+                .extract().body().as(Boolean.class);
+
+        assertEquals(expectedResult, result);
+    }
+
+    private static Application buildApp(String name, String displayName) {
+        Application app = new Application();
+        app.setName(name);
+        app.setDisplayName(displayName);
+        return app;
+    }
+
+    private static Optional<String> createApp(String bundleId, String name, String displayName, int expectedStatusCode) {
+        Application app = buildApp(name, displayName);
+        return createApp(bundleId, app, expectedStatusCode);
+    }
+
+    private static Optional<String> createApp(String bundleId, Application app, int expectedStatusCode) {
+        String responseBody = given()
+                .contentType(JSON)
+                .pathParam("bundleId", bundleId)
+                .body(Json.encode(app))
+                .when()
+                .post("/internal/bundles/{bundleId}/applications")
+                .then()
+                .statusCode(expectedStatusCode)
+                .extract().body().asString();
+
+        if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
+            JsonObject jsonApp = new JsonObject(responseBody);
+            jsonApp.mapTo(Application.class);
+            assertNotNull(jsonApp.getString("id"));
+            assertNotNull(jsonApp.getString("created"));
+            assertEquals(bundleId, jsonApp.getString("bundle_id"));
+            assertEquals(app.getName(), jsonApp.getString("name"));
+            assertEquals(app.getDisplayName(), jsonApp.getString("display_name"));
+
+            getApp(jsonApp.getString("id"), app.getName(), app.getDisplayName(), OK);
+
+            return Optional.of(jsonApp.getString("id"));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private static void getApps(String bundleId, int expectedStatusCode, int expectedAppsCount) {
+        String responseBody = given()
+                .pathParam("bundleId", bundleId)
+                .when()
+                .get("/internal/bundles/{bundleId}/applications")
+                .then()
+                .statusCode(expectedStatusCode)
+                .extract().body().asString();
+
+        if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
+            JsonArray jsonApps = new JsonArray(responseBody);
+            assertEquals(expectedAppsCount, jsonApps.size());
+            if (expectedAppsCount > 0) {
+                for (int i = 0; i < expectedAppsCount; i++) {
+                    jsonApps.getJsonObject(i).mapTo(Application.class);
+                }
+            }
+        }
+    }
+
+    private static void getApp(String appId, String expectedName, String expectedDisplayName, int expectedStatusCode) {
+        String responseBody = given()
+                .pathParam("appId", appId)
+                .get("/internal/applications/{appId}")
+                .then()
+                .statusCode(expectedStatusCode)
+                .extract().body().asString();
+
+        if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
+            JsonObject jsonApp = new JsonObject(responseBody);
+            jsonApp.mapTo(Application.class);
+            assertEquals(appId, jsonApp.getString("id"));
+            assertEquals(expectedName, jsonApp.getString("name"));
+            assertEquals(expectedDisplayName, jsonApp.getString("display_name"));
+        }
+    }
+
+    private static void updateApp(String appId, String name, String displayName, int expectedStatusCode) {
+        Application app = buildApp(name, displayName);
+        updateApp(appId, app, expectedStatusCode);
+    }
+
+    private static void updateApp(String appId, Application app, int expectedStatusCode) {
+        given()
+                .contentType(JSON)
+                .pathParam("appId", appId)
+                .body(Json.encode(app))
+                .put("/internal/applications/{appId}")
+                .then()
+                .statusCode(expectedStatusCode);
+
+        if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
+            getApp(appId, app.getName(), app.getDisplayName(), OK);
+        }
+    }
+
+    private static void deleteApp(String appId, boolean expectedResult) {
+        Boolean result = given()
+                .pathParam("appId", appId)
+                .when()
+                .delete("/internal/applications/{appId}")
+                .then()
+                .statusCode(OK)
+                .extract().body().as(Boolean.class);
+
+        assertEquals(expectedResult, result);
+    }
+
+    private static EventType buildEventType(String name, String displayName, String description) {
+        EventType eventType = new EventType();
+        eventType.setName(name);
+        eventType.setDisplayName(displayName);
+        eventType.setDescription(description);
+        return eventType;
+    }
+
+    private static Optional<String> createEventType(String appId, String name, String displayName, String description, int expectedStatusCode) {
+        EventType eventType = buildEventType(name, displayName, description);
+        return createEventType(appId, eventType, expectedStatusCode);
+    }
+
+    private static Optional<String> createEventType(String appId, EventType eventType, int expectedStatusCode) {
+        String responseBody = given()
+                .contentType(JSON)
+                .pathParam("appId", appId)
+                .body(Json.encode(eventType))
+                .when()
+                .post("/internal/applications/{appId}/eventTypes")
+                .then()
+                .statusCode(expectedStatusCode)
+                .extract().body().asString();
+
+        if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
+            JsonObject jsonEventType = new JsonObject(responseBody);
+            jsonEventType.mapTo(EventType.class);
+            assertNotNull(jsonEventType.getString("id"));
+            assertEquals(eventType.getName(), jsonEventType.getString("name"));
+            assertEquals(eventType.getDisplayName(), jsonEventType.getString("display_name"));
+            assertEquals(eventType.getDescription(), jsonEventType.getString("description"));
+
+            return Optional.of(jsonEventType.getString("id"));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private static void getEventTypes(String appId, int expectedStatusCode, int expectedEventTypesCount) {
+        String responseBody = given()
+                .pathParam("appId", appId)
+                .when()
+                .get("/internal/applications/{appId}/eventTypes")
+                .then()
+                .statusCode(expectedStatusCode)
+                .extract().body().asString();
+
+        if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
+            JsonArray jsonEventTypes = new JsonArray(responseBody);
+            assertEquals(expectedEventTypesCount, jsonEventTypes.size());
+            if (expectedEventTypesCount > 0) {
+                for (int i = 0; i < expectedEventTypesCount; i++) {
+                    jsonEventTypes.getJsonObject(0).mapTo(EventType.class);
+                }
+            }
+        }
+    }
+
+    private static void deleteEventType(String eventTypeId, boolean expectedResult) {
+        Boolean result = given()
+                .pathParam("eventTypeId", eventTypeId)
+                .when()
+                .delete("/internal/eventTypes/{eventTypeId}")
+                .then()
+                .statusCode(OK)
+                .extract().body().as(Boolean.class);
+
+        assertEquals(expectedResult, result);
+    }
+}

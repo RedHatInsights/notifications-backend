@@ -16,7 +16,7 @@ public abstract class DbIsolatedTest {
     void cleanDatabase() {
         given()
                 .basePath("/internal")
-                .delete("/db-cleaner")
+                .delete("/db_cleaner")
                 .then()
                 .statusCode(204);
     }

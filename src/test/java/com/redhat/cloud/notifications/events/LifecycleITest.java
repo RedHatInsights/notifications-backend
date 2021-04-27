@@ -39,7 +39,6 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -132,14 +131,14 @@ public class LifecycleITest extends DbIsolatedTest {
         Application app = new Application();
         app.setName(APP_NAME);
         app.setDisplayName("The best app in the life");
-        app.setBundleId(UUID.fromString(theBundle.getString("id")));
 
         Response response = given()
                 .when()
                 .contentType(ContentType.JSON)
                 .basePath("/")
+                .pathParam("bundleId", theBundle.getString("id"))
                 .body(Json.encode(app))
-                .post("/internal/applications")
+                .post("/internal/bundles/{bundleId}/applications")
                 .then()
                 .statusCode(200)
                 .extract().response();

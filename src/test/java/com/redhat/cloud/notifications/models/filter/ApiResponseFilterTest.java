@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.GET;
@@ -22,20 +23,24 @@ public class ApiResponseFilterTest {
 
     @Test
     void testActiveFilter() {
-        EventType eventType = given()
+        String responseBody = given()
                 .when().get("/internal/event-types/filtered")
                 .then().statusCode(200)
-                .extract().as(EventType.class);
-        assertNull(eventType.getApplication());
+                .extract().asString();
+        JsonObject jsonEventType = new JsonObject(responseBody);
+        jsonEventType.mapTo(EventType.class);
+        assertNull(jsonEventType.getJsonObject("application"));
     }
 
     @Test
     void testInactiveFilter() {
-        EventType eventType = given()
+        String responseBody = given()
                 .when().get("/internal/event-types/unfiltered")
                 .then().statusCode(200)
-                .extract().as(EventType.class);
-        assertNotNull(eventType.getApplication());
+                .extract().asString();
+        JsonObject jsonEventType = new JsonObject(responseBody);
+        jsonEventType.mapTo(EventType.class);
+        assertNotNull(jsonEventType.getJsonObject("application"));
     }
 
     @Path("/internal/event-types")

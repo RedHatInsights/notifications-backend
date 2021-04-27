@@ -22,7 +22,7 @@ import javax.inject.Inject;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.Path;
 
-@Path("/internal/db-cleaner")
+@Path("/internal/db_cleaner")
 public class DbCleaner {
 
     private static final String DEFAULT_BUNDLE_NAME = "rhel";
@@ -50,8 +50,8 @@ public class DbCleaner {
      * is a temporary workaround to make our tests more reliable and easy to maintain.
      */
     @DELETE
-    public void clean() {
-        session.withTransaction(transaction -> deleteAllFrom(EmailAggregation.class)
+    public Uni<Void> clean() {
+        return session.withTransaction(transaction -> deleteAllFrom(EmailAggregation.class)
                 .chain(() -> deleteAllFrom(EmailSubscription.class))
                 .chain(() -> deleteAllFrom(NotificationHistory.class))
                 .chain(() -> deleteAllFrom(EndpointDefault.class)) // TODO [BG Phase 2] Delete this line
@@ -73,7 +73,7 @@ public class DbCleaner {
                     app.setName(DEFAULT_APP_NAME);
                     app.setDisplayName(DEFAULT_APP_DISPLAY_NAME);
                     app.setBundleId(bundle.getId());
-                    return appResources.createApplication(app);
+                    return bundleResources.addApplicationToBundle(bundle.getId(), app);
                 })
                 .onItem().transformToUni(app -> {
                     EventType eventType = new EventType();
@@ -82,7 +82,8 @@ public class DbCleaner {
                     eventType.setDescription(DEFAULT_EVENT_TYPE_DESCRIPTION);
                     return appResources.addEventTypeToApplication(app.getId(), eventType);
                 })
-        ).await().indefinitely();
+                .replaceWith(Uni.createFrom().voidItem())
+        );
     }
 
     private Uni<Integer> deleteAllFrom(Class<?> classname) {
