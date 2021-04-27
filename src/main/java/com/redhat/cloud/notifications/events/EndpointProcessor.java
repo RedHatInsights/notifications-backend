@@ -22,12 +22,15 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 @ApplicationScoped
 public class EndpointProcessor {
 
     public static final String PROCESSED_MESSAGES_COUNTER_NAME = "processor.input.processed";
     public static final String PROCESSED_ENDPOINTS_COUNTER_NAME = "processor.input.endpoint.processed";
+
+    private static final Logger LOGGER = Logger.getLogger(EndpointProcessor.class.getName());
 
     @Inject
     Mutiny.Session session;
@@ -76,7 +79,9 @@ public class EndpointProcessor {
                     Notification endpointNotif = new Notification(action, endpoint);
                     return endpointTypeToProcessor(endpoint.getType()).process(endpointNotif);
                 })
-                .onItem().transformToUniAndConcatenate(history -> notifResources.createNotificationHistory(history));
+                .onItem().transformToUniAndConcatenate(history -> notifResources.createNotificationHistory(history)
+                        .onFailure().invoke(failure -> LOGGER.severe("Notification history creation failed for " + history.getEndpoint()))
+                );
 
         // Should this be a separate endpoint type as well (since it is configurable) ?
         Notification notification = new Notification(action, null);
