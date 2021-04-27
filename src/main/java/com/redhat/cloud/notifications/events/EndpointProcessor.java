@@ -86,7 +86,7 @@ public class EndpointProcessor {
                 .onItem().ignoreAsUni()
                 .replaceWith(notificationResult)
                 .replaceWith(Uni.createFrom().voidItem())
-                .onItem().invoke(ignored -> session.clear());
+                .onItemOrFailure().call(() -> Uni.createFrom().item(() -> session.clear()));
     }
 
     public EndpointTypeProcessor endpointTypeToProcessor(EndpointType endpointType) {
