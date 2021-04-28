@@ -19,6 +19,7 @@ import java.util.Base64;
 import java.util.logging.Logger;
 
 import static com.redhat.cloud.notifications.auth.rhid.RHIdentityAuthMechanism.IDENTITY_HEADER;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Authorizes the data from the insight's RBAC-server and adds the appropriate roles
@@ -97,7 +98,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     }
 
     private static RhIdentity getRhIdentityFromString(String xRhIdHeader) {
-        String xRhDecoded = new String(Base64.getDecoder().decode(xRhIdHeader));
+        String xRhDecoded = new String(Base64.getDecoder().decode(xRhIdHeader.getBytes(UTF_8)), UTF_8);
         return Json.decodeValue(xRhDecoded, RhIdentity.class);
     }
 }

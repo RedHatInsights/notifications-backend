@@ -42,7 +42,7 @@ public class TestHelpers {
         JsonObject header = new JsonObject();
         header.put("identity", identity);
 
-        return new String(Base64.getEncoder().encode(header.encode().getBytes(UTF_8)));
+        return new String(Base64.getEncoder().encode(header.encode().getBytes(UTF_8)), UTF_8);
     }
 
     public static Header createIdentityHeader(String tenant, String username) {

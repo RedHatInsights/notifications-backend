@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Base64;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Filter to optionally add data on outgoing requests to the RBAC service.
  * This is meant for local development and not production.
@@ -17,7 +19,7 @@ public class RbacRestClientRequestFilter implements ClientRequestFilter {
     public RbacRestClientRequestFilter() {
         String tmp = System.getProperty("develop.exceptional.user.auth.info");
         if (tmp != null && !tmp.isEmpty()) {
-            authInfo = Base64.getEncoder().encodeToString(tmp.getBytes());
+            authInfo = new String(Base64.getEncoder().encode(tmp.getBytes(UTF_8)), UTF_8);
         }
     }
 
