@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.processors.email.bop.Email;
+import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.templates.AbstractEmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
@@ -23,8 +24,6 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.WebClientOptions;
-import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
@@ -57,7 +56,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     static final String BODY_TYPE_HTML = "html";
 
     @Inject
-    Vertx vertx;
+    @SslVerificationDisabled
+    WebClient unsecuredWebClient;
 
     @Inject
     WebhookTypeProcessor webhookSender;
@@ -87,11 +87,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     String noReplyAddress;
 
     protected HttpRequest<Buffer> buildBOPHttpRequest() {
-        WebClientOptions options = new WebClientOptions()
-                .setTrustAll(true)
-                .setConnectTimeout(3000);
-
-        return WebClient.create(vertx, options)
+        return unsecuredWebClient
                 .postAbs(bopUrl)
                 .putHeader(BOP_APITOKEN_HEADER, bopApiToken)
                 .putHeader(BOP_CLIENT_ID_HEADER, bopClientId)
