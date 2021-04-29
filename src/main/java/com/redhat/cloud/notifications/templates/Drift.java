@@ -36,6 +36,11 @@ public class Drift extends AbstractEmailTemplate {
         return eventType.equals("drift-baseline-detected") && type == EmailSubscriptionType.INSTANT;
     }
 
+    @Override
+    public boolean isSupported(EmailSubscriptionType type) {
+        return type == EmailSubscriptionType.INSTANT;
+    }
+
     @CheckedTemplate
     public static class Templates {
 

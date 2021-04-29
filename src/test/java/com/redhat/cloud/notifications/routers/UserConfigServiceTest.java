@@ -14,14 +14,19 @@ import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
+import com.redhat.cloud.notifications.templates.AbstractEmailTemplate;
+import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
+import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.vertx.core.json.Json;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -44,6 +49,9 @@ public class UserConfigServiceTest extends DbIsolatedTest {
 
     @Inject
     EndpointEmailSubscriptionResources emailSubscriptionResources;
+
+    @InjectMock
+    EmailTemplateFactory emailTemplateFactory;
 
     private Field rhelPolicyForm(SettingsValueJsonForm jsonForm) {
         for (Field section : jsonForm.fields.get(0).sections) {
@@ -92,6 +100,8 @@ public class UserConfigServiceTest extends DbIsolatedTest {
 
         String bundle = "rhel";
         String application = "policies";
+
+        Mockito.when(emailTemplateFactory.get(bundle, application)).thenCallRealMethod();
 
         SettingsValueJsonForm jsonForm = given()
                 .header(identityHeader)
@@ -271,6 +281,42 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                         .getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", EmailSubscriptionType.INSTANT)
                         .await().indefinitely()
         );
+
+        // Does not add event type if is not supported by the templates
+        Mockito
+                .when(emailTemplateFactory.get(bundle, application))
+                .thenReturn(new AbstractEmailTemplate() {
+                    @Override
+                    public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
+                        return null;
+                    }
+
+                    @Override
+                    public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean isSupported(String eventType, EmailSubscriptionType type) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isSupported(EmailSubscriptionType type) {
+                        return type == EmailSubscriptionType.INSTANT;
+                    }
+                });
+
+        jsonForm = given()
+                .header(identityHeader)
+                .when().get("/user-config/notification-preference?bundleName=rhel")
+                .then()
+                .statusCode(200)
+                .extract().body().as(SettingsValueJsonForm.class);
+        rhelPolicy = rhelPolicyForm(jsonForm);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        assertEquals(1, rhelPolicy.fields.get(0).fields.size());
+        assertEquals("bundles[rhel].applications[policies].notifications[INSTANT]", rhelPolicy.fields.get(0).fields.get(0).name);
     }
 
 }

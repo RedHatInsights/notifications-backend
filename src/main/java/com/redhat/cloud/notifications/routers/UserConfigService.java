@@ -12,6 +12,8 @@ import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
+import com.redhat.cloud.notifications.templates.AbstractEmailTemplate;
+import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -50,6 +52,9 @@ public class UserConfigService {
 
     @Inject
     ApplicationResources applicationResources;
+
+    @Inject
+    EmailTemplateFactory emailTemplateFactory;
 
     @POST
     @Path("/notification-preference")
@@ -159,10 +164,14 @@ public class UserConfigService {
                                 .onItem().transformToMulti(application -> {
                                     ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
                                     applicationSettingsValue.displayName = application.getDisplayName();
+                                    AbstractEmailTemplate applicationEmailTemplate = emailTemplateFactory.get(bundle.getName(), application.getName());
+
                                     values.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
                                     return Multi.createFrom().items(EmailSubscriptionType.values())
                                             .onItem().transformToMulti(emailSubscriptionType -> {
-                                                values.bundles.get(bundle.getName()).applications.get(application.getName()).notifications.put(emailSubscriptionType, false);
+                                                if (applicationEmailTemplate.isSupported(emailSubscriptionType)) {
+                                                    values.bundles.get(bundle.getName()).applications.get(application.getName()).notifications.put(emailSubscriptionType, false);
+                                                }
                                                 return Multi.createFrom().empty();
                                             }).concatenate();
                                 }).concatenate();
@@ -171,7 +180,10 @@ public class UserConfigService {
                         if (values.bundles.containsKey(emailSubscription.getApplication().getBundle().getName())) {
                             BundleSettingsValue bundleSettingsValue = values.bundles.get(emailSubscription.getApplication().getBundle().getName());
                             if (bundleSettingsValue.applications.containsKey(emailSubscription.getApplication().getName())) {
-                                bundleSettingsValue.applications.get(emailSubscription.getApplication().getName()).notifications.put(emailSubscription.getType(), true);
+                                ApplicationSettingsValue applicationSettingsValue = bundleSettingsValue.applications.get(emailSubscription.getApplication().getName());
+                                if (applicationSettingsValue.notifications.containsKey(emailSubscription.getType())) {
+                                    bundleSettingsValue.applications.get(emailSubscription.getApplication().getName()).notifications.put(emailSubscription.getType(), true);
+                                }
                             }
                         }
                         return emailSubscription;

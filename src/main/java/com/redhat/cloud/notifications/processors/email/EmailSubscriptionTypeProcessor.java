@@ -71,6 +71,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Inject
     BaseTransformer baseTransformer;
 
+    @Inject
+    EmailTemplateFactory emailTemplateFactory;
+
     @ConfigProperty(name = "processor.email.bop_url")
     String bopUrl;
 
@@ -122,7 +125,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @Override
     public Uni<NotificationHistory> process(Notification item) {
-        final AbstractEmailTemplate template = EmailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
+        final AbstractEmailTemplate template = emailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
         final boolean shouldSaveAggregation = Arrays.asList(EmailSubscriptionType.values())
                 .stream()
                 .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
@@ -164,7 +167,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         return Uni.createFrom().nullItem();
                     }
 
-                    AbstractEmailTemplate emailTemplate = EmailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
+                    AbstractEmailTemplate emailTemplate = emailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
 
                     if (emailTemplate.isSupported(item.getAction().getEventType(), emailSubscriptionType)) {
                         Uni<String> title = emailTemplate.getTitle(item.getAction().getEventType(), emailSubscriptionType)

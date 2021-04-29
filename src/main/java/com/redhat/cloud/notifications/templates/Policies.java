@@ -30,6 +30,11 @@ public class Policies extends AbstractEmailTemplate {
         return true;
     }
 
+    @Override
+    public boolean isSupported(EmailSubscriptionType type) {
+        return true;
+    }
+
     @CheckedTemplate
     public static class Templates {
 

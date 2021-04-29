@@ -10,4 +10,6 @@ public abstract class AbstractEmailTemplate {
     public abstract TemplateInstance getBody(String eventType, EmailSubscriptionType type);
 
     public abstract boolean isSupported(String eventType, EmailSubscriptionType type);
+
+    public abstract boolean isSupported(EmailSubscriptionType type);
 }

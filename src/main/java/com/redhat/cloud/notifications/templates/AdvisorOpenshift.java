@@ -36,6 +36,11 @@ public class AdvisorOpenshift extends AbstractEmailTemplate {
         return eventType.equals("new-recommendation") && type == EmailSubscriptionType.INSTANT;
     }
 
+    @Override
+    public boolean isSupported(EmailSubscriptionType type) {
+        return type == EmailSubscriptionType.INSTANT;
+    }
+
     @CheckedTemplate
     public static class Templates {
 
