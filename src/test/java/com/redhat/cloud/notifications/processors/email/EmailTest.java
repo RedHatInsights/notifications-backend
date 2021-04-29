@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
+import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import com.redhat.cloud.notifications.templates.LocalDateTimeExtension;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.scheduler.ScheduledExecution;
@@ -77,6 +78,9 @@ public class EmailTest extends DbIsolatedTest {
     WebClient unsecuredWebClient;
 
     @Inject
+    EmailTemplateFactory emailTemplateFactory;
+
+    @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
 
     @BeforeAll
@@ -86,6 +90,7 @@ public class EmailTest extends DbIsolatedTest {
         emailProcessor.webhookSender = webhookTypeProcessor;
         emailProcessor.emailAggregationResources = emailAggregationResources;
         emailProcessor.subscriptionResources = subscriptionResources;
+        emailProcessor.emailTemplateFactory = emailTemplateFactory;
         emailProcessor.bopApiToken = "test-token";
         emailProcessor.bopClientId = "emailTest";
         emailProcessor.bopEnv = "unitTest";
