@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class BehaviorGroupResources {
@@ -47,7 +48,8 @@ public class BehaviorGroupResources {
         return session.createQuery(query, BehaviorGroup.class)
                 .setParameter("accountId", accountId)
                 .setParameter("bundleId", bundleId)
-                .getResultList();
+                .getResultList()
+                .onItem().transform(behaviorGroups -> behaviorGroups.stream().distinct().collect(Collectors.toList()));
     }
 
     // TODO Should this be forbidden for default behavior groups?

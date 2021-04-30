@@ -25,6 +25,7 @@ public class BehaviorGroupAction extends CreationTimestamped {
     @ManyToOne
     @MapsId("behaviorGroupId")
     @JoinColumn(name = "behavior_group_id")
+    @JsonIgnore
     private BehaviorGroup behaviorGroup;
 
     @ManyToOne
