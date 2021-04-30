@@ -15,7 +15,7 @@ import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadA
 import com.redhat.cloud.notifications.processors.email.bop.Email;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
-import com.redhat.cloud.notifications.templates.AbstractEmailTemplate;
+import com.redhat.cloud.notifications.templates.EmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.scheduler.Scheduled;
@@ -71,6 +71,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Inject
     BaseTransformer baseTransformer;
 
+    @Inject
+    EmailTemplateFactory emailTemplateFactory;
+
     @ConfigProperty(name = "processor.email.bop_url")
     String bopUrl;
 
@@ -122,7 +125,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @Override
     public Uni<NotificationHistory> process(Notification item) {
-        final AbstractEmailTemplate template = EmailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
+        final EmailTemplate template = emailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
         final boolean shouldSaveAggregation = Arrays.asList(EmailSubscriptionType.values())
                 .stream()
                 .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
@@ -164,7 +167,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         return Uni.createFrom().nullItem();
                     }
 
-                    AbstractEmailTemplate emailTemplate = EmailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
+                    EmailTemplate emailTemplate = emailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
 
                     if (emailTemplate.isSupported(item.getAction().getEventType(), emailSubscriptionType)) {
                         Uni<String> title = emailTemplate.getTitle(item.getAction().getEventType(), emailSubscriptionType)

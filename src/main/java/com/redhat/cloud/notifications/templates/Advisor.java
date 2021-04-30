@@ -5,7 +5,7 @@ import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 
 // Name needs to be "Advisor" to read templates from resources/templates/Advisor
-public class Advisor extends AbstractEmailTemplate {
+public class Advisor implements EmailTemplate {
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
@@ -34,6 +34,11 @@ public class Advisor extends AbstractEmailTemplate {
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
         return eventType.equals("new-recommendation") && type == EmailSubscriptionType.INSTANT;
+    }
+
+    @Override
+    public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
+        return type == EmailSubscriptionType.INSTANT;
     }
 
     @CheckedTemplate

@@ -3,12 +3,12 @@ package com.redhat.cloud.notifications.templates;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.TemplateInstance;
 
+import javax.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
 public class EmailTemplateFactory {
-    private EmailTemplateFactory() {
 
-    }
-
-    public static AbstractEmailTemplate get(String bundle, String application) {
+    public EmailTemplate get(String bundle, String application) {
         if (bundle.toLowerCase().equals("rhel")) {
             switch (application.toLowerCase()) {
                 case "policies":
@@ -30,7 +30,7 @@ public class EmailTemplateFactory {
     }
 }
 
-class EmailTemplateNotSupported extends AbstractEmailTemplate {
+class EmailTemplateNotSupported implements EmailTemplate {
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         throw new UnsupportedOperationException();
@@ -43,6 +43,11 @@ class EmailTemplateNotSupported extends AbstractEmailTemplate {
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
+        return false;
+    }
+
+    @Override
+    public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
         return false;
     }
 }
