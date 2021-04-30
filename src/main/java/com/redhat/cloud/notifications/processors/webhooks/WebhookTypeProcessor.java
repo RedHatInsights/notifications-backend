@@ -5,14 +5,14 @@ import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookAttributes;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
+import com.redhat.cloud.notifications.processors.webclient.SslVerificationEnabled;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.client.impl.HttpRequestImpl;
-import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
@@ -23,7 +23,6 @@ import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
-
 @ApplicationScoped
 public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
@@ -32,7 +31,12 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     private static final String TOKEN_HEADER = "X-Insight-Token";
 
     @Inject
-    Vertx vertx;
+    @SslVerificationEnabled
+    WebClient securedWebClient;
+
+    @Inject
+    @SslVerificationDisabled
+    WebClient unsecuredWebClient;
 
     @Inject
     BaseTransformer transformer;
@@ -51,11 +55,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         Endpoint endpoint = item.getEndpoint();
         WebhookAttributes properties = (WebhookAttributes) endpoint.getProperties();
 
-        WebClientOptions options = new WebClientOptions()
-                .setTrustAll(properties.isDisableSSLVerification())
-                .setConnectTimeout(3000); // TODO Should this be configurable by the system? We need a maximum in any case
-
-        final HttpRequest<Buffer> req = WebClient.create(vertx, options)
+        final HttpRequest<Buffer> req = getWebClient(properties.isDisableSSLVerification())
                 .rawAbs(properties.getMethod().name(), properties.getUrl());
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
@@ -69,6 +69,14 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         Uni<JsonObject> payload = transformer.transform(item.getAction());
 
         return doHttpRequest(item, req, payload);
+    }
+
+    private WebClient getWebClient(boolean disableSSLVerification) {
+        if (disableSSLVerification) {
+            return unsecuredWebClient;
+        } else {
+            return securedWebClient;
+        }
     }
 
     public Uni<NotificationHistory> doHttpRequest(Notification item, HttpRequest<Buffer> req, Uni<JsonObject> payload) {

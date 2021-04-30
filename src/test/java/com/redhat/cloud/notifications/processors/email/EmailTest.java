@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.templates.LocalDateTimeExtension;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
@@ -27,7 +28,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.ext.web.client.WebClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -72,7 +73,8 @@ public class EmailTest extends DbIsolatedTest {
     ResourceHelpers helpers;
 
     @Inject
-    Vertx vertx;
+    @SslVerificationDisabled
+    WebClient unsecuredWebClient;
 
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
@@ -80,7 +82,7 @@ public class EmailTest extends DbIsolatedTest {
     @BeforeAll
     void init() {
         emailProcessor = new EmailSubscriptionTypeProcessor();
-        emailProcessor.vertx = vertx;
+        emailProcessor.unsecuredWebClient = unsecuredWebClient;
         emailProcessor.webhookSender = webhookTypeProcessor;
         emailProcessor.emailAggregationResources = emailAggregationResources;
         emailProcessor.subscriptionResources = subscriptionResources;
