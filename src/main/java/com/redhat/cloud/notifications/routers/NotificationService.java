@@ -147,7 +147,7 @@ public class NotificationService {
      */
     @GET
     @Path("/bg/eventTypes/affectedByRemovalOfEndpoint/{endpointId}") // TODO [BG Phase 2] Remove '/bg' path prefix
-    @Operation(summary = "Retrieve the event types affected by the removal of an integration.")
+    @Operation(summary = "Retrieve the event types affected by the removal of an integration.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<EventType>> getEventTypesAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         return getAccountId(sec)
@@ -160,7 +160,7 @@ public class NotificationService {
      */
     @GET
     @Path("/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
-    @Operation(summary = "Retrieve the event types affected by the removal of a behavior group.")
+    @Operation(summary = "Retrieve the event types affected by the removal of a behavior group.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<EventType>> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         return getAccountId(sec)
@@ -200,7 +200,7 @@ public class NotificationService {
 
     @PUT
     @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
-    @Operation(summary = "Link a behavior group to an event type.")
+    @Operation(summary = "Link a behavior group to an event type.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> linkBehaviorGroupToEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
@@ -211,7 +211,7 @@ public class NotificationService {
 
     @DELETE
     @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
-    @Operation(summary = "Unlink a behavior group from an event type.")
+    @Operation(summary = "Unlink a behavior group from an event type.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204", description = "Behavior group has been removed from the event type", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> unlinkBehaviorGroupFromEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
@@ -222,7 +222,7 @@ public class NotificationService {
 
     @GET
     @Path("/eventTypes/{eventTypeId}/behaviorGroups")
-    @Operation(summary = "Retrieve the behavior groups linked to an event type.")
+    @Operation(summary = "Retrieve the behavior groups linked to an event type.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<BehaviorGroup>> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
         return getAccountId(sec)
@@ -279,7 +279,7 @@ public class NotificationService {
 
     @DELETE
     @Path("/eventTypes/{eventTypeId}/mute")
-    @Operation(summary = "Mute an event type, removing all its link with behavior groups.")
+    @Operation(summary = "Mute an event type, removing all its link with behavior groups.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<Boolean> muteEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId) {
         return getAccountId(sec)
@@ -288,7 +288,7 @@ public class NotificationService {
 
     @POST
     @Path("/behaviorGroups")
-    @Operation(summary = "Create a behavior group.")
+    @Operation(summary = "Create a behavior group.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<BehaviorGroup> createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
         return getAccountId(sec)
@@ -297,7 +297,7 @@ public class NotificationService {
 
     @PUT
     @Path("/behaviorGroups/{id}")
-    @Operation(summary = "Update a behavior group.")
+    @Operation(summary = "Update a behavior group.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<Boolean> updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         return getAccountId(sec)
@@ -309,7 +309,7 @@ public class NotificationService {
 
     @DELETE
     @Path("/behaviorGroups/{id}")
-    @Operation(summary = "Delete a behavior group.")
+    @Operation(summary = "Delete a behavior group.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<Boolean> deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
         return getAccountId(sec)
@@ -318,7 +318,7 @@ public class NotificationService {
 
     @PUT
     @Path("/behaviorGroups/{behaviorGroupId}/actions")
-    @Operation(summary = "Update the list of actions of a behavior group.")
+    @Operation(summary = "Update the list of actions of a behavior group.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
@@ -329,7 +329,7 @@ public class NotificationService {
 
     @GET
     @Path("/bundles/{bundleId}/behaviorGroups")
-    @Operation(summary = "Retrieve the behavior groups of a bundle.")
+    @Operation(summary = "Retrieve the behavior groups of a bundle.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
         return getAccountId(sec)
