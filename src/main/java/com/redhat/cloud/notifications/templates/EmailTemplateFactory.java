@@ -7,11 +7,8 @@ import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class EmailTemplateFactory {
-    public EmailTemplateFactory() {
 
-    }
-
-    public AbstractEmailTemplate get(String bundle, String application) {
+    public EmailTemplate get(String bundle, String application) {
         if (bundle.toLowerCase().equals("rhel")) {
             switch (application.toLowerCase()) {
                 case "policies":
@@ -33,7 +30,7 @@ public class EmailTemplateFactory {
     }
 }
 
-class EmailTemplateNotSupported extends AbstractEmailTemplate {
+class EmailTemplateNotSupported implements EmailTemplate {
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         throw new UnsupportedOperationException();
@@ -50,7 +47,7 @@ class EmailTemplateNotSupported extends AbstractEmailTemplate {
     }
 
     @Override
-    public boolean isSupported(EmailSubscriptionType type) {
+    public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
         return false;
     }
 }

@@ -5,7 +5,7 @@ import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 
 // Name needs to be "Drift" to read templates from resources/templates/Drift
-public class Drift extends AbstractEmailTemplate {
+public class Drift implements EmailTemplate {
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
@@ -37,7 +37,7 @@ public class Drift extends AbstractEmailTemplate {
     }
 
     @Override
-    public boolean isSupported(EmailSubscriptionType type) {
+    public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
         return type == EmailSubscriptionType.INSTANT;
     }
 

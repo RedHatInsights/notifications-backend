@@ -14,7 +14,7 @@ import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
-import com.redhat.cloud.notifications.templates.AbstractEmailTemplate;
+import com.redhat.cloud.notifications.templates.EmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -285,7 +285,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
         // Does not add event type if is not supported by the templates
         Mockito
                 .when(emailTemplateFactory.get(bundle, application))
-                .thenReturn(new AbstractEmailTemplate() {
+                .thenReturn(new EmailTemplate() {
                     @Override
                     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
                         return null;
@@ -302,7 +302,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                     }
 
                     @Override
-                    public boolean isSupported(EmailSubscriptionType type) {
+                    public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
                         return type == EmailSubscriptionType.INSTANT;
                     }
                 });

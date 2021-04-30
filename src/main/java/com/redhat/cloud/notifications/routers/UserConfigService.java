@@ -12,7 +12,7 @@ import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
-import com.redhat.cloud.notifications.templates.AbstractEmailTemplate;
+import com.redhat.cloud.notifications.templates.EmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -164,12 +164,12 @@ public class UserConfigService {
                                 .onItem().transformToMulti(application -> {
                                     ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
                                     applicationSettingsValue.displayName = application.getDisplayName();
-                                    AbstractEmailTemplate applicationEmailTemplate = emailTemplateFactory.get(bundle.getName(), application.getName());
+                                    EmailTemplate applicationEmailTemplate = emailTemplateFactory.get(bundle.getName(), application.getName());
 
                                     values.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
                                     return Multi.createFrom().items(EmailSubscriptionType.values())
                                             .onItem().transformToMulti(emailSubscriptionType -> {
-                                                if (applicationEmailTemplate.isSupported(emailSubscriptionType)) {
+                                                if (applicationEmailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
                                                     values.bundles.get(bundle.getName()).applications.get(application.getName()).notifications.put(emailSubscriptionType, false);
                                                 }
                                                 return Multi.createFrom().empty();
