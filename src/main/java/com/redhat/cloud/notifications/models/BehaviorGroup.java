@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.hibernate.jpa.QueryHints;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -14,7 +15,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.QueryHint;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
@@ -34,6 +37,21 @@ import static javax.persistence.FetchType.LAZY;
 @Table(name = "behavior_group")
 @JsonNaming(SnakeCaseStrategy.class)
 @JsonFilter(ApiResponseFilter.NAME)
+/*
+ * When PostgreSQL sorts a BOOLEAN column in DESC order, true comes first. That's not true for all DBMS.
+ *
+ * When QueryHints.HINT_PASS_DISTINCT_THROUGH is set to false, Hibernate returns distinct results without passing the
+ * DISTINCT keyword to the DBMS. This is better for performances.
+ * See https://in.relation.to/2016/08/04/introducing-distinct-pass-through-query-hint/ for more details about that hint.
+ */
+// TODO Move this query back to BehaviorGroupResources when hints are implemented in Mutiny.Query.
+@NamedQuery(
+        name = "findByBundleId",
+        query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
+                "WHERE b.accountId = :accountId AND b.bundle.id = :bundleId " +
+                "ORDER BY b.defaultBehavior DESC, b.created DESC, a.position ASC",
+        hints = @QueryHint(name = QueryHints.HINT_PASS_DISTINCT_THROUGH, value = "false")
+)
 public class BehaviorGroup extends CreationUpdateTimestamped {
 
     @Id
