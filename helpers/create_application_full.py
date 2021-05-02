@@ -27,7 +27,7 @@ print(">>> create bundle")
 bundle_id = helpers.add_bundle(bundle_name, bundle_description)
 
 print(">>> create application")
-app_id = helpers.add_application(app_name, app_display_name, bundle_name)
+app_id = helpers.add_application(bundle_id, app_name, app_display_name)
 
 print(">>> add eventType to application")
 et_id = helpers.add_event_type(app_id, event_type, event_type_display_name)
