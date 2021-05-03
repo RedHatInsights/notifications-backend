@@ -53,30 +53,34 @@ public class ResourceHelpers {
         Bundle b = bundleResources.createBundle(bundle).await().indefinitely();
 
         Application app = new Application();
+        app.setBundleId(b.getId());
         app.setName(TEST_APP_NAME);
         app.setDisplayName("...");
         app.setBundleId(b.getId());
-        Application added = bundleResources.addApplicationToBundle(b.getId(), app).await().indefinitely();
+        Application added = appResources.createApp(app).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
+            eventType.setApplicationId(added.getId());
             eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
             eventType.setDisplayName("... -> " + i);
             eventType.setDescription("Desc .. --> " + i);
-            appResources.addEventTypeToApplication(added.getId(), eventType).await().indefinitely();
+            appResources.createEventType(eventType).await().indefinitely();
         }
 
         Application app2 = new Application();
+        app2.setBundleId(b.getId());
         app2.setName(TEST_APP_NAME_2);
         app2.setDisplayName("...");
         app2.setBundleId(b.getId());
-        Application added2 = bundleResources.addApplicationToBundle(b.getId(), app2).await().indefinitely();
+        Application added2 = appResources.createApp(app2).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
+            eventType.setApplicationId(added2.getId());
             eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
             eventType.setDisplayName("... -> " + i);
-            appResources.addEventTypeToApplication(added2.getId(), eventType).await().indefinitely();
+            appResources.createEventType(eventType).await().indefinitely();
         }
     }
 

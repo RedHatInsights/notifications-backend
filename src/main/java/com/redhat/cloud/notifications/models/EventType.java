@@ -52,6 +52,11 @@ public class EventType {
     @JsonInclude(NON_NULL)
     private String description;
 
+    @NotNull
+    @Transient
+    @Schema(name = "application_id")
+    private UUID applicationId;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "application_id")
     @JsonInclude(NON_NULL)
@@ -100,6 +105,17 @@ public class EventType {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public UUID getApplicationId() {
+        if (applicationId == null && application != null) {
+            applicationId = application.getId();
+        }
+        return applicationId;
+    }
+
+    public void setApplicationId(UUID applicationId) {
+        this.applicationId = applicationId;
     }
 
     public Application getApplication() {

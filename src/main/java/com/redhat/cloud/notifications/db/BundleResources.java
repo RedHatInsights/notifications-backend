@@ -74,16 +74,4 @@ public class BundleResources {
                                 .getResultList()
                 );
     }
-
-    public Uni<Application> addApplicationToBundle(UUID bundleId, Application app) {
-        return session.find(Bundle.class, bundleId)
-                .onItem().ifNull().failWith(new NotFoundException())
-                .onItem().transform(bundle -> {
-                    app.setBundle(bundle);
-                    return app;
-                })
-                .onItem().transformToUni(session::persist)
-                .call(session::flush)
-                .replaceWith(app);
-    }
 }

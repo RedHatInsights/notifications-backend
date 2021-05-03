@@ -191,6 +191,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
 
     private String createApp(String bundleId) {
         Application app = new Application();
+        app.setBundleId(UUID.fromString(bundleId));
         app.setName(APP_NAME);
         app.setDisplayName("The best app in the life");
         app.setBundleId(UUID.fromString(bundleId));
@@ -199,9 +200,8 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .when()
                 .basePath(INTERNAL_BASE_PATH)
                 .contentType(ContentType.JSON)
-                .pathParam("bundleId", bundleId)
                 .body(Json.encode(app))
-                .post("/internal/bundles/{bundleId}/applications")
+                .post("/internal/applications")
                 .then()
                 .statusCode(200)
                 .extract().body().asString();
@@ -219,6 +219,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
 
     private String createEventType(String appId) {
         EventType eventType = new EventType();
+        eventType.setApplicationId(UUID.fromString(appId));
         eventType.setName(EVENT_TYPE_NAME);
         eventType.setDisplayName("Policies will take care of the rules");
         eventType.setDescription("Policies is super cool, you should use it");
@@ -228,8 +229,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .basePath(INTERNAL_BASE_PATH)
                 .contentType(ContentType.JSON)
                 .body(Json.encode(eventType))
-                .pathParam("appId", appId)
-                .post("/internal/applications/{appId}/eventTypes")
+                .post("/internal/eventTypes")
                 .then()
                 .statusCode(200)
                 .extract().body().asString();
