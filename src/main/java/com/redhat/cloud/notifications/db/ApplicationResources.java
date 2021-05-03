@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -10,6 +9,7 @@ import org.hibernate.reactive.mutiny.Mutiny;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -20,15 +20,6 @@ public class ApplicationResources {
 
     @Inject
     Mutiny.Session session;
-
-    public Uni<Application> createApplication(Application app) {
-        // The returned app will contain an ID and a creation timestamp.
-        return Uni.createFrom().item(app)
-                .onItem().transform(this::addBundleReference)
-                .onItem().transformToUni(session::persist)
-                .call(session::flush)
-                .replaceWith(app);
-    }
 
     public Uni<Integer> updateApplication(UUID id, Application app) {
         String query = "UPDATE Application SET name = :name, displayName = :displayName WHERE id = :id";
@@ -50,10 +41,11 @@ public class ApplicationResources {
     }
 
     public Uni<EventType> addEventTypeToApplication(UUID appId, EventType eventType) {
-        return Uni.createFrom().item(eventType)
-                .onItem().transform(et -> {
-                    et.setApplication(session.getReference(Application.class, appId));
-                    return et;
+        return session.find(Application.class, appId)
+                .onItem().ifNull().failWith(new NotFoundException())
+                .onItem().transform(app -> {
+                    eventType.setApplication(app);
+                    return eventType;
                 })
                 .onItem().transformToUni(session::persist)
                 .call(session::flush)
@@ -92,9 +84,13 @@ public class ApplicationResources {
 
     public Multi<EventType> getEventTypes(UUID appId) {
         String query = "FROM EventType WHERE application.id = :appId";
-        return session.createQuery(query, EventType.class)
-                .setParameter("appId", appId)
-                .getResultList()
+        return session.find(Application.class, appId)
+                .onItem().ifNull().failWith(new NotFoundException())
+                .replaceWith(
+                        session.createQuery(query, EventType.class)
+                                .setParameter("appId", appId)
+                                .getResultList()
+                )
                 .onItem().transformToMulti(Multi.createFrom()::iterable)
                 .onItem().transform(EventType::filterOutApplication);
     }
@@ -161,19 +157,5 @@ public class ApplicationResources {
                 .setParameter("accountId", accountId)
                 .setParameter("endpointId", endpointId)
                 .getResultList();
-    }
-
-    /**
-     * Adds to the given {@link Application} a reference to a persistent {@link Bundle} without actually loading its
-     * state from the database. The app will remain unchanged if it does not contain a non-null bundle identifier.
-     *
-     * @param app the app that will hold the bundle reference
-     * @return the same app instance, possibly modified if a bundle reference was added
-     */
-    private Application addBundleReference(Application app) {
-        if (app.getBundleId() != null && app.getBundle() == null) {
-            app.setBundle(session.getReference(Bundle.class, app.getBundleId()));
-        }
-        return app;
     }
 }

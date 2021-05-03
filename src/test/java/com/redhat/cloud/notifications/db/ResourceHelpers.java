@@ -56,7 +56,7 @@ public class ResourceHelpers {
         app.setName(TEST_APP_NAME);
         app.setDisplayName("...");
         app.setBundleId(b.getId());
-        Application added = appResources.createApplication(app).await().indefinitely();
+        Application added = bundleResources.addApplicationToBundle(b.getId(), app).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();
@@ -70,7 +70,7 @@ public class ResourceHelpers {
         app2.setName(TEST_APP_NAME_2);
         app2.setDisplayName("...");
         app2.setBundleId(b.getId());
-        Application added2 = appResources.createApplication(app2).await().indefinitely();
+        Application added2 = bundleResources.addApplicationToBundle(b.getId(), app2).await().indefinitely();
 
         for (int i = 0; i < 100; i++) {
             EventType eventType = new EventType();

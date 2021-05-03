@@ -13,43 +13,40 @@ def set_path_prefix(base_path):
     notifications_prefix = base_path + "/api/notifications/v1.0"
 
 
-def find_application(app_name, bundle_name):
+def find_application(bundle_id, app_name):
     """Find an application by name and return its UUID or return None
     :param name: Name of the application
     """
-    r = requests.get(applications_prefix + "?bundleName=" + bundle_name)
+    r = requests.get(bundles_prefix + "/" + bundle_id + "/applications")
     if r.status_code != 200:
         return None
 
     j = r.json()
-    for entity in j:
-        app = entity['entity']
+    for app in j:
         if app["name"] == app_name:
             return app["id"]
 
     return None
 
 
-def add_application(name, display_name, bundle_name):
+def add_application(bundle_id, name, display_name):
     """Adds an application if it does not yet exist
-    :param bundle_name: name of the bundle we add the application to
+    :param bundle_id: id of the bundle we add the application to
     :param name: Name of the application, [a-z0-9-]+
     :param display_name: Display name of the application
     """
 
     # First try to find it.
-    ret = find_application(name, bundle_name)
+    ret = find_application(bundle_id, name)
     if ret is not None:
         return ret
-
-    bundle_id = find_bundle(bundle_name)
 
     # The app does not yet exist, so try to create
     app_json = {"name": name,
                 "display_name": display_name,
                 "bundle_id": bundle_id}
 
-    r = requests.post(applications_prefix, json=app_json)
+    r = requests.post(bundles_prefix + "/" + bundle_id + "/applications", json=app_json)
     print(r.status_code)
     response_json = r.json()
     print(response_json)
@@ -67,7 +64,7 @@ def delete_application(app_id):
 
 
 def delete_bundle(bundle_id):
-    """Delets a bundle by its id"""
+    """Deletes a bundle by its id"""
     r = requests.delete(bundles_prefix + "/" + bundle_id)
     print(r.status_code)
 
@@ -124,8 +121,8 @@ def add_bundle(name, display_name):
 
 
 def find_bundle(name):
-    """Find an application by name and return its UUID or return None
-    :param name: Name of the application
+    """Find a bundle by name and return its UUID or return None
+    :param name: Name of the bundle
     """
     r = requests.get(bundles_prefix)
     if r.status_code != 200:

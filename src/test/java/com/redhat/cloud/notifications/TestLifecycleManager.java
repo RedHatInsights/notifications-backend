@@ -20,6 +20,8 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
     PostgreSQLContainer<?> postgreSQLContainer;
@@ -54,6 +56,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         ObjectMapper mapper = DatabindCodec.mapper();
         mapper.setFilterProvider(filterProvider);
         mapper.registerModule(new JavaTimeModule());
+        mapper.configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     @Override

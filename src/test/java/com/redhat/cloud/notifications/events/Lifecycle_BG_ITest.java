@@ -199,8 +199,9 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .when()
                 .basePath(INTERNAL_BASE_PATH)
                 .contentType(ContentType.JSON)
+                .pathParam("bundleId", bundleId)
                 .body(Json.encode(app))
-                .post("/internal/applications")
+                .post("/internal/bundles/{bundleId}/applications")
                 .then()
                 .statusCode(200)
                 .extract().body().asString();

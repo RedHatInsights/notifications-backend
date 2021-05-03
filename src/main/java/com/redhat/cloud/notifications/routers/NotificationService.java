@@ -274,7 +274,9 @@ public class NotificationService {
     @Path("/facets/bundles")
     @Operation(summary = "Return a thin list of configured bundles. This can be used to configure a filter in the UI")
     public Multi<Facet> getBundleFacets(@Context SecurityContext sec) {
-        return bundleResources.getBundles().onItem().transform(b -> new Facet(b.getId().toString(), b.getName(), b.getDisplayName()));
+        return bundleResources.getBundles()
+                .onItem().transformToMulti(Multi.createFrom()::iterable)
+                .onItem().transform(b -> new Facet(b.getId().toString(), b.getName(), b.getDisplayName()));
     }
 
     @DELETE
