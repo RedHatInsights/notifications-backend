@@ -342,7 +342,9 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     }
 
     private List<BehaviorGroupAction> findBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId) {
-        return behaviorGroupResources.findByBundleId(accountId, bundleId).await().indefinitely()
+        List<BehaviorGroup> behaviorGroups = behaviorGroupResources.findByBundleId(accountId, bundleId).await().indefinitely();
+        assertEquals(1, behaviorGroups.size());
+        return behaviorGroups
                 .stream().filter(behaviorGroup -> behaviorGroup.getId().equals(behaviorGroupId))
                 .findFirst().get().getActions();
     }

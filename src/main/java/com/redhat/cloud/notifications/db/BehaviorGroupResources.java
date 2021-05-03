@@ -41,10 +41,7 @@ public class BehaviorGroupResources {
     }
 
     public Uni<List<BehaviorGroup>> findByBundleId(String accountId, UUID bundleId) {
-        // When PostgreSQL sorts a BOOLEAN column in DESC order, true comes first. That's not true for all DBMS.
-        String query = "FROM BehaviorGroup b LEFT JOIN FETCH b.actions a WHERE b.accountId = :accountId AND b.bundle.id = :bundleId " +
-                "ORDER BY b.defaultBehavior DESC, b.created DESC, a.position ASC";
-        return session.createQuery(query, BehaviorGroup.class)
+        return session.createNamedQuery("findByBundleId", BehaviorGroup.class)
                 .setParameter("accountId", accountId)
                 .setParameter("bundleId", bundleId)
                 .getResultList();
