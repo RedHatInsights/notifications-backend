@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -39,6 +40,9 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
     @Inject
     BundleResources bundleResources;
+
+    @Inject
+    ApplicationResources appResources;
 
     @Inject
     EndpointResources endpointResources;
@@ -143,7 +147,8 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     public void testAddAndDeleteEventTypeBehaviorAndMuteEventType() {
         Bundle bundle = createBundle();
-        EventType eventType = createEventType();
+        Application app = createApp(bundle.getId());
+        EventType eventType = createEventType(app.getId());
 
         // Add behaviorGroup1 to eventType behaviors.
         BehaviorGroup behaviorGroup1 = createBehaviorGroup("name1", "displayName", bundle.getId());
@@ -194,7 +199,8 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     public void testAddEventTypeBehaviorWithWrongAccountId() {
         Bundle bundle = createBundle();
-        EventType eventType = createEventType();
+        Application app = createApp(bundle.getId());
+        EventType eventType = createEventType(app.getId());
         BehaviorGroup behaviorGroup = createBehaviorGroup("name", "displayName", bundle.getId());
         Boolean added = addEventTypeBehavior("unknownAccountId", eventType.getId(), behaviorGroup.getId());
         assertFalse(added);
@@ -203,7 +209,8 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     public void testFindEventTypesByBehaviorGroupId() {
         Bundle bundle = createBundle();
-        EventType eventType = createEventType();
+        Application app = createApp(bundle.getId());
+        EventType eventType = createEventType(app.getId());
         BehaviorGroup behaviorGroup = createBehaviorGroup("name", "displayName", bundle.getId());
         addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup.getId());
         List<EventType> eventTypes = findEventTypesByBehaviorGroupId(ACCOUNT_ID, behaviorGroup.getId());
@@ -214,7 +221,8 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     public void testFindBehaviorGroupsByEventTypeId() {
         Bundle bundle = createBundle();
-        EventType eventType = createEventType();
+        Application app = createApp(bundle.getId());
+        EventType eventType = createEventType(app.getId());
         BehaviorGroup behaviorGroup = createBehaviorGroup("name", "displayName", bundle.getId());
         addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup.getId());
         List<BehaviorGroup> behaviorGroups = findBehaviorGroupsByEventTypeId(ACCOUNT_ID, eventType.getId());
@@ -253,8 +261,17 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         return bundleResources.createBundle(bundle).await().indefinitely();
     }
 
-    private EventType createEventType() {
+    private Application createApp(UUID bundleId) {
+        Application app = new Application();
+        app.setBundleId(bundleId);
+        app.setName("name");
+        app.setDisplayName("displayName");
+        return appResources.createApp(app).await().indefinitely();
+    }
+
+    private EventType createEventType(UUID appID) {
         EventType eventType = new EventType();
+        eventType.setApplicationId(appID);
         eventType.setName("name");
         eventType.setDisplayName("displayName");
         return session.persist(eventType).call(session::flush).replaceWith(eventType).await().indefinitely();

@@ -70,17 +70,19 @@ public class DbCleaner {
                 })
                 .onItem().transformToUni(bundle -> {
                     Application app = new Application();
+                    app.setBundleId(bundle.getId());
                     app.setName(DEFAULT_APP_NAME);
                     app.setDisplayName(DEFAULT_APP_DISPLAY_NAME);
                     app.setBundleId(bundle.getId());
-                    return bundleResources.addApplicationToBundle(bundle.getId(), app);
+                    return appResources.createApp(app);
                 })
                 .onItem().transformToUni(app -> {
                     EventType eventType = new EventType();
+                    eventType.setApplicationId(app.getId());
                     eventType.setName(DEFAULT_EVENT_TYPE_NAME);
                     eventType.setDisplayName(DEFAULT_EVENT_TYPE_DISPLAY_NAME);
                     eventType.setDescription(DEFAULT_EVENT_TYPE_DESCRIPTION);
-                    return appResources.addEventTypeToApplication(app.getId(), eventType);
+                    return appResources.createEventType(eventType);
                 })
                 .replaceWith(Uni.createFrom().voidItem())
         );

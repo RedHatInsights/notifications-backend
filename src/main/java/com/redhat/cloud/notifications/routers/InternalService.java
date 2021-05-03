@@ -87,16 +87,16 @@ public class InternalService {
         return bundleResources.deleteBundle(bundleId);
     }
 
-    @POST
-    @Path("/bundles/{bundleId}/applications")
-    public Uni<Application> createApplication(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Application app) {
-        return bundleResources.addApplicationToBundle(bundleId, app);
-    }
-
     @GET
     @Path("/bundles/{bundleId}/applications")
     public Uni<List<Application>> getApplications(@PathParam("bundleId") UUID bundleId) {
         return bundleResources.getApplications(bundleId);
+    }
+
+    @POST
+    @Path("/applications")
+    public Uni<Application> createApplication(@NotNull @Valid Application app) {
+        return appResources.createApp(app);
     }
 
     @GET
@@ -125,16 +125,16 @@ public class InternalService {
         return appResources.deleteApplication(appId);
     }
 
-    @POST
-    @Path("/applications/{appId}/eventTypes")
-    public Uni<EventType> createEventType(@PathParam("appId") UUID appId, @NotNull @Valid EventType eventType) {
-        return appResources.addEventTypeToApplication(appId, eventType);
-    }
-
     @GET
     @Path("/applications/{appId}/eventTypes")
     public Multi<EventType> getEventTypes(@PathParam("appId") UUID appId) {
         return appResources.getEventTypes(appId);
+    }
+
+    @POST
+    @Path("/eventTypes")
+    public Uni<EventType> createEventType(@NotNull @Valid EventType eventType) {
+        return appResources.createEventType(eventType);
     }
 
     @DELETE

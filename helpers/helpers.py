@@ -5,10 +5,12 @@ import uuid
 def set_path_prefix(base_path):
     global applications_prefix
     global bundles_prefix
+    global event_types_prefix
     global integrations_prefix
     global notifications_prefix
     applications_prefix = base_path + "/internal/applications"
     bundles_prefix = base_path + "/internal/bundles"
+    event_types_prefix = base_path + "/internal/eventTypes"
     integrations_prefix = base_path + "/api/integrations/v1.0"
     notifications_prefix = base_path + "/api/notifications/v1.0"
 
@@ -46,7 +48,7 @@ def add_application(bundle_id, name, display_name):
                 "display_name": display_name,
                 "bundle_id": bundle_id}
 
-    r = requests.post(bundles_prefix + "/" + bundle_id + "/applications", json=app_json)
+    r = requests.post(applications_prefix, json=app_json)
     print(r.status_code)
     response_json = r.json()
     print(response_json)
@@ -83,9 +85,8 @@ def add_event_type(application_id, name, display_name):
 
     # It does not exist, so create it
 
-    et_json = {"name": name, "display_name": display_name}
-    r = requests.post(applications_prefix + "/" + application_id + "/eventTypes",
-                      json=et_json)
+    et_json = {"name": name, "display_name": display_name, "application_id": application_id}
+    r = requests.post(event_types_prefix, json=et_json)
     response_json = r.json()
     print(response_json)
     if r.status_code / 10 != 20:

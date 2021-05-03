@@ -46,15 +46,12 @@ public class InternalServiceTest extends DbIsolatedTest {
 
     @Test
     void testCreateNullApp() {
-        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
-        createApp(bundleId, null, BAD_REQUEST);
+        createApp(null, BAD_REQUEST);
     }
 
     @Test
     void testCreateNullEventType() {
-        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
-        String appId = createApp(bundleId, "app-name", "App", OK).get();
-        createEventType(appId, null, BAD_REQUEST);
+        createEventType(null, BAD_REQUEST);
     }
 
     @Test
@@ -67,18 +64,20 @@ public class InternalServiceTest extends DbIsolatedTest {
     @Test
     void testCreateInvalidApp() {
         String bundleId = createBundle("bundle-name", "Bundle", OK).get();
-        createApp(bundleId, buildApp(null, "I am valid"), BAD_REQUEST);
-        createApp(bundleId, buildApp("i-am-valid", null), BAD_REQUEST);
-        createApp(bundleId, buildApp("I violate the @Pattern constraint", "I am valid"), BAD_REQUEST);
+        createApp(buildApp(null, "i-am-valid", "I am valid"), BAD_REQUEST);
+        createApp(buildApp(bundleId, null, "I am valid"), BAD_REQUEST);
+        createApp(buildApp(bundleId, "i-am-valid", null), BAD_REQUEST);
+        createApp(buildApp(bundleId, "I violate the @Pattern constraint", "I am valid"), BAD_REQUEST);
     }
 
     @Test
     void testCreateInvalidEventType() {
         String bundleId = createBundle("bundle-name", "Bundle", OK).get();
         String appId = createApp(bundleId, "app-name", "App", OK).get();
-        createEventType(appId, buildEventType(null, "I am valid", NOT_USED), BAD_REQUEST);
-        createEventType(appId, buildEventType("i-am-valid", null, NOT_USED), BAD_REQUEST);
-        createEventType(appId, buildEventType("I violate the @Pattern constraint", "I am valid", NOT_USED), BAD_REQUEST);
+        createEventType(buildEventType(null, "i-am-valid", "I am valid", NOT_USED), BAD_REQUEST);
+        createEventType(buildEventType(appId, null, "I am valid", NOT_USED), BAD_REQUEST);
+        createEventType(buildEventType(appId, "i-am-valid", null, NOT_USED), BAD_REQUEST);
+        createEventType(buildEventType(appId, "I violate the @Pattern constraint", "I am valid", NOT_USED), BAD_REQUEST);
     }
 
     @Test
@@ -101,7 +100,7 @@ public class InternalServiceTest extends DbIsolatedTest {
         createApp(bundleId, nonUniqueAppName, NOT_USED, INTERNAL_SERVER_ERROR);
         // We create an app with an available name and then rename it to an unavailable name.
         String appId = createApp(bundleId, "app-2-name", NOT_USED, OK).get();
-        updateApp(appId, nonUniqueAppName, NOT_USED, INTERNAL_SERVER_ERROR);
+        updateApp(bundleId, appId, nonUniqueAppName, NOT_USED, INTERNAL_SERVER_ERROR);
     }
 
     @Test
@@ -147,8 +146,9 @@ public class InternalServiceTest extends DbIsolatedTest {
 
     @Test
     void testUpdateUnknownApp() {
+        String bundleId = createBundle("bundle-name", "Bundle", OK).get();
         String unknownAppId = UUID.randomUUID().toString();
-        updateApp(unknownAppId, NOT_USED, NOT_USED, NOT_FOUND);
+        updateApp(bundleId, unknownAppId, NOT_USED, NOT_USED, NOT_FOUND);
     }
 
     @Test
@@ -206,7 +206,7 @@ public class InternalServiceTest extends DbIsolatedTest {
         getApps(bundleId, OK, 2);
 
         // Let's test the app update API.
-        updateApp(appId, "app-2-new-name", "App 2 new display name", OK);
+        updateApp(bundleId, appId, "app-2-new-name", "App 2 new display name", OK);
 
         // Same for the app delete API.
         deleteApp(appId, true);
@@ -214,7 +214,7 @@ public class InternalServiceTest extends DbIsolatedTest {
         // Now that we deleted the app, all the following APIs calls should "fail".
         deleteApp(appId, false);
         getApp(appId, NOT_USED, NOT_USED, NOT_FOUND);
-        updateApp(appId, NOT_USED, NOT_USED, NOT_FOUND);
+        updateApp(bundleId, appId, NOT_USED, NOT_USED, NOT_FOUND);
 
         // The bundle should also contain one app now.
         getApps(bundleId, OK, 1);
@@ -346,25 +346,27 @@ public class InternalServiceTest extends DbIsolatedTest {
         assertEquals(expectedResult, result);
     }
 
-    private static Application buildApp(String name, String displayName) {
+    private static Application buildApp(String bundleId, String name, String displayName) {
         Application app = new Application();
+        if (bundleId != null) {
+            app.setBundleId(UUID.fromString(bundleId));
+        }
         app.setName(name);
         app.setDisplayName(displayName);
         return app;
     }
 
     private static Optional<String> createApp(String bundleId, String name, String displayName, int expectedStatusCode) {
-        Application app = buildApp(name, displayName);
-        return createApp(bundleId, app, expectedStatusCode);
+        Application app = buildApp(bundleId, name, displayName);
+        return createApp(app, expectedStatusCode);
     }
 
-    private static Optional<String> createApp(String bundleId, Application app, int expectedStatusCode) {
+    private static Optional<String> createApp(Application app, int expectedStatusCode) {
         String responseBody = given()
                 .contentType(JSON)
-                .pathParam("bundleId", bundleId)
                 .body(Json.encode(app))
                 .when()
-                .post("/internal/bundles/{bundleId}/applications")
+                .post("/internal/applications")
                 .then()
                 .statusCode(expectedStatusCode)
                 .extract().body().asString();
@@ -374,7 +376,7 @@ public class InternalServiceTest extends DbIsolatedTest {
             jsonApp.mapTo(Application.class);
             assertNotNull(jsonApp.getString("id"));
             assertNotNull(jsonApp.getString("created"));
-            assertEquals(bundleId, jsonApp.getString("bundle_id"));
+            assertEquals(app.getBundleId().toString(), jsonApp.getString("bundle_id"));
             assertEquals(app.getName(), jsonApp.getString("name"));
             assertEquals(app.getDisplayName(), jsonApp.getString("display_name"));
 
@@ -423,8 +425,8 @@ public class InternalServiceTest extends DbIsolatedTest {
         }
     }
 
-    private static void updateApp(String appId, String name, String displayName, int expectedStatusCode) {
-        Application app = buildApp(name, displayName);
+    private static void updateApp(String bundleId, String appId, String name, String displayName, int expectedStatusCode) {
+        Application app = buildApp(bundleId, name, displayName);
         updateApp(appId, app, expectedStatusCode);
     }
 
@@ -454,8 +456,11 @@ public class InternalServiceTest extends DbIsolatedTest {
         assertEquals(expectedResult, result);
     }
 
-    private static EventType buildEventType(String name, String displayName, String description) {
+    private static EventType buildEventType(String appId, String name, String displayName, String description) {
         EventType eventType = new EventType();
+        if (appId != null) {
+            eventType.setApplicationId(UUID.fromString(appId));
+        }
         eventType.setName(name);
         eventType.setDisplayName(displayName);
         eventType.setDescription(description);
@@ -463,17 +468,16 @@ public class InternalServiceTest extends DbIsolatedTest {
     }
 
     private static Optional<String> createEventType(String appId, String name, String displayName, String description, int expectedStatusCode) {
-        EventType eventType = buildEventType(name, displayName, description);
-        return createEventType(appId, eventType, expectedStatusCode);
+        EventType eventType = buildEventType(appId, name, displayName, description);
+        return createEventType(eventType, expectedStatusCode);
     }
 
-    private static Optional<String> createEventType(String appId, EventType eventType, int expectedStatusCode) {
+    private static Optional<String> createEventType(EventType eventType, int expectedStatusCode) {
         String responseBody = given()
                 .contentType(JSON)
-                .pathParam("appId", appId)
                 .body(Json.encode(eventType))
                 .when()
-                .post("/internal/applications/{appId}/eventTypes")
+                .post("/internal/eventTypes")
                 .then()
                 .statusCode(expectedStatusCode)
                 .extract().body().asString();
@@ -482,6 +486,7 @@ public class InternalServiceTest extends DbIsolatedTest {
             JsonObject jsonEventType = new JsonObject(responseBody);
             jsonEventType.mapTo(EventType.class);
             assertNotNull(jsonEventType.getString("id"));
+            assertEquals(eventType.getApplicationId().toString(), jsonEventType.getString("application_id"));
             assertEquals(eventType.getName(), jsonEventType.getString("name"));
             assertEquals(eventType.getDisplayName(), jsonEventType.getString("display_name"));
             assertEquals(eventType.getDescription(), jsonEventType.getString("description"));

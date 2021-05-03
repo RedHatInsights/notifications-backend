@@ -44,14 +44,9 @@ public class Application extends CreationUpdateTimestamped {
     @Schema(name = "display_name")
     private String displayName;
 
-    /*
-     * This field is only used to return the bundleId in a REST API response.
-     * When an app is created, the bundleId from the REST API path is used to determine the relation between the app and a bundle.
-     * When an app is updated, the bundleId cannot be updated.
-     */
+    @NotNull
     @Transient
     @Schema(name = "bundle_id")
-    @JsonProperty(access = READ_ONLY)
     private UUID bundleId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

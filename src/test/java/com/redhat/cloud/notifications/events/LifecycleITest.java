@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -129,6 +130,7 @@ public class LifecycleITest extends DbIsolatedTest {
 
     void t01_testAdding() {
         Application app = new Application();
+        app.setBundleId(UUID.fromString(theBundle.getString("id")));
         app.setName(APP_NAME);
         app.setDisplayName("The best app in the life");
 
@@ -136,9 +138,8 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .basePath("/")
-                .pathParam("bundleId", theBundle.getString("id"))
                 .body(Json.encode(app))
-                .post("/internal/bundles/{bundleId}/applications")
+                .post("/internal/applications")
                 .then()
                 .statusCode(200)
                 .extract().response();
@@ -150,6 +151,7 @@ public class LifecycleITest extends DbIsolatedTest {
 
         // Create eventType
         EventType eventType = new EventType();
+        eventType.setApplicationId(UUID.fromString(appResponse.getString("id")));
         eventType.setName(EVENT_TYPE_NAME);
         eventType.setDisplayName("Policies will take care of the rules");
         eventType.setDescription("Policies is super cool, you should use it");
@@ -159,7 +161,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .contentType(ContentType.JSON)
                 .basePath("/")
                 .body(Json.encode(eventType))
-                .post(String.format("/internal/applications/%s/eventTypes", appResponse.getString("id")))
+                .post("/internal/eventTypes")
                 .then()
                 .statusCode(200)
                 .extract().response();

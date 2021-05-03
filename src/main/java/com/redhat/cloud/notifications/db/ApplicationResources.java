@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -21,6 +22,18 @@ public class ApplicationResources {
     @Inject
     Mutiny.Session session;
 
+    public Uni<Application> createApp(Application app) {
+        return session.find(Bundle.class, app.getBundleId())
+                .onItem().ifNull().failWith(new NotFoundException())
+                .onItem().transform(bundle -> {
+                    app.setBundle(bundle);
+                    return app;
+                })
+                .onItem().transformToUni(session::persist)
+                .call(session::flush)
+                .replaceWith(app);
+    }
+
     public Uni<Integer> updateApplication(UUID id, Application app) {
         String query = "UPDATE Application SET name = :name, displayName = :displayName WHERE id = :id";
         return session.createQuery(query)
@@ -40,8 +53,8 @@ public class ApplicationResources {
                 .onItem().transform(rowCount -> rowCount > 0);
     }
 
-    public Uni<EventType> addEventTypeToApplication(UUID appId, EventType eventType) {
-        return session.find(Application.class, appId)
+    public Uni<EventType> createEventType(EventType eventType) {
+        return session.find(Application.class, eventType.getApplicationId())
                 .onItem().ifNull().failWith(new NotFoundException())
                 .onItem().transform(app -> {
                     eventType.setApplication(app);
