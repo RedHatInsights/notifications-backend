@@ -69,7 +69,7 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
     private String name;
 
     @NotNull
-    @JsonProperty(value = "display_name")
+    @Schema(name = "display_name")
     private String displayName;
 
     @NotNull
