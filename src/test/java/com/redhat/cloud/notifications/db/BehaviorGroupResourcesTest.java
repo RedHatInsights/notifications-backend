@@ -55,25 +55,22 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         Bundle bundle = createBundle();
 
         // Create behavior group.
-        BehaviorGroup behaviorGroup = createBehaviorGroup("name", "displayName", bundle.getId());
+        BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
         List<BehaviorGroup> behaviorGroups = findBehaviorGroupsByBundleId(bundle.getId());
         assertEquals(1, behaviorGroups.size());
         assertEquals(behaviorGroup, behaviorGroups.get(0));
-        assertEquals(behaviorGroup.getName(), behaviorGroups.get(0).getName());
         assertEquals(behaviorGroup.getDisplayName(), behaviorGroups.get(0).getDisplayName());
         assertEquals(bundle.getId(), behaviorGroups.get(0).getBundle().getId());
         assertNotNull(bundle.getCreated());
 
         // Update behavior group.
-        String newName = "new-name";
         String newDisplayName = "newDisplayName";
-        Boolean updated = updateBehaviorGroup(behaviorGroup.getId(), newName, newDisplayName, bundle.getId());
+        Boolean updated = updateBehaviorGroup(behaviorGroup.getId(), newDisplayName, bundle.getId());
         assertTrue(updated);
         session.clear(); // We need to clear the session L1 cache before checking the update result.
         behaviorGroups = findBehaviorGroupsByBundleId(bundle.getId());
         assertEquals(1, behaviorGroups.size());
         assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
-        assertEquals(newName, behaviorGroups.get(0).getName());
         assertEquals(newDisplayName, behaviorGroups.get(0).getDisplayName());
         assertEquals(bundle.getId(), behaviorGroups.get(0).getBundle().getId());
 
@@ -85,30 +82,10 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     }
 
     @Test
-    public void testCreateBehaviorGroupWithNullName() {
-        Bundle bundle = createBundle();
-        PersistenceException e = assertThrows(PersistenceException.class, () -> {
-            createBehaviorGroup(null, "displayName", bundle.getId());
-        });
-        assertSame(ConstraintViolationException.class, e.getCause().getCause().getClass());
-        assertTrue(e.getCause().getCause().getMessage().contains("propertyPath=name"));
-    }
-
-    @Test
-    public void testCreateBehaviorGroupWithInvalidName() {
-        Bundle bundle = createBundle();
-        PersistenceException e = assertThrows(PersistenceException.class, () -> {
-            createBehaviorGroup("I am not valid", "displayName", bundle.getId());
-        });
-        assertSame(ConstraintViolationException.class, e.getCause().getCause().getClass());
-        assertTrue(e.getCause().getCause().getMessage().contains("propertyPath=name"));
-    }
-
-    @Test
     public void testCreateBehaviorGroupWithNullDisplayName() {
         Bundle bundle = createBundle();
         PersistenceException e = assertThrows(PersistenceException.class, () -> {
-            createBehaviorGroup("name", null, bundle.getId());
+            createBehaviorGroup(null, bundle.getId());
         });
         assertSame(ConstraintViolationException.class, e.getCause().getCause().getClass());
         assertTrue(e.getCause().getCause().getMessage().contains("propertyPath=displayName"));
@@ -117,7 +94,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     public void testCreateBehaviorGroupWithNullBundleId() {
         PersistenceException e = assertThrows(PersistenceException.class, () -> {
-            createBehaviorGroup("name", "displayName", null);
+            createBehaviorGroup("displayName", null);
         });
         assertSame(IllegalArgumentException.class, e.getCause().getCause().getClass());
     }
@@ -125,7 +102,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     public void testCreateBehaviorGroupWithUnknownBundleId() {
         PersistenceException e = assertThrows(PersistenceException.class, () -> {
-            createBehaviorGroup("name", "displayName", UUID.randomUUID());
+            createBehaviorGroup("displayName", UUID.randomUUID());
         });
         assertSame(PgException.class, e.getCause().getCause().getClass()); // FK constraint violation
     }
@@ -133,9 +110,9 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     public void testfindByBundleIdOrdering() {
         Bundle bundle = createBundle();
-        BehaviorGroup behaviorGroup1 = createBehaviorGroup("name1", "displayName", bundle.getId());
-        BehaviorGroup behaviorGroup2 = createBehaviorGroup("name2", "displayName", bundle.getId());
-        BehaviorGroup behaviorGroup3 = createBehaviorGroup("name3", "displayName", bundle.getId());
+        BehaviorGroup behaviorGroup1 = createBehaviorGroup("displayName", bundle.getId());
+        BehaviorGroup behaviorGroup2 = createBehaviorGroup("displayName", bundle.getId());
+        BehaviorGroup behaviorGroup3 = createBehaviorGroup("displayName", bundle.getId());
         setDefaultBehaviorGroup(bundle.getId(), behaviorGroup2.getId());
         List<BehaviorGroup> behaviorGroups = findBehaviorGroupsByBundleId(bundle.getId());
         assertEquals(3, behaviorGroups.size());
@@ -151,7 +128,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         EventType eventType = createEventType(app.getId());
 
         // Add behaviorGroup1 to eventType behaviors.
-        BehaviorGroup behaviorGroup1 = createBehaviorGroup("name1", "displayName", bundle.getId());
+        BehaviorGroup behaviorGroup1 = createBehaviorGroup("displayName", bundle.getId());
         Boolean added = addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup1.getId());
         assertTrue(added);
 
@@ -160,12 +137,12 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         assertFalse(added);
 
         // Add behaviorGroup2 to eventType behaviors.
-        BehaviorGroup behaviorGroup2 = createBehaviorGroup("name2", "displayName", bundle.getId());
+        BehaviorGroup behaviorGroup2 = createBehaviorGroup("displayName", bundle.getId());
         added = addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup2.getId());
         assertTrue(added);
 
         // Add behaviorGroup3 to eventType behaviors.
-        BehaviorGroup behaviorGroup3 = createBehaviorGroup("name3", "displayName", bundle.getId());
+        BehaviorGroup behaviorGroup3 = createBehaviorGroup("displayName", bundle.getId());
         added = addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup3.getId());
         assertTrue(added);
 
@@ -201,7 +178,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         Bundle bundle = createBundle();
         Application app = createApp(bundle.getId());
         EventType eventType = createEventType(app.getId());
-        BehaviorGroup behaviorGroup = createBehaviorGroup("name", "displayName", bundle.getId());
+        BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
         Boolean added = addEventTypeBehavior("unknownAccountId", eventType.getId(), behaviorGroup.getId());
         assertFalse(added);
     }
@@ -211,7 +188,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         Bundle bundle = createBundle();
         Application app = createApp(bundle.getId());
         EventType eventType = createEventType(app.getId());
-        BehaviorGroup behaviorGroup = createBehaviorGroup("name", "displayName", bundle.getId());
+        BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
         addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup.getId());
         List<EventType> eventTypes = findEventTypesByBehaviorGroupId(ACCOUNT_ID, behaviorGroup.getId());
         assertEquals(1, eventTypes.size());
@@ -223,7 +200,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         Bundle bundle = createBundle();
         Application app = createApp(bundle.getId());
         EventType eventType = createEventType(app.getId());
-        BehaviorGroup behaviorGroup = createBehaviorGroup("name", "displayName", bundle.getId());
+        BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
         addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup.getId());
         List<BehaviorGroup> behaviorGroups = findBehaviorGroupsByEventTypeId(ACCOUNT_ID, eventType.getId());
         assertEquals(1, behaviorGroups.size());
@@ -233,7 +210,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     public void testAddAndDeleteBehaviorGroupAction() {
         Bundle bundle = createBundle();
-        BehaviorGroup behaviorGroup = createBehaviorGroup("name", "displayName", bundle.getId());
+        BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
         Endpoint endpoint1 = createEndpoint();
         Endpoint endpoint2 = createEndpoint();
         Endpoint endpoint3 = createEndpoint();
@@ -249,7 +226,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     public void testUpdateBehaviorGroupActionsWithWrongAccountId() {
         Bundle bundle = createBundle();
-        BehaviorGroup behaviorGroup = createBehaviorGroup("name", "displayName", bundle.getId());
+        BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
         Endpoint endpoint = createEndpoint();
         updateAndCheckBehaviorGroupActions("unknownAccountId", bundle.getId(), behaviorGroup.getId(), false, endpoint.getId());
     }
@@ -286,18 +263,16 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         return endpointResources.createEndpoint(endpoint).await().indefinitely();
     }
 
-    private BehaviorGroup createBehaviorGroup(String name, String displayName, UUID bundleId) {
+    private BehaviorGroup createBehaviorGroup(String displayName, UUID bundleId) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setName(name);
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
         return behaviorGroupResources.create(ACCOUNT_ID, behaviorGroup).await().indefinitely();
     }
 
-    private Boolean updateBehaviorGroup(UUID behaviorGroupId, String name, String displayName, UUID bundleId) {
+    private Boolean updateBehaviorGroup(UUID behaviorGroupId, String displayName, UUID bundleId) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setId(behaviorGroupId);
-        behaviorGroup.setName(name);
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(UUID.randomUUID()); // This should not have any effect, the bundle is not updatable.
         return behaviorGroupResources.update(ACCOUNT_ID, behaviorGroup).await().indefinitely();

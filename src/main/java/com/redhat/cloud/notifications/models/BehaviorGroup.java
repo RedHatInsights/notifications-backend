@@ -21,7 +21,6 @@ import javax.persistence.QueryHint;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import java.util.List;
 import java.util.Objects;
@@ -62,11 +61,6 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
     @Size(max = 50)
     @JsonIgnore
     private String accountId;
-
-    @NotNull
-    @Pattern(regexp = "[a-z][a-z_0-9-]*")
-    @Size(max = 255)
-    private String name;
 
     @NotNull
     @Schema(name = "display_name")
@@ -115,14 +109,6 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getDisplayName() {
