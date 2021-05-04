@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: notifications
+  name: notifications-backend
 objects:
 - apiVersion: v1
   kind: Secret # For ephemeral/local environment
