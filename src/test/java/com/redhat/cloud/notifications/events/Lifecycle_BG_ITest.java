@@ -106,8 +106,8 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
          * Then, we'll create two behavior groups which will be part of the bundle created above. One will be the
          * default behavior group, the other one will be a custom behavior group.
          */
-        String defaultBehaviorGroupId = createBehaviorGroup(identityHeader, "default-behavior-group", "Default behavior group", bundleId);
-        String customBehaviorGroupId = createBehaviorGroup(identityHeader, "custom-behavior-group", "Custom behavior group", bundleId);
+        String defaultBehaviorGroupId = createBehaviorGroup(identityHeader, "Default behavior group", bundleId);
+        String customBehaviorGroupId = createBehaviorGroup(identityHeader, "Custom behavior group", bundleId);
         setDefaultBehaviorGroup(identityHeader, bundleId, defaultBehaviorGroupId);
 
         // We need actions for our behavior groups.
@@ -258,9 +258,8 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         assertEquals(2, jsonEventTypes.size()); // One from the current test, one from the default DB records.
     }
 
-    private String createBehaviorGroup(Header identityHeader, String name, String displayName, String bundleId) {
+    private String createBehaviorGroup(Header identityHeader, String displayName, String bundleId) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setName(name);
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(UUID.fromString(bundleId));
 
@@ -279,7 +278,6 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         jsonBehaviorGroup.mapTo(BehaviorGroup.class);
         assertNotNull(jsonBehaviorGroup.getString("id"));
         assertNull(jsonBehaviorGroup.getString("accountId"));
-        assertEquals(behaviorGroup.getName(), jsonBehaviorGroup.getString("name"));
         assertEquals(behaviorGroup.getDisplayName(), jsonBehaviorGroup.getString("display_name"));
         assertEquals(behaviorGroup.getBundleId().toString(), jsonBehaviorGroup.getString("bundle_id"));
         assertNotNull(jsonBehaviorGroup.getString("created"));
@@ -488,21 +486,6 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
                 .then()
                 .statusCode(200);
-
-        String responseBody = given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
-                .pathParam("eventTypeId", eventTypeId)
-                .when()
-                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
-                .then()
-                .statusCode(200)
-                .extract().body().asString();
-
-        JsonArray jsonBehaviorGroups = new JsonArray(responseBody);
-        assertEquals(expectedEventTypeBehaviorGroups, jsonBehaviorGroups.size());
-        JsonObject jsonBehaviorGroup = jsonBehaviorGroups.getJsonObject(0);
-        assertEquals(behaviorGroupId, jsonBehaviorGroup.getString("id"));
     }
 
     private void checkEventTypeBehaviorGroups(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {

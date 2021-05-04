@@ -49,9 +49,8 @@ public class BehaviorGroupResources {
 
     // TODO Should this be forbidden for default behavior groups?
     public Uni<Boolean> update(String accountId, BehaviorGroup behaviorGroup) {
-        String query = "UPDATE BehaviorGroup SET name = :name, displayName = :displayName WHERE accountId = :accountId AND id = :id";
+        String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE accountId = :accountId AND id = :id";
         return session.createQuery(query)
-                .setParameter("name", behaviorGroup.getName())
                 .setParameter("displayName", behaviorGroup.getDisplayName())
                 .setParameter("accountId", accountId)
                 .setParameter("id", behaviorGroup.getId())
