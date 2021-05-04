@@ -29,7 +29,7 @@ objects:
           failureThreshold: 3
           httpGet:
             path: /health/live
-            port: 8080
+            port: 8000
             scheme: HTTP
           initialDelaySeconds: 40
           periodSeconds: 10
@@ -39,7 +39,7 @@ objects:
           failureThreshold: 3
           httpGet:
             path: /health/ready
-            port: 8080
+            port: 8000
             scheme: HTTP
           initialDelaySeconds: 40
           periodSeconds: 10
