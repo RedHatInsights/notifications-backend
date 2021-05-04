@@ -48,10 +48,9 @@ public class EventConsumer {
     // Can be modified to use Multi<Message<String>> input also for more concurrency
     public Uni<Void> processAsync(Message<String> input) {
         return Uni.createFrom().item(() -> input.getPayload())
-                .onItem().invoke(payload -> log.fine(() -> "Processing: " + payload))
                 .stage(self -> self
-                                // First pipeline stage - modify from Kafka message to processable entity
                                 .onItem().transform(this::extractPayload)
+                                .onItem().invoke(payload -> log.info(() -> "Processing received payload: (" + payload.getAccountId() + ") " + payload.getBundle() + "/" + payload.getApplication() + "/" + payload.getEventType()))
                                 .onFailure().invoke(t -> rejectedCount.increment())
                 )
                 .stage(self -> self
