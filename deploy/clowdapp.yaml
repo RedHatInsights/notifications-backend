@@ -16,7 +16,7 @@ objects:
     name: notifications-backend
     labels:
       app: notifications
-      clowdapp: notifications-backend
+      clowdapp: notifications
   spec:
     envName: ${ENV_NAME}
     deployments:
