@@ -26,6 +26,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -44,6 +45,8 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import static javax.ws.rs.core.Response.Status;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -324,9 +327,19 @@ public class NotificationService {
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
+        // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
+        if (endpointIds.contains(null)) {
+            return Uni.createFrom().failure(new BadRequestException("The endpoints identifiers list should not contain empty values"));
+        }
         return getAccountId(sec)
                 .onItem().transformToUni(accountId -> behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds))
-                .replaceWith(Response.ok().build());
+                .onItem().transform(updated -> {
+                    if (updated) {
+                        return Response.ok().build();
+                    } else {
+                        return Response.status(Status.NOT_FOUND).build();
+                    }
+                });
     }
 
     @GET
