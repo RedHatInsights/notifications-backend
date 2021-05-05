@@ -65,7 +65,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
         // Update behavior group.
         String newDisplayName = "newDisplayName";
-        Boolean updated = updateBehaviorGroup(behaviorGroup.getId(), newDisplayName, bundle.getId());
+        Boolean updated = updateBehaviorGroup(behaviorGroup.getId(), newDisplayName);
         assertTrue(updated);
         session.clear(); // We need to clear the session L1 cache before checking the update result.
         behaviorGroups = findBehaviorGroupsByBundleId(bundle.getId());
@@ -270,7 +270,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         return behaviorGroupResources.create(ACCOUNT_ID, behaviorGroup).await().indefinitely();
     }
 
-    private Boolean updateBehaviorGroup(UUID behaviorGroupId, String displayName, UUID bundleId) {
+    private Boolean updateBehaviorGroup(UUID behaviorGroupId, String displayName) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setId(behaviorGroupId);
         behaviorGroup.setDisplayName(displayName);
