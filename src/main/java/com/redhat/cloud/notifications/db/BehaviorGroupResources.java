@@ -10,6 +10,7 @@ import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.NoResultException;
 import javax.ws.rs.NotFoundException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -135,6 +136,11 @@ public class BehaviorGroupResources {
                 .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutActions));
     }
 
+    /*
+     * Returns Boolean.TRUE if the behavior group was found and successfully updated.
+     * Returns Boolean.FALSE if the behavior group was not found.
+     * If an exception other than NoResultException is thrown during the update, the DB transaction will be rolled back.
+     */
     public Uni<Boolean> updateBehaviorGroupActions(String accountId, UUID behaviorGroupId, List<UUID> endpointIds) {
         return session.withTransaction(tx -> {
 
@@ -143,8 +149,7 @@ public class BehaviorGroupResources {
             return session.createQuery(checkQuery, UUID.class)
                     .setParameter("accountId", accountId)
                     .setParameter("id", behaviorGroupId)
-                    .getSingleResultOrNull()
-                    .onItem().ifNull().failWith(new NotFoundException("Behavior group not found: " + behaviorGroupId))
+                    .getSingleResult()
                     .onItem().call(() -> {
 
                         // All behavior group actions that should no longer exist must be deleted.
@@ -182,15 +187,10 @@ public class BehaviorGroupResources {
                     })
                     .collect().asList()
                     .replaceWith(Boolean.TRUE)
-                    .onFailure().recoverWithItem(failure -> {
-                        // The transaction is rolled back in case of failure.
-                        tx.markForRollback();
-                        LOGGER.log(Level.WARNING, "Behavior group actions update failed", failure);
-                        return Boolean.FALSE;
-                    });
+                    // The following exception will be thrown if the behavior group is not found with the first query.
+                    .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
         });
     }
-
 
     // This should only be called from an internal API. That's why we don't have to validate the accountId.
     public Uni<Integer> setDefaultBehaviorGroup(UUID bundleId, UUID behaviorGroupId) {
