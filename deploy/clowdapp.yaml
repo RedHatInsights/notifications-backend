@@ -68,8 +68,10 @@ objects:
       partitions: 64
       topicName: platform.notifications.ingress
     database:
-      name: notifications
+      sharedDbAppName: notifications
       version: 12
+      dependencies:
+      - notifications-gw
 
 parameters:
 - name: LOG_LEVEL
