@@ -65,7 +65,7 @@ public class EventConsumer {
                 .onItemOrFailure()
                 .transformToUni((unused, t) -> {
                     if (t != null) {
-                        log.log(Level.INFO, "Could not process the payload", t);
+                        log.log(Level.INFO, "Could not process the payload: " + input.getPayload(), t);
                     }
                     return Uni.createFrom().voidItem();
                 });
