@@ -304,7 +304,7 @@ public class NotificationService {
     public Uni<Boolean> updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         return getAccountId(sec)
                 .onItem().transformToUni(accountId -> {
-                    behaviorGroup.setBundleId(id);
+                    behaviorGroup.setId(id);
                     return behaviorGroupResources.update(accountId, behaviorGroup);
                 });
     }
