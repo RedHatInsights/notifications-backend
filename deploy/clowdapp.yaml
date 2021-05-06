@@ -50,6 +50,10 @@ objects:
           value: ${CLOWDER_FILE}
         - name: CLOWDER_ENABLED
           value: ${CLOWDER_ENABLED}
+        - name: RBAC_URL
+          value: ${RBAC_SCHEME}://${RBAC_HOST}:${RBAC_PORT}
+        - name: RBAC_MP_REST_URL
+          value: ${RBAC_SCHEME}://${RBAC_HOST}:${RBAC_PORT}
         resources:
           limits:
             cpu: ${CPU_LIMIT}
@@ -103,3 +107,15 @@ parameters:
 - name: CLOWDER_FILE
   value: /cdapp/cdappconfig.json
   description: default path for cdappconfig file
+- name: RBAC_HOST
+  displayName: Rbac Service Host
+  description: Host to use for the RBAC service URL.
+  value: "rbac"
+- name: RBAC_PORT
+  displayName: Rbac Service Port
+  description: Port to use for the RBAC service URL.
+  value: "8080"
+- name: RBAC_SCHEME
+  displayName: Rbac Service Scheme
+  description: Scheme to use for the RBAC service URL. Can be either http or https
+  value: http
