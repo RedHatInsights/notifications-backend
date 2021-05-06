@@ -110,11 +110,11 @@ parameters:
 - name: RBAC_HOST
   displayName: Rbac Service Host
   description: Host to use for the RBAC service URL.
-  value: "rbac"
+  value: "rbac-service"
 - name: RBAC_PORT
   displayName: Rbac Service Port
   description: Port to use for the RBAC service URL.
-  value: "8080"
+  value: "8000"
 - name: RBAC_SCHEME
   displayName: Rbac Service Scheme
   description: Scheme to use for the RBAC service URL. Can be either http or https
