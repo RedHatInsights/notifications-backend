@@ -49,6 +49,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     public Uni<SecurityIdentity> authenticate(RhIdentityAuthenticationRequest rhAuthReq, AuthenticationRequestContext authenticationRequestContext) {
         if (!isRbacEnabled) {
             return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
+                    .setPrincipal(new RhIdPrincipal("-noauth-", "-1"))
                     .addRole(RBAC_READ_NOTIFICATIONS)
                     .addRole(RBAC_WRITE_NOTIFICATIONS)
                     .addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS)
