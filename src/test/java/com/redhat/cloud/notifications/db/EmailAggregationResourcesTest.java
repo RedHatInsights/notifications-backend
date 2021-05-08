@@ -97,12 +97,12 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
 
     private List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
         return emailAggregationResources.getEmailAggregation(key, start, end)
-                .collect().asList().await().indefinitely();
+                .await().indefinitely();
     }
 
     private List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
         return emailAggregationResources.getApplicationsWithPendingAggregation(start, end)
-                .collect().asList().await().indefinitely();
+                .await().indefinitely();
     }
 
     private Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {

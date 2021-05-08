@@ -131,22 +131,27 @@ public class NotificationService {
     @GET
     @Path("/eventTypes/affectedByRemovalOfEndpoint/{endpointId}")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Multi<EventType> getEventTypesAffectedByEndpointId(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
+    public Uni<List<EventType>> getEventTypesAffectedByEndpointId(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        Multi<EventType> directlyAffected = apps.getEventTypesByEndpointId(principal.getAccount(), endpointId);
-        Multi<EventType> indirectlyAffected = resources.getEndpointsPerType(principal.getAccount(), EndpointType.DEFAULT, null, null).toUni().onItem().transformToMulti(defaultEndpoint ->
+        Multi<EventType> directlyAffected = apps.getEventTypesByEndpointId(principal.getAccount(), endpointId)
+                .onItem().transformToMulti(Multi.createFrom()::iterable);
+        Multi<EventType> indirectlyAffected = resources.getEndpointsPerType(principal.getAccount(), EndpointType.DEFAULT, null, null)
+                .onItem().transformToMulti(Multi.createFrom()::iterable)
+                .toUni().onItem().transformToMulti(defaultEndpoint ->
             resources.endpointInDefaults(principal.getAccount(), endpointId)
                     .onItem().transformToMulti(exists -> {
                         if (exists) {
-                            return apps.getEventTypesByEndpointId(principal.getAccount(), defaultEndpoint.getId());
+                            return apps.getEventTypesByEndpointId(principal.getAccount(), defaultEndpoint.getId())
+                                    .onItem().transformToMulti(Multi.createFrom()::iterable);
                         }
 
                         return Multi.createFrom().empty();
                     })
         );
 
-        return Multi.createBy().concatenating().streams(directlyAffected, indirectlyAffected);
+        return Multi.createBy().concatenating().streams(directlyAffected, indirectlyAffected)
+                .collect().asList();
     }
 
     /*
@@ -201,7 +206,7 @@ public class NotificationService {
     @GET
     @Path("/eventTypes/{eventTypeId}")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Multi<Endpoint> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
+    public Uni<List<Endpoint>> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query);
     }
@@ -242,7 +247,7 @@ public class NotificationService {
     @Path("/defaults")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     @Operation(summary = "Retrieve all integrations of the configured default actions.")
-    public Multi<Endpoint> getEndpointsForDefaults(@Context SecurityContext sec) {
+    public Uni<List<Endpoint>> getEndpointsForDefaults(@Context SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.getDefaultEndpoints(principal.getAccount());
     }
@@ -274,17 +279,23 @@ public class NotificationService {
     @GET
     @Path("/facets/applications")
     @Operation(summary = "Return a thin list of configured applications. This can be used to configure a filter in the UI")
-    public Multi<Facet> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
-        return apps.getApplications(bundleName).onItem().transform(a -> new Facet(a.getId().toString(), a.getName(), a.getDisplayName()));
+    public Uni<List<Facet>> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
+        return apps.getApplications(bundleName)
+                .onItem().transform(apps -> apps.stream()
+                        .map(a -> new Facet(a.getId().toString(), a.getName(), a.getDisplayName()))
+                        .collect(Collectors.toList())
+                );
     }
 
     @GET
     @Path("/facets/bundles")
     @Operation(summary = "Return a thin list of configured bundles. This can be used to configure a filter in the UI")
-    public Multi<Facet> getBundleFacets(@Context SecurityContext sec) {
+    public Uni<List<Facet>> getBundleFacets(@Context SecurityContext sec) {
         return bundleResources.getBundles()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transform(b -> new Facet(b.getId().toString(), b.getName(), b.getDisplayName()));
+                .onItem().transform(bundles -> bundles.stream()
+                        .map(b -> new Facet(b.getId().toString(), b.getName(), b.getDisplayName()))
+                        .collect(Collectors.toList())
+                );
     }
 
     @DELETE

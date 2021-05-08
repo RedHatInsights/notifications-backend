@@ -15,6 +15,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 import javax.ws.rs.BadRequestException;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -52,7 +53,7 @@ public class EndpointResources {
                 .replaceWith(endpoint);
     }
 
-    public Multi<Endpoint> getEndpointsPerType(String tenant, EndpointType type, Boolean activeOnly, Query limiter) {
+    public Uni<List<Endpoint>> getEndpointsPerType(String tenant, EndpointType type, Boolean activeOnly, Query limiter) {
         // TODO Modify the parameter to take a vararg of Functions that modify the query
         // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
         String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.type = :endpointType";
@@ -79,7 +80,8 @@ public class EndpointResources {
 
         return mutinyQuery.getResultList()
                 .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties);
+                .onItem().transformToUniAndConcatenate(this::loadProperties)
+                .collect().asList();
     }
 
     public Uni<Long> getEndpointsCountPerType(String tenant, EndpointType type, Boolean activeOnly) {
@@ -131,7 +133,7 @@ public class EndpointResources {
                 .onItem().transformToUniAndConcatenate(this::loadProperties);
     }
 
-    public Multi<Endpoint> getEndpoints(String tenant, Query limiter) {
+    public Uni<List<Endpoint>> getEndpoints(String tenant, Query limiter) {
         // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
         //      or should I just create a new method for it?
         String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId";
@@ -150,7 +152,8 @@ public class EndpointResources {
 
         return mutinyQuery.getResultList()
                 .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties);
+                .onItem().transformToUniAndConcatenate(this::loadProperties)
+                .collect().asList();
     }
 
     public Uni<Long> getEndpointsCount(String tenant) {
@@ -227,7 +230,7 @@ public class EndpointResources {
     }
 
     // TODO [BG Phase 2] Delete this method
-    public Multi<Endpoint> getLinkedEndpoints(String tenant, UUID eventTypeId, Query limiter) {
+    public Uni<List<Endpoint>> getLinkedEndpoints(String tenant, UUID eventTypeId, Query limiter) {
         String query = "SELECT e FROM Endpoint e JOIN e.targets t WHERE t.id.accountId = :accountId AND t.eventType.id = :eventTypeId";
 
         if (limiter != null) {
@@ -245,18 +248,20 @@ public class EndpointResources {
 
         return mutinyQuery.getResultList()
                 .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties);
+                .onItem().transformToUniAndConcatenate(this::loadProperties)
+                .collect().asList();
     }
 
     // TODO [BG Phase 2] Delete this method
-    public Multi<Endpoint> getDefaultEndpoints(String tenant) {
+    public Uni<List<Endpoint>> getDefaultEndpoints(String tenant) {
         String query = "SELECT e FROM Endpoint e JOIN e.defaults d WHERE d.id.accountId = :accountId";
 
         return session.createQuery(query, Endpoint.class)
                 .setParameter("accountId", tenant)
                 .getResultList()
                 .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties);
+                .onItem().transformToUniAndConcatenate(this::loadProperties)
+                .collect().asList();
     }
 
     // TODO [BG Phase 2] Delete this method

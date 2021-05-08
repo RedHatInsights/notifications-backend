@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
 import javax.inject.Inject;
@@ -127,7 +126,7 @@ public class InternalService {
 
     @GET
     @Path("/applications/{appId}/eventTypes")
-    public Multi<EventType> getEventTypes(@PathParam("appId") UUID appId) {
+    public Uni<List<EventType>> getEventTypes(@PathParam("appId") UUID appId) {
         return appResources.getEventTypes(appId);
     }
 
