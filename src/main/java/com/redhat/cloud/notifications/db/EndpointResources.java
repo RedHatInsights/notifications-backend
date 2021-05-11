@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointDefault;
 import com.redhat.cloud.notifications.models.EndpointProperties;
@@ -46,9 +47,13 @@ public class EndpointResources {
                          */
                         endpoint.getProperties().setEndpoint(endpoint);
                         switch (endpoint.getType()) {
+                            case CAMEL:
                             case WEBHOOK:
                                 return session.persist(endpoint.getProperties())
                                         .onItem().call(session::flush);
+//                            case CAMEL:
+//                                return session.persist(endpoint.getProperties())
+//                                        .onItem().call(session::flush);
                             case EMAIL_SUBSCRIPTION:
                             case DEFAULT: // TODO [BG Phase 2] Delete this case
                             default:
@@ -310,6 +315,8 @@ public class EndpointResources {
                 "WHERE accountId = :accountId AND id = :id";
         String webhookQuery = "UPDATE WebhookProperties SET url = :url, method = :method, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
+        String camelQuery = "UPDATE EndpointCamel SET url = :url, subType = :subType, " +
+                "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
 
         return session.createQuery(endpointQuery)
                 .setParameter("name", endpoint.getName())
@@ -337,6 +344,17 @@ public class EndpointResources {
                                         .executeUpdate()
                                         .call(session::flush)
                                         .onItem().transform(rowCount -> rowCount > 0);
+                            case CAMEL:
+                                CamelProperties cAttr = (CamelProperties) endpoint.getProperties();
+                                return session.createQuery(camelQuery)
+                                        .setParameter("url", cAttr.getUrl())
+                                        .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
+                                        .setParameter("secretToken", cAttr.getSecretToken())
+                                        .setParameter("endpointId", endpoint.getId())
+                                        .setParameter("subType", endpoint.getType())
+                                        .executeUpdate()
+                                        .call(session::flush)
+                                        .onItem().transform(rowCount -> rowCount > 0);
                             case EMAIL_SUBSCRIPTION:
                             case DEFAULT:
                             default:
@@ -350,7 +368,8 @@ public class EndpointResources {
         // Group endpoints in types and load in batches for each type.
         Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
-        return this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK);
+        return this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK)
+                .chain(() -> loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL));
         // use `.chain(() -> loadTyped...)` when adding other types
     }
 

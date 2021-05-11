@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
@@ -46,6 +47,9 @@ public class EndpointProcessor {
     WebhookTypeProcessor webhooks;
 
     @Inject
+    CamelTypeProcessor camel;
+
+    @Inject
     EmailSubscriptionTypeProcessor emails;
 
     @Inject
@@ -83,6 +87,8 @@ public class EndpointProcessor {
 
     public EndpointTypeProcessor endpointTypeToProcessor(EndpointType endpointType) {
         switch (endpointType) {
+            case CAMEL:
+                return camel;
             case WEBHOOK:
                 return webhooks;
             case EMAIL_SUBSCRIPTION:

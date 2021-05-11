@@ -48,8 +48,16 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     @Override
     public Uni<SecurityIdentity> authenticate(RhIdentityAuthenticationRequest rhAuthReq, AuthenticationRequestContext authenticationRequestContext) {
         if (!isRbacEnabled) {
+            RhIdPrincipal principal;
+            String xH = rhAuthReq.getAttribute(IDENTITY_HEADER);
+            if (xH != null) {
+                RhIdentity rhid = getRhIdentityFromString(xH);
+                principal = new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(), rhid.getIdentity().getAccountNumber());
+            } else {
+                principal = new RhIdPrincipal("-noauth-", "-1");
+            }
             return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
-                    .setPrincipal(new RhIdPrincipal("-noauth-", "-1"))
+                    .setPrincipal(principal)
                     .addRole(RBAC_READ_NOTIFICATIONS)
                     .addRole(RBAC_WRITE_NOTIFICATIONS)
                     .addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS)

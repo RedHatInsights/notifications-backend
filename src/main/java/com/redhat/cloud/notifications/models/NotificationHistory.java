@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.db.converters.NotificationHistoryDetailsCo
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -27,7 +26,7 @@ import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 public class NotificationHistory extends CreationTimestamped {
 
     @Id
-    @GeneratedValue
+    // We can not use @GeneratedValue as the ID needs to be sent over to Camel
     @JsonProperty(access = READ_ONLY)
     private UUID id;
 
@@ -67,6 +66,17 @@ public class NotificationHistory extends CreationTimestamped {
         this.eventId = eventId;
         this.endpoint = endpoint;
         setCreated(created);
+    }
+
+    public NotificationHistory(UUID id, String accountId, Long invocationTime, Boolean invocationResult, String eventId, Endpoint endpoint, LocalDateTime created, Map<String, Object> details) {
+        this.id = id;
+        this.accountId = accountId;
+        this.invocationTime = invocationTime;
+        this.invocationResult = invocationResult;
+        this.eventId = eventId;
+        this.endpoint = endpoint;
+        setCreated(created);
+        this.details = details;
     }
 
     public UUID getId() {
@@ -152,4 +162,17 @@ public class NotificationHistory extends CreationTimestamped {
     public int hashCode() {
         return Objects.hash(id);
     }
+
+
+    public static NotificationHistory getHistoryStub(Notification item, long invocationTime, UUID historyId) {
+        NotificationHistory history = new NotificationHistory();
+        history.setInvocationTime(invocationTime);
+        history.setEndpoint(item.getEndpoint());
+        history.setAccountId(item.getTenant());
+        history.setEventId("");
+        history.setInvocationResult(false);
+        history.setId(historyId);
+        return history;
+    }
+
 }

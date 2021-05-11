@@ -1,3 +1,4 @@
+import json
 import requests
 import uuid
 
@@ -95,7 +96,6 @@ def add_event_type(application_id, name, display_name):
     return response_json['id']
 
 
-
 def add_bundle(name, display_name):
     """Adds a bundle if it does not yet exist
     :param name: Name of the bundle, [a-z0-9-]+
@@ -138,7 +138,9 @@ def find_bundle(name):
 
 
 def find_event_type(application_id, name):
-    """Find an event type by name for an application"""
+    """Find an event type by name for an application.
+    Returns its id or None if not found
+    """
     r = requests.get(applications_prefix + "/" + application_id + "/eventTypes/")
 
     if r.status_code != 200:
@@ -152,21 +154,17 @@ def find_event_type(application_id, name):
     return None
 
 
-def create_endpoint(name, xrhid):
-    """Creates a default endpoint"""
+def create_endpoint(name, xrhid, properties, ep_type="webhook"):
+    """Creates an endpoint"""
 
     ep_uuid = uuid.uuid4()
     ep_id = str(ep_uuid)
+    properties["endpointId"] = ep_id
     ep_json = {"name": name,
                "description": name,
                "enabled": True,
-               "properties": {
-                   "endpointId": ep_id,
-                   "url": "http://localhost:8085",
-                   "method": "PUT",
-                   "secret_token": "bla-token"
-               },
-               "type": "webhook"}
+               "properties": properties,
+               "type": ep_type}
 
     h = {"x-rh-identity": xrhid}
 
@@ -183,12 +181,49 @@ def create_endpoint(name, xrhid):
     return epid
 
 
-def add_endpoint_to_event_type(event_type_id, endpoint_id, xrhid):
+def add_endpoint_to_event_type(event_type_id, endpoint_id, x_rhid):
 
-    headers = {"x-rh-identity": xrhid}
-    r = requests.put(notifications_prefix+ "/notifications/eventTypes/" + event_type_id + "/" + endpoint_id,
+    headers = {"x-rh-identity": x_rhid}
+    r = requests.put(notifications_prefix + "/notifications/eventTypes/" + event_type_id + "/" + endpoint_id,
                      headers=headers)
 
     print(r.status_code)
 
 
+def print_history_for_event_type(event_type_id, x_rhid):
+
+    headers = {"x-rh-identity": x_rhid}
+    r = requests.get(notifications_prefix + "/notifications/eventTypes/" + event_type_id,
+                     headers=headers)
+
+    if r.status_code != 200:
+        print (r.reason)
+        exit(1)
+
+    response_json = r.json()
+    for ep in response_json:
+        st = ''
+        url = ep["properties"]["url"]
+        if ep["type"] == "camel":
+            st = ep["properties"]["sub_type"]
+
+        ep_id = ep['id']
+        print("Endpoint  >" + ep["name"] + "< of type " + ep["type"], end='')
+        if st != '':
+            print(f"({st})", end='')
+
+        print(f", url={url}, created at {ep['created']}, id= {ep_id}")
+
+        r2 = requests.get(integrations_prefix + "/endpoints/" + ep_id + "/history"
+                          + "?include_detail=true&limit=5",
+                          headers=headers)
+
+        reply = r2.json()
+        if r2.status_code != 200:
+            print("Reading history failed: " + r2.status_code)
+            exit(r2.status_code)
+
+        for entry in reply:
+            print("   " + entry["created"] + ", successful: " + str(entry["invocationResult"])
+                  + ", duration= " + str(entry['invocationTime']))
+            print("     Details: " + str(entry["details"]))
