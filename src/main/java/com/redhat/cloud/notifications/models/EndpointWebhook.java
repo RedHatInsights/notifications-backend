@@ -6,31 +6,36 @@ import com.redhat.cloud.notifications.db.converters.HttpTypeConverter;
 
 import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.MapsId;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Objects;
+import java.util.UUID;
 
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
+import static javax.persistence.FetchType.LAZY;
 
 @Entity
 @Table(name = "endpoint_webhooks")
 @JsonNaming(SnakeCaseStrategy.class)
 public class EndpointWebhook {
 
+    /*
+     * Because of the @MapsId annotation on the `endpoint` field, an EndpointWebhook instance and its parent Endpoint
+     * instance will share the same @Id value. As a consequence, the `id` field doesn't need to be generated.
+     */
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "endpoint_webhooks_id_seq")
     @NotNull
-    private Integer id;
+    private UUID id;
 
     @NotNull
-    @OneToOne
-    @JoinColumn(name = "endpoint_id")
+    @MapsId
+    @OneToOne(fetch = LAZY)
+    @JoinColumn(name = "id")
     private Endpoint endpoint;
 
     @NotNull
@@ -49,11 +54,11 @@ public class EndpointWebhook {
     @Convert(converter = BasicAuthenticationConverter.class)
     private BasicAuthentication basicAuthentication;
 
-    public Integer getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

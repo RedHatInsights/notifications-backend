@@ -68,7 +68,7 @@ public class EndpointProcessor {
 
     public Uni<Void> process(Action action) {
         processedItems.increment();
-        // TODO [BG Phase 2] Use EndpointResources.getEndpoints here
+        // TODO [BG Phase 2] Use EndpointResources.getTargetEndpoints here
         Multi<NotificationHistory> endpointsCallResult = getEndpoints(
                 action.getAccountId(),
                 action.getBundle(),
