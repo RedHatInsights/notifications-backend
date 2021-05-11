@@ -17,7 +17,7 @@ ALTER TABLE endpoint_webhooks
 -- The 'endpoint_webhook' -> 'endpoint' FK value will be the 'endpoint_webhook' PK value from now on.
 UPDATE endpoint_webhooks SET id = endpoint_id;
 
--- Finally, we no longer need the 'endpoint_id column' since its values were copied into the 'id' column.
+-- Finally, we no longer need the 'endpoint_id' column since its values were copied into the 'id' column.
 -- The constraints must also be restored. The same column is now used for both PK and FK.
 ALTER TABLE endpoint_webhooks
     DROP COLUMN endpoint_id,
