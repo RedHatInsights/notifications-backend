@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
+import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -126,8 +127,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Override
     public Uni<NotificationHistory> process(Notification item) {
         final EmailTemplate template = emailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
-        final boolean shouldSaveAggregation = Arrays.asList(EmailSubscriptionType.values())
-                .stream()
+        final boolean shouldSaveAggregation = Arrays.stream(EmailSubscriptionType.values())
                 .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
                 .anyMatch(emailSubscriptionType -> template.isSupported(item.getAction().getEventType(), emailSubscriptionType));
 
@@ -153,7 +153,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
         return this.subscriptionResources.getEmailSubscribers(item.getTenant(), item.getAction().getBundle(), item.getAction().getApplication(), emailSubscriptionType)
-            .onItem().transform(emailSubscription -> emailSubscription.getUserId())
+            .onItem().transform(EmailSubscription::getUserId)
                 .collect().with(Collectors.toSet())
                 .onItem().transform(userSet -> {
                     if (userSet.size() > 0) {
@@ -248,7 +248,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 });
     }
 
-
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
         return subscriptionResources.getEmailSubscribersCount(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType)
                 .onItem().transformToMulti(subscriberCount -> {
@@ -308,7 +307,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 // .onItem().invoke(result -> { })
     }
 
-    public Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
+    Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
         Instant yesterdayScheduledFireTime = scheduledFireTime.minus(emailSubscriptionType.getDuration());
 
         LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, UTC);
