@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db;
 
-import com.redhat.cloud.notifications.models.Attributes;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointDefault;
 import com.redhat.cloud.notifications.models.EndpointTarget;
@@ -17,25 +16,46 @@ import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 import javax.ws.rs.BadRequestException;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 @ApplicationScoped
 public class EndpointResources {
+
+    private static final Logger LOGGER = Logger.getLogger(EndpointResources.class.getName());
 
     @Inject
     Mutiny.Session session;
 
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
-        return Uni.createFrom().item(endpoint)
-                .onItem().transform(this::mapProperties)
-                .onItem().transformToUni(session::persist)
-                .call(session::flush)
+        return session.persist(endpoint)
+                .onItem().call(session::flush)
+                .onItem().call(() -> {
+                    // If the endpoint properties are null, they won't be persisted.
+                    if (endpoint.getProperties() != null) {
+                        switch (endpoint.getType()) {
+                            case WEBHOOK:
+                                return session.persist(buildEndpointWebhook(endpoint))
+                                        .onItem().call(session::flush);
+                            case EMAIL_SUBSCRIPTION:
+                            case DEFAULT: // TODO [BG Phase 2] Delete this case
+                            default:
+                                // Do nothing.
+                                break;
+                        }
+                    }
+                    /*
+                     * If this line is reached, it means the endpoint properties are null or we don't support
+                     * persisting properties for the endpoint type. We still have to return something.
+                     */
+                    return Uni.createFrom().voidItem();
+                })
                 .replaceWith(endpoint);
     }
 
     public Multi<Endpoint> getEndpointsPerType(String tenant, EndpointType type, Boolean activeOnly, Query limiter) {
         // TODO Modify the parameter to take a vararg of Functions that modify the query
         // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
-        String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.webhook WHERE e.accountId = :accountId AND e.type = :endpointType";
+        String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.type = :endpointType";
         if (activeOnly != null) {
             query += " AND enabled = :enabled";
         }
@@ -58,7 +78,8 @@ public class EndpointResources {
         }
 
         return mutinyQuery.getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .onItem().transformToMulti(Multi.createFrom()::iterable)
+                .onItem().transformToUniAndConcatenate(this::loadProperties);
     }
 
     public Uni<Long> getEndpointsCountPerType(String tenant, EndpointType type, Boolean activeOnly) {
@@ -80,8 +101,7 @@ public class EndpointResources {
 
     // TODO [BG Phase 2] Delete this method
     public Multi<Endpoint> getTargetEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
-        // TODO Add UNION JOIN for different endpoint types here
-        String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.webhook JOIN e.targets t " +
+        String query = "SELECT e FROM Endpoint e JOIN e.targets t " +
                 "WHERE e.enabled = TRUE AND t.eventType.name = :eventTypeName AND t.id.accountId = :accountId " +
                 "AND t.eventType.application.name = :applicationName AND t.eventType.application.bundle.name = :bundleName";
 
@@ -91,13 +111,13 @@ public class EndpointResources {
                 .setParameter("accountId", tenant)
                 .setParameter("bundleName", bundleName)
                 .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .onItem().transformToMulti(Multi.createFrom()::iterable)
+                .onItem().transformToUniAndConcatenate(this::loadProperties);
     }
 
     // TODO [BG Phase 2] Remove '_BG' suffix
     public Multi<Endpoint> getTargetEndpoints_BG(String tenant, String bundleName, String applicationName, String eventTypeName) {
-        // TODO Add UNION JOIN for different endpoint types here
-        String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.webhook JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
+        String query = "SELECT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                 "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName";
 
@@ -107,18 +127,18 @@ public class EndpointResources {
                 .setParameter("accountId", tenant)
                 .setParameter("bundleName", bundleName)
                 .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .onItem().transformToMulti(Multi.createFrom()::iterable)
+                .onItem().transformToUniAndConcatenate(this::loadProperties);
     }
 
     public Multi<Endpoint> getEndpoints(String tenant, Query limiter) {
         // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
         //      or should I just create a new method for it?
-        String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.webhook WHERE e.accountId = :accountId";
+        String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId";
 
         if (limiter != null) {
             query = limiter.getModifiedQuery(query);
         }
-        // TODO Add JOIN ON clause to proper table, such as webhooks and then read the results
 
         Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
                 .setParameter("accountId", tenant);
@@ -129,7 +149,8 @@ public class EndpointResources {
         }
 
         return mutinyQuery.getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .onItem().transformToMulti(Multi.createFrom()::iterable)
+                .onItem().transformToUniAndConcatenate(this::loadProperties);
     }
 
     public Uni<Long> getEndpointsCount(String tenant) {
@@ -140,11 +161,12 @@ public class EndpointResources {
     }
 
     public Uni<Endpoint> getEndpoint(String tenant, UUID id) {
-        String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.webhook WHERE e.accountId = :accountId AND e.id = :id";
+        String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.id = :id";
         return session.createQuery(query, Endpoint.class)
                 .setParameter("id", id)
                 .setParameter("accountId", tenant)
-                .getSingleResultOrNull();
+                .getSingleResultOrNull()
+                .onItem().ifNotNull().transformToUni(this::loadProperties);
     }
 
     public Uni<Boolean> deleteEndpoint(String tenant, UUID id) {
@@ -206,7 +228,7 @@ public class EndpointResources {
 
     // TODO [BG Phase 2] Delete this method
     public Multi<Endpoint> getLinkedEndpoints(String tenant, UUID eventTypeId, Query limiter) {
-        String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.webhook JOIN e.targets t WHERE t.id.accountId = :accountId AND t.eventType.id = :eventTypeId";
+        String query = "SELECT e FROM Endpoint e JOIN e.targets t WHERE t.id.accountId = :accountId AND t.eventType.id = :eventTypeId";
 
         if (limiter != null) {
             query = limiter.getModifiedQuery(query);
@@ -222,17 +244,19 @@ public class EndpointResources {
         }
 
         return mutinyQuery.getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .onItem().transformToMulti(Multi.createFrom()::iterable)
+                .onItem().transformToUniAndConcatenate(this::loadProperties);
     }
 
     // TODO [BG Phase 2] Delete this method
     public Multi<Endpoint> getDefaultEndpoints(String tenant) {
-        String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.webhook JOIN e.defaults d WHERE d.id.accountId = :accountId";
+        String query = "SELECT e FROM Endpoint e JOIN e.defaults d WHERE d.id.accountId = :accountId";
 
         return session.createQuery(query, Endpoint.class)
                 .setParameter("accountId", tenant)
                 .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .onItem().transformToMulti(Multi.createFrom()::iterable)
+                .onItem().transformToUniAndConcatenate(this::loadProperties);
     }
 
     // TODO [BG Phase 2] Delete this method
@@ -292,46 +316,67 @@ public class EndpointResources {
                     } else if (endpoint.getProperties() == null || endpoint.getType() != EndpointType.WEBHOOK) {
                         return Uni.createFrom().item(Boolean.TRUE);
                     } else {
-                        WebhookAttributes attr = (WebhookAttributes) endpoint.getProperties();
-                        return session.createQuery(webhookQuery)
-                                .setParameter("url", attr.getUrl())
-                                .setParameter("method", attr.getMethod())
-                                .setParameter("disableSslVerification", attr.isDisableSSLVerification())
-                                .setParameter("secretToken", attr.getSecretToken())
-                                .setParameter("endpointId", endpoint.getId())
-                                .executeUpdate()
-                                .call(session::flush)
-                                .onItem().transform(rowCount -> rowCount > 0);
+                        switch (endpoint.getType()) {
+                            case WEBHOOK:
+                                WebhookAttributes attr = (WebhookAttributes) endpoint.getProperties();
+                                return session.createQuery(webhookQuery)
+                                        .setParameter("url", attr.getUrl())
+                                        .setParameter("method", attr.getMethod())
+                                        .setParameter("disableSslVerification", attr.isDisableSSLVerification())
+                                        .setParameter("secretToken", attr.getSecretToken())
+                                        .setParameter("endpointId", endpoint.getId())
+                                        .executeUpdate()
+                                        .call(session::flush)
+                                        .onItem().transform(rowCount -> rowCount > 0);
+                            case EMAIL_SUBSCRIPTION:
+                            case DEFAULT:
+                            default:
+                                return Uni.createFrom().item(Boolean.TRUE);
+                        }
                     }
                 });
     }
 
-    private Endpoint mapProperties(Endpoint endpoint) {
-        if (endpoint.getProperties() != null) {
-            switch (endpoint.getType()) {
-                case WEBHOOK:
-                    EndpointWebhook webhook = webhook(endpoint.getProperties());
-                    webhook.setEndpoint(endpoint);
-                    endpoint.setWebhook(webhook);
-                    break;
-                case EMAIL_SUBSCRIPTION:
-                case DEFAULT:
-                default:
-                    // Do nothing for now
-                    break;
-            }
+    private Uni<Endpoint> loadProperties(Endpoint endpoint) {
+        if (endpoint == null) {
+            LOGGER.warning("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
+            return Uni.createFrom().nullItem();
         }
-        return endpoint;
+        switch (endpoint.getType()) {
+            case WEBHOOK:
+                return session.find(EndpointWebhook.class, endpoint.getId())
+                        .onItem().ifNotNull().invoke(webhook -> {
+                            WebhookAttributes properties = buildWebhookAttributes(webhook);
+                            endpoint.setProperties(properties);
+                        })
+                        .replaceWith(endpoint);
+            case EMAIL_SUBSCRIPTION:
+            case DEFAULT: // TODO [BG Phase 2] Delete this case
+            default:
+                // Properties loading is not supported for the endpoint type.
+                return Uni.createFrom().item(endpoint);
+        }
     }
 
-    private EndpointWebhook webhook(Attributes properties) {
-        WebhookAttributes attr = (WebhookAttributes) properties;
+    private static EndpointWebhook buildEndpointWebhook(Endpoint endpoint) {
+        WebhookAttributes attr = (WebhookAttributes) endpoint.getProperties();
         EndpointWebhook webhook = new EndpointWebhook();
+        webhook.setEndpoint(endpoint);
         webhook.setUrl(attr.getUrl());
         webhook.setMethod(attr.getMethod());
         webhook.setDisableSslVerification(attr.isDisableSSLVerification());
         webhook.setSecretToken(attr.getSecretToken());
         webhook.setBasicAuthentication(attr.getBasicAuthentication());
         return webhook;
+    }
+
+    private static WebhookAttributes buildWebhookAttributes(EndpointWebhook webhook) {
+        WebhookAttributes attr = new WebhookAttributes();
+        attr.setUrl(webhook.getUrl());
+        attr.setMethod(webhook.getMethod());
+        attr.setDisableSSLVerification(webhook.getDisableSslVerification());
+        attr.setSecretToken(webhook.getSecretToken());
+        attr.setBasicAuthentication(webhook.getBasicAuthentication());
+        return attr;
     }
 }

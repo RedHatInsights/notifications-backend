@@ -1,14 +1,10 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.NotNull;
 
 public class WebhookAttributes extends Attributes {
-
-    @JsonIgnore
-    private Integer id;
 
     @NotNull
     private String url;
@@ -23,13 +19,6 @@ public class WebhookAttributes extends Attributes {
 
     @JsonProperty("basic_authentication")
     private BasicAuthentication basicAuthentication;
-
-    public WebhookAttributes() {
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
 
     public String getUrl() {
         return url;
@@ -74,8 +63,7 @@ public class WebhookAttributes extends Attributes {
     @Override
     public String toString() {
         return "WebhookAttributes{" +
-                "id=" + id +
-                ", url='" + url + '\'' +
+                "url='" + url + '\'' +
                 ", method=" + method +
                 ", disableSSLVerification=" + disableSSLVerification +
                 ", secretToken='" + secretToken + '\'' +

@@ -12,11 +12,9 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.Valid;
@@ -67,14 +65,9 @@ public class Endpoint extends CreationUpdateTimestamped {
             @JsonSubTypes.Type(value = WebhookAttributes.class, name = "webhook"),
             @JsonSubTypes.Type(value = EmailSubscriptionAttributes.class, name = "email_subscription")
     })
-//    @NotNull
     @Valid
     @Transient
     private Attributes properties;
-
-    @OneToOne(mappedBy = "endpoint", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JsonIgnore
-    private EndpointWebhook webhook;
 
     // TODO [BG Phase 2] Delete this attribute
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
@@ -143,33 +136,11 @@ public class Endpoint extends CreationUpdateTimestamped {
     }
 
     public Attributes getProperties() {
-        if (properties == null) {
-            switch (type) {
-                case WEBHOOK:
-                    if (webhook != null) {
-                        properties = buildWebhookAttributes(webhook);
-                    }
-                    break;
-                case EMAIL_SUBSCRIPTION:
-                case DEFAULT: // TODO [BG Phase 2] Delete this case
-                default:
-                    // Do nothing for now
-                    break;
-            }
-        }
         return properties;
     }
 
     public void setProperties(Attributes properties) {
         this.properties = properties;
-    }
-
-    public EndpointWebhook getWebhook() {
-        return webhook;
-    }
-
-    public void setWebhook(EndpointWebhook webhook) {
-        this.webhook = webhook;
     }
 
     public Set<BehaviorGroupAction> getBehaviorGroupActions() {
@@ -206,17 +177,6 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public void setNotificationHistories(Set<NotificationHistory> notificationHistories) {
         this.notificationHistories = notificationHistories;
-    }
-
-    private WebhookAttributes buildWebhookAttributes(EndpointWebhook webhook) {
-        WebhookAttributes attr = new WebhookAttributes();
-        attr.setId(webhook.getId());
-        attr.setUrl(webhook.getUrl());
-        attr.setMethod(webhook.getMethod());
-        attr.setDisableSSLVerification(webhook.getDisableSslVerification());
-        attr.setSecretToken(webhook.getSecretToken());
-        attr.setBasicAuthentication(webhook.getBasicAuthentication());
-        return attr;
     }
 
     @Override
