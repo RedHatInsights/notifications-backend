@@ -27,9 +27,8 @@ public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregat
     private static final String INVENTORY_ID = "inventory_id";
     private static final String TAGS = "tags";
 
-    private HashSet<String> uniqueHosts = new HashSet<>();
-    private HashMap<String, HashSet<String>> uniqueHostPerPolicy = new HashMap<>();
-
+    private final HashSet<String> uniqueHosts = new HashSet<>();
+    private final HashMap<String, HashSet<String>> uniqueHostPerPolicy = new HashMap<>();
 
     public PoliciesEmailPayloadAggregator() {
         context.put(POLICIES_KEY, new JsonObject());

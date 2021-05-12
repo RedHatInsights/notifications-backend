@@ -15,23 +15,9 @@ public abstract class AbstractEmailPayloadAggregator {
     private LocalDateTime endTime;
     private String accountId;
     private int processedAggregations;
-    protected JsonObject context = new JsonObject();
+    JsonObject context = new JsonObject();
 
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public void setEndTimeKey(LocalDateTime endTime) {
-        this.endTime = endTime;
-    }
-
-    public String getAccountId() {
-        return accountId;
-    }
-
-    public int getProcessedAggregations() {
-        return this.processedAggregations;
-    }
+    abstract void processEmailAggregation(EmailAggregation aggregation);
 
     public void aggregate(EmailAggregation aggregation) {
         if (accountId == null) {
@@ -55,6 +41,19 @@ public abstract class AbstractEmailPayloadAggregator {
         to.put(field, from.getString(field));
     }
 
-    public abstract void processEmailAggregation(EmailAggregation aggregation);
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
 
+    public void setEndTimeKey(LocalDateTime endTime) {
+        this.endTime = endTime;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public int getProcessedAggregations() {
+        return this.processedAggregations;
+    }
 }
