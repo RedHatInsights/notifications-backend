@@ -14,9 +14,13 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 import javax.ws.rs.BadRequestException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EndpointResources {
@@ -84,9 +88,7 @@ public class EndpointResources {
         }
 
         return mutinyQuery.getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties)
-                .collect().asList();
+                .onItem().call(this::loadProperties);
     }
 
     public Uni<Long> getEndpointsCountPerType(String tenant, EndpointType type, Boolean activeOnly) {
@@ -118,8 +120,8 @@ public class EndpointResources {
                 .setParameter("accountId", tenant)
                 .setParameter("bundleName", bundleName)
                 .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties);
+                .onItem().call(this::loadProperties)
+                .onItem().transformToMulti(Multi.createFrom()::iterable);
     }
 
     // TODO [BG Phase 2] Remove '_BG' suffix
@@ -134,8 +136,8 @@ public class EndpointResources {
                 .setParameter("accountId", tenant)
                 .setParameter("bundleName", bundleName)
                 .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties);
+                .onItem().call(this::loadProperties)
+                .onItem().transformToMulti(Multi.createFrom()::iterable);
     }
 
     public Uni<List<Endpoint>> getEndpoints(String tenant, Query limiter) {
@@ -156,9 +158,7 @@ public class EndpointResources {
         }
 
         return mutinyQuery.getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties)
-                .collect().asList();
+                .onItem().call(this::loadProperties);
     }
 
     public Uni<Long> getEndpointsCount(String tenant) {
@@ -252,9 +252,7 @@ public class EndpointResources {
         }
 
         return mutinyQuery.getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties)
-                .collect().asList();
+                .onItem().call(this::loadProperties);
     }
 
     // TODO [BG Phase 2] Delete this method
@@ -264,9 +262,7 @@ public class EndpointResources {
         return session.createQuery(query, Endpoint.class)
                 .setParameter("accountId", tenant)
                 .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties)
-                .collect().asList();
+                .onItem().call(this::loadProperties);
     }
 
     // TODO [BG Phase 2] Delete this method
@@ -347,21 +343,43 @@ public class EndpointResources {
                 });
     }
 
+    public Uni<List<Endpoint>> loadProperties(List<Endpoint> endpoints) {
+        // Group endpoints in types and load in batches each type.
+        // Currently only webhook types have properties.
+        endpoints = endpoints.stream().distinct().collect(Collectors.toList());
+
+        Map<UUID, Endpoint> webhookEndpoints = endpoints
+                .stream()
+                .filter(endpoint -> endpoint.getType().equals(EndpointType.WEBHOOK))
+                .collect(Collectors.toMap(Endpoint::getId, Function.identity()));
+
+        final Uni<List<Endpoint>> webhookUnis;
+
+        if (webhookEndpoints.size() > 0) {
+            webhookUnis = session
+                    .find(WebhookProperties.class, webhookEndpoints.keySet().toArray())
+                    .onItem().transform(endpointWebhooks -> endpointWebhooks
+                            .stream()
+                            .map(webhook -> {
+                                Endpoint endpoint = webhookEndpoints.get(webhook.getId());
+                                endpoint.setProperties(webhook);
+                                return endpoint;
+                            })
+                            .collect(Collectors.toList())
+                    );
+        } else {
+            webhookUnis = Uni.createFrom().item(Collections.emptyList());
+        }
+
+        return webhookUnis.replaceWith(endpoints);
+    }
+
     public Uni<Endpoint> loadProperties(Endpoint endpoint) {
         if (endpoint == null) {
             LOGGER.warning("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
             return Uni.createFrom().nullItem();
         }
-        switch (endpoint.getType()) {
-            case WEBHOOK:
-                return session.find(WebhookProperties.class, endpoint.getId())
-                        .onItem().ifNotNull().invoke(endpoint::setProperties)
-                        .replaceWith(endpoint);
-            case EMAIL_SUBSCRIPTION:
-            case DEFAULT: // TODO [BG Phase 2] Delete this case
-            default:
-                // Properties loading is not supported for the endpoint type.
-                return Uni.createFrom().item(endpoint);
-        }
+        return this.loadProperties(Collections.singletonList(endpoint))
+                .replaceWith(endpoint);
     }
 }

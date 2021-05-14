@@ -43,6 +43,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -365,17 +366,14 @@ public class NotificationService {
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
         return getAccountId(sec)
                 .onItem().transformToUni(accountId -> behaviorGroupResources.findByBundleId(accountId, bundleId))
-                .onItem().call(behaviorGroups -> behaviorGroups.size() == 0 ? Uni.createFrom().voidItem() : Uni.combine().all().unis(
-                        behaviorGroups.stream()
+                .onItem().call(behaviorGroups -> endpointResources.loadProperties(
+                        behaviorGroups
+                                .stream()
                                 .map(BehaviorGroup::getActions)
-                                .map(bga -> bga.size() == 0 ? Uni.createFrom().voidItem() : Uni.combine().all().unis(
-                                        bga.stream()
-                                                .map(BehaviorGroupAction::getEndpoint)
-                                                .map(endpoint -> endpointResources.loadProperties(endpoint))
-                                                .collect(Collectors.toList())
-                                        )
-                                                .discardItems()
-                                ).collect(Collectors.toList())
-                ).discardItems());
+                                .flatMap(Collection::stream)
+                                .map(BehaviorGroupAction::getEndpoint)
+                                .collect(Collectors.toList())
+                        )
+                );
     }
 }
