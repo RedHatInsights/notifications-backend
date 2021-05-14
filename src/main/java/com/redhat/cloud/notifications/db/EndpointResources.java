@@ -337,7 +337,7 @@ public class EndpointResources {
                 });
     }
 
-    private Uni<Endpoint> loadProperties(Endpoint endpoint) {
+    public Uni<Endpoint> loadProperties(Endpoint endpoint) {
         if (endpoint == null) {
             LOGGER.warning("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
             return Uni.createFrom().nullItem();

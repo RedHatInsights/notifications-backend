@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
+import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
@@ -45,6 +46,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static javax.ws.rs.core.Response.Status;
 
@@ -67,6 +69,9 @@ public class NotificationService {
 
     @Inject
     BehaviorGroupResources behaviorGroupResources;
+
+    @Inject
+    EndpointResources endpointResources;
 
     private Uni<String> getAccountId(SecurityContext sec) {
         return Uni.createFrom().item(() -> {
@@ -348,6 +353,18 @@ public class NotificationService {
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
         return getAccountId(sec)
-                .onItem().transformToUni(accountId -> behaviorGroupResources.findByBundleId(accountId, bundleId));
+                .onItem().transformToUni(accountId -> behaviorGroupResources.findByBundleId(accountId, bundleId))
+                .onItem().call(behaviorGroups -> behaviorGroups.size() == 0 ? Uni.createFrom().voidItem() : Uni.combine().all().unis(
+                        behaviorGroups.stream()
+                                .map(BehaviorGroup::getActions)
+                                .map(bga -> bga.size() == 0 ? Uni.createFrom().voidItem() : Uni.combine().all().unis(
+                                        bga.stream()
+                                                .map(BehaviorGroupAction::getEndpoint)
+                                                .map(endpoint -> endpointResources.loadProperties(endpoint))
+                                                .collect(Collectors.toList())
+                                        )
+                                                .discardItems()
+                                ).collect(Collectors.toList())
+                ).discardItems());
     }
 }
