@@ -354,10 +354,10 @@ public class NotificationService {
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
         return getAccountId(sec)
                 .onItem().transformToUni(accountId -> behaviorGroupResources.findByBundleId(accountId, bundleId))
-                .onItem().call(behaviorGroups -> Uni.combine().all().unis(
+                .onItem().call(behaviorGroups -> behaviorGroups.size() == 0 ? Uni.createFrom().voidItem() : Uni.combine().all().unis(
                         behaviorGroups.stream()
                                 .map(BehaviorGroup::getActions)
-                                .map(bga -> Uni.combine().all().unis(
+                                .map(bga -> bga.size() == 0 ? Uni.createFrom().voidItem() : Uni.combine().all().unis(
                                         bga.stream()
                                                 .map(BehaviorGroupAction::getEndpoint)
                                                 .map(endpoint -> endpointResources.loadProperties(endpoint))
