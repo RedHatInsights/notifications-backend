@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointDefault;
 import com.redhat.cloud.notifications.models.EndpointTarget;
@@ -15,8 +16,10 @@ import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 import javax.ws.rs.BadRequestException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -343,35 +346,31 @@ public class EndpointResources {
                 });
     }
 
-    public Uni<List<Endpoint>> loadProperties(List<Endpoint> endpoints) {
-        // Group endpoints in types and load in batches each type.
-        // Currently only webhook types have properties.
-        endpoints = endpoints.stream().distinct().collect(Collectors.toList());
+    public Uni<Void> loadProperties(List<Endpoint> endpoints) {
+        // Group endpoints in types and load in batches for each type.
+        Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
-        Map<UUID, Endpoint> webhookEndpoints = endpoints
+        return Uni.combine().all().unis(
+                this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK)
+        ).discardItems();
+    }
+
+    private <T extends EndpointProperties> Uni<Void> loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type) {
+        Map<UUID, Endpoint> endpointsMap = endpoints
                 .stream()
-                .filter(endpoint -> endpoint.getType().equals(EndpointType.WEBHOOK))
+                .filter(e -> e.getType().equals(type))
                 .collect(Collectors.toMap(Endpoint::getId, Function.identity()));
 
-        final Uni<List<Endpoint>> webhookUnis;
-
-        if (webhookEndpoints.size() > 0) {
-            webhookUnis = session
-                    .find(WebhookProperties.class, webhookEndpoints.keySet().toArray())
-                    .onItem().transform(endpointWebhooks -> endpointWebhooks
-                            .stream()
-                            .map(webhook -> {
-                                Endpoint endpoint = webhookEndpoints.get(webhook.getId());
-                                endpoint.setProperties(webhook);
-                                return endpoint;
-                            })
-                            .collect(Collectors.toList())
-                    );
-        } else {
-            webhookUnis = Uni.createFrom().item(Collections.emptyList());
+        if (endpointsMap.size() > 0) {
+            return session
+                    .find(typedEndpointClass, endpointsMap.keySet().toArray())
+                    .onItem().invoke(propList -> propList.forEach(props -> {
+                        Endpoint endpoint = endpointsMap.get(props.getId());
+                        endpoint.setProperties(props);
+                    })).replaceWith(Uni.createFrom().voidItem());
         }
 
-        return webhookUnis.replaceWith(endpoints);
+        return Uni.createFrom().voidItem();
     }
 
     public Uni<Endpoint> loadProperties(Endpoint endpoint) {
