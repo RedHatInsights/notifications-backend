@@ -56,18 +56,18 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Convert(converter = EndpointTypeConverter.class)
     private EndpointType type;
 
-    @Schema(oneOf = { WebhookAttributes.class, EmailSubscriptionAttributes.class })
+    @Schema(oneOf = { WebhookProperties.class, EmailSubscriptionProperties.class })
     @JsonTypeInfo(
             use = JsonTypeInfo.Id.NAME,
             property = "type",
             include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
     @JsonSubTypes({
-            @JsonSubTypes.Type(value = WebhookAttributes.class, name = "webhook"),
-            @JsonSubTypes.Type(value = EmailSubscriptionAttributes.class, name = "email_subscription")
+            @JsonSubTypes.Type(value = WebhookProperties.class, name = "webhook"),
+            @JsonSubTypes.Type(value = EmailSubscriptionProperties.class, name = "email_subscription")
     })
     @Valid
     @Transient
-    private Attributes properties;
+    private EndpointProperties properties;
 
     // TODO [BG Phase 2] Delete this attribute
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
@@ -135,11 +135,20 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.type = type;
     }
 
-    public Attributes getProperties() {
+    public EndpointProperties getProperties() {
         return properties;
     }
 
-    public void setProperties(Attributes properties) {
+    public <T extends EndpointProperties> T getProperties(Class<T> propertiesClass) {
+        if (!propertiesClass.isInstance(properties)) {
+            throw new IllegalStateException("Endpoint properties type mismatch, expected: " + propertiesClass.getName() +
+                    ", actual: " + properties.getClass().getName());
+        } else {
+            return propertiesClass.cast(properties);
+        }
+    }
+
+    public void setProperties(EndpointProperties properties) {
         this.properties = properties;
     }
 

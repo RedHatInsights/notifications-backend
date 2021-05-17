@@ -12,7 +12,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.WebhookAttributes;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -103,16 +103,16 @@ public class WebhookTest extends DbIsolatedTest {
 
         webhookActionMessage.setContext(context);
 
-        WebhookAttributes attributes = new WebhookAttributes();
-        attributes.setMethod(HttpType.POST);
-        attributes.setUrl(url);
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setUrl(url);
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
         ep.setName("positive feeling");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
-        ep.setProperties(attributes);
+        ep.setProperties(properties);
 
         Notification notif = new Notification(webhookActionMessage, ep);
         try {

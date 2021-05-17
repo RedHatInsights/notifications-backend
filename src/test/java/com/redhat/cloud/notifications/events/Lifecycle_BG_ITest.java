@@ -17,7 +17,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.WebhookAttributes;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -322,18 +322,18 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
     }
 
     private String createWebhookEndpoint(Header identityHeader, String name, String description, String secretToken) {
-        WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(HttpType.POST);
-        webAttr.setDisableSSLVerification(true);
-        webAttr.setSecretToken(secretToken);
-        webAttr.setUrl("http://" + mockServerConfig.getRunningAddress() +  WEBHOOK_MOCK_PATH);
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setDisableSslVerification(true);
+        properties.setSecretToken(secretToken);
+        properties.setUrl("http://" + mockServerConfig.getRunningAddress() + WEBHOOK_MOCK_PATH);
 
         Endpoint endpoint = new Endpoint();
         endpoint.setType(EndpointType.WEBHOOK);
         endpoint.setName(name);
         endpoint.setDescription(description);
         endpoint.setEnabled(true);
-        endpoint.setProperties(webAttr);
+        endpoint.setProperties(properties);
 
         String responseBody = given()
                 .basePath(API_INTEGRATIONS_V_1_0)
@@ -355,14 +355,14 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         assertTrue(jsonEndpoint.getBoolean("enabled"));
         assertEquals(EndpointType.WEBHOOK.name().toLowerCase(), jsonEndpoint.getString("type"));
 
-        JsonObject jsonWebhookAttributes = jsonEndpoint.getJsonObject("properties");
-        jsonWebhookAttributes.mapTo(WebhookAttributes.class);
-        assertEquals(webAttr.getMethod().name(), jsonWebhookAttributes.getString("method"));
-        assertEquals(webAttr.isDisableSSLVerification(), jsonWebhookAttributes.getBoolean("disable_ssl_verification"));
-        if (webAttr.getSecretToken() != null) {
-            assertEquals(webAttr.getSecretToken(), jsonWebhookAttributes.getString("secret_token"));
+        JsonObject jsonWebhookProperties = jsonEndpoint.getJsonObject("properties");
+        jsonWebhookProperties.mapTo(WebhookProperties.class);
+        assertEquals(properties.getMethod().name(), jsonWebhookProperties.getString("method"));
+        assertEquals(properties.getDisableSslVerification(), jsonWebhookProperties.getBoolean("disable_ssl_verification"));
+        if (properties.getSecretToken() != null) {
+            assertEquals(properties.getSecretToken(), jsonWebhookProperties.getString("secret_token"));
         }
-        assertEquals(webAttr.getUrl(), jsonWebhookAttributes.getString("url"));
+        assertEquals(properties.getUrl(), jsonWebhookProperties.getString("url"));
 
         return jsonEndpoint.getString("id");
     }
@@ -380,7 +380,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         JsonArray jsonEndpoints = new JsonObject(responseBody).getJsonArray("data");
         assertEquals(expectedEndpointIds.length, jsonEndpoints.size());
         jsonEndpoints.getJsonObject(0).mapTo(Endpoint.class);
-        jsonEndpoints.getJsonObject(0).getJsonObject("properties").mapTo(WebhookAttributes.class);
+        jsonEndpoints.getJsonObject(0).getJsonObject("properties").mapTo(WebhookProperties.class);
 
         for (String endpointId : expectedEndpointIds) {
             if (!responseBody.contains(endpointId)) {

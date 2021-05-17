@@ -1,42 +1,22 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.BasicAuthenticationConverter;
 import com.redhat.cloud.notifications.db.converters.HttpTypeConverter;
 
 import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.MapsId;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import java.util.Objects;
-import java.util.UUID;
 
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
-import static javax.persistence.FetchType.LAZY;
 
 @Entity
 @Table(name = "endpoint_webhooks")
 @JsonNaming(SnakeCaseStrategy.class)
-public class EndpointWebhook {
-
-    /*
-     * Because of the @MapsId annotation on the `endpoint` field, an EndpointWebhook instance and its parent Endpoint
-     * instance will share the same @Id value. As a consequence, the `id` field doesn't need to be generated.
-     */
-    @Id
-    @NotNull
-    private UUID id;
-
-    @NotNull
-    @MapsId
-    @OneToOne(fetch = LAZY)
-    @JoinColumn(name = "id")
-    private Endpoint endpoint;
+public class WebhookProperties extends EndpointProperties {
 
     @NotNull
     private String url;
@@ -46,29 +26,16 @@ public class EndpointWebhook {
     private HttpType method;
 
     @NotNull
-    private Boolean disableSslVerification;
+    @JsonProperty("disable_ssl_verification")
+    private Boolean disableSslVerification = Boolean.FALSE;
 
     @Size(max = 255)
-    private String secretToken;
+    @JsonProperty("secret_token")
+    private String secretToken; // TODO Should be optional
 
     @Convert(converter = BasicAuthenticationConverter.class)
+    @JsonProperty("basic_authentication")
     private BasicAuthentication basicAuthentication;
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Endpoint getEndpoint() {
-        return endpoint;
-    }
-
-    public void setEndpoint(Endpoint endpoint) {
-        this.endpoint = endpoint;
-    }
 
     public String getUrl() {
         return url;
@@ -108,22 +75,5 @@ public class EndpointWebhook {
 
     public void setBasicAuthentication(BasicAuthentication basicAuthentication) {
         this.basicAuthentication = basicAuthentication;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o instanceof EndpointWebhook) {
-            EndpointWebhook other = (EndpointWebhook) o;
-            return Objects.equals(id, other.id);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
     }
 }

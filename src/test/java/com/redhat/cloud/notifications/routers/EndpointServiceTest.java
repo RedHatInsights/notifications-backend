@@ -8,12 +8,12 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
-import com.redhat.cloud.notifications.models.EmailSubscriptionAttributes;
+import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
-import com.redhat.cloud.notifications.models.WebhookAttributes;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -79,18 +79,18 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
         // Add new endpoints
-        WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(HttpType.POST);
-        webAttr.setDisableSSLVerification(false);
-        webAttr.setSecretToken("my-super-secret-token");
-        webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setDisableSslVerification(false);
+        properties.setSecretToken("my-super-secret-token");
+        properties.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint to find");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
-        ep.setProperties(webAttr);
+        ep.setProperties(properties);
 
         Response response = given()
                 .header(identityHeader)
@@ -217,14 +217,14 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(400);
 
-        WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(HttpType.POST);
-        webAttr.setDisableSSLVerification(false);
-        webAttr.setSecretToken("my-super-secret-token");
-        webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setDisableSslVerification(false);
+        properties.setSecretToken("my-super-secret-token");
+        properties.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
         // Test with properties, but without endpoint type
-        ep.setProperties(webAttr);
+        ep.setProperties(properties);
         ep.setType(null);
 
         given()
@@ -239,7 +239,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Test with incorrect webhook properties
         ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint with incorrect webhook properties");
-        webAttr.setMethod(null);
+        properties.setMethod(null);
 
         given()
                 .header(identityHeader)
@@ -251,19 +251,19 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .statusCode(400);
 
         // Type and attributes don't match
-        webAttr.setMethod(HttpType.POST);
+        properties.setMethod(HttpType.POST);
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
         // FIXME Find a way to run the test below successfully.
         /*
          * The following test fails because of a bug which is not in our app.
          * The invalid properties should cause a deserialization error (see below) leading to an HTTP 400 response,
-         * but the properties are deserialized as an instance of EmailSubscriptionAttributes instead and we receive an HTTP 200 response.
+         * but the properties are deserialized as an instance of EmailSubscriptionProperties instead and we receive an HTTP 200 response.
          *
          * Expected error :
          * com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException:
-         * Unrecognized field "url" (class com.redhat.cloud.notifications.models.EmailSubscriptionAttributes), not marked as ignorable (0 known properties: ])
-         * at [Source: (String)"{"id":null,"name":"endpoint with incorrect webhook properties","description":"Destined to fail","enabled":true,"type":"email_subscription","created":null,"updated":null,"properties":{"url":"https://localhost:49368","method":"POST","disable_ssl_verification":false,"secret_token":"my-super-secret-token","basic_authentication":null}}"; line: 1, column: 332] (through reference chain: com.redhat.cloud.notifications.models.EmailSubscriptionAttributes["url"])
+         * Unrecognized field "url" (class com.redhat.cloud.notifications.models.EmailSubscriptionProperties), not marked as ignorable (0 known properties: ])
+         * at [Source: (String)"{"id":null,"name":"endpoint with incorrect webhook properties","description":"Destined to fail","enabled":true,"type":"email_subscription","created":null,"updated":null,"properties":{"url":"https://localhost:49368","method":"POST","disable_ssl_verification":false,"secret_token":"my-super-secret-token","basic_authentication":null}}"; line: 1, column: 332] (through reference chain: com.redhat.cloud.notifications.models.EmailSubscriptionProperties["url"])
          * at com.redhat.cloud.notifications.routers.EndpointServiceTest.testEndpointValidation(EndpointServiceTest.java:257)
          *
          * This might be a Quarkus issue, investigation in progress...
@@ -297,18 +297,18 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
         // Add new endpoints
-        WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(HttpType.POST);
-        webAttr.setDisableSSLVerification(false);
-        webAttr.setSecretToken("my-super-secret-token");
-        webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setDisableSslVerification(false);
+        properties.setSecretToken("my-super-secret-token");
+        properties.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint to find");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
-        ep.setProperties(webAttr);
+        ep.setProperties(properties);
 
         Response response = given()
                 .header(identityHeader)
@@ -346,7 +346,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Update the endpoint
         responsePointSingle.put("name", "endpoint found");
         JsonObject attrSingle = responsePointSingle.getJsonObject("properties");
-        attrSingle.mapTo(WebhookAttributes.class);
+        attrSingle.mapTo(WebhookProperties.class);
         attrSingle.put("secret_token", "not-so-secret-anymore");
 
         // Update without payload
@@ -371,7 +371,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Fetch single one again to see that the updates were done
         JsonObject updatedEndpoint = fetchSingle(responsePointSingle.getString("id"), identityHeader);
         JsonObject attrSingleUpdated = updatedEndpoint.getJsonObject("properties");
-        attrSingleUpdated.mapTo(WebhookAttributes.class);
+        attrSingleUpdated.mapTo(WebhookProperties.class);
         assertEquals("endpoint found", updatedEndpoint.getString("name"));
         assertEquals("not-so-secret-anymore", attrSingleUpdated.getString("secret_token"));
     }
@@ -387,18 +387,18 @@ public class EndpointServiceTest extends DbIsolatedTest {
 
         for (int i = 0; i < 29; i++) {
             // Add new endpoints
-            WebhookAttributes webAttr = new WebhookAttributes();
-            webAttr.setMethod(HttpType.POST);
-            webAttr.setDisableSSLVerification(false);
-            webAttr.setSecretToken("my-super-secret-token");
-            webAttr.setUrl(String.format("https://%s/%d", mockServerConfig.getRunningAddress(), i));
+            WebhookProperties properties = new WebhookProperties();
+            properties.setMethod(HttpType.POST);
+            properties.setDisableSslVerification(false);
+            properties.setSecretToken("my-super-secret-token");
+            properties.setUrl(String.format("https://%s/%d", mockServerConfig.getRunningAddress(), i));
 
             Endpoint ep = new Endpoint();
             ep.setType(EndpointType.WEBHOOK);
             ep.setName(String.format("Endpoint %d", i));
             ep.setDescription("Try to find me!");
             ep.setEnabled(true);
-            ep.setProperties(webAttr);
+            ep.setProperties(properties);
 
             Response response = given()
                     .header(identityHeader)
@@ -506,11 +506,11 @@ public class EndpointServiceTest extends DbIsolatedTest {
         another.setDescription("desc");
         another.setName("name");
 
-        WebhookAttributes attr = new WebhookAttributes();
-        attr.setMethod(HttpType.POST);
-        attr.setUrl("http://localhost");
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setUrl("http://localhost");
 
-        another.setProperties(attr);
+        another.setProperties(properties);
 
         given()
                 .header(identityHeader)
@@ -630,19 +630,19 @@ public class EndpointServiceTest extends DbIsolatedTest {
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
         // Add new endpoints
-        WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(HttpType.POST);
-        webAttr.setDisableSSLVerification(false);
-        webAttr.setSecretToken("my-super-secret-token");
-        webAttr.setBasicAuthentication(new BasicAuthentication("myuser", "mypassword"));
-        webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setDisableSslVerification(false);
+        properties.setSecretToken("my-super-secret-token");
+        properties.setBasicAuthentication(new BasicAuthentication("myuser", "mypassword"));
+        properties.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint to find");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
-        ep.setProperties(webAttr);
+        ep.setProperties(properties);
 
         Response response = given()
                 .header(identityHeader)
@@ -667,7 +667,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         assertNotNull(responsePointSingle.getJsonObject("properties").getString("secret_token"));
 
         JsonObject attr = responsePointSingle.getJsonObject("properties");
-        attr.mapTo(WebhookAttributes.class);
+        attr.mapTo(WebhookProperties.class);
         assertNotNull(attr.getJsonObject("basic_authentication"));
         assertEquals("mypassword", attr.getJsonObject("basic_authentication").getString("password"));
     }
@@ -682,14 +682,14 @@ public class EndpointServiceTest extends DbIsolatedTest {
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
         // Add new EmailSubscriptionEndpoint
-        EmailSubscriptionAttributes attributes = new EmailSubscriptionAttributes();
+        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
         ep.setName("Endpoint: EmailSubscription");
         ep.setDescription("Subscribe!");
         ep.setEnabled(true);
-        ep.setProperties(attributes);
+        ep.setProperties(properties);
 
         Response response = given()
                 .header(identityHeader)
@@ -885,18 +885,18 @@ public class EndpointServiceTest extends DbIsolatedTest {
 
         for (int i = 0; i < 200; i++) {
             // Add new endpoints
-            WebhookAttributes webAttr = new WebhookAttributes();
-            webAttr.setMethod(HttpType.POST);
-            webAttr.setDisableSSLVerification(false);
-            webAttr.setSecretToken("my-super-secret-token");
-            webAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+            WebhookProperties properties = new WebhookProperties();
+            properties.setMethod(HttpType.POST);
+            properties.setDisableSslVerification(false);
+            properties.setSecretToken("my-super-secret-token");
+            properties.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
 
             Endpoint ep = new Endpoint();
             ep.setType(EndpointType.WEBHOOK);
             ep.setName("endpoint to find" + i);
             ep.setDescription("needle in the haystack" + i);
             ep.setEnabled(true);
-            ep.setProperties(webAttr);
+            ep.setProperties(properties);
 
             Response response = given()
                     .header(identityHeader)
