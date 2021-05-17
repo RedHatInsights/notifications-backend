@@ -7,11 +7,16 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.inject.Inject;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,7 +36,7 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
     EmailAggregationResources emailAggregationResources;
 
     @Test
-    public void testAllMethods() {
+    void testAllMethods() {
 
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
@@ -42,7 +47,7 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
         addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2, true);
         addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2, true);
 
-        EmailAggregationKey key = buildEmailAggregationKey(ACCOUNT_ID, BUNDLE_NAME, APP_NAME);
+        EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, BUNDLE_NAME, APP_NAME);
 
         List<EmailAggregation> aggregations = getEmailAggregation(key, start, end);
         assertEquals(2, aggregations.size());
@@ -68,20 +73,19 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
         assertEquals(3, keys.size());
     }
 
-    @Test
-    public void testAddEmailAggregationWithConstraintViolations() {
-        addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null, false);
-        addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1, false);
-        addEmailAggregation(ACCOUNT_ID, null, APP_NAME, PAYLOAD1, false);
-        addEmailAggregation(null, BUNDLE_NAME, APP_NAME, PAYLOAD1, false);
+    @ParameterizedTest
+    @MethodSource("constraintViolations")
+    void addEmailAggregationWithConstraintViolations(String accountId, String bundleName, String applicationName, JsonObject payload) {
+        addEmailAggregation(accountId, bundleName, applicationName, payload, false);
     }
 
-    private EmailAggregationKey buildEmailAggregationKey(String accountId, String bundleName, String applicationName) {
-        EmailAggregationKey key = new EmailAggregationKey();
-        key.setAccountId(accountId);
-        key.setBundle(bundleName);
-        key.setApplication(applicationName);
-        return key;
+    private static Stream<Arguments> constraintViolations() {
+        return Stream.of(
+                Arguments.of(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null),
+                Arguments.of(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1),
+                Arguments.of(null, BUNDLE_NAME, APP_NAME, PAYLOAD1),
+                Arguments.of(null, BUNDLE_NAME, APP_NAME, PAYLOAD1)
+        );
     }
 
     private void addEmailAggregation(String accountId, String bundleName, String applicationName, JsonObject payload, boolean expectedResult) {
