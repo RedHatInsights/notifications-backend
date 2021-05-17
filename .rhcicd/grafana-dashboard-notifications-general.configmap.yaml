@@ -421,11 +421,11 @@ data:
           },
           "color": {
             "cardColor": "#c15c17",
-            "colorScale": "sqrt",
+            "colorScale": "linear",
             "colorScheme": "interpolateOranges",
-            "exponent": 0.3,
-            "min": null,
-            "mode": "opacity"
+            "exponent": 0.9,
+            "min": 0,
+            "mode": "spectrum"
           },
           "dataFormat": "tsbuckets",
           "datasource": "$datasource",
@@ -442,7 +442,7 @@ data:
             "y": 12
           },
           "heatmap": {},
-          "hideZeroBuckets": false,
+          "hideZeroBuckets": true,
           "highlightCards": true,
           "id": 87,
           "legend": {
@@ -452,7 +452,7 @@ data:
           "reverseYBuckets": false,
           "targets": [
             {
-              "expr": "sum(increase(api_3scale_gateway_api_time_bucket{exported_service=\"notifications\"}[5m])) by (le)",
+              "expr": "sum(increase(api_3scale_gateway_api_time_bucket{exported_service=\"notifications\"}[1m])) by (le)",
               "format": "heatmap",
               "groupBy": [
                 {
@@ -492,7 +492,7 @@ data:
               "tags": []
             }
           ],
-          "title": "Latency",
+          "title": "Latency(3Scale)",
           "tooltip": {
             "show": true,
             "showHistogram": false
@@ -505,7 +505,7 @@ data:
           "xBucketSize": null,
           "yAxis": {
             "decimals": null,
-            "format": "ms",
+            "format": "none",
             "logBase": 1,
             "max": null,
             "min": null,
