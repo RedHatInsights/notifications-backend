@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BundleResources;
@@ -20,7 +21,6 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 
-import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.ws.rs.BadRequestException;
@@ -38,10 +38,11 @@ import javax.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
 
-@Path("/api/notifications/v1.0/user-config")
-@Produces("application/json")
-@Consumes("application/json")
-@RequestScoped
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+
+@Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
+@Consumes(APPLICATION_JSON)
+@Produces(APPLICATION_JSON)
 public class UserConfigService {
 
     private static final ObjectMapper mapper = new ObjectMapper();
