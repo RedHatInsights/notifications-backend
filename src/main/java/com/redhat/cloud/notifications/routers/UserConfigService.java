@@ -6,6 +6,8 @@ import com.redhat.cloud.notifications.auth.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
@@ -147,48 +149,56 @@ public class UserConfigService {
      * Pulls the user settings values of an user across all the know applications of a bundle
      * */
     private Uni<SettingsValues> getSettingsValueForUser(String account, String username, String bundleName) {
-        return Uni.createFrom().deferred(() -> {
-            final SettingsValues values = new SettingsValues();
+        if (bundleName == null || bundleName.equals("")) {
+            throw new BadRequestException("bundleName must have a value");
+        }
 
-            if (bundleName == null || bundleName.equals("")) {
-                throw new BadRequestException("bundleName must have a value");
-            }
-
-            return bundleResources.getBundle(bundleName)
-                    .onItem().ifNull().failWith(() -> new BadRequestException("Unknown bundleName: " + bundleName))
-                    .onItem().transformToMulti(bundle -> {
-                        BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
-                        bundleSettingsValue.displayName = bundle.getDisplayName();
-                        values.bundles.put(bundle.getName(), bundleSettingsValue);
-                        return applicationResources.getApplications(bundle.getName())
-                                .onItem().transformToMulti(application -> {
-                                    ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
-                                    applicationSettingsValue.displayName = application.getDisplayName();
-                                    EmailTemplate applicationEmailTemplate = emailTemplateFactory.get(bundle.getName(), application.getName());
-
-                                    values.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
-                                    return Multi.createFrom().items(EmailSubscriptionType.values())
-                                            .onItem().transformToMulti(emailSubscriptionType -> {
-                                                if (applicationEmailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
-                                                    values.bundles.get(bundle.getName()).applications.get(application.getName()).notifications.put(emailSubscriptionType, false);
+        /*
+         * The following stream creates a `SettingsValues` instance and then populates it by using side-effects.
+         * It is done by invoking to kind of functions:
+         * - database queries are executed in an asynchronous way using `.onItem().call(...)`
+         * - side-effects are executed in a synchronous way using `.onItem().invoke(...)`
+         */
+        return Uni.createFrom().item(() -> new SettingsValues())
+                .onItem().call(settingsValues ->
+                        bundleResources.getBundle(bundleName)
+                                .onItem().ifNull().failWith(() -> new BadRequestException("Unknown bundleName: " + bundleName))
+                                .onItem().call(bundle -> {
+                                    BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
+                                    bundleSettingsValue.displayName = bundle.getDisplayName();
+                                    settingsValues.bundles.put(bundle.getName(), bundleSettingsValue);
+                                    return applicationResources.getApplications(bundle.getName())
+                                            .onItem().invoke(applications -> {
+                                                for (Application application : applications) {
+                                                    ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
+                                                    applicationSettingsValue.displayName = application.getDisplayName();
+                                                    EmailTemplate applicationEmailTemplate = emailTemplateFactory.get(bundle.getName(), application.getName());
+                                                    settingsValues.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
+                                                    for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
+                                                        if (applicationEmailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
+                                                            settingsValues.bundles.get(bundle.getName()).applications.get(application.getName()).notifications.put(emailSubscriptionType, false);
+                                                        }
+                                                    }
                                                 }
-                                                return Multi.createFrom().empty();
-                                            }).concatenate();
-                                }).concatenate();
-                    }).collect().asList().onItem().transformToMulti(objects -> emailSubscriptionResources.getEmailSubscriptionsForUser(account, username))
-                    .onItem().transform(emailSubscription -> {
-                        if (values.bundles.containsKey(emailSubscription.getApplication().getBundle().getName())) {
-                            BundleSettingsValue bundleSettingsValue = values.bundles.get(emailSubscription.getApplication().getBundle().getName());
-                            if (bundleSettingsValue.applications.containsKey(emailSubscription.getApplication().getName())) {
-                                ApplicationSettingsValue applicationSettingsValue = bundleSettingsValue.applications.get(emailSubscription.getApplication().getName());
-                                if (applicationSettingsValue.notifications.containsKey(emailSubscription.getType())) {
-                                    bundleSettingsValue.applications.get(emailSubscription.getApplication().getName()).notifications.put(emailSubscription.getType(), true);
-                                }
-                            }
-                        }
-                        return emailSubscription;
-                    }).collect().asList().onItem().transform(emailSubscriptions -> values);
-        });
+                                            });
+                                })
+                                .onItem().call(ignoredBundle ->
+                                        emailSubscriptionResources.getEmailSubscriptionsForUser(account, username)
+                                                .onItem().invoke(emailSubscriptions -> {
+                                                    for (EmailSubscription emailSubscription : emailSubscriptions) {
+                                                        if (settingsValues.bundles.containsKey(emailSubscription.getApplication().getBundle().getName())) {
+                                                            BundleSettingsValue bundleSettingsValue = settingsValues.bundles.get(emailSubscription.getApplication().getBundle().getName());
+                                                            if (bundleSettingsValue.applications.containsKey(emailSubscription.getApplication().getName())) {
+                                                                ApplicationSettingsValue applicationSettingsValue = bundleSettingsValue.applications.get(emailSubscription.getApplication().getName());
+                                                                if (applicationSettingsValue.notifications.containsKey(emailSubscription.getType())) {
+                                                                    bundleSettingsValue.applications.get(emailSubscription.getApplication().getName()).notifications.put(emailSubscription.getType(), true);
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                })
+                                )
+                );
     }
 
     private Uni<String> settingsValuesToJsonForm(Uni<SettingsValues> settingsValuesUni) {

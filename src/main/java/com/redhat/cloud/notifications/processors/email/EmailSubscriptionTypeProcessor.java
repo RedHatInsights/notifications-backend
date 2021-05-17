@@ -153,8 +153,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
         return this.subscriptionResources.getEmailSubscribers(item.getTenant(), item.getAction().getBundle(), item.getAction().getApplication(), emailSubscriptionType)
-            .onItem().transform(EmailSubscription::getUserId)
-                .collect().with(Collectors.toSet())
+                .onItem().transform(subscriptions -> {
+                    return subscriptions.stream()
+                            .map(EmailSubscription::getUserId)
+                            .collect(Collectors.toSet());
+                })
                 .onItem().transform(userSet -> {
                     if (userSet.size() > 0) {
                         return this.buildEmail(userSet);
@@ -255,6 +258,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
                     if (subscriberCount > 0 && aggregator != null) {
                         return emailAggregationResources.getEmailAggregation(aggregationKey, startTime, endTime)
+                                .onItem().transformToMulti(Multi.createFrom()::iterable)
                                 .collect().in(() -> aggregator, AbstractEmailPayloadAggregator::aggregate).toMulti();
                     }
 
@@ -317,6 +321,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         log.info(String.format("Running %s email aggregation for period (%s, %s)", emailSubscriptionType.toString(), startTime.toString(), endTime.toString()));
 
         return emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
+                .onItem().transformToMulti(Multi.createFrom()::iterable)
                 .onItem().transformToMulti(aggregationKey -> processAggregateEmailsByAggregationKey(aggregationKey, startTime, endTime, emailSubscriptionType, delete))
                 .concatenate().collect().asList()
                 .onItem().invoke(result -> {

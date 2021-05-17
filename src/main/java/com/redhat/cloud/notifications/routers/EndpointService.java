@@ -86,7 +86,7 @@ public class EndpointService {
     public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") Boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        Multi<Endpoint> endpoints;
+        Uni<List<Endpoint>> endpoints;
         Uni<Long> count;
 
         if (targetType != null) {
@@ -99,7 +99,7 @@ public class EndpointService {
             count = resources.getEndpointsCount(principal.getAccount());
         }
 
-        return endpoints.collect().asList()
+        return endpoints
                 .onItem().transformToUni(endpointsList -> count
                         .onItem().transform(endpointsCount -> new EndpointPage(endpointsList, new HashMap<>(), new Meta(endpointsCount))));
     }
@@ -116,6 +116,7 @@ public class EndpointService {
         } else if (endpoint.getType() == EndpointType.DEFAULT) {
             // Only a single default endpoint is allowed
             return resources.getEndpointsPerType(principal.getAccount(), EndpointType.DEFAULT, null, null)
+                    .onItem().transformToMulti(Multi.createFrom()::iterable)
                     .toUni()
                     .onItem()
                     .ifNull()

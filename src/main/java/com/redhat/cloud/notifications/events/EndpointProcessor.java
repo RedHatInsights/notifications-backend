@@ -16,7 +16,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
-import org.reactivestreams.Publisher;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -108,7 +107,7 @@ public class EndpointProcessor {
     // TODO [BG Phase 2] Delete this method
     public Multi<Endpoint> getEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
         return resources.getTargetEndpoints(tenant, bundleName, applicationName, eventTypeName)
-                .onItem().transformToMultiAndConcatenate((Function<Endpoint, Publisher<Endpoint>>) endpoint -> {
+                .onItem().transformToMultiAndConcatenate((Function<Endpoint, Multi<Endpoint>>) endpoint -> {
                     // If the tenant has a default endpoint for the eventType, then add the target endpoints here
                     if (endpoint.getType() == EndpointType.DEFAULT) {
                         return defaultProcessor.getDefaultEndpoints(endpoint);

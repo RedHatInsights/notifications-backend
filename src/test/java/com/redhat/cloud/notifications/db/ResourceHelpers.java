@@ -41,7 +41,7 @@ public class ResourceHelpers {
     EmailAggregationResources emailAggregationResources;
 
     public List<Application> getApplications(String bundleName) {
-        return appResources.getApplications(bundleName).collect().asList().await().indefinitely();
+        return appResources.getApplications(bundleName).await().indefinitely();
     }
 
     public EmailSubscription getSubscription(String accountNumber, String username, String bundle, String application, EmailSubscriptionType type) {
@@ -164,6 +164,6 @@ public class ResourceHelpers {
     }
 
     public List<EventType> getEventTypesForApplication(UUID applicationId) {
-        return appResources.getEventTypes(applicationId).collect().asList().await().indefinitely();
+        return appResources.getEventTypes(applicationId).await().indefinitely();
     }
 }

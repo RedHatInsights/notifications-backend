@@ -2,12 +2,12 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.List;
 
 @ApplicationScoped
 public class EndpointEmailSubscriptionResources {
@@ -59,14 +59,13 @@ public class EndpointEmailSubscriptionResources {
                 .getSingleResultOrNull();
     }
 
-    public Multi<EmailSubscription> getEmailSubscriptionsForUser(String accountNumber, String username) {
+    public Uni<List<EmailSubscription>> getEmailSubscriptionsForUser(String accountNumber, String username) {
         String query = "SELECT es FROM EmailSubscription es LEFT JOIN FETCH es.application a LEFT JOIN FETCH a.bundle b " +
                 "WHERE es.id.accountId = :accountId AND es.id.userId = :userId";
         return session.createQuery(query, EmailSubscription.class)
                 .setParameter("accountId", accountNumber)
                 .setParameter("userId", username)
-                .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .getResultList();
     }
 
     public Uni<Long> getEmailSubscribersCount(String accountNumber, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
@@ -80,7 +79,7 @@ public class EndpointEmailSubscriptionResources {
                 .getSingleResult();
     }
 
-    public Multi<EmailSubscription> getEmailSubscribers(String accountNumber, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
+    public Uni<List<EmailSubscription>> getEmailSubscribers(String accountNumber, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "FROM EmailSubscription WHERE id.accountId = :accountId AND application.bundle.name = :bundleName " +
                 "AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
         return session.createQuery(query, EmailSubscription.class)
@@ -88,7 +87,6 @@ public class EndpointEmailSubscriptionResources {
                 .setParameter("bundleName", bundleName)
                 .setParameter("applicationName", applicationName)
                 .setParameter("subscriptionType", subscriptionType)
-                .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .getResultList();
     }
 }

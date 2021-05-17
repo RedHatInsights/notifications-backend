@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.db;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 
@@ -66,12 +65,11 @@ public class ApplicationResources {
                 .onItem().transform(EventType::filterOutApplication);
     }
 
-    public Multi<Application> getApplications(String bundleName) {
+    public Uni<List<Application>> getApplications(String bundleName) {
         String query = "FROM Application WHERE bundle.name = :bundleName";
         return session.createQuery(query, Application.class)
                 .setParameter("bundleName", bundleName)
-                .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .getResultList();
     }
 
     public Uni<Application> getApplication(UUID id) {
@@ -95,7 +93,7 @@ public class ApplicationResources {
                 .getSingleResultOrNull();
     }
 
-    public Multi<EventType> getEventTypes(UUID appId) {
+    public Uni<List<EventType>> getEventTypes(UUID appId) {
         String query = "FROM EventType WHERE application.id = :appId";
         return session.find(Application.class, appId)
                 .onItem().ifNull().failWith(new NotFoundException())
@@ -104,8 +102,11 @@ public class ApplicationResources {
                                 .setParameter("appId", appId)
                                 .getResultList()
                 )
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transform(EventType::filterOutApplication);
+                .onItem().invoke(eventTypes -> {
+                    for (EventType eventType : eventTypes) {
+                        eventType.filterOutApplication();
+                    }
+                });
     }
 
     public Uni<Boolean> deleteEventTypeById(UUID id) {
@@ -152,14 +153,13 @@ public class ApplicationResources {
     }
 
     // TODO [BG Phase 2] Delete this method
-    public Multi<EventType> getEventTypesByEndpointId(@NotNull String accountId, @NotNull UUID endpointId) {
+    public Uni<List<EventType>> getEventTypesByEndpointId(@NotNull String accountId, @NotNull UUID endpointId) {
         String query = "SELECT e FROM EventType e LEFT JOIN FETCH e.application JOIN e.targets t " +
                 "WHERE t.id.accountId = :accountId AND t.endpoint.id = :endpointId";
         return session.createQuery(query, EventType.class)
                 .setParameter("accountId", accountId)
                 .setParameter("endpointId", endpointId)
-                .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .getResultList();
     }
 
     // TODO [BG Phase 2] Remove '_BG' suffix
