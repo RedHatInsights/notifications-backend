@@ -74,6 +74,9 @@ objects:
     database:
       name: notifications
       version: 12
+    optionalDependencies:
+      - rbac
+      - ingress
 
 parameters:
 - name: LOG_LEVEL
