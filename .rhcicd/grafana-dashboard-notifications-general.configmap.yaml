@@ -799,7 +799,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(api_3scale_gateway_api_status{exported_service=\"notifications\",status=\"5xx\"}[5m])) / sum(rate(api_3scale_gateway_api_time_count{exported_service=\"notifications\"}[5m]))",
+              "expr": "sum(rate(api_3scale_gateway_api_status{exported_service=\"notifications\"}[5m]))/sum(rate(api_3scale_gateway_api_time_count{exported_service=\"notifications\"}[5m]))",
               "format": "time_series",
               "groupBy": [
                 {
@@ -842,7 +842,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "API error rate",
+          "title": "3scale API error rate",
           "tooltip": {
             "shared": true,
             "sort": 0,
