@@ -23,32 +23,32 @@ data:
       "links": [],
       "panels": [
         {
-	  "fieldConfig": {
-	    "defaults": {
-	      "custom": {}
-	    },
-	    "overrides": []
-	  },
-	  "gridPos": {
-	    "h": 6,
-	    "w": 16,
-	    "x": 0,
-	    "y": 1
-	  },
-	  "id": 89,
-	  "options": {
-	    "mode": "markdown",
-	    "content": "# Notifications Dashboard\nIf you make changes, please make sure you export the dashboard and save the json [in the notifications-backend repo](https://github.com/RedHatInsights/notifications-backend/blob/master/.rhcicd/grafana-dashboard-notifications-general.configmap.yaml).\n\nTo see:\n- Prod metrics, use [the prod/stage Grafana instance](https://grafana.stage.devshift.net/d/JBI_WiqMz/notifications2): pick \"datasource=crcp01ue1-prometheus\" above\n- Stage metrics, use [the prod/stage Grafana instance](https://grafana.stage.devshift.net/d/JBI_WiqMz/notifications2): pick \"datasource=crcs02ue1-prometheus\" above\n- CI metrics, use [the dev Grafana instance](https://metrics-mnm-ci.5a9f.insights-dev.openshiftapps.com) pick \"Role=mnm-ci\" and \"Kubernetes Namespace=notifications-ci\" above\n- QA metrics, use [the dev Grafana instance](https://metrics-mnm-ci.5a9f.insights-dev.openshiftapps.com) pick \"Role=mnm-ci\" and \"Kubernetes Namespace=notifications-qa\" above"
-	  },
-	  "pluginVersion": "7.1.0",
-	  "type": "text",
-	  "transparent": true,
-	  "content": "# Notifications Dashboard\nIf you make changes, please make sure you export the dashboard and save the json [in the notifications-backend repo](https://github.com/RedHatInsights/notifications-backend/blob/master/.rhcicd/grafana-dashboard-notifications-general.configmap.yaml).\n\nTo see:\n- Prod metrics, use [the prod/stage Grafana instance](https://grafana.stage.devshift.net/d/JBI_WiqMz/notifications2): pick \"datasource=crcp01ue1-prometheus\" above\n- Stage metrics, use [the prod/stage Grafana instance](https://grafana.stage.devshift.net/d/JBI_WiqMz/notifications2): pick \"datasource=crcs02ue1-prometheus\" above\n- CI metrics, use [the dev Grafana instance](https://metrics-mnm-ci.5a9f.insights-dev.openshiftapps.com) pick \"Role=mnm-ci\" and \"Kubernetes Namespace=notifications-ci\" above\n- QA metrics, use [the dev Grafana instance](https://metrics-mnm-ci.5a9f.insights-dev.openshiftapps.com) pick \"Role=mnm-ci\" and \"Kubernetes Namespace=notifications-qa\" above",
-	  "links": [],
-	  "mode": "markdown",
-	  "title": "",
-	  "datasource": null
-	},
+          "fieldConfig": {
+            "defaults": {
+              "custom": {}
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 16,
+            "x": 0,
+            "y": 1
+          },
+          "id": 89,
+          "options": {
+            "mode": "markdown",
+            "content": "# Notifications Dashboard\nIf you make changes, please make sure you export the dashboard and save the json [in the notifications-backend repo](https://github.com/RedHatInsights/notifications-backend/blob/master/.rhcicd/grafana-dashboard-notifications-general.configmap.yaml).\n\nTo see:\n- Prod metrics, use [the prod/stage Grafana instance](https://grafana.stage.devshift.net/d/JBI_WiqMz/notifications2): pick \"datasource=crcp01ue1-prometheus\" above\n- Stage metrics, use [the prod/stage Grafana instance](https://grafana.stage.devshift.net/d/JBI_WiqMz/notifications2): pick \"datasource=crcs02ue1-prometheus\" above\n- CI metrics, use [the dev Grafana instance](https://metrics-mnm-ci.5a9f.insights-dev.openshiftapps.com) pick \"Role=mnm-ci\" and \"Kubernetes Namespace=notifications-ci\" above\n- QA metrics, use [the dev Grafana instance](https://metrics-mnm-ci.5a9f.insights-dev.openshiftapps.com) pick \"Role=mnm-ci\" and \"Kubernetes Namespace=notifications-qa\" above"
+          },
+          "pluginVersion": "7.1.0",
+          "type": "text",
+          "transparent": true,
+          "content": "# Notifications Dashboard\nIf you make changes, please make sure you export the dashboard and save the json [in the notifications-backend repo](https://github.com/RedHatInsights/notifications-backend/blob/master/.rhcicd/grafana-dashboard-notifications-general.configmap.yaml).\n\nTo see:\n- Prod metrics, use [the prod/stage Grafana instance](https://grafana.stage.devshift.net/d/JBI_WiqMz/notifications2): pick \"datasource=crcp01ue1-prometheus\" above\n- Stage metrics, use [the prod/stage Grafana instance](https://grafana.stage.devshift.net/d/JBI_WiqMz/notifications2): pick \"datasource=crcs02ue1-prometheus\" above\n- CI metrics, use [the dev Grafana instance](https://metrics-mnm-ci.5a9f.insights-dev.openshiftapps.com) pick \"Role=mnm-ci\" and \"Kubernetes Namespace=notifications-ci\" above\n- QA metrics, use [the dev Grafana instance](https://metrics-mnm-ci.5a9f.insights-dev.openshiftapps.com) pick \"Role=mnm-ci\" and \"Kubernetes Namespace=notifications-qa\" above",
+          "links": [],
+          "mode": "markdown",
+          "title": "",
+          "datasource": null
+        },
     {
       "collapsed": false,
       "datasource": null,
