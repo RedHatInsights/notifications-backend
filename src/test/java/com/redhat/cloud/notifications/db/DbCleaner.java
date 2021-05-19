@@ -9,10 +9,10 @@ import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointDefault;
 import com.redhat.cloud.notifications.models.EndpointTarget;
-import com.redhat.cloud.notifications.models.EndpointWebhook;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.AfterEach;
@@ -57,7 +57,7 @@ public class DbCleaner {
                 .chain(() -> deleteAllFrom(EndpointDefault.class)) // TODO [BG Phase 2] Delete this line
                 .chain(() -> deleteAllFrom(EndpointTarget.class)) // TODO [BG Phase 2] Delete this line
                 .chain(() -> deleteAllFrom(BehaviorGroupAction.class))
-                .chain(() -> deleteAllFrom(EndpointWebhook.class))
+                .chain(() -> deleteAllFrom(WebhookProperties.class))
                 .chain(() -> deleteAllFrom(Endpoint.class))
                 .chain(() -> deleteAllFrom(EventTypeBehavior.class))
                 .chain(() -> deleteAllFrom(BehaviorGroup.class))

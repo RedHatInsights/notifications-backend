@@ -17,7 +17,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.WebhookAttributes;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -172,18 +172,18 @@ public class LifecycleITest extends DbIsolatedTest {
         assertEquals(eventType.getDescription(), typeResponse.getString("description"));
 
         // Add new endpoints
-        WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(HttpType.POST);
-        webAttr.setDisableSSLVerification(true);
-        webAttr.setSecretToken("super-secret-token");
-        webAttr.setUrl(String.format("http://%s/test/lifecycle", mockServerConfig.getRunningAddress()));
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setDisableSslVerification(true);
+        properties.setSecretToken("super-secret-token");
+        properties.setUrl(String.format("http://%s/test/lifecycle", mockServerConfig.getRunningAddress()));
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
         ep.setName("positive feeling");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
-        ep.setProperties(webAttr);
+        ep.setProperties(properties);
 
         response = given()
                 .header(identityHeader)
@@ -199,17 +199,17 @@ public class LifecycleITest extends DbIsolatedTest {
         endpoint.mapTo(Endpoint.class);
         assertNotNull(endpoint.getString("id"));
 
-        webAttr = new WebhookAttributes();
-        webAttr.setMethod(HttpType.POST);
-        webAttr.setDisableSSLVerification(true);
-        webAttr.setUrl(String.format("http://%s/test/lifecycle", mockServerConfig.getRunningAddress()));
+        properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setDisableSslVerification(true);
+        properties.setUrl(String.format("http://%s/test/lifecycle", mockServerConfig.getRunningAddress()));
 
         ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
         ep.setName("negative feeling");
         ep.setDescription("I feel like dying");
         ep.setEnabled(true);
-        ep.setProperties(webAttr);
+        ep.setProperties(properties);
 
         response = given()
                 .header(identityHeader)
@@ -341,8 +341,8 @@ public class LifecycleITest extends DbIsolatedTest {
                 if (ep.getString("name").startsWith("negative")) {
                     // TODO Validate that we actually reach this part
                     assertFalse(history.getBoolean("invocationResult"));
-                    JsonObject attr = ep.getJsonObject("properties");
-                    attr.mapTo(WebhookAttributes.class);
+                    JsonObject properties = ep.getJsonObject("properties");
+                    properties.mapTo(WebhookProperties.class);
 
                     // Fetch details
                     response = given()
@@ -357,8 +357,8 @@ public class LifecycleITest extends DbIsolatedTest {
                     JsonObject json = new JsonObject(response.getBody().asString());
                     assertFalse(json.isEmpty());
                     assertEquals(400, json.getInteger("code").intValue());
-                    assertEquals(attr.getString("url"), json.getString("url"));
-                    assertEquals(attr.getString("method"), json.getString("method"));
+                    assertEquals(properties.getString("url"), json.getString("url"));
+                    assertEquals(properties.getString("method"), json.getString("method"));
                 } else {
                     // TODO Validate that we actually reach this part
                     assertTrue(history.getBoolean("invocationResult"));

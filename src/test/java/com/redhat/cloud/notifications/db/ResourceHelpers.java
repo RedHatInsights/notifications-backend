@@ -10,7 +10,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
-import com.redhat.cloud.notifications.models.WebhookAttributes;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -89,9 +89,9 @@ public class ResourceHelpers {
         statsValues[0] = count;
         for (int i = 0; i < count; i++) {
             // Add new endpoints
-            WebhookAttributes webAttr = new WebhookAttributes();
-            webAttr.setMethod(HttpType.POST);
-            webAttr.setUrl("https://localhost");
+            WebhookProperties properties = new WebhookProperties();
+            properties.setMethod(HttpType.POST);
+            properties.setUrl("https://localhost");
 
             Endpoint ep = new Endpoint();
             if (i > 0) {
@@ -109,7 +109,7 @@ public class ResourceHelpers {
             ep.setEnabled(enabled);
             if (i > 0) {
                 statsValues[2]++;
-                ep.setProperties(webAttr);
+                ep.setProperties(properties);
             }
 
             ep.setAccountId(tenant);
@@ -119,15 +119,16 @@ public class ResourceHelpers {
     }
 
     public UUID createWebhookEndpoint(String tenant) {
-        WebhookAttributes webAttr = new WebhookAttributes();
-        webAttr.setMethod(HttpType.POST);
-        webAttr.setUrl("https://localhost");
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setUrl("https://localhost");
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
         ep.setName(String.format("Endpoint %s", UUID.randomUUID().toString()));
         ep.setDescription("Automatically generated");
         ep.setEnabled(true);
         ep.setAccountId(tenant);
+        ep.setProperties(properties);
         return resources.createEndpoint(ep).await().indefinitely().getId();
     }
 

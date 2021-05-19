@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.processors.webhooks;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.WebhookAttributes;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationEnabled;
@@ -53,9 +53,9 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     public Uni<NotificationHistory> process(Notification item) {
         processedCount.increment();
         Endpoint endpoint = item.getEndpoint();
-        WebhookAttributes properties = (WebhookAttributes) endpoint.getProperties();
+        WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
 
-        final HttpRequest<Buffer> req = getWebClient(properties.isDisableSSLVerification())
+        final HttpRequest<Buffer> req = getWebClient(properties.getDisableSslVerification())
                 .rawAbs(properties.getMethod().name(), properties.getUrl());
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {

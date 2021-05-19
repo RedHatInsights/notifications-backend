@@ -4,9 +4,8 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointDefault;
 import com.redhat.cloud.notifications.models.EndpointTarget;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.EndpointWebhook;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.WebhookAttributes;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -33,9 +32,15 @@ public class EndpointResources {
                 .onItem().call(() -> {
                     // If the endpoint properties are null, they won't be persisted.
                     if (endpoint.getProperties() != null) {
+                        /*
+                         * As weird as it seems, we need the following line because the Endpoint instance was
+                         * deserialized from JSON and that JSON did not contain any information about the
+                         * @OneToOne relation from EndpointProperties to Endpoint.
+                         */
+                        endpoint.getProperties().setEndpoint(endpoint);
                         switch (endpoint.getType()) {
                             case WEBHOOK:
-                                return session.persist(buildEndpointWebhook(endpoint))
+                                return session.persist(endpoint.getProperties())
                                         .onItem().call(session::flush);
                             case EMAIL_SUBSCRIPTION:
                             case DEFAULT: // TODO [BG Phase 2] Delete this case
@@ -304,7 +309,7 @@ public class EndpointResources {
         // TODO Fix transaction so that we don't end up with half the updates applied
         String endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled " +
                 "WHERE accountId = :accountId AND id = :id";
-        String webhookQuery = "UPDATE EndpointWebhook SET url = :url, method = :method, " +
+        String webhookQuery = "UPDATE WebhookProperties SET url = :url, method = :method, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
 
         return session.createQuery(endpointQuery)
@@ -318,17 +323,17 @@ public class EndpointResources {
                 .onItem().transformToUni(endpointRowCount -> {
                     if (endpointRowCount == 0) {
                         return Uni.createFrom().item(Boolean.FALSE);
-                    } else if (endpoint.getProperties() == null || endpoint.getType() != EndpointType.WEBHOOK) {
+                    } else if (endpoint.getProperties() == null) {
                         return Uni.createFrom().item(Boolean.TRUE);
                     } else {
                         switch (endpoint.getType()) {
                             case WEBHOOK:
-                                WebhookAttributes attr = (WebhookAttributes) endpoint.getProperties();
+                                WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
                                 return session.createQuery(webhookQuery)
-                                        .setParameter("url", attr.getUrl())
-                                        .setParameter("method", attr.getMethod())
-                                        .setParameter("disableSslVerification", attr.isDisableSSLVerification())
-                                        .setParameter("secretToken", attr.getSecretToken())
+                                        .setParameter("url", properties.getUrl())
+                                        .setParameter("method", properties.getMethod())
+                                        .setParameter("disableSslVerification", properties.getDisableSslVerification())
+                                        .setParameter("secretToken", properties.getSecretToken())
                                         .setParameter("endpointId", endpoint.getId())
                                         .executeUpdate()
                                         .call(session::flush)
@@ -349,11 +354,8 @@ public class EndpointResources {
         }
         switch (endpoint.getType()) {
             case WEBHOOK:
-                return session.find(EndpointWebhook.class, endpoint.getId())
-                        .onItem().ifNotNull().invoke(webhook -> {
-                            WebhookAttributes properties = buildWebhookAttributes(webhook);
-                            endpoint.setProperties(properties);
-                        })
+                return session.find(WebhookProperties.class, endpoint.getId())
+                        .onItem().ifNotNull().invoke(endpoint::setProperties)
                         .replaceWith(endpoint);
             case EMAIL_SUBSCRIPTION:
             case DEFAULT: // TODO [BG Phase 2] Delete this case
@@ -361,27 +363,5 @@ public class EndpointResources {
                 // Properties loading is not supported for the endpoint type.
                 return Uni.createFrom().item(endpoint);
         }
-    }
-
-    private static EndpointWebhook buildEndpointWebhook(Endpoint endpoint) {
-        WebhookAttributes attr = (WebhookAttributes) endpoint.getProperties();
-        EndpointWebhook webhook = new EndpointWebhook();
-        webhook.setEndpoint(endpoint);
-        webhook.setUrl(attr.getUrl());
-        webhook.setMethod(attr.getMethod());
-        webhook.setDisableSslVerification(attr.isDisableSSLVerification());
-        webhook.setSecretToken(attr.getSecretToken());
-        webhook.setBasicAuthentication(attr.getBasicAuthentication());
-        return webhook;
-    }
-
-    private static WebhookAttributes buildWebhookAttributes(EndpointWebhook webhook) {
-        WebhookAttributes attr = new WebhookAttributes();
-        attr.setUrl(webhook.getUrl());
-        attr.setMethod(webhook.getMethod());
-        attr.setDisableSSLVerification(webhook.getDisableSslVerification());
-        attr.setSecretToken(webhook.getSecretToken());
-        attr.setBasicAuthentication(webhook.getBasicAuthentication());
-        return attr;
     }
 }

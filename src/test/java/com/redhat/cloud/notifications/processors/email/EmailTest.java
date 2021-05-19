@@ -11,7 +11,7 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
-import com.redhat.cloud.notifications.models.EmailSubscriptionAttributes;
+import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -138,14 +138,14 @@ public class EmailTest extends DbIsolatedTest {
 
         Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application, "My test machine");
 
-        EmailSubscriptionAttributes emailAttr = new EmailSubscriptionAttributes();
+        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
         ep.setName("positive feeling");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
-        ep.setProperties(emailAttr);
+        ep.setProperties(properties);
 
         Notification notif = new Notification(emailActionMessage, ep);
 
@@ -246,14 +246,14 @@ public class EmailTest extends DbIsolatedTest {
 
         emailActionMessage.setAccountId(tenant);
 
-        EmailSubscriptionAttributes emailAttr = new EmailSubscriptionAttributes();
+        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
         ep.setName("positive feeling");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
-        ep.setProperties(emailAttr);
+        ep.setProperties(properties);
 
         Notification notif = new Notification(emailActionMessage, ep);
 
