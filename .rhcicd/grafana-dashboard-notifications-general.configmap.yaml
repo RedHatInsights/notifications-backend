@@ -1393,11 +1393,11 @@ data:
           "gridPos": {
             "h": 8,
             "w": 8,
-            "x": 0,
+            "x": 8,
             "y": 35
           },
           "hiddenSeries": false,
-          "id": 98,
+          "id": 103,
           "legend": {
             "avg": false,
             "current": false,
@@ -1419,13 +1419,14 @@ data:
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
-          "repeat": "service",
           "repeatDirection": "h",
+          "repeatIteration": 1618488264010,
+          "repeatPanelId": 98,
           "scopedVars": {
             "service": {
               "selected": false,
-              "text": "notifications-gw",
-              "value": "notifications-gw"
+              "text": "notifications-backend",
+              "value": "notifications-backend"
             }
           },
           "seriesOverrides": [],
@@ -1434,7 +1435,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(container_memory_working_set_bytes{container=\"notifications-gw\"}) BY (pod, namespace)",
+              "expr": "sum(container_memory_working_set_bytes{container=\"notifications-backend\"}) BY (pod, namespace)",
               "refId": "A"
             }
           ],
@@ -1442,7 +1443,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Memory usage \"notifications-gw\"",
+          "title": "Memory usage \"notifications-backend\"",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1497,11 +1498,11 @@ data:
           "gridPos": {
             "h": 8,
             "w": 8,
-            "x": 8,
+            "x": 0,
             "y": 35
           },
           "hiddenSeries": false,
-          "id": 103,
+          "id": 98,
           "legend": {
             "avg": false,
             "current": false,
@@ -1523,14 +1524,13 @@ data:
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
+          "repeat": "service",
           "repeatDirection": "h",
-          "repeatIteration": 1618488264010,
-          "repeatPanelId": 98,
           "scopedVars": {
             "service": {
               "selected": false,
-              "text": "notifications-backend",
-              "value": "notifications-backend"
+              "text": "notifications-gw",
+              "value": "notifications-gw"
             }
           },
           "seriesOverrides": [],
@@ -1539,7 +1539,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(container_memory_working_set_bytes{container=\"notifications-backend\"}) BY (pod, namespace)",
+              "expr": "sum(container_memory_working_set_bytes{container=\"notifications-gw\"}) BY (pod, namespace)",
               "refId": "A"
             }
           ],
@@ -1547,7 +1547,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Memory usage \"notifications-backend\"",
+          "title": "Memory usage \"notifications-gw\"",
           "tooltip": {
             "shared": true,
             "sort": 0,
