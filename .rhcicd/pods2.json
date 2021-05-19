@@ -24,12 +24,12 @@
         "thresholdMarkers": true
     },
     "gridPos": {
-        "h": 3,
-        "w": 6,
         "x": 4,
-        "y": 20
+        "y": 8,
+        "w": 4,
+        "h": 3
     },
-    "id": 101,
+    "id": 107,
     "interval": null,
     "links": [],
     "mappingType": 1,
