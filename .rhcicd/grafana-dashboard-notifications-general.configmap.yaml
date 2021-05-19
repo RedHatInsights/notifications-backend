@@ -56,7 +56,7 @@ data:
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 6
       },
       "id": 14,
       "panels": [],
@@ -88,10 +88,10 @@ data:
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 6,
-        "w": 7,
+        "h": 3,
+        "w": 4,
         "x": 0,
-        "y": 8
+        "y": 7
       },
       "id": 3,
       "interval": null,
@@ -163,8 +163,8 @@ data:
       "colorValue": true,
       "colors": [
         "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#d44a3a",
+        "rgba(237, 129, 40, 0.89)"
       ],
       "datasource": "$datasource",
       "description": "This shows the number of restarts for the latest pod that's running in that time period",
@@ -183,23 +183,23 @@ data:
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 6,
+        "h": 3,
         "w": 4,
-        "x": 7,
-        "y": 8
+        "x": 4,
+        "y": 7
       },
-      "id": 7,
+      "id": 101,
       "interval": null,
       "links": [],
       "mappingType": 1,
       "mappingTypes": [
         {
-          "name": "value to text",
-          "value": 1
-        },
-        {
           "name": "range to text",
           "value": 2
+        },
+        {
+          "name": "value to text",
+          "value": 1
         }
       ],
       "maxDataPoints": 100,
@@ -218,7 +218,7 @@ data:
         }
       ],
       "repeatDirection": "h",
-      "repeatIteration": 1621266294414,
+      "repeatIteration": 1621298345749,
       "repeatPanelId": 2,
       "scopedVars": {
         "service": {
@@ -236,7 +236,7 @@ data:
       "tableColumn": "",
       "targets": [
         {
-          "expr": "kube_pod_container_status_restarts_total{container=\"notifications-backend\"}",
+          "expr": "kube_pod_container_status_restarts_total{container=\"$service\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -314,10 +314,10 @@ data:
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 11,
-        "y": 8
+        "h": 3,
+        "w": 5,
+        "x": 8,
+        "y": 7
       },
       "id": 5,
       "interval": null,
@@ -389,8 +389,8 @@ data:
       "colorValue": true,
       "colors": [
         "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#d44a3a",
+        "rgba(237, 129, 40, 0.89)"
       ],
       "datasource": "$datasource",
       "description": "This shows the number of restarts for the latest pod that's running in that time period",
@@ -409,23 +409,23 @@ data:
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 17,
-        "y": 8
+        "h": 3,
+        "w": 6,
+        "x": 13,
+        "y": 7
       },
-      "id": 9,
+      "id": 103,
       "interval": null,
       "links": [],
       "mappingType": 1,
       "mappingTypes": [
         {
-          "name": "value to text",
-          "value": 1
-        },
-        {
           "name": "range to text",
           "value": 2
+        },
+        {
+          "name": "value to text",
+          "value": 1
         }
       ],
       "maxDataPoints": 100,
@@ -444,7 +444,7 @@ data:
         }
       ],
       "repeatDirection": "h",
-      "repeatIteration": 1621266294414,
+      "repeatIteration": 1621298345749,
       "repeatPanelId": 2,
       "scopedVars": {
         "service": {
@@ -462,473 +462,7 @@ data:
       "tableColumn": "",
       "targets": [
         {
-          "expr": "kube_pod_container_status_restarts_total{container=\"notifications-gw\"}",
-          "format": "time_series",
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "null"
-              ],
-              "type": "fill"
-            }
-          ],
-          "instant": true,
-          "intervalFactor": 1,
-          "legendFormat": "",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": []
-        }
-      ],
-      "thresholds": "1,5",
-      "title": "restarts \"notifications-gw\"",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
-    },
-    {
-      "collapsed": false,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 1
-      },
-      "id": 85,
-      "panels": [],
-      "title": "Pods",
-      "type": "row"
-    },
-    {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": true,
-      "colors": [
-        "#d44a3a",
-        "rgba(237, 129, 40, 0.89)",
-        "#299c46"
-      ],
-      "datasource": "$datasource",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 0,
-        "y": 2
-      },
-      "id": 2,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
-      "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "repeatDirection": "h",
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": true,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
-      },
-      "tableColumn": "",
-      "targets": [
-        {
-          "expr": "up{container=\"notifications-backend\", endpoint=\"notifications-backend\", service=\"notifications-backend\"}",
-          "instant": true,
-          "interval": "",
-          "legendFormat": "",
-          "refId": "B"
-        }
-      ],
-      "thresholds": "0,1",
-      "timeFrom": null,
-      "title": "Up/Down \"notifications-backend\"",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "Up",
-          "value": "1"
-        },
-        {
-          "op": "=",
-          "text": "Down",
-          "value": "0"
-        }
-      ],
-      "valueName": "min"
-    },
-    {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": true,
-      "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
-      ],
-      "datasource": "$datasource",
-      "description": "This shows the number of restarts for the latest pod that's running in that time period",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 5,
-        "x": 6,
-        "y": 2
-      },
-      "id": 95,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
-      "maxDataPoints": 100,
-      "maxPerRow": 12,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "repeatDirection": "h",
-      "repeatIteration": 1621266294410,
-      "repeatPanelId": 2,
-      "scopedVars": {
-        "service": {
-          "selected": false,
-          "text": "notifications-backend",
-          "value": "notifications-backend"
-        }
-      },
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
-      },
-      "tableColumn": "",
-      "targets": [
-        {
-          "expr": "kube_pod_container_status_restarts_total{container=\"notifications-backend\"}",
-          "format": "time_series",
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "null"
-              ],
-              "type": "fill"
-            }
-          ],
-          "instant": true,
-          "intervalFactor": 1,
-          "legendFormat": "",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": []
-        }
-      ],
-      "thresholds": "1,5",
-      "title": "restarts \"notifications-backend\"",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
-    },
-    {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": true,
-      "colors": [
-        "#d44a3a",
-        "rgba(237, 129, 40, 0.89)",
-        "#299c46"
-      ],
-      "datasource": "$datasource",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 5,
-        "x": 11,
-        "y": 2
-      },
-      "id": 4,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
-      "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "repeatDirection": "h",
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": true,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
-      },
-      "tableColumn": "",
-      "targets": [
-        {
-          "expr": "up{container=\"notifications-gw\", endpoint=\"notifications-gw\", service=\"notifications-gw\"}",
-          "instant": true,
-          "interval": "",
-          "legendFormat": "",
-          "refId": "B"
-        }
-      ],
-      "thresholds": "0,1",
-      "timeFrom": null,
-      "title": "Up/Down \"$service\"",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "Up",
-          "value": "1"
-        },
-        {
-          "op": "=",
-          "text": "Down",
-          "value": "0"
-        }
-      ],
-      "valueName": "min"
-    },
-    {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": true,
-      "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
-      ],
-      "datasource": "$datasource",
-      "description": "This shows the number of restarts for the latest pod that's running in that time period",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 16,
-        "y": 2
-      },
-      "id": 93,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
-      "maxDataPoints": 100,
-      "maxPerRow": 12,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "repeatDirection": "h",
-      "repeatIteration": 1621266294410,
-      "repeatPanelId": 2,
-      "scopedVars": {
-        "service": {
-          "selected": false,
-          "text": "notifications-gw",
-          "value": "notifications-gw"
-        }
-      },
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
-      },
-      "tableColumn": "",
-      "targets": [
-        {
-          "expr": "kube_pod_container_status_restarts_total{container=\"notifications-gw\"}",
+          "expr": "kube_pod_container_status_restarts_total{container=\"$service\"}",
           "format": "time_series",
           "groupBy": [
             {
