@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
-import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
@@ -54,6 +53,9 @@ import static javax.ws.rs.core.Response.Status;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class NotificationService {
+
+    // TODO: i18n
+    public static final String DEFAULT_BEHAVIOR_GROUP_DISPLAY_NAME = "Default";
 
     @Inject
     Vertx vertx;
@@ -364,18 +366,51 @@ public class NotificationService {
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
         return getAccountId(sec)
-                .onItem().transformToUni(accountId -> behaviorGroupResources.findByBundleId(accountId, bundleId))
-                .onItem().call(behaviorGroups -> behaviorGroups.size() == 0 ? Uni.createFrom().voidItem() : Uni.combine().all().unis(
-                        behaviorGroups.stream()
-                                .map(BehaviorGroup::getActions)
-                                .map(bga -> bga.size() == 0 ? Uni.createFrom().voidItem() : Uni.combine().all().unis(
-                                        bga.stream()
-                                                .map(BehaviorGroupAction::getEndpoint)
-                                                .map(endpoint -> endpointResources.loadProperties(endpoint))
-                                                .collect(Collectors.toList())
-                                        )
-                                                .discardItems()
-                                ).collect(Collectors.toList())
-                ).discardItems());
+                // Let's try to load the behavior groups for the current account!
+                .onItem().transformToUni(accountId -> behaviorGroupResources.findByBundleId(accountId, bundleId)
+                        .onItem().transformToUni(behaviorGroups -> {
+                            if (behaviorGroups.isEmpty()) {
+                                /*
+                                 * If the database does not contain any behavior group for the account, we'll create a
+                                 * default one and return it. There's no endpoint linked to the default group so we
+                                 * don't have to load endpoint properties.
+                                 */
+                                return behaviorGroupResources.create(accountId, createDefaultBehaviorGroup(bundleId))
+                                        .onItem().transform(List::of);
+                            } else {
+                                /*
+                                 * If the database contains behavior groups for the account, we need to load the
+                                 * properties of all the endpoints linked to the behavior groups we found.
+                                 */
+                                return Uni.createFrom().item(behaviorGroups)
+                                        // The properties loading is done using async side-effects.
+                                        .onItem().call(bg -> Multi.createFrom().iterable(bg)
+                                                // Concatenate is mandatory to prevent concurrent accesses to the Hibernate session.
+                                                .onItem().transformToUniAndConcatenate(behaviorGroup -> {
+                                                    if (behaviorGroup.getActions() == null || behaviorGroup.getActions().isEmpty()) {
+                                                        // If the behavior group does not have any action, there's nothing to load.
+                                                        return Uni.createFrom().voidItem();
+                                                    } else {
+                                                        return Multi.createFrom().iterable(behaviorGroup.getActions())
+                                                                // Concatenate is mandatory to prevent concurrent accesses to the Hibernate session.
+                                                                .onItem().transformToUniAndConcatenate(action ->
+                                                                        endpointResources.loadProperties(action.getEndpoint())
+                                                                )
+                                                                .collect().asList();
+                                                    }
+                                                })
+                                                .collect().asList()
+                                        );
+                            }
+                        })
+                );
+    }
+
+    private static BehaviorGroup createDefaultBehaviorGroup(UUID bundleId) {
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setBundleId(bundleId);
+        behaviorGroup.setDisplayName(DEFAULT_BEHAVIOR_GROUP_DISPLAY_NAME);
+        behaviorGroup.setDefaultBehavior(true);
+        return behaviorGroup;
     }
 }

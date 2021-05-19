@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
@@ -617,5 +618,45 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .get("/notifications/bundles/{bundleId}/behaviorGroups")
                 .then()
                 .statusCode(403);
+    }
+
+    @Test
+    void testDefaultBehaviorGroupLazyCreation() {
+        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+
+        Bundle bundle = new Bundle("test-bundle", "Test bundle");
+        String responseBody = given()
+                .contentType(ContentType.JSON)
+                .basePath("/internal")
+                .body(bundle)
+                .when()
+                .post("/bundles")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+        JsonObject jsonBundle = new JsonObject(responseBody);
+        jsonBundle.mapTo(Bundle.class);
+
+        // At this point, the bundle does not have any behavior group.
+
+        responseBody = given()
+                .header(identityHeader)
+                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
+                .pathParam("bundleId", UUID.fromString(jsonBundle.getString("id")))
+                .when()
+                .get("/notifications/bundles/{bundleId}/behaviorGroups")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+
+        // The default behavior group lazy creation should have been triggered now.
+
+        JsonArray jsonBehaviorGroups = new JsonArray(responseBody);
+        assertEquals(1, jsonBehaviorGroups.size());
+
+        JsonObject jsonBehaviorGroup = jsonBehaviorGroups.getJsonObject(0);
+        jsonBehaviorGroup.mapTo(BehaviorGroup.class);
+        assertEquals(NotificationService.DEFAULT_BEHAVIOR_GROUP_DISPLAY_NAME, jsonBehaviorGroup.getString("display_name"));
+        assertTrue(jsonBehaviorGroup.getBoolean("default_behavior"));
     }
 }
