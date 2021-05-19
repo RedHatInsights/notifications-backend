@@ -102,7 +102,6 @@ public class NotificationService {
     @DELETE
     @Path("/{id}")
     @APIResponse(responseCode = "204", description = "Notification has been marked as read", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> markRead(@Context SecurityContext sec, @PathParam("id") Integer id) {
         // Mark the notification id for <tenantId><userId> 's subscription as read
         return Uni.createFrom().nullItem();
@@ -198,7 +197,6 @@ public class NotificationService {
     @Path("/eventTypes/{eventTypeId}/{endpointId}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204", description = "Integration has been removed from the event type", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> unlinkEndpointFromEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") UUID eventTypeId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.unlinkEndpoint(principal.getAccount(), endpointId, eventTypeId)
@@ -231,7 +229,6 @@ public class NotificationService {
     @Operation(summary = "Unlink a behavior group from an event type.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204", description = "Behavior group has been removed from the event type", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> unlinkBehaviorGroupFromEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         return getAccountId(sec)
                 .onItem().transformToUni(accountId -> behaviorGroupResources.deleteEventTypeBehavior(accountId, eventTypeId, behaviorGroupId))
@@ -276,7 +273,6 @@ public class NotificationService {
     @Operation(summary = "Remove an integration from the list of configured default actions.")
     @APIResponse(responseCode = "204", description = "Integration has been removed from the default actions", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> deleteEndpointFromDefaults(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.deleteEndpointFromDefaults(principal.getAccount(), endpointId)

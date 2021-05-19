@@ -294,7 +294,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .pathParam("endpointId", persistedEndpoint.getString("id"))
                 .put("/notifications/defaults/{endpointId}")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(ContentType.TEXT);
 
         // Check if the endpoint appears in the list of defaults.
         response = given()
@@ -317,7 +318,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .pathParam("endpointId", persistedEndpoint.getString("id"))
                 .put("/notifications/defaults/{endpointId}")
                 .then()
-                .statusCode(400);
+                .statusCode(400)
+                .contentType(ContentType.TEXT);
 
         // Delete the endpoint from defaults, it should work.
         given()
@@ -544,7 +546,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(ContentType.TEXT);
 
         given()
                 .header(readAccessIdentityHeader)
@@ -590,7 +593,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .put("/notifications/behaviorGroups/{id}")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(ContentType.JSON);
 
         given()
                 .header(readAccessIdentityHeader)
@@ -608,7 +612,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(ContentType.TEXT);
 
         given()
                 .header(noAccessIdentityHeader)
