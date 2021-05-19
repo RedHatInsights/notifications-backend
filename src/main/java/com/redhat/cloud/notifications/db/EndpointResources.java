@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.db;
 
-import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointDefault;
+import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointTarget;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
