@@ -84,8 +84,11 @@ public class NotificationResources {
         }
 
         String outcome = (String) jo.get("outcome");
-        boolean result = "Success".equalsIgnoreCase(outcome);
+        boolean result = outcome == null ? false : outcome.startsWith("Success");
         Map details = (Map) jo.get("details");
+        if (!details.containsKey("outcome")) {
+            details.put("outcome", outcome);
+        }
         Integer duration = (Integer) jo.get("duration");
 
         String updateQuery = "UPDATE NotificationHistory SET details = :details, invocationResult = :result, invocationTime= :invocationTime WHERE id = :id";
