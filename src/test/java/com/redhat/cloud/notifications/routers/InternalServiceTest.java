@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -331,7 +332,8 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .when()
                 .put("/internal/bundles/{bundleId}/behaviorGroups/{behaviorGroupId}/default")
                 .then()
-                .statusCode(expectedStatusCode);
+                .statusCode(expectedStatusCode)
+                .contentType(ContentType.TEXT);
     }
 
     private static void deleteBundle(String bundleId, boolean expectedResult) {

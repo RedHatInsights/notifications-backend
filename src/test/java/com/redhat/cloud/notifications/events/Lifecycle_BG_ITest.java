@@ -295,6 +295,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .put("/internal/bundles/{bundleId}/behaviorGroups/{behaviorGroupId}/default")
                 .then()
                 .statusCode(200)
+                .contentType(ContentType.TEXT)
                 .extract().body().asString();
 
         // Now let's verify which behavior group is marked as default in the database.
@@ -399,7 +400,8 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .when()
                 .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(ContentType.TEXT);
     }
 
     /*
@@ -485,7 +487,8 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .when()
                 .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(ContentType.TEXT);
     }
 
     private void checkEventTypeBehaviorGroups(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {

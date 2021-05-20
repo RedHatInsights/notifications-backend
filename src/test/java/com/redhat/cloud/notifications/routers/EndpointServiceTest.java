@@ -143,7 +143,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when().put("/endpoints/" + responsePoint.getString("id") + "/enable")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(ContentType.TEXT);
 
         responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
@@ -744,13 +745,15 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/rhel/" + ResourceHelpers.TEST_APP_NAME + "/instant")
-                .then().statusCode(404);
+                .then().statusCode(404)
+                .contentType(ContentType.JSON);
         given()
                 .header(identityHeader)
                 .when()
                 .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/policies/instant")
-                .then().statusCode(404);
+                .then().statusCode(404)
+                .contentType(ContentType.JSON);
 
         // Unknown bundle/apps give 404
         given()
@@ -764,7 +767,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/idontexist/meneither/instant")
-                .then().statusCode(404);
+                .then().statusCode(404)
+                .contentType(ContentType.JSON);
 
         // Disable everything as preparation
         // rhel/policies instant and daily
@@ -805,7 +809,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/rhel/policies/instant")
-                .then().statusCode(200);
+                .then().statusCode(200).contentType(ContentType.JSON);
 
         assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
         assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
@@ -818,7 +822,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/rhel/policies/daily")
-                .then().statusCode(200);
+                .then().statusCode(200).contentType(ContentType.JSON);
 
         assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
         assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
@@ -831,7 +835,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when()
                 .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/" + ResourceHelpers.TEST_APP_NAME + "/instant")
-                .then().statusCode(200);
+                .then().statusCode(200).contentType(ContentType.JSON);
 
         assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
         assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));

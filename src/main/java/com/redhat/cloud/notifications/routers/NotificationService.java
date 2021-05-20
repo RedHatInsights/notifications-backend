@@ -185,6 +185,7 @@ public class NotificationService {
     @Path("/eventTypes/{eventTypeId}/{endpointId}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> linkEndpointToEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") UUID eventTypeId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.linkEndpoint(principal.getAccount(), endpointId, eventTypeId)
@@ -216,6 +217,7 @@ public class NotificationService {
     @Operation(summary = "Link a behavior group to an event type.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> linkBehaviorGroupToEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         return getAccountId(sec)
                 .onItem().transformToUni(accountId -> behaviorGroupResources.addEventTypeBehavior(accountId, eventTypeId, behaviorGroupId))
@@ -258,6 +260,7 @@ public class NotificationService {
     @Operation(summary = "Add an integration to the list of configured default actions.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> addEndpointToDefaults(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.addEndpointToDefaults(principal.getAccount(), endpointId)
@@ -342,6 +345,7 @@ public class NotificationService {
     @Operation(summary = "Update the list of actions of a behavior group.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
         // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
         if (endpointIds.contains(null)) {

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
 @Path("/internal")
 @Consumes(APPLICATION_JSON)
@@ -62,6 +63,7 @@ public class InternalService {
 
     @PUT
     @Path("/bundles/{bundleId}")
+    @Produces(TEXT_PLAIN)
     public Uni<Response> updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
         return bundleResources.updateBundle(bundleId, bundle)
                 .onItem().transform(rowCount -> {
@@ -75,6 +77,7 @@ public class InternalService {
 
     @PUT
     @Path("/bundles/{bundleId}/behaviorGroups/{behaviorGroupId}/default")
+    @Produces(TEXT_PLAIN)
     public Uni<Response> setDefaultBehaviorGroup(@PathParam("bundleId") UUID bundleId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         return behaviorGroupResources.setDefaultBehaviorGroup(bundleId, behaviorGroupId)
                 .onItem().transform(rowCount -> {
@@ -113,6 +116,7 @@ public class InternalService {
 
     @PUT
     @Path("/applications/{appId}")
+    @Produces(TEXT_PLAIN)
     public Uni<Response> updateApplication(@PathParam("appId") UUID appId, @NotNull @Valid Application app) {
         return appResources.updateApplication(appId, app)
                 .onItem().transform(rowCount -> {
