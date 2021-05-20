@@ -1481,9 +1481,9 @@ data:
     ]
   },
   "timezone": "",
-  "title": "Notifications Dashboard Test",
-  "uid": "KQIVyFuMk4",
-  "version": 9
+  "title": "Notifications Dashboard",
+  "uid": "KQIVyFuMk",
+  "version": 10 
 }
 kind: ConfigMap
 metadata:
