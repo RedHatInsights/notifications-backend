@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointDefault;
+import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointTarget;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
@@ -14,9 +15,15 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 import javax.ws.rs.BadRequestException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EndpointResources {
@@ -84,9 +91,7 @@ public class EndpointResources {
         }
 
         return mutinyQuery.getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties)
-                .collect().asList();
+                .onItem().call(this::loadProperties);
     }
 
     public Uni<Long> getEndpointsCountPerType(String tenant, EndpointType type, Boolean activeOnly) {
@@ -118,8 +123,8 @@ public class EndpointResources {
                 .setParameter("accountId", tenant)
                 .setParameter("bundleName", bundleName)
                 .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties);
+                .onItem().call(this::loadProperties)
+                .onItem().transformToMulti(Multi.createFrom()::iterable);
     }
 
     // TODO [BG Phase 2] Remove '_BG' suffix
@@ -134,8 +139,8 @@ public class EndpointResources {
                 .setParameter("accountId", tenant)
                 .setParameter("bundleName", bundleName)
                 .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties);
+                .onItem().call(this::loadProperties)
+                .onItem().transformToMulti(Multi.createFrom()::iterable);
     }
 
     public Uni<List<Endpoint>> getEndpoints(String tenant, Query limiter) {
@@ -156,9 +161,7 @@ public class EndpointResources {
         }
 
         return mutinyQuery.getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties)
-                .collect().asList();
+                .onItem().call(this::loadProperties);
     }
 
     public Uni<Long> getEndpointsCount(String tenant) {
@@ -252,9 +255,7 @@ public class EndpointResources {
         }
 
         return mutinyQuery.getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties)
-                .collect().asList();
+                .onItem().call(this::loadProperties);
     }
 
     // TODO [BG Phase 2] Delete this method
@@ -264,9 +265,7 @@ public class EndpointResources {
         return session.createQuery(query, Endpoint.class)
                 .setParameter("accountId", tenant)
                 .getResultList()
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToUniAndConcatenate(this::loadProperties)
-                .collect().asList();
+                .onItem().call(this::loadProperties);
     }
 
     // TODO [BG Phase 2] Delete this method
@@ -347,21 +346,38 @@ public class EndpointResources {
                 });
     }
 
+    public Uni<Void> loadProperties(List<Endpoint> endpoints) {
+        // Group endpoints in types and load in batches for each type.
+        Set<Endpoint> endpointSet = new HashSet<>(endpoints);
+
+        return this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK);
+        // use `.chain(() -> loadTyped...)` when adding other types
+    }
+
+    private <T extends EndpointProperties> Uni<Void> loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type) {
+        Map<UUID, Endpoint> endpointsMap = endpoints
+                .stream()
+                .filter(e -> e.getType().equals(type))
+                .collect(Collectors.toMap(Endpoint::getId, Function.identity()));
+
+        if (endpointsMap.size() > 0) {
+            return session
+                    .find(typedEndpointClass, endpointsMap.keySet().toArray())
+                    .onItem().invoke(propList -> propList.forEach(props -> {
+                        Endpoint endpoint = endpointsMap.get(props.getId());
+                        endpoint.setProperties(props);
+                    })).replaceWith(Uni.createFrom().voidItem());
+        }
+
+        return Uni.createFrom().voidItem();
+    }
+
     public Uni<Endpoint> loadProperties(Endpoint endpoint) {
         if (endpoint == null) {
             LOGGER.warning("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
             return Uni.createFrom().nullItem();
         }
-        switch (endpoint.getType()) {
-            case WEBHOOK:
-                return session.find(WebhookProperties.class, endpoint.getId())
-                        .onItem().ifNotNull().invoke(endpoint::setProperties)
-                        .replaceWith(endpoint);
-            case EMAIL_SUBSCRIPTION:
-            case DEFAULT: // TODO [BG Phase 2] Delete this case
-            default:
-                // Properties loading is not supported for the endpoint type.
-                return Uni.createFrom().item(endpoint);
-        }
+        return this.loadProperties(Collections.singletonList(endpoint))
+                .replaceWith(endpoint);
     }
 }
