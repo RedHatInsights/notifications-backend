@@ -350,9 +350,8 @@ public class EndpointResources {
         // Group endpoints in types and load in batches for each type.
         Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
-        return Uni.combine().all().unis(
-                this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK)
-        ).discardItems();
+        return this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK);
+        // use `.chain(() -> loadTyped...)` when adding other types
     }
 
     private <T extends EndpointProperties> Uni<Void> loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type) {

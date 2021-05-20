@@ -45,6 +45,7 @@ import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -370,6 +371,7 @@ public class NotificationService {
                         behaviorGroups
                                 .stream()
                                 .map(BehaviorGroup::getActions)
+                                .filter(Objects::nonNull)
                                 .flatMap(Collection::stream)
                                 .map(BehaviorGroupAction::getEndpoint)
                                 .collect(Collectors.toList())
