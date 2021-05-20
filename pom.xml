@@ -104,6 +104,7 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-micrometer</artifactId>
         </dependency>
+<!--
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-opentelemetry</artifactId>
@@ -112,6 +113,7 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-opentelemetry-exporter-jaeger</artifactId>
         </dependency>
+-->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-cache</artifactId>
