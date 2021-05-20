@@ -77,7 +77,7 @@
     "tableColumn": "",
     "targets": [
         {
-            "expr": "kube_pod_container_status_restarts_total{container=\"$service\"}",
+            "expr": "kube_pod_container_status_restarts_total{container=\"notifications-backend\"}",
             "format": "time_series",
             "groupBy": [
                 {
