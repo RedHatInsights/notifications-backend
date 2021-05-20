@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.when;
 import static io.restassured.RestAssured.with;
+import static io.restassured.http.ContentType.TEXT;
 import static org.hamcrest.Matchers.in;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -36,12 +37,11 @@ public class HealthCheckTest {
 
         with()
                 .queryParam("status", "admin-down")
-                .accept("application/json")
-                .contentType("application/json")
                 .when()
                 .post("/internal/admin/status")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(TEXT);
 
         try {
             String body =
@@ -54,12 +54,11 @@ public class HealthCheckTest {
         } finally {
             with()
                     .queryParam("status", "ok")
-                    .accept("application/json")
-                    .contentType("application/json")
                     .when()
                     .post("/internal/admin/status")
                     .then()
-                    .statusCode(200);
+                    .statusCode(200)
+                    .contentType(TEXT);
         }
     }
 

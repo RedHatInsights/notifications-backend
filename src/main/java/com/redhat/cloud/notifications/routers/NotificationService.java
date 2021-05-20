@@ -39,7 +39,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
@@ -50,11 +49,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.Response.Status;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
 public class NotificationService {
 
     @Inject
@@ -103,6 +102,7 @@ public class NotificationService {
 
     @DELETE
     @Path("/{id}")
+    @Produces(TEXT_PLAIN)
     @APIResponse(responseCode = "204", description = "Notification has been marked as read", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> markRead(@Context SecurityContext sec, @PathParam("id") Integer id) {
         // Mark the notification id for <tenantId><userId> 's subscription as read
@@ -123,6 +123,7 @@ public class NotificationService {
 
     @GET
     @Path("/eventTypes")
+    @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve all event types. The returned list can be filtered by bundle or application.")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<EventType>> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId) {
@@ -132,6 +133,7 @@ public class NotificationService {
     // TODO [BG Phase 2] Delete this method
     @GET
     @Path("/eventTypes/affectedByRemovalOfEndpoint/{endpointId}")
+    @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<EventType>> getEventTypesAffectedByEndpointId(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -162,6 +164,7 @@ public class NotificationService {
      */
     @GET
     @Path("/bg/eventTypes/affectedByRemovalOfEndpoint/{endpointId}") // TODO [BG Phase 2] Remove '/bg' path prefix
+    @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the event types affected by the removal of an integration.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<EventType>> getEventTypesAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
@@ -175,6 +178,7 @@ public class NotificationService {
      */
     @GET
     @Path("/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
+    @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the event types affected by the removal of a behavior group.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<EventType>> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
@@ -185,9 +189,9 @@ public class NotificationService {
     // TODO [BG Phase 2] Delete this method
     @PUT
     @Path("/eventTypes/{eventTypeId}/{endpointId}")
+    @Produces(TEXT_PLAIN)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> linkEndpointToEventType(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId, @PathParam("eventTypeId") UUID eventTypeId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.linkEndpoint(principal.getAccount(), endpointId, eventTypeId)
@@ -208,6 +212,7 @@ public class NotificationService {
     // TODO [BG Phase 2] Delete this method
     @GET
     @Path("/eventTypes/{eventTypeId}")
+    @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<Endpoint>> getLinkedEndpoints(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -216,10 +221,10 @@ public class NotificationService {
 
     @PUT
     @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
+    @Produces(TEXT_PLAIN)
     @Operation(summary = "Link a behavior group to an event type.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> linkBehaviorGroupToEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         return getAccountId(sec)
                 .onItem().transformToUni(accountId -> behaviorGroupResources.addEventTypeBehavior(accountId, eventTypeId, behaviorGroupId))
@@ -239,6 +244,7 @@ public class NotificationService {
 
     @GET
     @Path("/eventTypes/{eventTypeId}/behaviorGroups")
+    @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the behavior groups linked to an event type.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<BehaviorGroup>> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
@@ -249,6 +255,7 @@ public class NotificationService {
     // TODO [BG Phase 2] Delete this method
     @GET
     @Path("/defaults")
+    @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     @Operation(summary = "Retrieve all integrations of the configured default actions.")
     public Uni<List<Endpoint>> getEndpointsForDefaults(@Context SecurityContext sec) {
@@ -259,10 +266,10 @@ public class NotificationService {
     // TODO [BG Phase 2] Delete this method
     @PUT
     @Path("/defaults/{endpointId}")
+    @Produces(TEXT_PLAIN)
     @Operation(summary = "Add an integration to the list of configured default actions.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> addEndpointToDefaults(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.addEndpointToDefaults(principal.getAccount(), endpointId)
@@ -283,6 +290,7 @@ public class NotificationService {
 
     @GET
     @Path("/facets/applications")
+    @Produces(APPLICATION_JSON)
     @Operation(summary = "Return a thin list of configured applications. This can be used to configure a filter in the UI")
     public Uni<List<Facet>> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
         return apps.getApplications(bundleName)
@@ -294,6 +302,7 @@ public class NotificationService {
 
     @GET
     @Path("/facets/bundles")
+    @Produces(APPLICATION_JSON)
     @Operation(summary = "Return a thin list of configured bundles. This can be used to configure a filter in the UI")
     public Uni<List<Facet>> getBundleFacets(@Context SecurityContext sec) {
         return bundleResources.getBundles()
@@ -305,6 +314,7 @@ public class NotificationService {
 
     @DELETE
     @Path("/eventTypes/{eventTypeId}/mute")
+    @Produces(APPLICATION_JSON)
     @Operation(summary = "Mute an event type, removing all its link with behavior groups.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<Boolean> muteEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId) {
@@ -314,6 +324,8 @@ public class NotificationService {
 
     @POST
     @Path("/behaviorGroups")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
     @Operation(summary = "Create a behavior group.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<BehaviorGroup> createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
@@ -323,6 +335,8 @@ public class NotificationService {
 
     @PUT
     @Path("/behaviorGroups/{id}")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
     @Operation(summary = "Update a behavior group.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<Boolean> updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
@@ -335,6 +349,7 @@ public class NotificationService {
 
     @DELETE
     @Path("/behaviorGroups/{id}")
+    @Produces(APPLICATION_JSON)
     @Operation(summary = "Delete a behavior group.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<Boolean> deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
@@ -344,10 +359,11 @@ public class NotificationService {
 
     @PUT
     @Path("/behaviorGroups/{behaviorGroupId}/actions")
+    @Consumes(APPLICATION_JSON)
+    @Produces(TEXT_PLAIN)
     @Operation(summary = "Update the list of actions of a behavior group.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
         // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
         if (endpointIds.contains(null)) {
@@ -366,6 +382,7 @@ public class NotificationService {
 
     @GET
     @Path("/bundles/{bundleId}/behaviorGroups")
+    @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the behavior groups of a bundle.", hidden = true)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {

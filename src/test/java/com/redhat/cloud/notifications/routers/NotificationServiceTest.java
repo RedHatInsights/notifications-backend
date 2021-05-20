@@ -17,7 +17,6 @@ import com.redhat.cloud.notifications.routers.models.Facet;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.Json;
@@ -33,6 +32,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -77,10 +78,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         Response response = given()
                 .when()
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonArray eventTypes = new JsonArray(response.getBody().asString());
@@ -104,11 +105,11 @@ public class NotificationServiceTest extends DbIsolatedTest {
         Response response = given()
                 .when()
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
                 .queryParam("applicationIds", myOtherTesterApplicationId)
                 .get("/notifications/eventTypes")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonArray eventTypes = new JsonArray(response.getBody().asString());
@@ -132,11 +133,11 @@ public class NotificationServiceTest extends DbIsolatedTest {
         Response response = given()
                 .when()
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
                 .queryParam("bundleId", myBundleId)
                 .get("/notifications/eventTypes")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonArray eventTypes = new JsonArray(response.getBody().asString());
@@ -161,12 +162,12 @@ public class NotificationServiceTest extends DbIsolatedTest {
         Response response = given()
                 .when()
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
                 .queryParam("bundleId", myBundleId)
                 .queryParam("applicationIds", myOtherTesterApplicationId)
                 .get("/notifications/eventTypes")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonArray eventTypes = new JsonArray(response.getBody().asString());
@@ -193,10 +194,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(TEXT);
     }
 
     // TODO [BG Phase 2] Delete this test
@@ -212,7 +213,6 @@ public class NotificationServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .delete(String.format("/notifications/defaults/%s", UUID.randomUUID()))
                 .then()
                 .statusCode(403);
@@ -228,10 +228,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
                 .then()
-                .statusCode(400);
+                .statusCode(400)
+                .contentType(TEXT);
 
         // Create default endpoint
         Endpoint ep = new Endpoint();
@@ -244,20 +244,21 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .basePath(TestConstants.API_INTEGRATIONS_V_1_0)
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(JSON);
 
         // Send non-existant UUID again
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .put(String.format("/notifications/defaults/%s", UUID.randomUUID()))
                 .then()
-                .statusCode(400);
+                .statusCode(400)
+                .contentType(TEXT);
     }
 
     // TODO [BG Phase 2] Delete this test
@@ -277,11 +278,12 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .basePath(TestConstants.API_INTEGRATIONS_V_1_0)
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
         JsonObject persistedEndpoint = new JsonObject(response.body().asString());
         assertNotNull(persistedEndpoint.getString("id"));
@@ -290,21 +292,21 @@ public class NotificationServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .pathParam("endpointId", persistedEndpoint.getString("id"))
                 .put("/notifications/defaults/{endpointId}")
                 .then()
                 .statusCode(200)
-                .contentType(ContentType.TEXT);
+                .contentType(TEXT);
 
         // Check if the endpoint appears in the list of defaults.
         response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/notifications/defaults")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
         JsonArray defaultEndpoints = new JsonArray(response.body().asString());
         assertEquals(1, defaultEndpoints.size());
@@ -314,18 +316,18 @@ public class NotificationServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .pathParam("endpointId", persistedEndpoint.getString("id"))
                 .put("/notifications/defaults/{endpointId}")
                 .then()
                 .statusCode(400)
-                .contentType(ContentType.TEXT);
+                .contentType(TEXT);
 
         // Delete the endpoint from defaults, it should work.
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .pathParam("endpointId", persistedEndpoint.getString("id"))
                 .delete("/notifications/defaults/{endpointId}")
                 .then()
@@ -335,10 +337,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/notifications/defaults")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
         defaultEndpoints = new JsonArray(response.body().asString());
         assertEquals(0, defaultEndpoints.size());
@@ -363,10 +365,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         Response response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonArray eventTypes = new JsonArray(response.getBody().asString());
@@ -377,10 +379,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         eventTypes = new JsonArray(response.getBody().asString());
@@ -391,10 +393,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         eventTypes = new JsonArray(response.getBody().asString());
@@ -405,10 +407,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         eventTypes = new JsonArray(response.getBody().asString());
@@ -419,10 +421,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         eventTypes = new JsonArray(response.getBody().asString());
@@ -433,10 +435,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         eventTypes = new JsonArray(response.getBody().asString());
@@ -449,10 +451,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep1.toString())
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         eventTypes = new JsonArray(response.getBody().asString());
@@ -463,10 +465,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes/affectedByRemovalOfEndpoint/" + ep2.toString())
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         eventTypes = new JsonArray(response.getBody().asString());
@@ -482,10 +484,9 @@ public class NotificationServiceTest extends DbIsolatedTest {
         List<Facet> applications = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/notifications/facets/applications?bundleName=rhel")
                 .then()
-                .statusCode(200).extract().response().jsonPath().getList(".", Facet.class);
+                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
 
         assertTrue(applications.size() > 0);
         Optional<Facet> policies = applications.stream().filter(facet -> facet.getName().equals("policies")).findFirst();
@@ -499,10 +500,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         List<Facet> bundles = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .get("/notifications/facets/bundles")
                 .then()
-                .statusCode(200).extract().response().jsonPath().getList(".", Facet.class);
+                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
 
         assertTrue(bundles.size() > 0);
         Optional<Facet> rhel = bundles.stream().filter(facet -> facet.getName().equals("rhel")).findFirst();
@@ -520,7 +521,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .get("/notifications/eventTypes")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(JSON);
 
         given()
                 .header(noAccessIdentityHeader)
@@ -529,7 +531,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 // TODO [BG Phase 2] Remove '/bg' from path
                 .get("/notifications/bg/eventTypes/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(JSON);
 
         given()
                 .header(noAccessIdentityHeader)
@@ -537,7 +540,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(JSON);
 
         given()
                 .header(readAccessIdentityHeader)
@@ -547,7 +551,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
                 .then()
                 .statusCode(403)
-                .contentType(ContentType.TEXT);
+                .contentType(TEXT);
 
         given()
                 .header(readAccessIdentityHeader)
@@ -564,7 +568,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(JSON);
 
         given()
                 .header(readAccessIdentityHeader)
@@ -572,21 +577,23 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .delete("/notifications/eventTypes/{eventTypeId}/mute")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(JSON);
 
         given()
                 .header(readAccessIdentityHeader)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 // TODO Remove the body when https://github.com/quarkusio/quarkus/issues/16897 is fixed
                 .body(Json.encode(new BehaviorGroup()))
                 .when()
                 .post("/notifications/behaviorGroups")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(JSON);
 
         given()
                 .header(readAccessIdentityHeader)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .pathParam("id", UUID.randomUUID())
                 // TODO Remove the body when https://github.com/quarkusio/quarkus/issues/16897 is fixed
                 .body(Json.encode(new BehaviorGroup()))
@@ -594,7 +601,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .put("/notifications/behaviorGroups/{id}")
                 .then()
                 .statusCode(403)
-                .contentType(ContentType.JSON);
+                .contentType(JSON);
 
         given()
                 .header(readAccessIdentityHeader)
@@ -602,18 +609,19 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .delete("/notifications/behaviorGroups/{id}")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(JSON);
 
         given()
                 .header(readAccessIdentityHeader)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .pathParam("behaviorGroupId", UUID.randomUUID())
                 .body(Json.encode(List.of(UUID.randomUUID())))
                 .when()
                 .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
                 .then()
                 .statusCode(403)
-                .contentType(ContentType.TEXT);
+                .contentType(TEXT);
 
         given()
                 .header(noAccessIdentityHeader)
@@ -621,6 +629,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .get("/notifications/bundles/{bundleId}/behaviorGroups")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .contentType(JSON);
     }
 }

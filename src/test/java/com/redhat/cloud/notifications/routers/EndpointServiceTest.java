@@ -30,6 +30,8 @@ import javax.inject.Inject;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.TEXT;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -76,6 +78,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200) // TODO Maybe 204 here instead?
+                .contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
         // Add new endpoints
@@ -95,11 +98,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
         Response response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
@@ -113,6 +117,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
@@ -144,6 +149,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when().put("/endpoints/" + responsePoint.getString("id") + "/enable")
                 .then()
                 .statusCode(200)
+                .contentType(TEXT)
                 .contentType(ContentType.TEXT);
 
         responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
@@ -166,7 +172,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when().get("/endpoints/" + responsePoint.getString("id"))
                 .then()
-                .statusCode(404);
+                .statusCode(404)
+                .contentType(JSON);
 
         // Fetch all, nothing should be left
         given()
@@ -175,6 +182,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
     }
 
@@ -185,6 +193,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when().get("/endpoints/" + id)
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .body("id", equalTo(id))
                 .extract().response();
 
@@ -212,11 +221,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(400);
+                .statusCode(400)
+                .contentType(JSON);
 
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
@@ -231,7 +241,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
@@ -245,11 +255,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(400);
+                .statusCode(400)
+                .contentType(JSON);
 
         // Type and attributes don't match
         properties.setMethod(HttpType.POST);
@@ -295,6 +306,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200) // TODO Maybe 204 here instead?
+                .contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
         // Add new endpoints
@@ -314,11 +326,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
         Response response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
@@ -329,10 +342,11 @@ public class EndpointServiceTest extends DbIsolatedTest {
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
@@ -353,7 +367,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Update without payload
         given()
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .when()
                 .put(String.format("/endpoints/%s", responsePointSingle.getString("id")))
                 .then()
@@ -362,12 +376,13 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // With payload
         given()
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .when()
                 .body(Json.encode(responsePointSingle))
                 .put(String.format("/endpoints/%s", responsePointSingle.getString("id")))
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(TEXT);
 
         // Fetch single one again to see that the updates were done
         JsonObject updatedEndpoint = fetchSingle(responsePointSingle.getString("id"), identityHeader);
@@ -404,11 +419,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
             Response response = given()
                     .header(identityHeader)
                     .when()
-                    .contentType(ContentType.JSON)
+                    .contentType(JSON)
                     .body(Json.encode(ep))
                     .post("/endpoints")
                     .then()
                     .statusCode(200)
+                    .contentType(JSON)
                     .extract().response();
 
             JsonObject responsePoint = new JsonObject(response.getBody().asString());
@@ -425,6 +441,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
@@ -441,6 +458,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
@@ -468,11 +486,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
         Response response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
@@ -488,10 +507,11 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .queryParam("type", "default")
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonObject endpointPage = new JsonObject(response.getBody().asString());
@@ -516,31 +536,33 @@ public class EndpointServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(another))
                 .post("/endpoints")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(JSON);
 
         // Ensure that there's only a single default endpoint
         // This second insert should return the original one without modifications
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(JSON);
 
         response = given()
                 .header(identityHeader)
                 .queryParam("type", "default")
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         endpointPage = new JsonObject(response.getBody().asString());
@@ -567,10 +589,10 @@ public class EndpointServiceTest extends DbIsolatedTest {
         Response response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
@@ -581,10 +603,10 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .queryParam("sort_by", "enabled")
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
@@ -600,10 +622,10 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .queryParam("limit", "50")
                 .queryParam("offset", stats[0] - 20)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
@@ -648,11 +670,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
         Response response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
@@ -695,11 +718,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
         Response response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
@@ -731,44 +755,41 @@ public class EndpointServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .delete("/endpoints/email/subscription/rhel/" + ResourceHelpers.TEST_APP_NAME + "/instant")
-                .then().statusCode(404);
+                .then().statusCode(404)
+                .contentType(JSON);
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .delete("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/policies/instant")
-                .then().statusCode(404);
+                .then().statusCode(404)
+                .contentType(JSON);
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/rhel/" + ResourceHelpers.TEST_APP_NAME + "/instant")
                 .then().statusCode(404)
-                .contentType(ContentType.JSON);
+                .contentType(JSON);
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/policies/instant")
                 .then().statusCode(404)
-                .contentType(ContentType.JSON);
+                .contentType(JSON);
 
         // Unknown bundle/apps give 404
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .delete("/endpoints/email/subscription/idontexist/meneither/instant")
-                .then().statusCode(404);
+                .then().statusCode(404)
+                .contentType(JSON);
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/idontexist/meneither/instant")
                 .then().statusCode(404)
-                .contentType(ContentType.JSON);
+                .contentType(JSON);
 
         // Disable everything as preparation
         // rhel/policies instant and daily
@@ -776,27 +797,27 @@ public class EndpointServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .delete("/endpoints/email/subscription/rhel/policies/instant")
-                .then().statusCode(200);
+                .then().statusCode(200)
+                .contentType(JSON);
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .delete("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/" + ResourceHelpers.TEST_APP_NAME + "/instant")
-                .then().statusCode(200);
+                .then().statusCode(200)
+                .contentType(JSON);
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .delete("/endpoints/email/subscription/rhel/policies/daily")
-                .then().statusCode(200);
+                .then().statusCode(200)
+                .contentType(JSON);
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .delete("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/" + ResourceHelpers.TEST_APP_NAME + "/daily")
-                .then().statusCode(200);
+                .then().statusCode(200)
+                .contentType(JSON);
 
         assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
         assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
@@ -807,9 +828,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/rhel/policies/instant")
-                .then().statusCode(200).contentType(ContentType.JSON);
+                .then().statusCode(200).contentType(JSON);
 
         assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
         assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
@@ -820,9 +840,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/rhel/policies/daily")
-                .then().statusCode(200).contentType(ContentType.JSON);
+                .then().statusCode(200).contentType(JSON);
 
         assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
         assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
@@ -833,9 +852,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .put("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/" + ResourceHelpers.TEST_APP_NAME + "/instant")
-                .then().statusCode(200).contentType(ContentType.JSON);
+                .then().statusCode(200).contentType(JSON);
 
         assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
         assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
@@ -846,9 +864,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .delete("/endpoints/email/subscription/rhel/policies/daily")
-                .then().statusCode(200);
+                .then().statusCode(200).contentType(JSON);
 
         assertNotNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
         assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
@@ -859,9 +876,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .delete("/endpoints/email/subscription/rhel/policies/instant")
-                .then().statusCode(200);
+                .then().statusCode(200).contentType(JSON);
 
         assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT));
         assertNull(this.helpers.getSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY));
@@ -885,6 +901,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200) // TODO Maybe 204 here instead?
+                .contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
         for (int i = 0; i < 200; i++) {
@@ -905,11 +922,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
             Response response = given()
                     .header(identityHeader)
                     .when()
-                    .contentType(ContentType.JSON)
+                    .contentType(JSON)
                     .body(Json.encode(ep))
                     .post("/endpoints")
                     .then()
                     .statusCode(200)
+                    .contentType(JSON)
                     .extract().response();
 
             JsonObject responsePoint = new JsonObject(response.getBody().asString());
@@ -923,6 +941,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                     .when().get("/endpoints")
                     .then()
                     .statusCode(200)
+                    .contentType(JSON)
                     .extract().response();
         }
     }

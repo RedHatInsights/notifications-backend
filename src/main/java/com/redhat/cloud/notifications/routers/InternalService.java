@@ -28,8 +28,6 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
 @Path("/internal")
-@Consumes(APPLICATION_JSON)
-@Produces(APPLICATION_JSON)
 public class InternalService {
 
     @Inject
@@ -43,12 +41,15 @@ public class InternalService {
 
     @POST
     @Path("/bundles")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
     public Uni<Bundle> createBundle(@NotNull @Valid Bundle bundle) {
         return bundleResources.createBundle(bundle);
     }
 
     @GET
     @Path("/bundles")
+    @Produces(APPLICATION_JSON)
     public Uni<List<Bundle>> getBundles() {
         // Return configured with types?
         return bundleResources.getBundles();
@@ -56,6 +57,7 @@ public class InternalService {
 
     @GET
     @Path("/bundles/{bundleId}")
+    @Produces(APPLICATION_JSON)
     public Uni<Bundle> getBundle(@PathParam("bundleId") UUID bundleId) {
         return bundleResources.getBundle(bundleId)
                 .onItem().ifNull().failWith(new NotFoundException());
@@ -63,6 +65,7 @@ public class InternalService {
 
     @PUT
     @Path("/bundles/{bundleId}")
+    @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     public Uni<Response> updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
         return bundleResources.updateBundle(bundleId, bundle)
@@ -77,24 +80,29 @@ public class InternalService {
 
     @DELETE
     @Path("/bundles/{bundleId}")
+    @Produces(APPLICATION_JSON)
     public Uni<Boolean> deleteBundle(@PathParam("bundleId") UUID bundleId) {
         return bundleResources.deleteBundle(bundleId);
     }
 
     @GET
     @Path("/bundles/{bundleId}/applications")
+    @Produces(APPLICATION_JSON)
     public Uni<List<Application>> getApplications(@PathParam("bundleId") UUID bundleId) {
         return bundleResources.getApplications(bundleId);
     }
 
     @POST
     @Path("/applications")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
     public Uni<Application> createApplication(@NotNull @Valid Application app) {
         return appResources.createApp(app);
     }
 
     @GET
     @Path("/applications/{appId}")
+    @Produces(APPLICATION_JSON)
     public Uni<Application> getApplication(@PathParam("appId") UUID appId) {
         return appResources.getApplication(appId)
                 .onItem().ifNull().failWith(new NotFoundException());
@@ -102,6 +110,7 @@ public class InternalService {
 
     @PUT
     @Path("/applications/{appId}")
+    @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     public Uni<Response> updateApplication(@PathParam("appId") UUID appId, @NotNull @Valid Application app) {
         return appResources.updateApplication(appId, app)
@@ -116,24 +125,29 @@ public class InternalService {
 
     @DELETE
     @Path("/applications/{appId}")
+    @Produces(APPLICATION_JSON)
     public Uni<Boolean> deleteApplication(@PathParam("appId") UUID appId) {
         return appResources.deleteApplication(appId);
     }
 
     @GET
     @Path("/applications/{appId}/eventTypes")
+    @Produces(APPLICATION_JSON)
     public Uni<List<EventType>> getEventTypes(@PathParam("appId") UUID appId) {
         return appResources.getEventTypes(appId);
     }
 
     @POST
     @Path("/eventTypes")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
     public Uni<EventType> createEventType(@NotNull @Valid EventType eventType) {
         return appResources.createEventType(eventType);
     }
 
     @DELETE
     @Path("/eventTypes/{eventTypeId}")
+    @Produces(APPLICATION_JSON)
     public Uni<Boolean> deleteEventType(@PathParam("eventTypeId") UUID eventTypeId) {
         return appResources.deleteEventTypeById(eventTypeId);
     }

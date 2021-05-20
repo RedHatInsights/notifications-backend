@@ -21,7 +21,6 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
@@ -46,6 +45,8 @@ import java.util.concurrent.TimeUnit;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -117,12 +118,13 @@ public class LifecycleITest extends DbIsolatedTest {
         Bundle bundle = new Bundle(BUNDLE_NAME, "A bundle");
         Response response = given()
                 .body(bundle)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .basePath("/")
                 .when()
                 .post("/internal/bundles")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
         theBundle = new JsonObject(response.getBody().asString());
         theBundle.mapTo(Bundle.class);
@@ -136,12 +138,13 @@ public class LifecycleITest extends DbIsolatedTest {
 
         Response response = given()
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .basePath("/")
                 .body(Json.encode(app))
                 .post("/internal/applications")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonObject appResponse = new JsonObject(response.getBody().asString());
@@ -158,12 +161,13 @@ public class LifecycleITest extends DbIsolatedTest {
 
         response = given()
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .basePath("/")
                 .body(Json.encode(eventType))
                 .post("/internal/eventTypes")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonObject typeResponse = new JsonObject(response.getBody().asString());
@@ -188,11 +192,12 @@ public class LifecycleITest extends DbIsolatedTest {
         response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonObject endpoint = new JsonObject(response.getBody().asString());
@@ -214,11 +219,12 @@ public class LifecycleITest extends DbIsolatedTest {
         response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonObject endpointFail = new JsonObject(response.getBody().asString());
@@ -232,10 +238,10 @@ public class LifecycleITest extends DbIsolatedTest {
                     .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                     .header(identityHeader)
                     .when()
-                    .contentType(ContentType.JSON)
                     .put(String.format("/notifications/eventTypes/%s/%s", typeResponse.getString("id"), endpointLink.getString("id")))
                     .then()
-                    .statusCode(200);
+                    .statusCode(200)
+                    .contentType(TEXT);
         }
     }
 
@@ -309,10 +315,10 @@ public class LifecycleITest extends DbIsolatedTest {
         Response response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonArray endpoints = new JsonObject(response.getBody().asString()).getJsonArray("data");
@@ -325,10 +331,10 @@ public class LifecycleITest extends DbIsolatedTest {
             response = given()
                     .header(identityHeader)
                     .when()
-                    .contentType(ContentType.JSON)
                     .get(String.format("/endpoints/%s/history", ep.getString("id")))
                     .then()
                     .statusCode(200)
+                    .contentType(JSON)
                     .extract().response();
 
             JsonArray histories = new JsonArray(response.getBody().asString());
@@ -348,10 +354,10 @@ public class LifecycleITest extends DbIsolatedTest {
                     response = given()
                             .header(identityHeader)
                             .when()
-                            .contentType(ContentType.JSON)
                             .get(String.format("/endpoints/%s/history/%s/details", ep.getString("id"), history.getString("id")))
                             .then()
                             .statusCode(200)
+                            .contentType(JSON)
                             .extract().response();
 
                     JsonObject json = new JsonObject(response.getBody().asString());
@@ -372,10 +378,10 @@ public class LifecycleITest extends DbIsolatedTest {
                 .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                 .when()
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonArray typesResponse = new JsonArray(response.getBody().asString());
@@ -401,6 +407,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when().get(String.format("/notifications/eventTypes/%s", policiesAll.getString("id")))
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonArray endpoints = new JsonArray(response.getBody().asString());
@@ -430,6 +437,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when().get(String.format("/notifications/eventTypes/%s", policiesAll.getString("id")))
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         endpoints = new JsonArray(response.getBody().asString());
@@ -447,11 +455,12 @@ public class LifecycleITest extends DbIsolatedTest {
         Response response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonObject defaultEndpoint = new JsonObject(response.getBody().asString());
@@ -463,10 +472,10 @@ public class LifecycleITest extends DbIsolatedTest {
                 .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                 .when()
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
                 .get("/notifications/eventTypes")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonArray eventTypes = new JsonArray(response.getBody().asString());
@@ -485,10 +494,10 @@ public class LifecycleITest extends DbIsolatedTest {
                 .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .put(String.format("/notifications/eventTypes/%s/%s", targetType.getString("id"), defaultEndpoint.getString("id")))
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(TEXT);
 
         // Get existing endpoints
         // Link them to the default
@@ -515,10 +524,10 @@ public class LifecycleITest extends DbIsolatedTest {
         Response response = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
                 .get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().response();
 
         JsonArray endpoints = new JsonObject(response.getBody().asString()).getJsonArray("data");
@@ -532,10 +541,10 @@ public class LifecycleITest extends DbIsolatedTest {
                         .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
                         .header(identityHeader)
                         .when()
-                        .contentType(ContentType.JSON)
                         .put(String.format("/notifications/defaults/%s", endpoint.getString("id")))
                         .then()
-                        .statusCode(200);
+                        .statusCode(200)
+                        .contentType(TEXT);
             }
         }
 
@@ -548,6 +557,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when()
                 .delete("/internal/bundles/" + theBundle.getString("id"))
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(JSON);
     }
 }
