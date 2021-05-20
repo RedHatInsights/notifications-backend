@@ -13,9 +13,6 @@ public class EmailAggregationKey {
     @NotNull
     private String application;
 
-    public EmailAggregationKey() {
-    }
-
     public EmailAggregationKey(String accountId, String bundle, String application) {
         this.accountId = accountId;
         this.bundle = bundle;
@@ -26,24 +23,12 @@ public class EmailAggregationKey {
         return accountId;
     }
 
-    public void setAccountId(String accountId) {
-        this.accountId = accountId;
-    }
-
     public String getBundle() {
         return bundle;
     }
 
-    public void setBundle(String bundle) {
-        this.bundle = bundle;
-    }
-
     public String getApplication() {
         return application;
-    }
-
-    public void setApplication(String application) {
-        this.application = application;
     }
 
 }
