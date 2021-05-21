@@ -10,9 +10,9 @@ public class AdvisorOpenshift implements EmailTemplate {
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType == "new-recommendation") {
+            if (eventType.equals("new-recommendation")) {
                 return Templates.newRecommendationInstantEmailTitle();
-            } else if (eventType == "weekly-digest") {
+            } else if (eventType.equals("weekly-digest")) {
                 return Templates.weeklyDigestEmailTitle();
             }
         }
@@ -26,9 +26,9 @@ public class AdvisorOpenshift implements EmailTemplate {
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType == "new-recommendation") {
+            if (eventType.equals("new-recommendation")) {
                 return Templates.newRecommendationInstantEmailBody();
-            } else if (eventType == "weekly-digest") {
+            } else if (eventType.equals("weekly-digest")) {
                 return Templates.weeklyDigestEmailBody();
             }
         }
