@@ -25,9 +25,9 @@
     },
     "gridPos": {
         "h": 3,
-        "w": 6,
-        "x": 16,
-        "y": 20
+        "w": 4,
+        "x": 13,
+        "y": 8
     },
     "id": 103,
     "interval": null,
@@ -77,7 +77,7 @@
     "tableColumn": "",
     "targets": [
         {
-            "expr": "kube_pod_container_status_restarts_total{container=\"$service\"}",
+            "expr": "kube_pod_container_status_restarts_total{container=\"notifications-gw\"}",
             "format": "time_series",
             "groupBy": [
                 {

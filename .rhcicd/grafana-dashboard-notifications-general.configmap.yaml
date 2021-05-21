@@ -19,7 +19,7 @@ data:
   "gnetId": null,
   "graphTooltip": 1,
   "id": 179,
-  "iteration": 1621415654216,
+  "iteration": 1621549991930,
   "links": [],
   "panels": [
     {
@@ -172,136 +172,136 @@ data:
       "valueName": "min"
     },
     {
-    "cacheTimeout": null,
-    "colorBackground": false,
-    "colors": [
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": true,
+      "colors": [
         "#299c46",
         "#d44a3a",
         "rgba(237, 129, 40, 0.89)"
-    ],
-    "colorValue": true,
-    "datasource": "$datasource",
-    "description": "This shows the number of restarts for the latest pod that's running in that time period",
-    "fieldConfig": {
+      ],
+      "datasource": "$datasource",
+      "description": "This shows the number of restarts for the latest pod that's running in that time period",
+      "fieldConfig": {
         "defaults": {
-            "custom": {}
+          "custom": {}
         },
         "overrides": []
-    },
-    "format": "none",
-    "gauge": {
+      },
+      "format": "none",
+      "gauge": {
         "maxValue": 100,
         "minValue": 0,
         "show": false,
         "thresholdLabels": false,
         "thresholdMarkers": true
-    },
-    "gridPos": {
-        "x": 4,
-        "y": 8,
+      },
+      "gridPos": {
+        "h": 3,
         "w": 4,
-        "h": 3
-    },
-    "id": 107,
-    "interval": null,
-    "links": [],
-    "mappingType": 1,
-    "mappingTypes": [
+        "x": 4,
+        "y": 8
+      },
+      "id": 107,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
         {
-            "name": "range to text",
-            "value": 2
+          "name": "range to text",
+          "value": 2
         },
         {
-            "name": "value to text",
-            "value": 1
+          "name": "value to text",
+          "value": 1
         }
-    ],
-    "maxDataPoints": 100,
-    "maxPerRow": 12,
-    "nullPointMode": "connected",
-    "nullText": null,
-    "postfix": "",
-    "postfixFontSize": "50%",
-    "prefix": "",
-    "prefixFontSize": "50%",
-    "rangeMaps": [
+      ],
+      "maxDataPoints": 100,
+      "maxPerRow": 12,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
         {
-            "from": "null",
-            "text": "N/A",
-            "to": "null"
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
         }
-    ],
-    "repeatDirection": "h",
-    "repeatIteration": 1621298345749,
-    "repeatPanelId": 2,
-    "scopedVars": {
+      ],
+      "repeatDirection": "h",
+      "repeatIteration": 1621298345749,
+      "repeatPanelId": 2,
+      "scopedVars": {
         "service": {
-            "selected": false,
-            "text": "notifications-backend",
-            "value": "notifications-backend"
+          "selected": false,
+          "text": "notifications-backend",
+          "value": "notifications-backend"
         }
-    },
-    "sparkline": {
+      },
+      "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
         "full": false,
         "lineColor": "rgb(31, 120, 193)",
         "show": true
-    },
-    "tableColumn": "",
-    "targets": [
+      },
+      "tableColumn": "",
+      "targets": [
         {
-            "expr": "kube_pod_container_status_restarts_total{container=\"$service\"}",
-            "format": "time_series",
-            "groupBy": [
-                {
-                    "params": [
-                        "$__interval"
-                    ],
-                    "type": "time"
-                },
-                {
-                    "params": [
-                        "null"
-                    ],
-                    "type": "fill"
-                }
-            ],
-            "instant": true,
-            "intervalFactor": 1,
-            "legendFormat": "",
-            "orderByTime": "ASC",
-            "policy": "default",
-            "refId": "A",
-            "resultFormat": "time_series",
-            "select": [
-                [
-                    {
-                        "params": [
-                            "value"
-                        ],
-                        "type": "field"
-                    },
-                    {
-                        "params": [],
-                        "type": "mean"
-                    }
-                ]
-            ],
-            "tags": []
+          "expr": "kube_pod_container_status_restarts_total{container=\"notifications-backend\"}",
+          "format": "time_series",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "instant": true,
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
         }
-    ],
-    "thresholds": "1,5",
-    "title": "restarts \"notifications-backend\"",
-    "type": "singlestat",
-    "valueFontSize": "80%",
-    "valueMaps": [
+      ],
+      "thresholds": "1,5",
+      "title": "restarts \"notifications-backend\"",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
         {
-            "op": "=",
-            "text": "N/A",
-            "value": "null"
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
         }
-    ],
-    "valueName": "current"
+      ],
+      "valueName": "current"
     },
     {
       "cacheTimeout": null,
@@ -398,136 +398,136 @@ data:
       "valueName": "min"
     },
     {
-    "cacheTimeout": null,
-    "colorBackground": false,
-    "colors": [
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": true,
+      "colors": [
         "#299c46",
         "#d44a3a",
         "rgba(237, 129, 40, 0.89)"
-    ],
-    "colorValue": true,
-    "datasource": "$datasource",
-    "description": "This shows the number of restarts for the latest pod that's running in that time period",
-    "fieldConfig": {
+      ],
+      "datasource": "$datasource",
+      "description": "This shows the number of restarts for the latest pod that's running in that time period",
+      "fieldConfig": {
         "defaults": {
-            "custom": {}
+          "custom": {}
         },
         "overrides": []
-    },
-    "format": "none",
-    "gauge": {
+      },
+      "format": "none",
+      "gauge": {
         "maxValue": 100,
         "minValue": 0,
         "show": false,
         "thresholdLabels": false,
         "thresholdMarkers": true
-    },
-    "gridPos": {
+      },
+      "gridPos": {
         "h": 3,
-        "w": 6,
-        "x": 16,
-        "y": 20
-    },
-    "id": 103,
-    "interval": null,
-    "links": [],
-    "mappingType": 1,
-    "mappingTypes": [
+        "w": 4,
+        "x": 13,
+        "y": 8
+      },
+      "id": 103,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
         {
-            "name": "range to text",
-            "value": 2
+          "name": "range to text",
+          "value": 2
         },
         {
-            "name": "value to text",
-            "value": 1
+          "name": "value to text",
+          "value": 1
         }
-    ],
-    "maxDataPoints": 100,
-    "maxPerRow": 12,
-    "nullPointMode": "connected",
-    "nullText": null,
-    "postfix": "",
-    "postfixFontSize": "50%",
-    "prefix": "",
-    "prefixFontSize": "50%",
-    "rangeMaps": [
+      ],
+      "maxDataPoints": 100,
+      "maxPerRow": 12,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
         {
-            "from": "null",
-            "text": "N/A",
-            "to": "null"
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
         }
-    ],
-    "repeatDirection": "h",
-    "repeatIteration": 1621298345749,
-    "repeatPanelId": 2,
-    "scopedVars": {
+      ],
+      "repeatDirection": "h",
+      "repeatIteration": 1621298345749,
+      "repeatPanelId": 2,
+      "scopedVars": {
         "service": {
-            "selected": false,
-            "text": "notifications-gw",
-            "value": "notifications-gw"
+          "selected": false,
+          "text": "notifications-gw",
+          "value": "notifications-gw"
         }
-    },
-    "sparkline": {
+      },
+      "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
         "full": false,
         "lineColor": "rgb(31, 120, 193)",
         "show": true
-    },
-    "tableColumn": "",
-    "targets": [
+      },
+      "tableColumn": "",
+      "targets": [
         {
-            "expr": "kube_pod_container_status_restarts_total{container=\"$service\"}",
-            "format": "time_series",
-            "groupBy": [
-                {
-                    "params": [
-                        "$__interval"
-                    ],
-                    "type": "time"
-                },
-                {
-                    "params": [
-                        "null"
-                    ],
-                    "type": "fill"
-                }
-            ],
-            "instant": true,
-            "intervalFactor": 1,
-            "legendFormat": "",
-            "orderByTime": "ASC",
-            "policy": "default",
-            "refId": "A",
-            "resultFormat": "time_series",
-            "select": [
-                [
-                    {
-                        "params": [
-                            "value"
-                        ],
-                        "type": "field"
-                    },
-                    {
-                        "params": [],
-                        "type": "mean"
-                    }
-                ]
-            ],
-            "tags": []
+          "expr": "kube_pod_container_status_restarts_total{container=\"notifications-gw\"}",
+          "format": "time_series",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "instant": true,
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
         }
-    ],
-    "thresholds": "1,5",
-    "title": "restarts \"notifications-gw\"",
-    "type": "singlestat",
-    "valueFontSize": "80%",
-    "valueMaps": [
+      ],
+      "thresholds": "1,5",
+      "title": "restarts \"notifications-gw\"",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
         {
-            "op": "=",
-            "text": "N/A",
-            "value": "null"
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
         }
-    ],
-    "valueName": "current"
+      ],
+      "valueName": "current"
     },
     {
       "collapsed": false,
@@ -684,11 +684,11 @@ data:
         "cardColor": "#c15c17",
         "colorScale": "linear",
         "colorScheme": "interpolateOranges",
-        "exponent": 0.9,
+        "exponent": 0.6,
         "min": 0,
         "mode": "spectrum"
       },
-      "dataFormat": "tsbuckets",
+      "dataFormat": "timeseries",
       "datasource": "$datasource",
       "fieldConfig": {
         "defaults": {
@@ -698,7 +698,7 @@ data:
       },
       "gridPos": {
         "h": 9,
-        "w": 16,
+        "w": 13,
         "x": 8,
         "y": 12
       },
@@ -765,7 +765,7 @@ data:
       "xBucketNumber": null,
       "xBucketSize": null,
       "yAxis": {
-        "decimals": null,
+        "decimals": 1500,
         "format": "none",
         "logBase": 1,
         "max": null,
@@ -1005,8 +1005,8 @@ data:
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 8,
-        "w": 24,
+        "h": 7,
+        "w": 21,
         "x": 0,
         "y": 30
       },
@@ -1142,7 +1142,7 @@ data:
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 37
       },
       "id": 147,
       "panels": [],
@@ -1166,9 +1166,9 @@ data:
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 11,
         "x": 0,
-        "y": 39
+        "y": 38
       },
       "hiddenSeries": false,
       "id": 98,
@@ -1183,7 +1183,7 @@ data:
       },
       "lines": true,
       "linewidth": 1,
-      "maxPerRow": 3,
+      "maxPerRow": 2,
       "nullPointMode": "null",
       "options": {
         "alertThreshold": true
@@ -1193,15 +1193,8 @@ data:
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
-      "repeat": "service",
+      "repeat": null,
       "repeatDirection": "h",
-      "scopedVars": {
-        "service": {
-          "selected": false,
-          "text": "notifications-backend",
-          "value": "notifications-backend"
-        }
-      },
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
@@ -1270,9 +1263,9 @@ data:
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 39
+        "w": 10,
+        "x": 11,
+        "y": 38
       },
       "hiddenSeries": false,
       "id": 150,
@@ -1371,6 +1364,7 @@ data:
         "name": "datasource",
         "options": [],
         "query": "prometheus",
+        "queryValue": "",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -1454,43 +1448,11 @@ data:
         "query": "notifications-backend, notifications-gw",
         "skipUrlSync": false,
         "type": "custom"
-      },
-      {
-        "allValue": null,
-        "current": {
-          "selected": false,
-          "text": "notifications-stage",
-          "value": "notifications-stage"
-        },
-        "datasource": "$datasource",
-        "definition": "up",
-        "hide": 0,
-        "includeAll": false,
-        "label": "Kubernetes Namespace",
-        "multi": false,
-        "name": "kubernetes_namespace",
-        "options": [
-          {
-            "selected": false,
-            "text": "notifications-prod",
-            "value": "notifications-prod"
-          }
-        ],
-        "query": "up",
-        "refresh": 0,
-        "regex": "/.*namespace=\"(notifications-[^\"]*).*/",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
       }
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-2d",
     "to": "now"
   },
   "timepicker": {
@@ -1519,9 +1481,9 @@ data:
     ]
   },
   "timezone": "",
-  "title": "Notifications Dashboard Test",
-  "uid": "KQIVyFuMk4",
-  "version": 1
+  "title": "Notifications Dashboard",
+  "uid": "KQIVyFuMk",
+  "version": 10 
 }
 kind: ConfigMap
 metadata:
