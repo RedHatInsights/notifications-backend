@@ -233,7 +233,7 @@ public class TestHelpers {
         if (eventType == "new-recommendation") {
             emailActionMessage.setContext(Map.of(
                     "display_name", "some-cluster-name",
-                    "host-url", "some-ocm-url-to-the-cluster"
+                    "host_url", "some-ocm-url-to-the-cluster"
             ));
             emailActionMessage.setEvents(List.of(
                 Event

@@ -19,7 +19,7 @@ public class TestOpenshiftAdvisorTemplate {
                 .data("action", action)
                 .render();
 
-        assertEquals("Openshift - Advisor instant notification - 20 May 2021", result, "Title is the expected.");
+        assertEquals("Openshift - Advisor Instant notification - 20 May 2021", result, "Title is the expected.");
     }
 
     @Test
