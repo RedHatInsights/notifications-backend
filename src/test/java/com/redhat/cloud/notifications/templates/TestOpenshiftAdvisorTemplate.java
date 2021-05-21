@@ -19,7 +19,7 @@ public class TestOpenshiftAdvisorTemplate {
                 .data("action", action)
                 .render();
 
-        assertEquals("Openshift - Advisor Instant notification - 20 May 2021", result, "Title is the expected.");
+        assertEquals("Openshift - Advisor Instant Notification - 20 May 2021", result, "Title is the expected.");
     }
 
     @Test
@@ -37,10 +37,6 @@ public class TestOpenshiftAdvisorTemplate {
             assertTrue(
                     result.contains(event.getPayload().get("total_risk").toString()),
                     "Body should contain total_risk" + event.getPayload().get("total_risk")
-            );
-            assertTrue(
-                    result.contains(event.getPayload().get("publish_date").toString()),
-                    "Body should contain publish_date" + event.getPayload().get("publish_date")
             );
             assertTrue(
                     result.contains(event.getPayload().get("rule_url").toString()),
