@@ -1,0 +1,569 @@
+{#include AdvisorOpenshift/insightsEmailBody}
+{#content-title}Openshift - Advisor Weekly Report - {action.timestamp.format('d MMM uuuu')}{/content-title}
+{#content-body}
+<tr>
+    <td align="center" valign="top" class="rh-body-cell"
+        style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; height: 100% !important; margin: 0; padding: 0; width: 100% !important;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="rh-template-container"
+               bgcolor="#ededed"
+               style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; padding-top: 0; padding-right: 0; padding-bottom: 24px; padding-left: 0; width: 600px; background: #ededed; color: #151515;">
+            <tbody style="-ms-text-size-adjust: 100%; background: #ededed; color: #151515;">
+            {% if action.events[0].payload.incidents > 0 %}
+            <!-- Body section -->
+            <tr style="-ms-text-size-adjust: 100%;">
+                <td class="rh-body rh-multi-column"
+                    style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; margin: 0; mso-line-height-rule: exactly; font-family: 'Red Hat Text', Helvetica; font-size: 16px; box-sizing: border-box; width: 100% !important; padding-right: 12px; padding-bottom: 24px; padding-left: 12px;">
+                    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0"
+                           cellspacing="0" width="100%"
+                           style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100% !important; background: none !important; background-color: transparent;">
+                        <tbody style="-ms-text-size-adjust: 100%;">
+                        <!-- Content block -->
+                        <tr style="-ms-text-size-adjust: 100%;">
+                            <td style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important;">
+                                <!-- start 50 col -->
+                                <!--[if (gte mso 9)|(IE)]>
+                                <table cellpadding="0" cellspacing="0" border="0" width="100%"
+                                       style="border-spacing: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                    <tr style="-ms-text-size-adjust: 100%;">
+                                        <td width="50%" valign="top"
+                                            style="padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; color: #ffffff;">
+                                <![endif]-->
+                                <div class="rh-50-block"
+                                     style="-ms-text-size-adjust: 100%; width: 100%; max-width: 281px; display: inline-block; vertical-align: top; direction: ltr;">
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0"
+                                           style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                        <tbody style="-ms-text-size-adjust: 100%;">
+                                        <tr style="-ms-text-size-adjust: 100%;">
+                                            <td class="rh-pad"
+                                                style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-left: 12px; background-color: transparent; background: none;">
+                                                <table role="presentation" border="0" cellpadding="0"
+                                                       cellspacing="0" bgcolor="#c9190b"
+                                                       style="background: #c9190b !important; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background-color: transparent;">
+                                                    <tbody style="-ms-text-size-adjust: 100%;">
+                                                    <tr style="-ms-text-size-adjust: 100%;">
+                                                        <td class="rh-card rh-m-danger rh-m-set-height"
+                                                            bgcolor="#c9190b"
+                                                            style="background: #c9190b !important; color: #ffffff; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; background-color: #c9190b; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 18px; text-align: left; border-left: 0; vertical-align: top; box-sizing: border-box; border: 0; height: 160px;">
+                                                            <table role="presentation" border="0"
+                                                                   cellpadding="0" cellspacing="0"
+                                                                   class="rh-card-metrics"
+                                                                   style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: auto; background: none !important; background-color: transparent;">
+                                                                <tbody style="-ms-text-size-adjust: 100%;">
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td rowspan="3" valign="top"
+                                                                        class="rh-icon-wrapper"
+                                                                        style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 0;">
+                                                                        <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Flightning-bolt-light.png"
+                                                                             alt="" width="30"
+                                                                             style="-ms-text-size-adjust: 100%; -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none;">
+                                                                    </td>
+                                                                    <td class="rh-card__header"
+                                                                        style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 4px;">
+                                                                        <h2 style="-ms-text-size-adjust: 100%; margin-top: 0; font-size: 14px; font-weight: 500; color: #FFFFFF !important;">
+                                                                            Incidents</h2>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td class="rh-metric__count"
+                                                                        style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; font-size: 28px; font-weight: 500; font-family: 'Red Hat Display', Helvetica, Arial sans-serif; line-height: 1.5; padding-right: 12px; padding-bottom: 0;">
+                                                                        <a href="https://cloud.redhat.com/insights/advisor/recommendations?impacting=true&rule_status=enabled&reports_shown=true&incident=true"
+                                                                           style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none !important; color: #ffffff;">{{
+                                                                            action.events[0].payload.incidents }}</a>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td style="padding-right: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-bottom: 0;">
+                                                                        <p style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; margin-top: 0; margin-bottom: 0px;">
+                                                                            <a href="https://cloud.redhat.com/insights/advisor/recommendations?impacting=true&rule_status=enabled&reports_shown=true&incident=true"
+                                                                               style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none !important; color: #ffffff;">Configuration{{
+                                                                                action.events[0].payload.incidents|pluralize
+                                                                                }} affecting your systems</a>
+                                                                        </p>
+                                                                    </td>
+                                                                </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- end 50 col -->
+                                <!--[if (gte mso 9)|(IE)]>
+                                </td>
+
+                                <td width="50%" valign="top"
+                                    style="padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important;">
+                                <![endif]-->
+
+                                <!-- start 50 col -->
+                                <div class="rh-50-block"
+                                     style="-ms-text-size-adjust: 100%; width: 100%; max-width: 281px; display: inline-block; vertical-align: top; direction: ltr; padding-bottom: 0;">
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0"
+                                           style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                        <tbody style="-ms-text-size-adjust: 100%;">
+                                        <tr style="-ms-text-size-adjust: 100%;">
+                                            <td class="rh-pad"
+                                                style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-left: 12px; background-color: transparent; background: none;">
+                                                <table role="presentation" border="0" cellpadding="0"
+                                                       cellspacing="0"
+                                                       style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                                    <tbody style="-ms-text-size-adjust: 100%;">
+                                                    <tr style="-ms-text-size-adjust: 100%;">
+                                                        <td class="rh-card rh-m-set-height"
+                                                            style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; background-color: #ffffff; padding-top: 24px; padding-right: 24px; padding-bottom: 48px; padding-left: 18px; text-align: left; border-left: 4px solid #c9190b; vertical-align: top; box-sizing: border-box; height: 160px;">
+                                                            <table role="presentation" border="0"
+                                                                   cellpadding="0" cellspacing="0"
+                                                                   class="rh-card-metrics"
+                                                                   style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: auto; background: none !important; background-color: transparent;">
+                                                                <tbody style="-ms-text-size-adjust: 100%;">
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td class="rh-card__header"
+                                                                        style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 4px;">
+                                                                        <h2 style="-ms-text-size-adjust: 100%; margin-top: 0; font-size: 14px; font-weight: 500;">
+                                                                            Total clusters
+                                                                        </h2>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 0;">
+                                                                            <span class="rh-metric__count"
+                                                                                  style="-ms-text-size-adjust: 100%; font-size: 28px; font-weight: 500; font-family: 'Red Hat Display', Helvetica, Arial sans-serif; line-height: 1.5;">{{ action.events[0].payload.total_clusters }}</span>
+                                                                    </td>
+                                                                </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- end 50 col -->
+                                <!--[if (gte mso 9)|(IE)]>
+                                </td>
+                                </tr></table>
+                                <![endif]-->
+                            </td>
+                        </tr>
+                        <!-- end content block -->
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <!-- end body section -->
+            {% else %}
+            <!-- Body section -->
+            <tr style="-ms-text-size-adjust: 100%;">
+                <td class="rh-body rh-multi-column"
+                    style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; margin: 0; mso-line-height-rule: exactly; font-family: 'Red Hat Text', Helvetica; font-size: 16px; box-sizing: border-box; width: 100% !important; padding-right: 12px; padding-bottom: 24px; padding-left: 12px;">
+                    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0"
+                           cellspacing="0" width="100%"
+                           style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100% !important; background: none !important; background-color: transparent;">
+                        <tbody style="-ms-text-size-adjust: 100%;">
+                        <!-- Content block -->
+                        <tr style="-ms-text-size-adjust: 100%;">
+                            <td style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important;">
+                                <!-- start 50 col -->
+                                <!--[if (gte mso 9)|(IE)]>
+                                <table cellpadding="0" cellspacing="0" border="0" width="100%"
+                                       style="border-spacing: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                    <tr style="-ms-text-size-adjust: 100%;">
+                                        <td width="50%" valign="top"
+                                            style="padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important;">
+                                <![endif]-->
+                                <div class="rh-50-block"
+                                     style="-ms-text-size-adjust: 100%; width: 100%; max-width: 281px; display: inline-block; vertical-align: top; direction: ltr;">
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0"
+                                           class="width-100"
+                                           style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                        <tbody style="-ms-text-size-adjust: 100%;">
+                                        <tr style="-ms-text-size-adjust: 100%;">
+                                            <td class="rh-pad"
+                                                style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-left: 12px; background-color: transparent; background: none;">
+                                                <table role="presentation" border="0" cellpadding="0"
+                                                       cellspacing="0"
+                                                       style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                                    <tbody style="-ms-text-size-adjust: 100%;">
+                                                    <tr style="-ms-text-size-adjust: 100%;">
+                                                        <td class="rh-card rh-m-no-danger"
+                                                            style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; background-color: #b8bbbe; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 18px; text-align: left; border-left: 0; vertical-align: top; box-sizing: border-box; border: 0; background: #b8bbbe !important; color: #151515;">
+                                                            <table role="presentation" border="0"
+                                                                   cellpadding="0" cellspacing="0"
+                                                                   class="rh-card-metrics" bgcolor="#b8bbbe"
+                                                                   style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: auto; background: none !important; background-color: transparent;">
+                                                                <tbody style="-ms-text-size-adjust: 100%;">
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td rowspan="3" valign="top"
+                                                                        class="rh-icon-wrapper"
+                                                                        style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 0;">
+                                                                        <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Flightning-bolt.png"
+                                                                             alt="" width="30"
+                                                                             style="-ms-text-size-adjust: 100%; -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none;">
+                                                                    </td>
+                                                                    <td class="rh-card__header"
+                                                                        style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 4px;">
+                                                                        <h2 style="-ms-text-size-adjust: 100%; margin-top: 0; font-size: 14px; font-weight: 500;">
+                                                                            Incidents
+                                                                        </h2>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td class="rh-metric__count"
+                                                                        style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; font-size: 28px; font-weight: 500; font-family: 'Red Hat Display', Helvetica, Arial sans-serif; line-height: 1.5; padding-right: 12px; padding-bottom: 0;">
+                                                                        0
+                                                                    </td>
+                                                                </tr>
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td style="padding-right: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-bottom: 0;">
+                                                                        <p style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; margin-top: 0; margin-bottom: 0px;">
+                                                                            No incidents to review
+                                                                        </p>
+                                                                    </td>
+                                                                </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- end 50 col -->
+                                <!--[if (gte mso 9)|(IE)]>
+                                </td>
+
+                                <td width="50%" valign="top"
+                                    style="padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important;">
+                                <![endif]-->
+                                <!-- start 50 col -->
+                                <div class="rh-50-block"
+                                     style="-ms-text-size-adjust: 100%; width: 100%; max-width: 281px; display: inline-block; vertical-align: top; direction: ltr; padding-bottom: 0;">
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0"
+                                           class="width-100"
+                                           style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                        <tbody style="-ms-text-size-adjust: 100%;">
+                                        <tr style="-ms-text-size-adjust: 100%;">
+                                            <td class="rh-pad"
+                                                style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-left: 12px; background-color: transparent; background: none;">
+                                                <table role="presentation" border="0" cellpadding="0"
+                                                       cellspacing="0"
+                                                       style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                                    <tbody style="-ms-text-size-adjust: 100%;">
+                                                    <tr style="-ms-text-size-adjust: 100%;">
+                                                        <td class="rh-card"
+                                                            style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; background-color: #ffffff; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 18px; text-align: left; border-left: 4px solid #c9190b; vertical-align: top; box-sizing: border-box;">
+                                                            <table role="presentation" border="0"
+                                                                   cellpadding="0" cellspacing="0"
+                                                                   class="rh-card-metrics"
+                                                                   style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: auto; background: none !important; background-color: transparent;">
+                                                                <tbody style="-ms-text-size-adjust: 100%;">
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td class="rh-card__header"
+                                                                        style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 4px;">
+                                                                        <h2 style="-ms-text-size-adjust: 100%; margin-top: 0; font-size: 14px; font-weight: 500;">
+                                                                            Total clusters
+                                                                        </h2>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 0;">
+                                                                            <span class="rh-metric__count"
+                                                                                  style="-ms-text-size-adjust: 100%; font-size: 28px; font-weight: 500; font-family: 'Red Hat Display', Helvetica, Arial sans-serif; line-height: 1.5;">{{ action.events[0].payload.total_clusters }}</span>
+                                                                    </td>
+                                                                </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- end 50 col -->
+                                <!--[if (gte mso 9)|(IE)]>
+                                </td>
+                                </tr></table>
+                                <![endif]-->
+                            </td>
+                        </tr>
+                        <!-- end content block -->
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <!-- end body section -->
+            {% endif %}
+            <!-- Body section -->
+            <tr style="-ms-text-size-adjust: 100%;">
+                <td class="rh-body rh-multi-column"
+                    style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; margin: 0; mso-line-height-rule: exactly; font-family: 'Red Hat Text', Helvetica; font-size: 16px; box-sizing: border-box; width: 100% !important; padding-right: 12px; padding-bottom: 24px; padding-left: 12px;">
+                    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0"
+                           cellspacing="0" width="100%"
+                           style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100% !important; background: none !important; background-color: transparent;">
+                        <tbody style="-ms-text-size-adjust: 100%;">
+                        <!-- Content block -->
+                        <tr style="-ms-text-size-adjust: 100%;">
+                            <td style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important;">
+                                <!-- start 50 col -->
+                                <!--[if (gte mso 9)|(IE)]>
+                                <table cellpadding="0" cellspacing="0" border="0" width="100%"
+                                       style="border-spacing: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                    <tr style="-ms-text-size-adjust: 100%;">
+                                        <td width="50%" valign="top"
+                                            style="padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important;">
+                                <![endif]-->
+                                <div class="rh-50-block"
+                                     style="-ms-text-size-adjust: 100%; width: 100%; max-width: 281px; display: inline-block; vertical-align: top; direction: ltr;">
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0"
+                                           class="width-100"
+                                           style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                        <tbody style="-ms-text-size-adjust: 100%;">
+                                        <tr style="-ms-text-size-adjust: 100%;">
+                                            <td class="rh-pad"
+                                                style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-left: 12px; background-color: transparent; background: none;">
+                                                <table role="presentation" border="0" cellpadding="0"
+                                                       cellspacing="0"
+                                                       style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                                    <tbody style="-ms-text-size-adjust: 100%;">
+                                                    <tr style="-ms-text-size-adjust: 100%;">
+                                                        <td class="rh-card"
+                                                            style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; background-color: #ffffff; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 18px; text-align: left; border-left: 4px solid #c9190b; vertical-align: top; box-sizing: border-box;">
+                                                            <table role="presentation" border="0"
+                                                                   cellpadding="0" cellspacing="0"
+                                                                   class="rh-card-metrics"
+                                                                   style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: auto; background: none !important; background-color: transparent;">
+                                                                <tbody style="-ms-text-size-adjust: 100%;">
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td class="rh-card__header"
+                                                                        style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 4px;">
+                                                                        <h2 style="-ms-text-size-adjust: 100%; margin-top: 0; font-size: 14px; font-weight: 500;">
+                                                                            Prioritized recommendations</h2>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 0;">
+                                                                        {% if action.events[0].payload.total_critical > 0%}
+                                                                        <table role="presentation" border="0"
+                                                                               cellpadding="0" cellspacing="0"
+                                                                               valign="center"
+                                                                               class="rh-severities"
+                                                                               style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: auto; background: none !important; background-color: transparent;">
+                                                                            <tbody style="-ms-text-size-adjust: 100%;">
+                                                                            <tr style="-ms-text-size-adjust: 100%;">
+                                                                                <td style="padding-right: 8px; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-bottom: 0;"
+                                                                                    valign="middle">
+                                                                                    <a href="https://cloud.redhat.com/insights/advisor/recommendations?total_risk=4&reports_shown=true&impacting=true"
+                                                                                       target="_blank"
+                                                                                       style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none !important; color: #0066cc !important;">
+                                                                                            <span class="rh-metric__count"
+                                                                                                  style="-ms-text-size-adjust: 100%; font-size: 28px; font-weight: 500; font-family: 'Red Hat Display', Helvetica, Arial sans-serif; line-height: 1.5; padding-bottom: 0;">{{ action.events[0].payload.total_critical }}</span></a>
+                                                                                </td>
+                                                                                <td class="rh-severity"
+                                                                                    style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-top: 0; padding-right: 12px; padding-bottom: 0;">
+                                                                                    <a href="https://cloud.redhat.com/insights/advisor/recommendations?total_risk=4&reports_shown=true&impacting=true"
+                                                                                       target="_blank"
+                                                                                       style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;">
+                                                                                        <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_critical.png"
+                                                                                             alt="Critical severity"
+                                                                                             width="70">
+                                                                                    </a>
+                                                                                </td>
+                                                                            </tr>
+                                                                            </tbody>
+                                                                        </table>
+                                                                        {% endif %}
+                                                                        {% if action.events[0].payload.total_important > 0%}
+                                                                        <table role="presentation" border="0"
+                                                                               cellpadding="0" cellspacing="0"
+                                                                               valign="center"
+                                                                               class="rh-severities"
+                                                                               style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: auto; background: none !important; background-color: transparent;">
+                                                                            <tbody style="-ms-text-size-adjust: 100%;">
+                                                                            <tr style="-ms-text-size-adjust: 100%;">
+                                                                                <td style="padding-right: 8px; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-bottom: 0;"
+                                                                                    valign="middle">
+                                                                                    <a href="https://cloud.redhat.com/insights/advisor/recommendations?total_risk=3&reports_shown=true&impacting=true"
+                                                                                       target="_blank"
+                                                                                       style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none !important; color: #0066cc !important;">
+                                                                                            <span class="rh-metric__count"
+                                                                                                  style="-ms-text-size-adjust: 100%; font-size: 28px; font-weight: 500; font-family: 'Red Hat Display', Helvetica, Arial sans-serif; line-height: 1.5; padding-bottom: 0;">{{ action.events[0].payload.total_important}}</span>
+                                                                                    </a>
+                                                                                </td>
+                                                                                <td class="rh-severity"
+                                                                                    style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-top: 0; padding-right: 12px; padding-bottom: 0;">
+                                                                                    <a href="https://cloud.redhat.com/insights/advisor/recommendations?total_risk=3&reports_shown=true&impacting=true"
+                                                                                       target="_blank"
+                                                                                       style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;">
+                                                                                        <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_important.png"
+                                                                                             alt="Important severity"
+                                                                                             width="86">
+                                                                                    </a>
+                                                                                </td>
+                                                                            </tr>
+                                                                            </tbody>
+                                                                        </table>
+                                                                        {% endif %}
+                                                                        {% if action.events[0].payload.total_important == 0 &&
+                                                                        action.events[0].payload.total_critical == 0 %}
+                                                                        <table role="presentation" border="0"
+                                                                               cellpadding="0" cellspacing="0"
+                                                                               valign="center"
+                                                                               class="rh-severities"
+                                                                               style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: auto; background: none !important; background-color: transparent;">
+                                                                            <tbody style="-ms-text-size-adjust: 100%;">
+                                                                            <tr style="-ms-text-size-adjust: 100%;">
+                                                                                <td style="padding-right: 12px; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-bottom: 0;"
+                                                                                    valign="middle">
+                                                                                    <a href="https://cloud.redhat.com/insights/advisor/recommendations"
+                                                                                       target="_blank"
+                                                                                       style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none !important; color: #0066cc !important;">
+                                                                                            <span class="rh-metric__count"
+                                                                                                  style="-ms-text-size-adjust: 100%; font-size: 28px; font-weight: 500; font-family: 'Red Hat Display', Helvetica, Arial sans-serif; line-height: 1.5; padding-bottom: 0;">0</span>
+                                                                                    </a>
+                                                                                </td>
+                                                                            </tr>
+                                                                            </tbody>
+                                                                        </table>
+                                                                        {% endif %}
+                                                                    </td>
+                                                                </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!--[if (gte mso 9)|(IE)]>
+                                </td>
+
+                                <td width="50%" valign="top"
+                                    style="padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important;">
+                                <![endif]-->
+                                <!-- end 50 col -->
+                                <!-- start 50 col -->
+                                <div class="rh-50-block"
+                                     style="-ms-text-size-adjust: 100%; width: 100%; max-width: 281px; display: inline-block; vertical-align: top; direction: ltr; padding-bottom: 0;">
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0"
+                                           class="width-100"
+                                           style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                        <tbody style="-ms-text-size-adjust: 100%;">
+                                        <tr style="-ms-text-size-adjust: 100%;">
+                                            <td class="rh-pad"
+                                                style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-left: 12px; background-color: transparent; background: none;">
+                                                <table role="presentation" border="0" cellpadding="0"
+                                                       cellspacing="0"
+                                                       style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100%; background: none !important; background-color: transparent;">
+                                                    <tbody style="-ms-text-size-adjust: 100%;">
+                                                    <tr style="-ms-text-size-adjust: 100%;">
+                                                        <td class="rh-card"
+                                                            style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; background-color: #ffffff; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 18px; text-align: left; border-left: 4px solid #c9190b; vertical-align: top; box-sizing: border-box;">
+                                                            <table role="presentation" border="0"
+                                                                   cellpadding="0" cellspacing="0"
+                                                                   class="rh-card-metrics"
+                                                                   style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: auto; background: none !important; background-color: transparent;">
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td class="rh-card__header"
+                                                                        style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 4px;">
+                                                                        <h2 style="-ms-text-size-adjust: 100%; margin-top: 0; font-size: 14px; font-weight: 500;">
+                                                                            Total recommendations
+                                                                        </h2>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr style="-ms-text-size-adjust: 100%;">
+                                                                    <td style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; padding-right: 12px; padding-bottom: 0;">
+                                                                            <span class="rh-metric__count"
+                                                                                  style="-ms-text-size-adjust: 100%; font-size: 28px; font-weight: 500; font-family: 'Red Hat Display', Helvetica, Arial sans-serif; line-height: 1.5;">{{ action.events[0].payload.total_recommendations }}</span>
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- end 50 col -->
+                                <!--[if (gte mso 9)|(IE)]>
+                                </td>
+                                </tr></table>
+                                <![endif]-->
+                            </td>
+                        </tr>
+                        <!-- end content block -->
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <!-- end body section --><!-- Body section -->
+            <tr style="-ms-text-size-adjust: 100%;">
+                <td class="rh-body"
+                    style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; margin: 0; mso-line-height-rule: exactly; font-family: 'Red Hat Text', Helvetica; font-size: 16px; box-sizing: border-box; width: 100% !important; padding-right: 24px; padding-bottom: 16px; padding-left: 24px;">
+                    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0"
+                           cellspacing="0" width="100%"
+                           style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: 100% !important; background: #efefef;">
+                        <tbody style="-ms-text-size-adjust: 100%;">
+                        <!-- Content block -->
+                        <tr style="-ms-text-size-adjust: 100%;">
+                            <td class="rh-content__block"
+                                style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; max-width: 100%; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 24px; overflow: hidden; background-color: #ffffff;">
+                                <p style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; margin-top: 0;">
+                                    Hi {{user.first_name}},
+                                    <br style="-ms-text-size-adjust: 100%;">
+                                    <br style="-ms-text-size-adjust: 100%; margin-bottom: 0;">
+                                    Here are your Advisor statistics for the week of {{action.timestamp.format('d MMM uuuu')}}.
+                                </p>
+                            </td>
+                        </tr>
+                        <!-- end content block -->
+                        <!-- Content block -->
+                        <tr style="-ms-text-size-adjust: 100%;">
+                            <td class="rh-content__block"
+                                style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; max-width: 100%; padding-top: 0; padding-right: 24px; padding-bottom: 24px; padding-left: 24px; overflow: hidden; background-color: #ffffff;">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0"
+                                       align="center" class="rh-button-table"
+                                       style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: auto; background: none !important; background-color: transparent;">
+                                    <tr style="-ms-text-size-adjust: 100%;">
+                                        <td class="rh-cta-link" align="center"
+                                            style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; display: block; padding-top: 12px; padding-right: 24px; padding-bottom: 12px; padding-left: 24px; background-color: #0066cc !important; border-radius: 3px; text-decoration: none;">
+                                            <a target="_blank" href="https://cloud.redhat.com/insights/advisor"
+                                               style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none !important; color: #fff !important; font-weight: 400; font-size: 18px;">
+                                                <span style="-ms-text-size-adjust: 100%;">Go to Insights</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <!-- end content block -->
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </td>
+</tr>
+{/content-body}
+{/include}
