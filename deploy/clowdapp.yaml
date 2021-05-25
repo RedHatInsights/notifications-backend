@@ -54,6 +54,8 @@ objects:
           value: ${RBAC_SCHEME}://${RBAC_HOST}:${RBAC_PORT}
         - name: RBAC_MP_REST_URL
           value: ${RBAC_SCHEME}://${RBAC_HOST}:${RBAC_PORT}
+        - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+          value: ${CLOUDWATCH_LOGGING_ENABLED}
         resources:
           limits:
             cpu: ${CPU_LIMIT}
@@ -122,3 +124,7 @@ parameters:
   displayName: Rbac Service Scheme
   description: Scheme to use for the RBAC service URL. Can be either http or https
   value: http
+- name: CLOUDWATCH_LOGGING_ENABLED
+  description: Enable Cloudwatch (or not)
+  value: false
+
