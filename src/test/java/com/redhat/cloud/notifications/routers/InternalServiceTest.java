@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -244,13 +243,6 @@ public class InternalServiceTest extends DbIsolatedTest {
         getEventTypes(appId, OK, 1);
     }
 
-    @Test
-    void testSetDefaultBehaviorGroup() {
-        // This test only verifies the SQL query execution. The real API test is in LifecycleITest.
-        String notUsed = UUID.randomUUID().toString();
-        setDefaultBehaviorGroup(notUsed, notUsed, NOT_FOUND);
-    }
-
     private static Bundle buildBundle(String name, String displayName) {
         Bundle bundle = new Bundle();
         bundle.setName(name);
@@ -323,17 +315,6 @@ public class InternalServiceTest extends DbIsolatedTest {
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             getBundle(bundleId, bundle.getName(), bundle.getDisplayName(), OK);
         }
-    }
-
-    private static void setDefaultBehaviorGroup(String bundleId, String behaviorGroupId, int expectedStatusCode) {
-        given()
-                .pathParam("bundleId", bundleId)
-                .pathParam("behaviorGroupId", behaviorGroupId)
-                .when()
-                .put("/internal/bundles/{bundleId}/behaviorGroups/{behaviorGroupId}/default")
-                .then()
-                .statusCode(expectedStatusCode)
-                .contentType(ContentType.TEXT);
     }
 
     private static void deleteBundle(String bundleId, boolean expectedResult) {

@@ -192,17 +192,6 @@ public class BehaviorGroupResources {
         });
     }
 
-    // This should only be called from an internal API. That's why we don't have to validate the accountId.
-    public Uni<Integer> setDefaultBehaviorGroup(UUID bundleId, UUID behaviorGroupId) {
-        String query = "UPDATE BehaviorGroup SET defaultBehavior = (CASE WHEN id = :behaviorGroupId THEN TRUE ELSE FALSE END) " +
-                "WHERE bundle.id = :bundleId";
-        return session.createQuery(query)
-                .setParameter("behaviorGroupId", behaviorGroupId)
-                .setParameter("bundleId", bundleId)
-                .executeUpdate()
-                .call(session::flush);
-    }
-
     public Uni<Boolean> muteEventType(String accountId, UUID eventTypeId) {
         String query = "DELETE FROM EventTypeBehavior b " +
                 "WHERE b.behaviorGroup.id IN (SELECT id FROM BehaviorGroup WHERE accountId = :accountId) AND b.eventType.id = :eventTypeId";

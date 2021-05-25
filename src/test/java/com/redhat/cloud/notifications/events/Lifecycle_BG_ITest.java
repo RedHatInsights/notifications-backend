@@ -102,47 +102,34 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         String eventTypeId = createEventType(appId);
         checkAllEventTypes(identityHeader);
 
-        /*
-         * Then, we'll create two behavior groups which will be part of the bundle created above. One will be the
-         * default behavior group, the other one will be a custom behavior group.
-         */
-        String defaultBehaviorGroupId = createBehaviorGroup(identityHeader, "Default behavior group", bundleId);
-        String customBehaviorGroupId = createBehaviorGroup(identityHeader, "Custom behavior group", bundleId);
-        setDefaultBehaviorGroup(identityHeader, bundleId, defaultBehaviorGroupId);
+        // We also need a behavior group.
+        String behaviorGroupId = createBehaviorGroup(identityHeader, bundleId);
 
-        // We need actions for our behavior groups.
+        // We need actions for our behavior group.
         String endpointId1 = createWebhookEndpoint(identityHeader, "positive feeling", "needle in the haystack", SECRET_TOKEN);
         String endpointId2 = createWebhookEndpoint(identityHeader, "negative feeling", "I feel like dying", "wrong-secret-token");
         checkEndpoints(identityHeader, endpointId1, endpointId2);
 
-        // The actions must be added to the behavior groups.
-        addBehaviorGroupActions(identityHeader, defaultBehaviorGroupId, endpointId1);
+        // The actions must be added to the behavior group.
+        addBehaviorGroupActions(identityHeader, behaviorGroupId, endpointId1);
         // Adding the same action twice must not raise an exception.
-        addBehaviorGroupActions(identityHeader, defaultBehaviorGroupId, endpointId1, endpointId2);
+        addBehaviorGroupActions(identityHeader, behaviorGroupId, endpointId1, endpointId2);
 
         /*
          * Let's push a first message! It should not trigger any webhook call since we didn't link the event type with
-         * any behavior group.
+         * the behavior group.
          */
         pushMessage(0);
 
         /*
-         * Now we'll link the event type with the default behavior group.
+         * Now we'll link the event type with the behavior group.
          * Pushing a new message should trigger one webhook call.
          */
-        addEventTypeBehaviorGroup(identityHeader, eventTypeId, defaultBehaviorGroupId, 1);
+        addEventTypeBehaviorGroup(identityHeader, eventTypeId, behaviorGroupId, 1);
         // Adding the same behavior group twice must not raise an exception.
-        addEventTypeBehaviorGroup(identityHeader, eventTypeId, defaultBehaviorGroupId, 1);
-        checkEventTypeBehaviorGroups(identityHeader, eventTypeId, defaultBehaviorGroupId);
+        addEventTypeBehaviorGroup(identityHeader, eventTypeId, behaviorGroupId, 1);
+        checkEventTypeBehaviorGroups(identityHeader, eventTypeId, behaviorGroupId);
         // pushMessage(1); TODO [BG Phase 2] Uncomment (it does not work here because EndpointProcessor does not use behavior groups)
-
-        /*
-         * Let's also link the same event type with the custom behavior group.
-         * Pushing a new message should trigger two webhook calls.
-         */
-        addEventTypeBehaviorGroup(identityHeader, eventTypeId, customBehaviorGroupId, 2);
-        checkEventTypeBehaviorGroups(identityHeader, eventTypeId, defaultBehaviorGroupId, customBehaviorGroupId);
-        // pushMessage(2); TODO [BG Phase 2] Uncomment (it does not work here because EndpointProcessor does not use behavior groups)
 
         /*
          * What happens if we mute the event type?
@@ -258,9 +245,9 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         assertEquals(2, jsonEventTypes.size()); // One from the current test, one from the default DB records.
     }
 
-    private String createBehaviorGroup(Header identityHeader, String displayName, String bundleId) {
+    private String createBehaviorGroup(Header identityHeader, String bundleId) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setDisplayName(displayName);
+        behaviorGroup.setDisplayName("Behavior group");
         behaviorGroup.setBundleId(UUID.fromString(bundleId));
 
         String responseBody = given()
@@ -283,43 +270,6 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         assertNotNull(jsonBehaviorGroup.getString("created"));
 
         return jsonBehaviorGroup.getString("id");
-    }
-
-    private void setDefaultBehaviorGroup(Header identityHeader, String bundleId, String behaviorGroupId) {
-        // Sets the default behavior group.
-        given()
-                .basePath(INTERNAL_BASE_PATH)
-                .pathParam("bundleId", bundleId)
-                .pathParam("behaviorGroupId", behaviorGroupId)
-                .when()
-                .put("/internal/bundles/{bundleId}/behaviorGroups/{behaviorGroupId}/default")
-                .then()
-                .statusCode(200)
-                .contentType(ContentType.TEXT)
-                .extract().body().asString();
-
-        // Now let's verify which behavior group is marked as default in the database.
-        String responseBody = given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
-                .pathParam("bundleId", bundleId)
-                .when()
-                .get("/notifications/bundles/{bundleId}/behaviorGroups")
-                .then()
-                .statusCode(200)
-                .extract().body().asString();
-
-        JsonArray jsonBehaviorGroups = new JsonArray(responseBody);
-        assertEquals(2, jsonBehaviorGroups.size());
-        for (int i = 0; i < jsonBehaviorGroups.size(); i++) {
-            JsonObject jsonBehaviorGroup = jsonBehaviorGroups.getJsonObject(i);
-            jsonBehaviorGroup.mapTo(BehaviorGroup.class);
-            if (jsonBehaviorGroup.getString("id").equals(behaviorGroupId)) {
-                assertTrue(jsonBehaviorGroup.getBoolean("default_behavior"));
-            } else {
-                assertFalse(jsonBehaviorGroup.getBoolean("default_behavior"));
-            }
-        }
     }
 
     private String createWebhookEndpoint(Header identityHeader, String name, String description, String secretToken) {
