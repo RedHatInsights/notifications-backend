@@ -6,9 +6,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Notification;
-import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
-import com.redhat.cloud.notifications.processors.EventBusTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
@@ -36,9 +34,6 @@ public class EndpointProcessor {
 
     @Inject
     EndpointResources resources;
-
-    @Inject
-    EventBusTypeProcessor notificationProcessor;
 
     // TODO [BG Phase 2] Delete this attribute
     @Inject
@@ -68,7 +63,7 @@ public class EndpointProcessor {
     public Uni<Void> process(Action action) {
         processedItems.increment();
         // TODO [BG Phase 2] Use EndpointResources.getTargetEndpoints here
-        Multi<NotificationHistory> endpointsCallResult = getEndpoints(
+        return getEndpoints(
                 action.getAccountId(),
                 action.getBundle(),
                 action.getApplication(),
@@ -80,16 +75,8 @@ public class EndpointProcessor {
                 })
                 .onItem().transformToUniAndConcatenate(history -> notifResources.createNotificationHistory(history)
                         .onFailure().invoke(failure -> LOGGER.severe("Notification history creation failed for " + history.getEndpoint()))
-                );
-
-        // Should this be a separate endpoint type as well (since it is configurable) ?
-        Notification notification = new Notification(action, null);
-        Uni<NotificationHistory> notificationResult = notificationProcessor.process(notification);
-
-        return endpointsCallResult
+                )
                 .onItem().ignoreAsUni()
-                .replaceWith(notificationResult)
-                .replaceWith(Uni.createFrom().voidItem())
                 .onItemOrFailure().call(() -> Uni.createFrom().item(() -> session.clear()));
     }
 
@@ -100,7 +87,7 @@ public class EndpointProcessor {
             case EMAIL_SUBSCRIPTION:
                 return emails;
             default:
-                return notificationProcessor;
+                return notification -> Uni.createFrom().nullItem();
         }
     }
 
