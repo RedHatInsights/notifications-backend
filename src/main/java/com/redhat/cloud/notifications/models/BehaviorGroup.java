@@ -48,7 +48,7 @@ import static javax.persistence.FetchType.LAZY;
         name = "findByBundleId",
         query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
                 "WHERE b.accountId = :accountId AND b.bundle.id = :bundleId " +
-                "ORDER BY b.defaultBehavior DESC, b.created DESC, a.position ASC",
+                "ORDER BY b.created DESC, a.position ASC",
         hints = @QueryHint(name = QueryHints.HINT_PASS_DISTINCT_THROUGH, value = "false")
 )
 public class BehaviorGroup extends CreationUpdateTimestamped {
@@ -75,13 +75,6 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
     @JoinColumn(name = "bundle_id")
     @JsonIgnore
     private Bundle bundle;
-
-    /*
-     * Is this behavior group the default one for its bundle?
-     * There should never be more than one default behavior group for each bundle.
-     */
-    @JsonProperty(value = "default_behavior", access = READ_ONLY)
-    private boolean defaultBehavior;
 
     @OneToMany(mappedBy = "behaviorGroup", cascade = CascadeType.REMOVE)
     @JsonInclude(Include.NON_NULL)
@@ -136,14 +129,6 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     public void setBundle(Bundle bundle) {
         this.bundle = bundle;
-    }
-
-    public Boolean getDefaultBehavior() {
-        return defaultBehavior;
-    }
-
-    public void setDefaultBehavior(boolean defaultBehavior) {
-        this.defaultBehavior = defaultBehavior;
     }
 
     public List<BehaviorGroupAction> getActions() {

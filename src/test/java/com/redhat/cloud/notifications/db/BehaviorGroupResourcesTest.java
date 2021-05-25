@@ -113,12 +113,12 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         BehaviorGroup behaviorGroup1 = createBehaviorGroup("displayName", bundle.getId());
         BehaviorGroup behaviorGroup2 = createBehaviorGroup("displayName", bundle.getId());
         BehaviorGroup behaviorGroup3 = createBehaviorGroup("displayName", bundle.getId());
-        setDefaultBehaviorGroup(bundle.getId(), behaviorGroup2.getId());
         List<BehaviorGroup> behaviorGroups = findBehaviorGroupsByBundleId(bundle.getId());
         assertEquals(3, behaviorGroups.size());
-        assertSame(behaviorGroup2, behaviorGroups.get(0), "Default behavior group should come first");
-        assertSame(behaviorGroup3, behaviorGroups.get(1), "Non-default behavior groups should be sorted on descending creation date");
-        assertSame(behaviorGroup1, behaviorGroups.get(2), "Non-default behavior groups should be sorted on descending creation date");
+        // Behavior groups should be sorted on descending creation date.
+        assertSame(behaviorGroup3, behaviorGroups.get(0));
+        assertSame(behaviorGroup2, behaviorGroups.get(1));
+        assertSame(behaviorGroup1, behaviorGroups.get(2));
     }
 
     @Test
@@ -280,10 +280,6 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
     private Boolean deleteBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupResources.delete(ACCOUNT_ID, behaviorGroupId).await().indefinitely();
-    }
-
-    private void setDefaultBehaviorGroup(UUID bundleId, UUID behaviorGroupId) {
-        behaviorGroupResources.setDefaultBehaviorGroup(bundleId, behaviorGroupId).await().indefinitely();
     }
 
     private List<BehaviorGroup> findBehaviorGroupsByBundleId(UUID bundleId) {

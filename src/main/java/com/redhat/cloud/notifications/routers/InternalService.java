@@ -75,20 +75,6 @@ public class InternalService {
                 });
     }
 
-    @PUT
-    @Path("/bundles/{bundleId}/behaviorGroups/{behaviorGroupId}/default")
-    @Produces(TEXT_PLAIN)
-    public Uni<Response> setDefaultBehaviorGroup(@PathParam("bundleId") UUID bundleId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
-        return behaviorGroupResources.setDefaultBehaviorGroup(bundleId, behaviorGroupId)
-                .onItem().transform(rowCount -> {
-                    if (rowCount == 0) {
-                        return Response.status(Response.Status.NOT_FOUND).build();
-                    } else {
-                        return Response.ok().build();
-                    }
-                });
-    }
-
     @DELETE
     @Path("/bundles/{bundleId}")
     public Uni<Boolean> deleteBundle(@PathParam("bundleId") UUID bundleId) {
