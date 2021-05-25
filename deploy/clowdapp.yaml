@@ -126,5 +126,4 @@ parameters:
   value: http
 - name: CLOUDWATCH_LOGGING_ENABLED
   description: Enable Cloudwatch (or not)
-  value: false
-
+  value: "false"
