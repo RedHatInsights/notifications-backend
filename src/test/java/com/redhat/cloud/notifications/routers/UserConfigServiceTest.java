@@ -21,7 +21,6 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.vertx.core.json.Json;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +32,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
@@ -109,6 +110,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .when().get("/user-config/notification-preference")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().as(SettingsValueJsonForm.class);
 
         Field rhelPolicy = rhelPolicyForm(jsonForm);
@@ -118,16 +120,18 @@ public class UserConfigServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(settingsValues))
                 .post("/user-config/notification-preference")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(TEXT);
         jsonForm = given()
                 .header(identityHeader)
                 .when().get("/user-config/notification-preference?bundleName=rhel")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().as(SettingsValueJsonForm.class);
         rhelPolicy = rhelPolicyForm(jsonForm);
         assertNotNull(rhelPolicy, "RHEL policies not found");
@@ -139,6 +143,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().as(UserConfigPreferences.class);
 
         assertEquals(false, preferences.getDailyEmail());
@@ -149,16 +154,18 @@ public class UserConfigServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(settingsValues))
                 .post("/user-config/notification-preference")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(TEXT);
         jsonForm = given()
                 .header(identityHeader)
                 .when().get("/user-config/notification-preference?bundleName=rhel")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().as(SettingsValueJsonForm.class);
         rhelPolicy = rhelPolicyForm(jsonForm);
         assertNotNull(rhelPolicy, "RHEL policies not found");
@@ -170,6 +177,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().as(UserConfigPreferences.class);
 
         assertEquals(true, preferences.getDailyEmail());
@@ -180,16 +188,18 @@ public class UserConfigServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(settingsValues))
                 .post("/user-config/notification-preference")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(TEXT);
         jsonForm = given()
                 .header(identityHeader)
                 .when().get("/user-config/notification-preference?bundleName=rhel")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().as(SettingsValueJsonForm.class);
         rhelPolicy = rhelPolicyForm(jsonForm);
         assertNotNull(rhelPolicy, "RHEL policies not found");
@@ -201,6 +211,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().as(UserConfigPreferences.class);
 
         assertEquals(false, preferences.getDailyEmail());
@@ -211,16 +222,18 @@ public class UserConfigServiceTest extends DbIsolatedTest {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(settingsValues))
                 .post("/user-config/notification-preference")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(TEXT);
         jsonForm = given()
                 .header(identityHeader)
                 .when().get("/user-config/notification-preference?bundleName=rhel")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().as(SettingsValueJsonForm.class);
         rhelPolicy = rhelPolicyForm(jsonForm);
         assertNotNull(rhelPolicy, "RHEL policies not found");
@@ -232,6 +245,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().as(UserConfigPreferences.class);
 
         assertEquals(true, preferences.getDailyEmail());
@@ -246,7 +260,8 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                     .queryParam("bundleName", bundle)
                     .get("/user-config/notification-preference")
                     .then()
-                    .statusCode(200);
+                    .statusCode(200)
+                    .contentType(JSON);
         } finally {
             emailSubscriptionResources.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", EmailSubscriptionType.DAILY).await().indefinitely();
         }
@@ -257,18 +272,20 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .when()
                 .get("/user-config/notification-preference")
                 .then()
-                .statusCode(400);
+                .statusCode(400)
+                .contentType(JSON);
 
         // does not add if we try to create unknown bundle/apps
         settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", true, true);
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(settingsValues))
                 .post("/user-config/notification-preference")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(TEXT);
 
         assertNull(
                 emailSubscriptionResources
@@ -312,6 +329,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .when().get("/user-config/notification-preference?bundleName=rhel")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().as(SettingsValueJsonForm.class);
         rhelPolicy = rhelPolicyForm(jsonForm);
         assertNotNull(rhelPolicy, "RHEL policies not found");

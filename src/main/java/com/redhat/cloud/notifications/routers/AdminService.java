@@ -7,22 +7,21 @@ import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
+
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
 /**
  * Stuff around admin of the service and debugging
  */
 @Path("/internal/admin")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
 public class AdminService {
 
     @Inject
@@ -30,6 +29,7 @@ public class AdminService {
     RbacServer rbacServer;
 
     @GET
+    @Produces(APPLICATION_JSON)
     public Uni<Response> debugRbac(@QueryParam("rhid") String rhid) {
 
         Uni<RbacRaw> rbacRawUni = rbacServer.getRbacInfo("notifications,integrations", rhid);
@@ -44,6 +44,7 @@ public class AdminService {
 
     @Path("/status")
     @POST
+    @Produces(TEXT_PLAIN)
     public Response setAdminDown(@QueryParam("status") Optional<String> status) {
 
         Response.ResponseBuilder builder;

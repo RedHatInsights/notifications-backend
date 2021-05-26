@@ -41,16 +41,16 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
+
 @Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
 // Email endpoints are not added at this point
 // TODO Needs documentation annotations
 public class EndpointService {
@@ -68,6 +68,7 @@ public class EndpointService {
     ApplicationResources applicationResources;
 
     @GET
+    @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Parameters({
             @Parameter(
@@ -106,6 +107,8 @@ public class EndpointService {
 
     // TODO [BG Phase 2] Delete this method
     @POST
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -128,6 +131,8 @@ public class EndpointService {
 
     @POST
     @Path("/bg") // TODO [BG Phase 2] Delete this path
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     // TODO [BG Phase 2] Remove '_BG' suffix
     public Uni<Endpoint> createEndpoint_BG(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
@@ -143,6 +148,7 @@ public class EndpointService {
 
     @GET
     @Path("/{id}")
+    @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     public Uni<Endpoint> getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -163,9 +169,9 @@ public class EndpointService {
 
     @PUT
     @Path("/{id}/enable")
+    @Produces(TEXT_PLAIN)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return resources.enableEndpoint(principal.getAccount(), id)
@@ -184,9 +190,10 @@ public class EndpointService {
 
     @PUT
     @Path("/{id}")
+    @Consumes(APPLICATION_JSON)
+    @Produces(TEXT_PLAIN)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> updateEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setAccountId(principal.getAccount());
@@ -197,6 +204,7 @@ public class EndpointService {
 
     @GET
     @Path("/{id}/history")
+    @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     public Uni<List<NotificationHistory>> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id) {
         // TODO We need globally limitations (Paging support and limits etc)
@@ -206,6 +214,7 @@ public class EndpointService {
 
     @GET
     @Path("/{id}/history/{history_id}/details")
+    @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Parameters({
             @Parameter(
@@ -222,7 +231,6 @@ public class EndpointService {
             )
     })
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") UUID historyId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return notifResources.getNotificationDetails(principal.getAccount(), query, id, historyId)
@@ -238,6 +246,7 @@ public class EndpointService {
 
     @PUT
     @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
+    @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Boolean> subscribeEmail(
             @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName,
@@ -257,6 +266,7 @@ public class EndpointService {
 
     @DELETE
     @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
+    @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Boolean> unsubscribeEmail(
             @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName,

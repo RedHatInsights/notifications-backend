@@ -39,10 +39,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
-@Consumes(APPLICATION_JSON)
-@Produces(APPLICATION_JSON)
 public class UserConfigService {
 
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -61,6 +60,8 @@ public class UserConfigService {
 
     @POST
     @Path("/notification-preference")
+    @Consumes(APPLICATION_JSON)
+    @Produces(TEXT_PLAIN)
     @Operation(hidden = true)
     public Uni<Response> saveSettings(@Context SecurityContext sec, @Valid SettingsValues values) {
 
@@ -108,6 +109,7 @@ public class UserConfigService {
 
     @GET
     @Path("/notification-preference/{bundleName}/{applicationName}")
+    @Produces(APPLICATION_JSON)
     @Operation(hidden = true)
     public Uni<UserConfigPreferences> getPreferences(
             @Context SecurityContext sec,
@@ -128,6 +130,7 @@ public class UserConfigService {
 
     @GET
     @Path("/notification-preference")
+    @Produces(APPLICATION_JSON)
     @Operation(hidden = true)
     public Uni<Response> getSettingsSchema(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
 

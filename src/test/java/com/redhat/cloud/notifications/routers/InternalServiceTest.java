@@ -18,7 +18,10 @@ import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.TEXT;
 import static javax.ws.rs.core.Response.Status.Family.familyOf;
+import static org.hamcrest.Matchers.any;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -263,6 +266,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .post("/internal/bundles")
                 .then()
                 .statusCode(expectedStatusCode)
+                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
                 .extract().body().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
@@ -287,6 +291,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .get("/internal/bundles/{bundleId}")
                 .then()
                 .statusCode(expectedStatusCode)
+                .contentType(JSON)
                 .extract().body().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
@@ -310,7 +315,8 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .body(Json.encode(bundle))
                 .put("/internal/bundles/{bundleId}")
                 .then()
-                .statusCode(expectedStatusCode);
+                .statusCode(expectedStatusCode)
+                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(TEXT.toString()) : any(String.class));
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             getBundle(bundleId, bundle.getName(), bundle.getDisplayName(), OK);
@@ -324,6 +330,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .delete("/internal/bundles/{bundleId}")
                 .then()
                 .statusCode(OK)
+                .contentType(JSON)
                 .extract().body().as(Boolean.class);
 
         assertEquals(expectedResult, result);
@@ -352,6 +359,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .post("/internal/applications")
                 .then()
                 .statusCode(expectedStatusCode)
+                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
                 .extract().body().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
@@ -378,6 +386,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .get("/internal/bundles/{bundleId}/applications")
                 .then()
                 .statusCode(expectedStatusCode)
+                .contentType(JSON)
                 .extract().body().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
@@ -397,6 +406,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .get("/internal/applications/{appId}")
                 .then()
                 .statusCode(expectedStatusCode)
+                .contentType(JSON)
                 .extract().body().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
@@ -420,7 +430,8 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .body(Json.encode(app))
                 .put("/internal/applications/{appId}")
                 .then()
-                .statusCode(expectedStatusCode);
+                .statusCode(expectedStatusCode)
+                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(TEXT.toString()) : any(String.class));
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             getApp(appId, app.getName(), app.getDisplayName(), OK);
@@ -434,6 +445,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .delete("/internal/applications/{appId}")
                 .then()
                 .statusCode(OK)
+                .contentType(JSON)
                 .extract().body().as(Boolean.class);
 
         assertEquals(expectedResult, result);
@@ -463,6 +475,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .post("/internal/eventTypes")
                 .then()
                 .statusCode(expectedStatusCode)
+                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
                 .extract().body().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
@@ -487,6 +500,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .get("/internal/applications/{appId}/eventTypes")
                 .then()
                 .statusCode(expectedStatusCode)
+                .contentType(JSON)
                 .extract().body().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
@@ -507,6 +521,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .delete("/internal/eventTypes/{eventTypeId}")
                 .then()
                 .statusCode(OK)
+                .contentType(JSON)
                 .extract().body().as(Boolean.class);
 
         assertEquals(expectedResult, result);

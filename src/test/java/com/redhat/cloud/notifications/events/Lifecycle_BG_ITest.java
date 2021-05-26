@@ -20,7 +20,6 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.vertx.core.json.Json;
@@ -48,6 +47,8 @@ import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_MESSAGES_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -158,12 +159,13 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
 
         String responseBody = given()
                 .basePath(INTERNAL_BASE_PATH)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(bundle))
                 .when()
                 .post("/internal/bundles")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().asString();
 
         JsonObject jsonBundle = new JsonObject(responseBody);
@@ -186,11 +188,12 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         String responseBody = given()
                 .when()
                 .basePath(INTERNAL_BASE_PATH)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(app))
                 .post("/internal/applications")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().asString();
 
         JsonObject jsonApp = new JsonObject(responseBody);
@@ -214,11 +217,12 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         String responseBody = given()
                 .when()
                 .basePath(INTERNAL_BASE_PATH)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(eventType))
                 .post("/internal/eventTypes")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().asString();
 
         JsonObject jsonEventType = new JsonObject(responseBody);
@@ -239,6 +243,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .get("/notifications/eventTypes")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().asString();
 
         JsonArray jsonEventTypes = new JsonArray(responseBody);
@@ -253,12 +258,13 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         String responseBody = given()
                 .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(behaviorGroup))
                 .when()
                 .post("/notifications/behaviorGroups")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().asString();
 
         JsonObject jsonBehaviorGroup = new JsonObject(responseBody);
@@ -289,12 +295,13 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         String responseBody = given()
                 .basePath(API_INTEGRATIONS_V_1_0)
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(endpoint))
                 .when()
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().asString();
 
         JsonObject jsonEndpoint = new JsonObject(responseBody);
@@ -326,6 +333,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .get("/endpoints")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().asString();
 
         JsonArray jsonEndpoints = new JsonObject(responseBody).getJsonArray("data");
@@ -344,14 +352,14 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         given()
                 .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .pathParam("behaviorGroupId", behaviorGroupId)
                 .body(Json.encode(Arrays.asList(endpointIds)))
                 .when()
                 .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
                 .then()
                 .statusCode(200)
-                .contentType(ContentType.TEXT);
+                .contentType(TEXT);
     }
 
     /*
@@ -438,7 +446,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
                 .then()
                 .statusCode(200)
-                .contentType(ContentType.TEXT);
+                .contentType(TEXT);
     }
 
     private void checkEventTypeBehaviorGroups(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {
@@ -450,6 +458,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().asString();
 
         JsonArray jsonBehaviorGroups = new JsonArray(responseBody);
@@ -470,6 +479,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .when()
                 .delete("/notifications/eventTypes/{eventTypeId}/mute")
                 .then()
+                .contentType(JSON)
                 .statusCode(200);
 
         String responseBody = given()
@@ -480,6 +490,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().asString();
 
         JsonArray jsonBehaviorGroups = new JsonArray(responseBody);
@@ -495,6 +506,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .get("/endpoints/{endpointId}/history")
                 .then()
                 .statusCode(200)
+                .contentType(JSON)
                 .extract().body().asString();
 
         JsonArray jsonEndpointHistory = new JsonArray(responseBody);
@@ -515,6 +527,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                         .get("/endpoints/{endpointId}/history/{historyId}/details")
                         .then()
                         .statusCode(200)
+                        .contentType(JSON)
                         .extract().body().asString();
 
                 JsonObject jsonDetails = new JsonObject(responseBody);
@@ -533,6 +546,7 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 .pathParam("bundleId", bundleId)
                 .delete("/internal/bundles/{bundleId}")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(JSON);
     }
 }
