@@ -20,14 +20,14 @@ public class TestRHELAdvisorTemplate {
                 .data("action", action)
                 .render();
 
-        assertEquals("RHEL - Advisor Instant Notification - 3 Oct 2020", result, "Title contains the number of reports created");
+        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 4 recommendations", result, "Title contains the number of reports created");
 
         // Action with only 1 event
         action.setEvents(List.of(action.getEvents().get(0)));
         result = AdvisorRHEL.Templates.resolvedRecommendationInstantEmailTitle()
                 .data("action", action)
                 .render();
-        assertEquals("RHEL - Advisor Instant Notification - 3 Oct 2020", result, "Title contains the number of reports created");
+        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 1 recommendation", result, "Title contains the number of reports created");
     }
 
     @Test

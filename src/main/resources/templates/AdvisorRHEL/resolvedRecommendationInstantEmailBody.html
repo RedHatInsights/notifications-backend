@@ -1,5 +1,5 @@
 {#include AdvisorRHEL/insightsEmailBody}
-{#content-title}RHEL - Advisor Instant Notification - {action.timestamp.format('d MMM uuuu')}{/content-title}
+{#content-title}Advisor instant notification - {action.timestamp.toUtcFormat()}{/content-title}
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
@@ -78,7 +78,7 @@
                         <!-- Hi {{user.first_name}},
                         <br>
                         <br> -->
-                        Your cluster <a href="#" target="_blank">{action.context.display_name}</a> has {action.events.size()} resolved recommendations.
+                        Your system <a href="#" target="_blank">{action.context.display_name}</a> has {action.events.size()} resolved recommendations.
                     </p>
                 </td>
             </tr>
@@ -92,7 +92,7 @@
                             <td class="rh-cta-link" align="center">
                                 <a target="_blank" href="https://cloud.redhat.com/">
                                         <span>
-                                          Go to cluster page
+                                          Go to system page
                                         </span>
                                 </a>
                             </td>
@@ -145,24 +145,24 @@
                         </thead>
                         <tbody>
                         {#each action.events}
-                            <tr>
-                                <td>
-                                    <a href="{it.payload.rule_url}">{it.payload.rule_description}</a>
-                                </td>
-                                <td class="rh-severity">
-                                    {#switch it.payload.total_risk}
-                                    {#case '1'}
-                                    <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_low.png" alt="Low severity" width="55" border="0">
-                                    {#case '2'}
-                                    <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_moderate.png" alt="Moderate severity" width="85" border="0">
-                                    {#case '3'}
-                                    <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_important.png" alt="Important severity" width="86" border="0">
-                                    {#case '4'}
-                                    <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_critical.png" alt="Critical severity" width="70" border="0">
-                                    {/switch}
-                                </td>
-                                <td>{it.payload.publish_date.toTimeAgo()}</td>
-                            </tr>
+                        <tr>
+                            <td>
+                                <a href="{it.payload.rule_url}">{it.payload.rule_description}</a>
+                            </td>
+                            <td class="rh-severity">
+                                {#switch it.payload.total_risk}
+                                {#case '1'}
+                                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_low.png" alt="Low severity" width="55" border="0">
+                                {#case '2'}
+                                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_moderate.png" alt="Moderate severity" width="85" border="0">
+                                {#case '3'}
+                                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_important.png" alt="Important severity" width="86" border="0">
+                                {#case '4'}
+                                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_critical.png" alt="Critical severity" width="70" border="0">
+                                {/switch}
+                            </td>
+                            <td>{it.payload.publish_date.toTimeAgo()}</td>
+                        </tr>
                         {/each}
                         </tbody>
                     </table>

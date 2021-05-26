@@ -1,1 +1,1 @@
-RHEL - Advisor Instant Notification - {action.timestamp.format('d MMM uuuu')}
+Advisor instant notification - {action.timestamp.toUtcFormat()} - {action.events.size()} recommendation{#if action.events.size() > 1}s{/if}
