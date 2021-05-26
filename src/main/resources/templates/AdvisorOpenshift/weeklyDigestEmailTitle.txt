@@ -1,1 +1,1 @@
-Openshift - Advisor Weekly Report - {action.timestamp.format('d MMM uuuu')}
+OpenShift - Advisor Weekly Report - {action.timestamp.format('d MMM uuuu')}

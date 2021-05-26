@@ -18,7 +18,7 @@ public class AdvisorOpenshift implements EmailTemplate {
         }
 
         throw new UnsupportedOperationException(String.format(
-                "No email title template for Openshift Advisor event_type: %s and EmailSubscription: %s found.",
+                "No email title template for OpenShift Advisor event_type: %s and EmailSubscription: %s found.",
                 eventType, type
         ));
     }
@@ -34,7 +34,7 @@ public class AdvisorOpenshift implements EmailTemplate {
         }
 
         throw new UnsupportedOperationException(String.format(
-                "No email body template for Openshift Advisor event_type: %s and EmailSubscription: %s found.",
+                "No email body template for OpenShift Advisor event_type: %s and EmailSubscription: %s found.",
                 eventType, type
         ));
     }
