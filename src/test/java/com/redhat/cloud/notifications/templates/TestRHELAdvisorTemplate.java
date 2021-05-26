@@ -11,29 +11,29 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
-public class TestAdvisorTemplate {
+public class TestRHELAdvisorTemplate {
 
     @Test
     public void testInstantEmailTitle() {
-        Action action = TestHelpers.createAdvisorAction("123456", "new-recommendation");
-        String result = Advisor.Templates.newRecommendationInstantEmailTitle()
+        Action action = TestHelpers.createAdvisorAction("123456", "resolved-recommendation");
+        String result = AdvisorRHEL.Templates.resolvedRecommendationInstantEmailTitle()
                 .data("action", action)
                 .render();
 
-        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 4 recommendations", result, "Title contains the number of reports created");
+        assertEquals("RHEL - Advisor Instant Notification - 3 Oct 2020", result, "Title contains the number of reports created");
 
         // Action with only 1 event
         action.setEvents(List.of(action.getEvents().get(0)));
-        result = Advisor.Templates.newRecommendationInstantEmailTitle()
+        result = AdvisorRHEL.Templates.resolvedRecommendationInstantEmailTitle()
                 .data("action", action)
                 .render();
-        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 1 recommendation", result, "Title contains the number of reports created");
+        assertEquals("RHEL - Advisor Instant Notification - 3 Oct 2020", result, "Title contains the number of reports created");
     }
 
     @Test
     public void testInstantEmailBody() {
         Action action = TestHelpers.createAdvisorAction("123456", "new-recommendation");
-        final String result = Advisor.Templates.newRecommendationInstantEmailBody()
+        final String result = AdvisorRHEL.Templates.resolvedRecommendationInstantEmailBody()
                 .data("action", action)
                 .render();
 
@@ -57,7 +57,7 @@ public class TestAdvisorTemplate {
         assertTrue(result.contains("My Host"), "Body should contain the display_name");
 
         action.setEvents(action.getEvents().stream().filter(event -> event.getPayload().get("total_risk").equals("1")).collect(Collectors.toList()));
-        String result2 = Advisor.Templates.newRecommendationInstantEmailBody()
+        String result2 = AdvisorRHEL.Templates.resolvedRecommendationInstantEmailBody()
                 .data("action", action)
                 .render();
 

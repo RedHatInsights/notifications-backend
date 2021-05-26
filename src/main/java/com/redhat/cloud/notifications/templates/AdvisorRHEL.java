@@ -4,17 +4,13 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 
-// Name needs to be "AdvisorRHEl" to read templates from resources/templates/AdvisorOpenshift
+// Name needs to be "AdvisorRHEl" to read templates from resources/templates/AdvisorRHEL
 public class AdvisorRHEL implements EmailTemplate {
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
-        if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals("resolved-recommendation")) {
-                return Templates.newRecommendationInstantEmailTitle();
-            } else if (eventType.equals("weekly-digest")) {
-                return Templates.weeklyDigestEmailTitle();
-            }
+        if (type == EmailSubscriptionType.INSTANT && eventType.equals("resolved-recommendation")) {
+            return Templates.resolvedRecommendationInstantEmailTitle();
         }
 
         throw new UnsupportedOperationException(String.format(
@@ -25,12 +21,8 @@ public class AdvisorRHEL implements EmailTemplate {
 
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
-        if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals("resolved-recommendation")) {
-                return Templates.newRecommendationInstantEmailBody();
-            } else if (eventType.equals("weekly-digest")) {
-                return Templates.weeklyDigestEmailBody();
-            }
+        if (type == EmailSubscriptionType.INSTANT && eventType.equals("resolved-recommendation")) {
+            return Templates.resolvedRecommendationInstantEmailBody();
         }
 
         throw new UnsupportedOperationException(String.format(
@@ -41,7 +33,7 @@ public class AdvisorRHEL implements EmailTemplate {
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return (eventType.equals("resolved-recommendation") || eventType.equals("weekly-digest")) && type == EmailSubscriptionType.INSTANT;
+        return eventType.equals("resolved-recommendation") && type == EmailSubscriptionType.INSTANT;
     }
 
     @Override
@@ -52,13 +44,9 @@ public class AdvisorRHEL implements EmailTemplate {
     @CheckedTemplate
     public static class Templates {
 
-        public static native TemplateInstance newRecommendationInstantEmailTitle();
+        public static native TemplateInstance resolvedRecommendationInstantEmailTitle();
 
-        public static native TemplateInstance newRecommendationInstantEmailBody();
-
-        public static native TemplateInstance weeklyDigestEmailTitle();
-
-        public static native TemplateInstance weeklyDigestEmailBody();
+        public static native TemplateInstance resolvedRecommendationInstantEmailBody();
 
     }
 

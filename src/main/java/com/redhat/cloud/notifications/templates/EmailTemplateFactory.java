@@ -14,7 +14,7 @@ public class EmailTemplateFactory {
                 case "policies":
                     return new Policies();
                 case "advisor":
-                    return new Advisor();
+                    return new AdvisorRHEL();
                 case "drift":
                     return new Drift();
                 default:
