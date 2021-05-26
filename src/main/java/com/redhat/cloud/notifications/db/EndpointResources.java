@@ -315,7 +315,7 @@ public class EndpointResources {
                 "WHERE accountId = :accountId AND id = :id";
         String webhookQuery = "UPDATE WebhookProperties SET url = :url, method = :method, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
-        String camelQuery = "UPDATE EndpointCamel SET url = :url, subType = :subType, " +
+        String camelQuery = "UPDATE CamelProperties SET url = :url, subType = :subType, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
 
         return session.createQuery(endpointQuery)
