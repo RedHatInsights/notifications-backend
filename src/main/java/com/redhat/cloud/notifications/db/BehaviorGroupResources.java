@@ -175,13 +175,15 @@ public class BehaviorGroupResources {
                          * In the end, all inserted or updated actions will have the same position than the endpointIds list order.
                          */
                         String upsertQuery = "INSERT INTO behavior_group_action (behavior_group_id, endpoint_id, position, created) " +
-                                "VALUES (:behaviorGroupId, :endpointId, :position, :created) " +
+                                "SELECT :behaviorGroupId, :endpointId, :position, :created " +
+                                "WHERE EXISTS (SELECT 1 FROM endpoints WHERE account_id = :accountId AND id = :endpointId) " +
                                 "ON CONFLICT (behavior_group_id, endpoint_id) DO UPDATE SET position = :position";
                         return session.createNativeQuery(upsertQuery)
                                 .setParameter("behaviorGroupId", behaviorGroupId)
                                 .setParameter("endpointId", endpointId)
                                 .setParameter("position", endpointIds.indexOf(endpointId))
                                 .setParameter("created", LocalDateTime.now(UTC))
+                                .setParameter("accountId", accountId)
                                 .executeUpdate();
 
                     })
