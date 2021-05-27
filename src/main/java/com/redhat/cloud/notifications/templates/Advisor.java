@@ -10,7 +10,11 @@ public class Advisor implements EmailTemplate {
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            return Templates.newRecommendationInstantEmailTitle();
+            if (eventType.equals("new-recommendation")) {
+                return Templates.newRecommendationInstantEmailTitle();
+            } else if (eventType.equals("resolved-recommendation")) {
+                return Templates.resolvedRecommendationInstantEmailTitle();
+            }
         }
 
         throw new UnsupportedOperationException(String.format(
@@ -22,7 +26,11 @@ public class Advisor implements EmailTemplate {
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            return Templates.newRecommendationInstantEmailBody();
+            if (eventType.equals("new-recommendation")) {
+                return Templates.newRecommendationInstantEmailBody();
+            } else if (eventType.equals("resolved-recommendation")) {
+                return Templates.resolvedRecommendationInstantEmailBody();
+            }
         }
 
         throw new UnsupportedOperationException(String.format(
@@ -33,7 +41,7 @@ public class Advisor implements EmailTemplate {
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return eventType.equals("new-recommendation") && type == EmailSubscriptionType.INSTANT;
+        return (eventType.equals("new-recommendation") || eventType.equals("resolved-recommendation")) && type == EmailSubscriptionType.INSTANT;
     }
 
     @Override
@@ -48,6 +56,9 @@ public class Advisor implements EmailTemplate {
 
         public static native TemplateInstance newRecommendationInstantEmailBody();
 
+        public static native TemplateInstance resolvedRecommendationInstantEmailTitle();
+
+        public static native TemplateInstance resolvedRecommendationInstantEmailBody();
     }
 
 }
