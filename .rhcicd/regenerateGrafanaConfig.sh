@@ -38,15 +38,15 @@ SECTION_LINES_ALREADY_SPACED=`awk '/^    /{a++}END{print a}' "$SECTIONS_JSON"`;
 ALL_SECTIONS_ALREADY_SPACED="false"; [ "$SECTIONS_LINES" == "$SECTION_LINES_ALREADY_SPACED" ] && ALL_SECTIONS_ALREADY_SPACED="true";
   [[ "$DEBUG_ENABLED" == "$YES" ]] && DebugLog "ALL_SECTIONS_ALREADY_SPACED" "$ALL_SECTIONS_ALREADY_SPACED";
 
-# generate json content
-while read line; do
+## generate json content: NOTE: don't name the variable in while loop. Causes hidden line stripping. Ugh.
+while read -r; do
   if [[ "$ALL_SECTIONS_ALREADY_SPACED" == "true" ]]
   then
-    echo -e "$line\n" >> "$YAML_FILE";
+    printf '%s\n' "$REPLY" >> "$YAML_FILE";
   else
-    echo -e "    $line" >> "$YAML_FILE";
+    printf '%s\n' "    $REPLY" >> "$YAML_FILE";
   fi
-done < "$SECTIONS_JSON";
+done <$SECTIONS_JSON
 
 LINE_COUNT=`wc -l "$YAML_FILE" | cut -d' ' -f1`;
   [[ "$DEBUG_ENABLED" == "$YES" ]] && DebugLog "LINE_COUNT" "$LINE_COUNT";

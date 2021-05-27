@@ -2,153 +2,153 @@ apiVersion: v1
 data:
   Notifications.json: |-
     {
-    "annotations": {
-    "list": [
-    {
-    "builtIn": 1,
-    "datasource": "-- Grafana --",
-    "enable": true,
-    "hide": true,
-    "iconColor": "rgba(0, 211, 255, 1)",
-    "name": "Annotations & Alerts",
-    "type": "dashboard"
-    }
-    ]
-    },
-    "editable": true,
-    "gnetId": null,
-    "graphTooltip": 0,
-    "id": 187,
-    "links": [],
-    "panels": [
-    {
-    "collapsed": true,
-    "datasource": null,
-    "gridPos": {
-    "h": 1,
-    "w": 24,
-    "x": 0,
-    "y": 0
-    },
-    "id": 2,
-    "panels": [],
-    "title": "Status",
-    "type": "row"
-    },
-    {
-    "collapsed": true,
-    "datasource": null,
-    "gridPos": {
-    "h": 1,
-    "w": 24,
-    "x": 0,
-    "y": 1
-    },
-    "id": 4,
-    "panels": [],
-    "title": "Details",
-    "type": "row"
-    },
-    {
-    "collapsed": true,
-    "datasource": null,
-    "gridPos": {
-    "h": 1,
-    "w": 24,
-    "x": 0,
-    "y": 2
-    },
-    "id": 6,
-    "panels": [],
-    "title": "3Scale",
-    "type": "row"
-    },
-    {
-    "collapsed": true,
-    "datasource": null,
-    "gridPos": {
-    "h": 1,
-    "w": 24,
-    "x": 0,
-    "y": 3
-    },
-    "id": 8,
-    "panels": [],
-    "title": "Requests",
-    "type": "row"
-    },
-    {
-    "collapsed": true,
-    "datasource": null,
-    "gridPos": {
-    "h": 1,
-    "w": 24,
-    "x": 0,
-    "y": 4
-    },
-    "id": 10,
-    "panels": [],
-    "title": "Memory",
-    "type": "row"
-    },
-    {
-    "collapsed": true,
-    "datasource": null,
-    "gridPos": {
-    "h": 1,
-    "w": 24,
-    "x": 0,
-    "y": 5
-    },
-    "id": 12,
-    "panels": [],
-    "title": "Kafka Log",
-    "type": "row"
-    },
-    {
-    "collapsed": true,
-    "datasource": null,
-    "gridPos": {
-    "h": 1,
-    "w": 24,
-    "x": 0,
-    "y": 6
-    },
-    "id": 14,
-    "panels": [],
-    "title": "Rollups",
-    "type": "row"
-    },
-    {
-    "collapsed": true,
-    "datasource": null,
-    "gridPos": {
-    "h": 1,
-    "w": 24,
-    "x": 0,
-    "y": 7
-    },
-    "id": 16,
-    "panels": [],
-    "title": "RDS",
-    "type": "row"
-    }
-    ],
-    "schemaVersion": 26,
-    "style": "dark",
-    "tags": [],
-    "templating": {
-    "list": []
-    },
-    "time": {
-    "from": "now-6h",
-    "to": "now"
-    },
-    "timepicker": {},
-    "timezone": "",
-    "title": "Notifications Dashboard",
-    "uid": "KQIVyFuMk",
-    "version": 2
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": 187,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": true,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "id": 2,
+          "panels": [],
+          "title": "Status",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 1
+          },
+          "id": 4,
+          "panels": [],
+          "title": "Details",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 2
+          },
+          "id": 6,
+          "panels": [],
+          "title": "3Scale",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 3
+          },
+          "id": 8,
+          "panels": [],
+          "title": "Requests",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 4
+          },
+          "id": 10,
+          "panels": [],
+          "title": "Memory",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 5
+          },
+          "id": 12,
+          "panels": [],
+          "title": "Kafka Log",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 6
+          },
+          "id": 14,
+          "panels": [],
+          "title": "Rollups",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 7
+          },
+          "id": 16,
+          "panels": [],
+          "title": "RDS",
+          "type": "row"
+        }
+      ],
+      "schemaVersion": 26,
+      "style": "dark",
+      "tags": [],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Notifications Dashboard",
+      "uid": "KQIVyFuMk",
+      "version": 2
     }
 kind: ConfigMap
 metadata:
