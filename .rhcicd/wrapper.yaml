@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+  Notifications.json: |-
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-insights-notifications-general
+  labels:
+    grafana_dashboard: "true"
+  annotations:
+    grafana-folder: /grafana-dashboard-definitions/Insights
