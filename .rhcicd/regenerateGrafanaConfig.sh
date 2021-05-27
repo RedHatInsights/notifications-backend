@@ -28,18 +28,24 @@ SECTIONS_JSON="sections.json";
 # generate top
 sed -n 1,3p "$WRAPPER_YAML" > "$YAML_FILE";
 
-# Are 'sections' already properly spaced?
+## Are 'sections' already properly spaced?
 SECTIONS_LINES=`wc -l "$SECTIONS_JSON" | cut -d' ' -f1`;
   [[ "$DEBUG_ENABLED" == "$YES" ]] && DebugLog "SECTIONS_LINES" "$SECTIONS_LINES";
+
 SECTION_LINES_ALREADY_SPACED=`awk '/^    /{a++}END{print a}' "$SECTIONS_JSON"`;
   [[ "$DEBUG_ENABLED" == "$YES" ]] && DebugLog "SECTION_LINES_ALREADY_SPACED" "$SECTION_LINES_ALREADY_SPACED";
+
 ALL_SECTIONS_ALREADY_SPACED="false"; [ "$SECTIONS_LINES" == "$SECTION_LINES_ALREADY_SPACED" ] && ALL_SECTIONS_ALREADY_SPACED="true";
   [[ "$DEBUG_ENABLED" == "$YES" ]] && DebugLog "ALL_SECTIONS_ALREADY_SPACED" "$ALL_SECTIONS_ALREADY_SPACED";
 
 # generate json content
 while read line; do
-  [[ "$ALL_SECTIONS_ALREADY_SPACED" == "true" ]] && echo -e "$line\n" >> "$YAML_FILE";
-  [[ "$ALL_SECTIONS_ALREADY_SPACED" == "false" ]] && echo -e "    $line" >> "$YAML_FILE";
+  if [[ "$ALL_SECTIONS_ALREADY_SPACED" == "true" ]]
+  then
+    echo -e "$line\n" >> "$YAML_FILE";
+  else
+    echo -e "    $line" >> "$YAML_FILE";
+  fi
 done < "$SECTIONS_JSON";
 
 LINE_COUNT=`wc -l "$YAML_FILE" | cut -d' ' -f1`;

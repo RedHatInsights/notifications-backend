@@ -146,8 +146,8 @@ data:
     },
     "timepicker": {},
     "timezone": "",
-    "title": "Notifications",
-    "uid": "tnPOob3Gz",
+    "title": "Notifications Dashboard",
+    "uid": "KQIVyFuMk",
     "version": 2
     }
 kind: ConfigMap
