@@ -20,10 +20,10 @@ import javax.persistence.PersistenceException;
 import javax.validation.ConstraintViolationException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -122,65 +122,20 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     }
 
     @Test
-    public void testAddAndDeleteEventTypeBehaviorAndMuteEventType() {
+    public void testAddAndDeleteEventTypeBehavior() {
         Bundle bundle = createBundle();
         Application app = createApp(bundle.getId());
         EventType eventType = createEventType(app.getId());
+        BehaviorGroup behaviorGroup1 = createBehaviorGroup("Behavior group 1", bundle.getId());
+        BehaviorGroup behaviorGroup2 = createBehaviorGroup("Behavior group 2", bundle.getId());
+        BehaviorGroup behaviorGroup3 = createBehaviorGroup("Behavior group 3", bundle.getId());
 
-        // Add behaviorGroup1 to eventType behaviors.
-        BehaviorGroup behaviorGroup1 = createBehaviorGroup("displayName", bundle.getId());
-        Boolean added = addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup1.getId());
-        assertTrue(added);
-
-        // Doing it again should not throw any exception but return false.
-        added = addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup1.getId());
-        assertFalse(added);
-
-        // Add behaviorGroup2 to eventType behaviors.
-        BehaviorGroup behaviorGroup2 = createBehaviorGroup("displayName", bundle.getId());
-        added = addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup2.getId());
-        assertTrue(added);
-
-        // Add behaviorGroup3 to eventType behaviors.
-        BehaviorGroup behaviorGroup3 = createBehaviorGroup("displayName", bundle.getId());
-        added = addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup3.getId());
-        assertTrue(added);
-
-        // Check all behaviors were correctly persisted.
-        List<EventTypeBehavior> behaviors = findEventTypeBehaviorByEventTypeId(eventType.getId());
-        assertEquals(3, behaviors.size());
-        assertTrue(behaviors.stream().anyMatch(behavior -> behavior.getId().behaviorGroupId.equals(behaviorGroup1.getId())));
-        assertTrue(behaviors.stream().anyMatch(behavior -> behavior.getId().behaviorGroupId.equals(behaviorGroup2.getId())));
-        assertTrue(behaviors.stream().anyMatch(behavior -> behavior.getId().behaviorGroupId.equals(behaviorGroup3.getId())));
-
-        // Remove behaviorGroup2 from eventType behaviors.
-        Boolean deleted = deleteEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup2.getId());
-        assertTrue(deleted);
-        behaviors = findEventTypeBehaviorByEventTypeId(eventType.getId());
-        assertEquals(2, behaviors.size());
-        assertTrue(behaviors.stream().noneMatch(action -> action.getId().behaviorGroupId.equals(behaviorGroup2.getId())));
-
-        // Doing it again should not throw any exception but return false.
-        deleted = deleteEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup2.getId());
-        assertFalse(deleted);
-        behaviors = findEventTypeBehaviorByEventTypeId(eventType.getId());
-        assertEquals(2, behaviors.size());
-
-        // Mute eventType, removing all its behaviors.
-        Boolean muted = muteEventType(ACCOUNT_ID, eventType.getId());
-        assertTrue(muted);
-        behaviors = findEventTypeBehaviorByEventTypeId(eventType.getId());
-        assertTrue(behaviors.isEmpty());
-    }
-
-    @Test
-    public void testAddEventTypeBehaviorWithWrongAccountId() {
-        Bundle bundle = createBundle();
-        Application app = createApp(bundle.getId());
-        EventType eventType = createEventType(app.getId());
-        BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
-        Boolean added = addEventTypeBehavior("unknownAccountId", eventType.getId(), behaviorGroup.getId());
-        assertFalse(added);
+        updateAndCheckEventTypeBehaviors(ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId());
+        updateAndCheckEventTypeBehaviors(ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId());
+        updateAndCheckEventTypeBehaviors(ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId(), behaviorGroup2.getId());
+        updateAndCheckEventTypeBehaviors(ACCOUNT_ID, eventType.getId(), true, behaviorGroup2.getId());
+        updateAndCheckEventTypeBehaviors(ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId(), behaviorGroup2.getId(), behaviorGroup3.getId());
+        updateAndCheckEventTypeBehaviors(ACCOUNT_ID, eventType.getId(), true);
     }
 
     @Test
@@ -189,7 +144,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         Application app = createApp(bundle.getId());
         EventType eventType = createEventType(app.getId());
         BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
-        addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup.getId());
+        updateAndCheckEventTypeBehaviors(ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId());
         List<EventType> eventTypes = findEventTypesByBehaviorGroupId(ACCOUNT_ID, behaviorGroup.getId());
         assertEquals(1, eventTypes.size());
         assertEquals(eventType.getId(), eventTypes.get(0).getId());
@@ -201,7 +156,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         Application app = createApp(bundle.getId());
         EventType eventType = createEventType(app.getId());
         BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
-        addEventTypeBehavior(ACCOUNT_ID, eventType.getId(), behaviorGroup.getId());
+        updateAndCheckEventTypeBehaviors(ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId());
         List<BehaviorGroup> behaviorGroups = findBehaviorGroupsByEventTypeId(ACCOUNT_ID, eventType.getId());
         assertEquals(1, behaviorGroups.size());
         assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
@@ -286,8 +241,19 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         return behaviorGroupResources.findByBundleId(ACCOUNT_ID, bundleId).await().indefinitely();
     }
 
-    private Boolean addEventTypeBehavior(String accountId, UUID eventTypeId, UUID behaviorGroupId) {
-        return behaviorGroupResources.addEventTypeBehavior(accountId, eventTypeId, behaviorGroupId).await().indefinitely();
+    private void updateAndCheckEventTypeBehaviors(String accountId, UUID eventTypeId, boolean expectedResult, UUID... behaviorGroupIds) {
+        Boolean updated = behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupIds)).await().indefinitely();
+        // Is the update result the one we expected?
+        assertEquals(expectedResult, updated);
+        if (expectedResult) {
+            session.clear(); // We need to clear the session L1 cache before checking the update result.
+            // If we expected a success, the event type behaviors should match in any order the given behavior groups IDs.
+            List<EventTypeBehavior> behaviors = findEventTypeBehaviorByEventTypeId(eventTypeId);
+            assertEquals(behaviorGroupIds.length, behaviors.size());
+            for (UUID behaviorGroupId : behaviorGroupIds) {
+                assertEquals(1L, behaviors.stream().filter(behavior -> behavior.getBehaviorGroup().getId().equals(behaviorGroupId)).count());
+            }
+        }
     }
 
     private List<EventTypeBehavior> findEventTypeBehaviorByEventTypeId(UUID eventTypeId) {
@@ -296,14 +262,6 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
                 .setParameter("eventTypeId", eventTypeId)
                 .getResultList()
                 .await().indefinitely();
-    }
-
-    private Boolean deleteEventTypeBehavior(String accountId, UUID eventTypeId, UUID behaviorGroupId) {
-        return behaviorGroupResources.deleteEventTypeBehavior(accountId, eventTypeId, behaviorGroupId).await().indefinitely();
-    }
-
-    private Boolean muteEventType(String accountId, UUID eventTypeId) {
-        return behaviorGroupResources.muteEventType(accountId, eventTypeId).await().indefinitely();
     }
 
     private List<EventType> findEventTypesByBehaviorGroupId(String accountId, UUID behaviorGroupId) {
