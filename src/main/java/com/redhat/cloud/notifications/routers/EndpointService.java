@@ -207,7 +207,7 @@ public class EndpointService {
     @Produces(APPLICATION_JSON)
     @Parameters({
             @Parameter(
-                    name = "pageSize",
+                    name = "limit",
                     in = ParameterIn.QUERY,
                     description = "Number of items per page, if not specified or 0 is used, returns all elements",
                     schema = @Schema(type = SchemaType.INTEGER)
@@ -239,7 +239,7 @@ public class EndpointService {
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Parameters({
             @Parameter(
-                    name = "pageSize",
+                    name = "limit",
                     in = ParameterIn.QUERY,
                     description = "Number of items per page, if not specified or 0 is used, returns all elements",
                     schema = @Schema(type = SchemaType.INTEGER)
