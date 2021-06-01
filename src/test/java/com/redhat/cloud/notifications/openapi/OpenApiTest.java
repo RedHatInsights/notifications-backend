@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.openapi;
 
 import com.redhat.cloud.notifications.TestConstants;
+import com.redhat.cloud.notifications.routers.OApiService;
 import com.reprezen.kaizen.oasparser.OpenApi3Parser;
 import com.reprezen.kaizen.oasparser.model3.OpenApi3;
 import com.reprezen.kaizen.oasparser.val.ValidationResults;
@@ -37,13 +38,16 @@ public class OpenApiTest {
     @TestHTTPResource(TestConstants.API_INTEGRATIONS_V_1 + "/openapi.json")
     URL iUrl1;
 
+    @TestHTTPResource("/api/" + OApiService.PRIVATE + "/v1.0/openapi.json")
+    URL privateUrl;
+
     @TestHTTPResource("/api/doesNotExist/v1.0/openapi.json")
     URL badUrl;
 
     @Test
     public void validateOpenApi() throws Exception {
 
-        URL[] urls = {nUrl, iUrl, nUrl1, iUrl1};
+        URL[] urls = {nUrl, iUrl, nUrl1, iUrl1, privateUrl};
 
         for (URL url : urls) {
             OpenApi3 model = new OpenApi3Parser().parse(url, true);
