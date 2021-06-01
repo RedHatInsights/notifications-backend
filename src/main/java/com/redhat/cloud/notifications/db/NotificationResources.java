@@ -99,7 +99,6 @@ public class NotificationResources {
                 .setParameter("invocationTime", (long) duration)
                 .executeUpdate()
                 .call(session::flush)
-                .onItem().transform(rowCount  -> rowCount > 0)
                 .replaceWith(Uni.createFrom().voidItem());
     }
 }

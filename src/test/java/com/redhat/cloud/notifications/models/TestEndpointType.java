@@ -23,4 +23,9 @@ public class TestEndpointType {
     void endpointTypeDefaultIs2() {
         assertEquals(2, EndpointType.DEFAULT.ordinal());
     }
+
+    @Test
+    void endpointTypeCamelIs3() {
+        assertEquals(3, EndpointType.CAMEL.ordinal());
+    }
 }

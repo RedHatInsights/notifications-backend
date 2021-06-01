@@ -306,7 +306,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
-        cAttr.setSubtype("ansible");
+        cAttr.setSubType("ansible");
         cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
@@ -319,17 +319,18 @@ public class EndpointServiceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(cAttr);
 
-        Response response = given()
+        String responseBody = given()
                 .header(identityHeader)
                 .when()
-                .contentType(ContentType.JSON)
+                .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
-                .extract().response();
+                .contentType(JSON)
+                .extract().asString();
 
-        JsonObject responsePoint = new JsonObject(response.getBody().asString());
+        JsonObject responsePoint = new JsonObject(responseBody);
         responsePoint.mapTo(Endpoint.class);
         String id = responsePoint.getString("id");
         assertNotNull(id);
@@ -338,7 +339,6 @@ public class EndpointServiceTest extends DbIsolatedTest {
             JsonObject endpoint = fetchSingle(id, identityHeader);
             JsonObject properties = responsePoint.getJsonObject("properties");
             assertNotNull(properties);
-            System.out.println(properties);
             assertTrue(endpoint.getBoolean("enabled"));
             assertEquals("ansible", properties.getString("sub_type"));
             JsonObject extrasObject = properties.getJsonObject("extras");

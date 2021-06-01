@@ -18,6 +18,7 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.nio.charset.StandardCharsets;
@@ -25,15 +26,11 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
 
-
 @ApplicationScoped
 public class CamelTypeProcessor implements EndpointTypeProcessor {
-
-    private final Logger log = Logger.getLogger(this.getClass().getName());
 
     private static final String TOKEN_HEADER = "X-Insight-Token";
 
@@ -44,12 +41,13 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     @Channel("toCamel")
     Emitter<String> emitter;
 
+    @Inject
     MeterRegistry registry;
 
     private Counter processedCount;
 
-    public CamelTypeProcessor(MeterRegistry registry) {
-        this.registry = registry;
+    @PostConstruct
+    public void init() {
         processedCount = registry.counter("processor.camel.processed");
     }
 
@@ -63,7 +61,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         metaData.put("trustAll", String.valueOf(properties.getDisableSslVerification()));
 
         metaData.put("url", properties.getUrl());
-        metaData.put("type", properties.getSubtype());
+        metaData.put("type", properties.getSubType());
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
             metaData.put(TOKEN_HEADER, properties.getSecretToken());
@@ -118,12 +116,9 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         return Uni.createFrom().item(() -> {
             emitter.send(jo.encode()); // TODO use msg
-            return null;
-        })
-        .replaceWith(Boolean.TRUE);
+            return true;
+        });
 
     }
-
-
 
 }

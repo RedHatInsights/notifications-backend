@@ -30,22 +30,19 @@ public class FromCamelHistoryFiller {
     public Uni<Void> processAsync(Message<String> input) {
         return Uni.createFrom().item(() -> input.getPayload())
                 .onItem().invoke(payload -> log.info(() -> "Processing return from camel: " + payload))
-                .stage(self -> self
-                        .onItem().transform(this::decodeItem)
-                )
-                .stage(self -> self
-                        .onItem()
-                        .transformToUni(payload -> notificationResources.updateHistoryItem(payload)
-                                .onFailure().invoke(t -> log.info(() -> "|  Update Fail: " + t)
-                                )
+                .onItem().transform(this::decodeItem)
+                .onItem()
+                .transformToUni(payload -> notificationResources.updateHistoryItem(payload)
+                        .onFailure().invoke(t -> log.info(() -> "|  Update Fail: " + t)
                         )
-                        .onItemOrFailure()
-                        .transformToUni((unused, t) -> {
-                            if (t != null) {
-                                log.severe("|  Failure to update the history : " + t);
-                            }
-                            return Uni.createFrom().voidItem();
-                        }));
+                )
+                .onItemOrFailure()
+                .transformToUni((unused, t) -> {
+                    if (t != null) {
+                        log.severe("|  Failure to update the history : " + t);
+                    }
+                    return Uni.createFrom().voidItem();
+                });
     }
 
     private Map<String, Object> decodeItem(String s) {

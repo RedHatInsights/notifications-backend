@@ -219,14 +219,14 @@ public class EndpointService {
                     schema = @Schema(type = SchemaType.INTEGER)
             ),
             @Parameter(
-                    name = "include_detail",
+                    name = "includeDetail",
                     description = "Include the detail in the reply",
                     schema = @Schema(type = SchemaType.BOOLEAN)
             )
     })
 
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public Uni<List<NotificationHistory>> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("include_detail") Boolean includeDetail, @BeanParam Query query) {
+    public Uni<List<NotificationHistory>> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
         // TODO We need globally limitations (Paging support and limits etc)
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         boolean doDetail = includeDetail != null && includeDetail;

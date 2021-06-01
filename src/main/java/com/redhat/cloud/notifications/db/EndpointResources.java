@@ -51,9 +51,6 @@ public class EndpointResources {
                             case WEBHOOK:
                                 return session.persist(endpoint.getProperties())
                                         .onItem().call(session::flush);
-//                            case CAMEL:
-//                                return session.persist(endpoint.getProperties())
-//                                        .onItem().call(session::flush);
                             case EMAIL_SUBSCRIPTION:
                             case DEFAULT: // TODO [BG Phase 2] Delete this case
                             default:

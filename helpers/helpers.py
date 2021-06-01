@@ -215,7 +215,7 @@ def print_history_for_event_type(event_type_id, x_rhid):
         print(f", url={url}, created at {ep['created']}, id= {ep_id}")
 
         r2 = requests.get(integrations_prefix + "/endpoints/" + ep_id + "/history"
-                          + "?include_detail=true&limit=5",
+                          + "?includeDetail=true&limit=5",
                           headers=headers)
 
         reply = r2.json()
