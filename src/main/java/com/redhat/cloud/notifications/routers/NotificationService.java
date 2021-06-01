@@ -219,29 +219,6 @@ public class NotificationService {
         return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query);
     }
 
-    @PUT
-    @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
-    @Produces(TEXT_PLAIN)
-    @Operation(summary = "Link a behavior group to an event type.", hidden = true)
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> linkBehaviorGroupToEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
-        return getAccountId(sec)
-                .onItem().transformToUni(accountId -> behaviorGroupResources.addEventTypeBehavior(accountId, eventTypeId, behaviorGroupId))
-                .replaceWith(() -> Response.ok().build());
-    }
-
-    @DELETE
-    @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
-    @Operation(summary = "Unlink a behavior group from an event type.", hidden = true)
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    @APIResponse(responseCode = "204", description = "Behavior group has been removed from the event type", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> unlinkBehaviorGroupFromEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
-        return getAccountId(sec)
-                .onItem().transformToUni(accountId -> behaviorGroupResources.deleteEventTypeBehavior(accountId, eventTypeId, behaviorGroupId))
-                .replaceWith(() -> Response.noContent().build());
-    }
-
     @GET
     @Path("/eventTypes/{eventTypeId}/behaviorGroups")
     @Produces(APPLICATION_JSON)
@@ -312,16 +289,6 @@ public class NotificationService {
                 );
     }
 
-    @DELETE
-    @Path("/eventTypes/{eventTypeId}/mute")
-    @Produces(APPLICATION_JSON)
-    @Operation(summary = "Mute an event type, removing all its link with behavior groups.", hidden = true)
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    public Uni<Boolean> muteEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId) {
-        return getAccountId(sec)
-                .onItem().transformToUni(accountId -> behaviorGroupResources.muteEventType(accountId, eventTypeId));
-    }
-
     @POST
     @Path("/behaviorGroups")
     @Consumes(APPLICATION_JSON)
@@ -371,6 +338,29 @@ public class NotificationService {
         }
         return getAccountId(sec)
                 .onItem().transformToUni(accountId -> behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds))
+                .onItem().transform(updated -> {
+                    if (updated) {
+                        return Response.ok().build();
+                    } else {
+                        return Response.status(Status.NOT_FOUND).build();
+                    }
+                });
+    }
+
+    @PUT
+    @Path("/eventTypes/{eventTypeId}/behaviorGroups")
+    @Consumes(APPLICATION_JSON)
+    @Produces(TEXT_PLAIN)
+    @Operation(summary = "Update the list of behavior groups of an event type.", hidden = true)
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    public Uni<Response> updateEventTypeBehaviors(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, Set<UUID> behaviorGroupIds) {
+        // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
+        if (behaviorGroupIds.contains(null)) {
+            return Uni.createFrom().failure(new BadRequestException("The behavior groups identifiers list should not contain empty values"));
+        }
+        return getAccountId(sec)
+                .onItem().transformToUni(accountId -> behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds))
                 .onItem().transform(updated -> {
                     if (updated) {
                         return Response.ok().build();

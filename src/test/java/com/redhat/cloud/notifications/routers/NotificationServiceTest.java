@@ -545,37 +545,20 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
         given()
                 .header(readAccessIdentityHeader)
+                .contentType(JSON)
                 .pathParam("eventTypeId", UUID.randomUUID())
-                .pathParam("behaviorGroupId", UUID.randomUUID())
+                .body(Json.encode(List.of(UUID.randomUUID())))
                 .when()
-                .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
+                .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
                 .then()
                 .statusCode(403)
                 .contentType(TEXT);
-
-        given()
-                .header(readAccessIdentityHeader)
-                .pathParam("eventTypeId", UUID.randomUUID())
-                .pathParam("behaviorGroupId", UUID.randomUUID())
-                .when()
-                .delete("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
-                .then()
-                .statusCode(403);
 
         given()
                 .header(noAccessIdentityHeader)
                 .pathParam("eventTypeId", UUID.randomUUID())
                 .when()
                 .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
-                .then()
-                .statusCode(403)
-                .contentType(JSON);
-
-        given()
-                .header(readAccessIdentityHeader)
-                .pathParam("eventTypeId", UUID.randomUUID())
-                .when()
-                .delete("/notifications/eventTypes/{eventTypeId}/mute")
                 .then()
                 .statusCode(403)
                 .contentType(JSON);
