@@ -364,8 +364,10 @@ public class EndpointResources {
             return session
                     .find(typedEndpointClass, endpointsMap.keySet().toArray())
                     .onItem().invoke(propList -> propList.forEach(props -> {
-                        Endpoint endpoint = endpointsMap.get(props.getId());
-                        endpoint.setProperties(props);
+                        if (props != null) {
+                            Endpoint endpoint = endpointsMap.get(props.getId());
+                            endpoint.setProperties(props);
+                        }
                     })).replaceWith(Uni.createFrom().voidItem());
         }
 

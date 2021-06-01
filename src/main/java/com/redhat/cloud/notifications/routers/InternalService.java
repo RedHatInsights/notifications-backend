@@ -1,10 +1,11 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.ApplicationResources;
-import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.BundleResources;
+import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import io.smallrye.mutiny.Uni;
 
@@ -20,6 +21,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.UUID;
@@ -34,10 +36,10 @@ public class InternalService {
     BundleResources bundleResources;
 
     @Inject
-    BehaviorGroupResources behaviorGroupResources;
+    ApplicationResources appResources;
 
     @Inject
-    ApplicationResources appResources;
+    EndpointResources endpointResoures;
 
     @POST
     @Path("/bundles")
@@ -150,5 +152,13 @@ public class InternalService {
     @Produces(APPLICATION_JSON)
     public Uni<Boolean> deleteEventType(@PathParam("eventTypeId") UUID eventTypeId) {
         return appResources.deleteEventTypeById(eventTypeId);
+    }
+
+    // TODO: Remove this when we're done investigating the Stage ghost endpoint issue.
+    @GET
+    @Path("/endpoints/{endpointId}")
+    @Produces(APPLICATION_JSON)
+    public Uni<Endpoint> getEndpoint(@PathParam("endpointId") UUID endpointId, @NotNull @QueryParam("account") String account) {
+        return endpointResoures.getEndpoint(account, endpointId);
     }
 }

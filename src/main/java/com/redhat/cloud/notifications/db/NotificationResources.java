@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db;
 
-import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -20,7 +19,6 @@ public class NotificationResources {
 
     public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {
         return Uni.createFrom().item(history)
-                .onItem().transform(this::addEndpointReference)
                 .onItem().transformToUni(session::persist)
                 .call(session::flush)
                 .replaceWith(history);
@@ -53,20 +51,5 @@ public class NotificationResources {
 
         return mutinyQuery.getSingleResultOrNull()
                 .onItem().ifNotNull().transform(JsonObject::new);
-    }
-
-    /**
-     * Adds to the given {@link NotificationHistory} a reference to a persistent {@link Endpoint} without actually
-     * loading its state from the database. The notification history will remain unchanged if it does not contain
-     * a non-null endpoint identifier.
-     *
-     * @param history the notification history that will hold the endpoint reference
-     * @return the same notification history instance, possibly modified if an endpoint reference was added
-     */
-    private NotificationHistory addEndpointReference(NotificationHistory history) {
-        if (history.getEndpointId() != null && history.getEndpoint() == null) {
-            history.setEndpoint(session.getReference(Endpoint.class, history.getEndpointId()));
-        }
-        return history;
     }
 }
