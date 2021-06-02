@@ -11,23 +11,19 @@ import io.vertx.ext.web.impl.Utils;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
 
 import java.util.logging.Logger;
 
 public class JsonAccessLoggerHandler implements LoggerHandler {
 
     public static final String REFERRER = "referrer";
-    Jsonb jsonb;
-    JsonObjectBuilder jsonObjectBuilder;
+    private final JsonObjectBuilder jsonObjectBuilder;
     private final boolean filterHealthCalls;
 
     private final Logger log = Logger.getLogger("Access");
 
     public JsonAccessLoggerHandler(boolean filterHealthCalls) {
         this.filterHealthCalls = filterHealthCalls;
-        jsonb = JsonbBuilder.create();
         jsonObjectBuilder = Json.createObjectBuilder();
     }
 
@@ -100,9 +96,8 @@ public class JsonAccessLoggerHandler implements LoggerHandler {
         jsonObjectBuilder.add("remote", remoteClient);
 
         JsonObject jsonMessage = jsonObjectBuilder.build();
-        String msg = jsonb.toJson(jsonMessage);
 
-        log.info(msg);
+        log.info(jsonMessage.toString());
     }
 
     private String getClientAddress(SocketAddress inetSocketAddress) {
@@ -124,6 +119,5 @@ public class JsonAccessLoggerHandler implements LoggerHandler {
         context.addBodyEndHandler(v -> log(context, timestamp, remoteClient, version, method, uri));
 
         context.next();
-
     }
 }
