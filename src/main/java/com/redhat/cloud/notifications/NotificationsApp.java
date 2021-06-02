@@ -1,18 +1,29 @@
 package com.redhat.cloud.notifications;
 
-import io.quarkus.runtime.StartupEvent;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.event.Observes;
 
 public class NotificationsApp {
+
     private static final String BUILD_COMMIT_ENV_NAME = "OPENSHIFT_BUILD_COMMIT";
     private static final String BUILD_REFERENCE_ENV_NAME = "OPENSHIFT_BUILD_REFERENCE";
     private static final String BUILD_NAME_ENV_NAME = "OPENSHIFT_BUILD_NAME";
 
     private static final Logger LOG = Logger.getLogger(NotificationsApp.class);
 
-    void init(@Observes StartupEvent ev) {
+    @ConfigProperty(name = "accesslog.filter.health", defaultValue = "true")
+    boolean filterHealth;
+
+    void init(@Observes Router router) {
+        //Produce access log
+        Handler<RoutingContext> handler = new JsonAccessLoggerHandler(filterHealth);
+        router.route().order(-1000).handler(handler);
+
         showVersionInfo();
     }
 
