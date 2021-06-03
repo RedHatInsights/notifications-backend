@@ -33,6 +33,9 @@ public class EndpointResources {
     @Inject
     Mutiny.Session session;
 
+    @Inject
+    Mutiny.StatelessSession statelessSession;
+
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
         return session.persist(endpoint)
                 .onItem().call(session::flush)
@@ -117,7 +120,7 @@ public class EndpointResources {
                 "WHERE e.enabled = TRUE AND t.eventType.name = :eventTypeName AND t.id.accountId = :accountId " +
                 "AND t.eventType.application.name = :applicationName AND t.eventType.application.bundle.name = :bundleName";
 
-        return session.createQuery(query, Endpoint.class)
+        return statelessSession.createQuery(query, Endpoint.class)
                 .setParameter("applicationName", applicationName)
                 .setParameter("eventTypeName", eventTypeName)
                 .setParameter("accountId", tenant)
@@ -133,7 +136,7 @@ public class EndpointResources {
                 "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName";
 
-        return session.createQuery(query, Endpoint.class)
+        return statelessSession.createQuery(query, Endpoint.class)
                 .setParameter("applicationName", applicationName)
                 .setParameter("eventTypeName", eventTypeName)
                 .setParameter("accountId", tenant)
@@ -263,6 +266,16 @@ public class EndpointResources {
         String query = "SELECT e FROM Endpoint e JOIN e.defaults d WHERE d.id.accountId = :accountId";
 
         return session.createQuery(query, Endpoint.class)
+                .setParameter("accountId", tenant)
+                .getResultList()
+                .onItem().call(this::loadProperties);
+    }
+
+    // TODO [BG Phase 2] Delete this method
+    public Uni<List<Endpoint>> getDefaultEndpointsStateless(String tenant) {
+        String query = "SELECT e FROM Endpoint e JOIN e.defaults d WHERE d.id.accountId = :accountId";
+
+        return statelessSession.createQuery(query, Endpoint.class)
                 .setParameter("accountId", tenant)
                 .getResultList()
                 .onItem().call(this::loadProperties);

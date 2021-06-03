@@ -13,7 +13,6 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -28,9 +27,6 @@ public class EndpointProcessor {
     public static final String PROCESSED_ENDPOINTS_COUNTER_NAME = "processor.input.endpoint.processed";
 
     private static final Logger LOGGER = Logger.getLogger(EndpointProcessor.class.getName());
-
-    @Inject
-    Mutiny.Session session;
 
     @Inject
     EndpointResources resources;
@@ -77,8 +73,7 @@ public class EndpointProcessor {
                 .onItem().transformToUniAndConcatenate(history -> notifResources.createNotificationHistory(history)
                         .onFailure().invoke(failure -> LOGGER.severe("Notification history creation failed for " + history.getEndpoint()))
                 )
-                .onItem().ignoreAsUni()
-                .onItemOrFailure().call(() -> Uni.createFrom().item(() -> session.clear()));
+                .onItem().ignoreAsUni();
     }
 
     public EndpointTypeProcessor endpointTypeToProcessor(EndpointType endpointType) {

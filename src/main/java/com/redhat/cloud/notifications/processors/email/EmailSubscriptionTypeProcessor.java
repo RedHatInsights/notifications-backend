@@ -271,7 +271,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
                     return Multi.createFrom().empty();
                 })
-                .onItem().transformToMulti(aggregator -> {
+                .onItem().transformToMultiAndConcatenate(aggregator -> {
                     String accountId = aggregationKey.getAccountId();
                     String bundle = aggregationKey.getBundle();
                     String application = aggregationKey.getApplication();
@@ -297,8 +297,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     Notification item = new Notification(action, null);
 
                     return sendEmail(item, emailSubscriptionType).onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
-                }).concatenate()
-                .onItem().transformToMulti(result -> {
+                })
+                .onItem().transformToMultiAndConcatenate(result -> {
                     if (delete) {
                         return emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
                                 .toMulti()
@@ -306,7 +306,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     }
 
                     return Multi.createFrom().item(result);
-                }).concatenate();
+                });
                 // Todo: If we want to save the NotificationHistory, this could be a good place to do so. We would probably require a special EndpointType
                 // .onItem().invoke(result -> { })
     }
@@ -322,8 +322,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
         return emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
                 .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToMulti(aggregationKey -> processAggregateEmailsByAggregationKey(aggregationKey, startTime, endTime, emailSubscriptionType, delete))
-                .concatenate().collect().asList()
+                .onItem().transformToMultiAndConcatenate(aggregationKey -> processAggregateEmailsByAggregationKey(aggregationKey, startTime, endTime, emailSubscriptionType, delete))
+                .collect().asList()
                 .onItem().invoke(result -> {
                     final LocalDateTime aggregateFinished = LocalDateTime.now();
                     log.info(

@@ -17,10 +17,12 @@ public class NotificationResources {
     @Inject
     Mutiny.Session session;
 
+    @Inject
+    Mutiny.StatelessSession statelessSession;
+
     public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {
-        return Uni.createFrom().item(history)
-                .onItem().transformToUni(session::persist)
-                .call(session::flush)
+        history.prePersist(); // This method must be called manually while using a StatelessSession.
+        return statelessSession.insert(history)
                 .replaceWith(history);
     }
 
