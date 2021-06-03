@@ -80,5 +80,9 @@ public class OpenApiTest {
         try (InputStream in = iUrl.openStream()) {
             Files.copy(in, Paths.get("./target/openapi.integrations.json"), StandardCopyOption.REPLACE_EXISTING);
         }
+
+        try (InputStream in = privateUrl.openStream()) {
+            Files.copy(in, Paths.get("./target/openapi.private.json"), StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 }

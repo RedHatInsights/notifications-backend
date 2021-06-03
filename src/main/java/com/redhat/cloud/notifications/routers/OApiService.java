@@ -17,7 +17,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,13 +30,7 @@ public class OApiService {
     public static final String INTEGRATIONS = "integrations";
     public static final String PRIVATE = "private";
 
-    static List<String> whats = new ArrayList<>(3);
-
-    static {
-        whats.add(INTEGRATIONS);
-        whats.add(NOTIFICATIONS);
-        whats.add(PRIVATE);
-    }
+    static List<String> whats = List.of(INTEGRATIONS, NOTIFICATIONS, PRIVATE);
 
     @Inject
     Vertx vertx;
