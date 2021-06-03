@@ -44,7 +44,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
             boolean good = false;
 
             // We block access unless the openapi file is requested.
-            if (path.startsWith("/api/notifications") || path.startsWith("/api/integrations")) {
+            if (path.startsWith("/api/notifications") || path.startsWith("/api/integrations") || path.startsWith("/api/private")) {
                 if (path.endsWith("openapi.json")) {
                     good = true;
                 }

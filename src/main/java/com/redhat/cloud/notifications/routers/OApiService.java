@@ -17,8 +17,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Serve the final OpenAPI documents.
@@ -28,13 +28,9 @@ public class OApiService {
 
     public static final String NOTIFICATIONS = "notifications";
     public static final String INTEGRATIONS = "integrations";
+    public static final String PRIVATE = "private";
 
-    static List<String> whats = new ArrayList<>(2);
-
-    static {
-        whats.add(INTEGRATIONS);
-        whats.add(NOTIFICATIONS);
-    }
+    static List<String> whats = List.of(INTEGRATIONS, NOTIFICATIONS, PRIVATE);
 
     @Inject
     Vertx vertx;
@@ -81,6 +77,16 @@ public class OApiService {
                     // We just copy all of them even if they may only apply to one
                     root.put(key, entry.getValue());
                     break;
+                case "tags":
+                    JsonArray tags = (JsonArray) entry.getValue();
+                    JsonArray filteredTags = new JsonArray(tags
+                            .stream()
+                            .filter(o -> !((JsonObject) o).getString("name").equals(PRIVATE))
+                            .collect(Collectors.toList()));
+                    if (filteredTags.size() > 0) {
+                        root.put(key, filteredTags);
+                    }
+                    break;
                 case "paths":
                     JsonObject pathObject2 = new JsonObject();
                     JsonObject pathsObjectIn = (JsonObject) entry.getValue();
@@ -89,12 +95,20 @@ public class OApiService {
 
                         JsonObject pathValue = (JsonObject) pathEntry.getValue();
                         if (!path.endsWith("openapi.json")) { // Skip the openapi endpoint
+                            JsonObject newPathValue = null;
+                            String mangledPath = mangle(path);
 
                             if (NOTIFICATIONS.equals(what) && path.startsWith(Constants.API_NOTIFICATIONS_V_1_0)) {
-                                pathObject2.put(mangle(path), pathValue);
+                                newPathValue = filterPrivateOperation(pathValue, true);
+                            } else if (INTEGRATIONS.equals(what) && path.startsWith(Constants.API_INTEGRATIONS_V_1_0)) {
+                                newPathValue = filterPrivateOperation(pathValue, true);
+                            } else if (PRIVATE.equals(what)) {
+                                newPathValue = filterPrivateOperation(pathValue, false);
+                                mangledPath = path;
                             }
-                            if (INTEGRATIONS.equals(what) && path.startsWith(Constants.API_INTEGRATIONS_V_1_0)) {
-                                pathObject2.put(mangle(path), pathValue);
+
+                            if (newPathValue != null) {
+                                pathObject2.put(mangledPath, newPathValue);
                             }
                         }
                     });
@@ -121,7 +135,7 @@ public class OApiService {
         if (what.equals(NOTIFICATIONS)) {
             serversArray.add(createServer(true, NOTIFICATIONS));
             serversArray.add(createServer(false, NOTIFICATIONS));
-        } else {
+        } else if (what.equals(INTEGRATIONS)) {
             serversArray.add(createServer(true, INTEGRATIONS));
             serversArray.add(createServer(false, INTEGRATIONS));
         }
@@ -133,6 +147,24 @@ public class OApiService {
 
     private String uppify(String what) {
         return what.substring(0, 1).toUpperCase() + what.substring(1);
+    }
+
+    private JsonObject filterPrivateOperation(JsonObject pathObject, boolean removePrivate) {
+        JsonObject newPathObject = new JsonObject();
+        pathObject.stream().forEach(entry -> {
+            String verb = entry.getKey();
+            JsonObject operation = (JsonObject) entry.getValue();
+            boolean isPrivate = operation.containsKey("tags") && operation.getJsonArray("tags").contains(PRIVATE);
+            if (isPrivate != removePrivate) {
+                newPathObject.put(verb, operation);
+            }
+        });
+
+        if (newPathObject.size() == 0) {
+            return null;
+        }
+
+        return newPathObject;
     }
 
     private JsonObject createServer(boolean isProd, String what) {
