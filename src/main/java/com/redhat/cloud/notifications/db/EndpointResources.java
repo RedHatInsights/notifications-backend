@@ -347,6 +347,10 @@ public class EndpointResources {
     }
 
     public Uni<Void> loadProperties(List<Endpoint> endpoints) {
+        if (endpoints.isEmpty()) {
+            return Uni.createFrom().voidItem();
+        }
+
         // Group endpoints in types and load in batches for each type.
         Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
