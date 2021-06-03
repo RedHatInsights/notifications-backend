@@ -32,7 +32,7 @@ public class EventConsumer {
     MeterRegistry registry;
 
     @Inject
-    EndpointProcessor destinations;
+    EndpointProcessor endpointProcessor;
 
     private Counter rejectedCount;
     private Counter processingErrorCount;
@@ -56,7 +56,7 @@ public class EventConsumer {
                 .stage(self -> self
                                 // Second pipeline stage - enrich from input to destination (webhook) processor format
                                 .onItem()
-                                .transformToUni(action -> destinations.process(action)
+                                .transformToUni(action -> endpointProcessor.process(action)
                                         .onFailure().invoke(t -> processingErrorCount.increment())
                                 )
                         // Receive only notification of completion
