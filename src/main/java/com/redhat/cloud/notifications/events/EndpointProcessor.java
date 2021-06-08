@@ -65,7 +65,6 @@ public class EndpointProcessor {
                 action.getApplication(),
                 action.getEventType())
                 .onItem().transformToUniAndConcatenate(endpoint -> {
-                    LOGGER.fine(() -> "Sending notification to " + endpoint);
                     endpointTargeted.increment();
                     Notification endpointNotif = new Notification(action, endpoint);
                     return endpointTypeToProcessor(endpoint.getType()).process(endpointNotif);
