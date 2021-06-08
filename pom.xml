@@ -26,7 +26,7 @@
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <maven-exec-plugin.version>3.0.0</maven-exec-plugin.version>
         <insights-notification-schemas-java.version>0.3</insights-notification-schemas-java.version>
-        <clowder-quarkus-config-source.version>0.1.3</clowder-quarkus-config-source.version>
+        <clowder-quarkus-config-source.version>0.1.4</clowder-quarkus-config-source.version>
     </properties>
     <dependencyManagement>
         <dependencies>
