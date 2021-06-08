@@ -93,7 +93,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                                 // Accepted
                                 log.fine("Target endpoint successful: " + resp.statusCode());
                                 history.setInvocationResult(true);
-                            } else if (resp.statusCode() > 500) {
+                            } else if (resp.statusCode() >= 500) {
                                 // Temporary error, allow retry
                                 log.fine("Target endpoint server error: " + resp.statusCode() + " " + resp.statusMessage());
                                 history.setInvocationResult(false);
