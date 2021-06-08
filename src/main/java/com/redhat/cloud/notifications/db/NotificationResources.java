@@ -17,6 +17,9 @@ public class NotificationResources {
     @Inject
     Mutiny.Session session;
 
+    @Inject
+    Mutiny.StatelessSession statelessSession;
+
     public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {
         return Uni.createFrom().item(history)
                 .onItem().transformToUni(session::persist)
@@ -92,13 +95,12 @@ public class NotificationResources {
         Integer duration = (Integer) jo.get("duration");
 
         String updateQuery = "UPDATE NotificationHistory SET details = :details, invocationResult = :result, invocationTime= :invocationTime WHERE id = :id";
-        return session.createQuery(updateQuery)
+        return statelessSession.createQuery(updateQuery)
                 .setParameter("details", details)
                 .setParameter("result", result)
                 .setParameter("id", UUID.fromString(historyId))
                 .setParameter("invocationTime", (long) duration)
                 .executeUpdate()
-                .call(session::flush)
                 .replaceWith(Uni.createFrom().voidItem());
     }
 }
