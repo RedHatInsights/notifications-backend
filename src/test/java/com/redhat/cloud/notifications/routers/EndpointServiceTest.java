@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -27,7 +28,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -288,6 +291,77 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(400);
          */
+    }
+
+    @Test
+    void addCamelEndpoint() {
+
+        String tenant = "empty";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        CamelProperties cAttr = new CamelProperties();
+        cAttr.setDisableSslVerification(false);
+        cAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+        cAttr.setSubType("ansible");
+        cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
+        Map<String, String> extras = new HashMap<>();
+        extras.put("template", "11");
+        cAttr.setExtras(extras);
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.CAMEL);
+        ep.setName("Push the camel through the needle's ear");
+        ep.setDescription("How many humps has a camel?");
+        ep.setEnabled(true);
+        ep.setProperties(cAttr);
+
+        String responseBody = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().asString();
+
+        JsonObject responsePoint = new JsonObject(responseBody);
+        responsePoint.mapTo(Endpoint.class);
+        String id = responsePoint.getString("id");
+        assertNotNull(id);
+
+        try {
+            JsonObject endpoint = fetchSingle(id, identityHeader);
+            JsonObject properties = responsePoint.getJsonObject("properties");
+            assertNotNull(properties);
+            assertTrue(endpoint.getBoolean("enabled"));
+            assertEquals("ansible", properties.getString("sub_type"));
+            JsonObject extrasObject = properties.getJsonObject("extras");
+            assertNotNull(extrasObject);
+            String template  = extrasObject.getString("template");
+            assertEquals("11", template);
+
+            JsonObject basicAuth = properties.getJsonObject("basic_authentication");
+            assertNotNull(basicAuth);
+            String user = basicAuth.getString("username");
+            String pass = basicAuth.getString("password");
+            assertEquals("testuser", user);
+            assertEquals("secret", pass);
+
+        } finally {
+
+            given()
+                    .header(identityHeader)
+                    .when().delete("/endpoints/" + id)
+                    .then()
+                    .statusCode(204)
+                    .extract().body().asString();
+        }
     }
 
     @Test

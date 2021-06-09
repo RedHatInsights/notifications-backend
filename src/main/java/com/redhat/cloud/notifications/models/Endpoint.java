@@ -56,14 +56,15 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Convert(converter = EndpointTypeConverter.class)
     private EndpointType type;
 
-    @Schema(oneOf = { WebhookProperties.class, EmailSubscriptionProperties.class })
+    @Schema(oneOf = { WebhookProperties.class, EmailSubscriptionProperties.class, CamelProperties.class })
     @JsonTypeInfo(
             use = JsonTypeInfo.Id.NAME,
             property = "type",
             include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
     @JsonSubTypes({
             @JsonSubTypes.Type(value = WebhookProperties.class, name = "webhook"),
-            @JsonSubTypes.Type(value = EmailSubscriptionProperties.class, name = "email_subscription")
+            @JsonSubTypes.Type(value = EmailSubscriptionProperties.class, name = "email_subscription"),
+            @JsonSubTypes.Type(value = CamelProperties.class, name = "camel")
     })
     @Valid
     @Transient

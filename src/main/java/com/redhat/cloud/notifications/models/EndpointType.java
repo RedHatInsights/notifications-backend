@@ -6,12 +6,14 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 // Add new values to the bottom of the enum
 // The ordinal order must remain the same as is used internally
 // Update test com.redhat.cloud.notifications.models.TestEndpointType to reflect any new enum value
-@Schema(enumeration = { "webhook", "email_subscription", "default" })
+@Schema(enumeration = { "webhook", "email_subscription", "default", "camel" })
 public enum EndpointType {
     @JsonProperty("webhook")
     WEBHOOK, // 0
     @JsonProperty("email_subscription")
     EMAIL_SUBSCRIPTION, // 1
     @JsonProperty("default") // TODO [BG Phase 2] Delete the DEFAULT enum member
-    DEFAULT // 2
+    DEFAULT, // 2
+    @JsonProperty("camel")
+    CAMEL // 3
 }
