@@ -5,15 +5,31 @@ import org.jboss.logging.Logger;
 
 import javax.enterprise.event.Observes;
 
+import java.util.regex.Pattern;
+
 public class NotificationsApp {
+
     private static final String BUILD_COMMIT_ENV_NAME = "OPENSHIFT_BUILD_COMMIT";
     private static final String BUILD_REFERENCE_ENV_NAME = "OPENSHIFT_BUILD_REFERENCE";
     private static final String BUILD_NAME_ENV_NAME = "OPENSHIFT_BUILD_NAME";
 
+    public static final String REGEX_FILTER = ".*(/health|/metrics) HTTP/[0-9].[0-9]\\\" 200.*";
+
     private static final Logger LOG = Logger.getLogger(NotificationsApp.class);
 
+    // we do need a event as parameter here, otherwise the init method won't get called.
     void init(@Observes StartupEvent ev) {
+        filterAccessLogs();
+
         showVersionInfo();
+    }
+
+    private void filterAccessLogs() {
+        java.util.logging.Logger accessLog = java.util.logging.Logger.getLogger("access_log");
+        accessLog.setFilter(record -> {
+            final String logMessage = record.getMessage().trim();
+            return !Pattern.matches(REGEX_FILTER, logMessage);
+        });
     }
 
     private void showVersionInfo() {
