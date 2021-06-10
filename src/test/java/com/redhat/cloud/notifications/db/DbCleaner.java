@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.EndpointTarget;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.Status;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -22,7 +23,9 @@ import javax.inject.Inject;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.Path;
 
-@Path("/internal/db_cleaner")
+import static com.redhat.cloud.notifications.Constants.INTERNAL;
+
+@Path(INTERNAL + "/db_cleaner")
 public class DbCleaner {
 
     private static final String DEFAULT_BUNDLE_NAME = "rhel";
@@ -84,6 +87,11 @@ public class DbCleaner {
                     eventType.setDescription(DEFAULT_EVENT_TYPE_DESCRIPTION);
                     return appResources.createEventType(eventType);
                 })
+                .onItem().transformToUni(ignored ->
+                        session.createQuery("UPDATE CurrentStatus SET status = :status")
+                                .setParameter("status", Status.UP)
+                                .executeUpdate()
+                )
                 .replaceWith(Uni.createFrom().voidItem())
         );
     }

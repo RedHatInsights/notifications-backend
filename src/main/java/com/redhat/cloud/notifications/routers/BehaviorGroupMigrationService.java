@@ -34,10 +34,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
+import static com.redhat.cloud.notifications.Constants.INTERNAL;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @RequestScoped
-@Path("/internal/behaviorGroups/migrate")
+@Path(INTERNAL + "/behaviorGroups/migrate")
 public class BehaviorGroupMigrationService {
 
     public static final String CONFIRMATION_TOKEN = "ready-set-go";

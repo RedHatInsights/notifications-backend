@@ -2,8 +2,10 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BundleResources;
+import com.redhat.cloud.notifications.db.StatusResources;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.CurrentStatus;
 import com.redhat.cloud.notifications.models.EventType;
 import io.smallrye.mutiny.Uni;
 
@@ -23,10 +25,11 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.INTERNAL;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
-@Path("/internal")
+@Path(INTERNAL)
 public class InternalService {
 
     @Inject
@@ -34,6 +37,9 @@ public class InternalService {
 
     @Inject
     ApplicationResources appResources;
+
+    @Inject
+    StatusResources statusResources;
 
     @POST
     @Path("/bundles")
@@ -146,5 +152,12 @@ public class InternalService {
     @Produces(APPLICATION_JSON)
     public Uni<Boolean> deleteEventType(@PathParam("eventTypeId") UUID eventTypeId) {
         return appResources.deleteEventTypeById(eventTypeId);
+    }
+
+    @PUT
+    @Path("/status")
+    @Consumes(APPLICATION_JSON)
+    public Uni<Void> setCurrentStatus(@NotNull @Valid CurrentStatus status) {
+        return statusResources.setCurrentStatus(status);
     }
 }

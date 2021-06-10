@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.db;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import static com.redhat.cloud.notifications.Constants.INTERNAL;
 import static io.restassured.RestAssured.given;
 
 /**
@@ -15,7 +16,7 @@ public abstract class DbIsolatedTest {
     @AfterEach
     void cleanDatabase() {
         given()
-                .basePath("/internal")
+                .basePath(INTERNAL)
                 .delete("/db_cleaner")
                 .then()
                 .statusCode(204);
