@@ -5,6 +5,7 @@ import org.jboss.logging.Logger;
 
 import javax.enterprise.event.Observes;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NotificationsApp {
@@ -13,7 +14,8 @@ public class NotificationsApp {
     private static final String BUILD_REFERENCE_ENV_NAME = "OPENSHIFT_BUILD_REFERENCE";
     private static final String BUILD_NAME_ENV_NAME = "OPENSHIFT_BUILD_NAME";
 
-    public static final String REGEX_FILTER = ".*(/health|/metrics) HTTP/[0-9].[0-9]\\\" 200.*";
+    public static final String FILTER_REGEX = ".*(/health|/metrics) HTTP/[0-9].[0-9]\\\" 200.*";
+    private final Pattern pattern = Pattern.compile(FILTER_REGEX);
 
     private static final Logger LOG = Logger.getLogger(NotificationsApp.class);
 
@@ -28,7 +30,8 @@ public class NotificationsApp {
         java.util.logging.Logger accessLog = java.util.logging.Logger.getLogger("access_log");
         accessLog.setFilter(record -> {
             final String logMessage = record.getMessage().trim();
-            return !Pattern.matches(REGEX_FILTER, logMessage);
+            Matcher matcher = pattern.matcher(logMessage);
+            return !matcher.matches();
         });
     }
 
