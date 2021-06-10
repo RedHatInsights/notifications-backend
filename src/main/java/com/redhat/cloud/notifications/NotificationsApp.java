@@ -15,7 +15,7 @@ public class NotificationsApp {
     private static final String BUILD_NAME_ENV_NAME = "OPENSHIFT_BUILD_NAME";
 
     public static final String FILTER_REGEX = ".*(/health|/health/live|health/ready|/metrics) HTTP/[0-9].[0-9]\\\" 200.*";
-    private final Pattern pattern = Pattern.compile(FILTER_REGEX);
+    private static final Pattern pattern = Pattern.compile(FILTER_REGEX);
 
     private static final Logger LOG = Logger.getLogger(NotificationsApp.class);
 
