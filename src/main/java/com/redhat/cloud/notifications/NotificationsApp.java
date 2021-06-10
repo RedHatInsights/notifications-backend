@@ -14,7 +14,7 @@ public class NotificationsApp {
     private static final String BUILD_REFERENCE_ENV_NAME = "OPENSHIFT_BUILD_REFERENCE";
     private static final String BUILD_NAME_ENV_NAME = "OPENSHIFT_BUILD_NAME";
 
-    public static final String FILTER_REGEX = ".*(/health|/health/live|health/ready|/metrics) HTTP/[0-9].[0-9]\\\" 200.*";
+    public static final String FILTER_REGEX = ".*(/health(/\\w+)?|/metrics) HTTP/[0-9].[0-9]\" 200.*\\n?";
     private static final Pattern pattern = Pattern.compile(FILTER_REGEX);
 
     private static final Logger LOG = Logger.getLogger(NotificationsApp.class);
@@ -29,7 +29,7 @@ public class NotificationsApp {
     private void filterAccessLogs() {
         java.util.logging.Logger accessLog = java.util.logging.Logger.getLogger("access_log");
         accessLog.setFilter(record -> {
-            final String logMessage = record.getMessage().trim();
+            final String logMessage = record.getMessage();
             Matcher matcher = pattern.matcher(logMessage);
             return !matcher.matches();
         });
