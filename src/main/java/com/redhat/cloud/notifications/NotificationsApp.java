@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import io.quarkus.runtime.StartupEvent;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.event.Observes;
@@ -17,6 +18,9 @@ public class NotificationsApp {
     public static final String FILTER_REGEX = ".*(/health(/\\w+)?|/metrics) HTTP/[0-9].[0-9]\" 200.*\\n?";
     private static final Pattern pattern = Pattern.compile(FILTER_REGEX);
 
+    @ConfigProperty(name = "quarkus.http.access-log.category")
+    private String loggerName;
+
     private static final Logger LOG = Logger.getLogger(NotificationsApp.class);
 
     // we do need a event as parameter here, otherwise the init method won't get called.
@@ -27,7 +31,7 @@ public class NotificationsApp {
     }
 
     private void initAccessLogFilter() {
-        java.util.logging.Logger accessLog = java.util.logging.Logger.getLogger("access_log");
+        java.util.logging.Logger accessLog = java.util.logging.Logger.getLogger(loggerName);
         accessLog.setFilter(record -> {
             final String logMessage = record.getMessage();
             Matcher matcher = pattern.matcher(logMessage);
