@@ -21,12 +21,12 @@ public class NotificationsApp {
 
     // we do need a event as parameter here, otherwise the init method won't get called.
     void init(@Observes StartupEvent ev) {
-        filterAccessLogs();
+        initAccessLogFilter();
 
         showVersionInfo();
     }
 
-    private void filterAccessLogs() {
+    private void initAccessLogFilter() {
         java.util.logging.Logger accessLog = java.util.logging.Logger.getLogger("access_log");
         accessLog.setFilter(record -> {
             final String logMessage = record.getMessage();
