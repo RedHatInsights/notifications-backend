@@ -70,4 +70,17 @@ class NotificationsAppTest {
         String inputWithHttpTwoZero = "127.0.0.1 - - 09/Jun/2021:16:07:07 +0200 \"GET /q/health HTTP/2.0\" 404 46 \"-\" \"Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0\"\n";
         assertFalse(Pattern.matches(FILTER_REGEX, inputWithHttpTwoZero));
     }
+
+    @Test
+    void shouldMatchWhenThereIsSomethingBehindHealth() {
+        String inputWithHttpTwoZero = "127.0.0.1 - - 09/Jun/2021:16:07:07 +0200 \"GET /q/health/live HTTP/2.0\" 200 46 \"-\" \"Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0\"\n";
+        assertTrue(Pattern.matches(FILTER_REGEX, inputWithHttpTwoZero.trim()));
+    }
+
+    @Test
+    void shouldMatchWithHealthReady() {
+        String inputWithHttpTwoZero = "127.0.0.1 - - 09/Jun/2021:16:07:07 +0200 \"GET /q/health/ready HTTP/2.0\" 200 46 \"-\" \"Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0\"\n";
+        assertTrue(Pattern.matches(FILTER_REGEX, inputWithHttpTwoZero.trim()));
+    }
+
 }
