@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class NotificationsAppTest {
 
-    final String logMessage = "127.0.0.1 - - 09/Jun/2021:16:07:07 +0200 \"GET /q/health HTTP/1.1\" 200 46 \"-\" \"Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0\"\n";
+    String logMessage = "127.0.0.1 - - 09/Jun/2021:16:07:07 +0200 \"GET /q/health HTTP/1.1\" 200 46 \"-\" \"Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0\"\n";
 
     @Test
     void shouldNotMachWhenInputEndsWithNewLine() {
