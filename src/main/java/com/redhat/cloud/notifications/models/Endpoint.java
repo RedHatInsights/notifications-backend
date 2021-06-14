@@ -62,9 +62,9 @@ public class Endpoint extends CreationUpdateTimestamped {
             property = "type",
             include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
     @JsonSubTypes({
-            @JsonSubTypes.Type(value = WebhookProperties.class, name = "webhook"),
-            @JsonSubTypes.Type(value = EmailSubscriptionProperties.class, name = "email_subscription"),
-            @JsonSubTypes.Type(value = CamelProperties.class, name = "camel")
+        @JsonSubTypes.Type(value = WebhookProperties.class, name = "webhook"),
+        @JsonSubTypes.Type(value = EmailSubscriptionProperties.class, name = "email_subscription"),
+        @JsonSubTypes.Type(value = CamelProperties.class, name = "camel")
     })
     @Valid
     @Transient
