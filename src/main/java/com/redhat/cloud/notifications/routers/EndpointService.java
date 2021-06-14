@@ -71,17 +71,17 @@ public class EndpointService {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Parameters({
-            @Parameter(
-                    name = "limit",
-                    in = ParameterIn.QUERY,
-                    description = "Number of items per page, if not specified or 0 is used, returns all elements",
-                    schema = @Schema(type = SchemaType.INTEGER)
+        @Parameter(
+                name = "limit",
+                in = ParameterIn.QUERY,
+                description = "Number of items per page, if not specified or 0 is used, returns all elements",
+                schema = @Schema(type = SchemaType.INTEGER)
             ),
-            @Parameter(
-                    name = "pageNumber",
-                    in = ParameterIn.QUERY,
-                    description = "Page number. Starts at first page (0), if not specified starts at first page.",
-                    schema = @Schema(type = SchemaType.INTEGER)
+        @Parameter(
+                name = "pageNumber",
+                in = ParameterIn.QUERY,
+                description = "Page number. Starts at first page (0), if not specified starts at first page.",
+                schema = @Schema(type = SchemaType.INTEGER)
             )
     })
     public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") Boolean activeOnly) {
@@ -217,13 +217,13 @@ public class EndpointService {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Parameters({
-            @Parameter(
+        @Parameter(
                     name = "pageSize",
                     in = ParameterIn.QUERY,
                     description = "Number of items per page, if not specified or 0 is used, returns all elements",
                     schema = @Schema(type = SchemaType.INTEGER)
             ),
-            @Parameter(
+        @Parameter(
                     name = "pageNumber",
                     in = ParameterIn.QUERY,
                     description = "Page number. Starts at first page (0), if not specified starts at first page.",
