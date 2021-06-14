@@ -33,7 +33,13 @@ print(">>> add eventType to application")
 et_id = helpers.add_event_type(app_id, event_type, event_type_display_name)
 
 print(">>> add endpoint")
-ep_id = helpers.create_endpoint("bla", x_rh_id)
+props= {
+    "url": "http://localhost:8085",
+    "method": "PUT",
+    "secret_token": "bla-token",
+    "sub_type": "webhook"
+},
+ep_id = helpers.create_endpoint("bla", x_rh_id, props)
 
 print(">>> add endpoint to event type")
 helpers.add_endpoint_to_event_type(et_id, ep_id, x_rh_id)

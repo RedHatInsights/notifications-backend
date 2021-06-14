@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db;
 
-import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -18,20 +17,36 @@ public class NotificationResources {
     @Inject
     Mutiny.Session session;
 
+    @Inject
+    Mutiny.StatelessSession statelessSession;
+
     public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {
-        return Uni.createFrom().item(history)
-                .onItem().transform(this::addEndpointReference)
-                .onItem().transformToUni(session::persist)
-                .call(session::flush)
+        history.prePersist(); // This method must be called manually while using a StatelessSession.
+        return statelessSession.insert(history)
                 .replaceWith(history);
     }
 
-    public Uni<List<NotificationHistory>> getNotificationHistory(String tenant, UUID endpoint) {
-        String query = "SELECT NEW NotificationHistory(nh.id, nh.accountId, nh.invocationTime, nh.invocationResult, nh.eventId, nh.endpoint, nh.created) " +
-                "FROM NotificationHistory nh WHERE nh.accountId = :accountId AND nh.endpoint.id = :endpointId";
-        return session.createQuery(query, NotificationHistory.class)
+    public Uni<List<NotificationHistory>> getNotificationHistory(String tenant, UUID endpoint, boolean includeDetails, Query limiter) {
+        String query = "SELECT NEW NotificationHistory(nh.id, nh.accountId, nh.invocationTime, nh.invocationResult, nh.eventId, nh.endpoint, nh.created";
+        if (includeDetails) {
+            query += ", nh.details";
+        }
+        query += ") FROM NotificationHistory nh WHERE nh.accountId = :accountId AND nh.endpoint.id = :endpointId";
+
+        if (limiter != null) {
+            query = limiter.getModifiedQuery(query);
+        }
+
+        Mutiny.Query<NotificationHistory> historyQuery = session.createQuery(query, NotificationHistory.class)
                 .setParameter("accountId", tenant)
-                .setParameter("endpointId", endpoint)
+                .setParameter("endpointId", endpoint);
+
+        if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
+            historyQuery = historyQuery.setMaxResults(limiter.getLimit().getLimit())
+                    .setFirstResult(limiter.getLimit().getOffset());
+        }
+
+        return historyQuery
                 .getResultList();
     }
 
@@ -56,17 +71,35 @@ public class NotificationResources {
     }
 
     /**
-     * Adds to the given {@link NotificationHistory} a reference to a persistent {@link Endpoint} without actually
-     * loading its state from the database. The notification history will remain unchanged if it does not contain
-     * a non-null endpoint identifier.
+     * Update a stub history item with data we have received from the Camel sender
+     * @param jo Map containing the returned data
+     * @return Nothing
      *
-     * @param history the notification history that will hold the endpoint reference
-     * @return the same notification history instance, possibly modified if an endpoint reference was added
+     * @see com.redhat.cloud.notifications.events.FromCamelHistoryFiller for the source of data
      */
-    private NotificationHistory addEndpointReference(NotificationHistory history) {
-        if (history.getEndpointId() != null && history.getEndpoint() == null) {
-            history.setEndpoint(session.getReference(Endpoint.class, history.getEndpointId()));
+    public Uni<Void> updateHistoryItem(Map<String, Object> jo) {
+
+        String historyId = (String) jo.get("historyId");
+
+        if (historyId == null || historyId.isBlank()) {
+            return Uni.createFrom().failure(new IllegalArgumentException("History Id is null"));
         }
-        return history;
+
+        String outcome = (String) jo.get("outcome");
+        boolean result = outcome == null ? false : outcome.startsWith("Success");
+        Map details = (Map) jo.get("details");
+        if (!details.containsKey("outcome")) {
+            details.put("outcome", outcome);
+        }
+        Integer duration = (Integer) jo.get("duration");
+
+        String updateQuery = "UPDATE NotificationHistory SET details = :details, invocationResult = :result, invocationTime= :invocationTime WHERE id = :id";
+        return statelessSession.createQuery(updateQuery)
+                .setParameter("details", details)
+                .setParameter("result", result)
+                .setParameter("id", UUID.fromString(historyId))
+                .setParameter("invocationTime", (long) duration)
+                .executeUpdate()
+                .replaceWith(Uni.createFrom().voidItem());
     }
 }

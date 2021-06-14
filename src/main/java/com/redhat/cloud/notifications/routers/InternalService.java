@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.ApplicationResources;
-import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -32,9 +31,6 @@ public class InternalService {
 
     @Inject
     BundleResources bundleResources;
-
-    @Inject
-    BehaviorGroupResources behaviorGroupResources;
 
     @Inject
     ApplicationResources appResources;

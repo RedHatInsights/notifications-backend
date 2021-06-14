@@ -33,3 +33,8 @@ jobs:
         with:
           name: openapi.integrations.json
           path: target/openapi.integrations.json
+      - uses: actions/upload-artifact@v2
+        name: Upload private openapi.json
+        with:
+          name: openapi.private.json
+          path: target/openapi.private.json

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointDefault;
 import com.redhat.cloud.notifications.models.EndpointProperties;
@@ -33,6 +34,9 @@ public class EndpointResources {
     @Inject
     Mutiny.Session session;
 
+    @Inject
+    Mutiny.StatelessSession statelessSession;
+
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
         return session.persist(endpoint)
                 .onItem().call(session::flush)
@@ -46,6 +50,7 @@ public class EndpointResources {
                          */
                         endpoint.getProperties().setEndpoint(endpoint);
                         switch (endpoint.getType()) {
+                            case CAMEL:
                             case WEBHOOK:
                                 return session.persist(endpoint.getProperties())
                                         .onItem().call(session::flush);
@@ -117,7 +122,7 @@ public class EndpointResources {
                 "WHERE e.enabled = TRUE AND t.eventType.name = :eventTypeName AND t.id.accountId = :accountId " +
                 "AND t.eventType.application.name = :applicationName AND t.eventType.application.bundle.name = :bundleName";
 
-        return session.createQuery(query, Endpoint.class)
+        return statelessSession.createQuery(query, Endpoint.class)
                 .setParameter("applicationName", applicationName)
                 .setParameter("eventTypeName", eventTypeName)
                 .setParameter("accountId", tenant)
@@ -133,7 +138,7 @@ public class EndpointResources {
                 "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName";
 
-        return session.createQuery(query, Endpoint.class)
+        return statelessSession.createQuery(query, Endpoint.class)
                 .setParameter("applicationName", applicationName)
                 .setParameter("eventTypeName", eventTypeName)
                 .setParameter("accountId", tenant)
@@ -269,6 +274,16 @@ public class EndpointResources {
     }
 
     // TODO [BG Phase 2] Delete this method
+    public Uni<List<Endpoint>> getDefaultEndpointsStateless(String tenant) {
+        String query = "SELECT e FROM Endpoint e JOIN e.defaults d WHERE d.id.accountId = :accountId";
+
+        return statelessSession.createQuery(query, Endpoint.class)
+                .setParameter("accountId", tenant)
+                .getResultList()
+                .onItem().call(this::loadProperties);
+    }
+
+    // TODO [BG Phase 2] Delete this method
     public Uni<Boolean> endpointInDefaults(String tenant, UUID endpointId) {
         String query = "SELECT COUNT(*) FROM EndpointDefault WHERE id.accountId = :accountId AND endpoint.id = :endpointId";
 
@@ -310,6 +325,8 @@ public class EndpointResources {
                 "WHERE accountId = :accountId AND id = :id";
         String webhookQuery = "UPDATE WebhookProperties SET url = :url, method = :method, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
+        String camelQuery = "UPDATE CamelProperties SET url = :url, subType = :subType, " +
+                "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
 
         return session.createQuery(endpointQuery)
                 .setParameter("name", endpoint.getName())
@@ -337,6 +354,17 @@ public class EndpointResources {
                                         .executeUpdate()
                                         .call(session::flush)
                                         .onItem().transform(rowCount -> rowCount > 0);
+                            case CAMEL:
+                                CamelProperties cAttr = (CamelProperties) endpoint.getProperties();
+                                return session.createQuery(camelQuery)
+                                        .setParameter("url", cAttr.getUrl())
+                                        .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
+                                        .setParameter("secretToken", cAttr.getSecretToken())
+                                        .setParameter("endpointId", endpoint.getId())
+                                        .setParameter("subType", endpoint.getType())
+                                        .executeUpdate()
+                                        .call(session::flush)
+                                        .onItem().transform(rowCount -> rowCount > 0);
                             case EMAIL_SUBSCRIPTION:
                             case DEFAULT:
                             default:
@@ -347,10 +375,15 @@ public class EndpointResources {
     }
 
     public Uni<Void> loadProperties(List<Endpoint> endpoints) {
+        if (endpoints.isEmpty()) {
+            return Uni.createFrom().voidItem();
+        }
+
         // Group endpoints in types and load in batches for each type.
         Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
-        return this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK);
+        return this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK)
+                .chain(() -> loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL));
         // use `.chain(() -> loadTyped...)` when adding other types
     }
 
@@ -364,8 +397,10 @@ public class EndpointResources {
             return session
                     .find(typedEndpointClass, endpointsMap.keySet().toArray())
                     .onItem().invoke(propList -> propList.forEach(props -> {
-                        Endpoint endpoint = endpointsMap.get(props.getId());
-                        endpoint.setProperties(props);
+                        if (props != null) {
+                            Endpoint endpoint = endpointsMap.get(props.getId());
+                            endpoint.setProperties(props);
+                        }
                     })).replaceWith(Uni.createFrom().voidItem());
         }
 

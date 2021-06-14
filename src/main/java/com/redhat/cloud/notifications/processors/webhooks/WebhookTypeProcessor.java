@@ -21,7 +21,10 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.util.UUID;
 import java.util.logging.Logger;
+
+import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
 
 @ApplicationScoped
 public class WebhookTypeProcessor implements EndpointTypeProcessor {
@@ -87,13 +90,13 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                         .onItem().transform(resp -> {
                             final long endTime = System.currentTimeMillis();
                             // Default result is false
-                            NotificationHistory history = getHistoryStub(item, endTime - startTime);
+                            NotificationHistory history = getHistoryStub(item, endTime - startTime, UUID.randomUUID());
 
                             if (resp.statusCode() >= 200 && resp.statusCode() <= 300) {
                                 // Accepted
                                 log.fine("Target endpoint successful: " + resp.statusCode());
                                 history.setInvocationResult(true);
-                            } else if (resp.statusCode() > 500) {
+                            } else if (resp.statusCode() >= 500) {
                                 // Temporary error, allow retry
                                 log.fine("Target endpoint server error: " + resp.statusCode() + " " + resp.statusMessage());
                                 history.setInvocationResult(false);
@@ -122,7 +125,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
                             // TODO Duplicate code with the success part
                             final long endTime = System.currentTimeMillis();
-                            NotificationHistory history = getHistoryStub(item, endTime - startTime);
+                            NotificationHistory history = getHistoryStub(item, endTime - startTime, UUID.randomUUID());
 
                             HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
 
@@ -159,13 +162,4 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         return protocol + "://" + reqImpl.host() + ":" + reqImpl.port() + reqImpl.uri();
     }
 
-    private NotificationHistory getHistoryStub(Notification item, long invocationTime) {
-        NotificationHistory history = new NotificationHistory();
-        history.setInvocationTime(invocationTime);
-        history.setEndpoint(item.getEndpoint());
-        history.setAccountId(item.getTenant());
-        history.setEventId("");
-        history.setInvocationResult(false);
-        return history;
-    }
 }

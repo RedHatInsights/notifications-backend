@@ -22,6 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -165,7 +166,8 @@ public class NotificationService {
     @GET
     @Path("/bg/eventTypes/affectedByRemovalOfEndpoint/{endpointId}") // TODO [BG Phase 2] Remove '/bg' path prefix
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the event types affected by the removal of an integration.", hidden = true)
+    @Operation(summary = "Retrieve the event types affected by the removal of an integration.")
+    @Tag(name = OApiService.PRIVATE)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<EventType>> getEventTypesAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         return getAccountId(sec)
@@ -179,7 +181,8 @@ public class NotificationService {
     @GET
     @Path("/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the event types affected by the removal of a behavior group.", hidden = true)
+    @Operation(summary = "Retrieve the event types affected by the removal of a behavior group.")
+    @Tag(name = OApiService.PRIVATE)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<EventType>> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         return getAccountId(sec)
@@ -219,33 +222,11 @@ public class NotificationService {
         return resources.getLinkedEndpoints(principal.getAccount(), eventTypeId, query);
     }
 
-    @PUT
-    @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
-    @Produces(TEXT_PLAIN)
-    @Operation(summary = "Link a behavior group to an event type.", hidden = true)
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> linkBehaviorGroupToEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
-        return getAccountId(sec)
-                .onItem().transformToUni(accountId -> behaviorGroupResources.addEventTypeBehavior(accountId, eventTypeId, behaviorGroupId))
-                .replaceWith(() -> Response.ok().build());
-    }
-
-    @DELETE
-    @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
-    @Operation(summary = "Unlink a behavior group from an event type.", hidden = true)
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    @APIResponse(responseCode = "204", description = "Behavior group has been removed from the event type", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> unlinkBehaviorGroupFromEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
-        return getAccountId(sec)
-                .onItem().transformToUni(accountId -> behaviorGroupResources.deleteEventTypeBehavior(accountId, eventTypeId, behaviorGroupId))
-                .replaceWith(() -> Response.noContent().build());
-    }
-
     @GET
     @Path("/eventTypes/{eventTypeId}/behaviorGroups")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the behavior groups linked to an event type.", hidden = true)
+    @Operation(summary = "Retrieve the behavior groups linked to an event type.")
+    @Tag(name = OApiService.PRIVATE)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<BehaviorGroup>> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
         return getAccountId(sec)
@@ -312,21 +293,12 @@ public class NotificationService {
                 );
     }
 
-    @DELETE
-    @Path("/eventTypes/{eventTypeId}/mute")
-    @Produces(APPLICATION_JSON)
-    @Operation(summary = "Mute an event type, removing all its link with behavior groups.", hidden = true)
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    public Uni<Boolean> muteEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId) {
-        return getAccountId(sec)
-                .onItem().transformToUni(accountId -> behaviorGroupResources.muteEventType(accountId, eventTypeId));
-    }
-
     @POST
     @Path("/behaviorGroups")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Create a behavior group.", hidden = true)
+    @Operation(summary = "Create a behavior group.")
+    @Tag(name = OApiService.PRIVATE)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<BehaviorGroup> createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
         return getAccountId(sec)
@@ -337,7 +309,8 @@ public class NotificationService {
     @Path("/behaviorGroups/{id}")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Update a behavior group.", hidden = true)
+    @Operation(summary = "Update a behavior group.")
+    @Tag(name = OApiService.PRIVATE)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<Boolean> updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         return getAccountId(sec)
@@ -350,7 +323,8 @@ public class NotificationService {
     @DELETE
     @Path("/behaviorGroups/{id}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Delete a behavior group.", hidden = true)
+    @Operation(summary = "Delete a behavior group.")
+    @Tag(name = OApiService.PRIVATE)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Uni<Boolean> deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
         return getAccountId(sec)
@@ -361,7 +335,8 @@ public class NotificationService {
     @Path("/behaviorGroups/{behaviorGroupId}/actions")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    @Operation(summary = "Update the list of actions of a behavior group.", hidden = true)
+    @Operation(summary = "Update the list of actions of a behavior group.")
+    @Tag(name = OApiService.PRIVATE)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
@@ -380,10 +355,35 @@ public class NotificationService {
                 });
     }
 
+    @PUT
+    @Path("/eventTypes/{eventTypeId}/behaviorGroups")
+    @Consumes(APPLICATION_JSON)
+    @Produces(TEXT_PLAIN)
+    @Operation(summary = "Update the list of behavior groups of an event type.")
+    @Tag(name = OApiService.PRIVATE)
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    public Uni<Response> updateEventTypeBehaviors(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, Set<UUID> behaviorGroupIds) {
+        // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
+        if (behaviorGroupIds.contains(null)) {
+            return Uni.createFrom().failure(new BadRequestException("The behavior groups identifiers list should not contain empty values"));
+        }
+        return getAccountId(sec)
+                .onItem().transformToUni(accountId -> behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds))
+                .onItem().transform(updated -> {
+                    if (updated) {
+                        return Response.ok().build();
+                    } else {
+                        return Response.status(Status.NOT_FOUND).build();
+                    }
+                });
+    }
+
     @GET
     @Path("/bundles/{bundleId}/behaviorGroups")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the behavior groups of a bundle.", hidden = true)
+    @Operation(summary = "Retrieve the behavior groups of a bundle.")
+    @Tag(name = OApiService.PRIVATE)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
         return getAccountId(sec)

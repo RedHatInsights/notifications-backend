@@ -126,17 +126,15 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
          * Now we'll link the event type with the behavior group.
          * Pushing a new message should trigger one webhook call.
          */
-        addEventTypeBehaviorGroup(identityHeader, eventTypeId, behaviorGroupId, 1);
-        // Adding the same behavior group twice must not raise an exception.
-        addEventTypeBehaviorGroup(identityHeader, eventTypeId, behaviorGroupId, 1);
+        updateEventTypeBehaviors(identityHeader, eventTypeId, behaviorGroupId);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId, behaviorGroupId);
         // pushMessage(1); TODO [BG Phase 2] Uncomment (it does not work here because EndpointProcessor does not use behavior groups)
 
         /*
-         * What happens if we mute the event type?
+         * What happens if we unlink the event type from the behavior group?
          * Pushing a new message should not trigger any webhook call.
          */
-        muteEventType(identityHeader, eventTypeId);
+        updateEventTypeBehaviors(identityHeader, eventTypeId);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId);
         // pushMessage(0); TODO [BG Phase 2] Uncomment (it does not work here because EndpointProcessor does not use behavior groups)
 
@@ -436,14 +434,15 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
         return expectedRequestPattern;
     }
 
-    private void addEventTypeBehaviorGroup(Header identityHeader, String eventTypeId, String behaviorGroupId, int expectedEventTypeBehaviorGroups) {
+    private void updateEventTypeBehaviors(Header identityHeader, String eventTypeId, String... behaviorGroupIds) {
         given()
                 .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
+                .contentType(JSON)
                 .pathParam("eventTypeId", eventTypeId)
-                .pathParam("behaviorGroupId", behaviorGroupId)
+                .body(Json.encode(Arrays.asList(behaviorGroupIds)))
                 .when()
-                .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
+                .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
                 .then()
                 .statusCode(200)
                 .contentType(TEXT);
@@ -469,32 +468,6 @@ public class Lifecycle_BG_ITest extends DbIsolatedTest {
                 fail("One of the expected behavior groups is not linked to the event type");
             }
         }
-    }
-
-    private void muteEventType(Header identityHeader, String eventTypeId) {
-        given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
-                .pathParam("eventTypeId", eventTypeId)
-                .when()
-                .delete("/notifications/eventTypes/{eventTypeId}/mute")
-                .then()
-                .contentType(JSON)
-                .statusCode(200);
-
-        String responseBody = given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
-                .pathParam("eventTypeId", eventTypeId)
-                .when()
-                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().asString();
-
-        JsonArray jsonBehaviorGroups = new JsonArray(responseBody);
-        assertEquals(0, jsonBehaviorGroups.size());
     }
 
     private void checkEndpointHistory(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {

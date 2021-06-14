@@ -7,13 +7,13 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -30,9 +30,6 @@ public class EndpointProcessor {
     private static final Logger LOGGER = Logger.getLogger(EndpointProcessor.class.getName());
 
     @Inject
-    Mutiny.Session session;
-
-    @Inject
     EndpointResources resources;
 
     // TODO [BG Phase 2] Delete this attribute
@@ -44,6 +41,9 @@ public class EndpointProcessor {
 
     @Inject
     WebhookTypeProcessor webhooks;
+
+    @Inject
+    CamelTypeProcessor camel;
 
     @Inject
     EmailSubscriptionTypeProcessor emails;
@@ -76,12 +76,13 @@ public class EndpointProcessor {
                 .onItem().transformToUniAndConcatenate(history -> notifResources.createNotificationHistory(history)
                         .onFailure().invoke(failure -> LOGGER.severe("Notification history creation failed for " + history.getEndpoint()))
                 )
-                .onItem().ignoreAsUni()
-                .onItemOrFailure().call(() -> Uni.createFrom().item(() -> session.clear()));
+                .onItem().ignoreAsUni();
     }
 
     public EndpointTypeProcessor endpointTypeToProcessor(EndpointType endpointType) {
         switch (endpointType) {
+            case CAMEL:
+                return camel;
             case WEBHOOK:
                 return webhooks;
             case EMAIL_SUBSCRIPTION:

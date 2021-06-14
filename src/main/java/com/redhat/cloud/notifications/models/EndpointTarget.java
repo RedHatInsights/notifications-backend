@@ -36,6 +36,18 @@ public class EndpointTarget {
         this.eventType = eventType;
     }
 
+    public EndpointTargetId getId() {
+        return id;
+    }
+
+    public Endpoint getEndpoint() {
+        return endpoint;
+    }
+
+    public EventType getEventType() {
+        return eventType;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -14,12 +14,11 @@ import java.util.List;
 public class EmailAggregationResources {
 
     @Inject
-    Mutiny.Session session;
+    Mutiny.StatelessSession statelessSession;
 
     public Uni<Boolean> addEmailAggregation(EmailAggregation aggregation) {
-        return Uni.createFrom().item(aggregation)
-                .onItem().transformToUni(session::persist)
-                .call(session::flush)
+        aggregation.prePersist(); // This method must be called manually while using a StatelessSession.
+        return statelessSession.insert(aggregation)
                 .replaceWith(Boolean.TRUE)
                 .onFailure().recoverWithItem(Boolean.FALSE);
     }
@@ -27,7 +26,7 @@ public class EmailAggregationResources {
     public Uni<List<EmailAggregationKey>> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
         String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.EmailAggregationKey(ea.accountId, ea.bundleName, ea.applicationName) " +
                 "FROM EmailAggregation ea WHERE ea.created > :start AND ea.created <= :end";
-        return session.createQuery(query, EmailAggregationKey.class)
+        return statelessSession.createQuery(query, EmailAggregationKey.class)
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getResultList();
@@ -35,7 +34,7 @@ public class EmailAggregationResources {
 
     public Uni<List<EmailAggregation>> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
         String query = "FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
-        return session.createQuery(query, EmailAggregation.class)
+        return statelessSession.createQuery(query, EmailAggregation.class)
                 .setParameter("accountId", key.getAccountId())
                 .setParameter("bundleName", key.getBundle())
                 .setParameter("applicationName", key.getApplication())
@@ -46,12 +45,11 @@ public class EmailAggregationResources {
 
     public Uni<Integer> purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
         String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
-        return session.createQuery(query)
+        return statelessSession.createQuery(query)
                 .setParameter("accountId", key.getAccountId())
                 .setParameter("bundleName", key.getBundle())
                 .setParameter("applicationName", key.getApplication())
                 .setParameter("created", lastUsedTime)
-                .executeUpdate()
-                .call(session::flush);
+                .executeUpdate();
     }
 }

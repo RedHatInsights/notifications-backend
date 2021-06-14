@@ -15,6 +15,9 @@ public class EndpointEmailSubscriptionResources {
     @Inject
     Mutiny.Session session;
 
+    @Inject
+    Mutiny.StatelessSession statelessSession;
+
     public Uni<Boolean> subscribe(String accountNumber, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "INSERT INTO endpoint_email_subscriptions(account_id, user_id, application_id, subscription_type) " +
                 "SELECT :accountId, :userId, a.id, :subscriptionType " +
@@ -71,7 +74,7 @@ public class EndpointEmailSubscriptionResources {
     public Uni<Long> getEmailSubscribersCount(String accountNumber, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "SELECT COUNT(id.userId) FROM EmailSubscription WHERE id.accountId = :accountId " +
                 "AND application.bundle.name = :bundleName AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
-        return session.createQuery(query, Long.class)
+        return statelessSession.createQuery(query, Long.class)
                 .setParameter("accountId", accountNumber)
                 .setParameter("bundleName", bundleName)
                 .setParameter("applicationName", applicationName)
@@ -82,7 +85,7 @@ public class EndpointEmailSubscriptionResources {
     public Uni<List<EmailSubscription>> getEmailSubscribers(String accountNumber, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "FROM EmailSubscription WHERE id.accountId = :accountId AND application.bundle.name = :bundleName " +
                 "AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
-        return session.createQuery(query, EmailSubscription.class)
+        return statelessSession.createQuery(query, EmailSubscription.class)
                 .setParameter("accountId", accountNumber)
                 .setParameter("bundleName", bundleName)
                 .setParameter("applicationName", applicationName)

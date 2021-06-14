@@ -205,11 +205,32 @@ public class EndpointService {
     @GET
     @Path("/{id}/history")
     @Produces(APPLICATION_JSON)
+    @Parameters({
+            @Parameter(
+                    name = "limit",
+                    in = ParameterIn.QUERY,
+                    description = "Number of items per page, if not specified or 0 is used, returns all elements",
+                    schema = @Schema(type = SchemaType.INTEGER)
+            ),
+            @Parameter(
+                    name = "pageNumber",
+                    in = ParameterIn.QUERY,
+                    description = "Page number. Starts at first page (0), if not specified starts at first page.",
+                    schema = @Schema(type = SchemaType.INTEGER)
+            ),
+            @Parameter(
+                    name = "includeDetail",
+                    description = "Include the detail in the reply",
+                    schema = @Schema(type = SchemaType.BOOLEAN)
+            )
+    })
+
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public Uni<List<NotificationHistory>> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    public Uni<List<NotificationHistory>> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
         // TODO We need globally limitations (Paging support and limits etc)
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return notifResources.getNotificationHistory(principal.getAccount(), id);
+        boolean doDetail = includeDetail != null && includeDetail;
+        return notifResources.getNotificationHistory(principal.getAccount(), id, doDetail, query);
     }
 
     @GET
@@ -218,7 +239,7 @@ public class EndpointService {
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Parameters({
         @Parameter(
-                    name = "pageSize",
+                    name = "limit",
                     in = ParameterIn.QUERY,
                     description = "Number of items per page, if not specified or 0 is used, returns all elements",
                     schema = @Schema(type = SchemaType.INTEGER)
@@ -231,9 +252,9 @@ public class EndpointService {
             )
     })
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @PathParam("history_id") UUID historyId, @BeanParam Query query) {
+    public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return notifResources.getNotificationDetails(principal.getAccount(), query, id, historyId)
+        return notifResources.getNotificationDetails(principal.getAccount(), query, endpointId, historyId)
                 // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
                 .onItem().ifNull().failWith(new NotFoundException())
                 .onItem().transform(json -> {
