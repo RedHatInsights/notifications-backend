@@ -18,12 +18,18 @@ import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 import javax.validation.ConstraintViolationException;
+import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
+import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.OK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -168,38 +174,47 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         Bundle bundle = createBundle();
         BehaviorGroup behaviorGroup1 = createBehaviorGroup("Behavior group 1", bundle.getId());
         BehaviorGroup behaviorGroup2 = createBehaviorGroup("Behavior group 2", bundle.getId());
-        Endpoint endpoint1 = createEndpoint();
-        Endpoint endpoint2 = createEndpoint();
-        Endpoint endpoint3 = createEndpoint();
+        Endpoint endpoint1 = createEndpoint(WEBHOOK);
+        Endpoint endpoint2 = createEndpoint(WEBHOOK);
+        Endpoint endpoint3 = createEndpoint(WEBHOOK);
 
         // At the beginning of the test, endpoint1 shouldn't be linked with any behavior group.
         findBehaviorGroupsByEndpointId(endpoint1.getId());
 
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true, endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true, endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true, endpoint1.getId(), endpoint2.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId(), endpoint2.getId());
 
         // Now, endpoint1 should be linked with behaviorGroup1.
         findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId());
 
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup2.getId(), true, endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup2.getId(), OK, endpoint1.getId());
         // Then, endpoint1 should be linked with both behavior groups.
         findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId(), behaviorGroup2.getId());
 
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true, endpoint2.getId());
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true, endpoint3.getId(), endpoint2.getId(), endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), true);
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint2.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint3.getId(), endpoint2.getId(), endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK);
 
         // The link between endpoint1 and behaviorGroup1 was removed. Let's check it is still linked with behaviorGroup2.
         findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup2.getId());
     }
 
     @Test
+    public void testAddMultipleEmailSubscriptionBehaviorGroupActions() {
+        Bundle bundle = createBundle();
+        BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
+        Endpoint endpoint1 = createEndpoint(EMAIL_SUBSCRIPTION);
+        Endpoint endpoint2 = createEndpoint(EMAIL_SUBSCRIPTION);
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), BAD_REQUEST, endpoint1.getId(), endpoint2.getId());
+    }
+
+    @Test
     public void testUpdateBehaviorGroupActionsWithWrongAccountId() {
         Bundle bundle = createBundle();
         BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
-        Endpoint endpoint = createEndpoint();
-        updateAndCheckBehaviorGroupActions("unknownAccountId", bundle.getId(), behaviorGroup.getId(), false, endpoint.getId());
+        Endpoint endpoint = createEndpoint(WEBHOOK);
+        updateAndCheckBehaviorGroupActions("unknownAccountId", bundle.getId(), behaviorGroup.getId(), NOT_FOUND, endpoint.getId());
     }
 
     private Bundle createBundle() {
@@ -225,12 +240,12 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         return session.persist(eventType).call(session::flush).replaceWith(eventType).await().indefinitely();
     }
 
-    private Endpoint createEndpoint() {
+    private Endpoint createEndpoint(EndpointType type) {
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(ACCOUNT_ID);
         endpoint.setName("name");
         endpoint.setDescription("description");
-        endpoint.setType(EndpointType.WEBHOOK);
+        endpoint.setType(type);
         return endpointResources.createEndpoint(endpoint).await().indefinitely();
     }
 
@@ -288,11 +303,11 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         return behaviorGroupResources.findBehaviorGroupsByEventTypeId(accountId, eventTypeId, new Query()).await().indefinitely();
     }
 
-    private void updateAndCheckBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId, boolean expectedResult, UUID... endpointIds) {
-        Boolean updated = behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, Arrays.asList(endpointIds)).await().indefinitely();
+    private void updateAndCheckBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId, Status expectedResult, UUID... endpointIds) {
+        Status status = behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, Arrays.asList(endpointIds)).await().indefinitely();
         // Is the update result the one we expected?
-        assertEquals(expectedResult, updated);
-        if (expectedResult) {
+        assertEquals(expectedResult, status);
+        if (expectedResult == Status.OK) {
             session.clear(); // We need to clear the session L1 cache before checking the update result.
             // If we expected a success, the behavior group actions should match exactly the given endpoint IDs.
             List<BehaviorGroupAction> actions = findBehaviorGroupActions(accountId, bundleId, behaviorGroupId);

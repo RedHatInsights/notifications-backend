@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -10,11 +11,16 @@ import org.hibernate.reactive.mutiny.Mutiny;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
+import javax.ws.rs.core.Response.Status;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.OK;
 
 @ApplicationScoped
 public class BehaviorGroupResources {
@@ -159,19 +165,36 @@ public class BehaviorGroupResources {
     }
 
     /*
-     * Returns Boolean.TRUE if the behavior group was found and successfully updated.
-     * Returns Boolean.FALSE if the behavior group was not found.
+     * Returns Status.OK if the behavior group was found and successfully updated.
+     * Returns Status.NOT_FOUND if the behavior group was not found.
+     * Returns Status.BAD_REQUEST if the behavior group contains more than one EMAIL_SUBSCRIPTION action.
      * If an exception other than NoResultException is thrown during the update, the DB transaction will be rolled back.
      */
-    public Uni<Boolean> updateBehaviorGroupActions(String accountId, UUID behaviorGroupId, List<UUID> endpointIds) {
+    public Uni<Status> updateBehaviorGroupActions(String accountId, UUID behaviorGroupId, List<UUID> endpointIds) {
         return session.withTransaction(tx -> {
 
             // First, let's make sure the behavior group exists and is owned by the current account.
-            String checkQuery = "SELECT 1 FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
-            return session.createQuery(checkQuery)
+            String checkBehaviorGroupQuery = "SELECT 1 FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
+            return session.createQuery(checkBehaviorGroupQuery)
                     .setParameter("accountId", accountId)
                     .setParameter("id", behaviorGroupId)
                     .getSingleResult()
+                    .onItem().call(() -> {
+
+                        // A behavior group must not contain more than one EMAIL_SUBSCRIPTION action.
+                        String checkEndpointTypeQuery = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId AND type = :type AND id IN (:endpointIds)";
+                        return session.createQuery(checkEndpointTypeQuery, Long.class)
+                                .setParameter("accountId", accountId)
+                                .setParameter("type", EndpointType.EMAIL_SUBSCRIPTION)
+                                .setParameter("endpointIds", endpointIds)
+                                .getSingleResult()
+                                .onItem().invoke(count -> {
+                                    if (count > 1) {
+                                        throw new IllegalArgumentException();
+                                    }
+                                });
+
+                    })
                     .onItem().call(() -> {
 
                         // All behavior group actions that should no longer exist must be deleted.
@@ -210,9 +233,11 @@ public class BehaviorGroupResources {
 
                     })
                     .collect().asList()
-                    .replaceWith(Boolean.TRUE)
+                    .replaceWith(OK)
                     // The following exception will be thrown if the behavior group is not found with the first query.
-                    .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
+                    .onFailure(NoResultException.class).recoverWithItem(NOT_FOUND)
+                    // The following exception will be thrown if the behavior group contains more than one EMAIL_SUBSCRIPTION action.
+                    .onFailure(IllegalArgumentException.class).recoverWithItem(BAD_REQUEST);
         });
     }
 
