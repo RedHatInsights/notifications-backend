@@ -53,6 +53,13 @@ public class ApiResponseFilter extends SimpleBeanPropertyFilter {
                         return;
                     }
                     break;
+                case "bundle":
+                    if (behaviorGroup.isFilterOutBundle()) {
+                        logFilterOut(BehaviorGroup.class.getName(), "bundle");
+                        // This will prevent the serialization of the property.
+                        return;
+                    }
+                    break;
                 default:
                     // Do nothing.
                     break;

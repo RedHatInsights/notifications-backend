@@ -14,7 +14,6 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -105,37 +104,11 @@ public class EndpointService {
                         .onItem().transform(endpointsCount -> new EndpointPage(endpointsList, new HashMap<>(), new Meta(endpointsCount))));
     }
 
-    // TODO [BG Phase 2] Delete this method
     @POST
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
-        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        endpoint.setAccountId(principal.getAccount());
-
-        if (endpoint.getType() != EndpointType.DEFAULT && endpoint.getProperties() == null) {
-            throw new BadRequestException("Properties is required");
-        } else if (endpoint.getType() == EndpointType.DEFAULT) {
-            // Only a single default endpoint is allowed
-            return resources.getEndpointsPerType(principal.getAccount(), EndpointType.DEFAULT, null, null)
-                    .onItem().transformToMulti(Multi.createFrom()::iterable)
-                    .toUni()
-                    .onItem()
-                    .ifNull()
-                    .switchTo(resources.createEndpoint(endpoint));
-        }
-
-        return resources.createEndpoint(endpoint);
-    }
-
-    @POST
-    @Path("/bg") // TODO [BG Phase 2] Delete this path
-    @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    // TODO [BG Phase 2] Remove '_BG' suffix
-    public Uni<Endpoint> createEndpoint_BG(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setAccountId(principal.getAccount());
 

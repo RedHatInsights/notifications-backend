@@ -73,8 +73,12 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     @ManyToOne(fetch = LAZY, optional = false)
     @JoinColumn(name = "bundle_id")
-    @JsonIgnore
+    @JsonInclude(Include.NON_NULL)
     private Bundle bundle;
+
+    @Transient
+    @JsonIgnore
+    private boolean filterOutBundle;
 
     @OneToMany(mappedBy = "behaviorGroup", cascade = CascadeType.REMOVE)
     @JsonInclude(Include.NON_NULL)
@@ -129,6 +133,15 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     public void setBundle(Bundle bundle) {
         this.bundle = bundle;
+    }
+
+    public boolean isFilterOutBundle() {
+        return filterOutBundle;
+    }
+
+    public BehaviorGroup filterOutBundle() {
+        filterOutBundle = true;
+        return this;
     }
 
     public List<BehaviorGroupAction> getActions() {

@@ -2,11 +2,8 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointDefault;
 import com.redhat.cloud.notifications.models.EndpointProperties;
-import com.redhat.cloud.notifications.models.EndpointTarget;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -14,8 +11,6 @@ import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.persistence.PersistenceException;
-import javax.ws.rs.BadRequestException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -55,7 +50,6 @@ public class EndpointResources {
                                 return session.persist(endpoint.getProperties())
                                         .onItem().call(session::flush);
                             case EMAIL_SUBSCRIPTION:
-                            case DEFAULT: // TODO [BG Phase 2] Delete this case
                             default:
                                 // Do nothing.
                                 break;
@@ -116,24 +110,7 @@ public class EndpointResources {
         return mutinyQuery.getSingleResult();
     }
 
-    // TODO [BG Phase 2] Delete this method
     public Multi<Endpoint> getTargetEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
-        String query = "SELECT e FROM Endpoint e JOIN e.targets t " +
-                "WHERE e.enabled = TRUE AND t.eventType.name = :eventTypeName AND t.id.accountId = :accountId " +
-                "AND t.eventType.application.name = :applicationName AND t.eventType.application.bundle.name = :bundleName";
-
-        return statelessSession.createQuery(query, Endpoint.class)
-                .setParameter("applicationName", applicationName)
-                .setParameter("eventTypeName", eventTypeName)
-                .setParameter("accountId", tenant)
-                .setParameter("bundleName", bundleName)
-                .getResultList()
-                .onItem().call(this::loadProperties)
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
-    }
-
-    // TODO [BG Phase 2] Remove '_BG' suffix
-    public Multi<Endpoint> getTargetEndpoints_BG(String tenant, String bundleName, String applicationName, String eventTypeName) {
         String query = "SELECT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                 "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName";
@@ -216,108 +193,6 @@ public class EndpointResources {
                 .onItem().transform(rowCount -> rowCount > 0);
     }
 
-    // TODO [BG Phase 2] Delete this method
-    public Uni<Boolean> linkEndpoint(String tenant, UUID endpointId, UUID eventTypeId) {
-        return Uni.createFrom().item(() -> {
-            Endpoint endpoint = session.getReference(Endpoint.class, endpointId);
-            EventType eventType = session.getReference(EventType.class, eventTypeId);
-            return new EndpointTarget(tenant, endpoint, eventType);
-        })
-                .onItem().transformToUni(session::persist)
-                .call(session::flush)
-                .replaceWith(Boolean.TRUE)
-                .onFailure().recoverWithItem(Boolean.FALSE);
-    }
-
-    // TODO [BG Phase 2] Delete this method
-    public Uni<Boolean> unlinkEndpoint(String tenant, UUID endpointId, UUID eventTypeId) {
-        String query = "DELETE FROM EndpointTarget WHERE id.accountId = :accountId AND eventType.id = :eventTypeId AND endpoint.id = :endpointId";
-
-        return session.createQuery(query)
-                .setParameter("accountId", tenant)
-                .setParameter("eventTypeId", eventTypeId)
-                .setParameter("endpointId", endpointId)
-                .executeUpdate()
-                .call(session::flush)
-                .onItem().transform(rowCount -> rowCount > 0);
-    }
-
-    // TODO [BG Phase 2] Delete this method
-    public Uni<List<Endpoint>> getLinkedEndpoints(String tenant, UUID eventTypeId, Query limiter) {
-        String query = "SELECT e FROM Endpoint e JOIN e.targets t WHERE t.id.accountId = :accountId AND t.eventType.id = :eventTypeId";
-
-        if (limiter != null) {
-            query = limiter.getModifiedQuery(query);
-        }
-
-        Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
-                .setParameter("accountId", tenant)
-                .setParameter("eventTypeId", eventTypeId);
-
-        if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-            mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
-                    .setFirstResult(limiter.getLimit().getOffset());
-        }
-
-        return mutinyQuery.getResultList()
-                .onItem().call(this::loadProperties);
-    }
-
-    // TODO [BG Phase 2] Delete this method
-    public Uni<List<Endpoint>> getDefaultEndpoints(String tenant) {
-        String query = "SELECT e FROM Endpoint e JOIN e.defaults d WHERE d.id.accountId = :accountId";
-
-        return session.createQuery(query, Endpoint.class)
-                .setParameter("accountId", tenant)
-                .getResultList()
-                .onItem().call(this::loadProperties);
-    }
-
-    // TODO [BG Phase 2] Delete this method
-    public Uni<List<Endpoint>> getDefaultEndpointsStateless(String tenant) {
-        String query = "SELECT e FROM Endpoint e JOIN e.defaults d WHERE d.id.accountId = :accountId";
-
-        return statelessSession.createQuery(query, Endpoint.class)
-                .setParameter("accountId", tenant)
-                .getResultList()
-                .onItem().call(this::loadProperties);
-    }
-
-    // TODO [BG Phase 2] Delete this method
-    public Uni<Boolean> endpointInDefaults(String tenant, UUID endpointId) {
-        String query = "SELECT COUNT(*) FROM EndpointDefault WHERE id.accountId = :accountId AND endpoint.id = :endpointId";
-
-        return session.createQuery(query, Long.class)
-                .setParameter("accountId", tenant)
-                .setParameter("endpointId", endpointId)
-                .getSingleResult()
-                .onItem().transform(count -> count > 0);
-    }
-
-    // TODO [BG Phase 2] Delete this method
-    public Uni<Boolean> addEndpointToDefaults(String tenant, UUID endpointId) {
-        return Uni.createFrom().item(() -> {
-            Endpoint endpoint = session.getReference(Endpoint.class, endpointId);
-            return new EndpointDefault(tenant, endpoint);
-        })
-                .onItem().transformToUni(session::persist)
-                .call(session::flush)
-                .onFailure(PersistenceException.class).transform(a -> new BadRequestException("Given endpoint id can not be linked to default"))
-                .replaceWith(Boolean.TRUE);
-    }
-
-    // TODO [BG Phase 2] Delete this method
-    public Uni<Boolean> deleteEndpointFromDefaults(String tenant, UUID endpointId) {
-        String query = "DELETE FROM EndpointDefault WHERE id.accountId = :accountId AND id.endpointId = :endpointId";
-
-        return session.createQuery(query)
-                .setParameter("accountId", tenant)
-                .setParameter("endpointId", endpointId)
-                .executeUpdate()
-                .call(session::flush)
-                .onItem().transform(rowCount -> rowCount > 0);
-    }
-
     public Uni<Boolean> updateEndpoint(Endpoint endpoint) {
         // TODO Update could fail because the item did not exist, throw 404 in that case?
         // TODO Fix transaction so that we don't end up with half the updates applied
@@ -366,7 +241,6 @@ public class EndpointResources {
                                         .call(session::flush)
                                         .onItem().transform(rowCount -> rowCount > 0);
                             case EMAIL_SUBSCRIPTION:
-                            case DEFAULT:
                             default:
                                 return Uni.createFrom().item(Boolean.TRUE);
                         }

@@ -15,12 +15,10 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 @ApplicationScoped
 public class BehaviorGroupResources {
 
-    private static final Logger LOGGER = Logger.getLogger(BehaviorGroupResources.class.getName());
     private static final ZoneId UTC = ZoneId.of("UTC");
 
     @Inject
@@ -36,14 +34,16 @@ public class BehaviorGroupResources {
                 })
                 .onItem().transformToUni(session::persist)
                 .call(session::flush)
-                .replaceWith(behaviorGroup);
+                .replaceWith(behaviorGroup)
+                .onItem().invoke(BehaviorGroup::filterOutBundle);
     }
 
     public Uni<List<BehaviorGroup>> findByBundleId(String accountId, UUID bundleId) {
         return session.createNamedQuery("findByBundleId", BehaviorGroup.class)
                 .setParameter("accountId", accountId)
                 .setParameter("bundleId", bundleId)
-                .getResultList();
+                .getResultList()
+                .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutBundle));
     }
 
     // TODO Should this be forbidden for default behavior groups?
@@ -153,7 +153,9 @@ public class BehaviorGroupResources {
         }
 
         return mutinyQuery.getResultList()
-                .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutActions));
+                .onItem().invoke(behaviorGroups ->
+                        behaviorGroups.forEach(behaviorGroup -> behaviorGroup.filterOutBundle().filterOutActions())
+                );
     }
 
     /*
@@ -212,5 +214,14 @@ public class BehaviorGroupResources {
                     // The following exception will be thrown if the behavior group is not found with the first query.
                     .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
         });
+    }
+
+    public Uni<List<BehaviorGroup>> findBehaviorGroupsByEndpointId(String accountId, UUID endpointId) {
+        String query = "SELECT bg FROM BehaviorGroup bg LEFT JOIN FETCH bg.bundle JOIN bg.actions a WHERE bg.accountId = :accountId AND a.endpoint.id = :endpointId";
+        return session.createQuery(query, BehaviorGroup.class)
+                .setParameter("accountId", accountId)
+                .setParameter("endpointId", endpointId)
+                .getResultList()
+                .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutActions));
     }
 }
