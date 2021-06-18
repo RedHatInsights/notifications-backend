@@ -121,7 +121,7 @@ public class EndpointResources {
                 .setParameter("accountId", tenant)
                 .setParameter("bundleName", bundleName)
                 .getResultList()
-                .onItem().call(this::loadProperties)
+                .onItem().call(endpoints -> loadProperties(endpoints, true))
                 .onItem().transformToMulti(Multi.createFrom()::iterable);
     }
 
@@ -159,7 +159,7 @@ public class EndpointResources {
                 .setParameter("id", id)
                 .setParameter("accountId", tenant)
                 .getSingleResultOrNull()
-                .onItem().ifNotNull().transformToUni(this::loadProperties);
+                .onItem().ifNotNull().transformToUni(endpoint -> loadProperties(endpoint));
     }
 
     public Uni<Boolean> deleteEndpoint(String tenant, UUID id) {
@@ -249,6 +249,10 @@ public class EndpointResources {
     }
 
     public Uni<Void> loadProperties(List<Endpoint> endpoints) {
+        return loadProperties(endpoints, false);
+    }
+
+    public Uni<Void> loadProperties(List<Endpoint> endpoints, boolean useStatelessSession) {
         if (endpoints.isEmpty()) {
             return Uni.createFrom().voidItem();
         }
@@ -256,20 +260,19 @@ public class EndpointResources {
         // Group endpoints in types and load in batches for each type.
         Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
-        return this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK)
-                .chain(() -> loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL));
+        return this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK, useStatelessSession)
+                .chain(() -> loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL, useStatelessSession));
         // use `.chain(() -> loadTyped...)` when adding other types
     }
 
-    private <T extends EndpointProperties> Uni<Void> loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type) {
+    private <T extends EndpointProperties> Uni<Void> loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type, boolean useStatelessSession) {
         Map<UUID, Endpoint> endpointsMap = endpoints
                 .stream()
                 .filter(e -> e.getType().equals(type))
                 .collect(Collectors.toMap(Endpoint::getId, Function.identity()));
 
         if (endpointsMap.size() > 0) {
-            return session
-                    .find(typedEndpointClass, endpointsMap.keySet().toArray())
+            return find(typedEndpointClass, endpointsMap.keySet(), useStatelessSession)
                     .onItem().invoke(propList -> propList.forEach(props -> {
                         if (props != null) {
                             Endpoint endpoint = endpointsMap.get(props.getId());
@@ -279,6 +282,17 @@ public class EndpointResources {
         }
 
         return Uni.createFrom().voidItem();
+    }
+
+    private <T extends EndpointProperties> Uni<List<T>> find(Class<T> typedEndpointClass, Set<UUID> endpointIds, boolean useStatelessSession) {
+        if (useStatelessSession) {
+            String query = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:endpointIds)";
+            return statelessSession.createQuery(query, typedEndpointClass)
+                    .setParameter("endpointIds", endpointIds)
+                    .getResultList();
+        } else {
+            return session.find(typedEndpointClass, endpointIds.toArray());
+        }
     }
 
     public Uni<Endpoint> loadProperties(Endpoint endpoint) {
