@@ -144,16 +144,16 @@ public class LifecycleITest extends DbIsolatedTest {
 
         /*
          * Let's change the behavior group actions configuration by adding an action to the second behavior group.
-         * Endpoint 2 is now an action for both behavior groups, so it should be notified twice on each message.
+         * Endpoint 2 is now an action for both behavior groups, but it should not be notified twice on each message because we don't want duplicate notifications.
          */
         addBehaviorGroupActions(identityHeader, behaviorGroupId2, endpointId3, endpointId2);
 
-        // Pushing a new message should trigger four webhook calls.
-        pushMessage(4);
+        // Pushing a new message should trigger three webhook calls.
+        pushMessage(3);
 
         // Let's check the notifications history again.
         checkEndpointHistory(identityHeader, endpointId1, 3, true, 200);
-        checkEndpointHistory(identityHeader, endpointId2, 4, true, 200);
+        checkEndpointHistory(identityHeader, endpointId2, 3, true, 200);
         checkEndpointHistory(identityHeader, endpointId3, 2, false, 400);
 
         /*
@@ -166,7 +166,7 @@ public class LifecycleITest extends DbIsolatedTest {
 
         // The notifications history should be exactly the same than last time.
         checkEndpointHistory(identityHeader, endpointId1, 3, true, 200);
-        checkEndpointHistory(identityHeader, endpointId2, 4, true, 200);
+        checkEndpointHistory(identityHeader, endpointId2, 3, true, 200);
         checkEndpointHistory(identityHeader, endpointId3, 2, false, 400);
 
         /*
