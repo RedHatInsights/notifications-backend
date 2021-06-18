@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -49,7 +50,7 @@ public class BehaviorGroupMigrationService {
      * This is used to dynamically create behavior groups names at persistence time.
      * See calling point for more details.
      */
-    private final Map<String, AtomicInteger> accountBehaviorGroupIndexes = new ConcurrentHashMap<>();
+    private final Map<BehaviorGroupIndexKey, AtomicInteger> accountBehaviorGroupIndexes = new ConcurrentHashMap<>();
 
     private volatile MigrationReport report = new MigrationReport();
 
@@ -67,6 +68,7 @@ public class BehaviorGroupMigrationService {
         return session.withTransaction(tx -> {
             LOGGER.debug("[BG MIGRATION] Start");
             return Uni.createFrom().item(new AccountBehaviorGroupsAggregator())
+                    .onItem().call(ignored -> session.createQuery("DELETE FROM BehaviorGroup").executeUpdate())
                     .onItem().transformToUni(aggregator -> {
                         LOGGER.debug("[BG MIGRATION] Migrating global default actions");
                         // Let's iterate over all accounts that saved default actions.
@@ -196,7 +198,8 @@ public class BehaviorGroupMigrationService {
                                     behaviorGroup.setBundle(aggregatorEntry.getKey().bundle);
                                     behaviorGroup.setBundleId(aggregatorEntry.getKey().bundle.getId()); // Yes, we need to set that even if the bundle was already set.
                                     // We have to generate a dynamic display name for the behavior group.
-                                    int displayNameIndex = accountBehaviorGroupIndexes.computeIfAbsent(behaviorGroup.getAccountId(), key -> new AtomicInteger()).incrementAndGet();
+                                    BehaviorGroupIndexKey behaviorGroupIndexKey = new BehaviorGroupIndexKey(behaviorGroup.getAccountId(), behaviorGroup.getBundleId());
+                                    int displayNameIndex = accountBehaviorGroupIndexes.computeIfAbsent(behaviorGroupIndexKey, key -> new AtomicInteger()).incrementAndGet();
                                     behaviorGroup.setDisplayName("Behavior group " + displayNameIndex);
                                     // Endpoints need to be ordered to determine the actions positions in the UI.
                                     List<Endpoint> orderedEndpoints = new ArrayList<>(aggregatorEntry.getKey().actions);
@@ -313,6 +316,35 @@ public class BehaviorGroupMigrationService {
 
         public AtomicLong getBehaviorsPersisted() {
             return behaviorsPersisted;
+        }
+    }
+
+    private static class BehaviorGroupIndexKey {
+
+        private String accountId;
+        private UUID bundleId;
+
+        BehaviorGroupIndexKey(String accountId, UUID bundleId) {
+            this.accountId = accountId;
+            this.bundleId = bundleId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o instanceof BehaviorGroupIndexKey) {
+                BehaviorGroupIndexKey other = (BehaviorGroupIndexKey) o;
+                return Objects.equals(accountId, other.accountId) &&
+                        Objects.equals(bundleId, other.bundleId);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(accountId, bundleId);
         }
     }
 }
