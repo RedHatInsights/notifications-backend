@@ -31,6 +31,7 @@ import org.mockserver.model.HttpRequest;
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
@@ -49,6 +51,7 @@ import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNT
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -127,8 +130,8 @@ public class LifecycleITest extends DbIsolatedTest {
         pushMessage(2);
 
         // Let's check the notifications history.
-        checkEndpointHistory(identityHeader, endpointId1, 1, true, 200);
-        checkEndpointHistory(identityHeader, endpointId2, 1, true, 200);
+        retry(() -> checkEndpointHistory(identityHeader, endpointId1, 1, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId2, 1, true, 200));
 
         // We'll link an additional behavior group to the event type.
         updateEventTypeBehaviors(identityHeader, eventTypeId, behaviorGroupId1, behaviorGroupId2);
@@ -138,9 +141,9 @@ public class LifecycleITest extends DbIsolatedTest {
         pushMessage(3);
 
         // Let's check the notifications history again.
-        checkEndpointHistory(identityHeader, endpointId1, 2, true, 200);
-        checkEndpointHistory(identityHeader, endpointId2, 2, true, 200);
-        checkEndpointHistory(identityHeader, endpointId3, 1, false, 400);
+        retry(() -> checkEndpointHistory(identityHeader, endpointId1, 2, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId2, 2, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId3, 1, false, 400));
 
         /*
          * Let's change the behavior group actions configuration by adding an action to the second behavior group.
@@ -152,9 +155,9 @@ public class LifecycleITest extends DbIsolatedTest {
         pushMessage(3);
 
         // Let's check the notifications history again.
-        checkEndpointHistory(identityHeader, endpointId1, 3, true, 200);
-        checkEndpointHistory(identityHeader, endpointId2, 3, true, 200);
-        checkEndpointHistory(identityHeader, endpointId3, 2, false, 400);
+        retry(() -> checkEndpointHistory(identityHeader, endpointId1, 3, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId2, 3, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId3, 2, false, 400));
 
         /*
          * What happens if we unlink the event type from the behavior groups?
@@ -165,9 +168,9 @@ public class LifecycleITest extends DbIsolatedTest {
         pushMessage(0);
 
         // The notifications history should be exactly the same than last time.
-        checkEndpointHistory(identityHeader, endpointId1, 3, true, 200);
-        checkEndpointHistory(identityHeader, endpointId2, 3, true, 200);
-        checkEndpointHistory(identityHeader, endpointId3, 2, false, 400);
+        retry(() -> checkEndpointHistory(identityHeader, endpointId1, 3, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId2, 3, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId3, 2, false, 400));
 
         /*
          * We'll finish with a bundle removal.
@@ -493,45 +496,60 @@ public class LifecycleITest extends DbIsolatedTest {
         }
     }
 
-    private void checkEndpointHistory(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
-        String responseBody = given()
-                .basePath(API_INTEGRATIONS_V_1_0)
-                .header(identityHeader)
-                .pathParam("endpointId", endpointId)
-                .when()
-                .get("/endpoints/{endpointId}/history")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().asString();
+    private void retry(Supplier<Boolean> checkEndpointHistoryResult) {
+        await()
+                .pollInterval(Duration.ofSeconds(1L))
+                .atMost(Duration.ofSeconds(5L))
+                .until(() -> checkEndpointHistoryResult.get());
+    }
 
-        JsonArray jsonEndpointHistory = new JsonArray(responseBody);
-        assertEquals(expectedHistoryEntries, jsonEndpointHistory.size());
+    private boolean checkEndpointHistory(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
+        try {
 
-        for (int i = 0; i < jsonEndpointHistory.size(); i++) {
-            JsonObject jsonNotificationHistory = jsonEndpointHistory.getJsonObject(i);
-            jsonNotificationHistory.mapTo(NotificationHistory.class);
-            assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
+            String responseBody = given()
+                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId)
+                    .when()
+                    .get("/endpoints/{endpointId}/history")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().body().asString();
 
-            if (!expectedInvocationResult) {
-                responseBody = given()
-                        .basePath(API_INTEGRATIONS_V_1_0)
-                        .header(identityHeader)
-                        .pathParam("endpointId", endpointId)
-                        .pathParam("historyId", jsonNotificationHistory.getString("id"))
-                        .when()
-                        .get("/endpoints/{endpointId}/history/{historyId}/details")
-                        .then()
-                        .statusCode(200)
-                        .contentType(JSON)
-                        .extract().body().asString();
+            JsonArray jsonEndpointHistory = new JsonArray(responseBody);
+            assertEquals(expectedHistoryEntries, jsonEndpointHistory.size());
 
-                JsonObject jsonDetails = new JsonObject(responseBody);
-                assertFalse(jsonDetails.isEmpty());
-                assertEquals(expectedHttpStatus, jsonDetails.getInteger("code"));
-                assertNotNull(jsonDetails.getString("url"));
-                assertNotNull(jsonDetails.getString("method"));
+            for (int i = 0; i < jsonEndpointHistory.size(); i++) {
+                JsonObject jsonNotificationHistory = jsonEndpointHistory.getJsonObject(i);
+                jsonNotificationHistory.mapTo(NotificationHistory.class);
+                assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
+
+                if (!expectedInvocationResult) {
+                    responseBody = given()
+                            .basePath(API_INTEGRATIONS_V_1_0)
+                            .header(identityHeader)
+                            .pathParam("endpointId", endpointId)
+                            .pathParam("historyId", jsonNotificationHistory.getString("id"))
+                            .when()
+                            .get("/endpoints/{endpointId}/history/{historyId}/details")
+                            .then()
+                            .statusCode(200)
+                            .contentType(JSON)
+                            .extract().body().asString();
+
+                    JsonObject jsonDetails = new JsonObject(responseBody);
+                    assertFalse(jsonDetails.isEmpty());
+                    assertEquals(expectedHttpStatus, jsonDetails.getInteger("code"));
+                    assertNotNull(jsonDetails.getString("url"));
+                    assertNotNull(jsonDetails.getString("method"));
+                }
             }
+
+            return true;
+        } catch (AssertionError e) {
+            e.printStackTrace();
+            return false;
         }
     }
 
