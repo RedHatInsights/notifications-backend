@@ -236,15 +236,12 @@ public class NotificationService {
         if (endpointIds.contains(null)) {
             return Uni.createFrom().failure(new BadRequestException("The endpoints identifiers list should not contain empty values"));
         }
+        if (endpointIds.size() != endpointIds.stream().distinct().count()) {
+            return Uni.createFrom().failure(new BadRequestException("The endpoints identifiers list should not contain duplicates"));
+        }
         return getAccountId(sec)
                 .onItem().transformToUni(accountId -> behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds))
-                .onItem().transform(updated -> {
-                    if (updated) {
-                        return Response.ok().build();
-                    } else {
-                        return Response.status(Status.NOT_FOUND).build();
-                    }
-                });
+                .onItem().transform(status -> Response.status(status).build());
     }
 
     @PUT
