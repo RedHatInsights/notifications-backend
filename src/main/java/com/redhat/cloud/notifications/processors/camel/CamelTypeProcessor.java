@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.camel;
 
 import com.redhat.cloud.notifications.db.converters.MapConverter;
+import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -11,6 +12,7 @@ import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.context.Context;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.TracingMetadata;
 import io.vertx.core.json.JsonObject;
@@ -24,6 +26,7 @@ import javax.inject.Inject;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -51,7 +54,16 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         processedCount = registry.counter("processor.camel.processed");
     }
 
-    public Uni<NotificationHistory> process(Notification item) {
+    @Override
+    public Multi<NotificationHistory> process(Action action, List<Endpoint> endpoints) {
+        return Multi.createFrom().iterable(endpoints)
+                .onItem().transformToUniAndConcatenate(endpoint -> {
+                    Notification notification = new Notification(action, endpoint);
+                    return process(notification);
+                });
+    }
+
+    private Uni<NotificationHistory> process(Notification item) {
         processedCount.increment();
         Endpoint endpoint = item.getEndpoint();
         CamelProperties properties = (CamelProperties) endpoint.getProperties();

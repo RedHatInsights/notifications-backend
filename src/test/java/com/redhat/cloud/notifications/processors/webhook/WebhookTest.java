@@ -10,13 +10,12 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
-import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.Multi;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
@@ -114,10 +113,9 @@ public class WebhookTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        Notification notif = new Notification(webhookActionMessage, ep);
         try {
-            Uni<NotificationHistory> process = webhookTypeProcessor.process(notif);
-            NotificationHistory history = process.await().indefinitely();
+            Multi<NotificationHistory> process = webhookTypeProcessor.process(webhookActionMessage, List.of(ep));
+            NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
             assertTrue(history.isInvocationResult());
         } catch (Exception e) {
             e.printStackTrace();

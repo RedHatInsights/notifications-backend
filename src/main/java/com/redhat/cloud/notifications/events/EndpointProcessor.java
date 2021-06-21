@@ -3,20 +3,24 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EndpointProcessor {
@@ -55,16 +59,26 @@ public class EndpointProcessor {
 
     public Uni<Void> process(Action action) {
         processedItems.increment();
-        return resources.getTargetEndpoints(
-                action.getAccountId(),
-                action.getBundle(),
-                action.getApplication(),
-                action.getEventType())
-                .onItem().transformToUniAndConcatenate(endpoint -> {
-                    endpointTargeted.increment();
-                    Notification endpointNotif = new Notification(action, endpoint);
-                    return endpointTypeToProcessor(endpoint.getType()).process(endpointNotif);
+        return resources.getTargetEndpoints(action.getAccountId(), action.getBundle(), action.getApplication(), action.getEventType())
+
+                // Target endpoints are grouped by endpoint type.
+                .onItem().transformToMulti(endpoints -> {
+                    endpointTargeted.increment(endpoints.size());
+                    Map<EndpointType, List<Endpoint>> endpointsByType = endpoints.stream().collect(Collectors.groupingBy(Endpoint::getType));
+                    return Multi.createFrom().iterable(endpointsByType.entrySet());
                 })
+
+                /*
+                 * For each endpoint type, the list of target endpoints is sent alongside with the action to the relevant processor.
+                 * Each processor returns a list of history entries. All of the returned lists are flattened into a single list.
+                 */
+                .onItem().transformToMultiAndConcatenate(entry -> {
+                    EndpointTypeProcessor processor = endpointTypeToProcessor(entry.getKey());
+                    return processor.process(action, entry.getValue());
+                })
+
+                // TODO Action processing and history persistence should be a single atomic operation.
+                // Now each history entry is persisted.
                 .onItem().transformToUniAndConcatenate(history -> notifResources.createNotificationHistory(history)
                         .onFailure().invoke(failure -> LOGGER.severe("Notification history creation failed for " + history.getEndpoint()))
                 )
@@ -80,7 +94,7 @@ public class EndpointProcessor {
             case EMAIL_SUBSCRIPTION:
                 return emails;
             default:
-                return notification -> Uni.createFrom().nullItem();
+                return (action, endpoints) -> Multi.createFrom().empty();
         }
     }
 }
