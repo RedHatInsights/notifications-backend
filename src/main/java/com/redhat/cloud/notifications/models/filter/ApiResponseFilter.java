@@ -70,6 +70,6 @@ public class ApiResponseFilter extends SimpleBeanPropertyFilter {
     }
 
     private void logFilterOut(String className, String fieldName) {
-        LOGGER.debugf("Filtering out %s#%s from a JSON response", className, fieldName);
+        LOGGER.tracef("Filtering out %s#%s from a JSON response", className, fieldName);
     }
 }
