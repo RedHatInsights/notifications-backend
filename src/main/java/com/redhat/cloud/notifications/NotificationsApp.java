@@ -19,7 +19,7 @@ public class NotificationsApp {
     private static final Pattern pattern = Pattern.compile(FILTER_REGEX);
 
     @ConfigProperty(name = "quarkus.http.access-log.category")
-    private String loggerName;
+    String loggerName;
 
     private static final Logger LOG = Logger.getLogger(NotificationsApp.class);
 

@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
-// TODO [BG Phase 2] Delete this class
+// TODO [BG Phase 3] Delete this class
 @Embeddable
 public class EndpointDefaultId implements Serializable {
 

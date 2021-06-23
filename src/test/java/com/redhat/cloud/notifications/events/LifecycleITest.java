@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.CounterAssertionHelper;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
-import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
@@ -11,6 +10,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -20,44 +20,48 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
 import io.restassured.http.Header;
-import io.restassured.response.Response;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.mockserver.model.HttpRequest;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
+import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
+import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
+import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
+import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_ENDPOINTS_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_MESSAGES_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpResponse.response;
 
-// TODO [BG Phase 2] Delete this file
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LifecycleITest extends DbIsolatedTest {
 
     /*
@@ -70,13 +74,9 @@ public class LifecycleITest extends DbIsolatedTest {
     private static final String APP_NAME = "policies-lifecycle-test";
     private static final String BUNDLE_NAME = "my-bundle";
     private static final String EVENT_TYPE_NAME = "all";
-
-    @BeforeEach
-    void beforeEach() {
-        RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
-    }
-
-    private Header identityHeader;
+    private static final String INTERNAL_BASE_PATH = "/";
+    private static final String WEBHOOK_MOCK_PATH = "/test/lifecycle";
+    private static final String SECRET_TOKEN = "super-secret-token";
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
@@ -88,474 +88,477 @@ public class LifecycleITest extends DbIsolatedTest {
     @Inject
     CounterAssertionHelper counterAssertionHelper;
 
-    JsonObject theBundle;
-
-    @BeforeAll
-    void setup() {
-        // Create Rbacs
-        String tenant = "tenant";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
-
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
-
+    private Header initRbacMock(String tenant, String username, MockServerClientConfig.RbacAccess access) {
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, access);
+        return TestHelpers.createIdentityHeader(identityHeaderValue);
     }
 
     @Test
-    void test() throws Exception {
-        t00_setupBundle();
-        t01_testAdding();
-        t02_pushMessage();
-        t03_fetchHistory();
-        t04_getUIDetailsAndUnlink();
-        t05_addEmptyDefaultSettings();
-        t06_linkEndpointsAndTest();
-        t10_deleteBundle();
+    void test() throws IOException, InterruptedException {
+        // Identity header used for all public APIs calls. Internal APIs calls don't need that.
+        Header identityHeader = initRbacMock("tenant", "user", RbacAccess.FULL_ACCESS);
+
+        // First, we need a bundle, an app and an event type. Let's create them!
+        String bundleId = createBundle();
+        String appId = createApp(bundleId);
+        String eventTypeId = createEventType(appId);
+        checkAllEventTypes(identityHeader);
+
+        // We also need behavior groups.
+        String behaviorGroupId1 = createBehaviorGroup(identityHeader, bundleId);
+        String behaviorGroupId2 = createBehaviorGroup(identityHeader, bundleId);
+
+        // We need actions for our behavior groups.
+        String endpointId1 = createWebhookEndpoint(identityHeader, SECRET_TOKEN);
+        String endpointId2 = createWebhookEndpoint(identityHeader, SECRET_TOKEN);
+        String endpointId3 = createWebhookEndpoint(identityHeader, "wrong-secret-token");
+        checkEndpoints(identityHeader, endpointId1, endpointId2, endpointId3);
+
+        // We'll start with a first behavior group actions configuration. This will slightly change later in the test.
+        addBehaviorGroupActions(identityHeader, behaviorGroupId1, endpointId1, endpointId2);
+        addBehaviorGroupActions(identityHeader, behaviorGroupId2, endpointId3);
+
+        // Let's push a first message! It should not trigger any webhook call since we didn't link the event type with any behavior group.
+        pushMessage(0);
+
+        // Now we'll link the event type with one behavior group.
+        updateEventTypeBehaviors(identityHeader, eventTypeId, behaviorGroupId1);
+        checkEventTypeBehaviorGroups(identityHeader, eventTypeId, behaviorGroupId1);
+
+        // Pushing a new message should trigger two webhook calls.
+        pushMessage(2);
+
+        // Let's check the notifications history.
+        retry(() -> checkEndpointHistory(identityHeader, endpointId1, 1, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId2, 1, true, 200));
+
+        // We'll link an additional behavior group to the event type.
+        updateEventTypeBehaviors(identityHeader, eventTypeId, behaviorGroupId1, behaviorGroupId2);
+        checkEventTypeBehaviorGroups(identityHeader, eventTypeId, behaviorGroupId1, behaviorGroupId2);
+
+        // Pushing a new message should trigger three webhook calls.
+        pushMessage(3);
+
+        // Let's check the notifications history again.
+        retry(() -> checkEndpointHistory(identityHeader, endpointId1, 2, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId2, 2, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId3, 1, false, 400));
+
+        /*
+         * Let's change the behavior group actions configuration by adding an action to the second behavior group.
+         * Endpoint 2 is now an action for both behavior groups, but it should not be notified twice on each message because we don't want duplicate notifications.
+         */
+        addBehaviorGroupActions(identityHeader, behaviorGroupId2, endpointId3, endpointId2);
+
+        // Pushing a new message should trigger three webhook calls.
+        pushMessage(3);
+
+        // Let's check the notifications history again.
+        retry(() -> checkEndpointHistory(identityHeader, endpointId1, 3, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId2, 3, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId3, 2, false, 400));
+
+        /*
+         * What happens if we unlink the event type from the behavior groups?
+         * Pushing a new message should not trigger any webhook call.
+         */
+        updateEventTypeBehaviors(identityHeader, eventTypeId);
+        checkEventTypeBehaviorGroups(identityHeader, eventTypeId);
+        pushMessage(0);
+
+        // The notifications history should be exactly the same than last time.
+        retry(() -> checkEndpointHistory(identityHeader, endpointId1, 3, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId2, 3, true, 200));
+        retry(() -> checkEndpointHistory(identityHeader, endpointId3, 2, false, 400));
+
+        /*
+         * We'll finish with a bundle removal.
+         * Why would we do that here? I don't really know, it was there before the big test refactor... :)
+         */
+        deleteBundle(bundleId);
     }
 
-    void t00_setupBundle() {
+    private String createBundle() {
         Bundle bundle = new Bundle(BUNDLE_NAME, "A bundle");
-        Response response = given()
-                .body(bundle)
+
+        String responseBody = given()
+                .basePath(INTERNAL_BASE_PATH)
                 .contentType(JSON)
-                .basePath("/")
+                .body(Json.encode(bundle))
                 .when()
                 .post("/internal/bundles")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().response();
-        theBundle = new JsonObject(response.getBody().asString());
-        theBundle.mapTo(Bundle.class);
+                .extract().body().asString();
+
+        JsonObject jsonBundle = new JsonObject(responseBody);
+        jsonBundle.mapTo(Bundle.class);
+        assertNotNull(jsonBundle.getString("id"));
+        assertEquals(bundle.getName(), jsonBundle.getString("name"));
+        assertEquals(bundle.getDisplayName(), jsonBundle.getString("display_name"));
+        assertNotNull(jsonBundle.getString("created"));
+
+        return jsonBundle.getString("id");
     }
 
-    void t01_testAdding() {
+    private String createApp(String bundleId) {
         Application app = new Application();
-        app.setBundleId(UUID.fromString(theBundle.getString("id")));
+        app.setBundleId(UUID.fromString(bundleId));
         app.setName(APP_NAME);
         app.setDisplayName("The best app in the life");
 
-        Response response = given()
+        String responseBody = given()
                 .when()
+                .basePath(INTERNAL_BASE_PATH)
                 .contentType(JSON)
-                .basePath("/")
                 .body(Json.encode(app))
                 .post("/internal/applications")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().response();
+                .extract().body().asString();
 
-        JsonObject appResponse = new JsonObject(response.getBody().asString());
-        appResponse.mapTo(Application.class);
-        assertNotNull(appResponse.getString("id"));
-        assertEquals(theBundle.getString("id"), appResponse.getString("bundle_id"));
+        JsonObject jsonApp = new JsonObject(responseBody);
+        jsonApp.mapTo(Application.class);
+        assertNotNull(jsonApp.getString("id"));
+        assertEquals(app.getName(), jsonApp.getString("name"));
+        assertEquals(app.getDisplayName(), jsonApp.getString("display_name"));
+        assertEquals(app.getBundleId().toString(), jsonApp.getString("bundle_id"));
+        assertNotNull(jsonApp.getString("created"));
 
-        // Create eventType
+        return jsonApp.getString("id");
+    }
+
+    private String createEventType(String appId) {
         EventType eventType = new EventType();
-        eventType.setApplicationId(UUID.fromString(appResponse.getString("id")));
+        eventType.setApplicationId(UUID.fromString(appId));
         eventType.setName(EVENT_TYPE_NAME);
         eventType.setDisplayName("Policies will take care of the rules");
         eventType.setDescription("Policies is super cool, you should use it");
 
-        response = given()
+        String responseBody = given()
                 .when()
+                .basePath(INTERNAL_BASE_PATH)
                 .contentType(JSON)
-                .basePath("/")
                 .body(Json.encode(eventType))
                 .post("/internal/eventTypes")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().response();
+                .extract().body().asString();
 
-        JsonObject typeResponse = new JsonObject(response.getBody().asString());
-        typeResponse.mapTo(EventType.class);
-        assertNotNull(typeResponse.getString("id"));
-        assertEquals(eventType.getDescription(), typeResponse.getString("description"));
+        JsonObject jsonEventType = new JsonObject(responseBody);
+        jsonEventType.mapTo(EventType.class);
+        assertNotNull(jsonEventType.getString("id"));
+        assertEquals(eventType.getName(), jsonEventType.getString("name"));
+        assertEquals(eventType.getDisplayName(), jsonEventType.getString("display_name"));
+        assertEquals(eventType.getDescription(), jsonEventType.getString("description"));
 
-        // Add new endpoints
+        return jsonEventType.getString("id");
+    }
+
+    private void checkAllEventTypes(Header identityHeader) {
+        String responseBody = given()
+                .basePath(API_NOTIFICATIONS_V_1_0)
+                .header(identityHeader)
+                .when()
+                .get("/notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().body().asString();
+
+        JsonArray jsonEventTypes = new JsonArray(responseBody);
+        assertEquals(2, jsonEventTypes.size()); // One from the current test, one from the default DB records.
+    }
+
+    private String createBehaviorGroup(Header identityHeader, String bundleId) {
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName("Behavior group");
+        behaviorGroup.setBundleId(UUID.fromString(bundleId));
+
+        String responseBody = given()
+                .basePath(API_NOTIFICATIONS_V_1_0)
+                .header(identityHeader)
+                .contentType(JSON)
+                .body(Json.encode(behaviorGroup))
+                .when()
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().body().asString();
+
+        JsonObject jsonBehaviorGroup = new JsonObject(responseBody);
+        jsonBehaviorGroup.mapTo(BehaviorGroup.class);
+        assertNotNull(jsonBehaviorGroup.getString("id"));
+        assertNull(jsonBehaviorGroup.getString("accountId"));
+        assertEquals(behaviorGroup.getDisplayName(), jsonBehaviorGroup.getString("display_name"));
+        assertEquals(behaviorGroup.getBundleId().toString(), jsonBehaviorGroup.getString("bundle_id"));
+        assertNotNull(jsonBehaviorGroup.getString("created"));
+
+        return jsonBehaviorGroup.getString("id");
+    }
+
+    private String createWebhookEndpoint(Header identityHeader, String secretToken) {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(true);
-        properties.setSecretToken("super-secret-token");
-        properties.setUrl(String.format("http://%s/test/lifecycle", mockServerConfig.getRunningAddress()));
+        properties.setSecretToken(secretToken);
+        properties.setUrl("http://" + mockServerConfig.getRunningAddress() + WEBHOOK_MOCK_PATH);
 
-        Endpoint ep = new Endpoint();
-        ep.setType(EndpointType.WEBHOOK);
-        ep.setName("positive feeling");
-        ep.setDescription("needle in the haystack");
-        ep.setEnabled(true);
-        ep.setProperties(properties);
+        Endpoint endpoint = new Endpoint();
+        endpoint.setType(EndpointType.WEBHOOK);
+        endpoint.setName("endpoint");
+        endpoint.setDescription("Endpoint");
+        endpoint.setEnabled(true);
+        endpoint.setProperties(properties);
 
-        response = given()
+        String responseBody = given()
+                .basePath(API_INTEGRATIONS_V_1_0)
                 .header(identityHeader)
-                .when()
                 .contentType(JSON)
-                .body(Json.encode(ep))
+                .body(Json.encode(endpoint))
+                .when()
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().response();
+                .extract().body().asString();
 
-        JsonObject endpoint = new JsonObject(response.getBody().asString());
-        endpoint.mapTo(Endpoint.class);
-        assertNotNull(endpoint.getString("id"));
+        JsonObject jsonEndpoint = new JsonObject(responseBody);
+        jsonEndpoint.mapTo(Endpoint.class);
+        assertNotNull(jsonEndpoint.getString("id"));
+        assertNull(jsonEndpoint.getString("accountId"));
+        assertEquals(endpoint.getName(), jsonEndpoint.getString("name"));
+        assertEquals(endpoint.getDescription(), jsonEndpoint.getString("description"));
+        assertTrue(jsonEndpoint.getBoolean("enabled"));
+        assertEquals(EndpointType.WEBHOOK.name().toLowerCase(), jsonEndpoint.getString("type"));
 
-        properties = new WebhookProperties();
-        properties.setMethod(HttpType.POST);
-        properties.setDisableSslVerification(true);
-        properties.setUrl(String.format("http://%s/test/lifecycle", mockServerConfig.getRunningAddress()));
-
-        ep = new Endpoint();
-        ep.setType(EndpointType.WEBHOOK);
-        ep.setName("negative feeling");
-        ep.setDescription("I feel like dying");
-        ep.setEnabled(true);
-        ep.setProperties(properties);
-
-        response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        JsonObject endpointFail = new JsonObject(response.getBody().asString());
-        endpointFail.mapTo(Endpoint.class);
-        assertNotNull(endpointFail.getString("id"));
-
-        // Link an eventType to endpoints
-
-        for (JsonObject endpointLink : List.of(endpoint, endpointFail)) {
-            given()
-                    .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
-                    .header(identityHeader)
-                    .when()
-                    .put(String.format("/notifications/eventTypes/%s/%s", typeResponse.getString("id"), endpointLink.getString("id")))
-                    .then()
-                    .statusCode(200)
-                    .contentType(TEXT);
+        JsonObject jsonWebhookProperties = jsonEndpoint.getJsonObject("properties");
+        jsonWebhookProperties.mapTo(WebhookProperties.class);
+        assertEquals(properties.getMethod().name(), jsonWebhookProperties.getString("method"));
+        assertEquals(properties.getDisableSslVerification(), jsonWebhookProperties.getBoolean("disable_ssl_verification"));
+        if (properties.getSecretToken() != null) {
+            assertEquals(properties.getSecretToken(), jsonWebhookProperties.getString("secret_token"));
         }
+        assertEquals(properties.getUrl(), jsonWebhookProperties.getString("url"));
+
+        return jsonEndpoint.getString("id");
     }
 
-    void t02_pushMessage() throws Exception {
-        counterAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME);
-
-        // These are succesful requests
-        HttpRequest postReq = new HttpRequest()
-                .withPath("/test/lifecycle")
-                .withMethod("POST");
-        CountDownLatch latch = new CountDownLatch(2);
-        mockServerConfig.getMockServerClient()
-                .withSecure(false)
-                .when(postReq)
-                .respond(req -> {
-                    // Verify req parameters here, like the secret-token?
-                    latch.countDown();
-                    List<String> header = req.getHeader("X-Insight-Token");
-                    if (header != null && header.size() == 1 && header.get(0).equals("super-secret-token")) {
-                        return response()
-                                .withStatusCode(200)
-                                .withBody("Success");
-                    }
-                    return response()
-                            .withStatusCode(400)
-                            .withBody("{ \"message\": \"Time is running out\" }");
-                });
-
-        // Read the input file and send it
-        Action targetAction = new Action();
-        targetAction.setApplication(APP_NAME);
-        targetAction.setBundle(BUNDLE_NAME);
-        targetAction.setTimestamp(LocalDateTime.now());
-        targetAction.setEventType(EVENT_TYPE_NAME);
-
-        targetAction.setEvents(
-                List.of(
-                        Event
-                                .newBuilder()
-                                .setMetadataBuilder(Metadata.newBuilder())
-                                .setPayload(new HashMap())
-                                .build()
-                )
-        );
-
-        targetAction.setContext(new HashMap());
-
-        targetAction.setAccountId("tenant");
-
-        String payload = serializeAction(targetAction);
-        inMemoryConnector.source("ingress").send(payload);
-
-//        InputStream is = getClass().getClassLoader().getResourceAsStream("input/platform.notifications.ingress.json");
-//        String inputJson = IOUtils.toString(is, StandardCharsets.UTF_8);
-//        ingressChan.send(inputJson);
-
-        if (!latch.await(5, TimeUnit.SECONDS)) {
-            fail("HttpServer never received the requests");
-//            mockServerConfig.getMockServerClient().verify(postReq, VerificationTimes.exactly(2));
-            HttpRequest[] httpRequests = mockServerConfig.getMockServerClient().retrieveRecordedRequests(postReq);
-            assertEquals(2, httpRequests.length);
-            // Verify calls were correct, sort first?
-        }
-
-        mockServerConfig.getMockServerClient().clear(postReq);
-        counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 0);
-        counterAssertionHelper.clear();
-    }
-
-    void t03_fetchHistory() {
-        Response response = given()
+    private void checkEndpoints(Header identityHeader, String... expectedEndpointIds) {
+        String responseBody = given()
+                .basePath(API_INTEGRATIONS_V_1_0)
                 .header(identityHeader)
                 .when()
                 .get("/endpoints")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().response();
+                .extract().body().asString();
 
-        JsonArray endpoints = new JsonObject(response.getBody().asString()).getJsonArray("data");
-        assertEquals(2, endpoints.size());
+        JsonArray jsonEndpoints = new JsonObject(responseBody).getJsonArray("data");
+        assertEquals(expectedEndpointIds.length, jsonEndpoints.size());
+        jsonEndpoints.getJsonObject(0).mapTo(Endpoint.class);
+        jsonEndpoints.getJsonObject(0).getJsonObject("properties").mapTo(WebhookProperties.class);
 
-        for (int i = 0; i < endpoints.size(); i++) {
-            JsonObject ep = endpoints.getJsonObject(i);
-            ep.mapTo(Endpoint.class);
-            // Fetch the notification history for the endpoints
-            response = given()
-                    .header(identityHeader)
-                    .when()
-                    .get(String.format("/endpoints/%s/history", ep.getString("id")))
-                    .then()
-                    .statusCode(200)
-                    .contentType(JSON)
-                    .extract().response();
-
-            JsonArray histories = new JsonArray(response.getBody().asString());
-            assertEquals(1, histories.size());
-
-            for (int j = 0; j < histories.size(); j++) {
-                JsonObject history = histories.getJsonObject(j);
-                history.mapTo(NotificationHistory.class);
-                // Sort first?
-                if (ep.getString("name").startsWith("negative")) {
-                    // TODO Validate that we actually reach this part
-                    assertFalse(history.getBoolean("invocationResult"));
-                    JsonObject properties = ep.getJsonObject("properties");
-                    properties.mapTo(WebhookProperties.class);
-
-                    // Fetch details
-                    response = given()
-                            .header(identityHeader)
-                            .when()
-                            .get(String.format("/endpoints/%s/history/%s/details", ep.getString("id"), history.getString("id")))
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().response();
-
-                    JsonObject json = new JsonObject(response.getBody().asString());
-                    assertFalse(json.isEmpty());
-                    assertEquals(400, json.getInteger("code").intValue());
-                    assertEquals(properties.getString("url"), json.getString("url"));
-                    assertEquals(properties.getString("method"), json.getString("method"));
-                } else {
-                    // TODO Validate that we actually reach this part
-                    assertTrue(history.getBoolean("invocationResult"));
-                }
+        for (String endpointId : expectedEndpointIds) {
+            if (!responseBody.contains(endpointId)) {
+                fail("One of the expected endpoint could not be found in the database");
             }
         }
     }
 
-    void t04_getUIDetailsAndUnlink() {
-        Response response = given()
-                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
-                .when()
-                .header(identityHeader)
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        JsonArray typesResponse = new JsonArray(response.getBody().asString());
-        assertTrue(typesResponse.size() >= 1);
-
-        JsonObject policiesAll = null;
-        for (int i = 0; i < typesResponse.size(); i++) {
-            JsonObject eventType = typesResponse.getJsonObject(i);
-            eventType.mapTo(EventType.class);
-            if (eventType.getString("name").equals(EVENT_TYPE_NAME) && eventType.getJsonObject("application").getString("name").equals(APP_NAME)) {
-                policiesAll = eventType;
-                break;
-            }
-        }
-
-        assertNotNull(policiesAll);
-
-        // Fetch the list
-        response = given()
-                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
-                // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get(String.format("/notifications/eventTypes/%s", policiesAll.getString("id")))
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        JsonArray endpoints = new JsonArray(response.getBody().asString());
-        assertEquals(2, endpoints.size());
-
-        for (int i = 0; i < endpoints.size(); i++) {
-            JsonObject endpoint = endpoints.getJsonObject(i);
-            endpoint.mapTo(Endpoint.class);
-            String body =
-                    given()
-                            .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
-                            .header(identityHeader)
-                            .when()
-                            .delete(String.format("/notifications/eventTypes/%s/%s", policiesAll.getString("id"), endpoint.getString("id")))
-                            .then()
-                            .statusCode(204)
-                            .extract().body().asString();
-            assertEquals(0, body.length());
-
-        }
-
-        // Fetch the list again
-        response = given()
-                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
-                // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get(String.format("/notifications/eventTypes/%s", policiesAll.getString("id")))
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        endpoints = new JsonArray(response.getBody().asString());
-        assertEquals(0, endpoints.size());
-    }
-
-    void t05_addEmptyDefaultSettings() {
-        // Create default endpoint
-        Endpoint ep = new Endpoint();
-        ep.setType(EndpointType.DEFAULT);
-        ep.setName("Default endpoint");
-        ep.setDescription("The ultimate fallback");
-        ep.setEnabled(true);
-
-        Response response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        JsonObject defaultEndpoint = new JsonObject(response.getBody().asString());
-        defaultEndpoint.mapTo(Endpoint.class);
-        assertNotNull(defaultEndpoint.getString("id"));
-
-        // Get the eventTypeId
-        response = given()
-                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
-                .when()
-                .header(identityHeader)
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        JsonArray eventTypes = new JsonArray(response.getBody().asString());
-        JsonObject targetType = null;
-        for (int i = 0; i < eventTypes.size(); i++) {
-            JsonObject eventType = eventTypes.getJsonObject(i);
-            eventType.mapTo(EventType.class);
-            if (eventType.getJsonObject("application").getString("name").equals(APP_NAME) && eventType.getString("name").equals(EVENT_TYPE_NAME)) {
-                targetType = eventType;
-            }
-        }
-        assertNotNull(targetType);
-
-        // Link default to eventType
+    private void addBehaviorGroupActions(Header identityHeader, String behaviorGroupId, String... endpointIds) {
         given()
-                .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
+                .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
+                .contentType(JSON)
+                .pathParam("behaviorGroupId", behaviorGroupId)
+                .body(Json.encode(Arrays.asList(endpointIds)))
                 .when()
-                .put(String.format("/notifications/eventTypes/%s/%s", targetType.getString("id"), defaultEndpoint.getString("id")))
+                .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
                 .then()
                 .statusCode(200)
                 .contentType(TEXT);
-
-        // Get existing endpoints
-        // Link them to the default
     }
 
-//    @Test
-//    void t06_testEmptyDefaultTrigger() throws Exception {
-//        // Send event there, expect it to be processed but nothing is sent and no error happens
-//        InputStream is = getClass().getClassLoader().getResourceAsStream("input/platform.notifications.ingress.json");
-//        String inputJson = IOUtils.toString(is, StandardCharsets.UTF_8);
-//        ingressChan.send(inputJson);
-//
-//        // How do we check the process was completed and no errors appeared? We have no metrics yet
-//
-//        // Basically repeat t02_pushMessage
-//        // The end result should be the same
-//
-//        // TODO Delete DefaultAttributes and that sort of stuff to ensure it doesn't mess up anything
-//        // TODO Add Micrometer metrics here also and update Quarkus?
-//    }
+    /*
+     * Pushes a single message to the 'ingress' channel.
+     * Depending on the event type, behavior groups and endpoints configuration, it will trigger zero or more webhook calls.
+     */
+    private void pushMessage(int expectedWebhookCalls) throws IOException, InterruptedException {
+        counterAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
 
-    void t06_linkEndpointsAndTest() throws Exception {
-        // Get the existing endpoints (not attached to anything)
-        Response response = given()
+        CountDownLatch requestsCounter = new CountDownLatch(expectedWebhookCalls);
+        HttpRequest expectedRequestPattern = null;
+
+        if (expectedWebhookCalls > 0) {
+            expectedRequestPattern = setupWebhookMock(requestsCounter);
+        }
+
+        emitMockedIngressAction();
+
+        if (expectedWebhookCalls > 0) {
+            if (!requestsCounter.await(30, TimeUnit.SECONDS)) {
+                fail("HttpServer never received the requests");
+                HttpRequest[] httpRequests = mockServerConfig.getMockServerClient().retrieveRecordedRequests(expectedRequestPattern);
+                assertEquals(2, httpRequests.length);
+                // Verify calls were correct, sort first?
+            }
+            mockServerConfig.getMockServerClient().clear(expectedRequestPattern);
+        }
+
+        counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 0);
+        counterAssertionHelper.assertIncrement(PROCESSED_MESSAGES_COUNTER_NAME, 1);
+        counterAssertionHelper.assertIncrement(PROCESSED_ENDPOINTS_COUNTER_NAME, expectedWebhookCalls);
+        counterAssertionHelper.clear();
+    }
+
+    private void emitMockedIngressAction() throws IOException {
+        Action action = new Action();
+        action.setAccountId("tenant");
+        action.setBundle(BUNDLE_NAME);
+        action.setApplication(APP_NAME);
+        action.setEventType(EVENT_TYPE_NAME);
+        action.setTimestamp(LocalDateTime.now());
+        action.setContext(Map.of());
+        action.setEvents(List.of(
+                Event.newBuilder()
+                        .setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(Map.of())
+                        .build()
+        ));
+
+        String serializedAction = serializeAction(action);
+        inMemoryConnector.source("ingress").send(serializedAction);
+    }
+
+    private HttpRequest setupWebhookMock(CountDownLatch requestsCounter) {
+        HttpRequest expectedRequestPattern = new HttpRequest()
+                .withPath(WEBHOOK_MOCK_PATH)
+                .withMethod("POST");
+
+        mockServerConfig.getMockServerClient()
+                .withSecure(false)
+                .when(expectedRequestPattern)
+                .respond(request -> {
+                    requestsCounter.countDown();
+                    List<String> header = request.getHeader("X-Insight-Token");
+                    if (header != null && header.size() == 1 && SECRET_TOKEN.equals(header.get(0))) {
+                        return response().withStatusCode(200)
+                                .withBody("Success");
+                    } else {
+                        return response().withStatusCode(400)
+                                .withBody("{ \"message\": \"Time is running out\" }");
+                    }
+                });
+
+        return expectedRequestPattern;
+    }
+
+    private void updateEventTypeBehaviors(Header identityHeader, String eventTypeId, String... behaviorGroupIds) {
+        given()
+                .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
+                .contentType(JSON)
+                .pathParam("eventTypeId", eventTypeId)
+                .body(Json.encode(Arrays.asList(behaviorGroupIds)))
                 .when()
-                .get("/endpoints")
+                .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+                .then()
+                .statusCode(200)
+                .contentType(TEXT);
+    }
+
+    private void checkEventTypeBehaviorGroups(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {
+        String responseBody = given()
+                .basePath(API_NOTIFICATIONS_V_1_0)
+                .header(identityHeader)
+                .pathParam("eventTypeId", eventTypeId)
+                .when()
+                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().response();
+                .extract().body().asString();
 
-        JsonArray endpoints = new JsonObject(response.getBody().asString()).getJsonArray("data");
-        assertEquals(3, endpoints.size());
+        JsonArray jsonBehaviorGroups = new JsonArray(responseBody);
+        assertEquals(expectedBehaviorGroupIds.length, jsonBehaviorGroups.size());
 
-        for (int i = 0; i < endpoints.size(); i++) {
-            JsonObject endpoint = endpoints.getJsonObject(i);
-            endpoint.mapTo(Endpoint.class);
-            if (endpoint.getString("type") != EndpointType.DEFAULT.name()) {
-                given()
-                        .basePath(TestConstants.API_NOTIFICATIONS_V_1_0)
-                        .header(identityHeader)
-                        .when()
-                        .put(String.format("/notifications/defaults/%s", endpoint.getString("id")))
-                        .then()
-                        .statusCode(200)
-                        .contentType(TEXT);
+        for (String behaviorGroupId : expectedBehaviorGroupIds) {
+            if (!responseBody.contains(behaviorGroupId)) {
+                fail("One of the expected behavior groups is not linked to the event type");
             }
         }
-
-        t02_pushMessage();
     }
 
-    void t10_deleteBundle() {
+    private void retry(Supplier<Boolean> checkEndpointHistoryResult) {
+        await()
+                .pollInterval(Duration.ofSeconds(1L))
+                .atMost(Duration.ofSeconds(5L))
+                .until(() -> checkEndpointHistoryResult.get());
+    }
+
+    private boolean checkEndpointHistory(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
+        try {
+
+            String responseBody = given()
+                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId)
+                    .when()
+                    .get("/endpoints/{endpointId}/history")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().body().asString();
+
+            JsonArray jsonEndpointHistory = new JsonArray(responseBody);
+            assertEquals(expectedHistoryEntries, jsonEndpointHistory.size());
+
+            for (int i = 0; i < jsonEndpointHistory.size(); i++) {
+                JsonObject jsonNotificationHistory = jsonEndpointHistory.getJsonObject(i);
+                jsonNotificationHistory.mapTo(NotificationHistory.class);
+                assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
+
+                if (!expectedInvocationResult) {
+                    responseBody = given()
+                            .basePath(API_INTEGRATIONS_V_1_0)
+                            .header(identityHeader)
+                            .pathParam("endpointId", endpointId)
+                            .pathParam("historyId", jsonNotificationHistory.getString("id"))
+                            .when()
+                            .get("/endpoints/{endpointId}/history/{historyId}/details")
+                            .then()
+                            .statusCode(200)
+                            .contentType(JSON)
+                            .extract().body().asString();
+
+                    JsonObject jsonDetails = new JsonObject(responseBody);
+                    assertFalse(jsonDetails.isEmpty());
+                    assertEquals(expectedHttpStatus, jsonDetails.getInteger("code"));
+                    assertNotNull(jsonDetails.getString("url"));
+                    assertNotNull(jsonDetails.getString("method"));
+                }
+            }
+
+            return true;
+        } catch (AssertionError e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private void deleteBundle(String bundleId) {
         given()
                 .basePath("/")
                 .when()
-                .delete("/internal/bundles/" + theBundle.getString("id"))
+                .pathParam("bundleId", bundleId)
+                .delete("/internal/bundles/{bundleId}")
                 .then()
                 .statusCode(200)
                 .contentType(JSON);

@@ -8,7 +8,7 @@ import javax.persistence.MapsId;
 import javax.persistence.Table;
 import java.util.Objects;
 
-// TODO [BG Phase 2] Delete this class
+// TODO [BG Phase 3] Delete this class
 @Entity
 @Table(name = "endpoint_defaults")
 public class EndpointDefault {

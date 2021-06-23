@@ -70,12 +70,12 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Transient
     private EndpointProperties properties;
 
-    // TODO [BG Phase 2] Delete this attribute
+    // TODO [BG Phase 3] Delete this attribute
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<EndpointTarget> targets;
 
-    // TODO [BG Phase 2] Delete this attribute
+    // TODO [BG Phase 3] Delete this attribute
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<EndpointDefault> defaults;
@@ -161,22 +161,22 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.behaviorGroupActions = behaviorGroupActions;
     }
 
-    // TODO [BG Phase 2] Delete this method
+    // TODO [BG Phase 3] Delete this method
     public Set<EndpointTarget> getTargets() {
         return targets;
     }
 
-    // TODO [BG Phase 2] Delete this method
+    // TODO [BG Phase 3] Delete this method
     public void setTargets(Set<EndpointTarget> targets) {
         this.targets = targets;
     }
 
-    // TODO [BG Phase 2] Delete this method
+    // TODO [BG Phase 3] Delete this method
     public Set<EndpointDefault> getDefaults() {
         return defaults;
     }
 
-    // TODO [BG Phase 2] Delete this method
+    // TODO [BG Phase 3] Delete this method
     public void setDefaults(Set<EndpointDefault> defaults) {
         this.defaults = defaults;
     }
