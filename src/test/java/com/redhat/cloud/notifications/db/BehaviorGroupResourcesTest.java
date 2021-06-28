@@ -90,12 +90,17 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
     @Test
     public void testCreateBehaviorGroupWithNullDisplayName() {
-        Bundle bundle = createBundle();
-        PersistenceException e = assertThrows(PersistenceException.class, () -> {
-            createBehaviorGroup(null, bundle.getId());
-        });
-        assertSame(ConstraintViolationException.class, e.getCause().getCause().getClass());
-        assertTrue(e.getCause().getCause().getMessage().contains("propertyPath=displayName"));
+        createBehaviorGroupWithIllegalDisplayName(null);
+    }
+
+    @Test
+    public void testCreateBehaviorGroupWithEmptyDisplayName() {
+        createBehaviorGroupWithIllegalDisplayName("");
+    }
+
+    @Test
+    public void testCreateBehaviorGroupWithBlankDisplayName() {
+        createBehaviorGroupWithIllegalDisplayName(" ");
     }
 
     @Test
@@ -254,6 +259,15 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
         return behaviorGroupResources.create(ACCOUNT_ID, behaviorGroup).await().indefinitely();
+    }
+
+    private void createBehaviorGroupWithIllegalDisplayName(String displayName) {
+        Bundle bundle = createBundle();
+        PersistenceException e = assertThrows(PersistenceException.class, () -> {
+            createBehaviorGroup(displayName, bundle.getId());
+        });
+        assertSame(ConstraintViolationException.class, e.getCause().getCause().getClass());
+        assertTrue(e.getCause().getCause().getMessage().contains("propertyPath=displayName"));
     }
 
     private Boolean updateBehaviorGroup(UUID behaviorGroupId, String displayName) {
