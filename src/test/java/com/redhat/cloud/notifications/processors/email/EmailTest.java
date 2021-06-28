@@ -15,7 +15,6 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
@@ -26,7 +25,7 @@ import io.quarkus.scheduler.ScheduledExecution;
 import io.quarkus.scheduler.Trigger;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.Multi;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.ext.web.client.WebClient;
@@ -50,7 +49,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpResponse.response;
@@ -147,11 +145,9 @@ public class EmailTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        Notification notif = new Notification(emailActionMessage, ep);
-
         try {
-            Uni<NotificationHistory> process = emailProcessor.process(notif);
-            NotificationHistory history = process.await().indefinitely();
+            Multi<NotificationHistory> process = emailProcessor.process(emailActionMessage, List.of(ep));
+            NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
             assertTrue(history.isInvocationResult());
         } catch (Exception e) {
             e.printStackTrace();
@@ -255,12 +251,10 @@ public class EmailTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        Notification notif = new Notification(emailActionMessage, ep);
-
         try {
-            Uni<NotificationHistory> process = emailProcessor.process(notif);
-            NotificationHistory history = process.await().indefinitely();
-            assertNull(history);
+            Multi<NotificationHistory> process = emailProcessor.process(emailActionMessage, List.of(ep));
+            // The processor returns a null history value but Multi does not support null values so the resulting Multi is empty.
+            assertTrue(process.collect().asList().await().indefinitely().isEmpty());
         } catch (Exception e) {
             e.printStackTrace();
             fail(e);

@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
@@ -125,7 +126,15 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     @Override
-    public Uni<NotificationHistory> process(Notification item) {
+    public Multi<NotificationHistory> process(Action action, List<Endpoint> endpoints) {
+        return Multi.createFrom().iterable(endpoints)
+                .onItem().transformToUniAndConcatenate(endpoint -> {
+                    Notification notification = new Notification(action, endpoint);
+                    return process(notification);
+                });
+    }
+
+    private Uni<NotificationHistory> process(Notification item) {
         final EmailTemplate template = emailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
         final boolean shouldSaveAggregation = Arrays.stream(EmailSubscriptionType.values())
                 .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
