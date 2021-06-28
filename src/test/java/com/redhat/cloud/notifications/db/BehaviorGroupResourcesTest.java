@@ -11,13 +11,13 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.vertx.pgclient.PgException;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 import javax.validation.ConstraintViolationException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
 import java.util.List;
@@ -100,18 +100,18 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
     @Test
     public void testCreateBehaviorGroupWithNullBundleId() {
-        PersistenceException e = assertThrows(PersistenceException.class, () -> {
+        NotFoundException e = assertThrows(NotFoundException.class, () -> {
             createBehaviorGroup("displayName", null);
         });
-        assertSame(IllegalArgumentException.class, e.getCause().getCause().getClass());
+        assertEquals("bundle_id not found", e.getMessage());
     }
 
     @Test
     public void testCreateBehaviorGroupWithUnknownBundleId() {
-        PersistenceException e = assertThrows(PersistenceException.class, () -> {
+        NotFoundException e = assertThrows(NotFoundException.class, () -> {
             createBehaviorGroup("displayName", UUID.randomUUID());
         });
-        assertSame(PgException.class, e.getCause().getCause().getClass()); // FK constraint violation
+        assertEquals("bundle_id not found", e.getMessage());
     }
 
     @Test
