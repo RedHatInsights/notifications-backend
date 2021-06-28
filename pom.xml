@@ -21,7 +21,7 @@
         <checkstyle-plugin.version>3.1.2</checkstyle-plugin.version>
         <checkstyle.version>8.43</checkstyle.version>
         <testcontainers.version>1.15.3</testcontainers.version>
-        <mockserver-client-java.version>5.5.4</mockserver-client-java.version> <!-- not the newest, but matches what is in org.testcontainers:mockserver -->
+        <mockserver-client-java.version>5.11.2</mockserver-client-java.version> <!-- Keep the version synced with TestLifecycleManager -->
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <maven-exec-plugin.version>3.0.0</maven-exec-plugin.version>
