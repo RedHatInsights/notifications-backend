@@ -20,6 +20,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.QueryHint;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.List;
@@ -62,7 +63,7 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
     @JsonIgnore
     private String accountId;
 
-    @NotNull
+    @NotBlank
     @Schema(name = "display_name")
     private String displayName;
 
