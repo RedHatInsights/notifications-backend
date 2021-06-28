@@ -1,12 +1,12 @@
-import React from 'react';
-import { Brand, Nav, NavItem, Page, PageHeader, PageSidebar } from "@patternfly/react-core";
-
 import '@patternfly/react-core/dist/styles/base.css';
-import { Routes } from "../Routes";
-import logo from './redhat-logo.svg';
-import { Navigation } from "./Navigation";
-
 import './app.css';
+
+import { Brand, Page, PageHeader, PageSidebar } from '@patternfly/react-core';
+import React from 'react';
+
+import { Routes } from '../Routes';
+import { Navigation } from './Navigation';
+import logo from './redhat-logo.svg';
 
 export const App: React.FunctionComponent<unknown> = () => {
 

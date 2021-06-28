@@ -1,12 +1,23 @@
-import * as React from 'react';
-import { PageSection, Title } from "@patternfly/react-core";
-import {CodeEditor, CodeEditorControl, Language} from "@patternfly/react-code-editor";
-import {useMemo} from "react";
-import { PlayIcon } from "@patternfly/react-icons";
+import '@patternfly/react-core/dist/styles/base.css';
 
-const template = "const aggregation = (action) => {\n" +
-    "\n" +
-    "}\n";
+import { CodeEditor, CodeEditorControl, Language } from '@patternfly/react-code-editor';
+import { PageSection, Title } from '@patternfly/react-core';
+import { PlayIcon } from '@patternfly/react-icons';
+import * as React from 'react';
+import { useMemo } from 'react';
+
+const aggregationTemplate = `
+// Here we can initialize the value of the Aggregation result.
+const result = {
+};
+
+// This function will be called by every action that was sent to notification server
+// to update the result with its values.
+const aggregate = (action) => {
+
+    return result;
+};
+`.trimLeft();
 
 export const AggregationPage: React.FunctionComponent<unknown> = () => {
 
@@ -16,15 +27,16 @@ export const AggregationPage: React.FunctionComponent<unknown> = () => {
         monaco.editor.getModels()[0].updateOptions({ tabSize: 5 });
     }, []);
 
-    const onChange = React.useCallback((value) => {
-        console.log(value);
+    const onChange = React.useCallback((_value) => {
+        // does not do anything yet
     }, []);
 
     const controls = useMemo(() => [
         <CodeEditorControl
+            key="test"
             icon={ <PlayIcon /> }
             toolTipText="Test aggregation"
-            onClick={ () => console.log('testing')}
+            onClick={ () => console.log('testing') }
             isVisible={ true }
         />
     ], []);
@@ -44,7 +56,7 @@ export const AggregationPage: React.FunctionComponent<unknown> = () => {
                 language={ Language.javascript }
                 onEditorDidMount={ onEditorDidMount }
                 onChange={ onChange }
-                code={template}
+                code={ aggregationTemplate }
                 height="300px"
             />
         </PageSection>

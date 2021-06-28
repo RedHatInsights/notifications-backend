@@ -9,7 +9,7 @@
     "@patternfly/react-code-editor": "4.2.92",
     "@patternfly/react-core": "4.135.0",
     "@patternfly/react-icons": "4.11.0",
-    "monaco-editor": "^0.25.2",
+    "monaco-editor": "0.25.2",
     "monaco-editor-webpack-plugin": "4.0.0",
     "react": "17.0.2",
     "react-dom": "17.0.2",
@@ -29,14 +29,22 @@
     "@types/react": "17.0.0",
     "@types/react-dom": "17.0.0",
     "@types/react-router": "5.1.15",
-    "@types/react-router-dom": "5.1.7"
+    "@types/react-router-dom": "5.1.7",
+    "@typescript-eslint/eslint-plugin": "4.28.0",
+    "@typescript-eslint/parser": "4.28.0",
+    "eslint": "7.29.0",
+    "eslint-config-prettier": "8.3.0",
+    "eslint-plugin-react": "7.24.0",
+    "eslint-plugin-simple-import-sort": "7.0.0",
+    "react-app-rewired": "2.1.8"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "ESLINT_NO_DEV_ERRORS=true react-app-rewired start",
+    "build": "react-app-rewired build",
     "build:prod": "yarn build && rm -rf ../resources/META-INF/resources/internal && mkdir -p ../resources/META-INF/resources/internal && cp -R build/* ../resources/META-INF/resources/internal",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "lint": "eslint --ext js,ts,tsx config src config-overrides.js",
+    "test": "react-app-rewired test",
+    "eject": "react-app-rewired eject"
   },
   "eslintConfig": {
     "extends": [

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Redirect, Route, Switch } from 'react-router';
-import {AggregationPage} from "./pages/AggregationPage";
+
+import { AggregationPage } from './pages/AggregationPage';
 
 interface Path {
     readonly path: string;
@@ -23,12 +24,12 @@ export const Routes: React.FunctionComponent<unknown> = _props => {
         <Switch>
             { pathRoutes.map(pathRoute => (
                 <Route
-                    key={ pathRoute.path}
+                    key={ pathRoute.path }
                     component={ pathRoute.component }
                     path={ pathRoute.path }
                 />
             )) }
             <Redirect to={ linkTo.aggregation() } />
         </Switch>
-    )
+    );
 };
