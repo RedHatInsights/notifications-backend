@@ -6,7 +6,5 @@ module.exports = function(config, _env) {
         languages: [ 'javascript' ]
     }));
 
-    console.log(config.plugins);
-
     return config;
 };
