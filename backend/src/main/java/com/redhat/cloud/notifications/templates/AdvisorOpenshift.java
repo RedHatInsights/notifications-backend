@@ -49,7 +49,7 @@ public class AdvisorOpenshift implements EmailTemplate {
         return type == EmailSubscriptionType.INSTANT;
     }
 
-    @CheckedTemplate
+    @CheckedTemplate(requireTypeSafeExpressions = false)
     public static class Templates {
 
         public static native TemplateInstance newRecommendationInstantEmailTitle();
