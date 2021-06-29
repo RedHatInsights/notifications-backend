@@ -11,6 +11,7 @@ import org.hibernate.reactive.mutiny.Mutiny;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response.Status;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -31,14 +32,13 @@ public class BehaviorGroupResources {
     Mutiny.Session session;
 
     public Uni<BehaviorGroup> create(String accountId, BehaviorGroup behaviorGroup) {
-        return Uni.createFrom().item(behaviorGroup)
-                .onItem().transform(bg -> {
-                    bg.setAccountId(accountId);
-                    Bundle bundle = session.getReference(Bundle.class, bg.getBundleId());
-                    bg.setBundle(bundle);
-                    return bg;
+        return session.find(Bundle.class, behaviorGroup.getBundleId())
+                .onItem().ifNull().failWith(new NotFoundException("bundle_id not found"))
+                .onItem().invoke(bundle -> {
+                    behaviorGroup.setBundle(bundle);
+                    behaviorGroup.setAccountId(accountId);
                 })
-                .onItem().transformToUni(session::persist)
+                .replaceWith(session.persist(behaviorGroup))
                 .call(session::flush)
                 .replaceWith(behaviorGroup)
                 .onItem().invoke(BehaviorGroup::filterOutBundle);

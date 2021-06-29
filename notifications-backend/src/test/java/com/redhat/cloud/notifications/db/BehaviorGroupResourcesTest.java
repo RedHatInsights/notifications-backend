@@ -11,13 +11,13 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.vertx.pgclient.PgException;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import javax.persistence.PersistenceException;
 import javax.validation.ConstraintViolationException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
 import java.util.List;
@@ -90,28 +90,33 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
     @Test
     public void testCreateBehaviorGroupWithNullDisplayName() {
-        Bundle bundle = createBundle();
-        PersistenceException e = assertThrows(PersistenceException.class, () -> {
-            createBehaviorGroup(null, bundle.getId());
-        });
-        assertSame(ConstraintViolationException.class, e.getCause().getCause().getClass());
-        assertTrue(e.getCause().getCause().getMessage().contains("propertyPath=displayName"));
+        createBehaviorGroupWithIllegalDisplayName(null);
+    }
+
+    @Test
+    public void testCreateBehaviorGroupWithEmptyDisplayName() {
+        createBehaviorGroupWithIllegalDisplayName("");
+    }
+
+    @Test
+    public void testCreateBehaviorGroupWithBlankDisplayName() {
+        createBehaviorGroupWithIllegalDisplayName(" ");
     }
 
     @Test
     public void testCreateBehaviorGroupWithNullBundleId() {
-        PersistenceException e = assertThrows(PersistenceException.class, () -> {
+        NotFoundException e = assertThrows(NotFoundException.class, () -> {
             createBehaviorGroup("displayName", null);
         });
-        assertSame(IllegalArgumentException.class, e.getCause().getCause().getClass());
+        assertEquals("bundle_id not found", e.getMessage());
     }
 
     @Test
     public void testCreateBehaviorGroupWithUnknownBundleId() {
-        PersistenceException e = assertThrows(PersistenceException.class, () -> {
+        NotFoundException e = assertThrows(NotFoundException.class, () -> {
             createBehaviorGroup("displayName", UUID.randomUUID());
         });
-        assertSame(PgException.class, e.getCause().getCause().getClass()); // FK constraint violation
+        assertEquals("bundle_id not found", e.getMessage());
     }
 
     @Test
@@ -254,6 +259,15 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
         return behaviorGroupResources.create(ACCOUNT_ID, behaviorGroup).await().indefinitely();
+    }
+
+    private void createBehaviorGroupWithIllegalDisplayName(String displayName) {
+        Bundle bundle = createBundle();
+        PersistenceException e = assertThrows(PersistenceException.class, () -> {
+            createBehaviorGroup(displayName, bundle.getId());
+        });
+        assertSame(ConstraintViolationException.class, e.getCause().getCause().getClass());
+        assertTrue(e.getCause().getCause().getMessage().contains("propertyPath=displayName"));
     }
 
     private Boolean updateBehaviorGroup(UUID behaviorGroupId, String displayName) {

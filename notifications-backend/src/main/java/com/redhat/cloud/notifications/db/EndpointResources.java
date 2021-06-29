@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 
@@ -110,7 +109,7 @@ public class EndpointResources {
         return mutinyQuery.getSingleResult();
     }
 
-    public Multi<Endpoint> getTargetEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
+    public Uni<List<Endpoint>> getTargetEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                 "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName";
@@ -121,8 +120,7 @@ public class EndpointResources {
                 .setParameter("accountId", tenant)
                 .setParameter("bundleName", bundleName)
                 .getResultList()
-                .onItem().call(endpoints -> loadProperties(endpoints, true))
-                .onItem().transformToMulti(Multi.createFrom()::iterable);
+                .onItem().call(endpoints -> loadProperties(endpoints, true));
     }
 
     public Uni<List<Endpoint>> getEndpoints(String tenant, Query limiter) {

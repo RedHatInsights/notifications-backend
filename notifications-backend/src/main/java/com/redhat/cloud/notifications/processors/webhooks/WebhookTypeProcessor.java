@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.webhooks;
 
+import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -10,6 +11,7 @@ import com.redhat.cloud.notifications.processors.webclient.SslVerificationEnable
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.impl.HttpRequestImpl;
@@ -21,6 +23,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -53,7 +56,16 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         processedCount = registry.counter("processor.webhook.processed");
     }
 
-    public Uni<NotificationHistory> process(Notification item) {
+    @Override
+    public Multi<NotificationHistory> process(Action action, List<Endpoint> endpoints) {
+        return Multi.createFrom().iterable(endpoints)
+                .onItem().transformToUniAndConcatenate(endpoint -> {
+                    Notification notification = new Notification(action, endpoint);
+                    return process(notification);
+                });
+    }
+
+    private Uni<NotificationHistory> process(Notification item) {
         processedCount.increment();
         Endpoint endpoint = item.getEndpoint();
         WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
