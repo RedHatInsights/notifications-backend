@@ -17,7 +17,7 @@ class AuthRequestFilter implements ClientRequestFilter {
     @ConfigProperty(name = "rbac.service-to-service.application", defaultValue = "notifications")
     String application;
 
-    public AuthRequestFilter() {
+    AuthRequestFilter() {
         String tmp = System.getProperty("rbac.service-to-service.exceptional.auth.info");
         if (tmp != null && !tmp.isEmpty()) {
             authInfo = Base64.getEncoder().encodeToString(tmp.getBytes());

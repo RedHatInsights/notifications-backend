@@ -61,8 +61,14 @@ public class User {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof User)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof User)) {
+            return false;
+        }
+
         User user = (User) o;
         return username.equals(user.username) && email.equals(user.email) && firstName.equals(user.firstName) && lastName.equals(user.lastName)
                 && isActive.equals(user.isActive) && isAdmin.equals(user.isAdmin);
