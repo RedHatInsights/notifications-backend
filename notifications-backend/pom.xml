@@ -13,6 +13,89 @@
     </parent>
 
     <dependencies>
+        <dependency>
+            <groupId>io.quarkiverse.logging.cloudwatch</groupId>
+            <artifactId>quarkus-logging-cloudwatch</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-logging-sentry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-scheduler</artifactId>
+        </dependency>
+        <!-- Related to Quarkus, but outside the Quarkus namespace -->
+        <!-- https://github.com/quarkusio/quarkus/issues/12913 -->
+        <dependency>
+            <groupId>com.github.java-json-tools</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>2.2.14</version>
+        </dependency>
+
+        <!-- Flyway specific dependencies -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-jdbc-postgresql</artifactId>
+        </dependency>
+
+        <!-- Insights -->
+        <dependency>
+            <groupId>com.redhat.cloud.common</groupId>
+            <artifactId>insights-notification-schemas-java</artifactId>
+            <version>${insights-notification-schemas-java.version}</version>
+        </dependency>
+
+        <!-- Configuration dependencies -->
+        <dependency>
+            <groupId>com.redhat.cloud.common</groupId>
+            <artifactId>clowder-quarkus-config-source</artifactId>
+            <version>${clowder-quarkus-config-source.version}</version>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5-mockito</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
