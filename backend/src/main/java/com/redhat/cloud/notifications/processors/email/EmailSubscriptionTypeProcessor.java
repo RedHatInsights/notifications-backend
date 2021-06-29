@@ -24,6 +24,7 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -67,6 +68,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    Mutiny.SessionFactory sessionFactory;
 
     @Inject
     MeterRegistry registry;
@@ -149,14 +153,16 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             return Uni.createFrom().nullItem();
         }
 
-        return processAggregateEmailsByAggregationKey(
-                aggregationCommand.getAggregationKey(),
-                aggregationCommand.getStart(),
-                aggregationCommand.getEnd(),
-                aggregationCommand.getSubscriptionType(),
-                // Delete on daily
-                aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY)
-        ).onItem().ignoreAsUni();
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return processAggregateEmailsByAggregationKey(
+                    aggregationCommand.getAggregationKey(),
+                    aggregationCommand.getStart(),
+                    aggregationCommand.getEnd(),
+                    aggregationCommand.getSubscriptionType(),
+                    // Delete on daily
+                    aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY)
+            ).onItem().ignoreAsUni();
+        });
     }
 
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {

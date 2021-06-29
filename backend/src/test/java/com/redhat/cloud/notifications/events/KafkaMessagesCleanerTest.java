@@ -5,9 +5,7 @@ import com.redhat.cloud.notifications.models.KafkaMessage;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import org.hibernate.reactive.mutiny.Mutiny;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -15,8 +13,9 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.db.EventLogCleaner.now;
 import static com.redhat.cloud.notifications.events.KafkaMessagesCleaner.KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY;
+import static com.redhat.cloud.notifications.events.KafkaMessagesCleaner.now;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -29,58 +28,56 @@ public class KafkaMessagesCleanerTest {
      * a stateless session.
      */
     @Inject
-    Mutiny.StatelessSession statelessSession;
+    Mutiny.SessionFactory sessionFactory;
 
     @Inject
     KafkaMessagesCleaner kafkaMessagesCleaner;
 
-    @BeforeEach
-    void beforeEach() {
-        statelessSession.createQuery("DELETE FROM KafkaMessage")
-                .executeUpdate()
-                .subscribe().withSubscriber(UniAssertSubscriber.create())
-                .await()
-                .assertCompleted();
-    }
-
     @Test
     void testWithDefaultConfiguration() {
-        createKafkaMessage(now().minus(Duration.ofHours(13L)))
+        sessionFactory.withStatelessSession(statelessSession -> deleteAllKafkaMessages()
+                .chain(() -> createKafkaMessage(now().minus(Duration.ofHours(13L))))
                 .chain(() -> createKafkaMessage(now().minus(Duration.ofDays(2L))))
-                .subscribe().withSubscriber(UniAssertSubscriber.create())
-                .await()
-                .assertCompleted();
-        assertCount(2L);
-        kafkaMessagesCleaner.clean();
-        assertCount(1L);
+                .chain(() -> count())
+                .invoke(count -> assertEquals(2L, count))
+                .chain(() -> kafkaMessagesCleaner.testableClean())
+                .chain(() -> count())
+                .invoke(count -> assertEquals(1L, count))
+        ).await().indefinitely();
     }
 
     @Test
     void testWithCustomConfiguration() {
-        System.setProperty(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY, "12h");
-        createKafkaMessage(now().minus(Duration.ofHours(13L)))
+        sessionFactory.withStatelessSession(statelessSession -> deleteAllKafkaMessages()
+                .invoke(() -> System.setProperty(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY, "12h"))
+                .chain(() -> createKafkaMessage(now().minus(Duration.ofHours(13L))))
                 .chain(() -> createKafkaMessage(now().minus(Duration.ofDays(2L))))
-                .subscribe().withSubscriber(UniAssertSubscriber.create())
-                .await()
-                .assertCompleted();
-        assertCount(2L);
-        kafkaMessagesCleaner.clean();
-        assertCount(0L);
-        System.clearProperty(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY);
+                .chain(() -> count())
+                .invoke(count -> assertEquals(2L, count))
+                .chain(() -> kafkaMessagesCleaner.testableClean())
+                .chain(() -> count())
+                .invoke(count -> assertEquals(0L, count))
+                .invoke(() -> System.clearProperty(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY))
+        ).await().indefinitely();
+    }
+
+    private Uni<Integer> deleteAllKafkaMessages() {
+        return sessionFactory.withStatelessSession(statelessSession ->
+                statelessSession.createQuery("DELETE FROM KafkaMessage")
+                        .executeUpdate()
+        );
     }
 
     private Uni<Void> createKafkaMessage(LocalDateTime created) {
         KafkaMessage kafkaMessage = new KafkaMessage(UUID.randomUUID());
         kafkaMessage.setCreated(created);
-        return statelessSession.insert(kafkaMessage);
+        return sessionFactory.withStatelessSession(statelessSession -> statelessSession.insert(kafkaMessage));
     }
 
-    private void assertCount(long expectedCount) {
-        statelessSession.createQuery("SELECT COUNT(*) FROM KafkaMessage", Long.class)
-                .getSingleResult()
-                .subscribe().withSubscriber(UniAssertSubscriber.create())
-                .await()
-                .assertItem(expectedCount)
-                .assertCompleted();
+    private Uni<Long> count() {
+        return sessionFactory.withStatelessSession(statelessSession ->
+                statelessSession.createQuery("SELECT COUNT(*) FROM KafkaMessage", Long.class)
+                        .getSingleResult()
+        );
     }
 }

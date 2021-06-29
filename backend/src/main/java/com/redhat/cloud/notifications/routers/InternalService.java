@@ -18,6 +18,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
@@ -63,6 +64,9 @@ public class InternalService {
     @Inject
     ActionParser actionParser;
 
+    @Inject
+    Mutiny.SessionFactory sessionFactory;
+
     @GET
     @Path("/")
     public void httpRoot() {
@@ -81,23 +85,29 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     public Uni<Bundle> createBundle(@NotNull @Valid Bundle bundle) {
-        return bundleResources.createBundle(bundle);
+        return sessionFactory.withSession(session -> {
+            return bundleResources.createBundle(bundle);
+        });
     }
 
     @GET
     @Path("/bundles")
     @Produces(APPLICATION_JSON)
     public Uni<List<Bundle>> getBundles() {
-        // Return configured with types?
-        return bundleResources.getBundles();
+        return sessionFactory.withSession(session -> {
+            // Return configured with types?
+            return bundleResources.getBundles();
+        });
     }
 
     @GET
     @Path("/bundles/{bundleId}")
     @Produces(APPLICATION_JSON)
     public Uni<Bundle> getBundle(@PathParam("bundleId") UUID bundleId) {
-        return bundleResources.getBundle(bundleId)
-                .onItem().ifNull().failWith(new NotFoundException());
+        return sessionFactory.withSession(session -> {
+            return bundleResources.getBundle(bundleId)
+                    .onItem().ifNull().failWith(new NotFoundException());
+        });
     }
 
     @PUT
@@ -105,28 +115,34 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     public Uni<Response> updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
-        return bundleResources.updateBundle(bundleId, bundle)
-                .onItem().transform(rowCount -> {
-                    if (rowCount == 0) {
-                        return Response.status(Response.Status.NOT_FOUND).build();
-                    } else {
-                        return Response.ok().build();
-                    }
-                });
+        return sessionFactory.withSession(session -> {
+            return bundleResources.updateBundle(bundleId, bundle)
+                    .onItem().transform(rowCount -> {
+                        if (rowCount == 0) {
+                            return Response.status(Response.Status.NOT_FOUND).build();
+                        } else {
+                            return Response.ok().build();
+                        }
+                    });
+        });
     }
 
     @DELETE
     @Path("/bundles/{bundleId}")
     @Produces(APPLICATION_JSON)
     public Uni<Boolean> deleteBundle(@PathParam("bundleId") UUID bundleId) {
-        return bundleResources.deleteBundle(bundleId);
+        return sessionFactory.withSession(session -> {
+            return bundleResources.deleteBundle(bundleId);
+        });
     }
 
     @GET
     @Path("/bundles/{bundleId}/applications")
     @Produces(APPLICATION_JSON)
     public Uni<List<Application>> getApplications(@PathParam("bundleId") UUID bundleId) {
-        return bundleResources.getApplications(bundleId);
+        return sessionFactory.withSession(session -> {
+            return bundleResources.getApplications(bundleId);
+        });
     }
 
     @POST
@@ -134,15 +150,19 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     public Uni<Application> createApplication(@NotNull @Valid Application app) {
-        return appResources.createApp(app);
+        return sessionFactory.withSession(session -> {
+            return appResources.createApp(app);
+        });
     }
 
     @GET
     @Path("/applications/{appId}")
     @Produces(APPLICATION_JSON)
     public Uni<Application> getApplication(@PathParam("appId") UUID appId) {
-        return appResources.getApplication(appId)
-                .onItem().ifNull().failWith(new NotFoundException());
+        return sessionFactory.withSession(session -> {
+            return appResources.getApplication(appId)
+                    .onItem().ifNull().failWith(new NotFoundException());
+        });
     }
 
     @PUT
@@ -150,28 +170,34 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     public Uni<Response> updateApplication(@PathParam("appId") UUID appId, @NotNull @Valid Application app) {
-        return appResources.updateApplication(appId, app)
-                .onItem().transform(rowCount -> {
-                    if (rowCount == 0) {
-                        return Response.status(Response.Status.NOT_FOUND).build();
-                    } else {
-                        return Response.ok().build();
-                    }
-                });
+        return sessionFactory.withSession(session -> {
+            return appResources.updateApplication(appId, app)
+                    .onItem().transform(rowCount -> {
+                        if (rowCount == 0) {
+                            return Response.status(Response.Status.NOT_FOUND).build();
+                        } else {
+                            return Response.ok().build();
+                        }
+                    });
+        });
     }
 
     @DELETE
     @Path("/applications/{appId}")
     @Produces(APPLICATION_JSON)
     public Uni<Boolean> deleteApplication(@PathParam("appId") UUID appId) {
-        return appResources.deleteApplication(appId);
+        return sessionFactory.withSession(session -> {
+            return appResources.deleteApplication(appId);
+        });
     }
 
     @GET
     @Path("/applications/{appId}/eventTypes")
     @Produces(APPLICATION_JSON)
     public Uni<List<EventType>> getEventTypes(@PathParam("appId") UUID appId) {
-        return appResources.getEventTypes(appId);
+        return sessionFactory.withSession(session -> {
+            return appResources.getEventTypes(appId);
+        });
     }
 
     @POST
@@ -179,7 +205,9 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     public Uni<EventType> createEventType(@NotNull @Valid EventType eventType) {
-        return appResources.createEventType(eventType);
+        return sessionFactory.withSession(session -> {
+            return appResources.createEventType(eventType);
+        });
     }
 
     @PUT
@@ -187,28 +215,34 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     public Uni<Response> updateEventType(@PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
-        return appResources.updateEventType(eventTypeId, eventType)
-                .onItem().transform(rowCount -> {
-                    if (rowCount == 0) {
-                        return Response.status(Response.Status.NOT_FOUND).build();
-                    } else {
-                        return Response.ok().build();
-                    }
-                });
+        return sessionFactory.withSession(session -> {
+            return appResources.updateEventType(eventTypeId, eventType)
+                    .onItem().transform(rowCount -> {
+                        if (rowCount == 0) {
+                            return Response.status(Response.Status.NOT_FOUND).build();
+                        } else {
+                            return Response.ok().build();
+                        }
+                    });
+        });
     }
 
     @DELETE
     @Path("/eventTypes/{eventTypeId}")
     @Produces(APPLICATION_JSON)
     public Uni<Boolean> deleteEventType(@PathParam("eventTypeId") UUID eventTypeId) {
-        return appResources.deleteEventTypeById(eventTypeId);
+        return sessionFactory.withSession(session -> {
+            return appResources.deleteEventTypeById(eventTypeId);
+        });
     }
 
     @PUT
     @Path("/status")
     @Consumes(APPLICATION_JSON)
     public Uni<Void> setCurrentStatus(@NotNull @Valid CurrentStatus status) {
-        return statusResources.setCurrentStatus(status);
+        return sessionFactory.withSession(session -> {
+            return statusResources.setCurrentStatus(status);
+        });
     }
 
     @POST

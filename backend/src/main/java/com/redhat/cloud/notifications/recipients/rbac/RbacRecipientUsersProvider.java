@@ -65,9 +65,7 @@ public class RbacRecipientUsersProvider {
                 .onItem().invoke(() -> getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId)));
             }
         )
-        .onItem().invoke(users -> getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size()))))
-        // .memoize().indefinitely() should be removed after the Quarkus 2.0 bump
-        .memoize().indefinitely();
+        .onItem().invoke(users -> getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size()))));
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
@@ -97,9 +95,7 @@ public class RbacRecipientUsersProvider {
                         });
                     }
                 })
-                .onItem().invoke(users -> getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountId, "users", String.valueOf(users.size()))))
-                // .memoize().indefinitely() should be removed after the Quarkus 2.0 bump
-                .memoize().indefinitely();
+                .onItem().invoke(users -> getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountId, "users", String.valueOf(users.size()))));
     }
 
     private <T> Uni<T> retryOnError(Uni<T> uni) {

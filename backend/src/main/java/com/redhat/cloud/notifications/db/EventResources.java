@@ -21,51 +21,54 @@ import static com.redhat.cloud.notifications.routers.EventService.SORT_BY_PATTER
 public class EventResources {
 
     @Inject
-    Mutiny.Session session;
-
-    @Inject
-    Mutiny.StatelessSession statelessSession;
+    Mutiny.SessionFactory sessionFactory;
 
     // Note: This method uses a stateless session
     public Uni<Event> create(Event event) {
         event.prePersist(); // This method must be called manually while using a StatelessSession.
-        return statelessSession.insert(event)
-                .replaceWith(event);
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.insert(event)
+                    .replaceWith(event);
+        });
     }
 
     public Uni<List<Event>> getEvents(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults,
                                       Integer limit, Integer offset, String sortBy) {
-        Optional<String> orderByCondition = getOrderByCondition(sortBy);
-        return getEventIds(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, orderByCondition)
-                .onItem().transformToUni(eventIds -> {
-                    String hql = "SELECT DISTINCT e FROM Event e " +
-                            "JOIN FETCH e.eventType et JOIN FETCH et.application a JOIN FETCH a.bundle b " +
-                            "LEFT JOIN FETCH e.historyEntries he " +
-                            "WHERE e.accountId = :accountId AND e.id IN (:eventIds)";
+        return sessionFactory.withSession(session -> {
+            Optional<String> orderByCondition = getOrderByCondition(sortBy);
+            return getEventIds(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, orderByCondition)
+                    .onItem().transformToUni(eventIds -> {
+                        String hql = "SELECT DISTINCT e FROM Event e " +
+                                "JOIN FETCH e.eventType et JOIN FETCH et.application a JOIN FETCH a.bundle b " +
+                                "LEFT JOIN FETCH e.historyEntries he " +
+                                "WHERE e.accountId = :accountId AND e.id IN (:eventIds)";
 
-                    if (orderByCondition.isPresent()) {
-                        hql += orderByCondition.get();
-                    }
+                        if (orderByCondition.isPresent()) {
+                            hql += orderByCondition.get();
+                        }
 
-                    return session.createQuery(hql, Event.class)
-                            .setParameter("accountId", accountId)
-                            .setParameter("eventIds", eventIds)
-                            .getResultList();
-                });
+                        return session.createQuery(hql, Event.class)
+                                .setParameter("accountId", accountId)
+                                .setParameter("eventIds", eventIds)
+                                .getResultList();
+                    });
+        });
     }
 
     public Uni<Long> count(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                           LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults) {
-        String hql = "SELECT COUNT(*) FROM Event e JOIN e.eventType et JOIN et.application a JOIN a.bundle b " +
-                "WHERE e.accountId = :accountId";
+                      LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults) {
+        return sessionFactory.withSession(session -> {
+            String hql = "SELECT COUNT(*) FROM Event e JOIN e.eventType et JOIN et.application a JOIN a.bundle b " +
+                    "WHERE e.accountId = :accountId";
 
-        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+            hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
 
-        Mutiny.Query<Long> query = session.createQuery(hql, Long.class);
-        setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+            Mutiny.Query<Long> query = session.createQuery(hql, Long.class);
+            setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
 
-        return query.getSingleResult();
+            return query.getSingleResult();
+        });
     }
 
     private Optional<String> getOrderByCondition(String sortBy) {
@@ -86,26 +89,28 @@ public class EventResources {
     private Uni<List<UUID>> getEventIds(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                         LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults,
                                         Integer limit, Integer offset, Optional<String> orderByCondition) {
-        String hql = "SELECT e.id FROM Event e JOIN e.eventType et JOIN et.application a JOIN a.bundle b " +
-                "WHERE e.accountId = :accountId";
+        return sessionFactory.withSession(session -> {
+            String hql = "SELECT e.id FROM Event e JOIN e.eventType et JOIN et.application a JOIN a.bundle b " +
+                    "WHERE e.accountId = :accountId";
 
-        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+            hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
 
-        if (orderByCondition.isPresent()) {
-            hql += orderByCondition.get();
-        }
+            if (orderByCondition.isPresent()) {
+                hql += orderByCondition.get();
+            }
 
-        Mutiny.Query<UUID> query = session.createQuery(hql, UUID.class);
-        setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+            Mutiny.Query<UUID> query = session.createQuery(hql, UUID.class);
+            setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
 
-        if (limit != null) {
-            query.setMaxResults(limit);
-        }
-        if (offset != null) {
-            query.setFirstResult(offset);
-        }
+            if (limit != null) {
+                query.setMaxResults(limit);
+            }
+            if (offset != null) {
+                query.setFirstResult(offset);
+            }
 
-        return query.getResultList();
+            return query.getResultList();
+        });
     }
 
     private static String addHqlConditions(String hql, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,

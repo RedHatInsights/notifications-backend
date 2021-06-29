@@ -6,6 +6,7 @@ import io.vertx.core.json.Json;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -24,6 +25,9 @@ public class FromCamelHistoryFiller {
     @Inject
     NotificationResources notificationResources;
 
+    @Inject
+    Mutiny.SessionFactory sessionFactory;
+
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
     @Incoming("fromCamel")
     // Can be modified to use Multi<Message<String>> input also for more concurrency
@@ -32,10 +36,13 @@ public class FromCamelHistoryFiller {
                 .onItem().invoke(payload -> log.info(() -> "Processing return from camel: " + payload))
                 .onItem().transform(this::decodeItem)
                 .onItem()
-                .transformToUni(payload -> notificationResources.updateHistoryItem(payload)
-                        .onFailure().invoke(t -> log.info(() -> "|  Update Fail: " + t)
-                        )
-                )
+                .transformToUni(payload -> {
+                    return sessionFactory.withStatelessSession(statelessSession -> {
+                        return notificationResources.updateHistoryItem(payload)
+                                .onFailure().invoke(t -> log.info(() -> "|  Update Fail: " + t)
+                                );
+                    });
+                })
                 .onItemOrFailure()
                 .transformToUni((unused, t) -> {
                     if (t != null) {

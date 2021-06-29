@@ -68,13 +68,7 @@ public class MaintenanceModeRequestFilter {
 
     @CacheResult(cacheName = "maintenance")
     public Uni<Boolean> isMaintenance() {
-        /*
-         * We have to memoize (which is the Mutiny word for cache) the Uni result here because quarkus-cache does not
-         * support caching Uni in Quarkus 1.x.
-         * This is already fixed in Quarkus 2.0: see https://github.com/quarkusio/quarkus/pull/16608
-         */
         return statusResources.getCurrentStatus()
-                .onItem().transform(currentStatus -> currentStatus.status == MAINTENANCE)
-                .memoize().indefinitely(); // TODO Remove memoize after Quarkus is bumped to 2.0
+                .onItem().transform(currentStatus -> currentStatus.status == MAINTENANCE);
     }
 }

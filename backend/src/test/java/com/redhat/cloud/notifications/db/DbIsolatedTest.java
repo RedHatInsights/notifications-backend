@@ -3,8 +3,7 @@ package com.redhat.cloud.notifications.db;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import static com.redhat.cloud.notifications.Constants.INTERNAL;
-import static io.restassured.RestAssured.given;
+import javax.inject.Inject;
 
 /**
  * When a test class extends {@link DbIsolatedTest}, all of its tests are individually preceded and followed by a
@@ -12,13 +11,13 @@ import static io.restassured.RestAssured.given;
  */
 public abstract class DbIsolatedTest {
 
+    @Inject
+    DbCleaner dbCleaner;
+
     @BeforeEach
     @AfterEach
     void cleanDatabase() {
-        given()
-                .basePath(INTERNAL)
-                .delete("/db_cleaner")
-                .then()
-                .statusCode(204);
+        dbCleaner.clean()
+                .await().indefinitely();
     }
 }

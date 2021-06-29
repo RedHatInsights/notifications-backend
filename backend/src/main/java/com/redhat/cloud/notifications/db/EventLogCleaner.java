@@ -12,8 +12,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-
 @ApplicationScoped
 public class EventLogCleaner {
 
@@ -23,17 +21,13 @@ public class EventLogCleaner {
     private static final Duration DEFAULT_DELETE_DELAY = Duration.ofDays(31L);
 
     @Inject
-    Mutiny.StatelessSession statelessSession;
+    Mutiny.SessionFactory sessionFactory;
 
     /**
      * The event log entries are stored in the database until their retention time is reached.
      * This scheduled job deletes from the database the expired event log entries.
      */
-    /*
-     * TODO The scheduling is delayed to prevent an unwanted execution during tests. Remove the delay and set the period
-     * to `disabled` after the Quarkus 2 bump. See https://quarkus.io/guides/scheduler-reference for more details.
-     */
-    @Scheduled(identity = "EventLogCleaner", delay = 10L, delayUnit = MINUTES, every = "{event-log-cleaner.period}")
+    @Scheduled(identity = "EventLogCleaner", every = "${event-log-cleaner.period}")
     public void clean() {
         testableClean().await().indefinitely();
     }
@@ -43,10 +37,12 @@ public class EventLogCleaner {
                 .orElse(DEFAULT_DELETE_DELAY);
         LocalDateTime deleteBefore = now().minus(deleteDelay);
         LOGGER.infof("Event log purge starting. Entries older than %s will be deleted.", deleteBefore.toString());
-        return statelessSession.createQuery("DELETE FROM Event WHERE created < :deleteBefore")
-                .setParameter("deleteBefore", deleteBefore)
-                .executeUpdate()
-                .invoke(deleted -> LOGGER.infof("Event log purge ended. %d entries were deleted from the database.", deleted));
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createQuery("DELETE FROM Event WHERE created < :deleteBefore")
+                    .setParameter("deleteBefore", deleteBefore)
+                    .executeUpdate()
+                    .invoke(deleted -> LOGGER.infof("Event log purge ended. %d entries were deleted from the database.", deleted));
+        });
     }
 
     public static LocalDateTime now() {

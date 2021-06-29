@@ -11,22 +11,26 @@ import javax.inject.Inject;
 public class StatusResources {
 
     @Inject
-    Mutiny.Session session;
+    Mutiny.SessionFactory sessionFactory;
 
     public Uni<CurrentStatus> getCurrentStatus() {
         String query = "FROM CurrentStatus";
-        return session.createQuery(query, CurrentStatus.class)
-                .getSingleResult();
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query, CurrentStatus.class)
+                    .getSingleResult();
+        });
     }
 
     public Uni<Void> setCurrentStatus(CurrentStatus currentStatus) {
         String query = "UPDATE CurrentStatus SET status = :status, startTime = :startTime, endTime = :endTime";
-        return session.createQuery(query)
-                .setParameter("status", currentStatus.getStatus())
-                .setParameter("startTime", currentStatus.getStartTime())
-                .setParameter("endTime", currentStatus.getEndTime())
-                .executeUpdate()
-                .call(session::flush)
-                .replaceWith(Uni.createFrom().voidItem());
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query)
+                    .setParameter("status", currentStatus.getStatus())
+                    .setParameter("startTime", currentStatus.getStartTime())
+                    .setParameter("endTime", currentStatus.getEndTime())
+                    .executeUpdate()
+                    .call(session::flush)
+                    .replaceWith(Uni.createFrom().voidItem());
+        });
     }
 }

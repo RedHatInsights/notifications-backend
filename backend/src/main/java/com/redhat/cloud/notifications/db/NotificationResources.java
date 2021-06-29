@@ -15,59 +15,62 @@ import java.util.UUID;
 public class NotificationResources {
 
     @Inject
-    Mutiny.Session session;
-
-    @Inject
-    Mutiny.StatelessSession statelessSession;
+    Mutiny.SessionFactory sessionFactory;
 
     public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {
         history.prePersist(); // This method must be called manually while using a StatelessSession.
-        return statelessSession.insert(history)
-                .replaceWith(history);
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.insert(history)
+                    .replaceWith(history);
+        });
     }
 
     public Uni<List<NotificationHistory>> getNotificationHistory(String tenant, UUID endpoint, boolean includeDetails, Query limiter) {
-        String query = "SELECT NEW NotificationHistory(nh.id, nh.invocationTime, nh.invocationResult, nh.endpoint, nh.created";
-        if (includeDetails) {
-            query += ", nh.details";
-        }
-        query += ") FROM NotificationHistory nh WHERE nh.event.accountId = :accountId AND nh.endpoint.id = :endpointId";
+        return sessionFactory.withSession(session -> {
+            String query = "SELECT NEW NotificationHistory(nh.id, nh.invocationTime, nh.invocationResult, nh.endpoint, nh.created";
+            if (includeDetails) {
+                query += ", nh.details";
+            }
+            query += ") FROM NotificationHistory nh WHERE nh.event.accountId = :accountId AND nh.endpoint.id = :endpointId";
 
-        if (limiter != null) {
-            query = limiter.getModifiedQuery(query);
-        }
+            if (limiter != null) {
+                query = limiter.getModifiedQuery(query);
+            }
 
-        Mutiny.Query<NotificationHistory> historyQuery = session.createQuery(query, NotificationHistory.class)
-                .setParameter("accountId", tenant)
-                .setParameter("endpointId", endpoint);
+            Mutiny.Query<NotificationHistory> historyQuery = session.createQuery(query, NotificationHistory.class)
+                    .setParameter("accountId", tenant)
+                    .setParameter("endpointId", endpoint);
 
-        if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-            historyQuery = historyQuery.setMaxResults(limiter.getLimit().getLimit())
-                    .setFirstResult(limiter.getLimit().getOffset());
-        }
+            if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
+                historyQuery = historyQuery.setMaxResults(limiter.getLimit().getLimit())
+                        .setFirstResult(limiter.getLimit().getOffset());
+            }
 
-        return historyQuery
-                .getResultList();
+            return historyQuery
+                    .getResultList();
+        });
     }
 
     public Uni<JsonObject> getNotificationDetails(String tenant, Query limiter, UUID endpoint, UUID historyId) {
-        String query = "SELECT details FROM NotificationHistory WHERE event.accountId = :accountId AND endpoint.id = :endpointId AND id = :historyId";
-        if (limiter != null) {
-            query = limiter.getModifiedQuery(query);
-        }
+        return sessionFactory.withSession(session -> {
+            String query = "SELECT details FROM NotificationHistory WHERE event.accountId = :accountId AND endpoint.id = :endpointId AND id = :historyId";
+            if (limiter != null) {
+                query = limiter.getModifiedQuery(query);
+            }
 
-        Mutiny.Query<Map> mutinyQuery = session.createQuery(query, Map.class)
-                .setParameter("accountId", tenant)
-                .setParameter("endpointId", endpoint)
-                .setParameter("historyId", historyId);
+            Mutiny.Query<Map> mutinyQuery = session.createQuery(query, Map.class)
+                    .setParameter("accountId", tenant)
+                    .setParameter("endpointId", endpoint)
+                    .setParameter("historyId", historyId);
 
-        if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-            mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
-                    .setFirstResult(limiter.getLimit().getOffset());
-        }
+            if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
+                mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
+                        .setFirstResult(limiter.getLimit().getOffset());
+            }
 
-        return mutinyQuery.getSingleResultOrNull()
-                .onItem().ifNotNull().transform(JsonObject::new);
+            return mutinyQuery.getSingleResultOrNull()
+                    .onItem().ifNotNull().transform(JsonObject::new);
+        });
     }
 
     /**
@@ -94,12 +97,14 @@ public class NotificationResources {
         Integer duration = (Integer) jo.get("duration");
 
         String updateQuery = "UPDATE NotificationHistory SET details = :details, invocationResult = :result, invocationTime= :invocationTime WHERE id = :id";
-        return statelessSession.createQuery(updateQuery)
-                .setParameter("details", details)
-                .setParameter("result", result)
-                .setParameter("id", UUID.fromString(historyId))
-                .setParameter("invocationTime", (long) duration)
-                .executeUpdate()
-                .replaceWith(Uni.createFrom().voidItem());
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createQuery(updateQuery)
+                    .setParameter("details", details)
+                    .setParameter("result", result)
+                    .setParameter("id", UUID.fromString(historyId))
+                    .setParameter("invocationTime", (long) duration)
+                    .executeUpdate()
+                    .replaceWith(Uni.createFrom().voidItem());
+        });
     }
 }

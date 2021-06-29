@@ -13,20 +13,34 @@ import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.Status;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.Path;
 
-import static com.redhat.cloud.notifications.Constants.INTERNAL;
+import java.util.List;
 
-@Path(INTERNAL + "/db_cleaner")
+@ApplicationScoped
 public class DbCleaner {
 
+    private static final List<Class<?>> ENTITIES = List.of(
+            EmailAggregation.class,
+            EmailSubscription.class,
+            NotificationHistory.class,
+            Event.class,
+            BehaviorGroupAction.class,
+            WebhookProperties.class,
+            Endpoint.class,
+            EventTypeBehavior.class,
+            BehaviorGroup.class,
+            EventType.class,
+            Application.class,
+            Bundle.class
+    );
     private static final String DEFAULT_BUNDLE_NAME = "rhel";
     private static final String DEFAULT_BUNDLE_DISPLAY_NAME = "Red Hat Enterprise Linux";
     private static final String DEFAULT_APP_NAME = "policies";
@@ -36,7 +50,7 @@ public class DbCleaner {
     private static final String DEFAULT_EVENT_TYPE_DESCRIPTION = "Matching policy";
 
     @Inject
-    Mutiny.Session session;
+    Mutiny.SessionFactory sessionFactory;
 
     @Inject
     BundleResources bundleResources;
@@ -51,49 +65,38 @@ public class DbCleaner {
      * should do that with {@link io.quarkus.test.TestTransaction} but it doesn't work with Hibernate Reactive, so this
      * is a temporary workaround to make our tests more reliable and easy to maintain.
      */
-    @DELETE
     public Uni<Void> clean() {
-        return session.withTransaction(transaction -> deleteAllFrom(EmailAggregation.class)
-                .chain(() -> deleteAllFrom(EmailSubscription.class))
-                .chain(() -> deleteAllFrom(NotificationHistory.class))
-                .chain(() -> deleteAllFrom(Event.class))
-                .chain(() -> deleteAllFrom(BehaviorGroupAction.class))
-                .chain(() -> deleteAllFrom(WebhookProperties.class))
-                .chain(() -> deleteAllFrom(Endpoint.class))
-                .chain(() -> deleteAllFrom(EventTypeBehavior.class))
-                .chain(() -> deleteAllFrom(BehaviorGroup.class))
-                .chain(() -> deleteAllFrom(EventType.class))
-                .chain(() -> deleteAllFrom(Application.class))
-                .chain(() -> deleteAllFrom(Bundle.class))
-                .chain(() -> {
-                    Bundle bundle = new Bundle(DEFAULT_BUNDLE_NAME, DEFAULT_BUNDLE_DISPLAY_NAME);
-                    return bundleResources.createBundle(bundle);
-                })
-                .onItem().transformToUni(bundle -> {
-                    Application app = new Application();
-                    app.setBundleId(bundle.getId());
-                    app.setName(DEFAULT_APP_NAME);
-                    app.setDisplayName(DEFAULT_APP_DISPLAY_NAME);
-                    return appResources.createApp(app);
-                })
-                .onItem().transformToUni(app -> {
-                    EventType eventType = new EventType();
-                    eventType.setApplicationId(app.getId());
-                    eventType.setName(DEFAULT_EVENT_TYPE_NAME);
-                    eventType.setDisplayName(DEFAULT_EVENT_TYPE_DISPLAY_NAME);
-                    eventType.setDescription(DEFAULT_EVENT_TYPE_DESCRIPTION);
-                    return appResources.createEventType(eventType);
-                })
-                .onItem().transformToUni(ignored ->
-                        session.createQuery("UPDATE CurrentStatus SET status = :status")
+        return sessionFactory.withTransaction((session, transaction) -> {
+            return Multi.createFrom().iterable(ENTITIES)
+                    .onItem().transformToUniAndConcatenate(entity ->
+                            session.createQuery("DELETE FROM " + entity.getSimpleName()).executeUpdate()
+                    )
+                    .onItem().ignoreAsUni()
+                    .chain(() -> {
+                        Bundle bundle = new Bundle(DEFAULT_BUNDLE_NAME, DEFAULT_BUNDLE_DISPLAY_NAME);
+                        return bundleResources.createBundle(bundle);
+                    })
+                    .onItem().transformToUni(bundle -> {
+                        Application app = new Application();
+                        app.setBundleId(bundle.getId());
+                        app.setName(DEFAULT_APP_NAME);
+                        app.setDisplayName(DEFAULT_APP_DISPLAY_NAME);
+                        return appResources.createApp(app);
+                    })
+                    .onItem().transformToUni(app -> {
+                        EventType eventType = new EventType();
+                        eventType.setApplicationId(app.getId());
+                        eventType.setName(DEFAULT_EVENT_TYPE_NAME);
+                        eventType.setDisplayName(DEFAULT_EVENT_TYPE_DISPLAY_NAME);
+                        eventType.setDescription(DEFAULT_EVENT_TYPE_DESCRIPTION);
+                        return appResources.createEventType(eventType);
+                    })
+                    .chain(() -> {
+                        return session.createQuery("UPDATE CurrentStatus SET status = :status")
                                 .setParameter("status", Status.UP)
-                                .executeUpdate()
-                )
-                .replaceWith(Uni.createFrom().voidItem())
-        );
-    }
-
-    private Uni<Integer> deleteAllFrom(Class<?> classname) {
-        return session.createQuery("DELETE FROM " + classname.getSimpleName()).executeUpdate();
+                                .executeUpdate();
+                    })
+                    .replaceWith(Uni.createFrom().voidItem());
+        });
     }
 }

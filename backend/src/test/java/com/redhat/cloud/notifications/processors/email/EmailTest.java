@@ -26,6 +26,7 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,9 @@ public class EmailTest extends DbIsolatedTest {
 
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
+
+    @Inject
+    Mutiny.SessionFactory sessionFactory;
 
     @InjectMock
     @RestClient
@@ -188,7 +192,7 @@ public class EmailTest extends DbIsolatedTest {
         String bundle = "rhel";
         String application = "policies";
 
-        Multi.createFrom().items(usernames)
+        sessionFactory.withSession(session -> Multi.createFrom().items(usernames)
                 .onItem().transformToUniAndConcatenate(username -> subscriptionResources.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT))
                 .onItem().ignoreAsUni()
                 .chain(() -> {
@@ -257,7 +261,7 @@ public class EmailTest extends DbIsolatedTest {
                                 assertEquals(0, bodyRequests.size());
                             });
                 })
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     private String usernameOfRequest(String request, String[] users) {

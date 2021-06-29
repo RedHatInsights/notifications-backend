@@ -3,6 +3,8 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.StuffHolder;
 import io.smallrye.health.api.AsyncHealthCheck;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.vertx.MutinyHelper;
+import io.vertx.core.Vertx;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Liveness;
@@ -16,13 +18,25 @@ import javax.inject.Inject;
 public class LivenessService implements AsyncHealthCheck {
 
     @Inject
-    Mutiny.StatelessSession statelessSession;
+    Mutiny.SessionFactory sessionFactory;
+
+    @Inject
+    Vertx vertx;
 
     Uni<Boolean> postgresConnectionHealth() {
-        return statelessSession.createNativeQuery("SELECT 1")
-                .getSingleResult()
-                .replaceWith(Boolean.TRUE)
-                .onFailure().recoverWithItem(Boolean.FALSE);
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createNativeQuery("SELECT 1")
+                    .getSingleResult()
+                    .replaceWith(Boolean.TRUE)
+                    .onFailure().recoverWithItem(Boolean.FALSE);
+        }).runSubscriptionOn(
+                /*
+                 * AsyncHealthCheck does not work with Hibernate Reactive. The following line is a workaround for that issue.
+                 * TODO Remove it ASAP.
+                 * See https://github.com/quarkusio/quarkus/issues/20166 for more details.
+                 */
+                MutinyHelper.executor(vertx.getOrCreateContext())
+        );
     }
 
     @Override
@@ -32,11 +46,11 @@ public class LivenessService implements AsyncHealthCheck {
         HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications readiness check");
         if (adminDown) {
             return Uni.createFrom().item(() ->
-                response.down().withData("status", "admin-down").build()
+                    response.down().withData("status", "admin-down").build()
             );
         }
         return postgresConnectionHealth().onItem().transform(dbState ->
-                response.state(dbState).withData("reactive-db-check", dbState).build()
+                    response.status(dbState).withData("reactive-db-check", dbState).build()
         );
     }
 }

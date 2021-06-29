@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
+import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +30,9 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
     private static final JsonObject PAYLOAD2 = new JsonObject("{\"hello\":\"world\"}");
 
     @Inject
+    Mutiny.SessionFactory sessionFactory;
+
+    @Inject
     ResourceHelpers resourceHelpers;
 
     @Inject
@@ -41,7 +45,7 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
         EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, BUNDLE_NAME, APP_NAME);
 
-        resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1)
+        sessionFactory.withSession(session -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1)
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2))
                 .chain(() -> resourceHelpers.addEmailAggregation("other-account", BUNDLE_NAME, APP_NAME, PAYLOAD2))
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2))
@@ -68,12 +72,12 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
                 .invoke(aggregations -> assertEquals(0, aggregations.size()))
                 .chain(aggregations -> aggregationResources.getApplicationsWithPendingAggregation(start, end))
                 .invoke(keys -> assertEquals(3, keys.size()))
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void addEmailAggregationWithConstraintViolations() {
-        resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null)
+        sessionFactory.withSession(session -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null)
                 .invoke(Assertions::assertFalse)
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1))
                 .invoke(Assertions::assertFalse)
@@ -81,6 +85,6 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
                 .invoke(Assertions::assertFalse)
                 .chain(() -> resourceHelpers.addEmailAggregation(null, BUNDLE_NAME, APP_NAME, PAYLOAD1))
                 .invoke(Assertions::assertFalse)
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 }
