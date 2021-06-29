@@ -11,7 +11,7 @@
 
     <modules>
         <!--        <module>notifications-aggregator</module>-->
-        <module>notifications-backend</module>
+        <module>backend</module>
     </modules>
 
     <properties>

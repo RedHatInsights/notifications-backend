@@ -5,12 +5,13 @@
 # Build the project
 FROM registry.access.redhat.com/ubi8/openjdk-11:latest AS build
 USER root
-COPY src /home/jboss/src
 COPY pom.xml /home/jboss
-COPY checkstyle.xml /home/jboss
-COPY checkstyle-suppressions.xml /home/jboss
+COPY backend/src /home/jboss/backend/src
+COPY backend/pom.xml /home/jboss/backend
+COPY backend/checkstyle.xml /home/jboss/backend
+COPY backend/checkstyle-suppressions.xml /home/jboss/backend
 WORKDIR /home/jboss
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests --projects :notifications-parent,:notifications-backend
 
 # Build the container
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
@@ -37,7 +38,7 @@ RUN microdnf install openssl curl ca-certificates ${JAVA_PACKAGE} \
 # Configure the JAVA_OPTIONS, you can add -XshowSettings:vm to also display the heap size.
 ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
-COPY --from=build --chown=1001 /home/jboss/target/quarkus-app/ /deployments/
+COPY --from=build --chown=1001 /home/jboss/backend/target/quarkus-app/ /deployments/
 
 EXPOSE 8080
 USER 1001
