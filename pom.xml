@@ -34,8 +34,6 @@
         <insights-notification-schemas-java.version>0.3</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>0.1.4</clowder-quarkus-config-source.version>
 
-        <quarkus-plugin.version>${quarkus.platform.version}</quarkus-plugin.version>
-
         <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
         <quarkus.platform.version>1.13.7.Final</quarkus.platform.version>
