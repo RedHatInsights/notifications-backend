@@ -1,0 +1,132 @@
+{
+    "cacheTimeout": null,
+    "colorBackground": false,
+    "colors": [
+        "#299c46",
+        "#d44a3a",
+        "rgba(237, 129, 40, 0.89)"
+    ],
+    "colorValue": true,
+    "datasource": "$datasource",
+    "description": "This shows the number of restarts for the latest pod that's running in that time period",
+    "fieldConfig": {
+        "defaults": {
+            "custom": {}
+        },
+        "overrides": []
+    },
+    "format": "none",
+    "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+    },
+    "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 13,
+        "y": 8
+    },
+    "id": 103,
+    "interval": null,
+    "links": [],
+    "mappingType": 1,
+    "mappingTypes": [
+        {
+            "name": "range to text",
+            "value": 2
+        },
+        {
+            "name": "value to text",
+            "value": 1
+        }
+    ],
+    "maxDataPoints": 100,
+    "maxPerRow": 12,
+    "nullPointMode": "connected",
+    "nullText": null,
+    "postfix": "",
+    "postfixFontSize": "50%",
+    "prefix": "",
+    "prefixFontSize": "50%",
+    "rangeMaps": [
+        {
+            "from": "null",
+            "text": "N/A",
+            "to": "null"
+        }
+    ],
+    "repeatDirection": "h",
+    "repeatIteration": 1621298345749,
+    "repeatPanelId": 2,
+    "scopedVars": {
+        "service": {
+            "selected": false,
+            "text": "notifications-gw",
+            "value": "notifications-gw"
+        }
+    },
+    "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": true
+    },
+    "tableColumn": "",
+    "targets": [
+        {
+            "expr": "kube_pod_container_status_restarts_total{container=\"notifications-gw\"}",
+            "format": "time_series",
+            "groupBy": [
+                {
+                    "params": [
+                        "$__interval"
+                    ],
+                    "type": "time"
+                },
+                {
+                    "params": [
+                        "null"
+                    ],
+                    "type": "fill"
+                }
+            ],
+            "instant": true,
+            "intervalFactor": 1,
+            "legendFormat": "",
+            "orderByTime": "ASC",
+            "policy": "default",
+            "refId": "A",
+            "resultFormat": "time_series",
+            "select": [
+                [
+                    {
+                        "params": [
+                            "value"
+                        ],
+                        "type": "field"
+                    },
+                    {
+                        "params": [],
+                        "type": "mean"
+                    }
+                ]
+            ],
+            "tags": []
+        }
+    ],
+    "thresholds": "1,5",
+    "title": "restarts \"notifications-gw\"",
+    "type": "singlestat",
+    "valueFontSize": "80%",
+    "valueMaps": [
+        {
+            "op": "=",
+            "text": "N/A",
+            "value": "null"
+        }
+    ],
+    "valueName": "current"
+}

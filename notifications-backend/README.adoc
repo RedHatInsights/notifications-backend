@@ -1,0 +1,11 @@
+= Notifications service
+
+== Coding
+
+When using IntelliJ IDEA, use the 'default' style. This is matched by checkstyle,
+which is invoked when running maven.
+
+## Usage of the Clowder Config Source
+
+This project uses the Clowder Config Source from https://github.com/RedHatInsights/clowder-quarkus-config-source.
+To configure this source to use a different file than `/cdappconfig/cdappconfig.json` you can use the property `clowder.file=/path/to/file.json`.

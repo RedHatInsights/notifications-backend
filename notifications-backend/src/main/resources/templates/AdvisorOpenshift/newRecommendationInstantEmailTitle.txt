@@ -1,0 +1,1 @@
+OpenShift - Advisor Instant Notification - {action.timestamp.format('d MMM uuuu')}

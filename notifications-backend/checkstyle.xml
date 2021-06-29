@@ -1,0 +1,144 @@
+<?xml version="1.0"?>
+<!--
+
+    Copyright 2014-2015 Red Hat, Inc. and/or its affiliates
+    and other contributors as indicated by the @author tags.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<!DOCTYPE module PUBLIC
+        "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
+        "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
+
+<module name="Checker">
+    <property name="localeLanguage" value="en"/>
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="true" />
+    </module>
+
+    <module name="RegexpSingleline">
+        <!-- \s matches whitespace character, $ matches end of line. -->
+        <property name="format" value="\s+$" />
+        <property name="message" value="Line has trailing spaces." />
+    </module>
+
+    <module name="NewlineAtEndOfFile"/>
+
+    <module name="RegexpSingleline">
+        <property name="format" value="^\s*\*\s*@author" />
+        <property name="minimum" value="0" />
+        <property name="maximum" value="0" />
+        <property name="message" value="Javadoc has illegal ''author'' tag." />
+    </module>
+
+    <module name="TreeWalker">
+
+<!--        <property name="cacheFile" value="${checkstyle.cache.file}" />-->
+
+        <!-- Checks for imports -->
+        <module name="AvoidStarImport">
+            <property name="allowStaticMemberImports" value="true" />
+        </module>
+        <module name="RedundantImport" />
+
+        <module name="UnusedImports">
+            <property name="processJavadoc" value="true" />
+        </module>
+
+        <module name="ImportOrder">
+            <property name="groups" value="*,javax,java"/>
+            <property name="ordered" value="true"/>
+            <property name="separated" value="false"/>
+            <property name="option" value="bottom"/>
+            <property name="sortStaticImportsAlphabetically" value="true"/>
+            <property name="separatedStaticGroups" value="true" />
+        </module>
+
+        <module name="SuppressionXpathSingleFilter">
+            <property name="checks" value="ImportOrder"/>
+            <property name="message" value="Extra separation in import group before 'java?..*"/>
+        </module>
+
+<!--        <module name="ImportOrder">-->
+<!--            <property name="groups" value="*,javax,java"/>-->
+<!--            <property name="ordered" value="true"/>-->
+<!--            <property name="separated" value="true"/>-->
+<!--            <property name="separatedStaticGroups" value="true" />-->
+<!--            <property name="option" value="top"/>-->
+<!--        </module>-->
+
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="junit.framework" />
+        </module>
+
+        <!-- Modifier Checks -->
+        <module name="ModifierOrder" />
+        <module name="RedundantModifier" />
+
+        <!-- Checks for whitespace                               -->
+        <!-- See https://checkstyle.org/config_whitespace.html -->
+        <module name="EmptyForIteratorPad"/>
+        <module name="GenericWhitespace"/>
+        <module name="MethodParamPad"/>
+        <module name="NoWhitespaceAfter">
+            <property name="allowLineBreaks" value="false"/>
+        </module>
+        <module name="NoWhitespaceBefore"/>
+        <module name="ParenPad"/>
+        <module name="TypecastParenPad"/>
+        <module name="WhitespaceAfter"/>
+        <module name="WhitespaceAround"/>
+        <module name="EmptyLineSeparator">
+            <property name="allowNoEmptyLineBetweenFields" value="true" />
+            <property name="allowMultipleEmptyLinesInsideClassMembers" value="false"/>
+        </module>
+
+        <!-- Checks for blocks. You know, those {}'s         -->
+        <!-- See https://checkstyle.org/config_blocks.html -->
+        <module name="AvoidNestedBlocks"/>
+        <module name="EmptyBlock"/>
+<!--        <module name="LeftCurly"/>-->
+        <!-- Checks for blocks. You know, those {}'s -->
+        <module name="LeftCurly">
+            <property name="option" value="eol" />
+            <property name="tokens"
+                      value="CLASS_DEF,CTOR_DEF,INTERFACE_DEF,METHOD_DEF,LITERAL_SWITCH,STATIC_INIT" />
+        </module>
+        <module name="NeedBraces"/>
+        <module name="RightCurly"/>
+
+        <!-- Checks for common coding problems               -->
+        <!-- See https://checkstyle.org/config_coding.html -->
+        <module name="EmptyStatement"/>
+        <module name="EqualsHashCode"/>
+<!--        <module name="HiddenField"/>-->
+        <module name="IllegalInstantiation"/>
+        <module name="InnerAssignment"/>
+        <!-- Enable after Postgres config done -->
+<!--        <module name="MagicNumber"/>-->
+        <module name="MissingSwitchDefault"/>
+        <module name="MultipleVariableDeclarations"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+
+        <!-- Miscellaneous other checks. -->
+        <module name="UpperEll" />
+        <module name="PackageAnnotation" />
+        <module name="CovariantEquals" />
+        <module name="ArrayTypeStyle" />
+
+        <module name="Indentation" />
+    </module>
+
+</module>

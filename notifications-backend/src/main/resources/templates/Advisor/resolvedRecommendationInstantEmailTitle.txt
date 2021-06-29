@@ -1,0 +1,1 @@
+Advisor instant notification - {action.timestamp.toUtcFormat()} - {action.events.size()} resolved recommendation{#if action.events.size() > 1}s{/if}

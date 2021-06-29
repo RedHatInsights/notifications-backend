@@ -1,0 +1,52 @@
+{#include Policies/insightsEmailBody}
+{#content-title}Policies triggered - {action.context.system_check_in.toUtcFormat()}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-content__block">
+        <p>Policy trigger notification for <b>{action.context.display_name}</b>. System checked in at {action.context.system_check_in.toUtcFormat()} and triggered {action.events.size()} {#if action.events.size() is 1}policy{#else}policies{/if}.</p>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <div class="rh-stack">
+            <a class="rh-url" href="https://cloud.redhat.com/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a>
+        </div>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table class="rh-data-table rh-m-bordered">
+            <thead>
+            <tr>
+                <th>Policy</th>
+            </tr>
+            </thead>
+            <tbody>
+                {#if action.events.size() > 0}
+                    {#each action.events}
+                <tr style="font-size: 14px;">
+                    <a href="https://cloud.redhat.com/insights/policies/policy/{it.payload.policy_id}" target="_blank">{it.payload.policy_name}</a>
+                </tr>
+                    {/each}
+                {/if}
+            </tbody>
+        </table>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table align="center">
+            <tr>
+                <td class="rh-cta-link" align="center">
+                    <a target="_blank" href="https://cloud.redhat.com/insights/policies">
+                                <span>
+                                  Open Policies in Insights
+                                </span>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
+{/content-body}
+{/include}

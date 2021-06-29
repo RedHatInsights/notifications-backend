@@ -1,0 +1,37 @@
+{#include Drift/insightsEmailBody}
+{#content-title}Drift from baseline notification - {action.timestamp.toUtcFormat()}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-content__block">
+        <p>Baseline drift notification for <b>{action.context.display_name}</b>. System checked in at {action.context.system_check_in.toUtcFormat()} and has drifted from {action.events.size()} baseline{#if action.events.size() > 1}s{/if}.</p>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <div class="rh-stack">
+            <a class="rh-url" href="https://cloud.redhat.com/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a>
+        </div>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table class="rh-data-table rh-m-bordered">
+            <thead>
+            <tr>
+                <th>Baseline</th>
+            </tr>
+            </thead>
+            <tbody>
+                {#if action.events.size() > 0}
+                    {#each action.events}
+                <tr style="font-size: 14px;">
+                    <a href="https://cloud.redhat.com/insights/drift/?baseline_ids={it.payload.baseline_id}&reference_id={it.payload.baseline_id}&system_ids={action.context.inventory_id}" target="_blank">{it.payload.baseline_name}</a>
+                </tr>
+                    {/each}
+                {/if}
+            </tbody>
+        </table>
+    </td>
+</tr>
+{/content-body}
+{/include}
