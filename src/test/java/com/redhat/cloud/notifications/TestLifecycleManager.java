@@ -8,10 +8,10 @@ import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.vertx.core.json.jackson.DatabindCodec;
-import org.mockserver.client.MockServerClient;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.MockServerContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
@@ -24,9 +24,11 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
+    // Keep the version synced with pom.xml.
+    private static final DockerImageName MOCK_SERVER_DOCKER_IMAGE = DockerImageName.parse("jamesdbloom/mockserver").withTag("mockserver-5.11.2");
+
     PostgreSQLContainer<?> postgreSQLContainer;
     MockServerContainer mockEngineServer;
-    MockServerClient mockServerClient;
     MockServerClientConfig configurator;
 
     @Override
@@ -115,14 +117,13 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     }
 
     void setupMockEngine(Map<String, String> props) {
-        mockEngineServer = new MockServerContainer();
+        mockEngineServer = new MockServerContainer(MOCK_SERVER_DOCKER_IMAGE);
 
         // set up mock engine
         mockEngineServer.start();
         String mockServerUrl = "http://" + mockEngineServer.getContainerIpAddress() + ":" + mockEngineServer.getServerPort();
-        mockServerClient = new MockServerClient(mockEngineServer.getContainerIpAddress(), mockEngineServer.getServerPort());
 
-        configurator = new MockServerClientConfig(mockServerClient);
+        configurator = new MockServerClientConfig(mockEngineServer.getContainerIpAddress(), mockEngineServer.getServerPort());
 
         props.put("rbac/mp-rest/url", mockServerUrl);
     }
