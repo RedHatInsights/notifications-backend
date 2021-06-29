@@ -54,7 +54,7 @@ public class LivenessService implements HealthCheck {
             response.down().withData("status", "admin-down");
         } else {
             boolean dbState = postgresConnectionHealth().await().indefinitely();
-            response.state(dbState).withData("reactive-db-check", dbState);
+            response.status(dbState).withData("reactive-db-check", dbState);
         }
 
         return response.build();
