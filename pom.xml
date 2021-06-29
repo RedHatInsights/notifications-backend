@@ -30,6 +30,9 @@
         <clowder-quarkus-config-source.version>0.1.4</clowder-quarkus-config-source.version>
         <insights-notification-schemas-java.version>0.3</insights-notification-schemas-java.version>
 
+        <mockserver-client-java.version>5.5.4</mockserver-client-java.version> <!-- not the newest, but matches what is in org.testcontainers:mockserver -->
+        <openapi-parser.version>4.0.4</openapi-parser.version>
+
         <quarkus-plugin.version>${quarkus.platform.version}</quarkus-plugin.version>
 
         <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>

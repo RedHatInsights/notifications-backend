@@ -12,11 +12,6 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <properties>
-        <mockserver-client-java.version>5.5.4</mockserver-client-java.version> <!-- not the newest, but matches what is in org.testcontainers:mockserver -->
-        <openapi-parser.version>4.0.4</openapi-parser.version>
-    </properties>
-
     <dependencies>
         <!-- Quarkus -->
         <dependency>
