@@ -31,6 +31,9 @@
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
 
+        <insights-notification-schemas-java.version>0.3</insights-notification-schemas-java.version>
+        <clowder-quarkus-config-source.version>0.1.4</clowder-quarkus-config-source.version>
+
         <quarkus-plugin.version>${quarkus.platform.version}</quarkus-plugin.version>
 
         <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
@@ -60,10 +63,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-logging-sentry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-smallrye-health</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
