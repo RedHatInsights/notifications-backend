@@ -28,8 +28,8 @@ public class MockServerClientConfig {
         }
     }
 
-    public MockServerClientConfig(MockServerClient mockServerClient) {
-        this.mockServerClient = mockServerClient;
+    public MockServerClientConfig(String containerIpAddress, Integer serverPort) {
+        mockServerClient = new MockServerClient(containerIpAddress, serverPort);
     }
 
     public void addMockRbacAccess(String xRhIdentity, RbacAccess access) {
