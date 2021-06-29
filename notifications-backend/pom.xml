@@ -8,7 +8,7 @@
 
     <parent>
         <groupId>com.redhat.cloud.notifications</groupId>
-        <artifactId>notifications</artifactId>
+        <artifactId>notifications-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
