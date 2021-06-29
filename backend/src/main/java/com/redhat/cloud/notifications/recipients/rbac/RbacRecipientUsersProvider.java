@@ -73,6 +73,8 @@ public class RbacRecipientUsersProvider implements RecipientUsersProvider {
                     user.setEmail(rbacUser.getEmail());
                     user.setAdmin(rbacUser.getOrgAdmin());
                     user.setActive(rbacUser.getActive());
+                    user.setFirstName(rbacUser.getFirstName());
+                    user.setLastName(rbacUser.getLastName());
                     return user;
                 }).collect(Collectors.toList())).collect().in(ArrayList::new, List::addAll);
     }
