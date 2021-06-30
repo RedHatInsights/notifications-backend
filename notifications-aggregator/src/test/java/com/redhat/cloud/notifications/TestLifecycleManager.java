@@ -1,0 +1,72 @@
+package com.redhat.cloud.notifications;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
+import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import io.vertx.core.json.jackson.DatabindCodec;
+import org.postgresql.ds.PGSimpleDataSource;
+import org.testcontainers.containers.PostgreSQLContainer;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+
+public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
+
+    PostgreSQLContainer<?> postgreSQLContainer;
+
+    @Override
+    public Map<String, String> start() {
+        System.out.println("++++  TestLifecycleManager start +++");
+        configureObjectMapper();
+        Map<String, String> properties = new HashMap<>();
+        try {
+            setupPostgres(properties);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println(" -- Running with properties: " + properties);
+        return properties;
+    }
+
+    private void configureObjectMapper() {
+        FilterProvider filterProvider = new SimpleFilterProvider().addFilter(ApiResponseFilter.NAME, new ApiResponseFilter());
+        ObjectMapper mapper = DatabindCodec.mapper();
+        mapper.setFilterProvider(filterProvider);
+        mapper.registerModule(new JavaTimeModule());
+        mapper.configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
+    @Override
+    public void stop() {
+        postgreSQLContainer.stop();
+    }
+
+    void setupPostgres(Map<String, String> props) throws SQLException {
+        postgreSQLContainer = new PostgreSQLContainer<>("postgres");
+        postgreSQLContainer.start();
+
+        String jdbcUrl = postgreSQLContainer.getJdbcUrl();
+        props.put("quarkus.datasource.jdbc.url", jdbcUrl);
+        props.put("quarkus.datasource.username", "test");
+        props.put("quarkus.datasource.password", "test");
+        props.put("quarkus.datasource.db-kind", "postgresql");
+
+        // Install the pgcrypto extension
+        // Could perhas be done by a migration with a lower number than the 'live' ones.
+        PGSimpleDataSource ds = new PGSimpleDataSource();
+        ds.setURL(jdbcUrl);
+        Connection connection = ds.getConnection("test", "test");
+        Statement statement = connection.createStatement();
+        statement.execute("CREATE EXTENSION pgcrypto;");
+        statement.close();
+        connection.close();
+    }
+}
