@@ -21,7 +21,9 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.RedirectionException;
 import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,6 +42,12 @@ public class InternalService {
 
     @Inject
     StatusResources statusResources;
+
+    @GET
+    @Path("/")
+    public void httpRoot() {
+        throw new RedirectionException(Response.Status.OK, URI.create("index.html"));
+    }
 
     @POST
     @Path("/bundles")
