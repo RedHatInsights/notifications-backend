@@ -10,6 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>checkstyle</module>
         <module>aggregator</module>
         <module>backend</module>
     </modules>
@@ -50,4 +51,38 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle-plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.redhat.cloud.notifications</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>1.0</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <configLocation>checkstyle/checkstyle.xml</configLocation>
+                    <encoding>UTF-8</encoding>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <linkXRef>false</linkXRef>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
