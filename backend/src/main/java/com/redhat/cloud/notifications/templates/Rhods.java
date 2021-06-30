@@ -11,7 +11,7 @@ public class Rhods implements EmailTemplate {
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
 
         return Templates.instantEmailTitle();
-        
+
     }
 
     @Override
