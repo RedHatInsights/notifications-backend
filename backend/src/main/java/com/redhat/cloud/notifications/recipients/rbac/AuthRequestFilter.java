@@ -20,7 +20,7 @@ class AuthRequestFilter implements ClientRequestFilter {
     AuthRequestFilter() {
         String tmp = System.getProperty("rbac.service-to-service.exceptional.auth.info");
         if (tmp != null && !tmp.isEmpty()) {
-            authInfo = Base64.getEncoder().encodeToString(tmp.getBytes());
+            authInfo = new String(Base64.getEncoder().encode(tmp.getBytes(UTF_8)), UTF_8);
         }
     }
 

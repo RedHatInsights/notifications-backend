@@ -23,7 +23,6 @@ public interface RbacServiceToService {
 
     @GET
     @Path("/principals/") // trailing slash is required by api
-    @Consumes("application/json")
     @Produces("application/json")
     Uni<Page<RbacUser>> getUsers(
             @HeaderParam("x-rh-rbac-account") String accountId,
@@ -34,7 +33,6 @@ public interface RbacServiceToService {
 
     @GET
     @Path("/groups/") // trailing slash is required by api
-    @Consumes("application/json")
     @Produces("application/json")
     Uni<Page<RbacGroup>> getGroups(
             @HeaderParam("x-rh-rbac-account") String accountId,
@@ -44,7 +42,6 @@ public interface RbacServiceToService {
 
     @GET
     @Path("/groups/{groupId}/") // trailing slash is required by api
-    @Consumes("application/json")
     @Produces("application/json")
     Uni<RbacGroup> getGroup(
             @HeaderParam("x-rh-rbac-account") String accountId,
@@ -54,7 +51,6 @@ public interface RbacServiceToService {
 
     @GET
     @Path("/groups/{groupId}/principals/") // trailing slash is required by api
-    @Consumes("application/json")
     @Produces("application/json")
     Uni<Page<RbacUser>> getGroupUsers(
             @HeaderParam("x-rh-rbac-account") String accountId,
