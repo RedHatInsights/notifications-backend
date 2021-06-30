@@ -14,3 +14,7 @@ updates:
     schedule:
       # Check for updates to GitHub Actions every weekday
       interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/backend/src/main/webapp"
+    schedule:
+      interval: "daily"
