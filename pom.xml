@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <!--        <module>notifications-aggregator</module>-->
+        <module>notifications-aggregator</module>
         <module>backend</module>
     </modules>
 
