@@ -41,7 +41,6 @@ public class InternalService {
     ApplicationResources appResources;
 
     @Inject
-
     StatusResources statusResources;
 
     @GET
