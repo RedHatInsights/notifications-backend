@@ -1,5 +1,9 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class RbacUser {
 
     private String username;

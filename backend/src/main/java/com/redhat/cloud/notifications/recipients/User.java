@@ -70,8 +70,7 @@ public class User {
         }
 
         User user = (User) o;
-        return username.equals(user.username) && email.equals(user.email) && firstName.equals(user.firstName) && lastName.equals(user.lastName)
-                && isActive.equals(user.isActive) && isAdmin.equals(user.isAdmin);
+        return Objects.equals(username, user.username);
     }
 
     @Override

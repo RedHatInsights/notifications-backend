@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -13,6 +15,8 @@ public class RbacGroup {
     private Integer principalCount;
     private Integer roleCount;
     private boolean system;
+
+    @JsonProperty("platform_default")
     private boolean platformDefault;
 
     public String getName() {

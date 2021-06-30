@@ -13,7 +13,6 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -25,7 +24,7 @@ public class RbacRecipientUsersProvider implements RecipientUsersProvider {
     @RestClient
     RbacServiceToService rbacServiceToService;
 
-    @ConfigProperty(name = "recipient_provider.rbac.elements_per_page")
+    @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "40")
     Integer rbacElementsPerPage;
 
     @Override
@@ -33,7 +32,6 @@ public class RbacRecipientUsersProvider implements RecipientUsersProvider {
         return getWithPagination(
                 page -> rbacServiceToService
                         .getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
-                        .subscribeAsCompletionStage()
         );
     }
 
@@ -46,7 +44,6 @@ public class RbacRecipientUsersProvider implements RecipientUsersProvider {
                         return getWithPagination(
                                 page -> rbacServiceToService
                                         .getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage)
-                                        .subscribeAsCompletionStage()
                         )
                         // getGroupUsers doesn't have an adminOnly param.
                         .onItem().transform(users -> {
@@ -60,9 +57,9 @@ public class RbacRecipientUsersProvider implements RecipientUsersProvider {
                 });
     }
 
-    private Uni<List<User>> getWithPagination(Function<Integer, CompletionStage<Page<RbacUser>>> fetcher) {
+    private Uni<List<User>> getWithPagination(Function<Integer, Uni<Page<RbacUser>>> fetcher) {
         return Multi.createBy().repeating()
-                .completionStage(
+                .uni(
                         AtomicInteger::new,
                         state -> fetcher.apply(state.getAndIncrement())
                 )
