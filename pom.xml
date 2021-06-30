@@ -27,9 +27,12 @@
         <checkstyle.version>8.44</checkstyle.version>
 
         <testcontainers.version>1.15.3</testcontainers.version>
-        <mockserver-client-java.version>5.11.2</mockserver-client-java.version> <!-- Keep the version synced with TestLifecycleManager -->
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
+
+        <!-- Keep the version synced with TestLifecycleManager -->
+        <!-- Be careful with bumps, version 5.11.2 caused tests instability so we had to rollback to 5.5.4 -->
+        <mockserver-client-java.version>5.5.4</mockserver-client-java.version>
 
         <insights-notification-schemas-java.version>0.3</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>0.1.4</clowder-quarkus-config-source.version>

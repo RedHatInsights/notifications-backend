@@ -27,7 +27,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 import org.mockserver.model.HttpRequest;
-import org.mockserver.model.RequestDefinition;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
@@ -406,7 +405,7 @@ public class LifecycleITest extends DbIsolatedTest {
         if (expectedWebhookCalls > 0) {
             if (!requestsCounter.await(30, TimeUnit.SECONDS)) {
                 fail("HttpServer never received the requests");
-                RequestDefinition[] httpRequests = mockServerConfig.getMockServerClient().retrieveRecordedRequests(expectedRequestPattern);
+                HttpRequest[] httpRequests = mockServerConfig.getMockServerClient().retrieveRecordedRequests(expectedRequestPattern);
                 assertEquals(2, httpRequests.length);
                 // Verify calls were correct, sort first?
             }

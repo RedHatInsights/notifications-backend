@@ -42,7 +42,7 @@ public class EventConsumerTest {
     InMemoryConnector inMemoryConnector;
 
     @InjectMock
-    EndpointProcessor destinations;
+    EndpointProcessor endpointProcessor;
 
     @Inject
     CounterAssertionHelper counterAssertionHelper;
@@ -64,7 +64,7 @@ public class EventConsumerTest {
         inMemoryConnector.source("ingress").send(serializedAction);
         counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 0);
         counterAssertionHelper.assertIncrement(PROCESSING_ERROR_COUNTER_NAME, 0);
-        verify(destinations, times(1)).process(eq(action));
+        verify(endpointProcessor, times(1)).process(eq(action));
     }
 
     @Test
@@ -72,20 +72,20 @@ public class EventConsumerTest {
         inMemoryConnector.source("ingress").send("I am not a valid serialized action!");
         counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 1);
         counterAssertionHelper.assertIncrement(PROCESSING_ERROR_COUNTER_NAME, 0);
-        verify(destinations, never()).process(any(Action.class));
+        verify(endpointProcessor, never()).process(any(Action.class));
     }
 
     @Test
     void testProcessingError() throws IOException {
         Action action = buildValidAction();
         String serializedAction = serializeAction(action);
-        when(destinations.process(eq(action))).thenReturn(
+        when(endpointProcessor.process(eq(action))).thenReturn(
                 Uni.createFrom().failure(() -> new RuntimeException("I am a forced exception!"))
         );
         inMemoryConnector.source("ingress").send(serializedAction);
         counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 0);
         counterAssertionHelper.assertIncrement(PROCESSING_ERROR_COUNTER_NAME, 1);
-        verify(destinations, times(1)).process(eq(action));
+        verify(endpointProcessor, times(1)).process(eq(action));
     }
 
     private static Action buildValidAction() {
