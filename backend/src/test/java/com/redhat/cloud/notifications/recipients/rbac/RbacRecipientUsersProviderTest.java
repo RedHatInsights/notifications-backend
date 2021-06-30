@@ -23,7 +23,7 @@ public class RbacRecipientUsersProviderTest {
 
     private final String accountId = "test-account-id";
 
-    @ConfigProperty(name = "recipient_provider.rbac.elements_per_page")
+    @ConfigProperty(name = "recipient-provider.rbac.elements-per-page")
     Integer rbacElementsPerPage;
 
     @InjectMock
