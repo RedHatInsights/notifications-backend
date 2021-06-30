@@ -27,14 +27,14 @@ jobs:
         name: Upload notifications openapi.json
         with:
           name: openapi.notifications.json
-          path: target/openapi.notifications.json
+          path: backend/target/openapi.notifications.json
       - uses: actions/upload-artifact@v2
         name: Upload integrations openapi.json
         with:
           name: openapi.integrations.json
-          path: target/openapi.integrations.json
+          path: backend/target/openapi.integrations.json
       - uses: actions/upload-artifact@v2
         name: Upload private openapi.json
         with:
           name: openapi.private.json
-          path: target/openapi.private.json
+          path: backend/target/openapi.private.json
