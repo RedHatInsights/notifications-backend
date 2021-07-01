@@ -1,23 +1,25 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.HashSet;
 import java.util.Set;
 
-class Emails {
+public class Emails {
 
     @JsonProperty("emails")
-    private final Set<Email> emails;
+    private Set<Email> emails;
 
-    Emails() {
+    public Emails() {
         emails = new HashSet<>();
     }
 
-    void addEmail(Email email) {
+    public void addEmail(Email email) {
         emails.add(email);
     }
 
-    Set<Email> getEmails() {
+    public Set<Email> getEmails() {
         return emails;
     }
+
 }

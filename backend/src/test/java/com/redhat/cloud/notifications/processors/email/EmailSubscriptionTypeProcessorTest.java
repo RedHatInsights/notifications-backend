@@ -74,8 +74,8 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
         inMemoryConnector.source(AGGREGATION_CHANNEL).send(testPayload);
 
         // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-        verify(subscriptionResources, times(1)).getEmailSubscribers(eq(aggregation1.getAccountId()), eq(aggregation1.getBundleName()), eq(aggregation1.getApplicationName()), eq(DAILY));
-        verify(subscriptionResources, times(1)).getEmailSubscribers(eq(aggregation2.getAccountId()), eq(aggregation2.getBundleName()), eq(aggregation2.getApplicationName()), eq(DAILY));
+        verify(subscriptionResources, times(1)).getEmailSubscribersUserId(eq(aggregation1.getAccountId()), eq(aggregation1.getBundleName()), eq(aggregation1.getApplicationName()), eq(DAILY));
+        verify(subscriptionResources, times(1)).getEmailSubscribersUserId(eq(aggregation2.getAccountId()), eq(aggregation2.getBundleName()), eq(aggregation2.getApplicationName()), eq(DAILY));
         verifyNoMoreInteractions(subscriptionResources);
     }
 
