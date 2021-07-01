@@ -53,7 +53,7 @@ public class AuthRequestFilterTest {
         // Account is removed
         Assertions.assertNull(context.getHeaderString("x-rh-rbac-account"));
         Assertions.assertEquals(
-                "Basic " + Base64.getEncoder().encodeToString("myuser:p4ssw0rd".getBytes()),
+                "Basic " + new String(Base64.getEncoder().encode("myuser:p4ssw0rd".getBytes(UTF_8)), UTF_8),
                 context.getHeaderString("Authorization")
         );
     }
