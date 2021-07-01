@@ -177,10 +177,8 @@ public class RbacRecipientUsersProviderTest {
      * and
      * quarkus.cache.caffeine.rbac-recipient-users-provider-get-users.expire-after-write key.
      */
-    @CacheInvalidateAll.List(value = {
-        @CacheInvalidateAll(cacheName = "rbac-recipient-users-provider-get-users"),
-        @CacheInvalidateAll(cacheName = "rbac-recipient-users-provider-get-group-users")
-    })
+    @CacheInvalidateAll(cacheName = "rbac-recipient-users-provider-get-users")
+    @CacheInvalidateAll(cacheName = "rbac-recipient-users-provider-get-group-users")
     @BeforeEach
     void clearCached() {
     }
