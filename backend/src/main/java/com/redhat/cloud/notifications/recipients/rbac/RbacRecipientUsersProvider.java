@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.Page;
+import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -26,13 +27,15 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "40")
     Integer rbacElementsPerPage;
 
+    @CacheResult(cacheName = "rbac-recipient-users-provider-getUsers")
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
         return getWithPagination(
                 page -> rbacServiceToService
                         .getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
-        );
+        ).memoize().indefinitely();
     }
 
+    @CacheResult(cacheName = "rbac-recipient-users-provider-getGroupUsers")
     public Uni<List<User>> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
         return rbacServiceToService.getGroup(accountId, groupId)
                 .onItem().transformToUni(rbacGroup -> {
@@ -52,7 +55,7 @@ public class RbacRecipientUsersProvider {
                             return users;
                         });
                     }
-                });
+                }).memoize().indefinitely();
     }
 
     private Uni<List<User>> getWithPagination(Function<Integer, Uni<Page<RbacUser>>> fetcher) {
