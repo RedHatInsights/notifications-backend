@@ -56,6 +56,17 @@
             <artifactId>quarkus-jdbc-postgresql</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>io.quarkiverse.logging.cloudwatch</groupId>
+            <artifactId>quarkus-logging-cloudwatch</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-logging-sentry</artifactId>
+        </dependency>
+
         <!-- Insights -->
         <dependency>
             <groupId>com.redhat.cloud.common</groupId>
