@@ -36,18 +36,6 @@ public class RbacRecipientUsersProviderTest {
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
     @Test
-    public void getAllUsers() {
-        int elements = 95;
-        mockGetUsers(elements, false);
-
-        List<User> users = rbacRecipientUsersProvider.getUsers(accountId, false).await().indefinitely();
-        Assertions.assertEquals(elements, users.size());
-        for (int i = 0; i < elements; ++i) {
-            Assertions.assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-        }
-    }
-
-    @Test
     public void getAllUsersFromDefaultGroup() {
         RbacGroup defaultGroup = new RbacGroup();
         defaultGroup.setPlatformDefault(true);
@@ -66,30 +54,16 @@ public class RbacRecipientUsersProviderTest {
     }
 
     @Test
-    public void getAllUsersFromGroup() {
-        RbacGroup group = new RbacGroup();
-        group.setPlatformDefault(false);
-        group.setUuid(UUID.randomUUID());
-
-        int elements = 133;
-
-        mockGetGroup(group);
-        mockGetGroupUsers(elements, group.getUuid());
-
-        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()).await().indefinitely();
-        Assertions.assertEquals(elements, users.size());
-        for (int i = 0; i < elements; ++i) {
-            Assertions.assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-        }
-    }
-
-    @Test
     public void getAllUsersCache() {
         int initialSize = 95;
         mockGetUsers(initialSize, false);
 
         List<User> users = rbacRecipientUsersProvider.getUsers(accountId, false).await().indefinitely();
         Assertions.assertEquals(initialSize, users.size());
+
+        for (int i = 0; i < initialSize; ++i) {
+            Assertions.assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+        }
 
         int updatedSize = 323;
         mockGetUsers(updatedSize, false);

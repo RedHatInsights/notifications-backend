@@ -32,6 +32,7 @@ public class RbacRecipientUsersProvider {
         return getWithPagination(
                 page -> rbacServiceToService
                         .getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
+        // .memoize().indefinitely() should be removed after the Quarkus 2.0 bump
         ).memoize().indefinitely();
     }
 
@@ -55,6 +56,7 @@ public class RbacRecipientUsersProvider {
                             return users;
                         });
                     }
+                // .memoize().indefinitely() should be removed after the Quarkus 2.0 bump
                 }).memoize().indefinitely();
     }
 

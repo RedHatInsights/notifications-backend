@@ -9,6 +9,7 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 
@@ -53,7 +54,7 @@ public class AuthRequestFilterTest {
         // Account is removed
         Assertions.assertNull(context.getHeaderString("x-rh-rbac-account"));
         Assertions.assertEquals(
-                "Basic " + new String(Base64.getEncoder().encode("myuser:p4ssw0rd".getBytes(UTF_8)), UTF_8),
+                "Basic " + new String(Base64.getEncoder().encode("myuser:p4ssw0rd".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8),
                 context.getHeaderString("Authorization")
         );
     }
