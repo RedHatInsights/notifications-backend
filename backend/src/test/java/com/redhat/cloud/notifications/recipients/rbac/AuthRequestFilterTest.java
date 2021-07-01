@@ -20,26 +20,22 @@ public class AuthRequestFilterTest {
     }
 
     @Test
-    public void testServiceToServiceHeaders() {
+    public void testServiceToServiceHeaders() throws IOException {
         ClientRequestContext context = configureContext();
 
         AuthRequestFilter rbacAuthRequestFilter = new AuthRequestFilter();
         rbacAuthRequestFilter.application = "My nice app";
         rbacAuthRequestFilter.secret = "this-is-a-secret-token";
 
-        try {
-            rbacAuthRequestFilter.filter(context);
-            MultivaluedMap<String, Object> map = context.getHeaders();
-            Assertions.assertEquals("this-is-a-secret-token", context.getHeaderString("x-rh-rbac-psk"));
-            Assertions.assertEquals("My nice app", context.getHeaderString("x-rh-rbac-client-id"));
-            Assertions.assertNull(context.getHeaderString("Authorization"));
-        } catch (IOException ex) {
-            Assertions.fail(ex);
-        }
+        rbacAuthRequestFilter.filter(context);
+        MultivaluedMap<String, Object> map = context.getHeaders();
+        Assertions.assertEquals("this-is-a-secret-token", context.getHeaderString("x-rh-rbac-psk"));
+        Assertions.assertEquals("My nice app", context.getHeaderString("x-rh-rbac-client-id"));
+        Assertions.assertNull(context.getHeaderString("Authorization"));
     }
 
     @Test
-    public void testDevServiceToServiceHeaders() {
+    public void testDevServiceToServiceHeaders() throws IOException {
         System.setProperty("rbac.service-to-service.exceptional.auth.info", "myuser:p4ssw0rd");
         ClientRequestContext context = configureContext();
 
@@ -50,20 +46,16 @@ public class AuthRequestFilterTest {
         // Setting x-rh-rbac-account
         context.getHeaders().putSingle("x-rh-rbac-account", "the-account-id");
 
-        try {
-            rbacAuthRequestFilter.filter(context);
-            Assertions.assertNull(context.getHeaderString("x-rh-rbac-psk"));
-            Assertions.assertNull(context.getHeaderString("x-rh-rbac-client-id"));
+        rbacAuthRequestFilter.filter(context);
+        Assertions.assertNull(context.getHeaderString("x-rh-rbac-psk"));
+        Assertions.assertNull(context.getHeaderString("x-rh-rbac-client-id"));
 
-            // Account is removed
-            Assertions.assertNull(context.getHeaderString("x-rh-rbac-account"));
-            Assertions.assertEquals(
-                    "Basic " + Base64.getEncoder().encodeToString("myuser:p4ssw0rd".getBytes()),
-                    context.getHeaderString("Authorization")
-            );
-        } catch (IOException ex) {
-            Assertions.fail(ex);
-        }
+        // Account is removed
+        Assertions.assertNull(context.getHeaderString("x-rh-rbac-account"));
+        Assertions.assertEquals(
+                "Basic " + Base64.getEncoder().encodeToString("myuser:p4ssw0rd".getBytes()),
+                context.getHeaderString("Authorization")
+        );
     }
 
     private ClientRequestContext configureContext() {
