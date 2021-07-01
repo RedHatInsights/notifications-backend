@@ -45,7 +45,6 @@ public class EndpointEmailSubscriptionResources {
         return Boolean.TRUE;
     }
 
-    @Transactional
     public Long getEmailSubscribersCount(String accountNumber, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "SELECT COUNT(id.userId) FROM EmailSubscription WHERE id.accountId = :accountId " +
                 "AND application.bundle.name = :bundleName AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
