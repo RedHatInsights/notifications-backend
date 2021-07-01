@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
+import java.util.logging.Logger;
 import org.hibernate.Session;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -12,6 +13,8 @@ import java.util.List;
 @ApplicationScoped
 public class EmailAggregationResources {
 
+    private final Logger log = Logger.getLogger(this.getClass().getName());
+
     @Inject
     Session session;
 
@@ -19,9 +22,9 @@ public class EmailAggregationResources {
     public Boolean addEmailAggregation(EmailAggregation aggregation) {
         try {
             session.persist(aggregation);
-            session.flush();
             return Boolean.TRUE;
         } catch (Exception e) {
+            log.warning("Couldn't persist aggregation!" + e.getMessage());
             return Boolean.FALSE;
         }
     }
@@ -49,13 +52,11 @@ public class EmailAggregationResources {
     @Transactional
     public Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
         String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
-        final int result = session.createQuery(query)
+        return session.createQuery(query)
                 .setParameter("accountId", key.getAccountId())
                 .setParameter("bundleName", key.getBundle())
                 .setParameter("applicationName", key.getApplication())
                 .setParameter("created", lastUsedTime)
                 .executeUpdate();
-        session.flush();
-        return result;
     }
 }
