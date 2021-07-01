@@ -3,11 +3,10 @@ package com.redhat.cloud.notifications.db;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
-
+import org.hibernate.Session;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import org.hibernate.Session;
 
 @ApplicationScoped
 public class ResourceHelpers {

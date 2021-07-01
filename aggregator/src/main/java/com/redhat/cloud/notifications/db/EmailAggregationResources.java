@@ -2,13 +2,13 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import java.util.logging.Logger;
 import org.hibernate.Session;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.logging.Logger;
 
 @ApplicationScoped
 public class EmailAggregationResources {
