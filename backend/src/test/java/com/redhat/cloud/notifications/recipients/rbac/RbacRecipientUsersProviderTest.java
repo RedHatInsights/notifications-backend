@@ -138,7 +138,7 @@ public class RbacRecipientUsersProviderTest {
         MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
         Mockito.when(rbacServiceToService.getUsers(
                 Mockito.eq(accountId),
-                Mockito.anyBoolean(),
+                Mockito.eq(adminsOnly),
                 Mockito.anyInt(),
                 Mockito.anyInt()
         )).then(invocationOnMock -> answer.mockedUserAnswer(
