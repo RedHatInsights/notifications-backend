@@ -27,7 +27,7 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "40")
     Integer rbacElementsPerPage;
 
-    @CacheResult(cacheName = "rbac-recipient-users-provider-getUsers")
+    @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
         return getWithPagination(
                 page -> rbacServiceToService
@@ -35,7 +35,7 @@ public class RbacRecipientUsersProvider {
         ).memoize().indefinitely();
     }
 
-    @CacheResult(cacheName = "rbac-recipient-users-provider-getGroupUsers")
+    @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
     public Uni<List<User>> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
         return rbacServiceToService.getGroup(accountId, groupId)
                 .onItem().transformToUni(rbacGroup -> {

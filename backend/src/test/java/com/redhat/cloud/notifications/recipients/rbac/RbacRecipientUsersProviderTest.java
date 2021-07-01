@@ -3,12 +3,14 @@ package com.redhat.cloud.notifications.recipients.rbac;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
+import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -81,20 +83,69 @@ public class RbacRecipientUsersProviderTest {
         }
     }
 
+    @Test
+    public void getAllUsersCache() {
+        int initialSize = 95;
+        mockGetUsers(initialSize, false);
+
+        List<User> users = rbacRecipientUsersProvider.getUsers(accountId, false).await().indefinitely();
+        Assertions.assertEquals(initialSize, users.size());
+
+        int updatedSize = 323;
+        mockGetUsers(updatedSize, false);
+
+        // Should still have the initial size because of the cache
+        users = rbacRecipientUsersProvider.getUsers(accountId, false).await().indefinitely();
+        Assertions.assertEquals(initialSize, users.size());
+
+        clearCached();
+
+        users = rbacRecipientUsersProvider.getUsers(accountId, false).await().indefinitely();
+        Assertions.assertEquals(updatedSize, users.size());
+    }
+
+    @Test
+    public void getAllGroupsCache() {
+        RbacGroup group = new RbacGroup();
+        group.setPlatformDefault(false);
+        group.setUuid(UUID.randomUUID());
+
+        int initialSize = 133;
+
+        mockGetGroup(group);
+        mockGetGroupUsers(initialSize, group.getUuid());
+
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()).await().indefinitely();
+        Assertions.assertEquals(initialSize, users.size());
+        for (int i = 0; i < initialSize; ++i) {
+            Assertions.assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+        }
+
+        int updatedSize = 323;
+        mockGetGroupUsers(updatedSize, group.getUuid());
+
+        // Should still have the initial size because of the cache
+        users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()).await().indefinitely();
+        Assertions.assertEquals(initialSize, users.size());
+
+        clearCached();
+
+        users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()).await().indefinitely();
+        Assertions.assertEquals(updatedSize, users.size());
+    }
+
     private void mockGetUsers(int elements, boolean adminsOnly) {
+        MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
         Mockito.when(rbacServiceToService.getUsers(
                 Mockito.eq(accountId),
                 Mockito.anyBoolean(),
                 Mockito.anyInt(),
                 Mockito.anyInt()
-        )).then(invocationOnMock -> {
-            MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
-            return answer.mockedUserAnswer(
-                    invocationOnMock.getArgument(2, Integer.class),
-                    invocationOnMock.getArgument(3, Integer.class),
-                    invocationOnMock.getArgument(1, Boolean.class)
-            );
-        });
+        )).then(invocationOnMock -> answer.mockedUserAnswer(
+                invocationOnMock.getArgument(2, Integer.class),
+                invocationOnMock.getArgument(3, Integer.class),
+                invocationOnMock.getArgument(1, Boolean.class)
+        ));
     }
 
     private void mockGetGroup(RbacGroup group) {
@@ -118,6 +169,20 @@ public class RbacRecipientUsersProviderTest {
                     false
             );
         });
+    }
+
+    /*
+     * This would normally happen after a certain duration fixed in application.properties with the
+     * quarkus.cache.caffeine.rbac-recipient-users-provider-get-group-users.expire-after-write
+     * and
+     * quarkus.cache.caffeine.rbac-recipient-users-provider-get-users.expire-after-write key.
+     */
+    @CacheInvalidateAll.List(value = {
+        @CacheInvalidateAll(cacheName = "rbac-recipient-users-provider-get-users"),
+        @CacheInvalidateAll(cacheName = "rbac-recipient-users-provider-get-group-users")
+    })
+    @BeforeEach
+    void clearCached() {
     }
 
     class MockedUserAnswer {
