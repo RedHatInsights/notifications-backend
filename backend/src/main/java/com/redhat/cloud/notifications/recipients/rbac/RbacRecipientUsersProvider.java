@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
-import com.redhat.cloud.notifications.recipients.RecipientUsersProvider;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.smallrye.mutiny.Multi;
@@ -18,7 +17,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class RbacRecipientUsersProvider implements RecipientUsersProvider {
+public class RbacRecipientUsersProvider {
 
     @Inject
     @RestClient
@@ -27,7 +26,6 @@ public class RbacRecipientUsersProvider implements RecipientUsersProvider {
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "40")
     Integer rbacElementsPerPage;
 
-    @Override
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
         return getWithPagination(
                 page -> rbacServiceToService

@@ -29,7 +29,6 @@ public class AuthRequestFilterTest {
 
         try {
             rbacAuthRequestFilter.filter(context);
-            System.out.println(context.getHeaders());
             MultivaluedMap<String, Object> map = context.getHeaders();
             Assertions.assertEquals("this-is-a-secret-token", context.getHeaderString("x-rh-rbac-psk"));
             Assertions.assertEquals("My nice app", context.getHeaderString("x-rh-rbac-client-id"));
@@ -53,7 +52,6 @@ public class AuthRequestFilterTest {
 
         try {
             rbacAuthRequestFilter.filter(context);
-            System.out.println(context.getHeaders());
             Assertions.assertNull(context.getHeaderString("x-rh-rbac-psk"));
             Assertions.assertNull(context.getHeaderString("x-rh-rbac-client-id"));
 
@@ -65,8 +63,6 @@ public class AuthRequestFilterTest {
             );
         } catch (IOException ex) {
             Assertions.fail(ex);
-        } finally {
-            System.setProperty("rbac.service-to-service.exceptional.auth.info", "");
         }
     }
 
