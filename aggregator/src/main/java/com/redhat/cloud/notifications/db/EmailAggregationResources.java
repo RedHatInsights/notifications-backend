@@ -22,6 +22,7 @@ public class EmailAggregationResources {
     public Boolean addEmailAggregation(EmailAggregation aggregation) {
         try {
             session.persist(aggregation);
+            session.flush();
             return Boolean.TRUE;
         } catch (Exception e) {
             log.warning("Couldn't persist aggregation!" + e.getMessage());
@@ -52,11 +53,13 @@ public class EmailAggregationResources {
     @Transactional
     public Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
         String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
-        return session.createQuery(query)
+        final int result = session.createQuery(query)
                 .setParameter("accountId", key.getAccountId())
                 .setParameter("bundleName", key.getBundle())
                 .setParameter("applicationName", key.getApplication())
                 .setParameter("created", lastUsedTime)
                 .executeUpdate();
+        session.flush();
+        return result;
     }
 }

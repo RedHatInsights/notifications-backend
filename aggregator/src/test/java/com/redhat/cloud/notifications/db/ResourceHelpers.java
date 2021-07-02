@@ -31,7 +31,7 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    private void subscribe(String accountNumber, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
+    void subscribe(String accountNumber, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "INSERT INTO endpoint_email_subscriptions(account_id, user_id, application_id, subscription_type) " +
                 "SELECT :accountId, :userId, a.id, :subscriptionType " +
                 "FROM applications a, bundles b WHERE a.bundle_id = b.id AND a.name = :applicationName AND b.name = :bundleName " +
@@ -47,7 +47,7 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    private void unsubscribe(String accountNumber, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
+    void unsubscribe(String accountNumber, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "DELETE FROM EmailSubscription WHERE id.accountId = :accountId AND id.userId = :userId " +
                 "AND id.applicationId = (SELECT a.id FROM Application a, Bundle b WHERE a.bundle.id = b.id " +
                 "AND b.name = :bundleName AND a.name = :applicationName) AND id.subscriptionType = :subscriptionType";
