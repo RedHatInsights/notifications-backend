@@ -667,7 +667,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        // Add new EmailSubscriptionEndpoint
+        // EmailSubscription can't be created
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
@@ -677,12 +677,25 @@ public class EndpointServiceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        Response response = given()
+        String stringResponse = given()
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
                 .body(Json.encode(ep))
                 .post("/endpoints")
+                .then()
+                .statusCode(400)
+                .extract().asString();
+
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
+
+        // EmailSubscription can be fetch from the properties
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(properties))
+                .post("/endpoints/system/email_subscription")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
@@ -692,15 +705,83 @@ public class EndpointServiceTest extends DbIsolatedTest {
         responsePoint.mapTo(Endpoint.class);
         assertNotNull(responsePoint.getString("id"));
 
-        // Delete
-        String body =
-                given()
-                        .header(identityHeader)
-                        .when().delete("/endpoints/" + responsePoint.getString("id"))
-                        .then()
-                        .statusCode(204)
-                        .extract().body().asString();
-        assertEquals(0, body.length());
+        // It is always enabled
+        assertEquals(true, responsePoint.getBoolean("enabled"));
+
+        // Calling again yields the same endpoint id
+        String defaultEndpointId = responsePoint.getString("id");
+
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(properties))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertEquals(defaultEndpointId, responsePoint.getString("id"));
+
+        // It is not possible to delete it
+        stringResponse = given()
+                .header(identityHeader)
+                .when().delete("/endpoints/" + defaultEndpointId)
+                .then()
+                .statusCode(400)
+                .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
+
+        // It is not possible to disable or enable it
+        stringResponse = given()
+                .header(identityHeader)
+                .when().delete("/endpoints/" + defaultEndpointId + "/enable")
+                .then()
+                .statusCode(400)
+                .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
+
+        stringResponse = given()
+                .header(identityHeader)
+                .when().put("/endpoints/" + defaultEndpointId + "/enable")
+                .then()
+                .statusCode(400)
+                .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
+
+        // It is not possible to update it
+        stringResponse = given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .when().put("/endpoints/" + defaultEndpointId)
+                .then()
+                .statusCode(400)
+                .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
+
+        // It is not possible to update it to other type
+        ep.setType(EndpointType.WEBHOOK);
+
+        WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setMethod(HttpType.POST);
+        webhookProperties.setDisableSslVerification(false);
+        webhookProperties.setSecretToken("my-super-secret-token");
+        webhookProperties.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+        ep.setProperties(webhookProperties);
+
+        stringResponse = given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .when().put("/endpoints/" + defaultEndpointId)
+                .then()
+                .statusCode(400)
+                .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
     }
 
     @Test
@@ -907,4 +988,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
                     .extract().response();
         }
     }
+
+    private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
+        assertTrue(message.contains(String.format(
+                "Is not possible to create or alter endpoint with type %s, check API for alternatives",
+                endpointType
+        )));
+    }
+
 }
