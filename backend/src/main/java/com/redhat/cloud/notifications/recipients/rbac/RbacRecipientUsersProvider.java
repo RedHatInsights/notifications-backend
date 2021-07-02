@@ -30,8 +30,8 @@ public class RbacRecipientUsersProvider {
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
         return getWithPagination(
-                page -> rbacServiceToService
-                        .getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
+            page -> rbacServiceToService
+                    .getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
         // .memoize().indefinitely() should be removed after the Quarkus 2.0 bump
         ).memoize().indefinitely();
     }
@@ -44,8 +44,8 @@ public class RbacRecipientUsersProvider {
                         return getUsers(accountId, adminOnly);
                     } else {
                         return getWithPagination(
-                                page -> rbacServiceToService
-                                        .getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage)
+                            page -> rbacServiceToService
+                                    .getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage)
                         )
                         // getGroupUsers doesn't have an adminOnly param.
                         .onItem().transform(users -> {
@@ -63,8 +63,8 @@ public class RbacRecipientUsersProvider {
     private Uni<List<User>> getWithPagination(Function<Integer, Uni<Page<RbacUser>>> fetcher) {
         return Multi.createBy().repeating()
                 .uni(
-                        AtomicInteger::new,
-                        state -> fetcher.apply(state.getAndIncrement())
+                    AtomicInteger::new,
+                    state -> fetcher.apply(state.getAndIncrement())
                 )
                 .until(page -> page.getData().isEmpty())
                 .onItem().transform(page -> page.getData().stream().map(rbacUser -> {
