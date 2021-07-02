@@ -12,7 +12,6 @@ jobs:
       - name: Cache Maven dependencies
         uses: actions/cache@v2.1.6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
