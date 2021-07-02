@@ -1,11 +1,9 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.hibernate.jpa.QueryHints;
 
@@ -35,7 +33,6 @@ import static javax.persistence.FetchType.LAZY;
 @Entity
 @Table(name = "behavior_group")
 @JsonNaming(SnakeCaseStrategy.class)
-@JsonFilter(ApiResponseFilter.NAME)
 /*
  * When PostgreSQL sorts a BOOLEAN column in DESC order, true comes first. That's not true for all DBMS.
  *

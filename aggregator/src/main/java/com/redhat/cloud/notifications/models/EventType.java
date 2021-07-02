@@ -1,11 +1,9 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.persistence.CascadeType;
@@ -32,7 +30,6 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @Entity
 @Table(name = "event_type")
 @JsonNaming(SnakeCaseStrategy.class)
-@JsonFilter(ApiResponseFilter.NAME)
 public class EventType {
 
     @Id

@@ -1,10 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ser.FilterProvider;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.vertx.core.json.jackson.DatabindCodec;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -37,9 +34,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     }
 
     private void configureObjectMapper() {
-        FilterProvider filterProvider = new SimpleFilterProvider().addFilter(ApiResponseFilter.NAME, new ApiResponseFilter());
         ObjectMapper mapper = DatabindCodec.mapper();
-        mapper.setFilterProvider(filterProvider);
         mapper.registerModule(new JavaTimeModule());
         mapper.configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
