@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.db.converters.BasicAuthenticationConverter;
 import com.redhat.cloud.notifications.db.converters.HttpTypeConverter;
 
 import javax.persistence.Convert;
@@ -31,10 +30,6 @@ public class WebhookProperties extends EndpointProperties {
     @Size(max = 255)
     @JsonProperty("secret_token")
     private String secretToken; // TODO Should be optional
-
-    @Convert(converter = BasicAuthenticationConverter.class)
-    @JsonProperty("basic_authentication")
-    private BasicAuthentication basicAuthentication;
 
     public String getUrl() {
         return url;
@@ -68,11 +63,4 @@ public class WebhookProperties extends EndpointProperties {
         this.secretToken = secretToken;
     }
 
-    public BasicAuthentication getBasicAuthentication() {
-        return basicAuthentication;
-    }
-
-    public void setBasicAuthentication(BasicAuthentication basicAuthentication) {
-        this.basicAuthentication = basicAuthentication;
-    }
 }
