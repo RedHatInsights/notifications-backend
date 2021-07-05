@@ -168,11 +168,4 @@ public class InternalService {
     public Uni<Void> setCurrentStatus(@NotNull @Valid CurrentStatus status) {
         return statusResources.setCurrentStatus(status);
     }
-
-    @POST
-    @Path("/migrate/email_endpoint")
-    public Uni<Void> migrateEmailEndpoint() {
-        // Todo: implement this
-        return Uni.createFrom().voidItem();
-    }
 }
