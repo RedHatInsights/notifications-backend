@@ -25,18 +25,12 @@ public class EventTypeBehavior extends CreationTimestamped {
     @JoinColumn(name = "event_type_id")
     private EventType eventType;
 
-    @ManyToOne
-    @MapsId("behaviorGroupId")
-    @JoinColumn(name = "behavior_group_id")
-    private BehaviorGroup behaviorGroup;
-
     public EventTypeBehavior() {
     }
 
-    public EventTypeBehavior(EventType eventType, BehaviorGroup behaviorGroup) {
+    public EventTypeBehavior(EventType eventType) {
         id = new EventTypeBehaviorId(); // Required to prevent a Hibernate NPE at persistence time.
         this.eventType = eventType;
-        this.behaviorGroup = behaviorGroup;
     }
 
     public EventTypeBehaviorId getId() {
@@ -53,14 +47,6 @@ public class EventTypeBehavior extends CreationTimestamped {
 
     public void setEventType(EventType eventType) {
         this.eventType = eventType;
-    }
-
-    public BehaviorGroup getBehaviorGroup() {
-        return behaviorGroup;
-    }
-
-    public void setBehaviorGroup(BehaviorGroup behaviorGroup) {
-        this.behaviorGroup = behaviorGroup;
     }
 
     @Override

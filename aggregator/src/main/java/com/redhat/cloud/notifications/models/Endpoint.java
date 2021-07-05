@@ -69,10 +69,6 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Transient
     private EndpointProperties properties;
 
-    @OneToMany(mappedBy = "endpoint", cascade = CascadeType.REMOVE)
-    @JsonIgnore
-    private Set<BehaviorGroupAction> behaviorGroupActions;
-
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<NotificationHistory> notificationHistories;
@@ -140,14 +136,6 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public void setProperties(EndpointProperties properties) {
         this.properties = properties;
-    }
-
-    public Set<BehaviorGroupAction> getBehaviorGroupActions() {
-        return behaviorGroupActions;
-    }
-
-    public void setBehaviorGroupActions(Set<BehaviorGroupAction> behaviorGroupActions) {
-        this.behaviorGroupActions = behaviorGroupActions;
     }
 
     public Set<NotificationHistory> getNotificationHistories() {
