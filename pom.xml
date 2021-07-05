@@ -11,6 +11,7 @@
 
     <modules>
         <module>checkstyle</module>
+        <module>notifications-models</module>
         <module>aggregator</module>
         <module>backend</module>
     </modules>
