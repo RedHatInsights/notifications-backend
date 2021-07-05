@@ -18,9 +18,4 @@ public class TestEndpointType {
         assertEquals(1, EndpointType.EMAIL_SUBSCRIPTION.ordinal());
     }
 
-    // TODO [BG Phase 2] Delete this test
-    @Test
-    void endpointTypeDefaultIs2() {
-        assertEquals(2, EndpointType.DEFAULT.ordinal());
-    }
 }
