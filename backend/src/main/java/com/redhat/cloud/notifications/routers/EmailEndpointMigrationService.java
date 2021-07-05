@@ -46,11 +46,11 @@ public class EmailEndpointMigrationService {
         MigrationReport report = new MigrationReport();
 
         return session.withTransaction(transaction -> {
-            LOGGER.debugf("[NOTIF-240] Starting");
+            LOGGER.debugf("[NOTIF-242] Starting");
             return session.createQuery("SELECT DISTINCT accountId from Endpoint WHERE type = :endpointType", String.class)
                     .setParameter("endpointType", EndpointType.EMAIL_SUBSCRIPTION)
                     .getResultList()
-                    .onItem().invoke(accounts -> LOGGER.debugf("[NOTIF-240] Collapsing Email endpoints"))
+                    .onItem().invoke(accounts -> LOGGER.debugf("[NOTIF-242] Collapsing Email endpoints"))
                     .onItem().transformToMulti(Multi.createFrom()::iterable)
                     .invoke(s -> report.updatedAccounts.incrementAndGet())
                     .onItem().transformToUniAndConcatenate(accountId -> session.createQuery("FROM Endpoint WHERE type = :endpointType AND accountId = :accountId", Endpoint.class)
@@ -60,7 +60,7 @@ public class EmailEndpointMigrationService {
                             .onItem().transformToUni(endpoints -> {
                                 if (endpoints.size() > 1) {
                                     Endpoint defaultEmailEndpoint = endpoints.remove(0);
-                                    LOGGER.debugf("[NOTIF-240] Account [%s] has [%d] EmailEndpoints. Using [%s] as the default", accountId, endpoints.size() + 1, defaultEmailEndpoint.getId());
+                                    LOGGER.debugf("[NOTIF-242] Account [%s] has [%d] EmailEndpoints. Using [%s] as the default", accountId, endpoints.size() + 1, defaultEmailEndpoint.getId());
                                     Set<UUID> endpointIds = endpoints.stream().map(Endpoint::getId).collect(Collectors.toSet());
 
                                     return session.createQuery("FROM BehaviorGroupAction bga WHERE bga.id.endpointId IN (:endpointIds)", BehaviorGroupAction.class)
@@ -69,7 +69,7 @@ public class EmailEndpointMigrationService {
                                             .onItem().transformToMulti(Multi.createFrom()::iterable)
                                             .invoke(behaviorGroupAction -> {
                                                 LOGGER.debugf(
-                                                        "[NOTIF-240] Updating BehaviorGroup [%s] to use default EmailEndpoint [%s]",
+                                                        "[NOTIF-242] Updating BehaviorGroup [%s] to use default EmailEndpoint [%s]",
                                                         behaviorGroupAction.getId().behaviorGroupId,
                                                         defaultEmailEndpoint.getId()
                                                 );
@@ -98,7 +98,7 @@ public class EmailEndpointMigrationService {
                                             .invoke(_unused -> {
                                                 report.deletedEndpoints.addAndGet(endpoints.size());
                                                 LOGGER.debugf(
-                                                        "[NOTIF-240 Deleting [%d] endpoints from account: [%s]",
+                                                        "[NOTIF-242 Deleting [%d] endpoints from account: [%s]",
                                                         endpoints.size(),
                                                         accountId
                                                 );
@@ -112,13 +112,13 @@ public class EmailEndpointMigrationService {
                                             });
                                 }
 
-                                LOGGER.debugf("[NOTIF-240] Account [%s] only has one EmailEndpoint - skipping", accountId);
+                                LOGGER.debugf("[NOTIF-242] Account [%s] only has one EmailEndpoint - skipping", accountId);
                                 return Uni.createFrom().voidItem();
                             })).collect().asList();
         })
         .onItem().invoke(_unused -> {
             report.durationInMs.set(System.currentTimeMillis() - start);
-            LOGGER.debugf("[NOTIF-240] End");
+            LOGGER.debugf("[NOTIF-242] End");
         })
         .onItem().transform(_unused -> report);
     }
