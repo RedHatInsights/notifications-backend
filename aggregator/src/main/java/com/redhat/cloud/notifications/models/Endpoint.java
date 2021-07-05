@@ -8,20 +8,17 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.EndpointTypeConverter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
@@ -68,10 +65,6 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Valid
     @Transient
     private EndpointProperties properties;
-
-    @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
-    @JsonIgnore
-    private Set<NotificationHistory> notificationHistories;
 
     public UUID getId() {
         return id;
@@ -136,14 +129,6 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public void setProperties(EndpointProperties properties) {
         this.properties = properties;
-    }
-
-    public Set<NotificationHistory> getNotificationHistories() {
-        return notificationHistories;
-    }
-
-    public void setNotificationHistories(Set<NotificationHistory> notificationHistories) {
-        this.notificationHistories = notificationHistories;
     }
 
     @Override
