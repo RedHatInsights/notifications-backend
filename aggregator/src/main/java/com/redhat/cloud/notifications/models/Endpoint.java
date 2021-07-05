@@ -3,10 +3,7 @@ package com.redhat.cloud.notifications.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.db.converters.EndpointTypeConverter;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -41,12 +38,6 @@ public class Endpoint extends CreationUpdateTimestamped {
     private String description;
 
     private Boolean enabled = Boolean.FALSE;
-
-    // Transform to lower case in JSON
-    @NotNull
-    @Column(name = "endpoint_type")
-    @Convert(converter = EndpointTypeConverter.class)
-    private EndpointType type;
 
     public UUID getId() {
         return id;
@@ -88,14 +79,6 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.enabled = enabled;
     }
 
-    public EndpointType getType() {
-        return type;
-    }
-
-    public void setType(EndpointType type) {
-        this.type = type;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -121,7 +104,6 @@ public class Endpoint extends CreationUpdateTimestamped {
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", enabled=" + enabled +
-                ", type=" + type +
                 ", created=" + getCreated() +
                 ", updated=" + getUpdated() +
                 '}';
