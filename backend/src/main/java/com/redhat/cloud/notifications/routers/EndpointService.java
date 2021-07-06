@@ -134,29 +134,7 @@ public class EndpointService {
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid EmailSubscriptionProperties properties) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources
-                .getEndpointsPerType(principal.getAccount(), EndpointType.EMAIL_SUBSCRIPTION, true, null)
-                .onItem().call(emailEndpoints -> resources.loadProperties(emailEndpoints))
-                .onItem().transformToUni(emailEndpoints -> {
-                    Optional<Endpoint> endpointOptional = emailEndpoints
-                            .stream()
-                            // Todo: This should be changed once we store the properties - (properties = null right now)
-                            // .filter(endpoint -> endpoint.getProperties().equals(properties))
-                            .findFirst();
-                    if (endpointOptional.isPresent()) {
-                        return Uni.createFrom().item(endpointOptional.get());
-                    }
-
-                    Endpoint endpoint = new Endpoint();
-                    endpoint.setProperties(properties);
-                    endpoint.setAccountId(principal.getAccount());
-                    endpoint.setEnabled(true);
-                    endpoint.setDescription("System email endpoint");
-                    endpoint.setName("Email endpoint");
-                    endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
-
-                    return resources.createEndpoint(endpoint);
-                });
+        return resources.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties);
     }
 
     @GET
