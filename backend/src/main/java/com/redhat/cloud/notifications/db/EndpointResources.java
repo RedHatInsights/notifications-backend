@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.CamelProperties;
+import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -14,6 +15,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -90,6 +92,31 @@ public class EndpointResources {
 
         return mutinyQuery.getResultList()
                 .onItem().call(this::loadProperties);
+    }
+
+    public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties) {
+        return getEndpointsPerType(accountId, EndpointType.EMAIL_SUBSCRIPTION, true, null)
+                .onItem().call(this::loadProperties)
+                .onItem().transformToUni(emailEndpoints -> {
+                    Optional<Endpoint> endpointOptional = emailEndpoints
+                            .stream()
+                            // Todo: This should be changed once we store the properties - (properties = null right now)
+                            // .filter(endpoint -> endpoint.getProperties().equals(properties))
+                            .findFirst();
+                    if (endpointOptional.isPresent()) {
+                        return Uni.createFrom().item(endpointOptional.get());
+                    }
+
+                    Endpoint endpoint = new Endpoint();
+                    endpoint.setProperties(properties);
+                    endpoint.setAccountId(accountId);
+                    endpoint.setEnabled(true);
+                    endpoint.setDescription("System email endpoint");
+                    endpoint.setName("Email endpoint");
+                    endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+
+                    return createEndpoint(endpoint);
+                });
     }
 
     public Uni<Long> getEndpointsCountPerType(String tenant, EndpointType type, Boolean activeOnly) {
