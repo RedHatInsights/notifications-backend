@@ -11,36 +11,6 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <properties>
-        <compiler-plugin.version>3.8.1</compiler-plugin.version>
-        <maven.compiler.parameters>true</maven.compiler.parameters>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-        <surefire-plugin.version>2.22.2</surefire-plugin.version>
-        <checkstyle-plugin.version>3.1.2</checkstyle-plugin.version>
-        <checkstyle.version>8.44</checkstyle.version>
-
-        <testcontainers.version>1.15.3</testcontainers.version>
-        <version.cloud-commons>0.1.1</version.cloud-commons>
-        <openapi-parser.version>4.0.4</openapi-parser.version>
-
-        <!-- Keep the version synced with TestLifecycleManager -->
-        <!-- Be careful with bumps, version 5.11.2 caused tests instability so we had to rollback to 5.5.4 -->
-        <mockserver-client-java.version>5.5.4</mockserver-client-java.version>
-
-        <insights-notification-schemas-java.version>0.3</insights-notification-schemas-java.version>
-        <clowder-quarkus-config-source.version>0.1.4</clowder-quarkus-config-source.version>
-
-        <cloudwatch.version>3.0.0</cloudwatch.version>
-
-        <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
-        <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>1.13.7.Final</quarkus.platform.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -56,30 +26,4 @@
             <artifactId>quarkus-hibernate-orm</artifactId>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${surefire-plugin.version}</version>
-                <configuration>
-                    <systemPropertyVariables>
-                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${compiler-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>
