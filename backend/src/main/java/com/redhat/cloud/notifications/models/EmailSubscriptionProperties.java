@@ -8,7 +8,7 @@ public class EmailSubscriptionProperties extends EndpointProperties {
             return true;
         }
 
-        if (!(o instanceof EndpointProperties)) {
+        if (!(o instanceof EmailSubscriptionProperties)) {
             return false;
         }
 
