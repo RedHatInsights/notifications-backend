@@ -53,7 +53,7 @@ public class TestOpenshiftAdvisorTemplate {
         assertTrue(result.contains("some-cluster-name"), "Body should contain the display_name");
 
         action.setEvents(action.getEvents().stream().filter(event -> event.getPayload().get("total_risk").equals("1")).collect(Collectors.toList()));
-        String result2 = Advisor.Templates.newRecommendationInstantEmailBody()
+        String result2 = AdvisorOpenshift.Templates.newRecommendationInstantEmailBody()
                 .data("action", action)
                 .render();
 
