@@ -3,10 +3,10 @@ package com.redhat.cloud.notifications.models;
 import java.time.Duration;
 
 public enum EmailSubscriptionType {
-
+    INSTANT(null),
     DAILY(Duration.ofDays(1));
 
-    private final Duration duration;
+    private Duration duration;
 
     EmailSubscriptionType(Duration duration) {
         this.duration = duration;
