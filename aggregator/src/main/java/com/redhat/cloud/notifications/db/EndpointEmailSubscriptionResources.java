@@ -5,6 +5,7 @@ import org.hibernate.Session;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import java.math.BigInteger;
 
 @ApplicationScoped
 public class EndpointEmailSubscriptionResources {
@@ -14,13 +15,14 @@ public class EndpointEmailSubscriptionResources {
 
     @Transactional
     public Long getEmailSubscribersCount(String accountNumber, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
-        String query = "SELECT COUNT(id.userId) FROM EmailSubscription WHERE id.accountId = :accountId " +
-                "AND application.bundle.name = :bundleName AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
-        return session.createQuery(query, Long.class)
+        String query = "SELECT COUNT(user_id) FROM endpoint_email_subscriptions es, applications a, bundles b WHERE es.account_id = :accountId " +
+                "AND es.application_id = a.id AND a.bundle_id = b.id AND b.name = :bundleName AND a.name = :applicationName AND es.subscription_type = :subscriptionType";
+        BigInteger result = (BigInteger) session.createNativeQuery(query)
                 .setParameter("accountId", accountNumber)
                 .setParameter("bundleName", bundleName)
                 .setParameter("applicationName", applicationName)
-                .setParameter("subscriptionType", subscriptionType)
+                .setParameter("subscriptionType", subscriptionType.name())
                 .getSingleResult();
+        return result.longValue();
     }
 }
