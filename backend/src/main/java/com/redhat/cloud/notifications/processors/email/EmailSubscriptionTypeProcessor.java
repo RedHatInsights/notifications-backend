@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
@@ -76,6 +77,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     EmailAggregationResources emailAggregationResources;
+
+    @Inject
+    EndpointResources endpointResources;
 
     @Inject
     BaseTransformer baseTransformer;
@@ -197,7 +201,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     private Uni<NotificationHistory> sendEmail(Action action, List<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
-        subscriptionResources
+        return subscriptionResources
                 .getEmailSubscribers(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType)
                 .onItem().transformToUni(emailSubscriptions -> {
                     Set<String> subscribers = emailSubscriptions.stream().map(EmailSubscription::getUserId).collect(Collectors.toSet());
@@ -295,15 +299,12 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
                 //      also add metrics for these failures
 
-                // So we are about to send the email
-                // but since we do de-duplication we have multiple email endpoints but only one request.
-                // Should we
-                // a) Save the NotificationHistory on the related endpoints (refactoring doHttpRequest method)
-                // b) Skip saving the NotificationHistory (refactoring doHttpRequest)
-                // c) Have a "default" email endpoint whose only purpose is to save all the NotificationHistory
-                // d) Pick any?
-
-                return webhookSender.doHttpRequest(item, bopRequest, payload);
+                // All the notification history is saved to the default Email endpoint
+                return endpointResources.getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties())
+                        .onItem().transformToUni(endpoint -> {
+                            Notification notification = new Notification(action, endpoint);
+                            return webhookSender.doHttpRequest(notification, bopRequest, payload);
+                        });
             });
     }
 
@@ -349,10 +350,10 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     action.setEventType(null);
                     action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 
-                    // We don't have any endpoint (yet) as this aggregates multiple endpoints
-                    Notification item = new Notification(action, null);
-
-                    return sendEmail(item, emailSubscriptionType).onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
+                    // We use the default endpoint to send the email to only subscribed users
+                    return endpointResources.getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties())
+                            .onItem().transformToUni(endpoint -> sendEmail(action, List.of(endpoint), emailSubscriptionType))
+                            .onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
                 })
                 .onItem().transformToMultiAndConcatenate(result -> {
                     if (delete) {
@@ -363,8 +364,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
                     return Multi.createFrom().item(result);
                 });
-                // Todo: If we want to save the NotificationHistory, this could be a good place to do so. We would probably require a special EndpointType
-                // .onItem().invoke(result -> { })
     }
 
     Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
