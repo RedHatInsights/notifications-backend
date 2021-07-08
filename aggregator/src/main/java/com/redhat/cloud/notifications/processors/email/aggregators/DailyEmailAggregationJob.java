@@ -49,8 +49,7 @@ class DailyEmailAggregationJob {
     @ConfigProperty(name = "quarkus.aggregator.topic.name")
     String topicName;
 
-//    @Scheduled(identity = "dailyEmailProcessor", cron = "{email.subscription.daily.cron}")
-    @Scheduled(identity = "dailyEmailProcessor", every = "1m")
+    @Scheduled(identity = "dailyEmailProcessor", cron = "{email.subscription.daily.cron}")
     public void processDailyEmail(ScheduledExecution se) throws JsonProcessingException {
         List<EmailAggregation> aggregatedEmails = processAggregateEmails(se.getScheduledFireTime());
 
