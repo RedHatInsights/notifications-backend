@@ -6,7 +6,7 @@ public enum EmailSubscriptionType {
 
     DAILY(Duration.ofDays(1));
 
-    private Duration duration;
+    private final Duration duration;
 
     EmailSubscriptionType(Duration duration) {
         this.duration = duration;
