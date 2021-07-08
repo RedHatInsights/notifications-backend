@@ -37,16 +37,16 @@ class DailyEmailAggregationJob {
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
 
-    @ConfigProperty(name = "quarkus.aggregator.serializer")
+    @ConfigProperty(name = "notifications.aggregator.serializer")
     String serializer;
 
-    @ConfigProperty(name = "quarkus.aggregator.broker-url")
+    @ConfigProperty(name = "notifications.aggregator.broker-url")
     String brokerUrl;
 
-    @ConfigProperty(name = "quarkus.aggregator.acks")
+    @ConfigProperty(name = "notifications.aggregator.acks")
     String acks;
 
-    @ConfigProperty(name = "quarkus.aggregator.topic.name")
+    @ConfigProperty(name = "notifications.aggregator.topic.name")
     String topicName;
 
     @Scheduled(identity = "dailyEmailProcessor", cron = "{email.subscription.daily.cron}")
