@@ -10,6 +10,7 @@ import io.quarkus.scheduler.ScheduledExecution;
 import io.vertx.core.Vertx;
 import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
@@ -38,7 +39,11 @@ class DailyEmailAggregationJob {
     private static final String DEFAULT_BROKER_URL = "localhost:9092";
     private static final String DEFAULT_ACKS = "1";
 
-    @Scheduled(identity = "dailyEmailProcessor", cron = "{email.subscription.daily.cron}")
+    @ConfigProperty(name = "quarkus.aggregator.topic.name")
+    String topicName;
+
+//    @Scheduled(identity = "dailyEmailProcessor", cron = "{email.subscription.daily.cron}")
+    @Scheduled(every = "1m")
     public void processDailyEmail(ScheduledExecution se) {
         // Only delete on the largest aggregate time frame. Currently daily.
         final List<EmailAggregation> aggregatedEmails = processAggregateEmails(se.getScheduledFireTime());
@@ -51,7 +56,7 @@ class DailyEmailAggregationJob {
 
         KafkaProducer<String, String> producer = KafkaProducer.create(Vertx.vertx(), config);
 
-        KafkaProducerRecord<String, String> records = KafkaProducerRecord.create("mytopic", aggregatedEmails.toString());
+        KafkaProducerRecord<String, String> records = KafkaProducerRecord.create(topicName, aggregatedEmails.toString());
         producer.write(records);
     }
 
@@ -63,7 +68,13 @@ class DailyEmailAggregationJob {
         final LocalDateTime aggregateStarted = LocalDateTime.now();
 
         LOG.info(String.format("Running %s email aggregation for period (%s, %s)", EmailSubscriptionType.DAILY, startTime, endTime));
+
+        startTime = startTime.minus(2, ChronoUnit.YEARS);
+        endTime = endTime.plus(2, ChronoUnit.YEARS);
         final List<EmailAggregationKey> applicationsWithPendingAggregation = emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime);
+
+        System.out.println("Aggregation Keys " + applicationsWithPendingAggregation);
+
         List<List<EmailAggregation>> list = new LinkedList<>();
         for (EmailAggregationKey key : applicationsWithPendingAggregation) {
             List<EmailAggregation> emailAggregations = processAggregateEmailsByAggregationKey(key, startTime, endTime, EmailSubscriptionType.DAILY);
