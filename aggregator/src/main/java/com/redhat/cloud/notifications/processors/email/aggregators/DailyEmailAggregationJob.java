@@ -49,7 +49,7 @@ class DailyEmailAggregationJob {
     @ConfigProperty(name = "notifications.aggregator.topic.name")
     String topicName;
 
-    @Scheduled(identity = "dailyEmailProcessor", cron = "{email.subscription.daily.cron}")
+    @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.aggregator.email.subscription.periodic.cron}")
     public void processDailyEmail(ScheduledExecution se) throws JsonProcessingException {
         List<EmailAggregation> aggregatedEmails = processAggregateEmails(se.getScheduledFireTime());
 
