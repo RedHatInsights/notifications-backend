@@ -13,7 +13,6 @@
         <module>checkstyle</module>
         <module>aggregator</module>
         <module>backend</module>
-        <module>models</module>
     </modules>
 
     <properties>
