@@ -72,8 +72,6 @@ class DailyEmailAggregationJob {
 
         final List<EmailAggregationKey> applicationsWithPendingAggregation = emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime);
 
-        System.out.println("Aggregation Keys " + applicationsWithPendingAggregation);
-
         List<List<EmailAggregation>> list = new LinkedList<>();
         for (EmailAggregationKey key : applicationsWithPendingAggregation) {
             List<EmailAggregation> emailAggregations = processAggregateEmailsByAggregationKey(key, startTime, endTime, EmailSubscriptionType.DAILY);
