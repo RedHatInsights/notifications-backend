@@ -37,6 +37,9 @@ class DailyEmailAggregationJob {
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
 
+    @Inject
+    ObjectMapper objectMapper;
+
     @ConfigProperty(name = "notifications.aggregator.serializer")
     String serializer;
 
@@ -56,7 +59,7 @@ class DailyEmailAggregationJob {
         Map<String, String> config = createKafkaConfig();
         KafkaProducer<String, String> producer = KafkaProducer.create(Vertx.vertx(), config);
 
-        KafkaProducerRecord<String, String> records = KafkaProducerRecord.create(topicName, new ObjectMapper().writeValueAsString(aggregatedEmails));
+        KafkaProducerRecord<String, String> records = KafkaProducerRecord.create(topicName, objectMapper.writeValueAsString(aggregatedEmails));
         producer.write(records);
     }
 
