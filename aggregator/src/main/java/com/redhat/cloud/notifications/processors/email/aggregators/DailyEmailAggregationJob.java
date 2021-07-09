@@ -9,19 +9,15 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.ScheduledExecution;
-import io.vertx.core.Vertx;
-import io.vertx.kafka.client.producer.KafkaProducer;
-import io.vertx.kafka.client.producer.KafkaProducerRecord;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Emitter;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import static java.time.ZoneOffset.UTC;
@@ -40,27 +36,14 @@ class DailyEmailAggregationJob {
     @Inject
     ObjectMapper objectMapper;
 
-    @ConfigProperty(name = "notifications.aggregator.serializer")
-    String serializer;
-
-    @ConfigProperty(name = "notifications.aggregator.broker-url")
-    String brokerUrl;
-
-    @ConfigProperty(name = "notifications.aggregator.acks")
-    String acks;
-
-    @ConfigProperty(name = "notifications.aggregator.topic.name")
-    String topicName;
+    @Inject
+    @Channel("aggregation")
+    Emitter<String> emitter;
 
     @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.aggregator.email.subscription.periodic.cron}")
     public void processDailyEmail(ScheduledExecution se) throws JsonProcessingException {
         List<EmailAggregation> aggregatedEmails = processAggregateEmails(se.getScheduledFireTime());
-
-        Map<String, String> config = createKafkaConfig();
-        KafkaProducer<String, String> producer = KafkaProducer.create(Vertx.vertx(), config);
-
-        KafkaProducerRecord<String, String> records = KafkaProducerRecord.create(topicName, objectMapper.writeValueAsString(aggregatedEmails));
-        producer.write(records);
+        emitter.send(objectMapper.writeValueAsString(aggregatedEmails));
     }
 
     List<EmailAggregation> processAggregateEmails(Instant scheduledFireTime) {
@@ -116,14 +99,5 @@ class DailyEmailAggregationJob {
         }
 
         return emailAggregations;
-    }
-
-    private Map<String, String> createKafkaConfig() {
-        Map<String, String> config = new HashMap<>();
-        config.put("bootstrap.servers", brokerUrl);
-        config.put("key.serializer", serializer);
-        config.put("value.serializer", serializer);
-        config.put("acks", acks);
-        return config;
     }
 }
