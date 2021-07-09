@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db.converters;
 
 import io.vertx.core.json.JsonObject;
-
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
