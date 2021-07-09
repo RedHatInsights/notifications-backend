@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.email.bop;
+package com.redhat.cloud.notifications.processors.email;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -6,7 +6,7 @@ import java.util.Set;
 /**
  * Input JSON format accepted by the BOP
  */
-public class Email {
+class Email {
     private String subject;
     private String body;
     private Set<String> recipients;
@@ -14,21 +14,21 @@ public class Email {
     private Set<String> bccList;
     private String bodyType;
 
-    public Email() {
+    Email() {
         recipients = new HashSet<>();
         ccList = new HashSet<>();
         bccList = new HashSet<>();
     }
 
-    public String getSubject() {
+    String getSubject() {
         return subject;
     }
 
-    public void setSubject(String subject) {
+    void setSubject(String subject) {
         this.subject = subject;
     }
 
-    public String getBody() {
+    String getBody() {
         return body;
     }
 
@@ -36,35 +36,35 @@ public class Email {
         this.body = body;
     }
 
-    public Set<String> getRecipients() {
+    Set<String> getRecipients() {
         return recipients;
     }
 
-    public void setRecipients(Set<String> recipients) {
+    void setRecipients(Set<String> recipients) {
         this.recipients = recipients;
     }
 
-    public Set<String> getCcList() {
+    Set<String> getCcList() {
         return ccList;
     }
 
-    public void setCcList(Set<String> ccList) {
+    void setCcList(Set<String> ccList) {
         this.ccList = ccList;
     }
 
-    public Set<String> getBccList() {
+    Set<String> getBccList() {
         return bccList;
     }
 
-    public void setBccList(Set<String> bccList) {
+    void setBccList(Set<String> bccList) {
         this.bccList = bccList;
     }
 
-    public String getBodyType() {
+    String getBodyType() {
         return bodyType;
     }
 
-    public void setBodyType(String bodyType) {
+    void setBodyType(String bodyType) {
         this.bodyType = bodyType;
     }
 }
