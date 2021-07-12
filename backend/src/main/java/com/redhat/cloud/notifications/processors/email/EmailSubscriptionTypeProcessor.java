@@ -110,12 +110,12 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 .putHeader(BOP_ENV_HEADER, bopEnv);
     }
 
-    protected Email buildEmail(Set<String> recipients) {
+    protected Email buildEmail(String recipient) {
         Email email = new Email();
         email.setBodyType(BODY_TYPE_HTML);
         email.setCcList(Set.of());
         email.setRecipients(Set.of(noReplyAddress));
-        email.setBccList(recipients);
+        email.setRecipients(Set.of(recipient));
         return email;
     }
 
@@ -198,7 +198,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 .onItem().transform(users -> users.stream().distinct().collect(Collectors.toList()));
     }
 
-    private Uni<NotificationHistory> sendEmail(Action action, List<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType) {
+    private Multi<NotificationHistory> sendEmail(Action action, List<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
 
         return subscriptionResources
@@ -207,70 +207,65 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     Set<String> subscribers = emailSubscriptions.stream().map(EmailSubscription::getUserId).collect(Collectors.toSet());
                     return recipientUsers(action.getAccountId(), endpoints, subscribers);
                 })
-        .onItem().transform(users -> users.stream().map(User::getUsername).distinct().collect(Collectors.toSet()))
-        // Todo: We need to start updating here if we want personalized emails. The following block builds the Email object for sending to BOP from a set
-        .onItem().transform(users -> {
+        .onItem().transformToMulti(users -> {
             if (users.size() > 0) {
-                return buildEmail(users);
+                EmailTemplate emailTemplate = emailTemplateFactory.get(action.getBundle(), action.getApplication());
+                return Multi.createFrom().iterable(users)
+                        // .onItem().transform(this::buildEmail)
+                        .onItem().transformToUniAndConcatenate(user -> {
+                            if (emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
+                                Uni<String> title = emailTemplate.getTitle(action.getEventType(), emailSubscriptionType)
+                                        .data("action", action)
+                                        .createMulti()
+                                        .collect().with(Collectors.joining())
+                                        .onFailure()
+                                        .recoverWithItem(templateEx -> {
+                                            log.log(Level.WARNING, templateEx, () -> String.format(
+                                                    "Unable to render template title for application: [%s], eventType: [%s], subscriptionType: [%s].",
+                                                    action.getApplication(),
+                                                    action.getEventType(),
+                                                    emailSubscriptionType
+                                            ));
+                                            return null;
+                                        });
+
+                                Uni<String> body = emailTemplate.getBody(action.getEventType(), emailSubscriptionType)
+                                        .data("action", action)
+                                        .data("user", user)
+                                        .createMulti()
+                                        .collect().with(Collectors.joining())
+                                        .onFailure()
+                                        .recoverWithItem(templateEx -> {
+                                            log.log(Level.WARNING, templateEx, () -> String.format(
+                                                    "Unable to render template body for application: [%s], eventType: [%s], subscriptionType: [%s].",
+                                                    action.getApplication(),
+                                                    action.getEventType(),
+                                                    emailSubscriptionType
+                                            ));
+                                            return null;
+                                        });
+
+                                return Uni.combine().all()
+                                        .unis(
+                                                Uni.createFrom().item(this.buildEmail(user.getUsername())),
+                                                title,
+                                                body
+                                        ).asTuple()
+                                        .onItem().transform(objects -> {
+                                            if (objects == null || objects.getItem1() == null || objects.getItem2() == null || objects.getItem3() == null) {
+                                                return null;
+                                            }
+
+                                            return objects;
+                                        });
+                            }
+
+                            return Uni.createFrom().nullItem();
+                        });
             }
 
-            return null;
+            return Multi.createFrom().empty();
         })
-        .onItem().transformToUni(email -> {
-                if (email == null) {
-                    return Uni.createFrom().nullItem();
-                }
-
-                EmailTemplate emailTemplate = emailTemplateFactory.get(action.getBundle(), action.getApplication());
-
-                if (emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
-                    Uni<String> title = emailTemplate.getTitle(action.getEventType(), emailSubscriptionType)
-                            .data("action", action)
-                            .createMulti()
-                            .collect().with(Collectors.joining())
-                            .onFailure()
-                            .recoverWithItem(templateEx -> {
-                                log.log(Level.WARNING, templateEx, () -> String.format(
-                                        "Unable to render template title for application: [%s], eventType: [%s], subscriptionType: [%s].",
-                                        action.getApplication(),
-                                        action.getEventType(),
-                                        emailSubscriptionType
-                                ));
-                                return null;
-                            });
-
-                    Uni<String> body = emailTemplate.getBody(action.getEventType(), emailSubscriptionType)
-                            .data("action", action)
-                            .createMulti()
-                            .collect().with(Collectors.joining())
-                            .onFailure()
-                            .recoverWithItem(templateEx -> {
-                                log.log(Level.WARNING, templateEx, () -> String.format(
-                                        "Unable to render template body for application: [%s], eventType: [%s], subscriptionType: [%s].",
-                                        action.getApplication(),
-                                        action.getEventType(),
-                                        emailSubscriptionType
-                                ));
-                                return null;
-                            });
-
-                    return Uni.combine().all()
-                            .unis(
-                                    Uni.createFrom().item(email),
-                                    title,
-                                    body
-                            ).asTuple()
-                            .onItem().transform(objects -> {
-                                if (objects == null || objects.getItem1() == null || objects.getItem2() == null || objects.getItem3() == null) {
-                                    return null;
-                                }
-
-                                return objects;
-                            });
-                }
-
-                return Uni.createFrom().nullItem();
-            })
             .onItem().transform(data -> {
                 if (data != null) {
                     Email email = data.getItem1();
@@ -305,7 +300,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                             Notification notification = new Notification(action, endpoint);
                             return webhookSender.doHttpRequest(notification, bopRequest, payload);
                         });
-            });
+            }).concatenate();
     }
 
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
