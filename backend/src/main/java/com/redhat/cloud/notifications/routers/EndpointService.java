@@ -203,10 +203,10 @@ public class EndpointService {
         endpoint.setAccountId(principal.getAccount());
         endpoint.setId(id);
 
-        return resources.getEndpoint(principal.getAccount(), id)
-                .onItem().transformToUni(tmpEndpoint -> {
+        return resources.getEndpointTypeById(principal.getAccount(), id)
+                .onItem().transformToUni(endpointType -> {
                     // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
-                    checkSystemEndpoint(tmpEndpoint.getType());
+                    checkSystemEndpoint(endpointType);
                     return resources.updateEndpoint(endpoint);
                 })
                 .onItem().transform(ignored -> Response.ok().build());

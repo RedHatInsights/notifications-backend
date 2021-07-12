@@ -94,6 +94,14 @@ public class EndpointResources {
                 .onItem().call(this::loadProperties);
     }
 
+    public Uni<EndpointType> getEndpointTypeById(String accountId, UUID endpointId) {
+        String query = "Select e.type from Endpoint e WHERE e.accountId = :accountId AND e.id = :endpointId";
+        return session.createQuery(query, EndpointType.class)
+                .setParameter("accountId", accountId)
+                .setParameter("endpointId", endpointId)
+                .getSingleResultOrNull();
+    }
+
     public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties) {
         return getEndpointsPerType(accountId, EndpointType.EMAIL_SUBSCRIPTION, true, null)
                 .onItem().call(this::loadProperties)
