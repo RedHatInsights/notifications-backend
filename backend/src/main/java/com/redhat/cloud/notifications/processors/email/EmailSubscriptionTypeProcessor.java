@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
@@ -234,12 +236,13 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     @Incoming("aggregation")
-    public void consumeEmailAggregations(List<EmailAggregation> aggregations) {
+    public void consumeEmailAggregations(String aggregationsJson) throws JsonProcessingException {
+        List<EmailAggregation> aggregations = objectMapper.readValue(aggregationsJson, new TypeReference<>() { });
         Uni<List<EmailAggregation>> emailaggregations = Uni.createFrom().item(aggregations);
         emailaggregations.onItem().transform(aggregationList -> {
             aggregationList.forEach(emailAggregationItem -> {
                 Action action = new Action();
-//                action.setContext(objectMapper.readValue(emailAggregationItem.getPayload().encode(), new TypeReference<List<EmailAggregation>>(){}));
+                action.setContext(emailAggregationItem.getPayload().getMap());
                 action.setEvents(List.of());
                 action.setAccountId(emailAggregationItem.getAccountId());
                 action.setApplication(emailAggregationItem.getApplicationName());
