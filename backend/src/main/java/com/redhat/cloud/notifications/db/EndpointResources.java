@@ -103,13 +103,13 @@ public class EndpointResources {
     }
 
     public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties) {
-        return getEndpointsPerType(accountId, EndpointType.EMAIL_SUBSCRIPTION, true, null)
+        return getEndpointsPerType(accountId, EndpointType.EMAIL_SUBSCRIPTION, null, null)
                 .onItem().call(this::loadProperties)
                 .onItem().transformToUni(emailEndpoints -> {
                     Optional<Endpoint> endpointOptional = emailEndpoints
                             .stream()
-                            // Todo: This should be changed once we store the properties - (properties = null right now)
-                            // .filter(endpoint -> endpoint.getProperties().equals(properties))
+                            // Todo: This should be changed once we store the properties - (properties are null right now)
+                            // .filter(endpoint -> properties.hasSameProperties((EmailSubscriptionProperties) endpoint.getProperties()))
                             .findFirst();
                     if (endpointOptional.isPresent()) {
                         return Uni.createFrom().item(endpointOptional.get());

@@ -152,9 +152,9 @@ public class EndpointService {
     @APIResponse(responseCode = "204", description = "The integration has been deleted", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getEndpoint(principal.getAccount(), id)
-                .onItem().transformToUni(endpoint -> {
-                    checkSystemEndpoint(endpoint.getType());
+        return resources.getEndpointTypeById(principal.getAccount(), id)
+                .onItem().transformToUni(endpointType -> {
+                    checkSystemEndpoint(endpointType);
                     return resources.deleteEndpoint(principal.getAccount(), id);
                 })
                 // onFailure() ?
@@ -168,9 +168,9 @@ public class EndpointService {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getEndpoint(principal.getAccount(), id)
-                .onItem().transformToUni(endpoint -> {
-                    checkSystemEndpoint(endpoint.getType());
+        return resources.getEndpointTypeById(principal.getAccount(), id)
+                .onItem().transformToUni(endpointType -> {
+                    checkSystemEndpoint(endpointType);
                     return resources.enableEndpoint(principal.getAccount(), id);
                 })
                 .onItem().transform(ignored -> Response.ok().build());
@@ -182,9 +182,9 @@ public class EndpointService {
     @APIResponse(responseCode = "204", description = "The integration has been disabled", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getEndpoint(principal.getAccount(), id)
-                .onItem().transformToUni(endpoint -> {
-                    checkSystemEndpoint(endpoint.getType());
+        return resources.getEndpointTypeById(principal.getAccount(), id)
+                .onItem().transformToUni(endpointType -> {
+                    checkSystemEndpoint(endpointType);
                     return resources.disableEndpoint(principal.getAccount(), id);
                 })
                 .onItem().transform(ignored -> Response.noContent().build());
