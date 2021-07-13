@@ -97,8 +97,8 @@ public class EmailSender {
                 });
     }
 
-    private Uni<String> renderTemplate(User user, Action action, TemplateInstance subject) {
-        return subject
+    private Uni<String> renderTemplate(User user, Action action, TemplateInstance templateInstance) {
+        return templateInstance
                 .data("action", action)
                 .data("user", user)
                 .createUni()

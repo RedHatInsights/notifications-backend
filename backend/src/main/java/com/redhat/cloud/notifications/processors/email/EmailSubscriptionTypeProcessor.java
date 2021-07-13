@@ -118,13 +118,18 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
 
         final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
-        TemplateInstance subject = emailTemplate.getTitle(null, emailSubscriptionType);
-        TemplateInstance body = emailTemplate.getBody(null, emailSubscriptionType);
 
         Multi<Tuple2<NotificationHistory, EmailAggregationKey>> doDelete = delete ?
                 emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
-                .onItem().transformToMulti(unused -> Multi.createFrom().empty()) :
+                        .onItem().transformToMulti(unused -> Multi.createFrom().empty()) :
                 Multi.createFrom().empty();
+
+        if (!emailTemplate.isSupported(null, emailSubscriptionType)) {
+            return doDelete;
+        }
+
+        TemplateInstance subject = emailTemplate.getTitle(null, emailSubscriptionType);
+        TemplateInstance body = emailTemplate.getBody(null, emailSubscriptionType);
 
         if (subject == null || body == null) {
             return doDelete;
@@ -147,9 +152,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 
                     return emailSender.sendEmail(entries.getKey(), action, subject, body)
-                            .call(unused -> doDelete.toUni())
                             .onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
-                });
+                })
+                .onTermination().call((throwable, aBoolean) -> doDelete.toUni());
     }
 
     Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {

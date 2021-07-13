@@ -94,6 +94,10 @@ public class EmailAggregator {
                 .entrySet()
                 .stream()
                 .filter(entry -> entry.getValue().getProcessedAggregations() > 0)
+                .peek(entry -> {
+                    entry.getValue().setStartTime(start);
+                    entry.getValue().setEndTimeKey(end);
+                })
                 .collect(
                     Collectors.toMap(
                             Map.Entry::getKey,

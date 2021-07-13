@@ -28,7 +28,11 @@ public class RecipientResolver {
     }
 
     private Uni<List<User>> recipientUsers(String accountId, Endpoint endpoint, Set<String> subscribers) {
-        final EmailSubscriptionProperties props = (EmailSubscriptionProperties) endpoint.getProperties();
+        // Todo: Remove this for the personalized emails.
+        EmailSubscriptionProperties props = (EmailSubscriptionProperties) endpoint.getProperties();
+        if (props == null) {
+            props = new EmailSubscriptionProperties();
+        }
 
         Uni<List<User>> usersUni;
         if (props.getGroupId() == null) {
@@ -37,8 +41,9 @@ public class RecipientResolver {
             usersUni = rbacRecipientUsersProvider.getGroupUsers(accountId, props.getOnlyAdmins(), props.getGroupId());
         }
 
+        EmailSubscriptionProperties finalProps = props;
         return usersUni.onItem().transform(users -> {
-            if (props.getIgnorePreferences()) {
+            if (finalProps.getIgnorePreferences()) {
                 return users;
             }
 
