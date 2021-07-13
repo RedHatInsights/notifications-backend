@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Multi;
@@ -30,5 +32,19 @@ class EmailSubscriptionTypeProcessorTest {
         final Multi<NotificationHistory> process = testee.process(action, List.of());
 
         assertEquals(0, process.collect().asList().await().indefinitely().size());
+    }
+
+    @Test
+    void name() {
+        final Action action = new Action("someBundle", "someApplication", "someEventType", LocalDateTime.now(), "someAccountId", Map.of(), List.of());
+
+        Endpoint endpoint = new Endpoint();
+        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        endpoint.setName("someName");
+        endpoint.setEnabled(true);
+        endpoint.setDescription("someDescription");
+        endpoint.setAccountId("someAccountId");
+
+        final Multi<NotificationHistory> process = testee.process(action, List.of(endpoint));
     }
 }
