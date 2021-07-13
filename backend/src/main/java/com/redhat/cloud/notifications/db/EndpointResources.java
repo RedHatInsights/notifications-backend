@@ -33,6 +33,10 @@ public class EndpointResources {
     @Inject
     Mutiny.StatelessSession statelessSession;
 
+    private static final String targetEndpointBaseQuery = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
+            "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
+            "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName";
+
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
         return session.persist(endpoint)
                 .onItem().call(session::flush)
@@ -144,16 +148,27 @@ public class EndpointResources {
         return mutinyQuery.getSingleResult();
     }
 
+    // Note: This method uses a stateless session
     public Uni<List<Endpoint>> getTargetEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
-        String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
-                "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName";
+        return statelessSession.createQuery(targetEndpointBaseQuery, Endpoint.class)
+                .setParameter("applicationName", applicationName)
+                .setParameter("eventTypeName", eventTypeName)
+                .setParameter("accountId", tenant)
+                .setParameter("bundleName", bundleName)
+                .getResultList()
+                .onItem().call(endpoints -> loadProperties(endpoints, true));
+    }
+
+    // Note: This method uses a stateless session
+    public Uni<List<Endpoint>> getTargetEndpointsFromType(String tenant, String bundleName, String applicationName, String eventTypeName, EndpointType endpointType) {
+        String query = targetEndpointBaseQuery + " AND e.type = :endpointType";
 
         return statelessSession.createQuery(query, Endpoint.class)
                 .setParameter("applicationName", applicationName)
                 .setParameter("eventTypeName", eventTypeName)
                 .setParameter("accountId", tenant)
                 .setParameter("bundleName", bundleName)
+                .setParameter("endpointType", endpointType)
                 .getResultList()
                 .onItem().call(endpoints -> loadProperties(endpoints, true));
     }

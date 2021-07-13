@@ -5,23 +5,23 @@ import java.util.UUID;
 
 public class EmailSubscriptionProperties extends EndpointProperties {
 
-    private Boolean onlyAdmins;
-    private Boolean ignorePreferences;
+    private boolean onlyAdmins = false;
+    private boolean ignorePreferences = false;
     private UUID groupId;
 
-    public Boolean getOnlyAdmins() {
+    public boolean getOnlyAdmins() {
         return onlyAdmins;
     }
 
-    public void setOnlyAdmins(Boolean onlyAdmins) {
+    public void setOnlyAdmins(boolean onlyAdmins) {
         this.onlyAdmins = onlyAdmins;
     }
 
-    public Boolean getIgnorePreferences() {
+    public boolean getIgnorePreferences() {
         return ignorePreferences;
     }
 
-    public void setIgnorePreferences(Boolean ignorePreferences) {
+    public void setIgnorePreferences(boolean ignorePreferences) {
         this.ignorePreferences = ignorePreferences;
     }
 

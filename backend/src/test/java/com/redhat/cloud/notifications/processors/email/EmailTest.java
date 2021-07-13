@@ -5,8 +5,6 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.EmailAggregationResources;
-import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -16,22 +14,26 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
-import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
-import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
+import com.redhat.cloud.notifications.recipients.rbac.RbacServiceToService;
+import com.redhat.cloud.notifications.recipients.rbac.RbacUser;
+import com.redhat.cloud.notifications.routers.models.Meta;
+import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.templates.LocalDateTimeExtension;
-import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.scheduler.ScheduledExecution;
 import io.quarkus.scheduler.Trigger;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.mutiny.ext.web.client.WebClient;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.mockito.Mockito;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
 
@@ -43,6 +45,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,42 +64,26 @@ public class EmailTest extends DbIsolatedTest {
     MockServerClientConfig mockServerConfig;
 
     @Inject
-    WebhookTypeProcessor webhookTypeProcessor;
-
-    @Inject
-    EmailAggregationResources emailAggregationResources;
-
     EmailSubscriptionTypeProcessor emailProcessor;
 
     @Inject
     ResourceHelpers helpers;
 
-    @Inject
-    @SslVerificationDisabled
-    WebClient unsecuredWebClient;
+    @InjectMock
+    @RestClient
+    RbacServiceToService rbacServiceToService;
 
-    @Inject
-    EmailTemplateFactory emailTemplateFactory;
-
-    @Inject
-    EndpointEmailSubscriptionResources subscriptionResources;
+    static final String BOP_TOKEN = "test-token";
+    static final String BOP_ENV = "unitTest";
+    static final String BOP_CLIENT_ID = "test-client-id";
 
     @BeforeAll
     void init() {
-        emailProcessor = new EmailSubscriptionTypeProcessor();
-        emailProcessor.unsecuredWebClient = unsecuredWebClient;
-        emailProcessor.webhookSender = webhookTypeProcessor;
-        emailProcessor.emailAggregationResources = emailAggregationResources;
-        emailProcessor.subscriptionResources = subscriptionResources;
-        emailProcessor.emailTemplateFactory = emailTemplateFactory;
-        emailProcessor.bopApiToken = "test-token";
-        emailProcessor.bopClientId = "emailTest";
-        emailProcessor.bopEnv = "unitTest";
-        emailProcessor.noReplyAddress = "no-reply@redhat.com";
-        emailProcessor.baseTransformer = new BaseTransformer();
-
         String url = String.format("http://%s/v1/sendEmails", mockServerConfig.getRunningAddress());
-        emailProcessor.bopUrl = url;
+        System.setProperty("processor.email.bop_url", url);
+        System.setProperty("processor.email.bop_apitoken", BOP_TOKEN);
+        System.setProperty("processor.email.bop_env", BOP_ENV);
+        System.setProperty("processor.email.bop_client_id", BOP_CLIENT_ID);
     }
 
     private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {
@@ -112,9 +99,10 @@ public class EmailTest extends DbIsolatedTest {
 
     @Test
     void testEmailSubscriptionInstant() {
+        mockGetUsers(8, false);
 
         final String tenant = "instant-email-tenant";
-        final String[] usernames = {"foo", "bar", "admin"};
+        final String[] usernames = {"username-1", "username-2", "username-4"};
         String bundle = "rhel";
         String application = "policies";
 
@@ -125,9 +113,9 @@ public class EmailTest extends DbIsolatedTest {
         final List<String> bodyRequests = new ArrayList<>();
 
         ExpectationResponseCallback verifyEmptyRequest = req -> {
-            assertEquals(emailProcessor.bopApiToken, req.getHeader(EmailSubscriptionTypeProcessor.BOP_APITOKEN_HEADER).get(0));
-            assertEquals(emailProcessor.bopClientId, req.getHeader(EmailSubscriptionTypeProcessor.BOP_CLIENT_ID_HEADER).get(0));
-            assertEquals(emailProcessor.bopEnv, req.getHeader(EmailSubscriptionTypeProcessor.BOP_ENV_HEADER).get(0));
+            assertEquals(BOP_TOKEN, req.getHeader(EmailSender.BOP_APITOKEN_HEADER).get(0));
+            assertEquals(BOP_CLIENT_ID, req.getHeader(EmailSender.BOP_CLIENT_ID_HEADER).get(0));
+            assertEquals(BOP_ENV, req.getHeader(EmailSender.BOP_ENV_HEADER).get(0));
             bodyRequests.add(req.getBodyAsString());
             return response().withStatusCode(200);
         };
@@ -157,40 +145,34 @@ public class EmailTest extends DbIsolatedTest {
             mockServerConfig.getMockServerClient().clear(postReq);
         }
 
-        assertEquals(1, bodyRequests.size());
-        JsonObject body = new JsonObject(bodyRequests.get(0));
-        JsonArray emails = body.getJsonArray("emails");
-        assertNotNull(emails);
-        assertEquals(1, emails.size());
-        JsonObject firstEmail = emails.getJsonObject(0);
-        JsonArray recipients = firstEmail.getJsonArray("recipients");
-        assertEquals(1, recipients.size());
-        assertEquals("no-reply@redhat.com", recipients.getString(0));
+        assertEquals(3, bodyRequests.size());
+        for (int i = 0; i < usernames.length; ++i) {
+            JsonObject body = new JsonObject(bodyRequests.get(i));
+            JsonArray emails = body.getJsonArray("emails");
+            assertNotNull(emails);
+            assertEquals(1, emails.size());
+            JsonObject firstEmail = emails.getJsonObject(0);
+            JsonArray recipients = firstEmail.getJsonArray("recipients");
+            assertEquals(1, recipients.size());
+            assertEquals(usernames[i], recipients.getString(0));
 
-        JsonArray bccList = firstEmail.getJsonArray("bccList");
-        assertEquals(usernames.length, bccList.size());
+            JsonArray bccList = firstEmail.getJsonArray("bccList");
+            assertEquals(0, bccList.size());
 
-        List<String> sortedUsernames = Arrays.asList(usernames);
-        sortedUsernames.sort(Comparator.naturalOrder());
+            String bodyRequest = bodyRequests.get(0);
 
-        List<String> sortedBccList = new ArrayList<String>(bccList.getList());
-        sortedBccList.sort(Comparator.naturalOrder());
+            assertTrue(bodyRequest.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
+            assertTrue(bodyRequest.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
 
-        assertIterableEquals(sortedUsernames, sortedBccList);
+            assertTrue(bodyRequest.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
+            assertTrue(bodyRequest.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
 
-        String bodyRequest = bodyRequests.get(0);
+            // Display name
+            assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
 
-        assertTrue(bodyRequest.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
-        assertTrue(bodyRequest.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
-
-        assertTrue(bodyRequest.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
-        assertTrue(bodyRequest.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
-
-        // Display name
-        assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
-
-        // Formatted date
-        assertTrue(bodyRequest.contains("03 Aug 2020 15:22 UTC"));
+            // Formatted date
+            assertTrue(bodyRequest.contains("03 Aug 2020 15:22 UTC"));
+        }
     }
 
     @Test
@@ -208,9 +190,9 @@ public class EmailTest extends DbIsolatedTest {
         final List<String> bodyRequests = new ArrayList<>();
 
         ExpectationResponseCallback verifyEmptyRequest = req -> {
-            assertEquals(emailProcessor.bopApiToken, req.getHeader(EmailSubscriptionTypeProcessor.BOP_APITOKEN_HEADER).get(0));
-            assertEquals(emailProcessor.bopClientId, req.getHeader(EmailSubscriptionTypeProcessor.BOP_CLIENT_ID_HEADER).get(0));
-            assertEquals(emailProcessor.bopEnv, req.getHeader(EmailSubscriptionTypeProcessor.BOP_ENV_HEADER).get(0));
+            // assertEquals(emailProcessor.bopApiToken, req.getHeader(EmailSubscriptionTypeProcessor.BOP_APITOKEN_HEADER).get(0));
+            // assertEquals(emailProcessor.bopClientId, req.getHeader(EmailSubscriptionTypeProcessor.BOP_CLIENT_ID_HEADER).get(0));
+            // assertEquals(emailProcessor.bopEnv, req.getHeader(EmailSubscriptionTypeProcessor.BOP_ENV_HEADER).get(0));
             bodyRequests.add(req.getBodyAsString());
             return response().withStatusCode(200);
         };
@@ -315,9 +297,9 @@ public class EmailTest extends DbIsolatedTest {
         final List<String> bodyRequests = new ArrayList<>();
 
         ExpectationResponseCallback verifyEmptyRequest = req -> {
-            assertEquals(emailProcessor.bopApiToken, req.getHeader(EmailSubscriptionTypeProcessor.BOP_APITOKEN_HEADER).get(0));
-            assertEquals(emailProcessor.bopClientId, req.getHeader(EmailSubscriptionTypeProcessor.BOP_CLIENT_ID_HEADER).get(0));
-            assertEquals(emailProcessor.bopEnv, req.getHeader(EmailSubscriptionTypeProcessor.BOP_ENV_HEADER).get(0));
+            // assertEquals(emailProcessor.bopApiToken, req.getHeader(EmailSubscriptionTypeProcessor.BOP_APITOKEN_HEADER).get(0));
+            // assertEquals(emailProcessor.bopClientId, req.getHeader(EmailSubscriptionTypeProcessor.BOP_CLIENT_ID_HEADER).get(0));
+            // assertEquals(emailProcessor.bopEnv, req.getHeader(EmailSubscriptionTypeProcessor.BOP_ENV_HEADER).get(0));
             bodyRequests.add(req.getBodyAsString());
             return response().withStatusCode(200);
         };
@@ -458,4 +440,56 @@ public class EmailTest extends DbIsolatedTest {
 
         return email;
     }
+
+    private void mockGetUsers(int elements, boolean adminsOnly) {
+        MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
+        Mockito.when(rbacServiceToService.getUsers(
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.anyInt(),
+                Mockito.anyInt()
+        )).then(invocationOnMock -> answer.mockedUserAnswer(
+                invocationOnMock.getArgument(2, Integer.class),
+                invocationOnMock.getArgument(3, Integer.class),
+                invocationOnMock.getArgument(1, Boolean.class)
+        ));
+    }
+
+    class MockedUserAnswer {
+
+        private final int expectedElements;
+        private final boolean expectedAdminsOnly;
+
+        MockedUserAnswer(int expectedElements, boolean expectedAdminsOnly) {
+            this.expectedElements = expectedElements;
+            this.expectedAdminsOnly = expectedAdminsOnly;
+        }
+
+        Uni<Page<RbacUser>> mockedUserAnswer(int offset, int limit, boolean adminsOnly) {
+
+            Assertions.assertEquals(expectedAdminsOnly, adminsOnly);
+
+            int bound = Math.min(offset + limit, expectedElements);
+
+            List<RbacUser> users = new ArrayList<>();
+            for (int i = offset; i < bound; ++i) {
+                RbacUser user = new RbacUser();
+                user.setActive(true);
+                user.setUsername(String.format("username-%d", i));
+                user.setEmail(String.format("username-%d@foobardotcom", i));
+                user.setFirstName("foo");
+                user.setLastName("bar");
+                user.setOrgAdmin(false);
+                users.add(user);
+            }
+
+            Page<RbacUser> usersPage = new Page<>();
+            usersPage.setMeta(new Meta());
+            usersPage.setLinks(new HashMap<>());
+            usersPage.setData(users);
+
+            return Uni.createFrom().item(usersPage);
+        }
+    }
+
 }

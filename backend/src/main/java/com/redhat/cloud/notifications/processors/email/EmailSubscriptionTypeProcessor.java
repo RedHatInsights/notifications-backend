@@ -1,39 +1,24 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
-import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscription;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
-import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
-import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
-import com.redhat.cloud.notifications.processors.email.bop.Email;
-import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
-import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
-import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import com.redhat.cloud.notifications.templates.EmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import io.quarkus.qute.TemplateInstance;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.ScheduledExecution;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
-import io.vertx.core.json.JsonObject;
-import io.vertx.mutiny.core.buffer.Buffer;
-import io.vertx.mutiny.ext.web.client.HttpRequest;
-import io.vertx.mutiny.ext.web.client.WebClient;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -41,12 +26,10 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -56,30 +39,14 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     private final Logger log = Logger.getLogger(this.getClass().getName());
     private final ZoneOffset UTC = ZoneOffset.UTC;
 
-    static final String BOP_APITOKEN_HEADER = "x-rh-apitoken";
-    static final String BOP_CLIENT_ID_HEADER = "x-rh-clientid";
-    static final String BOP_ENV_HEADER = "x-rh-insights-env";
-
-    static final String BODY_TYPE_HTML = "html";
-
-    @Inject
-    @SslVerificationDisabled
-    WebClient unsecuredWebClient;
-
-    @Inject
-    WebhookTypeProcessor webhookSender;
-
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
 
     @Inject
-    RbacRecipientUsersProvider rbacRecipientUsersProvider;
+    RecipientResolver recipientResolver;
 
     @Inject
     EmailAggregationResources emailAggregationResources;
-
-    @Inject
-    EndpointResources endpointResources;
 
     @Inject
     BaseTransformer baseTransformer;
@@ -87,54 +54,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Inject
     EmailTemplateFactory emailTemplateFactory;
 
-    @ConfigProperty(name = "processor.email.bop_url")
-    String bopUrl;
+    @Inject
+    EmailSender emailSender;
 
-    @ConfigProperty(name = "processor.email.bop_apitoken")
-    String bopApiToken;
-
-    @ConfigProperty(name = "processor.email.bop_client_id")
-    String bopClientId;
-
-    @ConfigProperty(name = "processor.email.bop_env")
-    String bopEnv;
-
-    @ConfigProperty(name = "processor.email.no_reply")
-    String noReplyAddress;
-
-    protected HttpRequest<Buffer> buildBOPHttpRequest() {
-        return unsecuredWebClient
-                .postAbs(bopUrl)
-                .putHeader(BOP_APITOKEN_HEADER, bopApiToken)
-                .putHeader(BOP_CLIENT_ID_HEADER, bopClientId)
-                .putHeader(BOP_ENV_HEADER, bopEnv);
-    }
-
-    protected Email buildEmail(String recipient) {
-        Email email = new Email();
-        email.setBodyType(BODY_TYPE_HTML);
-        email.setCcList(Set.of());
-        email.setRecipients(Set.of(noReplyAddress));
-        email.setRecipients(Set.of(recipient));
-        return email;
-    }
-
-    static class Emails {
-        @JsonProperty("emails")
-        private Set<Email> emails;
-
-        Emails() {
-            emails = new HashSet<>();
-        }
-
-        public void addEmail(Email email) {
-            emails.add(email);
-        }
-
-        public Set<Email> getEmails() {
-            return emails;
-        }
-    }
+    @Inject
+    EmailAggregator emailAggregator;
 
     @Override
     public Multi<NotificationHistory> process(Action action, List<Endpoint> endpoints) {
@@ -164,200 +88,67 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 processUni = Uni.createFrom().item(false);
             }
 
-            return processUni.onItem().transformToUni(_unused -> sendEmail(
+            return processUni.onItem().transformToMulti(_unused -> sendEmail(
                     action,
                     endpoints,
                     EmailSubscriptionType.INSTANT
-            )).toMulti();
+            ));
         }
-    }
-
-    private Uni<List<User>> recipientUsers(String accountId, Endpoint endpoint, Set<String> subscribers) {
-        final EmailSubscriptionProperties props = (EmailSubscriptionProperties) endpoint.getProperties();
-
-        Uni<List<User>> usersUni;
-        if (props.getGroupId() == null) {
-            usersUni = rbacRecipientUsersProvider.getUsers(accountId, props.getOnlyAdmins());
-        } else {
-            usersUni = rbacRecipientUsersProvider.getGroupUsers(accountId, props.getOnlyAdmins(), props.getGroupId());
-        }
-
-        return usersUni.onItem().transform(users -> {
-            if (props.getIgnorePreferences()) {
-                return users;
-            }
-
-            return users.stream().filter(user -> subscribers.contains(user.getUsername())).collect(Collectors.toList());
-        });
-    }
-
-    private Uni<List<User>> recipientUsers(String accountId, List<Endpoint> endpoints, Set<String> subscribers) {
-        return Multi.createFrom().iterable(endpoints)
-                .onItem().transformToUni(e -> recipientUsers(accountId, e, subscribers))
-                .concatenate().collect().in(ArrayList<User>::new, List::addAll)
-                .onItem().transform(users -> users.stream().distinct().collect(Collectors.toList()));
     }
 
     private Multi<NotificationHistory> sendEmail(Action action, List<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType) {
-        final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
+        final EmailTemplate emailTemplate = emailTemplateFactory.get(action.getBundle(), action.getApplication());
+        TemplateInstance subject = emailTemplate.getTitle(action.getEventType(), emailSubscriptionType);
+        TemplateInstance body = emailTemplate.getBody(action.getEventType(), emailSubscriptionType);
+
+        if (subject == null || body == null) {
+            return Multi.createFrom().empty();
+        }
 
         return subscriptionResources
                 .getEmailSubscribers(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType)
                 .onItem().transformToUni(emailSubscriptions -> {
                     Set<String> subscribers = emailSubscriptions.stream().map(EmailSubscription::getUserId).collect(Collectors.toSet());
-                    return recipientUsers(action.getAccountId(), endpoints, subscribers);
+                    return recipientResolver.recipientUsers(action.getAccountId(), endpoints, subscribers);
                 })
-        .onItem().transformToMulti(users -> {
-            if (users.size() > 0) {
-                EmailTemplate emailTemplate = emailTemplateFactory.get(action.getBundle(), action.getApplication());
-                return Multi.createFrom().iterable(users)
-                        // .onItem().transform(this::buildEmail)
-                        .onItem().transformToUniAndConcatenate(user -> {
-                            if (emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
-                                Uni<String> title = emailTemplate.getTitle(action.getEventType(), emailSubscriptionType)
-                                        .data("action", action)
-                                        .createMulti()
-                                        .collect().with(Collectors.joining())
-                                        .onFailure()
-                                        .recoverWithItem(templateEx -> {
-                                            log.log(Level.WARNING, templateEx, () -> String.format(
-                                                    "Unable to render template title for application: [%s], eventType: [%s], subscriptionType: [%s].",
-                                                    action.getApplication(),
-                                                    action.getEventType(),
-                                                    emailSubscriptionType
-                                            ));
-                                            return null;
-                                        });
-
-                                Uni<String> body = emailTemplate.getBody(action.getEventType(), emailSubscriptionType)
-                                        .data("action", action)
-                                        .data("user", user)
-                                        .createMulti()
-                                        .collect().with(Collectors.joining())
-                                        .onFailure()
-                                        .recoverWithItem(templateEx -> {
-                                            log.log(Level.WARNING, templateEx, () -> String.format(
-                                                    "Unable to render template body for application: [%s], eventType: [%s], subscriptionType: [%s].",
-                                                    action.getApplication(),
-                                                    action.getEventType(),
-                                                    emailSubscriptionType
-                                            ));
-                                            return null;
-                                        });
-
-                                return Uni.combine().all()
-                                        .unis(
-                                                Uni.createFrom().item(this.buildEmail(user.getUsername())),
-                                                title,
-                                                body
-                                        ).asTuple()
-                                        .onItem().transform(objects -> {
-                                            if (objects == null || objects.getItem1() == null || objects.getItem2() == null || objects.getItem3() == null) {
-                                                return null;
-                                            }
-
-                                            return objects;
-                                        });
-                            }
-
-                            return Uni.createFrom().nullItem();
-                        });
-            }
-
-            return Multi.createFrom().empty();
-        })
-            .onItem().transform(data -> {
-                if (data != null) {
-                    Email email = data.getItem1();
-                    String title = data.getItem2();
-                    String body = data.getItem3();
-                    email.setSubject(title);
-                    email.setBody(body);
-
-                    return email;
-                }
-
-                return null;
-            })
-            .onItem().transformToUni(email -> {
-                if (email == null) {
-                    return Uni.createFrom().nullItem();
-                }
-
-                Emails emails = new Emails();
-                emails.addEmail(email);
-                Uni<JsonObject> payload = Uni.createFrom().item(JsonObject.mapFrom(emails));
-
-                // TODO Add recipients processing from policies-notifications processing (failed recipients)
-                //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)
-
-                // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
-                //      also add metrics for these failures
-
-                // All the notification history is saved to the default Email endpoint
-                return endpointResources.getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties())
-                        .onItem().transformToUni(endpoint -> {
-                            Notification notification = new Notification(action, endpoint);
-                            return webhookSender.doHttpRequest(notification, bopRequest, payload);
-                        });
-            }).concatenate();
+        .onItem().transformToMulti(Multi.createFrom()::iterable)
+        .onItem().transformToUniAndConcatenate(user -> emailSender.sendEmail(user, action, subject, body));
     }
 
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
-        return subscriptionResources.getEmailSubscribersCount(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType)
-                .onItem().transformToMulti(subscriberCount -> {
-                    AbstractEmailPayloadAggregator aggregator = EmailPayloadAggregatorFactory.by(aggregationKey);
 
-                    if (subscriberCount > 0 && aggregator != null) {
-                        return emailAggregationResources.getEmailAggregation(aggregationKey, startTime, endTime)
-                                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                                .collect().in(() -> aggregator, AbstractEmailPayloadAggregator::aggregate).toMulti();
-                    }
+        final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
+        TemplateInstance subject = emailTemplate.getTitle(null, emailSubscriptionType);
+        TemplateInstance body = emailTemplate.getBody(null, emailSubscriptionType);
 
-                    if (delete) {
-                        // Nothing to do, delete them right away.
-                        return emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
-                                .toMulti()
-                                .onItem().transformToMultiAndMerge(i -> Multi.createFrom().empty());
-                    }
+        Multi<Tuple2<NotificationHistory, EmailAggregationKey>> doDelete = delete ?
+                emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
+                .onItem().transformToMulti(unused -> Multi.createFrom().empty()) :
+                Multi.createFrom().empty();
 
-                    return Multi.createFrom().empty();
-                })
-                .onItem().transformToMultiAndConcatenate(aggregator -> {
-                    String accountId = aggregationKey.getAccountId();
-                    String bundle = aggregationKey.getBundle();
-                    String application = aggregationKey.getApplication();
+        if (subject == null || body == null) {
+            return doDelete;
+        }
 
-                    if (aggregator.getProcessedAggregations() == 0) {
-                        return Multi.createFrom().empty();
-                    }
+        return emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime)
+                .onItem().transform(Map::entrySet)
+                .onItem().transformToMulti(Multi.createFrom()::iterable)
+                .onItem().transformToMultiAndConcatenate(entries -> {
 
-                    aggregator.setStartTime(startTime);
-                    aggregator.setEndTimeKey(endTime);
                     Action action = new Action();
-                    action.setContext(aggregator.getContext());
+                    action.setContext(entries.getValue());
                     action.setEvents(List.of());
-                    action.setAccountId(accountId);
-                    action.setApplication(application);
-                    action.setBundle(bundle);
+                    action.setAccountId(aggregationKey.getAccountId());
+                    action.setApplication(aggregationKey.getApplication());
+                    action.setBundle(aggregationKey.getBundle());
 
                     // We don't have a eventtype as this aggregates over multiple event types
                     action.setEventType(null);
                     action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 
-                    // We use the default endpoint to send the email to only subscribed users
-                    return endpointResources.getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties())
-                            .onItem().transformToUni(endpoint -> sendEmail(action, List.of(endpoint), emailSubscriptionType))
+                    return emailSender.sendEmail(entries.getKey(), action, subject, body)
+                            .call(unused -> doDelete.toUni())
                             .onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
-                })
-                .onItem().transformToMultiAndConcatenate(result -> {
-                    if (delete) {
-                        return emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
-                                .toMulti()
-                                .onItem().transform(integer -> result);
-                    }
-
-                    return Multi.createFrom().item(result);
                 });
     }
 
