@@ -20,6 +20,7 @@ import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Tuple3;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
@@ -126,19 +127,18 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         return sendEmail(item, EmailSubscriptionType.INSTANT);
     }
 
-    private Uni<NotificationHistory> sendEmail(Notification item, EmailSubscriptionType emailSubscriptionType) {
+    Uni<NotificationHistory> sendEmail(Notification item, EmailSubscriptionType emailSubscriptionType) {
         final HttpRequest<Buffer> bopRequest = unsecuredWebClient
                 .postAbs(bopUrl)
                 .putHeader(BOP_APITOKEN_HEADER, bopApiToken)
                 .putHeader(BOP_CLIENT_ID_HEADER, bopClientId)
                 .putHeader(BOP_ENV_HEADER, bopEnv);
 
-        return this.subscriptionResources.getEmailSubscribers(item.getTenant(), item.getAction().getBundle(), item.getAction().getApplication(), emailSubscriptionType)
-                .onItem().transform(subscriptions -> {
-                    return subscriptions.stream()
-                            .map(EmailSubscription::getUserId)
-                            .collect(Collectors.toSet());
-                })
+        final Action action = item.getAction();
+        return this.subscriptionResources.getEmailSubscribers(item.getTenant(), action.getBundle(), action.getApplication(), emailSubscriptionType)
+                .onItem().transform(subscriptions -> subscriptions.stream()
+                        .map(EmailSubscription::getUserId)
+                        .collect(Collectors.toSet()))
                 .onItem().transform(recipients -> {
                     if (recipients.size() > 0) {
                         Email email = new Email();
@@ -154,61 +154,19 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     if (email == null) {
                         return Uni.createFrom().nullItem();
                     }
-
-                    EmailTemplate emailTemplate = emailTemplateFactory.get(item.getAction().getBundle(), item.getAction().getApplication());
-
-                    if (emailTemplate.isSupported(item.getAction().getEventType(), emailSubscriptionType)) {
-                        Uni<String> title = emailTemplate.getTitle(item.getAction().getEventType(), emailSubscriptionType)
-                                .data("action", item.getAction())
-                                .createMulti()
-                                .collect().with(Collectors.joining())
-                                .onFailure()
-                                .recoverWithItem(templateEx -> {
-                                    log.log(Level.WARNING, templateEx, () -> String.format(
-                                            "Unable to render template title for application: [%s], eventType: [%s], subscriptionType: [%s].",
-                                            item.getAction().getApplication(),
-                                            item.getAction().getEventType(),
-                                            emailSubscriptionType
-                                    ));
-                                    return null;
-                                });
-
-                        Uni<String> body = emailTemplate.getBody(item.getAction().getEventType(), emailSubscriptionType)
-                                .data("action", item.getAction())
-                                .createMulti()
-                                .collect().with(Collectors.joining())
-                                .onFailure()
-                                .recoverWithItem(templateEx -> {
-                                    log.log(Level.WARNING, templateEx, () -> String.format(
-                                            "Unable to render template body for application: [%s], eventType: [%s], subscriptionType: [%s].",
-                                            item.getAction().getApplication(),
-                                            item.getAction().getEventType(),
-                                            emailSubscriptionType
-                                    ));
-                                    return null;
-                                });
-
-                        return Uni.combine().all()
-                                .unis(
-                                        Uni.createFrom().item(email),
-                                        title,
-                                        body
-                                ).asTuple()
-                                .onItem().transform(objects -> {
-                                    if (objects == null || objects.getItem1() == null || objects.getItem2() == null || objects.getItem3() == null) {
-                                        return null;
-                                    }
-
-                                    return objects;
-                                });
+                    EmailTemplate emailTemplate = emailTemplateFactory.get(action.getBundle(), action.getApplication());
+                    if (emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
+                        Uni<String> title = renderTitle(item, emailSubscriptionType, emailTemplate);
+                        Uni<String> body = renderBody(item, emailSubscriptionType, emailTemplate);
+                        return combine(email, title, body);
                     }
                     return Uni.createFrom().nullItem();
                 })
-                .onItem().transform(data -> {
-                    if (data != null) {
-                        Email email = data.getItem1();
-                        String title = data.getItem2();
-                        String body = data.getItem3();
+                .onItem().transform(triple -> {
+                    if (triple != null) {
+                        Email email = triple.getItem1();
+                        String title = triple.getItem2();
+                        String body = triple.getItem3();
                         email.setSubject(title);
                         email.setBody(body);
 
@@ -232,6 +190,56 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
                     //      also add metrics for these failures
                     return webhookSender.doHttpRequest(item, bopRequest, payload);
+                });
+    }
+
+    private Uni<String> renderBody(Notification item, EmailSubscriptionType emailSubscriptionType, EmailTemplate emailTemplate) {
+        return emailTemplate.getBody(item.getAction().getEventType(), emailSubscriptionType)
+                .data("action", item.getAction())
+                .createMulti()
+                .collect().with(Collectors.joining())
+                .onFailure()
+                .recoverWithItem(templateEx -> {
+                    log.log(Level.WARNING, templateEx, () -> String.format(
+                            "Unable to render template body for application: [%s], eventType: [%s], subscriptionType: [%s].",
+                            item.getAction().getApplication(),
+                            item.getAction().getEventType(),
+                            emailSubscriptionType
+                    ));
+                    return null;
+                });
+    }
+
+    private Uni<String> renderTitle(Notification item, EmailSubscriptionType emailSubscriptionType, EmailTemplate emailTemplate) {
+        return emailTemplate.getTitle(item.getAction().getEventType(), emailSubscriptionType)
+                .data("action", item.getAction())
+                .createMulti()
+                .collect().with(Collectors.joining())
+                .onFailure()
+                .recoverWithItem(templateEx -> {
+                    log.log(Level.WARNING, templateEx, () -> String.format(
+                            "Unable to render template title for application: [%s], eventType: [%s], subscriptionType: [%s].",
+                            item.getAction().getApplication(),
+                            item.getAction().getEventType(),
+                            emailSubscriptionType
+                    ));
+                    return null;
+                });
+    }
+
+    private Uni<Tuple3<Email, String, String>> combine(Email email, Uni<String> title, Uni<String> body) {
+        return Uni.combine().all()
+                .unis(
+                        Uni.createFrom().item(email),
+                        title,
+                        body
+                ).asTuple()
+                .onItem().transform(objects -> {
+                    if (objects == null || objects.getItem1() == null || objects.getItem2() == null || objects.getItem3() == null) {
+                        return null;
+                    }
+
+                    return objects;
                 });
     }
 
