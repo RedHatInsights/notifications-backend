@@ -9,7 +9,7 @@ import javax.enterprise.context.ApplicationScoped;
 public class EmailTemplateFactory {
 
     public EmailTemplate get(String bundle, String application) {
-        if (bundle.toLowerCase().equals("rhel")) {
+        if (bundle.equalsIgnoreCase("rhel")) {
             switch (application.toLowerCase()) {
                 case "policies":
                     return new Policies();
@@ -20,12 +20,11 @@ public class EmailTemplateFactory {
                 default:
                     break;
             }
-        } else if (bundle.toLowerCase().equals("openshift")) {
-            if (application.toLowerCase().equals("advisor")) {
+        } else if (bundle.equalsIgnoreCase("openshift")) {
+            if (application.equalsIgnoreCase("advisor")) {
                 return new AdvisorOpenshift();
             }
         }
-
         return new EmailTemplateNotSupported();
     }
 }
