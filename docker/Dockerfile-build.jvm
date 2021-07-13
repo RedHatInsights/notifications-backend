@@ -8,8 +8,8 @@ USER root
 COPY pom.xml /home/jboss
 COPY backend/src /home/jboss/backend/src
 COPY backend/pom.xml /home/jboss/backend
-COPY backend/checkstyle.xml /home/jboss/backend
-COPY backend/checkstyle-suppressions.xml /home/jboss/backend
+COPY checkstyle/checkstyle/checkstyle.xml /home/jboss/backend
+COPY checkstyle/checkstyle/checkstyle-suppressions.xml /home/jboss/backend
 WORKDIR /home/jboss
 RUN mvn clean package -DskipTests --projects :notifications-parent,:notifications-backend
 

@@ -13,6 +13,7 @@
     </parent>
 
     <dependencies>
+
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
