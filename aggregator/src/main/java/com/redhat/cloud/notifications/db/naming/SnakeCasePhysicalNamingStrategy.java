@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.db.naming;
 import org.hibernate.boot.model.naming.Identifier;
 import org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl;
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
-
 import java.util.regex.Pattern;
 
 /**
