@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -22,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class TestEmailEndpointMigrationService {
+public class TestEmailEndpointMigrationService extends DbIsolatedTest {
 
     private static final String ACCOUNT1 = "account-1";
     private static final String ACCOUNT2 = "account-2";
