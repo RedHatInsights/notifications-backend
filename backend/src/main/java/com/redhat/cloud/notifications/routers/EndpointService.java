@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -53,6 +54,10 @@ import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 // Email endpoints are not added at this point
 // TODO Needs documentation annotations
 public class EndpointService {
+
+    private static final List<EndpointType> systemEndpointType = List.of(
+            EndpointType.EMAIL_SUBSCRIPTION
+    );
 
     @Inject
     EndpointResources resources;
@@ -109,6 +114,8 @@ public class EndpointService {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
+        checkSystemEndpoint(endpoint.getType());
+
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setAccountId(principal.getAccount());
 
@@ -117,6 +124,16 @@ public class EndpointService {
         }
 
         return resources.createEndpoint(endpoint);
+    }
+
+    @POST
+    @Path("/system/email_subscription")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
+    public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid EmailSubscriptionProperties properties) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return resources.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties);
     }
 
     @GET
@@ -135,7 +152,11 @@ public class EndpointService {
     @APIResponse(responseCode = "204", description = "The integration has been deleted", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.deleteEndpoint(principal.getAccount(), id)
+        return resources.getEndpointTypeById(principal.getAccount(), id)
+                .onItem().transformToUni(endpointType -> {
+                    checkSystemEndpoint(endpointType);
+                    return resources.deleteEndpoint(principal.getAccount(), id);
+                })
                 // onFailure() ?
                 .onItem().transform(ignored -> Response.noContent().build());
     }
@@ -147,7 +168,11 @@ public class EndpointService {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.enableEndpoint(principal.getAccount(), id)
+        return resources.getEndpointTypeById(principal.getAccount(), id)
+                .onItem().transformToUni(endpointType -> {
+                    checkSystemEndpoint(endpointType);
+                    return resources.enableEndpoint(principal.getAccount(), id);
+                })
                 .onItem().transform(ignored -> Response.ok().build());
     }
 
@@ -157,7 +182,11 @@ public class EndpointService {
     @APIResponse(responseCode = "204", description = "The integration has been disabled", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.disableEndpoint(principal.getAccount(), id)
+        return resources.getEndpointTypeById(principal.getAccount(), id)
+                .onItem().transformToUni(endpointType -> {
+                    checkSystemEndpoint(endpointType);
+                    return resources.disableEndpoint(principal.getAccount(), id);
+                })
                 .onItem().transform(ignored -> Response.noContent().build());
     }
 
@@ -168,10 +197,18 @@ public class EndpointService {
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> updateEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid Endpoint endpoint) {
+        // This prevents from updating an endpoint from whatever EndpointType to a system EndpointType
+        checkSystemEndpoint(endpoint.getType());
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setAccountId(principal.getAccount());
         endpoint.setId(id);
-        return resources.updateEndpoint(endpoint)
+
+        return resources.getEndpointTypeById(principal.getAccount(), id)
+                .onItem().transformToUni(endpointType -> {
+                    // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
+                    checkSystemEndpoint(endpointType);
+                    return resources.updateEndpoint(endpoint);
+                })
                 .onItem().transform(ignored -> Response.ok().build());
     }
 
@@ -276,6 +313,15 @@ public class EndpointService {
                         applicationName,
                         type
                 ));
+    }
+
+    private static void checkSystemEndpoint(EndpointType endpointType) {
+        if (systemEndpointType.contains(endpointType)) {
+            throw new BadRequestException(String.format(
+                    "Is not possible to create or alter endpoint with type %s, check API for alternatives",
+                    endpointType
+            ));
+        }
     }
 
 }
