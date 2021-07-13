@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
@@ -28,27 +27,8 @@ public class RecipientResolver {
     }
 
     private Uni<List<User>> recipientUsers(String accountId, Endpoint endpoint, Set<String> subscribers) {
-        // Todo: Remove this for the personalized emails.
-        EmailSubscriptionProperties props = (EmailSubscriptionProperties) endpoint.getProperties();
-        if (props == null) {
-            props = new EmailSubscriptionProperties();
-        }
-
-        Uni<List<User>> usersUni;
-        if (props.getGroupId() == null) {
-            usersUni = rbacRecipientUsersProvider.getUsers(accountId, props.getOnlyAdmins());
-        } else {
-            usersUni = rbacRecipientUsersProvider.getGroupUsers(accountId, props.getOnlyAdmins(), props.getGroupId());
-        }
-
-        EmailSubscriptionProperties finalProps = props;
-        return usersUni.onItem().transform(users -> {
-            if (finalProps.getIgnorePreferences()) {
-                return users;
-            }
-
-            return users.stream().filter(user -> subscribers.contains(user.getUsername())).collect(Collectors.toList());
-        });
+        Uni<List<User>> usersUni = rbacRecipientUsersProvider.getUsers(accountId, false);
+        return usersUni.onItem().transform(users -> users.stream().filter(user -> subscribers.contains(user.getUsername())).collect(Collectors.toList()));
     }
 
 }
