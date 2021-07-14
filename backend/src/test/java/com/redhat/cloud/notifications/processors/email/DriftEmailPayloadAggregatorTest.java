@@ -49,8 +49,4 @@ class DriftEmailPayloadAggregatorTest {
         System.out.println(JsonObject.mapFrom(drift).toString());
         Assertions.assertEquals(1, 1);
     }
-    /*private Integer getUniqueHostForPolicy(PoliciesEmailPayloadAggregator aggregator, String policy) {
-        Map<String, Map> policies = (Map<String, Map>) aggregator.getContext().get("policies");
-        return (Integer) policies.get(policy).get("unique_system_count");
-    }*/
 }

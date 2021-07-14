@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -29,14 +28,6 @@ public class DriftEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
 
     private final Set<String> uniqueHosts = new HashSet<>();
     private final Map<String, HashSet<String>> uniqueHostPerBaseline = new HashMap<>();
-
-    static AbstractEmailPayloadAggregator by(EmailAggregationKey aggregationKey) {
-        if (aggregationKey.getBundle().equals("rhel") && aggregationKey.getApplication().equals("drift")) {
-            return new DriftEmailPayloadAggregator();
-        }
-
-        return null;
-    }
 
     public DriftEmailPayloadAggregator() {
         context.put(DRIFT_KEY, new JsonObject());
