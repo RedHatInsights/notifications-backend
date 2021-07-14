@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @QuarkusTest
 public class TestDriftTemplate {
     private DriftEmailPayloadAggregator aggregator;
@@ -55,8 +57,8 @@ public class TestDriftTemplate {
     @Test
     public void testDailyEmailBodyOneBaselineAndMultipleSystem() {
 
-        LocalDateTime startTime = LocalDateTime.of(2021, 4, 22, 13, 15, 33);
-        LocalDateTime endTime = LocalDateTime.of(2021, 4, 22, 14, 15, 33);
+        LocalDateTime startTime = LocalDateTime.of(2021, 7, 14, 13, 15, 33);
+        LocalDateTime endTime = LocalDateTime.of(2021, 7, 14, 14, 15, 33);
 
         aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_01", "host-01"));
         aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_01", "host-02"));
@@ -67,6 +69,7 @@ public class TestDriftTemplate {
         String result = Drift.Templates.dailyEmailBody()
                 .data("action", Map.of("context", drift))
                 .render();
-        System.out.println(result);
+        assertTrue(result.contains("<b>1 baseline</b> drifted on <b>3 unique systems</b>"));
+        //System.out.println(result);
     }
 }
