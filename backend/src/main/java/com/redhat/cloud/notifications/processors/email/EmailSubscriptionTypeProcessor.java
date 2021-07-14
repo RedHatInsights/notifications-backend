@@ -90,18 +90,17 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     public Multi<NotificationHistory> process(Action action, List<Endpoint> endpoints) {
         if (endpoints == null || endpoints.isEmpty()) {
             return Multi.createFrom().empty();
-        } else {
-            /*
-             * Since EmailSubscriptionProperties is currently empty, if we process all endpoints from the given list,
-             * each one of them will be used to send (and possibly aggregate) the exact same email data. This means
-             * users will receive duplicate emails for a single event. This can happen when two behavior groups are
-             * linked with the same event type and each behavior group contains an EMAIL_SUBSCRIPTION action. We need
-             * to prevent duplicate emails which is why only the first endpoint from the given list will be used.
-             * TODO: Review this logic if fields are added to EmailSubscriptionProperties.
-             */
-            Notification notification = new Notification(action, endpoints.get(0));
-            return process(notification).toMulti();
         }
+        /*
+         * Since EmailSubscriptionProperties is currently empty, if we process all endpoints from the given list,
+         * each one of them will be used to send (and possibly aggregate) the exact same email data. This means
+         * users will receive duplicate emails for a single event. This can happen when two behavior groups are
+         * linked with the same event type and each behavior group contains an EMAIL_SUBSCRIPTION action. We need
+         * to prevent duplicate emails which is why only the first endpoint from the given list will be used.
+         * TODO: Review this logic if fields are added to EmailSubscriptionProperties.
+         */
+        Notification notification = new Notification(action, endpoints.get(0));
+        return process(notification).toMulti();
     }
 
     private Uni<NotificationHistory> process(Notification item) {
