@@ -13,10 +13,7 @@ public class Drift implements EmailTemplate {
             return Templates.newBaselineDriftInstantEmailTitle();
         }
 
-        throw new UnsupportedOperationException(String.format(
-                "No email title template for Drift event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
+        return Templates.dailyEmailTitle();
     }
 
     @Override
@@ -25,20 +22,17 @@ public class Drift implements EmailTemplate {
             return Templates.newBaselineDriftInstantEmailBody();
         }
 
-        throw new UnsupportedOperationException(String.format(
-                "No email body template for Drift event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
+        return Templates.dailyEmailBody();
     }
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return eventType.equals("drift-baseline-detected") && type == EmailSubscriptionType.INSTANT;
+        return true;
     }
 
     @Override
     public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
-        return type == EmailSubscriptionType.INSTANT;
+        return true;
     }
 
     @CheckedTemplate
@@ -47,6 +41,10 @@ public class Drift implements EmailTemplate {
         public static native TemplateInstance newBaselineDriftInstantEmailTitle();
 
         public static native TemplateInstance newBaselineDriftInstantEmailBody();
+
+        public static native TemplateInstance dailyEmailTitle();
+
+        public static native TemplateInstance dailyEmailBody();
 
     }
 

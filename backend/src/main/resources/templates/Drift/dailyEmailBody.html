@@ -1,3 +1,7 @@
+
+
+
+
 {#include Drift/insightsEmailBody}
 {#content-title}Daily Drift Summary - {action.context.start_time.toStringFormat()}{/content-title}
 {#content-body}
@@ -12,15 +16,17 @@
             <thead>
             <tr>
                 <th>Baseline</th>
-                <th>Systems</th>
+                <th>System</th>
             </tr>
             </thead>
             <tbody>
             {#for key in action.context.drift.keySet()}
+                {#for host in action.context.drift.get(key).hosts}
             <tr>
-                <td><a href="https://cloud.redhat.com/insights/drift/?baseline_ids={action.context.drift.get(key).baseline_id}&reference_id={action.context.drift.get(key).baseline_id}&system_ids={action.context.inventory_id}" target="_blank">{action.context.drift.get(key).baseline_name}</a></td>
-                <td>{action.context.drift.get(key).unique_system_count}</td>
+                <td><a href="https://cloud.redhat.com/insights/drift/?baseline_ids={action.context.drift.get(key).baseline_id}&reference_id={action.context.drift.get(key).baseline_id}&system_ids={host.inventory_id}" target="_blank">{action.context.drift.get(key).baseline_name}</a></td>
+                <td>{host.display_name}</td>
             </tr>
+            {/for}
             {/for}
             </tbody>
         </table>
