@@ -29,8 +29,11 @@ import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -268,29 +271,6 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Type and attributes don't match
         properties.setMethod(HttpType.POST);
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
-
-        // FIXME Find a way to run the test below successfully.
-        /*
-         * The following test fails because of a bug which is not in our app.
-         * The invalid properties should cause a deserialization error (see below) leading to an HTTP 400 response,
-         * but the properties are deserialized as an instance of EmailSubscriptionProperties instead and we receive an HTTP 200 response.
-         *
-         * Expected error :
-         * com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException:
-         * Unrecognized field "url" (class com.redhat.cloud.notifications.models.EmailSubscriptionProperties), not marked as ignorable (0 known properties: ])
-         * at [Source: (String)"{"id":null,"name":"endpoint with incorrect webhook properties","description":"Destined to fail","enabled":true,"type":"email_subscription","created":null,"updated":null,"properties":{"url":"https://localhost:49368","method":"POST","disable_ssl_verification":false,"secret_token":"my-super-secret-token","basic_authentication":null}}"; line: 1, column: 332] (through reference chain: com.redhat.cloud.notifications.models.EmailSubscriptionProperties["url"])
-         * at com.redhat.cloud.notifications.routers.EndpointServiceTest.testEndpointValidation(EndpointServiceTest.java:257)
-         *
-         * This might be a Quarkus issue, investigation in progress...
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(ContentType.JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(400);
-         */
     }
 
     @Test
@@ -725,6 +705,91 @@ public class EndpointServiceTest extends DbIsolatedTest {
         responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(Endpoint.class);
         assertEquals(defaultEndpointId, responsePoint.getString("id"));
+
+        // Different properties are different endpoints
+        Set<String> endpointIds = new HashSet<>();
+        endpointIds.add(defaultEndpointId);
+
+        EmailSubscriptionProperties customProperties = new EmailSubscriptionProperties();
+        customProperties.setIgnorePreferences(false);
+        customProperties.setOnlyAdmins(true);
+        customProperties.setGroupId(null);
+
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(customProperties))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertFalse(endpointIds.contains(responsePoint.getString("id")));
+        endpointIds.add(responsePoint.getString("id"));
+
+        customProperties.setIgnorePreferences(true);
+        customProperties.setOnlyAdmins(true);
+        customProperties.setGroupId(null);
+
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(customProperties))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertFalse(endpointIds.contains(responsePoint.getString("id")));
+        endpointIds.add(responsePoint.getString("id"));
+
+        customProperties.setIgnorePreferences(false);
+        customProperties.setOnlyAdmins(false);
+        customProperties.setGroupId(UUID.randomUUID());
+
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(customProperties))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertFalse(endpointIds.contains(responsePoint.getString("id")));
+        endpointIds.add(responsePoint.getString("id"));
+
+        // Same props is the same id
+        customProperties.setIgnorePreferences(false);
+        customProperties.setOnlyAdmins(true);
+        customProperties.setGroupId(null);
+
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(customProperties))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertTrue(endpointIds.contains(responsePoint.getString("id")));
 
         // It is not possible to delete it
         stringResponse = given()

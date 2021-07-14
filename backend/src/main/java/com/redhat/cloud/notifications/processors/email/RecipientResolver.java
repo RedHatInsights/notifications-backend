@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
@@ -41,15 +42,26 @@ public class RecipientResolver {
     }
 
     private Uni<Set<User>> recipientUsers(String accountId, Endpoint endpoint, Set<String> subscribers) {
-        Uni<List<User>> usersUni = rbacRecipientUsersProvider.getUsers(accountId, false);
-        return usersUni
-                .onItem().transform(users -> users
-                        .stream()
-                        .filter(user -> subscribers
-                                .stream()
-                                .anyMatch(subscriber -> subscriber.equalsIgnoreCase(user.getUsername()))
-                        )
-                        .collect(Collectors.toSet())
-                );
+        final EmailSubscriptionProperties props = (EmailSubscriptionProperties) endpoint.getProperties();
+
+        Uni<List<User>> usersUni;
+        if (props.getGroupId() == null) {
+            usersUni = rbacRecipientUsersProvider.getUsers(accountId, props.isOnlyAdmins());
+        } else {
+            usersUni = rbacRecipientUsersProvider.getGroupUsers(accountId, props.isOnlyAdmins(), props.getGroupId());
+        }
+
+        return usersUni.onItem().transform(users -> {
+            if (props.isIgnorePreferences()) {
+                return Set.copyOf(users);
+            }
+
+            return users.stream()
+                    .filter(user -> subscribers
+                            .stream()
+                            .anyMatch(subscriber -> subscriber.equalsIgnoreCase(user.getUsername()))
+                    )
+                    .collect(Collectors.toSet());
+        });
     }
 }
