@@ -75,7 +75,7 @@ class EmailSubscriptionTypeProcessorTest {
 
         final WebhookTypeProcessor webhookTypeProcessor = spy(WebhookTypeProcessor.class);
 
-        testee.sendEmail(new Notification(new Action(), new Endpoint()), DAILY);
+        testee.sendEmail(new Notification(new Action(), new Endpoint()), DAILY).await().indefinitely();
 
         verify(webhookTypeProcessor, times(1)).doHttpRequest(any(), any(), any());
     }

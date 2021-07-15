@@ -243,28 +243,28 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     @Incoming("aggregation")
-    public void consumeEmailAggregations(String aggregationsJson) throws JsonProcessingException {
+    // If the method returns Uni<Void> instead of void, Quarkus will automatically subscribe to the Uni.
+    public Uni<Void> consumeEmailAggregations(String aggregationsJson) throws JsonProcessingException {
         List<EmailAggregation> aggregations = objectMapper.readValue(aggregationsJson, new TypeReference<>() { });
-        Uni<List<EmailAggregation>> emailaggregations = Uni.createFrom().item(aggregations);
-        emailaggregations.onItem().transform(aggregationList -> {
-            aggregationList.forEach(emailAggregationItem -> {
-                Action action = new Action();
-                action.setContext(emailAggregationItem.getPayload().getMap());
-                action.setEvents(List.of());
-                action.setAccountId(emailAggregationItem.getAccountId());
-                action.setApplication(emailAggregationItem.getApplicationName());
-                action.setBundle(emailAggregationItem.getBundleName());
-
-                // We don't have a eventtype as this aggregates over multiple event types
-                action.setEventType(null);
-                action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
-
-                // We don't have any endpoint (yet) as this aggregates multiple endpoints
-                Notification item = new Notification(action, null);
-
-                sendEmail(item, EmailSubscriptionType.DAILY);
-            });
-            return null;
-        });
+        // Each element of the "aggregations" list must be processed as a reactive (Uni) operation because the email won't be sent otherwise, so we need to transform the List into a Multi.
+        return Multi.createFrom().iterable(aggregations)
+                // Each element of the Multi will be treated as a Uni.
+                // Concatenate prevents concurrent access to the Hibernate Reactive session (that's forbidden).
+                .onItem().transformToUniAndConcatenate(emailAggregationItem -> {
+                    Action action = new Action();
+                    action.setContext(emailAggregationItem.getPayload().getMap());
+                    action.setEvents(List.of());
+                    action.setAccountId(emailAggregationItem.getAccountId());
+                    action.setApplication(emailAggregationItem.getApplicationName());
+                    action.setBundle(emailAggregationItem.getBundleName());
+                    // We don't have a eventtype as this aggregates over multiple event types
+                    action.setEventType(null);
+                    action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
+                    // We don't have any endpoint (yet) as this aggregates multiple endpoints
+                    Notification item = new Notification(action, null);
+                    return sendEmail(item, EmailSubscriptionType.DAILY);
+                })
+                // The following line will wait for all the Unis above to be resolved and then replace everything with a Uni<Void> value because that's all we need in the end.
+                .onItem().ignoreAsUni();
     }
 }
