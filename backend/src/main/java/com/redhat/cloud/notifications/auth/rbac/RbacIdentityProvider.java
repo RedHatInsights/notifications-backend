@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.auth.rbac;
 import com.redhat.cloud.notifications.auth.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rhid.RhIdentity;
 import com.redhat.cloud.notifications.auth.rhid.RhIdentityAuthenticationRequest;
+import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.IdentityProvider;
@@ -15,6 +16,8 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.IOException;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.logging.Logger;
 
@@ -39,6 +42,15 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
 
     @ConfigProperty(name = "rbac.enabled", defaultValue = "true")
     Boolean isRbacEnabled;
+
+    @ConfigProperty(name = "rbac.retry.max-attempts", defaultValue = "3")
+    long maxRetryAttempts;
+
+    @ConfigProperty(name = "rbac.retry.back-off.initial-value", defaultValue = "0.1S")
+    Duration initialBackOff;
+
+    @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
+    Duration maxBackOff;
 
     @Override
     public Class<RhIdentityAuthenticationRequest> getRequestType() {
@@ -80,8 +92,16 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                                 // Otherwise, we can call the RBAC server
                                 .onItem().transformToUni(builder ->
                                         rbacServer.getRbacInfo("notifications,integrations", xRhIdHeader)
-                                                // An RBAC server call failure will cause an authentication failure
-                                                // TODO Add retry?
+                                                /*
+                                                 * RBAC server calls fail regularly because of RBAC instability so we need to retry.
+                                                 * IOException is thrown when the connection between us and RBAC is reset during an RBAC call execution.
+                                                 * ConnectTimeoutException is thrown when RBAC does not respond at all to our call.
+                                                 */
+                                                .onFailure(failure -> failure.getClass() == IOException.class || failure.getClass() == ConnectTimeoutException.class)
+                                                .retry()
+                                                .withBackOff(initialBackOff, maxBackOff)
+                                                .atMost(maxRetryAttempts)
+                                                // After we're done retrying, an RBAC server call failure will cause an authentication failure
                                                 .onFailure().transform(failure -> {
                                                     log.warning("RBAC call failed: " + failure.getMessage());
                                                     throw new AuthenticationFailedException(failure.getMessage());
