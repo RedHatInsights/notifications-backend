@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.response.ValidatableResponse;
@@ -14,8 +15,10 @@ import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
@@ -58,11 +61,16 @@ public class TestEmailEndpointMigrationService extends DbIsolatedTest {
                     createEndpoint(account, EndpointType.WEBHOOK, "w-2")
             );
 
+            Endpoint endpoint1 = createEndpoint(account, EndpointType.EMAIL_SUBSCRIPTION, "e-3");
+            createNotificationHistory(endpoint1);
+            Endpoint endpoint2 = createEndpoint(account, EndpointType.EMAIL_SUBSCRIPTION, "e-4");
+            createNotificationHistory(endpoint2);
+
             createBehaviorGroupActions(
                     createBehaviorGroup(account, bundle1, "b-3"),
-                    createEndpoint(account, EndpointType.EMAIL_SUBSCRIPTION, "e-3"),
+                    endpoint1,
                     createEndpoint(account, EndpointType.WEBHOOK, "w-3"),
-                    createEndpoint(account, EndpointType.EMAIL_SUBSCRIPTION, "e-4")
+                    endpoint2
             );
 
             createBehaviorGroupActions(
@@ -130,6 +138,19 @@ public class TestEmailEndpointMigrationService extends DbIsolatedTest {
                 .call(session::flush)
                 .await().indefinitely();
         return behaviorGroup;
+    }
+
+    private void createNotificationHistory(Endpoint endpoint) {
+        NotificationHistory history = new NotificationHistory();
+        history.setId(UUID.randomUUID());
+        history.setAccountId("not used");
+        history.setEndpoint(endpoint);
+        history.setInvocationResult(Boolean.TRUE);
+        history.setInvocationTime(1L);
+        history.setCreated(LocalDateTime.now());
+        session.persist(history)
+                .call(session::flush)
+                .await().indefinitely();
     }
 
     private List<BehaviorGroupAction> createBehaviorGroupActions(BehaviorGroup behaviorGroup, Endpoint...endpoints) {

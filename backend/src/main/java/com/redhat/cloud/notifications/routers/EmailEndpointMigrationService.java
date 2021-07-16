@@ -74,7 +74,9 @@ public class EmailEndpointMigrationService {
                                                         defaultEmailEndpoint.getId()
                                                 );
                                             })
-                                            .onItem().transformToUniAndConcatenate(behaviorGroupAction -> session.remove(behaviorGroupAction)
+                                            .onItem().transformToUniAndConcatenate(behaviorGroupAction -> session.createQuery("DELETE FROM BehaviorGroupAction WHERE id = :id")
+                                                    .setParameter("id", behaviorGroupAction.getId())
+                                                    .executeUpdate()
                                                     .onItem().transformToUni(_unused -> {
                                                         BehaviorGroupActionId bgaId = new BehaviorGroupActionId();
                                                         bgaId.endpointId = defaultEmailEndpoint.getId();
@@ -103,13 +105,13 @@ public class EmailEndpointMigrationService {
                                                         accountId
                                                 );
                                             })
-                                            .onItem().transformToUni(_unused -> {
-                                                endpoints.forEach(endpoint -> {
-                                                    endpoint.setBehaviorGroupActions(Set.of());
-                                                });
-
-                                                return session.removeAll(endpoints.toArray());
-                                            });
+                                            .onItem().transformToMulti(_unused -> Multi.createFrom().iterable(endpoints))
+                                            .onItem().transformToUniAndConcatenate(endpoint ->
+                                                    session.createQuery("DELETE FROM Endpoint WHERE id = :id")
+                                                            .setParameter("id", endpoint.getId())
+                                                            .executeUpdate()
+                                            )
+                                            .onItem().ignoreAsUni();
                                 }
 
                                 LOGGER.debugf("[NOTIF-242] Account [%s] only has one EmailEndpoint - skipping", accountId);
