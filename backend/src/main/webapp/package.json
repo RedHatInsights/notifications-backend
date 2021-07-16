@@ -1,6 +1,6 @@
 {
   "name": "internal",
-  "homepage": "/internal/",
+  "homepage": "/",
   "version": "0.1.0",
   "private": true,
   "proxy": "https://localhost:8085/internal",
