@@ -5,13 +5,9 @@
 # Build the project
 FROM registry.access.redhat.com/ubi8/openjdk-11:latest AS build
 USER root
-COPY pom.xml /home/jboss
-COPY backend/src /home/jboss/backend/src
-COPY backend/pom.xml /home/jboss/backend
-COPY backend/checkstyle.xml /home/jboss/backend
-COPY backend/checkstyle-suppressions.xml /home/jboss/backend
+COPY . /home/jboss
 WORKDIR /home/jboss
-RUN mvn clean package -DskipTests --projects :notifications-parent,:notifications-backend
+RUN mvn clean package -DskipTests --projects :checkstyle,:notifications-parent,:notifications-backend
 
 # Build the container
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
