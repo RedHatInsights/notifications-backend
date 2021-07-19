@@ -41,6 +41,8 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
+    public static final String AGGREGATION_CHANNEL = "aggregation";
+
     private final Logger log = Logger.getLogger(this.getClass().getName());
 
     static final String BOP_APITOKEN_HEADER = "x-rh-apitoken";
@@ -242,7 +244,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 });
     }
 
-    @Incoming("aggregation")
+    @Incoming(AGGREGATION_CHANNEL)
     public Uni<Void> consumeEmailAggregations(String aggregationsJson) throws JsonProcessingException {
         List<EmailAggregation> aggregations = objectMapper.readValue(aggregationsJson, new TypeReference<>() {
         });
