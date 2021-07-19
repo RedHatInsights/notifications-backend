@@ -42,12 +42,10 @@ public class NotificationsApp {
     private void showVersionInfo() {
         LOG.info("Starting notifications backend");
         String buildCommit = System.getenv(BUILD_COMMIT_ENV_NAME);
-        if (buildCommit != null) {
-            String osBuildRef = System.getenv(BUILD_REFERENCE_ENV_NAME);
-            String osBuildName = System.getenv(BUILD_NAME_ENV_NAME);
+        String osBuildRef = System.getenv(BUILD_REFERENCE_ENV_NAME);
+        String osBuildName = System.getenv(BUILD_NAME_ENV_NAME);
 
-            LOG.infof("\ts2i-build [%s]\n\tfrom branch [%s]\n\twith git sha [%s]", osBuildName, osBuildRef, buildCommit);
-        }
+        LOG.infof("\ts2i-build [%s]\n\tfrom branch [%s]\n\twith git sha [%s]", osBuildName, osBuildRef, buildCommit);
     }
 
 }
