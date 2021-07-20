@@ -46,38 +46,4 @@ class EmailSubscriptionTypeProcessorTest {
 
         assertEquals(0, process.collect().asList().await().indefinitely().size());
     }
-
-    @Test
-    @Disabled
-    void shouldProcess() {
-        final Action action = new Action("someBundle", "someApplication", "someEventType", LocalDateTime.now(), "someAccountId", Map.of(), List.of());
-
-        Endpoint endpoint = new Endpoint();
-        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
-        endpoint.setName("someName");
-        endpoint.setEnabled(true);
-        endpoint.setDescription("someDescription");
-        endpoint.setAccountId("someAccountId");
-
-        testee.process(action, List.of(endpoint));
-    }
-
-    @Test
-    @Disabled
-    void shouldSendEmail() {
-        List<EmailSubscription> emailSubscriptions = new LinkedList<>();
-        final EmailSubscription emailSubscription = new EmailSubscription();
-        emailSubscription.setApplication(new Application());
-        emailSubscriptions.add(emailSubscription);
-        Uni<List<EmailSubscription>> listUni = Uni.createFrom().item(emailSubscriptions);
-
-        final EndpointEmailSubscriptionResources endpointEmailSubscriptionResources = mock(EndpointEmailSubscriptionResources.class);
-        when(endpointEmailSubscriptionResources.getEmailSubscribers(anyString(), anyString(), anyString(), any())).thenReturn(listUni);
-
-        final WebhookTypeProcessor webhookTypeProcessor = spy(WebhookTypeProcessor.class);
-
-        testee.sendEmail(new Notification(new Action(), new Endpoint()), DAILY).await().indefinitely();
-
-        verify(webhookTypeProcessor, times(1)).doHttpRequest(any(), any(), any());
-    }
 }
