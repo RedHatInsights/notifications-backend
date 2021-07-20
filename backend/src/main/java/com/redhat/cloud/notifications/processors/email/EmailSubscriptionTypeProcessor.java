@@ -80,6 +80,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Inject
     EmailTemplateFactory emailTemplateFactory;
 
+    @ConfigProperty(name = "email.subscription.daily.cron.enabled", defaultValue = "true")
+    Boolean isScheduleEnabled;
+
     @ConfigProperty(name = "processor.email.bop_url")
     String bopUrl;
 
@@ -282,7 +285,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Scheduled(identity = "dailyEmailProcessor", cron = "{email.subscription.daily.cron}")
     public void processDailyEmail(ScheduledExecution se) {
         // Only delete on the largest aggregate time frame. Currently daily.
-        processAggregateEmails(se.getScheduledFireTime()).await().indefinitely();
+        if (isScheduleEnabled) {
+            processAggregateEmails(se.getScheduledFireTime()).await().indefinitely();
+        }
     }
 
     Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime) {
