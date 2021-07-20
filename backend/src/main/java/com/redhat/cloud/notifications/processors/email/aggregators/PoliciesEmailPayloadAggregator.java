@@ -33,14 +33,6 @@ class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
     private final Set<String> uniqueHosts = new HashSet<>();
     private final Map<String, HashSet<String>> uniqueHostPerPolicy = new HashMap<>();
 
-    static AbstractEmailPayloadAggregator by(EmailAggregationKey aggregationKey) {
-        if (aggregationKey.getBundle().equals("rhel") && aggregationKey.getApplication().equals("policies")) {
-            return new PoliciesEmailPayloadAggregator();
-        }
-
-        return null;
-    }
-
     PoliciesEmailPayloadAggregator() {
         context.put(POLICIES_KEY, new JsonObject());
     }

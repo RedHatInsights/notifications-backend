@@ -1,0 +1,270 @@
+package com.redhat.cloud.notifications.processors.email;
+
+import com.redhat.cloud.notifications.MockServerClientConfig;
+import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.TestHelpers;
+import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.EmailAggregationResources;
+import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
+import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
+import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
+import com.redhat.cloud.notifications.templates.LocalDateTimeExtension;
+import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import io.quarkus.scheduler.ScheduledExecution;
+import io.quarkus.scheduler.Trigger;
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.smallrye.mutiny.Multi;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.mutiny.ext.web.client.WebClient;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.mockserver.mock.action.ExpectationResponseCallback;
+import org.mockserver.model.HttpRequest;
+
+import javax.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockserver.model.HttpResponse.response;
+
+@QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@QuarkusTestResource(TestLifecycleManager.class)
+public class EmailTest extends DbIsolatedTest {
+    @MockServerConfig
+    MockServerClientConfig mockServerConfig;
+
+    @Inject
+    WebhookTypeProcessor webhookTypeProcessor;
+
+    @Inject
+    EmailAggregationResources emailAggregationResources;
+
+    EmailSubscriptionTypeProcessor emailProcessor;
+
+    @Inject
+    ResourceHelpers helpers;
+
+    @Inject
+    @SslVerificationDisabled
+    WebClient unsecuredWebClient;
+
+    @Inject
+    EmailTemplateFactory emailTemplateFactory;
+
+    @Inject
+    EndpointEmailSubscriptionResources subscriptionResources;
+
+    @BeforeAll
+    void init() {
+        emailProcessor = new EmailSubscriptionTypeProcessor();
+        emailProcessor.unsecuredWebClient = unsecuredWebClient;
+        emailProcessor.webhookSender = webhookTypeProcessor;
+        emailProcessor.emailAggregationResources = emailAggregationResources;
+        emailProcessor.subscriptionResources = subscriptionResources;
+        emailProcessor.emailTemplateFactory = emailTemplateFactory;
+        emailProcessor.bopApiToken = "test-token";
+        emailProcessor.bopClientId = "emailTest";
+        emailProcessor.bopEnv = "unitTest";
+        emailProcessor.noReplyAddress = "no-reply@redhat.com";
+        emailProcessor.baseTransformer = new BaseTransformer();
+
+        String url = String.format("http://%s/v1/sendEmails", mockServerConfig.getRunningAddress());
+        emailProcessor.bopUrl = url;
+    }
+
+    private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {
+        HttpRequest postReq = new HttpRequest()
+                .withPath("/v1/sendEmails")
+                .withMethod("POST");
+        mockServerConfig.getMockServerClient()
+                .withSecure(false)
+                .when(postReq)
+                .respond(verifyEmptyRequest);
+        return postReq;
+    }
+
+    @Test
+    void testEmailSubscriptionInstant() {
+
+        final String tenant = "instant-email-tenant";
+        final String[] usernames = {"foo", "bar", "admin"};
+        String bundle = "rhel";
+        String application = "policies";
+
+        for (String username : usernames) {
+            helpers.createSubscription(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
+        }
+
+        final List<String> bodyRequests = new ArrayList<>();
+
+        ExpectationResponseCallback verifyEmptyRequest = req -> {
+            assertEquals(emailProcessor.bopApiToken, req.getHeader(EmailSubscriptionTypeProcessor.BOP_APITOKEN_HEADER).get(0));
+            assertEquals(emailProcessor.bopClientId, req.getHeader(EmailSubscriptionTypeProcessor.BOP_CLIENT_ID_HEADER).get(0));
+            assertEquals(emailProcessor.bopEnv, req.getHeader(EmailSubscriptionTypeProcessor.BOP_ENV_HEADER).get(0));
+            bodyRequests.add(req.getBodyAsString());
+            return response().withStatusCode(200);
+        };
+
+        HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
+
+        Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application, "My test machine");
+
+        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        ep.setName("positive feeling");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(properties);
+
+        try {
+            Multi<NotificationHistory> process = emailProcessor.process(emailActionMessage, List.of(ep));
+            NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
+            assertTrue(history.isInvocationResult());
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail(e);
+        } finally {
+            // Remove expectations
+            mockServerConfig.getMockServerClient().clear(postReq);
+        }
+
+        assertEquals(1, bodyRequests.size());
+        JsonObject body = new JsonObject(bodyRequests.get(0));
+        JsonArray emails = body.getJsonArray("emails");
+        assertNotNull(emails);
+        assertEquals(1, emails.size());
+        JsonObject firstEmail = emails.getJsonObject(0);
+        JsonArray recipients = firstEmail.getJsonArray("recipients");
+        assertEquals(1, recipients.size());
+        assertEquals("no-reply@redhat.com", recipients.getString(0));
+
+        JsonArray bccList = firstEmail.getJsonArray("bccList");
+        assertEquals(usernames.length, bccList.size());
+
+        List<String> sortedUsernames = Arrays.asList(usernames);
+        sortedUsernames.sort(Comparator.naturalOrder());
+
+        List<String> sortedBccList = new ArrayList<String>(bccList.getList());
+        sortedBccList.sort(Comparator.naturalOrder());
+
+        assertIterableEquals(sortedUsernames, sortedBccList);
+
+        String bodyRequest = bodyRequests.get(0);
+
+        assertTrue(bodyRequest.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
+        assertTrue(bodyRequest.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
+
+        assertTrue(bodyRequest.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
+        assertTrue(bodyRequest.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
+
+        // Display name
+        assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
+
+        // Formatted date
+        assertTrue(bodyRequest.contains("03 Aug 2020 15:22 UTC"));
+    }
+
+    @Test
+    void testEmailSubscriptionInstantWrongPayload() {
+
+        final String tenant = "instant-email-tenant-wrong-payload";
+        final String[] usernames = {"foo", "bar", "admin"};
+        String bundle = "rhel";
+        String application = "policies";
+
+        for (String username : usernames) {
+            helpers.createSubscription(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
+        }
+
+        final List<String> bodyRequests = new ArrayList<>();
+
+        ExpectationResponseCallback verifyEmptyRequest = req -> {
+            assertEquals(emailProcessor.bopApiToken, req.getHeader(EmailSubscriptionTypeProcessor.BOP_APITOKEN_HEADER).get(0));
+            assertEquals(emailProcessor.bopClientId, req.getHeader(EmailSubscriptionTypeProcessor.BOP_CLIENT_ID_HEADER).get(0));
+            assertEquals(emailProcessor.bopEnv, req.getHeader(EmailSubscriptionTypeProcessor.BOP_ENV_HEADER).get(0));
+            bodyRequests.add(req.getBodyAsString());
+            return response().withStatusCode(200);
+        };
+
+        HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
+
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle(bundle);
+        emailActionMessage.setApplication(application);
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        // Disabling event id until we need it
+        // emailActionMessage.setEventId(UUID.randomUUID().toString());
+        emailActionMessage.setEventType("testEmailSubscriptionInstant");
+
+        emailActionMessage.setContext(Map.of(
+                "inventory_id-wrong", "host-01",
+                "system_check_in-wrong", "2020-08-03T15:22:42.199046",
+                "display_name-wrong", "My test machine",
+                "tags-what?", List.of()
+        ));
+        emailActionMessage.setEvents(List.of(
+                Event.newBuilder()
+                        .setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(Map.of(
+                                "foo", "bar"
+                        ))
+                        .build()
+        ));
+
+        emailActionMessage.setAccountId(tenant);
+
+        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        ep.setName("positive feeling");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(properties);
+
+        try {
+            Multi<NotificationHistory> process = emailProcessor.process(emailActionMessage, List.of(ep));
+            // The processor returns a null history value but Multi does not support null values so the resulting Multi is empty.
+            assertTrue(process.collect().asList().await().indefinitely().isEmpty());
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail(e);
+        } finally {
+            // Remove expectations
+            mockServerConfig.getMockServerClient().clear(postReq);
+        }
+
+        // No email, invalid payload
+        assertEquals(0, bodyRequests.size());
+    }
+
+}
