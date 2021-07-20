@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.ScheduledExecution;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import javax.enterprise.context.ApplicationScoped;
@@ -40,10 +41,15 @@ class DailyEmailAggregationJob {
     @Channel("aggregation")
     Emitter<String> emitter;
 
+    @ConfigProperty(name = "notifications.aggregator.email.subscription.periodic.cron.enabled", defaultValue = "true")
+    Boolean isCronJobEnabled;
+
     @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.aggregator.email.subscription.periodic.cron}")
     public void processDailyEmail(ScheduledExecution se) throws JsonProcessingException {
-        List<EmailAggregation> aggregatedEmails = processAggregateEmails(se.getScheduledFireTime());
-        emitter.send(objectMapper.writeValueAsString(aggregatedEmails));
+        if (isCronJobEnabled) {
+            List<EmailAggregation> aggregatedEmails = processAggregateEmails(se.getScheduledFireTime());
+            emitter.send(objectMapper.writeValueAsString(aggregatedEmails));
+        }
     }
 
     List<EmailAggregation> processAggregateEmails(Instant scheduledFireTime) {
