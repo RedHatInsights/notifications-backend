@@ -6,7 +6,7 @@ import java.util.Set;
 /**
  * Input JSON format accepted by the BOP
  */
-class Email {
+public class Email {
     private String subject;
     private String body;
     private Set<String> recipients;
@@ -14,21 +14,21 @@ class Email {
     private Set<String> bccList;
     private String bodyType;
 
-    Email() {
+    public Email() {
         recipients = new HashSet<>();
         ccList = new HashSet<>();
         bccList = new HashSet<>();
     }
 
-    String getSubject() {
+    public String getSubject() {
         return subject;
     }
 
-    void setSubject(String subject) {
+    public void setSubject(String subject) {
         this.subject = subject;
     }
 
-    String getBody() {
+    public String getBody() {
         return body;
     }
 
@@ -36,35 +36,35 @@ class Email {
         this.body = body;
     }
 
-    Set<String> getRecipients() {
+    public Set<String> getRecipients() {
         return recipients;
     }
 
-    void setRecipients(Set<String> recipients) {
+    public void setRecipients(Set<String> recipients) {
         this.recipients = recipients;
     }
 
-    Set<String> getCcList() {
+    public Set<String> getCcList() {
         return ccList;
     }
 
-    void setCcList(Set<String> ccList) {
+    public void setCcList(Set<String> ccList) {
         this.ccList = ccList;
     }
 
-    Set<String> getBccList() {
+    public Set<String> getBccList() {
         return bccList;
     }
 
-    void setBccList(Set<String> bccList) {
+    public void setBccList(Set<String> bccList) {
         this.bccList = bccList;
     }
 
-    String getBodyType() {
+    public String getBodyType() {
         return bodyType;
     }
 
-    void setBodyType(String bodyType) {
+    public void setBodyType(String bodyType) {
         this.bodyType = bodyType;
     }
 }

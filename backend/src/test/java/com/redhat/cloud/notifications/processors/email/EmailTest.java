@@ -19,10 +19,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
-import com.redhat.cloud.notifications.templates.LocalDateTimeExtension;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
-import io.quarkus.scheduler.ScheduledExecution;
-import io.quarkus.scheduler.Trigger;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Multi;
@@ -36,10 +33,7 @@ import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
 
 import javax.inject.Inject;
-import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -266,5 +260,4 @@ public class EmailTest extends DbIsolatedTest {
         // No email, invalid payload
         assertEquals(0, bodyRequests.size());
     }
-
 }

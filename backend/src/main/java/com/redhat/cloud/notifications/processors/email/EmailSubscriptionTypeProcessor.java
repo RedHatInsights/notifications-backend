@@ -7,19 +7,25 @@ import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
+import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.templates.EmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import io.quarkus.scheduler.Scheduled;
+import io.quarkus.scheduler.ScheduledExecution;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Tuple2;
 import io.smallrye.mutiny.tuples.Tuple3;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.buffer.Buffer;
@@ -29,14 +35,18 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static java.time.ZoneOffset.UTC;
 
 @ApplicationScoped
 public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
@@ -254,7 +264,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     action.setAccountId(emailAggregationItem.getAccountId());
                     action.setApplication(emailAggregationItem.getApplicationName());
                     action.setBundle(emailAggregationItem.getBundleName());
-                    action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
+                    action.setTimestamp(LocalDateTime.now(UTC));
 
                     // We don't have a eventtype as this aggregates over multiple event types
                     action.setEventType(null);
@@ -265,5 +275,99 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     return sendEmail(item, EmailSubscriptionType.DAILY);
                 })
                 .onItem().ignoreAsUni();
+    }
+
+    @Scheduled(identity = "dailyEmailProcessor", cron = "{email.subscription.daily.cron}")
+    public void processDailyEmail(ScheduledExecution se) {
+        // Only delete on the largest aggregate time frame. Currently daily.
+        processAggregateEmails(se.getScheduledFireTime()).await().indefinitely();
+    }
+
+    Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime) {
+        Instant yesterdayScheduledFireTime = scheduledFireTime.minus(EmailSubscriptionType.DAILY.getDuration());
+
+        LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, UTC);
+        LocalDateTime startTime = LocalDateTime.ofInstant(yesterdayScheduledFireTime, UTC);
+        final LocalDateTime aggregateStarted = LocalDateTime.now();
+
+        log.info(String.format("Running %s email aggregation for period (%s, %s)", EmailSubscriptionType.DAILY, startTime, endTime));
+
+        return emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
+                .onItem().transformToMulti(Multi.createFrom()::iterable)
+                .onItem().transformToMultiAndConcatenate(aggregationKey -> processAggregateEmailsByAggregationKey(aggregationKey, startTime, endTime, EmailSubscriptionType.DAILY, true))
+                .collect().asList()
+                .onItem().invoke(result -> {
+                    final LocalDateTime aggregateFinished = LocalDateTime.now();
+                    log.info(
+                            String.format(
+                                    "Finished running %s email aggregation for period (%s, %s) after %d seconds. %d (accountIds, applications) pairs were processed",
+                                    EmailSubscriptionType.DAILY,
+                                    startTime,
+                                    endTime,
+                                    ChronoUnit.SECONDS.between(aggregateStarted, aggregateFinished),
+                                    result.size()
+                            )
+                    );
+                });
+    }
+
+    private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
+        return subscriptionResources.getEmailSubscribersCount(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType)
+                .onItem().transformToMulti(subscriberCount -> {
+                    AbstractEmailPayloadAggregator aggregator = EmailPayloadAggregatorFactory.by(aggregationKey);
+
+                    if (subscriberCount > 0 && aggregator != null) {
+                        return emailAggregationResources.getEmailAggregation(aggregationKey, startTime, endTime)
+                                .onItem().transformToMulti(Multi.createFrom()::iterable)
+                                .collect().in(() -> aggregator, AbstractEmailPayloadAggregator::aggregate).toMulti();
+                    }
+
+                    if (delete) {
+                        // Nothing to do, delete them right away.
+                        return emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
+                                .toMulti()
+                                .onItem().transformToMultiAndMerge(i -> Multi.createFrom().empty());
+                    }
+
+                    return Multi.createFrom().empty();
+                })
+                .onItem().transformToMultiAndConcatenate(aggregator -> {
+                    String accountId = aggregationKey.getAccountId();
+                    String bundle = aggregationKey.getBundle();
+                    String application = aggregationKey.getApplication();
+
+                    if (aggregator.getProcessedAggregations() == 0) {
+                        return Multi.createFrom().empty();
+                    }
+
+                    aggregator.setStartTime(startTime);
+                    aggregator.setEndTimeKey(endTime);
+                    Action action = new Action();
+                    action.setContext(aggregator.getContext());
+                    action.setEvents(List.of());
+                    action.setAccountId(accountId);
+                    action.setApplication(application);
+                    action.setBundle(bundle);
+
+                    // We don't have a eventtype as this aggregates over multiple event types
+                    action.setEventType(null);
+                    action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
+
+                    // We don't have any endpoint (yet) as this aggregates multiple endpoints
+                    Notification item = new Notification(action, null);
+
+                    return sendEmail(item, emailSubscriptionType).onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
+                })
+                .onItem().transformToMultiAndConcatenate(result -> {
+                    if (delete) {
+                        return emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
+                                .toMulti()
+                                .onItem().transform(integer -> result);
+                    }
+
+                    return Multi.createFrom().item(result);
+                });
+        // Todo: If we want to save the NotificationHistory, this could be a good place to do so. We would probably require a special EndpointType
+        // .onItem().invoke(result -> { })
     }
 }

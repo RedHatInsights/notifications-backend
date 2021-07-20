@@ -6,7 +6,7 @@ import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-abstract class AbstractEmailPayloadAggregator {
+public abstract class AbstractEmailPayloadAggregator {
 
     private static final String START_TIME_KEY = "start_time";
     private static final String END_TIME_KEY = "end_time";
@@ -42,11 +42,11 @@ abstract class AbstractEmailPayloadAggregator {
         to.put(field, from.getString(field));
     }
 
-    void setStartTime(LocalDateTime startTime) {
+    public void setStartTime(LocalDateTime startTime) {
         this.startTime = startTime;
     }
 
-    void setEndTimeKey(LocalDateTime endTime) {
+    public void setEndTimeKey(LocalDateTime endTime) {
         this.endTime = endTime;
     }
 
@@ -54,7 +54,7 @@ abstract class AbstractEmailPayloadAggregator {
         return accountId;
     }
 
-    int getProcessedAggregations() {
+    public int getProcessedAggregations() {
         return this.processedAggregations;
     }
 }

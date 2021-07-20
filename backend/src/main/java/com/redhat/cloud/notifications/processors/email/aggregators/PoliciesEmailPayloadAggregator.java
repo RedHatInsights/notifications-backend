@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
