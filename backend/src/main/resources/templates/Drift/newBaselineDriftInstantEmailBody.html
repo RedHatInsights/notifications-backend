@@ -9,7 +9,7 @@
 <tr>
     <td class="rh-content__block">
         <div class="rh-stack">
-            <a class="rh-url" href="https://cloud.redhat.com/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a>
+            <a class="rh-url" href="https://console.redhat.com/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a>
         </div>
     </td>
 </tr>
@@ -25,7 +25,7 @@
                 {#if action.events.size() > 0}
                     {#each action.events}
                 <tr style="font-size: 14px;">
-                    <a href="https://cloud.redhat.com/insights/drift/?baseline_ids={it.payload.baseline_id}&reference_id={it.payload.baseline_id}&system_ids={action.context.inventory_id}" target="_blank">{it.payload.baseline_name}</a>
+                    <a href="https://console.redhat.com/insights/drift/?baseline_ids={it.payload.baseline_id}&reference_id={it.payload.baseline_id}&system_ids={action.context.inventory_id}" target="_blank">{it.payload.baseline_name}</a>
                 </tr>
                     {/each}
                 {/if}
