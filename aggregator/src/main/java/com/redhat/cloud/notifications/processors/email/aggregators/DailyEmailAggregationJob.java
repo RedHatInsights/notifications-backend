@@ -41,7 +41,7 @@ class DailyEmailAggregationJob {
     @Channel("aggregation")
     Emitter<String> emitter;
 
-    @ConfigProperty(name = "notifications.aggregator.email.subscription.periodic.cron.enabled", defaultValue = "true")
+    @ConfigProperty(name = "notifications.aggregator.email.subscription.periodic.cron.enabled", defaultValue = "false")
     Boolean isCronJobEnabled;
 
     @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.aggregator.email.subscription.periodic.cron}")
