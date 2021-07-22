@@ -1,7 +1,6 @@
-package com.redhat.cloud.notifications.processors.email;
+package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.DriftTestHelpers;
-import com.redhat.cloud.notifications.processors.email.aggregators.DriftEmailPayloadAggregator;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

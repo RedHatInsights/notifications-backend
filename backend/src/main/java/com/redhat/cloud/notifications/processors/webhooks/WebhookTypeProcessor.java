@@ -49,7 +49,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
     MeterRegistry registry;
 
-    private Counter processedCount;
+    private final Counter processedCount;
 
     public WebhookTypeProcessor(MeterRegistry registry) {
         this.registry = registry;

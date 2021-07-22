@@ -6,8 +6,10 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
+class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
 
     private static final String POLICIES_KEY = "policies";
     private static final String HOST_KEY = "hosts";
@@ -27,14 +29,14 @@ public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregat
     private static final String INVENTORY_ID = "inventory_id";
     private static final String TAGS = "tags";
 
-    private final HashSet<String> uniqueHosts = new HashSet<>();
-    private final HashMap<String, HashSet<String>> uniqueHostPerPolicy = new HashMap<>();
+    private final Set<String> uniqueHosts = new HashSet<>();
+    private final Map<String, HashSet<String>> uniqueHostPerPolicy = new HashMap<>();
 
-    public PoliciesEmailPayloadAggregator() {
+    PoliciesEmailPayloadAggregator() {
         context.put(POLICIES_KEY, new JsonObject());
     }
 
-    public void processEmailAggregation(EmailAggregation notification) {
+    void processEmailAggregation(EmailAggregation notification) {
         JsonObject notificationJson = notification.getPayload();
 
         JsonObject policies = context.getJsonObject(POLICIES_KEY);
@@ -75,7 +77,7 @@ public class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregat
         this.context.put(UNIQUE_SYSTEM_COUNT, this.uniqueHosts.size());
     }
 
-    public Integer getUniqueHostCount() {
+    Integer getUniqueHostCount() {
         return this.uniqueHosts.size();
     }
 }

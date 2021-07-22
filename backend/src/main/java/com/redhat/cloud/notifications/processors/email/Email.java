@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.email.bop;
+package com.redhat.cloud.notifications.processors.email;
 
 import java.util.HashSet;
 import java.util.Set;
