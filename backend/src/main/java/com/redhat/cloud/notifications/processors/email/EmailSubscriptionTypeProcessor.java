@@ -180,17 +180,17 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 .onItem().ignoreAsUni();
     }
 
-    private boolean isScheduleEnabled() {
-        // The scheduled job is enabled by default.
-        return ConfigProvider.getConfig().getOptionalValue("notifications.backend.email.subscription.periodic.cron.enabled", Boolean.class).orElse(true);
-    }
-
     @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.backend.email.subscription.daily.cron}")
     public void processDailyEmail(ScheduledExecution se) {
         // Only delete on the largest aggregate time frame. Currently daily.
         if (isScheduleEnabled()) {
             processAggregateEmails(se.getScheduledFireTime()).await().indefinitely();
         }
+    }
+
+    private boolean isScheduleEnabled() {
+        // The scheduled job is enabled by default.
+        return ConfigProvider.getConfig().getOptionalValue("notifications.backend.email.subscription.periodic.cron.enabled", Boolean.class).orElse(true);
     }
 
     private Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime) {
