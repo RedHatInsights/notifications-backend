@@ -9,7 +9,7 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.ScheduledExecution;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import javax.enterprise.context.ApplicationScoped;
@@ -41,15 +41,17 @@ class DailyEmailAggregationJob {
     @Channel("aggregation")
     Emitter<String> emitter;
 
-    @ConfigProperty(name = "notifications.aggregator.email.subscription.periodic.cron.enabled", defaultValue = "false")
-    Boolean isCronJobEnabled;
-
     @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.aggregator.email.subscription.periodic.cron}")
     public void processDailyEmail(ScheduledExecution se) throws JsonProcessingException {
-        if (isCronJobEnabled) {
+        if (isCronJobEnabled()) {
             List<EmailAggregation> aggregatedEmails = processAggregateEmails(se.getScheduledFireTime());
             emitter.send(objectMapper.writeValueAsString(aggregatedEmails));
         }
+    }
+
+    private boolean isCronJobEnabled() {
+        // The scheduled job is disabled by default.
+        return ConfigProvider.getConfig().getOptionalValue("notifications.aggregator.email.subscription.periodic.cron.enabled", Boolean.class).orElse(false);
     }
 
     List<EmailAggregation> processAggregateEmails(Instant scheduledFireTime) {

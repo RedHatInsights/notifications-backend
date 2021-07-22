@@ -31,6 +31,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import javax.enterprise.context.ApplicationScoped;
@@ -79,9 +80,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     EmailTemplateFactory emailTemplateFactory;
-
-    @ConfigProperty(name = "notifications.backend.email.subscription.periodic.cron.enabled", defaultValue = "true")
-    Boolean isScheduleEnabled;
 
     @ConfigProperty(name = "processor.email.bop_url")
     String bopUrl;
@@ -291,9 +289,14 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.backend.email.subscription.daily.cron}")
     public void processDailyEmail(ScheduledExecution se) {
         // Only delete on the largest aggregate time frame. Currently daily.
-        if (isScheduleEnabled) {
+        if (isScheduleEnabled()) {
             processAggregateEmails(se.getScheduledFireTime()).await().indefinitely();
         }
+    }
+
+    private boolean isScheduleEnabled() {
+        // The scheduled job is enabled by default.
+        return ConfigProvider.getConfig().getOptionalValue("notifications.backend.email.subscription.periodic.cron.enabled", Boolean.class).orElse(true);
     }
 
     private Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime) {
