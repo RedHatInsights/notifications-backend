@@ -5,20 +5,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Emails {
+class Emails {
 
     @JsonProperty("emails")
-    private Set<Email> emails;
+    private final Set<Email> emails;
 
-    public Emails() {
+    Emails() {
         emails = new HashSet<>();
     }
 
-    public void addEmail(Email email) {
+    void addEmail(Email email) {
         emails.add(email);
     }
 
-    public Set<Email> getEmails() {
+    Set<Email> getEmails() {
         return emails;
     }
 
