@@ -8,7 +8,9 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.AssertSubscriber;
+import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
@@ -85,5 +87,15 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
         aggregation.setPayload(new JsonObject());
         aggregation.setCreated(LocalDateTime.now(ZoneOffset.UTC));
         return aggregation;
+    }
+
+    @Test
+    void consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload() {
+        Uni<Void> consumeEmailAggregations = testee.consumeEmailAggregations("I am not valid!");
+
+        consumeEmailAggregations.subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .assertCompleted()
+                .assertItem(null);
     }
 }
