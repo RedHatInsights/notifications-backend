@@ -255,9 +255,15 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     @Incoming(AGGREGATION_CHANNEL)
-    public Uni<Void> consumeEmailAggregations(String aggregationsJson) throws JsonProcessingException {
-        List<EmailAggregation> aggregations = objectMapper.readValue(aggregationsJson, new TypeReference<>() {
-        });
+    public Uni<Void> consumeEmailAggregations(String aggregationsJson) {
+        List<EmailAggregation> aggregations;
+        try {
+            aggregations = objectMapper.readValue(aggregationsJson, new TypeReference<>() {
+            });
+        } catch (JsonProcessingException e) {
+            log.info(e.getMessage());
+            return Uni.createFrom().nullItem();
+        }
         return Multi.createFrom().iterable(aggregations)
                 .onItem().transformToUniAndConcatenate(emailAggregationItem -> {
                     Action action = new Action();
@@ -285,7 +291,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         processAggregateEmails(se.getScheduledFireTime()).await().indefinitely();
     }
 
-    Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime) {
+    private Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime) {
         Instant yesterdayScheduledFireTime = scheduledFireTime.minus(EmailSubscriptionType.DAILY.getDuration());
 
         LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, UTC);
