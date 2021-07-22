@@ -8,27 +8,12 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.logging.Logger;
 
 @ApplicationScoped
 public class EmailAggregationResources {
 
-    private final Logger log = Logger.getLogger(this.getClass().getName());
-
     @Inject
     Session session;
-
-    @Transactional
-    public Boolean addEmailAggregation(EmailAggregation aggregation) {
-        try {
-            session.persist(aggregation);
-            session.flush();
-            return Boolean.TRUE;
-        } catch (Exception e) {
-            log.warning("Couldn't persist aggregation!" + e.getMessage());
-            return Boolean.FALSE;
-        }
-    }
 
     public List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
         String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.EmailAggregationKey(ea.accountId, ea.bundleName, ea.applicationName) " +

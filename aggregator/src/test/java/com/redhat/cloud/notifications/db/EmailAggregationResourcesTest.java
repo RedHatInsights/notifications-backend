@@ -35,6 +35,9 @@ public class EmailAggregationResourcesTest {
     @Inject
     EmailAggregationResources emailAggregationResources;
 
+    @Inject
+    ResourceHelpers resourceHelpers;
+
     @Test
     void testAllMethods() {
 
@@ -95,7 +98,7 @@ public class EmailAggregationResourcesTest {
         aggregation.setApplicationName(applicationName);
         aggregation.setPayload(payload);
 
-        Boolean added = emailAggregationResources.addEmailAggregation(aggregation);
+        Boolean added = resourceHelpers.addEmailAggregation(aggregation);
         assertEquals(expectedResult, added);
     }
 
