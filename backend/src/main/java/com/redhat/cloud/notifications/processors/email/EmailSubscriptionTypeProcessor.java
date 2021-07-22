@@ -264,7 +264,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             aggregations = objectMapper.readValue(aggregationsJson, new TypeReference<>() {
             });
         } catch (JsonProcessingException e) {
-            log.error("Kafka aggregation payload parsing failed", e);
+            log.log(Level.SEVERE, "Kafka aggregation payload parsing failed", e);
             return Uni.createFrom().nullItem();
         }
         return Multi.createFrom().iterable(aggregations)
