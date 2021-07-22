@@ -175,7 +175,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     // We don't have a eventtype as this aggregates over multiple event types
                     action.setEventType(null);
                     EmailTemplate emailTemplate = emailTemplateFactory.get(action.getBundle(), action.getApplication());
-                    // return Multi.createFrom().item(oldSendEmail(action, EmailSubscriptionType.DAILY, emailTemplate).collect().asList().await().indefinitely());
                     return oldSendEmail(action, EmailSubscriptionType.DAILY, emailTemplate);
                 })
                 .onItem().ignoreAsUni();
