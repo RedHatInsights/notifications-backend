@@ -1,10 +1,13 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.templates.Blank;
+import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.mutiny.Multi;
@@ -13,8 +16,8 @@ import io.smallrye.mutiny.helpers.test.AssertSubscriber;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
@@ -25,6 +28,7 @@ import java.util.Map;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,7 +45,10 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
     InMemoryConnector inMemoryConnector;
 
     @InjectMock
-    EndpointEmailSubscriptionResources subscriptionResources;
+    EmailTemplateFactory emailTemplateFactory;
+
+    @InjectMock
+    EmailAggregationResources emailAggregationResources;
 
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
@@ -67,26 +74,45 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
 
     @Test
     void shouldSuccessfullySendEmail() {
-        EmailAggregation aggregation1 = buildEmailAggregation("account-1", "bundle-1", "app-1");
-        EmailAggregation aggregation2 = buildEmailAggregation("account-2", "bundle-2", "app-2");
-        List<EmailAggregation> aggregations = List.of(aggregation1, aggregation2);
-        String testPayload = Json.encode(aggregations);
-        inMemoryConnector.source(AGGREGATION_CHANNEL).send(testPayload);
+        AggregationCommand aggregationCommand1 = new AggregationCommand(
+                new EmailAggregationKey("account-1", "bundle-1", "app-1"),
+                LocalDateTime.now(),
+                LocalDateTime.now().plusDays(1),
+                DAILY
+        );
+        AggregationCommand aggregationCommand2 = new AggregationCommand(
+                new EmailAggregationKey("account-2", "bundle-2", "app-2"),
+                LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
+                LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
+                DAILY
+        );
+
+        Mockito.when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
+
+        inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
+        inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
 
         // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-        verify(subscriptionResources, times(1)).getEmailSubscribersUserId(eq(aggregation1.getAccountId()), eq(aggregation1.getBundleName()), eq(aggregation1.getApplicationName()), eq(DAILY));
-        verify(subscriptionResources, times(1)).getEmailSubscribersUserId(eq(aggregation2.getAccountId()), eq(aggregation2.getBundleName()), eq(aggregation2.getApplicationName()), eq(DAILY));
-        verifyNoMoreInteractions(subscriptionResources);
-    }
+        verify(emailAggregationResources, times(1)).getEmailAggregation(
+                eq(aggregationCommand1.getAggregationKey()),
+                eq(aggregationCommand1.getStart()),
+                eq(aggregationCommand1.getEnd())
+        );
 
-    private static EmailAggregation buildEmailAggregation(String accountId, String bundleName, String appName) {
-        EmailAggregation aggregation = new EmailAggregation();
-        aggregation.setAccountId(accountId);
-        aggregation.setBundleName(bundleName);
-        aggregation.setApplicationName(appName);
-        aggregation.setPayload(new JsonObject());
-        aggregation.setCreated(LocalDateTime.now(ZoneOffset.UTC));
-        return aggregation;
+        verify(emailAggregationResources, times(1)).purgeOldAggregation(
+                eq(aggregationCommand1.getAggregationKey()),
+                eq(aggregationCommand1.getEnd())
+        );
+        verify(emailAggregationResources, times(1)).getEmailAggregation(
+                eq(aggregationCommand2.getAggregationKey()),
+                eq(aggregationCommand2.getStart()),
+                eq(aggregationCommand2.getEnd())
+        );
+        verify(emailAggregationResources, times(1)).purgeOldAggregation(
+                eq(aggregationCommand2.getAggregationKey()),
+                eq(aggregationCommand2.getEnd())
+        );
+        verifyNoMoreInteractions(emailAggregationResources);
     }
 
     @Test

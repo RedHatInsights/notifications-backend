@@ -1,11 +1,11 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -127,57 +127,24 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         .onItem().transformToUniAndConcatenate(user -> emailSender.sendEmail(user, action, subject, body));
     }
 
-    private Multi<NotificationHistory> oldSendEmail(Action action, EmailSubscriptionType emailSubscriptionType, EmailTemplate emailTemplate) {
-        return subscriptionResources
-                .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType)
-                .onItem().transform(Set::copyOf)
-                .onItem().transformToMulti(users -> {
-                    if (!emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
-                        return Multi.createFrom().empty();
-                    }
-
-                    TemplateInstance subject = emailTemplate.getTitle(action.getEventType(), emailSubscriptionType);
-                    TemplateInstance body = emailTemplate.getBody(action.getEventType(), emailSubscriptionType);
-
-                    if (subject == null || body == null) {
-                        return Multi.createFrom().empty();
-                    }
-
-                    return emailSender.oldSendEmail(users, action, subject, body).toMulti();
-                });
-    }
-
-    /*
-    * Warning: This method is not in sync with the current daily-aggregation as a cron job in the backend.
-    * It still sends a single email (as opposed to one email per user) with the users in the bcc
-    * This is going to be updated in a separated PR to match the personalized email.
-    * */
     @Incoming(AGGREGATION_CHANNEL)
-    public Uni<Void> consumeEmailAggregations(String aggregationsJson) {
-        List<EmailAggregation> aggregations;
+    public Uni<Void> consumeEmailAggregations(String aggregationCommandJson) {
+        AggregationCommand aggregationCommand;
         try {
-            aggregations = objectMapper.readValue(aggregationsJson, new TypeReference<>() {
-            });
+            aggregationCommand = objectMapper.readValue(aggregationCommandJson, AggregationCommand.class);
         } catch (JsonProcessingException e) {
             log.log(Level.SEVERE, "Kafka aggregation payload parsing failed", e);
             return Uni.createFrom().nullItem();
         }
 
-        return Multi.createFrom().iterable(aggregations)
-                .onItem().transformToMultiAndConcatenate(emailAggregationItem -> {
-                    Action action = new Action();
-                    action.setContext(emailAggregationItem.getPayload().getMap());
-                    action.setEvents(List.of());
-                    action.setAccountId(emailAggregationItem.getAccountId());
-                    action.setApplication(emailAggregationItem.getApplicationName());
-                    action.setBundle(emailAggregationItem.getBundleName());
-                    action.setTimestamp(LocalDateTime.now(UTC));
-                    // We don't have a eventtype as this aggregates over multiple event types
-                    action.setEventType(null);
-                    EmailTemplate emailTemplate = emailTemplateFactory.get(action.getBundle(), action.getApplication());
-                    return oldSendEmail(action, EmailSubscriptionType.DAILY, emailTemplate);
-                })
-                .onItem().ignoreAsUni();
+        return processAggregateEmailsByAggregationKey(
+                aggregationCommand.getAggregationKey(),
+                aggregationCommand.getStart(),
+                aggregationCommand.getEnd(),
+                aggregationCommand.getSubscriptionType(),
+                // Delete on daily
+                aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY)
+        ).onItem().ignoreAsUni();
     }
 
     @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.backend.email.subscription.daily.cron}")
@@ -259,6 +226,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     return emailSender.sendEmail(entries.getKey(), action, subject, body)
                             .onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
                 })
-                .onTermination().call((throwable, aBoolean) -> doDelete.toUni());
+                .onTermination().call((throwable, aBoolean) -> {
+                    if (throwable != null) {
+                        log.log(Level.WARNING, "Error while processing aggregation", throwable);
+                    }
+                    return doDelete.toUni();
+                });
     }
 }

@@ -77,6 +77,7 @@ public class ResourceHelpers {
         }
     }
 
+    @Transactional
     public Integer purgeAggregations() {
         Integer deleted = session.createQuery("DELETE FROM EmailAggregation").executeUpdate();
         session.flush();

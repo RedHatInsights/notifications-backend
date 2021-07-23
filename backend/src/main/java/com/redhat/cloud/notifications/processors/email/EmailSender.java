@@ -56,10 +56,6 @@ public class EmailSender {
     @ConfigProperty(name = "processor.email.bop_env")
     String bopEnv;
 
-    // Only used by old send email
-    @ConfigProperty(name = "processor.email.no_reply")
-    String noReplyAddress;
-
     @Inject
     WebhookTypeProcessor webhookSender;
 
@@ -101,52 +97,6 @@ public class EmailSender {
                         processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
                     });
                 }).onFailure().recoverWithNull();
-    }
-
-    // Warning: Old non-personalized way of sending: going to be removed soon.
-    public Uni<NotificationHistory> oldSendEmail(Set<String> users, Action action, TemplateInstance subject, TemplateInstance body) {
-        final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
-        LocalDateTime start = LocalDateTime.now(UTC);
-
-        return endpointResources.getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties())
-                .onItem().transformToUni(endpoint -> {
-                    Notification notification = new Notification(action, endpoint);
-
-                    // TODO Add recipients processing from policies-notifications processing (failed recipients)
-                    //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)
-
-                    // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
-                    //      also add metrics for these failures
-
-                    return webhookSender.doHttpRequest(
-                            notification,
-                            bopRequest,
-                            oldGetPayload(users, action, subject, body)
-                    ).onItem().invoke(unused -> {
-                        processedCount.increment();
-                        processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
-                    });
-                }).onFailure().recoverWithNull();
-    }
-
-    // Note: Soon to be removed - does not support personalized email
-    private Uni<JsonObject> oldGetPayload(Set<String> users, Action action, TemplateInstance subject, TemplateInstance body) {
-        return Uni.combine().all().unis(
-                renderTemplate(null, action, subject),
-                renderTemplate(null, action, body)
-        )
-                .asTuple()
-                .onItem().transform(rendered -> {
-                    Emails emails = new Emails();
-                    Email email = buildEmail(
-                            noReplyAddress,
-                            rendered.getItem1(),
-                            rendered.getItem2()
-                    );
-                    email.setBccList(users);
-                    emails.addEmail(email);
-                    return JsonObject.mapFrom(emails);
-                });
     }
 
     private Uni<JsonObject> getPayload(User user, Action action, TemplateInstance subject, TemplateInstance body) {
