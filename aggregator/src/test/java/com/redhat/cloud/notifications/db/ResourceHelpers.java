@@ -4,12 +4,16 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import org.hibernate.Session;
+import org.jboss.logging.Logger;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 
 @ApplicationScoped
 public class ResourceHelpers {
+
+    private static final Logger LOGGER = Logger.getLogger(ResourceHelpers.class);
 
     @Inject
     Session session;
@@ -27,7 +31,7 @@ public class ResourceHelpers {
 
     public void addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
         EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, bundle, application, policyId, insightsId);
-        emailAggregationResources.addEmailAggregation(aggregation);
+        addEmailAggregation(aggregation);
     }
 
     @Transactional
@@ -59,5 +63,17 @@ public class ResourceHelpers {
                 .setParameter("subscriptionType", subscriptionType)
                 .executeUpdate();
         session.flush();
+    }
+
+    @Transactional
+    public Boolean addEmailAggregation(EmailAggregation aggregation) {
+        try {
+            session.persist(aggregation);
+            session.flush();
+            return Boolean.TRUE;
+        } catch (Exception e) {
+            LOGGER.warn("Couldn't persist aggregation!", e);
+            return Boolean.FALSE;
+        }
     }
 }
