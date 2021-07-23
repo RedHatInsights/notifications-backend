@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription;
+import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -28,7 +29,7 @@ public class ResourceHelpers {
     public static final String TEST_BUNDLE_NAME = "testbundle";
 
     @Inject
-    EndpointResources resources;
+    EndpointResources endpointResources;
 
     @Inject
     ApplicationResources appResources;
@@ -115,7 +116,7 @@ public class ResourceHelpers {
             }
 
             ep.setAccountId(tenant);
-            resources.createEndpoint(ep).await().indefinitely();
+            endpointResources.createEndpoint(ep).await().indefinitely();
         }
         return statsValues;
     }
@@ -131,9 +132,25 @@ public class ResourceHelpers {
         ep.setEnabled(true);
         ep.setAccountId(tenant);
         ep.setProperties(properties);
-        return resources.createEndpoint(ep).await().indefinitely().getId();
+        return endpointResources.createEndpoint(ep).await().indefinitely().getId();
     }
 
+    public UUID getBundleId(String bundleName) {
+        return bundleResources.getBundle(bundleName).await().indefinitely().getId();
+    }
+
+    public UUID createEventType(String bundleName, String applicationName, String eventTypeName) {
+        Application app = appResources.getApplication(bundleName, applicationName).await().indefinitely();
+
+        EventType eventType = new EventType();
+        eventType.setDescription("new event type");
+        eventType.setName(eventTypeName);
+        eventType.setDisplayName(eventTypeName);
+        eventType.setBehaviors(Set.of());
+        eventType.setApplication(app);
+        eventType.setApplicationId(app.getId());
+        return appResources.createEventType(eventType).await().indefinitely().getId();
+    }
 
     public void createSubscription(String tenant, String username, String bundle, String application, EmailSubscriptionType type) {
         subscriptionResources.subscribe(tenant, username, bundle, application, type).await().indefinitely();
@@ -165,5 +182,9 @@ public class ResourceHelpers {
 
     public void updateBehaviorGroupActions(String accountId, UUID behaviorGroupId, List<UUID> endpointIds) {
         behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds).await().indefinitely();
+    }
+
+    public UUID emailSubscriptionEndpointId(String accountId, EmailSubscriptionProperties properties) {
+        return endpointResources.getOrCreateEmailSubscriptionEndpoint(accountId, properties).await().indefinitely().getId();
     }
 }

@@ -32,6 +32,7 @@ public class TestHelpers {
     public static final String policyName1 = "Foobar";
     public static final String policyId2 = "0123-456-789-5721f";
     public static final String policyName2 = "Latest foo is installed";
+    public static final String eventType = "test-email-subscription-instant";
 
     public static String encodeIdentityInfo(String tenant, String username) {
         JsonObject identity = new JsonObject();
@@ -73,7 +74,7 @@ public class TestHelpers {
         emailActionMessage.setBundle(bundle);
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.now());
-        emailActionMessage.setEventType("testEmailSubscriptionInstant");
+        emailActionMessage.setEventType(eventType);
 
         emailActionMessage.setContext(Map.of(
                 "inventory_id", inventory_id,
@@ -117,7 +118,7 @@ public class TestHelpers {
         emailActionMessage.setBundle(bundle);
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
-        emailActionMessage.setEventType("testEmailSubscriptionInstant");
+        emailActionMessage.setEventType(eventType);
 
         emailActionMessage.setContext(Map.of(
                 "inventory_id", "host-01",
