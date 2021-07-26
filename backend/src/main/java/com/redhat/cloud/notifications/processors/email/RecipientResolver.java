@@ -21,7 +21,7 @@ public class RecipientResolver {
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
     @ConfigProperty(name = "processor.email.rbac-user-query", defaultValue = "false")
-    Boolean rbacUserQuery;
+    boolean rbacUserQuery;
 
     public Uni<Set<User>> recipientUsers(String accountId, Set<Endpoint> endpoints, Set<String> subscribers) {
 
