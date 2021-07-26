@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -19,7 +20,21 @@ public class RecipientResolver {
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
+    @ConfigProperty(name = "processor.email.personalized-email", defaultValue = "false")
+    Boolean personalizedEmail;
+
     public Uni<Set<User>> recipientUsers(String accountId, Set<Endpoint> endpoints, Set<String> subscribers) {
+
+        if (!personalizedEmail) {
+            return Uni.createFrom().item(
+                    subscribers.stream().map(username -> {
+                        User user = new User();
+                        user.setUsername(username);
+                        return user;
+                    }).collect(Collectors.toSet())
+            );
+        }
+
         return Multi.createFrom().iterable(endpoints)
                 .onItem().transformToUni(e -> recipientUsers(accountId, e, subscribers))
                 .concatenate().collect().in(HashSet<User>::new, Set::addAll);
