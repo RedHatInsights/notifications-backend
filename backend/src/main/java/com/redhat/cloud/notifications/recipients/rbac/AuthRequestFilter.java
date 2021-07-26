@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
@@ -11,14 +12,13 @@ import java.util.Base64;
 class AuthRequestFilter implements ClientRequestFilter {
 
     String authInfo;
-
-    @ConfigProperty(name = "rbac.service-to-service.secret", defaultValue = "addme")
     String secret;
-
-    @ConfigProperty(name = "rbac.service-to-service.application", defaultValue = "notifications")
     String application;
 
     AuthRequestFilter() {
+        Config config = ConfigProvider.getConfig();
+        secret = config.getOptionalValue("rbac.service-to-service.secret", String.class).orElse("addme");
+        application = config.getOptionalValue("rbac.service-to-service.application", String.class).orElse("notifications");
         String tmp = System.getProperty("rbac.service-to-service.exceptional.auth.info");
         if (tmp != null && !tmp.isEmpty()) {
             authInfo = new String(Base64.getEncoder().encode(tmp.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);

@@ -50,7 +50,6 @@ public class EmailAggregator {
     public Uni<Map<User, Map<String, Object>>> getAggregated(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType, LocalDateTime start, LocalDateTime end) {
         Map<User, AbstractEmailPayloadAggregator> aggregated = new HashMap<>();
         Uni<Set<String>> subscribers = getEmailSubscribers(aggregationKey, emailSubscriptionType);
-
         // First, we retrieve all aggregations that match the given key.
         return emailAggregationResources.getEmailAggregation(aggregationKey, start, end)
                 .onItem().transformToMulti(Multi.createFrom()::iterable)

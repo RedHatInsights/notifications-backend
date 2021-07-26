@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.models;
 
 import javax.validation.constraints.NotNull;
+import java.util.Objects;
 
 public class EmailAggregationKey {
 
@@ -31,4 +32,22 @@ public class EmailAggregationKey {
         return application;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof EmailAggregationKey)) {
+            return false;
+        }
+
+        EmailAggregationKey that = (EmailAggregationKey) o;
+        return Objects.equals(accountId, that.accountId) && Objects.equals(bundle, that.bundle) && Objects.equals(application, that.application);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(accountId, bundle, application);
+    }
 }

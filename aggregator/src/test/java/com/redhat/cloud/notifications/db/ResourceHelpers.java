@@ -76,4 +76,11 @@ public class ResourceHelpers {
             return Boolean.FALSE;
         }
     }
+
+    @Transactional
+    public Integer purgeAggregations() {
+        Integer deleted = session.createQuery("DELETE FROM EmailAggregation").executeUpdate();
+        session.flush();
+        return deleted;
+    }
 }
