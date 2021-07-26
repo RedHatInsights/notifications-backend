@@ -20,12 +20,12 @@ public class RecipientResolver {
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
-    @ConfigProperty(name = "processor.email.personalized-email", defaultValue = "false")
-    Boolean personalizedEmail;
+    @ConfigProperty(name = "processor.email.rbac-user-query", defaultValue = "false")
+    Boolean rbacUserQuery;
 
     public Uni<Set<User>> recipientUsers(String accountId, Set<Endpoint> endpoints, Set<String> subscribers) {
 
-        if (!personalizedEmail) {
+        if (!rbacUserQuery) {
             return Uni.createFrom().item(
                     subscribers.stream().map(username -> {
                         User user = new User();

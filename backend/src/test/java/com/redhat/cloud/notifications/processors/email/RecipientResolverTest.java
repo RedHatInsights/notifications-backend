@@ -24,7 +24,7 @@ public class RecipientResolverTest {
     @Test
     public void withPersonalizedEmailOff() {
         RecipientResolver recipientResolver = new RecipientResolver();
-        recipientResolver.personalizedEmail = false;
+        recipientResolver.rbacUserQuery = false;
         recipientResolver.rbacRecipientUsersProvider = rbacRecipientUsersProvider;
 
         Endpoint endpoint = new Endpoint();
@@ -52,7 +52,7 @@ public class RecipientResolverTest {
     @Test
     public void withPersonalizedEmailOn() {
         RecipientResolver recipientResolver = new RecipientResolver();
-        recipientResolver.personalizedEmail = true;
+        recipientResolver.rbacUserQuery = true;
         recipientResolver.rbacRecipientUsersProvider = rbacRecipientUsersProvider;
 
         Endpoint endpoint = new Endpoint();
