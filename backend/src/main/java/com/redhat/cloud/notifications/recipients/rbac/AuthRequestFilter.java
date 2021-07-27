@@ -7,7 +7,9 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logmanager.Level;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import java.io.IOException;
@@ -32,20 +34,23 @@ class AuthRequestFilter implements ClientRequestFilter {
         public String secret;
     }
 
-    String authInfo;
-    String secret;
-    String application;
+    @Inject
+    ObjectMapper objectMapper;
+
+    private String authInfo;
+    private String secret;
+    private String application;
 
     private final Logger log = Logger.getLogger(this.getClass().getName());
 
-    AuthRequestFilter() {
+    @PostConstruct
+    void init() {
         Config config = ConfigProvider.getConfig();
 
         application = config.getOptionalValue(RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY, String.class).orElse(RBAC_SERVICE_TO_SERVICE_APPLICATION_DEFAULT);
         Map<String, Secret> rbacServiceToServiceSecretMap;
 
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             rbacServiceToServiceSecretMap = objectMapper.readValue(
                     config.getOptionalValue(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_KEY, String.class).orElse(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_DEFAULT),
                     new TypeReference<>() { }
@@ -76,5 +81,17 @@ class AuthRequestFilter implements ClientRequestFilter {
 
         requestContext.getHeaders().putSingle("x-rh-rbac-psk", secret);
         requestContext.getHeaders().putSingle("x-rh-rbac-client-id", application);
+    }
+
+    public String getAuthInfo() {
+        return authInfo;
+    }
+
+    public String getSecret() {
+        return secret;
+    }
+
+    public String getApplication() {
+        return application;
     }
 }
