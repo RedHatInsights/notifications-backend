@@ -1,4 +1,4 @@
-import { Nav, NavItem, NavList } from '@patternfly/react-core';
+import { Nav, NavExpandable, NavGroup, NavItem, NavItemSeparator, NavList } from '@patternfly/react-core';
 import * as React from 'react';
 import { Link, useRouteMatch } from 'react-router-dom';
 
@@ -15,7 +15,7 @@ const EnhancedNavItem: React.FunctionComponent<EnhancedNavItemProps> = props => 
     });
 
     return (
-        <NavItem preventDefault isActive={ !!match }>
+        <NavItem isActive={ !!match }>
             <Link to={ props.to }>
                 { props.children }
             </Link>
@@ -23,10 +23,24 @@ const EnhancedNavItem: React.FunctionComponent<EnhancedNavItemProps> = props => 
     );
 };
 
-export const Navigation: React.FunctionComponent<unknown> = () => {
+export interface NavigationProps {
+    bundles: Array<any>;
+}
+
+export const Navigation: React.FunctionComponent<NavigationProps> = props => {
     return (
         <Nav>
             <NavList>
+                <NavGroup title="Bundles">
+                    { props.bundles.map(b => (
+                        <NavExpandable key={ b.id } title={ b.display_name }>
+                            { b.applications.map((a: any) => (
+                                <EnhancedNavItem key={ a.id } to={ linkTo.application(a.id) }>{ a.display_name }</EnhancedNavItem>
+                            )) }
+                        </NavExpandable>
+                    )) }
+                </NavGroup>
+                <NavItemSeparator />
                 <EnhancedNavItem to={ linkTo.aggregation() }>
                     Aggregation
                 </EnhancedNavItem>

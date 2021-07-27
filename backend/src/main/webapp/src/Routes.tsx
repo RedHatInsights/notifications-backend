@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Redirect, Route, Switch } from 'react-router';
 
 import { AggregationPage } from './pages/AggregationPage';
+import { ApplicationPage } from './pages/ApplicationPage';
 
 interface Path {
     readonly path: string;
@@ -9,6 +10,7 @@ interface Path {
 }
 
 export const linkTo = {
+    application: (applicationId: string) => `/application/${applicationId}`,
     aggregation: () => '/aggregation'
 };
 
@@ -16,6 +18,10 @@ const pathRoutes: Path[] = [
     {
         path: linkTo.aggregation(),
         component: AggregationPage
+    },
+    {
+        path: linkTo.application(':applicationId'),
+        component: ApplicationPage
     }
 ];
 
