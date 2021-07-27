@@ -15,9 +15,33 @@ import java.util.List;
 
 public class AuthRequestFilterTest {
 
+    private static final String testToken = "{\"approval\":{\"secret\":\"123\"},\"advisor\":{\"secret\":\"456\"},\"notifications\":{\"secret\":\"789\"}}";
+
     @BeforeEach
     public void clean() {
-        System.setProperty("rbac.service-to-service.exceptional.auth.info", "");
+        System.clearProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_DEV_EXCEPTIONAL_AUTH_KEY);
+        System.clearProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY);
+        System.clearProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_SECRET_MAP_KEY);
+    }
+
+    @Test
+    public void testLoadingFromConfiguration() throws IOException {
+        System.setProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY, "approval");
+        System.setProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_SECRET_MAP_KEY, testToken);
+
+        AuthRequestFilter rbacAuthRequestFilter = new AuthRequestFilter();
+        Assertions.assertEquals("approval", rbacAuthRequestFilter.application);
+        Assertions.assertEquals("123", rbacAuthRequestFilter.secret);
+    }
+
+    @Test
+    public void testLoadingFromConfigurationWithWrongApplication() throws IOException {
+        System.setProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY, "idontknow");
+        System.setProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_SECRET_MAP_KEY, testToken);
+
+        AuthRequestFilter rbacAuthRequestFilter = new AuthRequestFilter();
+        Assertions.assertEquals("idontknow", rbacAuthRequestFilter.application);
+        Assertions.assertEquals(null, rbacAuthRequestFilter.secret);
     }
 
     @Test
