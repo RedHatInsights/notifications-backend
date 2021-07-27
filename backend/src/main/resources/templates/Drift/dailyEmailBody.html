@@ -23,7 +23,7 @@
             {#for key in action.context.drift.keySet()}
                 {#for host in action.context.drift.get(key).hosts}
             <tr>
-                <td><a href="https://cloud.redhat.com/insights/drift/?baseline_ids={action.context.drift.get(key).baseline_id}&reference_id={action.context.drift.get(key).baseline_id}&system_ids={host.inventory_id}" target="_blank">{action.context.drift.get(key).baseline_name}</a></td>
+                <td><a href="https://console.redhat.com/insights/drift/?baseline_ids={action.context.drift.get(key).baseline_id}&reference_id={action.context.drift.get(key).baseline_id}&system_ids={host.inventory_id}" target="_blank">{action.context.drift.get(key).baseline_name}</a></td>
                 <td>{host.display_name}</td>
             </tr>
             {/for}
@@ -37,7 +37,7 @@
         <table align="center">
             <tr>
                 <td class="rh-cta-link" align="center">
-                    <a target="_blank" href="https://cloud.redhat.com/insights/drift">
+                    <a target="_blank" href="https://console.redhat.com/insights/drift">
                                 <span>
                                   Open Drift in Insights
                                 </span>
