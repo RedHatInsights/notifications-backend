@@ -1,15 +1,8 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
-import io.quarkus.scheduler.Scheduled;
-import io.quarkus.scheduler.ScheduledExecution;
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.eclipse.microprofile.reactive.messaging.Emitter;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
@@ -28,28 +21,6 @@ class DailyEmailAggregationJob {
 
     @Inject
     EmailAggregationResources emailAggregationResources;
-
-    @Inject
-    ObjectMapper objectMapper;
-
-    @Inject
-    @Channel("aggregation")
-    Emitter<String> emitter;
-
-    @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.aggregator.email.subscription.periodic.cron}")
-    public void processDailyEmail(ScheduledExecution se) throws JsonProcessingException {
-        if (isCronJobEnabled()) {
-            List<AggregationCommand> aggregationCommands = processAggregateEmails(se.getScheduledFireTime());
-            for (AggregationCommand aggregationCommand: aggregationCommands) {
-                emitter.send(objectMapper.writeValueAsString(aggregationCommand));
-            }
-        }
-    }
-
-    private boolean isCronJobEnabled() {
-        // The scheduled job is disabled by default.
-        return ConfigProvider.getConfig().getOptionalValue("notifications.aggregator.email.subscription.periodic.cron.enabled", Boolean.class).orElse(false);
-    }
 
     List<AggregationCommand> processAggregateEmails(Instant scheduledFireTime) {
         Instant yesterdayScheduledFireTime = scheduledFireTime.minus(EmailSubscriptionType.DAILY.getDuration());

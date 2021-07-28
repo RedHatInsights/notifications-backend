@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
@@ -49,7 +48,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
          * See https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/2/testing/testing.html
          */
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory("ingress"));
-        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(AGGREGATION_CHANNEL));
 
         System.out.println(" -- Running with properties: " + properties);
         return properties;

@@ -1,11 +1,8 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -22,7 +19,6 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -41,8 +37,6 @@ import static java.time.ZoneOffset.UTC;
 
 @ApplicationScoped
 public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
-
-    public static final String AGGREGATION_CHANNEL = "aggregation";
 
     private final Logger log = Logger.getLogger(this.getClass().getName());
 
@@ -66,9 +60,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     EmailAggregator emailAggregator;
-
-    @Inject
-    ObjectMapper objectMapper;
 
     @Override
     public Multi<NotificationHistory> process(Action action, List<Endpoint> endpoints) {
@@ -125,26 +116,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 .onItem().transformToUni(subscribers -> recipientResolver.recipientUsers(action.getAccountId(), endpoints, subscribers))
         .onItem().transformToMulti(Multi.createFrom()::iterable)
         .onItem().transformToUniAndConcatenate(user -> emailSender.sendEmail(user, action, subject, body));
-    }
-
-    @Incoming(AGGREGATION_CHANNEL)
-    public Uni<Void> consumeEmailAggregations(String aggregationCommandJson) {
-        AggregationCommand aggregationCommand;
-        try {
-            aggregationCommand = objectMapper.readValue(aggregationCommandJson, AggregationCommand.class);
-        } catch (JsonProcessingException e) {
-            log.log(Level.SEVERE, "Kafka aggregation payload parsing failed", e);
-            return Uni.createFrom().nullItem();
-        }
-
-        return processAggregateEmailsByAggregationKey(
-                aggregationCommand.getAggregationKey(),
-                aggregationCommand.getStart(),
-                aggregationCommand.getEnd(),
-                aggregationCommand.getSubscriptionType(),
-                // Delete on daily
-                aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY)
-        ).onItem().ignoreAsUni();
     }
 
     @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.backend.email.subscription.daily.cron}")
