@@ -44,7 +44,7 @@ public class NotificationsApp {
         try {
             return readFromInputStream(inputStream);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.log(Logger.Level.ERROR, "Could not read git.properties.", e);
             return "Version information could not be retrieved";
         }
     }

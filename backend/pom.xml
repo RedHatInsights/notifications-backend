@@ -293,13 +293,8 @@
                 <configuration>
                     <useNativeGit>true</useNativeGit>
                     <includeOnlyProperties>
-                        <includeOnlyProperty>git.commit.id</includeOnlyProperty>
-                        <includeOnlyProperty>git.commit.message.short</includeOnlyProperty>
+                        <includeOnlyProperty>git.commit.id.abbrev</includeOnlyProperty>
                     </includeOnlyProperties>
-                    <excludeProperties>
-                        <excludeProperty>git.commit.id.describe*</excludeProperty>
-                        <excludeProperty>git.commit.id.abbrev</excludeProperty>
-                    </excludeProperties>
                     <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
                     <generateGitPropertiesFile>true</generateGitPropertiesFile>
                     <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
