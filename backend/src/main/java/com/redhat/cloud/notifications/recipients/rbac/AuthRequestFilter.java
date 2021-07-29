@@ -56,7 +56,7 @@ class AuthRequestFilter implements ClientRequestFilter {
                     new TypeReference<>() { }
             );
         } catch (JsonProcessingException jsonProcessingException) {
-            log.log(Level.ERROR, "Unable to load Rbac service to service secret map, defaulting to empty map");
+            log.log(Level.ERROR, "Unable to load Rbac service to service secret map, defaulting to empty map", jsonProcessingException);
             rbacServiceToServiceSecretMap = Map.of();
         }
 
