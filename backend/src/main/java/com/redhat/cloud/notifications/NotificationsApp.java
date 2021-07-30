@@ -57,7 +57,9 @@ public class NotificationsApp {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
             while ((line = br.readLine()) != null) {
-                resultStringBuilder.append(line).append("\n");
+                if (!line.startsWith("#Generated")) {
+                    resultStringBuilder.append(line);
+                }
             }
         }
         return resultStringBuilder.toString();
