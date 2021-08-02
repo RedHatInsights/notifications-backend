@@ -2,5 +2,5 @@
 
 set -exv
 
-/bin/bash build_deploy_backend.sh
-/bin/bash build_deploy_aggregator.sh
+/bin/bash .rhcicd/build_deploy_backend.sh
+/bin/bash .rhcicd/build_deploy_aggregator.sh
