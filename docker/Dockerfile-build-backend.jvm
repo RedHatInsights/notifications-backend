@@ -7,7 +7,7 @@ FROM registry.access.redhat.com/ubi8/openjdk-11:latest AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
-RUN mvn clean package -DskipTests --projects :checkstyle,:notifications-parent,:notifications-backend
+RUN mvn clean package -DskipTests -Dcheckstyle.skip=true --projects :checkstyle,:notifications-parent,:notifications-backend
 
 # Build the container
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
