@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.StatusResources;
 import com.redhat.cloud.notifications.models.CurrentStatus;
+import com.redhat.cloud.notifications.oapi.OApiFilter;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -21,7 +22,7 @@ public class StatusService {
 
     @GET
     @Produces(APPLICATION_JSON)
-    @Tag(name = OApiService.PRIVATE)
+    @Tag(name = OApiFilter.PRIVATE)
     public Uni<CurrentStatus> getCurrentStatus() {
         return statusResources.getCurrentStatus();
     }
