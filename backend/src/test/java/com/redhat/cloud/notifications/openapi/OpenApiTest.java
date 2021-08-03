@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.openapi;
 
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
-import com.redhat.cloud.notifications.routers.OApiService;
 import com.reprezen.kaizen.oasparser.OpenApi3Parser;
 import com.reprezen.kaizen.oasparser.model3.OpenApi3;
 import com.reprezen.kaizen.oasparser.val.ValidationResults;
