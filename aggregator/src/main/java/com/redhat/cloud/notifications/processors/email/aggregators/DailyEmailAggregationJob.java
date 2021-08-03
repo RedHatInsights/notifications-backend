@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
-import io.quarkus.scheduler.Scheduled;
-import io.quarkus.scheduler.ScheduledExecution;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -22,7 +20,7 @@ import java.util.stream.Collectors;
 import static java.time.ZoneOffset.UTC;
 
 @ApplicationScoped
-class DailyEmailAggregationJob {
+public class DailyEmailAggregationJob {
 
     private static final Logger LOG = Logger.getLogger(DailyEmailAggregationJob.class.getName());
 
@@ -36,19 +34,18 @@ class DailyEmailAggregationJob {
     @Channel("aggregation")
     Emitter<String> emitter;
 
-    @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.aggregator.email.subscription.periodic.cron}")
-    public void processDailyEmail(ScheduledExecution se) throws JsonProcessingException {
+    public void processDailyEmail(Instant scheduledFireTime) {
         if (isCronJobEnabled()) {
-            List<AggregationCommand> aggregationCommands = processAggregateEmails(se.getScheduledFireTime());
+            List<AggregationCommand> aggregationCommands = processAggregateEmails(scheduledFireTime);
             for (AggregationCommand aggregationCommand: aggregationCommands) {
-                emitter.send(objectMapper.writeValueAsString(aggregationCommand));
+                try {
+                    final String payload = objectMapper.writeValueAsString(aggregationCommand);
+                    emitter.send(payload);
+                } catch (JsonProcessingException e) {
+                    LOG.warning("Could not transform AggregationCommand to JSON object.");
+                }
             }
         }
-    }
-
-    private boolean isCronJobEnabled() {
-        // The scheduled job is disabled by default.
-        return ConfigProvider.getConfig().getOptionalValue("notifications.aggregator.email.subscription.periodic.cron.enabled", Boolean.class).orElse(false);
     }
 
     List<AggregationCommand> processAggregateEmails(Instant scheduledFireTime) {
@@ -78,5 +75,10 @@ class DailyEmailAggregationJob {
         );
 
         return pendingAggregationCommands;
+    }
+
+    private boolean isCronJobEnabled() {
+        // The scheduled job is disabled by default.
+        return ConfigProvider.getConfig().getOptionalValue("notifications.aggregator.email.subscription.periodic.cron.enabled", Boolean.class).orElse(false);
     }
 }
