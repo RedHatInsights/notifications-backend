@@ -24,7 +24,7 @@ public class OApiFilter {
     public static final String PRIVATE = "private";
     public static final String INTERNAL = "internal";
 
-    static List<String> whats = List.of(INTEGRATIONS, NOTIFICATIONS, PRIVATE, INTERNAL);
+    static List<String> openApiOptions = List.of(INTEGRATIONS, NOTIFICATIONS, PRIVATE, INTERNAL);
 
     @Inject
     Vertx vertx;
@@ -40,21 +40,21 @@ public class OApiFilter {
                 new WebClientOptions().setDefaultHost("localhost").setDefaultPort(port));
     }
 
-    public Uni<String> serveOpenApi(String what) {
-        if (!whats.contains(what)) {
-            throw new WebApplicationException("No openapi file for [" + what + "] found.", 404);
+    public Uni<String> serveOpenApi(String openApiOption) {
+        if (!openApiOptions.contains(openApiOption)) {
+            throw new WebApplicationException("No openapi file for [" + openApiOption + "] found.", 404);
         }
 
         return client.get("/openapi.json")
                 .send()
                 .onItem()
                 .transform(response ->
-                        filterJson(response.bodyAsJsonObject(), what)
+                        filterJson(response.bodyAsJsonObject(), openApiOption)
                 )
                 .onItem().transform(JsonObject::encode);
     }
 
-    private JsonObject filterJson(JsonObject oapiModelJson, String what) {
+    private JsonObject filterJson(JsonObject oapiModelJson, String openApiOption) {
 
         JsonObject root = new JsonObject();
 
@@ -87,14 +87,14 @@ public class OApiFilter {
                             JsonObject newPathValue = null;
                             String mangledPath = mangle(path);
 
-                            if (NOTIFICATIONS.equals(what) && path.startsWith(Constants.API_NOTIFICATIONS_V_1_0)) {
+                            if (NOTIFICATIONS.equals(openApiOption) && path.startsWith(Constants.API_NOTIFICATIONS_V_1_0)) {
                                 newPathValue = filterPrivateOperation(pathValue, true);
-                            } else if (INTEGRATIONS.equals(what) && path.startsWith(Constants.API_INTEGRATIONS_V_1_0)) {
+                            } else if (INTEGRATIONS.equals(openApiOption) && path.startsWith(Constants.API_INTEGRATIONS_V_1_0)) {
                                 newPathValue = filterPrivateOperation(pathValue, true);
-                            } else if (PRIVATE.equals(what)) {
+                            } else if (PRIVATE.equals(openApiOption)) {
                                 newPathValue = filterPrivateOperation(pathValue, false);
                                 mangledPath = path;
-                            } else if (INTERNAL.equals(what) && path.startsWith(Constants.INTERNAL)) {
+                            } else if (INTERNAL.equals(openApiOption) && path.startsWith(Constants.INTERNAL)) {
                                 newPathValue = filterPrivateOperation(pathValue, true);
                             }
 
@@ -116,19 +116,19 @@ public class OApiFilter {
 
         // Add info section
         root.put("info", new JsonObject()
-                .put("description", "The API for " + uppify(what))
+                .put("description", "The API for " + capitalize(openApiOption))
                 .put("version", "1.0")
-                .put("title", uppify(what)));
+                .put("title", capitalize(openApiOption)));
 
         // Add servers section
         JsonArray serversArray = new JsonArray();
 
-        if (what.equals(NOTIFICATIONS)) {
-            serversArray.add(createServer(true, NOTIFICATIONS));
-            serversArray.add(createServer(false, NOTIFICATIONS));
-        } else if (what.equals(INTEGRATIONS)) {
-            serversArray.add(createServer(true, INTEGRATIONS));
-            serversArray.add(createServer(false, INTEGRATIONS));
+        if (openApiOption.equals(NOTIFICATIONS)) {
+            serversArray.add(createProdServer(NOTIFICATIONS));
+            serversArray.add(createDevServer(NOTIFICATIONS));
+        } else if (openApiOption.equals(INTEGRATIONS)) {
+            serversArray.add(createProdServer(INTEGRATIONS));
+            serversArray.add(createDevServer(INTEGRATIONS));
         }
 
         root.put("servers", serversArray);
@@ -136,8 +136,8 @@ public class OApiFilter {
         return root;
     }
 
-    private String uppify(String what) {
-        return what.substring(0, 1).toUpperCase() + what.substring(1);
+    private String capitalize(String name) {
+        return name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase();
     }
 
     private JsonObject filterPrivateOperation(JsonObject pathObject, boolean removePrivate) {
@@ -158,44 +158,47 @@ public class OApiFilter {
         return newPathObject;
     }
 
-    private JsonObject createServer(boolean isProd, String what) {
-
+    private JsonObject createProdServer(String openApiOption) {
         JsonObject job = new JsonObject();
-        if (isProd) {
-            job.put("url", "https://cloud.redhat.com");
-            job.put("description", "Production Server");
-            job.put("variables", new JsonObject()
-                    .put("basePath", new JsonObject()
-                            .put("default", "/api/" + what + "/v1.0")));
-        } else {
-            job.put("url", "http://localhost:{port}");
-            job.put("description", "Development Server");
-            job.put("variables", new JsonObject()
-                    .put("basePath", new JsonObject()
-                            .put("default", "/api/" + what + "/v1.0"))
-                    .put("port", new JsonObject()
-                            .put("default", "8080")));
-        }
+        job.put("url", "https://cloud.redhat.com");
+        job.put("description", "Production Server");
+        job.put("variables", new JsonObject()
+                .put("basePath", new JsonObject()
+                        .put("default", "/api/" + openApiOption + "/v1.0")));
         return job;
     }
 
-    private String mangle(String in) {
-        String out = null;
-        if (in.startsWith(Constants.API_INTEGRATIONS_V_1_0)) {
-            out = in.substring(Constants.API_INTEGRATIONS_V_1_0.length());
-        }
-        if (in.startsWith(Constants.API_NOTIFICATIONS_V_1_0)) {
-            out = in.substring(Constants.API_NOTIFICATIONS_V_1_0.length());
-        }
-        if (in.startsWith(Constants.INTERNAL)) {
-            out = in.substring(Constants.INTERNAL.length());
-        }
+    private JsonObject createDevServer(String openApiOption) {
+
+        JsonObject job = new JsonObject();
+        job.put("url", "http://localhost:{port}");
+        job.put("description", "Development Server");
+        job.put("variables", new JsonObject()
+                .put("basePath", new JsonObject()
+                        .put("default", "/api/" + openApiOption + "/v1.0"))
+                .put("port", new JsonObject()
+                        .put("default", "8080")));
+        return job;
+    }
+
+    String mangle(String in) {
+        String out = filterConstantsIfPresent(in);
+
         if (out != null && out.isEmpty()) {
             out = "/";
         }
 
-        if (out == null) {
-            System.out.println("Out is null and in is:" + in);
+        return out;
+    }
+
+    private String filterConstantsIfPresent(String in) {
+        String out = null;
+        if (in.startsWith(Constants.API_INTEGRATIONS_V_1_0)) {
+            out = in.substring(Constants.API_INTEGRATIONS_V_1_0.length());
+        } else if (in.startsWith(Constants.API_NOTIFICATIONS_V_1_0)) {
+            out = in.substring(Constants.API_NOTIFICATIONS_V_1_0.length());
+        } else if (in.startsWith(Constants.INTERNAL)) {
+            out = in.substring(Constants.INTERNAL.length());
         }
         return out;
     }
