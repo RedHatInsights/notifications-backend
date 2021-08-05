@@ -1,13 +1,11 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import javax.inject.Inject;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -21,9 +19,6 @@ public class AuthRequestFilterTest {
 
     private static final String testToken = "{\"approval\":{\"secret\":\"123\"},\"advisor\":{\"secret\":\"456\"},\"notifications\":{\"secret\":\"789\"}}";
 
-    @Inject
-    ObjectMapper objectMapper;
-
     @BeforeEach
     public void clean() {
         System.clearProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_DEV_EXCEPTIONAL_AUTH_KEY);
@@ -32,12 +27,7 @@ public class AuthRequestFilterTest {
     }
 
     private AuthRequestFilter getAuthRequestFilter() {
-        // Injecting doesn't seem to take into account the System.setProperty calls.
-        // Probably related to: https://quarkus.io/blog/quarkus-test-profiles/
-        AuthRequestFilter rbacAuthRequestFilter = new AuthRequestFilter();
-        rbacAuthRequestFilter.objectMapper = objectMapper;
-        rbacAuthRequestFilter.init();
-        return rbacAuthRequestFilter;
+        return new AuthRequestFilter();
     }
 
     @Test

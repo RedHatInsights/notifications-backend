@@ -7,9 +7,6 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logmanager.Level;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import java.io.IOException;
@@ -18,7 +15,6 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.logging.Logger;
 
-@ApplicationScoped
 class AuthRequestFilter implements ClientRequestFilter {
 
     static final String RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY = "rbac.service-to-service.application";
@@ -34,23 +30,20 @@ class AuthRequestFilter implements ClientRequestFilter {
         public String secret;
     }
 
-    @Inject
-    ObjectMapper objectMapper;
-
-    private String authInfo;
-    private String secret;
-    private String application;
+    private final String authInfo;
+    private final String secret;
+    private final String application;
 
     private final Logger log = Logger.getLogger(this.getClass().getName());
 
-    @PostConstruct
-    void init() {
+    AuthRequestFilter() {
         Config config = ConfigProvider.getConfig();
 
         application = config.getOptionalValue(RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY, String.class).orElse(RBAC_SERVICE_TO_SERVICE_APPLICATION_DEFAULT);
         Map<String, Secret> rbacServiceToServiceSecretMap;
 
         try {
+            ObjectMapper objectMapper = new ObjectMapper();
             rbacServiceToServiceSecretMap = objectMapper.readValue(
                     config.getOptionalValue(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_KEY, String.class).orElse(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_DEFAULT),
                     new TypeReference<>() { }
@@ -68,6 +61,8 @@ class AuthRequestFilter implements ClientRequestFilter {
         String tmp = System.getProperty(RBAC_SERVICE_TO_SERVICE_DEV_EXCEPTIONAL_AUTH_KEY);
         if (tmp != null && !tmp.isEmpty()) {
             authInfo = new String(Base64.getEncoder().encode(tmp.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+        } else {
+            authInfo = null;
         }
     }
 
