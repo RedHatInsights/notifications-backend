@@ -6,6 +6,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -14,9 +15,11 @@ import java.util.UUID;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class EmailSubscriptionProperties extends EndpointProperties {
 
+    @NotNull
     @Schema(name = "only_admins")
     private boolean onlyAdmins;
 
+    @NotNull
     @Schema(name = "ignore_preferences")
     private boolean ignorePreferences;
 
