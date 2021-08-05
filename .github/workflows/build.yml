@@ -43,3 +43,8 @@ jobs:
         with:
           name: openapi.private.json
           path: backend/target/openapi.private.json
+      - uses: actions/upload-artifact@v2
+        name: Upload internal openapi.json
+        with:
+          name: openapi.internal.json
+          path: backend/target/openapi.internal.json
