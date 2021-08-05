@@ -42,7 +42,7 @@ public class RecipientResolver {
     }
 
     private Uni<Set<User>> recipientUsers(String accountId, Endpoint endpoint, Set<String> subscribers) {
-        final EmailSubscriptionProperties props = (EmailSubscriptionProperties) endpoint.getProperties();
+        final EmailSubscriptionProperties props = endpoint.getProperties(EmailSubscriptionProperties.class);
 
         Uni<List<User>> usersUni;
         if (props.getGroupId() == null) {

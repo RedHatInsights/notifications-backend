@@ -112,7 +112,7 @@ public class EndpointResources {
                 .onItem().transformToUni(emailEndpoints -> {
                     Optional<Endpoint> endpointOptional = emailEndpoints
                             .stream()
-                            .filter(endpoint -> properties.hasSameProperties((EmailSubscriptionProperties) endpoint.getProperties()))
+                            .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(EmailSubscriptionProperties.class)))
                             .findFirst();
                     if (endpointOptional.isPresent()) {
                         return Uni.createFrom().item(endpointOptional.get());
