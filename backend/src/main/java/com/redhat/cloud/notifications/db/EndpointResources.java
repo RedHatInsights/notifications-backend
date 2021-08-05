@@ -250,6 +250,10 @@ public class EndpointResources {
         String camelQuery = "UPDATE CamelProperties SET url = :url, subType = :subType, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
 
+        if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
+            throw new RuntimeException("Unable to update an endpoint of type EMAIL_SUBSCRIPTION");
+        }
+
         return session.createQuery(endpointQuery)
                 .setParameter("name", endpoint.getName())
                 .setParameter("description", endpoint.getDescription())
@@ -287,9 +291,6 @@ public class EndpointResources {
                                         .executeUpdate()
                                         .call(session::flush)
                                         .onItem().transform(rowCount -> rowCount > 0);
-                            case EMAIL_SUBSCRIPTION:
-                                LOGGER.warning("Endpoint updating properties of EmailSubscription. It should never happen.");
-                                // Todo: Should throw? EmailSubscriptions are not updatable once they are created
                             default:
                                 return Uni.createFrom().item(Boolean.TRUE);
                         }

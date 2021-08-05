@@ -1,6 +1,6 @@
 CREATE TABLE email_properties (
     only_admins boolean NOT NULL,
-    ignore_preferences boolean NULL,
+    ignore_preferences boolean NOT NULL,
     group_id uuid,
     id uuid NOT NULL,
     CONSTRAINT pk_email_properties PRIMARY KEY (id),
