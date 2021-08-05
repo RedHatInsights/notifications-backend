@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.processors.email.aggregators.DailyEmailAggregationJob;
 import io.quarkus.runtime.QuarkusApplication;
+import io.quarkus.runtime.annotations.QuarkusMain;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import javax.inject.Inject;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@QuarkusMain
 public class NotificationsApp implements QuarkusApplication {
 
     private static final String FILTER_REGEX = ".*(/health(/\\w+)?|/metrics) HTTP/[0-9].[0-9]\" 200.*\\n?";
