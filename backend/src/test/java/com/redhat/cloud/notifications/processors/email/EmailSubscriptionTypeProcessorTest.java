@@ -16,7 +16,6 @@ import io.smallrye.mutiny.helpers.test.AssertSubscriber;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.vertx.core.json.Json;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -74,7 +73,6 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
     }
 
     @Test
-    @Disabled
     void shouldSuccessfullySendEmail() {
         AggregationCommand aggregationCommand1 = new AggregationCommand(
                 new EmailAggregationKey("account-1", "bundle-1", "app-1"),

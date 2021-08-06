@@ -19,7 +19,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
         return <Spinner />;
     }
 
-    if (eventTypesQuery.payload.length === 0) {
+    if (eventTypesQuery.payload?.status !== 200) {
+        return <span>Error while loading eventtypes: {eventTypesQuery.errorObject.toString() }</span>;
+    }
+
+    if (eventTypesQuery.payload.value.length === 0) {
         return <span>No event types found for this application</span>;
     }
 

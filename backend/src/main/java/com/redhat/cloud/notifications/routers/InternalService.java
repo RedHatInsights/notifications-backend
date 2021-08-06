@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CurrentStatus;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.oapi.OApiFilter;
 import io.smallrye.mutiny.Uni;
 
 import javax.inject.Inject;
@@ -22,6 +23,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.RedirectionException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
@@ -43,10 +45,20 @@ public class InternalService {
     @Inject
     StatusResources statusResources;
 
+    @Inject
+    OApiFilter oApiFilter;
+
     @GET
     @Path("/")
     public void httpRoot() {
         throw new RedirectionException(Response.Status.OK, URI.create("index.html"));
+    }
+
+    @GET
+    @Path("/openapi.json")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<String> serveInternalOpenAPI() {
+        return oApiFilter.serveOpenApi(OApiFilter.INTERNAL);
     }
 
     @POST

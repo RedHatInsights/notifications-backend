@@ -3,6 +3,7 @@ import * as React from 'react';
 import { Link, useRouteMatch } from 'react-router-dom';
 
 import { linkTo } from '../Routes';
+import { Bundle } from '../types/Notifications';
 
 type EnhancedNavItemProps = {
     to: string;
@@ -24,7 +25,7 @@ const EnhancedNavItem: React.FunctionComponent<EnhancedNavItemProps> = props => 
 };
 
 export interface NavigationProps {
-    bundles: Array<any>;
+    bundles: ReadonlyArray<Bundle>;
 }
 
 export const Navigation: React.FunctionComponent<NavigationProps> = props => {
@@ -33,9 +34,9 @@ export const Navigation: React.FunctionComponent<NavigationProps> = props => {
             <NavList>
                 <NavGroup title="Bundles">
                     { props.bundles.map(b => (
-                        <NavExpandable key={ b.id } title={ b.display_name }>
-                            { b.applications.map((a: any) => (
-                                <EnhancedNavItem key={ a.id } to={ linkTo.application(a.id) }>{ a.display_name }</EnhancedNavItem>
+                        <NavExpandable key={ b.id } title={ b.displayName }>
+                            { b.applications.map(a => (
+                                <EnhancedNavItem key={ a.id } to={ linkTo.application(a.id) }>{ a.displayName }</EnhancedNavItem>
                             )) }
                         </NavExpandable>
                     )) }

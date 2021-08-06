@@ -2,10 +2,12 @@ import produce from 'immer';
 import { useCallback, useEffect, useState } from 'react';
 import { useClient } from 'react-fetching-library';
 
-// Todo: add types
+import { Operations } from '../generated/OpenapiInternal';
+import { Bundle } from '../types/Notifications';
+
 export const useBundles = () => {
     const client = useClient();
-    const [ bundles, setBundles ] = useState<Array<any>>([]);
+    const [ bundles, setBundles ] = useState<ReadonlyArray<Bundle>>([]);
 
     const [ isLoading, setLoading ] = useState<boolean>();
 
@@ -13,27 +15,38 @@ export const useBundles = () => {
         const cQuery = client.query;
         setLoading(true);
 
-        const bundleResponse = await cQuery({
-            endpoint: './bundles',
-            method: 'GET'
-        });
+        const bundleResponse = await cQuery(Operations.InternalServiceGetBundles.actionCreator());
 
-        if (bundleResponse.status === 200) {
+        if (bundleResponse.payload?.status === 200) {
+
+            const bundles: ReadonlyArray<Bundle> = bundleResponse.payload.value.map(bundleResponse => ({
+                id: bundleResponse.id ?? '',
+                displayName: bundleResponse.display_name,
+                applications: []
+            }));
+
             const applicationsPromises = [];
-            for (const bundle of bundleResponse.payload) {
-                applicationsPromises.push(cQuery({
-                    method: 'GET',
-                    endpoint: `./bundles/${bundle.id}/applications`
-                }));
+            for (const bundle of bundleResponse.payload.value) {
+                if (bundle.id) {
+                    applicationsPromises.push(cQuery(Operations.InternalServiceGetApplications.actionCreator({
+                        bundleId: bundle.id
+                    })));
+                }
             }
 
             const applicationResponses = await Promise.all(applicationsPromises);
 
-            const reducedBundles = applicationResponses.map(r => r.payload).reduce((bundles, applications) => produce(bundles, (draftBundle: any) => {
-                if (applications.length > 0) {
-                    draftBundle.find((b: any) => b.id === applications[0].bundle_id).applications = applications;
+            const reducedBundles = applicationResponses.map(r => r.payload).reduce((bundles, applications) => produce(bundles, draftBundles => {
+                if (applications?.status === 200) {
+                    const draftBundle = draftBundles.find(b => b.id === applications.value[0].bundle_id);
+                    if (draftBundle) {
+                        draftBundle.applications = applications.value.map(a => ({
+                            id: a.id ?? '',
+                            displayName: a.display_name
+                        }));
+                    }
                 }
-            }), bundleResponse.payload);
+            }), bundles);
 
             setBundles(reducedBundles);
         }
