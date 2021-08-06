@@ -20,7 +20,6 @@ services:
     image: flyway/flyway:7.12.1-alpine
     command: -url=jdbc:postgresql://postgres:5432/notifications -schemas=public -user=postgres -password=postgres -connectRetries=60 migrate
     volumes:
-      - ./../backend/src/main/resources/db/migration
       - type: 'bind'
         source: ./../backend/src/main/resources/db/migration
         target: /flyway/sql
