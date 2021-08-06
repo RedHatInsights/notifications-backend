@@ -1,0 +1,22 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:12
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=notifications
+      - PGUSER=postgres
+
+  flyway:
+    image: flyway/flyway:7.12.1-alpine
+    command: -url=jdbc:postgresql://postgres:5432/notifications -schemas=public -user=postgres -password=postgres -connectRetries=60 migrate
+    volumes:
+      - .:/flyway/sql
+    environment:
+      - FLYWAY_EDITION=community
+    depends_on:
+      - postgres
