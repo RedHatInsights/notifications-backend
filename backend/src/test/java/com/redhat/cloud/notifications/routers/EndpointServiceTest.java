@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
+import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -33,7 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -669,12 +669,14 @@ public class EndpointServiceTest extends DbIsolatedTest {
 
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
+        RequestEmailSubscriptionProperties requestProps = new RequestEmailSubscriptionProperties();
+
         // EmailSubscription can be fetch from the properties
         Response response = given()
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(properties))
+                .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
                 .statusCode(200)
@@ -695,7 +697,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(properties))
+                .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
                 .statusCode(200)
@@ -710,16 +712,13 @@ public class EndpointServiceTest extends DbIsolatedTest {
         Set<String> endpointIds = new HashSet<>();
         endpointIds.add(defaultEndpointId);
 
-        EmailSubscriptionProperties customProperties = new EmailSubscriptionProperties();
-        customProperties.setIgnorePreferences(false);
-        customProperties.setOnlyAdmins(true);
-        customProperties.setGroupId(null);
+        requestProps.setOnlyAdmins(true);
 
         response = given()
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(customProperties))
+                .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
                 .statusCode(200)
@@ -731,56 +730,11 @@ public class EndpointServiceTest extends DbIsolatedTest {
         assertFalse(endpointIds.contains(responsePoint.getString("id")));
         endpointIds.add(responsePoint.getString("id"));
 
-        customProperties.setIgnorePreferences(true);
-        customProperties.setOnlyAdmins(true);
-        customProperties.setGroupId(null);
-
         response = given()
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(customProperties))
-                .post("/endpoints/system/email_subscription")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
-        assertFalse(endpointIds.contains(responsePoint.getString("id")));
-        endpointIds.add(responsePoint.getString("id"));
-
-        customProperties.setIgnorePreferences(false);
-        customProperties.setOnlyAdmins(false);
-        customProperties.setGroupId(UUID.randomUUID());
-
-        response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(customProperties))
-                .post("/endpoints/system/email_subscription")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
-        assertFalse(endpointIds.contains(responsePoint.getString("id")));
-        endpointIds.add(responsePoint.getString("id"));
-
-        // Same props is the same id
-        customProperties.setIgnorePreferences(false);
-        customProperties.setOnlyAdmins(true);
-        customProperties.setGroupId(null);
-
-        response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(customProperties))
+                .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
                 .statusCode(200)

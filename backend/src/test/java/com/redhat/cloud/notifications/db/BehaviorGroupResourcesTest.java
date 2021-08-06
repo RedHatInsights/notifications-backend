@@ -211,7 +211,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
         Endpoint endpoint1 = createEndpoint(EMAIL_SUBSCRIPTION);
         Endpoint endpoint2 = createEndpoint(EMAIL_SUBSCRIPTION);
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), BAD_REQUEST, endpoint1.getId(), endpoint2.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), OK, endpoint1.getId(), endpoint2.getId());
     }
 
     @Test
