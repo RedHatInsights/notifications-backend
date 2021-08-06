@@ -36,12 +36,6 @@ public class NotificationsApp implements QuarkusApplication {
 
         dailyEmailAggregationJob.processDailyEmail(Instant.now());
 
-        try {
-            Thread.sleep(30000);
-        } catch (InterruptedException e) {
-            LOG.warn("Interruption after sending the messages!");
-        }
-
         return 0;
     }
 

@@ -7,12 +7,17 @@ import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
+import org.jboss.logmanager.Level;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -35,13 +40,22 @@ public class DailyEmailAggregationJob {
 
     public void processDailyEmail(Instant scheduledFireTime) {
         List<AggregationCommand> aggregationCommands = processAggregateEmails(scheduledFireTime);
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (AggregationCommand aggregationCommand : aggregationCommands) {
             try {
                 final String payload = objectMapper.writeValueAsString(aggregationCommand);
                 emitter.send(payload);
+                futures.add(emitter.send(payload).toCompletableFuture());
             } catch (JsonProcessingException e) {
                 LOG.warning("Could not transform AggregationCommand to JSON object.");
             }
+        }
+
+        try {
+            CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            combinedDataCompletionStage.toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException ie) {
+            LOG.log(Level.SEVERE, "Writing AggregationCommands failed", ie);
         }
     }
 
@@ -56,9 +70,9 @@ public class DailyEmailAggregationJob {
 
         final List<AggregationCommand> pendingAggregationCommands =
                 emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
-                .stream()
-                .map(aggregationKey -> new AggregationCommand(aggregationKey, startTime, endTime, EmailSubscriptionType.DAILY))
-                .collect(Collectors.toList());
+                        .stream()
+                        .map(aggregationKey -> new AggregationCommand(aggregationKey, startTime, endTime, EmailSubscriptionType.DAILY))
+                        .collect(Collectors.toList());
 
         LOG.info(
                 String.format(
