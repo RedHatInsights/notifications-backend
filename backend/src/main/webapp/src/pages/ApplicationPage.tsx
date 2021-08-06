@@ -1,4 +1,4 @@
-import { List, ListItem, Spinner } from '@patternfly/react-core';
+import { Spinner } from '@patternfly/react-core';
 import { Breadcrumb, BreadcrumbItem } from '@patternfly/react-core';
 import { Caption, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
