@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import javax.enterprise.context.ApplicationScoped;
@@ -35,15 +34,13 @@ public class DailyEmailAggregationJob {
     Emitter<String> emitter;
 
     public void processDailyEmail(Instant scheduledFireTime) {
-        if (isCronJobEnabled()) {
-            List<AggregationCommand> aggregationCommands = processAggregateEmails(scheduledFireTime);
-            for (AggregationCommand aggregationCommand: aggregationCommands) {
-                try {
-                    final String payload = objectMapper.writeValueAsString(aggregationCommand);
-                    emitter.send(payload);
-                } catch (JsonProcessingException e) {
-                    LOG.warning("Could not transform AggregationCommand to JSON object.");
-                }
+        List<AggregationCommand> aggregationCommands = processAggregateEmails(scheduledFireTime);
+        for (AggregationCommand aggregationCommand : aggregationCommands) {
+            try {
+                final String payload = objectMapper.writeValueAsString(aggregationCommand);
+                emitter.send(payload);
+            } catch (JsonProcessingException e) {
+                LOG.warning("Could not transform AggregationCommand to JSON object.");
             }
         }
     }
@@ -75,10 +72,5 @@ public class DailyEmailAggregationJob {
         );
 
         return pendingAggregationCommands;
-    }
-
-    private boolean isCronJobEnabled() {
-        // The scheduled job is disabled by default.
-        return ConfigProvider.getConfig().getOptionalValue("notifications.aggregator.email.subscription.periodic.cron.enabled", Boolean.class).orElse(false);
     }
 }
