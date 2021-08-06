@@ -15,6 +15,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
+import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -131,8 +132,13 @@ public class EndpointService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid EmailSubscriptionProperties properties) {
+    public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid RequestEmailSubscriptionProperties requestProps) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+
+        // Prevent from creating not public facing properties
+        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+        properties.setOnlyAdmins(requestProps.isOnlyAdmins());
+
         return resources.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties);
     }
 
