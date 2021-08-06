@@ -10,16 +10,26 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=notifications
       - PGUSER=postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   flyway:
     image: flyway/flyway:7.12.1-alpine
     command: -url=jdbc:postgresql://postgres:5432/notifications -schemas=public -user=postgres -password=postgres -connectRetries=60 migrate
     volumes:
-      - .:/flyway/sql
+      - ./../backend/src/main/resources/db/migration
+      - type: 'bind'
+        source: ./../backend/src/main/resources/db/migration
+        target: /flyway/sql
+        read_only: true
     environment:
       - FLYWAY_EDITION=community
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   zookeeper:
     image: strimzi/kafka:0.11.3-kafka-2.1.0
