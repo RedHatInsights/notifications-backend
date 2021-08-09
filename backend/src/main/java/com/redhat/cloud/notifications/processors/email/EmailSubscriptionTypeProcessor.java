@@ -132,7 +132,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         AggregationCommand aggregationCommand;
         try {
             aggregationCommand = objectMapper.readValue(aggregationCommandJson, AggregationCommand.class);
-            log.info("Receiving payload from kafka topic: " + aggregationCommand);
         } catch (JsonProcessingException e) {
             log.log(Level.SEVERE, "Kafka aggregation payload parsing failed", e);
             return Uni.createFrom().nullItem();
