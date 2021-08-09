@@ -132,6 +132,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         AggregationCommand aggregationCommand;
         try {
             aggregationCommand = objectMapper.readValue(aggregationCommandJson, AggregationCommand.class);
+            log.info("Receiving payload from kafka topic: " + aggregationCommand);
         } catch (JsonProcessingException e) {
             log.log(Level.SEVERE, "Kafka aggregation payload parsing failed", e);
             return Uni.createFrom().nullItem();
@@ -189,7 +190,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
-
         final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
 
         Multi<Tuple2<NotificationHistory, EmailAggregationKey>> doDelete = delete ?
