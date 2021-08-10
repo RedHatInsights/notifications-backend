@@ -189,7 +189,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
-
         final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
 
         Multi<Tuple2<NotificationHistory, EmailAggregationKey>> doDelete = delete ?
