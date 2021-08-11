@@ -71,21 +71,10 @@ public class EndpointEmailSubscriptionResources {
                 .getResultList();
     }
 
-    public Uni<Long> getEmailSubscribersCount(String accountNumber, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
-        String query = "SELECT COUNT(id.userId) FROM EmailSubscription WHERE id.accountId = :accountId " +
-                "AND application.bundle.name = :bundleName AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
-        return statelessSession.createQuery(query, Long.class)
-                .setParameter("accountId", accountNumber)
-                .setParameter("bundleName", bundleName)
-                .setParameter("applicationName", applicationName)
-                .setParameter("subscriptionType", subscriptionType)
-                .getSingleResult();
-    }
-
-    public Uni<List<EmailSubscription>> getEmailSubscribers(String accountNumber, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
-        String query = "FROM EmailSubscription WHERE id.accountId = :accountId AND application.bundle.name = :bundleName " +
+    public Uni<List<String>> getEmailSubscribersUserId(String accountNumber, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
+        String query = "SELECT es.id.userId FROM EmailSubscription es WHERE id.accountId = :accountId AND application.bundle.name = :bundleName " +
                 "AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
-        return statelessSession.createQuery(query, EmailSubscription.class)
+        return statelessSession.createQuery(query, String.class)
                 .setParameter("accountId", accountNumber)
                 .setParameter("bundleName", bundleName)
                 .setParameter("applicationName", applicationName)

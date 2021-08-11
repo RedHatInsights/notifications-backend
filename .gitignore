@@ -41,3 +41,6 @@ release.properties
 # Antlr
 *.tokens
 *.interp
+
+# webapp build
+backend/src/main/resources/META-INF

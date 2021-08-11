@@ -37,6 +37,13 @@ public class WebClientProducer {
         return WebClient.create(vertx, buildOptions(true));
     }
 
+    @Produces
+    @Singleton
+    @BopWebClient
+    public WebClient bopWebClient() {
+        return WebClient.create(vertx, buildOptions(true));
+    }
+
     private WebClientOptions buildOptions(boolean trustAll) {
         WebClientOptions options = new WebClientOptions()
                 .setTrustAll(trustAll)

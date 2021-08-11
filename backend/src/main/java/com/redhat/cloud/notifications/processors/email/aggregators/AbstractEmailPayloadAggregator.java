@@ -15,6 +15,7 @@ public abstract class AbstractEmailPayloadAggregator {
     private LocalDateTime endTime;
     private String accountId;
     private int processedAggregations;
+
     JsonObject context = new JsonObject();
 
     abstract void processEmailAggregation(EmailAggregation aggregation);
@@ -49,7 +50,7 @@ public abstract class AbstractEmailPayloadAggregator {
         this.endTime = endTime;
     }
 
-    public String getAccountId() {
+    String getAccountId() {
         return accountId;
     }
 

@@ -1,0 +1,51 @@
+
+
+
+
+{#include Drift/insightsEmailBody}
+{#content-title}Daily Drift Summary - {action.context.start_time.toStringFormat()}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-content__block">
+        <p>Daily drift summary for <b>{action.context.start_time.toStringFormat()}</b> from Red Hat Insights. <b>{action.context.drift.size()} {#if action.context.drift.size() == 1}baseline{#else}baselines{/if}</b> drifted on <b>{action.context.unique_system_count} {#if action.context.unique_system_count == 1}system{#else}unique systems{/if}</b>.</p>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table class="rh-data-table rh-m-bordered">
+            <thead>
+            <tr>
+                <th>Baseline</th>
+                <th>System</th>
+            </tr>
+            </thead>
+            <tbody>
+            {#for key in action.context.drift.keySet()}
+                {#for host in action.context.drift.get(key).hosts}
+            <tr>
+                <td><a href="https://console.redhat.com/insights/drift/?baseline_ids={action.context.drift.get(key).baseline_id}&reference_id={action.context.drift.get(key).baseline_id}&system_ids={host.inventory_id}" target="_blank">{action.context.drift.get(key).baseline_name}</a></td>
+                <td>{host.display_name}</td>
+            </tr>
+            {/for}
+            {/for}
+            </tbody>
+        </table>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table align="center">
+            <tr>
+                <td class="rh-cta-link" align="center">
+                    <a target="_blank" href="https://console.redhat.com/insights/drift">
+                                <span>
+                                  Open Drift in Insights
+                                </span>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
+{/content-body}
+{/include}

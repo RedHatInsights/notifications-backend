@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.CamelProperties;
+import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -14,6 +15,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -30,6 +32,10 @@ public class EndpointResources {
 
     @Inject
     Mutiny.StatelessSession statelessSession;
+
+    private static final String targetEndpointBaseQuery = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
+            "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
+            "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName";
 
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
         return session.persist(endpoint)
@@ -92,6 +98,39 @@ public class EndpointResources {
                 .onItem().call(this::loadProperties);
     }
 
+    public Uni<EndpointType> getEndpointTypeById(String accountId, UUID endpointId) {
+        String query = "Select e.type from Endpoint e WHERE e.accountId = :accountId AND e.id = :endpointId";
+        return session.createQuery(query, EndpointType.class)
+                .setParameter("accountId", accountId)
+                .setParameter("endpointId", endpointId)
+                .getSingleResultOrNull();
+    }
+
+    public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties) {
+        return getEndpointsPerType(accountId, EndpointType.EMAIL_SUBSCRIPTION, null, null)
+                .onItem().call(this::loadProperties)
+                .onItem().transformToUni(emailEndpoints -> {
+                    Optional<Endpoint> endpointOptional = emailEndpoints
+                            .stream()
+                            // Todo: This should be changed once we store the properties - (properties are null right now)
+                            // .filter(endpoint -> properties.hasSameProperties((EmailSubscriptionProperties) endpoint.getProperties()))
+                            .findFirst();
+                    if (endpointOptional.isPresent()) {
+                        return Uni.createFrom().item(endpointOptional.get());
+                    }
+
+                    Endpoint endpoint = new Endpoint();
+                    endpoint.setProperties(properties);
+                    endpoint.setAccountId(accountId);
+                    endpoint.setEnabled(true);
+                    endpoint.setDescription("System email endpoint");
+                    endpoint.setName("Email endpoint");
+                    endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+
+                    return createEndpoint(endpoint);
+                });
+    }
+
     public Uni<Long> getEndpointsCountPerType(String tenant, EndpointType type, Boolean activeOnly) {
         String query = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId AND type = :endpointType";
         if (activeOnly != null) {
@@ -109,16 +148,27 @@ public class EndpointResources {
         return mutinyQuery.getSingleResult();
     }
 
+    // Note: This method uses a stateless session
     public Uni<List<Endpoint>> getTargetEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
-        String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
-                "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName";
+        return statelessSession.createQuery(targetEndpointBaseQuery, Endpoint.class)
+                .setParameter("applicationName", applicationName)
+                .setParameter("eventTypeName", eventTypeName)
+                .setParameter("accountId", tenant)
+                .setParameter("bundleName", bundleName)
+                .getResultList()
+                .onItem().call(endpoints -> loadProperties(endpoints, true));
+    }
+
+    // Note: This method uses a stateless session
+    public Uni<List<Endpoint>> getTargetEndpointsFromType(String tenant, String bundleName, String applicationName, String eventTypeName, EndpointType endpointType) {
+        String query = targetEndpointBaseQuery + " AND e.type = :endpointType";
 
         return statelessSession.createQuery(query, Endpoint.class)
                 .setParameter("applicationName", applicationName)
                 .setParameter("eventTypeName", eventTypeName)
                 .setParameter("accountId", tenant)
                 .setParameter("bundleName", bundleName)
+                .setParameter("endpointType", endpointType)
                 .getResultList()
                 .onItem().call(endpoints -> loadProperties(endpoints, true));
     }

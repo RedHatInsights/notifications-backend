@@ -18,7 +18,7 @@
             <tbody>
             {#for key in action.context.policies.keySet()}
             <tr>
-                <td><a href="https://cloud.redhat.com/insights/policies/policy/{action.context.policies.get(key).policy_id}" target="_blank">{action.context.policies.get(key).policy_name}</a></td>
+                <td><a href="https://console.redhat.com/insights/policies/policy/{action.context.policies.get(key).policy_id}" target="_blank">{action.context.policies.get(key).policy_name}</a></td>
                 <td>{action.context.policies.get(key).unique_system_count}</td>
             </tr>
             {/for}
@@ -31,7 +31,7 @@
         <table align="center">
             <tr>
                 <td class="rh-cta-link" align="center">
-                    <a target="_blank" href="https://cloud.redhat.com/insights/policies">
+                    <a target="_blank" href="https://console.redhat.com/insights/policies">
                                 <span>
                                   Open Policies in Insights
                                 </span>

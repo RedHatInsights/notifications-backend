@@ -78,7 +78,7 @@
                         <!-- Hi {{user.first_name}},
                         <br>
                         <br> -->
-                        Your system <a href="#" target="_blank">{action.context.display_name}</a> has {action.events.size()} new recommendations.
+                        Your system <a href="https://console.redhat.com/insights/advisor/systems/{action.context.inventory_id}" target="_blank">{action.context.display_name}</a> has {action.events.size()} new recommendations.
                     </p>
                 </td>
             </tr>
@@ -90,7 +90,7 @@
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" class="rh-button-table">
                         <tr>
                             <td class="rh-cta-link" align="center">
-                                <a target="_blank" href="https://cloud.redhat.com/">
+                                <a target="_blank" href="https://console.redhat.com/insights/advisor/systems/{action.context.inventory_id}">
                                         <span>
                                           Go to system page
                                         </span>

@@ -10,7 +10,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <!--        <module>notifications-aggregator</module>-->
+        <module>checkstyle</module>
+        <module>aggregator</module>
         <module>backend</module>
     </modules>
 
@@ -26,7 +27,7 @@
         <checkstyle-plugin.version>3.1.2</checkstyle-plugin.version>
         <checkstyle.version>8.44</checkstyle.version>
 
-        <testcontainers.version>1.15.3</testcontainers.version>
+        <testcontainers.version>1.16.0</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
 
@@ -36,6 +37,8 @@
 
         <insights-notification-schemas-java.version>0.3</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>0.1.4</clowder-quarkus-config-source.version>
+
+        <cloudwatch.version>3.0.0</cloudwatch.version>
 
         <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
@@ -53,4 +56,38 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle-plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.redhat.cloud.notifications</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>1.0</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <configLocation>checkstyle/checkstyle.xml</configLocation>
+                    <encoding>UTF-8</encoding>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <linkXRef>false</linkXRef>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -63,6 +63,7 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
     @JsonIgnore
     private String accountId;
 
+    @NotNull
     @NotBlank
     @Schema(name = "display_name")
     private String displayName;

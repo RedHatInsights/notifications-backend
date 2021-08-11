@@ -12,6 +12,9 @@ public class EmailPayloadAggregatorFactory {
         if (aggregationKey.getBundle().equals("rhel") && aggregationKey.getApplication().equals("policies")) {
             return new PoliciesEmailPayloadAggregator();
         }
+        if (aggregationKey.getBundle().equals("rhel") && aggregationKey.getApplication().equals("drift")) {
+            return new DriftEmailPayloadAggregator();
+        }
 
         return null;
     }
