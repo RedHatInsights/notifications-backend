@@ -8,6 +8,11 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CurrentStatus;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
+import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
+import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
+import com.redhat.cloud.notifications.templates.EmailTemplateService;
+import com.redhat.cloud.notifications.utils.ActionParser;
 import io.smallrye.mutiny.Uni;
 
 import javax.inject.Inject;
@@ -47,6 +52,12 @@ public class InternalService {
 
     @Inject
     OApiFilter oApiFilter;
+
+    @Inject
+    EmailTemplateService emailTemplateService;
+
+    @Inject
+    ActionParser actionParser;
 
     @GET
     @Path("/")
@@ -179,5 +190,39 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     public Uni<Void> setCurrentStatus(@NotNull @Valid CurrentStatus status) {
         return statusResources.setCurrentStatus(status);
+    }
+
+    @POST
+    @Path("/templates/email/render")
+    @Consumes(APPLICATION_JSON)
+    public Uni<Response> renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {
+        User user = new User();
+        user.setUsername("jdoe");
+        user.setEmail("jdoe@jdoe.com");
+        user.setFirstName("John");
+        user.setLastName("Doe");
+        user.setActive(true);
+        user.setAdmin(false);
+
+        return Uni.createFrom().item(renderEmailTemplateRequest.getPayload())
+                .onItem().transform(actionParser::fromJsonString)
+                .onItem().transformToUni(action -> Uni.combine().all().unis(
+                    emailTemplateService
+                            .compileTemplate(renderEmailTemplateRequest.getTitleTemplate(), "title")
+                            .onItem().transformToUni(templateInstance -> emailTemplateService.renderTemplate(
+                            user,
+                            action,
+                            templateInstance
+                    )),
+                    emailTemplateService
+                            .compileTemplate(renderEmailTemplateRequest.getBodyTemplate(), "body")
+                            .onItem().transformToUni(templateInstance -> emailTemplateService.renderTemplate(
+                            user,
+                            action,
+                            templateInstance
+                    ))
+                ).asTuple()
+        ).onItem().transform(titleAndBody -> Response.ok(new RenderEmailTemplateResponse(titleAndBody.getItem1(), titleAndBody.getItem2())).build())
+        .onFailure().recoverWithItem(throwable -> Response.status(Response.Status.BAD_REQUEST).entity(throwable.getMessage()).build());
     }
 }
