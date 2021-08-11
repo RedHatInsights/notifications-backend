@@ -1,13 +1,16 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.models.CronJobRun;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import org.hibernate.Session;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @ApplicationScoped
 public class EmailAggregationResources {
@@ -47,5 +50,19 @@ public class EmailAggregationResources {
                 .executeUpdate();
         session.flush();
         return result;
+    }
+
+    @Transactional
+    public CronJobRun getLastCronJobRun() {
+        String query = "SELECT id, last_run FROM cronjob_run";
+        return session.createNativeQuery(query, CronJobRun.class).getSingleResult();
+    }
+
+    public void updateLastCronJobRun(UUID id, Instant lastRun) {
+        String query = "UPDATE cronjob_run SET last_run = :lastRun WHERE id = :id";
+        session.createNativeQuery(query, CronJobRun.class)
+                .setParameter("last_run", lastRun)
+                .setParameter("id", id)
+                .executeUpdate();
     }
 }

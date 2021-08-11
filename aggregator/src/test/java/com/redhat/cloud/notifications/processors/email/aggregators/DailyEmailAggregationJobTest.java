@@ -4,17 +4,15 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import javax.inject.Inject;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
@@ -45,17 +43,15 @@ class DailyEmailAggregationJobTest {
         final String bundle = "rhel";
         final String application = "policies";
 
-        final Instant nowPlus5HoursInstant = Instant.now().plus(Duration.ofHours(5));
-
         try {
-            helpers.createSubscription(tenant1, "foo", bundle, application, EmailSubscriptionType.DAILY);
-            helpers.createSubscription(tenant1, "bar", bundle, application, EmailSubscriptionType.DAILY);
-            helpers.createSubscription(tenant1, "admin", bundle, application, EmailSubscriptionType.DAILY);
+            helpers.createSubscription(tenant1, "foo", bundle, application, DAILY);
+            helpers.createSubscription(tenant1, "bar", bundle, application, DAILY);
+            helpers.createSubscription(tenant1, "admin", bundle, application, DAILY);
 
-            helpers.createSubscription(tenant2, "baz", bundle, application, EmailSubscriptionType.DAILY);
-            helpers.createSubscription(tenant2, "bar", bundle, application, EmailSubscriptionType.DAILY);
+            helpers.createSubscription(tenant2, "baz", bundle, application, DAILY);
+            helpers.createSubscription(tenant2, "bar", bundle, application, DAILY);
 
-            helpers.removeSubscription(noSubscribedUsersTenant, "test", bundle, application, EmailSubscriptionType.DAILY);
+            helpers.removeSubscription(noSubscribedUsersTenant, "test", bundle, application, DAILY);
 
             // applications without template or aggregations do not break the process
             helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01");
@@ -67,7 +63,8 @@ class DailyEmailAggregationJobTest {
             helpers.addEmailAggregation(tenant1, bundle, "unknown-application", "policyid-01", "hostid-06");
             helpers.addEmailAggregation(tenant1, "unknown-bundle", application, "policyid-01", "hostid-06");
             helpers.addEmailAggregation(tenant1, "unknown-bundle", "unknown-application", "policyid-01", "hostid-06");
-            final List<AggregationCommand> emailAggregations1 = dailyEmailAggregationJob.processAggregateEmails(nowPlus5HoursInstant);
+
+            final List<AggregationCommand> emailAggregations1 = dailyEmailAggregationJob.processAggregateEmails();
 
             // 4 aggregationCommands
             assertEquals(4, emailAggregations1.size());
@@ -87,12 +84,12 @@ class DailyEmailAggregationJobTest {
             helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-25");
             helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-26");
 
-            final List<AggregationCommand> emailAggregations2 = dailyEmailAggregationJob.processAggregateEmails(nowPlus5HoursInstant);
+            final List<AggregationCommand> emailAggregations2 = dailyEmailAggregationJob.processAggregateEmails();
             // 6 aggregationCommands, 2 new (tenant2, bundle, application) and (noSubscribed, bundle, application)
             assertEquals(6, emailAggregations2.size());
 
-            helpers.createSubscription(noSubscribedUsersTenant, "test", bundle, application, EmailSubscriptionType.DAILY);
-            final List<AggregationCommand> emailAggregations3 = dailyEmailAggregationJob.processAggregateEmails(nowPlus5HoursInstant);
+            helpers.createSubscription(noSubscribedUsersTenant, "test", bundle, application, DAILY);
+            final List<AggregationCommand> emailAggregations3 = dailyEmailAggregationJob.processAggregateEmails();
             // still 6 - subscription not taken into account in this process
             assertEquals(6, emailAggregations3.size());
         } finally {

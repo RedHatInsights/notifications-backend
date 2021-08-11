@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.CronJobRun;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -38,8 +39,9 @@ public class DailyEmailAggregationJob {
     @Channel("aggregation")
     Emitter<String> emitter;
 
-    public void processDailyEmail(Instant scheduledFireTime) {
-        List<AggregationCommand> aggregationCommands = processAggregateEmails(scheduledFireTime);
+    public void processDailyEmail() {
+        List<AggregationCommand> aggregationCommands = processAggregateEmails();
+
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (AggregationCommand aggregationCommand : aggregationCommands) {
             try {
@@ -51,6 +53,9 @@ public class DailyEmailAggregationJob {
             }
         }
 
+        final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
+        emailAggregationResources.updateLastCronJobRun(lastCronJobRun.getId(), Instant.now());
+
         try {
             CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
             combinedDataCompletionStage.toCompletableFuture().get();
@@ -59,11 +64,14 @@ public class DailyEmailAggregationJob {
         }
     }
 
-    List<AggregationCommand> processAggregateEmails(Instant scheduledFireTime) {
+    List<AggregationCommand> processAggregateEmails() {
+        Instant scheduledFireTime = emailAggregationResources.getLastCronJobRun().getLastRun();
+//        scheduledFireTime = scheduledFireTime.plus(5, ChronoUnit.HOURS);
         Instant yesterdayScheduledFireTime = scheduledFireTime.minus(EmailSubscriptionType.DAILY.getDuration());
 
         LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, UTC);
         LocalDateTime startTime = LocalDateTime.ofInstant(yesterdayScheduledFireTime, UTC);
+
         final LocalDateTime aggregateStarted = LocalDateTime.now();
 
         LOG.info(String.format("Collecting email aggregation for period (%s, %s) and type %s", startTime, endTime, EmailSubscriptionType.DAILY));
