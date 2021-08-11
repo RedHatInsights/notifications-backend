@@ -66,7 +66,6 @@ public class DailyEmailAggregationJob {
 
     List<AggregationCommand> processAggregateEmails() {
         Instant scheduledFireTime = emailAggregationResources.getLastCronJobRun().getLastRun();
-//        scheduledFireTime = scheduledFireTime.plus(5, ChronoUnit.HOURS);
         Instant yesterdayScheduledFireTime = scheduledFireTime.minus(EmailSubscriptionType.DAILY.getDuration());
 
         LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, UTC);
