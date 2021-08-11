@@ -4,4 +4,4 @@ CREATE TABLE cronjob_run (
 ) WITH (OIDS=FALSE);
 
 INSERT INTO cronjob_run (id, last_run) VALUES
-('3db0955b-751b-48cd-b531-c1d81596d133', NOW());
+('3db0955b-751b-48cd-b531-c1d81596d133', -infinity);
