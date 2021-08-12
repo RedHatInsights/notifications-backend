@@ -35,17 +35,4 @@ public class EmailAggregationResources {
                 .setParameter("end", end)
                 .getResultList();
     }
-
-    @Transactional
-    public Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
-        final int result = session.createQuery(query)
-                .setParameter("accountId", key.getAccountId())
-                .setParameter("bundleName", key.getBundle())
-                .setParameter("applicationName", key.getApplication())
-                .setParameter("created", lastUsedTime)
-                .executeUpdate();
-        session.flush();
-        return result;
-    }
 }
