@@ -7,7 +7,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
-import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
+import com.redhat.cloud.notifications.processors.email.OldDailyEmailCronJob;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -43,7 +43,7 @@ public class EndpointProcessor {
     CamelTypeProcessor camel;
 
     @Inject
-    EmailSubscriptionTypeProcessor emails;
+    OldDailyEmailCronJob emails;
 
     @Inject
     MeterRegistry registry;

@@ -67,7 +67,7 @@ public class EmailTest extends DbIsolatedTest {
     MockServerClientConfig mockServerConfig;
 
     @Inject
-    EmailSubscriptionTypeProcessor emailProcessor;
+    OldDailyEmailCronJob emailProcessor;
 
     @Inject
     ResourceHelpers helpers;
