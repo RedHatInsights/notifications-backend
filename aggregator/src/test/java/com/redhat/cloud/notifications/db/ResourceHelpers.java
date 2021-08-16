@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import org.hibernate.Session;
 import org.jboss.logging.Logger;
@@ -9,6 +10,8 @@ import org.jboss.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+
+import java.time.LocalDateTime;
 
 @ApplicationScoped
 public class ResourceHelpers {
@@ -78,9 +81,21 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public Integer purgeAggregations() {
-        Integer deleted = session.createQuery("DELETE FROM EmailAggregation").executeUpdate();
+    public void purgeAggregations() {
+        session.createQuery("DELETE FROM EmailAggregation").executeUpdate();
         session.flush();
-        return deleted;
+    }
+
+    @Transactional
+    public Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
+        String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
+        final int result = session.createQuery(query)
+                .setParameter("accountId", key.getAccountId())
+                .setParameter("bundleName", key.getBundle())
+                .setParameter("applicationName", key.getApplication())
+                .setParameter("created", lastUsedTime)
+                .executeUpdate();
+        session.flush();
+        return result;
     }
 }
