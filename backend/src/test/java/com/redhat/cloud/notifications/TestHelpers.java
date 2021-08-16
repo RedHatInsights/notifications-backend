@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
-import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
 import org.apache.avro.io.DatumWriter;
@@ -28,7 +27,7 @@ import static org.junit.Assert.fail;
 
 public class TestHelpers {
 
-    public static EndpointTypeProcessor baseTransformer = new CamelTypeProcessor();
+    public static EndpointTypeProcessor baseTransformer = new DummyEndpointTypeProcessor();
     public static final String policyId1 = "abcd-efghi-jkl-lmn";
     public static final String policyName1 = "Foobar";
     public static final String policyId2 = "0123-456-789-5721f";

@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
-import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
@@ -14,7 +13,7 @@ import java.util.Map;
 
 public class DriftTestHelpers {
 
-    public static EndpointTypeProcessor baseTransformer = new CamelTypeProcessor();
+    public static EndpointTypeProcessor baseTransformer = new DummyEndpointTypeProcessor();
 
     public static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String baselineId, String inventory_id) {
         EmailAggregation aggregation = new EmailAggregation();
