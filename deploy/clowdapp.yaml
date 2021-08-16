@@ -15,7 +15,7 @@ objects:
   metadata:
     name: notifications-backend
     labels:
-      app: notifications
+      app: notifications-backend
       clowdapp: notifications-backend
   spec:
     envName: ${ENV_NAME}
