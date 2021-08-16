@@ -35,11 +35,11 @@ public class RecipientResolver {
         }
 
         return Multi.createFrom().iterable(endpoints)
-                .onItem().transformToUni(e -> recipientUsers(accountId, subscribers))
+                .onItem().transformToUni(e -> recipientUsers(accountId, e, subscribers))
                 .concatenate().collect().in(HashSet::new, Set::addAll);
     }
 
-    private Uni<Set<User>> recipientUsers(String accountId, Set<String> subscribers) {
+    private Uni<Set<User>> recipientUsers(String accountId, Endpoint endpoint, Set<String> subscribers) {
         Uni<List<User>> usersUni = rbacRecipientUsersProvider.getUsers(accountId, false);
         return usersUni
                 .onItem().transform(users -> users
