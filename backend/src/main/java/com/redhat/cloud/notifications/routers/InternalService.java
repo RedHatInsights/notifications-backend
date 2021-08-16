@@ -14,7 +14,6 @@ import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse
 import com.redhat.cloud.notifications.templates.EmailTemplateService;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.smallrye.mutiny.Uni;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
