@@ -14,6 +14,11 @@ import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse
 import com.redhat.cloud.notifications.templates.EmailTemplateService;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
@@ -195,6 +200,15 @@ public class InternalService {
     @POST
     @Path("/templates/email/render")
     @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", content = {
+                    @Content(schema = @Schema(implementation = RenderEmailTemplateResponse.class))
+            }),
+            @APIResponse(responseCode = "400", content = {
+                    @Content(schema = @Schema(implementation = RenderEmailTemplateResponse.Error.class))
+            })
+    })
     public Uni<Response> renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {
         User user = new User();
         user.setUsername("jdoe");
@@ -208,7 +222,7 @@ public class InternalService {
                 .onItem().transform(actionParser::fromJsonString)
                 .onItem().transformToUni(action -> Uni.combine().all().unis(
                     emailTemplateService
-                            .compileTemplate(renderEmailTemplateRequest.getTitleTemplate(), "title")
+                            .compileTemplate(renderEmailTemplateRequest.getSubjectTemplate(), "subject")
                             .onItem().transformToUni(templateInstance -> emailTemplateService.renderTemplate(
                             user,
                             action,
@@ -222,7 +236,7 @@ public class InternalService {
                             templateInstance
                     ))
                 ).asTuple()
-        ).onItem().transform(titleAndBody -> Response.ok(new RenderEmailTemplateResponse(titleAndBody.getItem1(), titleAndBody.getItem2())).build())
-        .onFailure().recoverWithItem(throwable -> Response.status(Response.Status.BAD_REQUEST).entity(throwable.getMessage()).build());
+        ).onItem().transform(titleAndBody -> Response.ok(new RenderEmailTemplateResponse.Success(titleAndBody.getItem1(), titleAndBody.getItem2())).build())
+        .onFailure().recoverWithItem(throwable -> Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(throwable.getMessage())).build());
     }
 }

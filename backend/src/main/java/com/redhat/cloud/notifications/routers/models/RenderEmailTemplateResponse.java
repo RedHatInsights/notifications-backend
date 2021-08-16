@@ -2,19 +2,37 @@ package com.redhat.cloud.notifications.routers.models;
 
 public class RenderEmailTemplateResponse {
 
-    private final String title;
-    private final String body;
+    public static class Error {
+        private final String message;
 
-    public RenderEmailTemplateResponse(String title, String body) {
-        this.title = title;
-        this.body = body;
+        public Error(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
+        }
     }
 
-    public String getTitle() {
-        return title;
+    public static class Success {
+        private final String subject;
+        private final String body;
+
+        public Success(String subject, String body) {
+            this.subject = subject;
+            this.body = body;
+        }
+
+        public String getSubject() {
+            return subject;
+        }
+
+        public String getBody() {
+            return body;
+        }
     }
 
-    public String getBody() {
-        return body;
+    private RenderEmailTemplateResponse() {
+
     }
 }

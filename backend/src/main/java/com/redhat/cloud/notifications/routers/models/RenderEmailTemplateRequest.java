@@ -6,7 +6,7 @@ import javax.validation.constraints.NotNull;
 public class RenderEmailTemplateRequest {
 
     @NotNull
-    private String titleTemplate;
+    private String subjectTemplate;
 
     @NotNull
     private String bodyTemplate;
@@ -14,12 +14,12 @@ public class RenderEmailTemplateRequest {
     @NotEmpty
     private String payload;
 
-    public String getTitleTemplate() {
-        return titleTemplate;
+    public String getSubjectTemplate() {
+        return subjectTemplate;
     }
 
-    public void setTitleTemplate(String titleTemplate) {
-        this.titleTemplate = titleTemplate;
+    public void setSubjectTemplate(String subjectTemplate) {
+        this.subjectTemplate = subjectTemplate;
     }
 
     public String getBodyTemplate() {
