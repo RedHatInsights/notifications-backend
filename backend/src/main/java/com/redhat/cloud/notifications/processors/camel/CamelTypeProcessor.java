@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
-import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.context.Context;
@@ -36,9 +35,6 @@ import static com.redhat.cloud.notifications.models.NotificationHistory.getHisto
 public class CamelTypeProcessor implements EndpointTypeProcessor {
 
     private static final String TOKEN_HEADER = "X-Insight-Token";
-
-    @Inject
-    BaseTransformer transformer;
 
     @Inject
     @Channel("toCamel")
@@ -90,7 +86,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         metaData.put("extras", new MapConverter().convertToDatabaseColumn(properties.getExtras()));
 
-        Uni<JsonObject> payload = transformer.transform(item.getAction());
+        Uni<JsonObject> payload = transform(item.getAction());
         return callCamel(item, metaData, payload);
     }
 

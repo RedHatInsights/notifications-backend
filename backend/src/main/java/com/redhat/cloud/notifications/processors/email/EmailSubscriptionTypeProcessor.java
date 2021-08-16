@@ -14,7 +14,6 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.templates.EmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
-import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.ScheduledExecution;
@@ -56,9 +55,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     EmailAggregationResources emailAggregationResources;
 
     @Inject
-    BaseTransformer baseTransformer;
-
-    @Inject
     EmailTemplateFactory emailTemplateFactory;
 
     @Inject
@@ -88,7 +84,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 aggregation.setApplicationName(action.getApplication());
                 aggregation.setBundleName(action.getBundle());
 
-                processUni = baseTransformer.transform(action)
+                processUni = transform(action)
                         .onItem().transform(transformedAction -> {
                             aggregation.setPayload(transformedAction);
                             return aggregation;

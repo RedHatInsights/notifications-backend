@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationEnabled;
-import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Multi;
@@ -44,9 +43,6 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     @SslVerificationDisabled
     WebClient unsecuredWebClient;
 
-    @Inject
-    BaseTransformer transformer;
-
     MeterRegistry registry;
 
     private final Counter processedCount;
@@ -81,7 +77,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
             req.basicAuthentication(properties.getBasicAuthentication().getUsername(), properties.getBasicAuthentication().getPassword());
         }
 
-        Uni<JsonObject> payload = transformer.transform(item.getAction());
+        Uni<JsonObject> payload = transform(item.getAction());
 
         return doHttpRequest(item, req, payload);
     }
