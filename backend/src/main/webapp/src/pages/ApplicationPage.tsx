@@ -1,9 +1,10 @@
-import { Spinner, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
-import { Breadcrumb, BreadcrumbItem, Pagination, Toolbar } from '@patternfly/react-core';
+import { Spinner } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, PageSection, Title } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { useParams } from 'react-router';
 
+import { useApplicationTypes }  from '../services/GetApplication';
 import { useEventTypes } from '../services/GetEventTypes';
 
 type ApplicationPageParams = {
@@ -29,21 +30,16 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     return (
         <React.Fragment>
-            <Toolbar>
-                <Pagination
-                    widgetId="pagination-options-menu-top"
-                    variant="top"
-                    itemCount={ 20 }
-                ></Pagination>
-            </Toolbar>
+            <PageSection>
+                <Title headingLevel="h1"><Breadcrumb>
+                    <BreadcrumbItem></BreadcrumbItem>
+                    <BreadcrumbItem to='#' isActive> </BreadcrumbItem>
+                </Breadcrumb></Title>
+            </PageSection>
             <TableComposable
                 aria-label="Simple table"
             >
                 <Thead>
-                    <Breadcrumb>
-                        <BreadcrumbItem>Red Hat Enterprise Linux</BreadcrumbItem>
-                        <BreadcrumbItem to="#" isActive>Policies</BreadcrumbItem>
-                    </Breadcrumb>
                     <Tr>
                         {columns.map((column, columnIndex) => (
                             <Th key={ columnIndex }>{column}</Th>
@@ -51,17 +47,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     </Tr>
                 </Thead>
                 <Tbody>
-                    { eventTypesQuery.payload.value.map((e: any) => (
-                        <Td key={ e.id }> { e.displayName }
-                        </Td>
-                    ))}
-                    { eventTypesQuery.payload.value.map((e: any) => (
-                        <Td key={ e.id }> { e.id }
-                        </Td>
-                    ))}
-                    { eventTypesQuery.payload.value.map((e: any) => (
-                        <Td key={ e.id }> { e.description }
-                        </Td>
+                    { eventTypesQuery.payload.value.map(e => (
+                        <Tr key={ e.id }>
+                            <Td>{ e.displayName }</Td>
+                            <Td>{ e.id }</Td>
+                            <Td>{ e.description }</Td>
+                        </Tr>
                     ))}
                 </Tbody>
             </TableComposable>
