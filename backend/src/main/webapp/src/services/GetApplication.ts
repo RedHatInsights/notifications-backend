@@ -8,15 +8,12 @@ import { Application } from '../types/Notifications';
 const validateResponse = validationResponseTransformer(
     (payload: Operations.InternalServiceGetApplication.Payload) => {
         if (payload.status === 200) {
-            const applicationTypes: ReadonlyArray<Application> = payload.value.map((value: { id: 'string'; display_name: 'string'; }) => ({
-                id: value.id ?? '',
-                displayName: value.display_name
-            }));
+            const applicationType: Application = { id: payload.value.id ?? '', displayName: payload.value.display_name };
 
             return validatedResponse(
                 'Application',
                 200,
-                applicationTypes,
+                applicationType,
                 payload.errors
             );
         }

@@ -13,6 +13,7 @@ type ApplicationPageParams = {
 
 export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
+    const applicationTypesQuery = useApplicationTypes(applicationId);
     const eventTypesQuery = useEventTypes(applicationId);
     const columns = [ 'Event', 'Event Id', 'Description' ];
 
@@ -32,8 +33,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
         <React.Fragment>
             <PageSection>
                 <Title headingLevel="h1"><Breadcrumb>
-                    <BreadcrumbItem></BreadcrumbItem>
-                    <BreadcrumbItem to='#' isActive> </BreadcrumbItem>
+                    <BreadcrumbItem> Red Hat Enterprise Linux </BreadcrumbItem>
+                    <BreadcrumbItem to='#' isActive> { applicationId } </BreadcrumbItem>
                 </Breadcrumb></Title>
             </PageSection>
             <TableComposable
