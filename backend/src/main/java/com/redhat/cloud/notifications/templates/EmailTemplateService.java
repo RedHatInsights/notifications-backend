@@ -10,7 +10,7 @@ import io.smallrye.mutiny.Uni;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class EmailTemplateService {
@@ -31,12 +31,12 @@ public class EmailTemplateService {
                 .data("user", user)
                 .createUni()
                 .onFailure().invoke(templateEx -> {
-                    logger.log(Level.WARNING, templateEx, () -> String.format(
+                    logger.warnf(templateEx,
                             "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",
                             action.getBundle(),
                             action.getApplication(),
                             action.getEventType()
-                    ));
+                    );
                 });
     }
 

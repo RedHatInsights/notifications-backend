@@ -21,7 +21,7 @@ Important email to {user.firstName} from MyCoolApp!
 
 const defaultBodyTemplate = `
 <div>Hello {user.firstName} {user.lastName},</div>
-<div>We have some important news to you, MyApp has a notification for you</div>
+<div>We have some important news for you, MyApp has a notification for you</div>
 <div>As a reminder, current user: {user.username}: is active? {user.isActive}; is admin? {user.isAdmin}</div>
 <div>
     System with name <strong>{action.context.display_name}</strong> (<strong>{action.context.inventory_id}</strong>) 
