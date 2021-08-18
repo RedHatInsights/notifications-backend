@@ -338,6 +338,14 @@ export namespace Schemas {
     username?: string | undefined | null;
   };
 
+  export const RenderEmailTemplateRequest =
+    zodSchemaRenderEmailTemplateRequest();
+  export type RenderEmailTemplateRequest = {
+    bodyTemplate: string;
+    payload: string;
+    subjectTemplate: string;
+  };
+
   export const Response = zodSchemaResponse();
   export type Response = {
     allowedMethods?: Array<string> | undefined | null;
@@ -756,6 +764,16 @@ export namespace Schemas {
           lastName: z.string().optional().nullable(),
           orgAdmin: z.boolean().optional().nullable(),
           username: z.string().optional().nullable()
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaRenderEmailTemplateRequest() {
+      return z
+      .object({
+          bodyTemplate: z.string(),
+          payload: z.string(),
+          subjectTemplate: z.string()
       })
       .nonstrict();
   }
@@ -1262,6 +1280,50 @@ export namespace Operations {
         .data(params.body)
         .config({
             rules: [ new ValidateRule(Response200, 'unknown', 200) ]
+        })
+        .build();
+    };
+  }
+  // POST /templates/email/render
+  export namespace InternalServiceRenderEmailTemplate {
+    const Response200 = z
+    .object({
+        body: z.string().optional().nullable(),
+        subject: z.string().optional().nullable()
+    })
+    .nonstrict();
+    type Response200 = {
+      body?: string | undefined | null;
+      subject?: string | undefined | null;
+    };
+    const Response400 = z
+    .object({
+        message: z.string().optional().nullable()
+    })
+    .nonstrict();
+    type Response400 = {
+      message?: string | undefined | null;
+    };
+    export interface Params {
+      body: Schemas.RenderEmailTemplateRequest;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', 400, Response400>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = '/templates/email/render';
+        const query = {} as Record<string, any>;
+        return actionBuilder('POST', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Response400, 'unknown', 400)
+            ]
         })
         .build();
     };

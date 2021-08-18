@@ -42,6 +42,9 @@ export const Navigation: React.FunctionComponent<NavigationProps> = props => {
                     )) }
                 </NavGroup>
                 <NavItemSeparator />
+                <EnhancedNavItem to={ linkTo.email() }>
+                    Email templates
+                </EnhancedNavItem>
                 <EnhancedNavItem to={ linkTo.aggregation() }>
                     Aggregation
                 </EnhancedNavItem>

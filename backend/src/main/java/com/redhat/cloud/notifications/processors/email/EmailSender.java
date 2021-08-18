@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.webclient.BopWebClient;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.templates.EmailTemplateService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -26,7 +27,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ApplicationScoped
@@ -61,6 +61,9 @@ public class EmailSender {
 
     @Inject
     EndpointResources endpointResources;
+
+    @Inject
+    EmailTemplateService emailTemplateService;
 
     @Inject
     MeterRegistry registry;
@@ -101,8 +104,8 @@ public class EmailSender {
 
     private Uni<JsonObject> getPayload(User user, Action action, TemplateInstance subject, TemplateInstance body) {
         return Uni.combine().all().unis(
-                renderTemplate(user, action, subject),
-                renderTemplate(user, action, body)
+                emailTemplateService.renderTemplate(user, action, subject),
+                emailTemplateService.renderTemplate(user, action, body)
         )
                 .asTuple()
                 .onItem().transform(rendered -> {
@@ -113,21 +116,6 @@ public class EmailSender {
                             rendered.getItem2()
                     ));
                     return JsonObject.mapFrom(emails);
-                });
-    }
-
-    private Uni<String> renderTemplate(User user, Action action, TemplateInstance templateInstance) {
-        return templateInstance
-                .data("action", action)
-                .data("user", user)
-                .createUni()
-                .onFailure().invoke(templateEx -> {
-                    logger.log(Level.WARNING, templateEx, () -> String.format(
-                            "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",
-                            action.getBundle(),
-                            action.getApplication(),
-                            action.getEventType()
-                    ));
                 });
     }
 

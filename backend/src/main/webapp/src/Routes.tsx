@@ -3,6 +3,7 @@ import { Redirect, Route, Switch } from 'react-router';
 
 import { AggregationPage } from './pages/AggregationPage';
 import { ApplicationPage } from './pages/ApplicationPage';
+import { RenderEmailPage } from './pages/RenderEmailPage';
 
 interface Path {
     readonly path: string;
@@ -11,7 +12,8 @@ interface Path {
 
 export const linkTo = {
     application: (applicationId: string) => `/application/${applicationId}`,
-    aggregation: () => '/aggregation'
+    aggregation: () => '/aggregation',
+    email: () => '/email'
 };
 
 const pathRoutes: Path[] = [
@@ -22,6 +24,10 @@ const pathRoutes: Path[] = [
     {
         path: linkTo.application(':applicationId'),
         component: ApplicationPage
+    },
+    {
+        path: linkTo.email(),
+        component: RenderEmailPage
     }
 ];
 
