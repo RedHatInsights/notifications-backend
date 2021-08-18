@@ -9,7 +9,6 @@ import io.smallrye.mutiny.Uni;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.util.logging.Level;
 import org.jboss.logging.Logger;
 
 @ApplicationScoped

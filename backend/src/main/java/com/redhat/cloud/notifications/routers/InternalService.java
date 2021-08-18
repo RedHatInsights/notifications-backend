@@ -202,10 +202,10 @@ public class InternalService {
     @Produces(APPLICATION_JSON)
     @APIResponses(value = {
             @APIResponse(responseCode = "200", content = {
-                    @Content(schema = @Schema(implementation = RenderEmailTemplateResponse.class))
+                    @Content(schema = @Schema(title = "RenderEmailTemplateResponseSuccess", implementation = RenderEmailTemplateResponse.Success.class))
             }),
             @APIResponse(responseCode = "400", content = {
-                    @Content(schema = @Schema(implementation = RenderEmailTemplateResponse.Error.class))
+                    @Content(schema = @Schema(title = "RenderEmailTemplateResponseError", implementation = RenderEmailTemplateResponse.Error.class))
             })
     })
     public Uni<Response> renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {

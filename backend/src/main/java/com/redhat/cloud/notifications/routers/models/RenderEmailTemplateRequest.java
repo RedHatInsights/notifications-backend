@@ -1,8 +1,12 @@
 package com.redhat.cloud.notifications.routers.models;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class RenderEmailTemplateRequest {
 
     @NotNull
@@ -11,6 +15,7 @@ public class RenderEmailTemplateRequest {
     @NotNull
     private String bodyTemplate;
 
+    @NotNull
     @NotEmpty
     private String payload;
 

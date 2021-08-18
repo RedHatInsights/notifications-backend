@@ -141,11 +141,6 @@ export namespace Schemas {
     weak?: boolean | undefined | null;
   };
 
-  export const Error = zodSchemaError();
-  export type Error = {
-    message?: string | undefined | null;
-  };
-
   export const EventType = zodSchemaEventType();
   export type EventType = {
     application?: Application | undefined | null;
@@ -347,15 +342,8 @@ export namespace Schemas {
     zodSchemaRenderEmailTemplateRequest();
   export type RenderEmailTemplateRequest = {
     bodyTemplate: string;
-    payload?: string | undefined | null;
+    payload: string;
     subjectTemplate: string;
-  };
-
-  export const RenderEmailTemplateResponse =
-    zodSchemaRenderEmailTemplateResponse();
-  export type RenderEmailTemplateResponse = {
-    body?: string | undefined | null;
-    subject?: string | undefined | null;
   };
 
   export const Response = zodSchemaResponse();
@@ -574,14 +562,6 @@ export namespace Schemas {
       .nonstrict();
   }
 
-  function zodSchemaError() {
-      return z
-      .object({
-          message: z.string().optional().nullable()
-      })
-      .nonstrict();
-  }
-
   function zodSchemaEventType() {
       return z
       .object({
@@ -792,17 +772,8 @@ export namespace Schemas {
       return z
       .object({
           bodyTemplate: z.string(),
-          payload: z.string().optional().nullable(),
+          payload: z.string(),
           subjectTemplate: z.string()
-      })
-      .nonstrict();
-  }
-
-  function zodSchemaRenderEmailTemplateResponse() {
-      return z
-      .object({
-          body: z.string().optional().nullable(),
-          subject: z.string().optional().nullable()
       })
       .nonstrict();
   }
@@ -1315,17 +1286,31 @@ export namespace Operations {
   }
   // POST /templates/email/render
   export namespace InternalServiceRenderEmailTemplate {
+    const Response200 = z
+    .object({
+        body: z.string().optional().nullable(),
+        subject: z.string().optional().nullable()
+    })
+    .nonstrict();
+    type Response200 = {
+      body?: string | undefined | null;
+      subject?: string | undefined | null;
+    };
+    const Response400 = z
+    .object({
+        message: z.string().optional().nullable()
+    })
+    .nonstrict();
+    type Response400 = {
+      message?: string | undefined | null;
+    };
     export interface Params {
       body: Schemas.RenderEmailTemplateRequest;
     }
 
     export type Payload =
-      | ValidatedResponse<
-          'RenderEmailTemplateResponse',
-          200,
-          Schemas.RenderEmailTemplateResponse
-        >
-      | ValidatedResponse<'Error', 400, Schemas.Error>
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', 400, Response400>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -1336,12 +1321,8 @@ export namespace Operations {
         .data(params.body)
         .config({
             rules: [
-                new ValidateRule(
-                    Schemas.RenderEmailTemplateResponse,
-                    'RenderEmailTemplateResponse',
-                    200
-                ),
-                new ValidateRule(Schemas.Error, 'Error', 400)
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Response400, 'unknown', 400)
             ]
         })
         .build();
