@@ -52,15 +52,15 @@ const defaultPayload = JSON.stringify({
     events: [
         {
             metadata: {},
-            payload: '{"my_id":"3df53241-3e09-481b-a322-4892caaaaadc","my_name":"Good name"}'
+            payload: '{"my_id":"3df53241-3e09-481b-a322-4892caaaaadc","my_name":"Red color"}'
         },
         {
             metadata: {},
-            payload: '{"my_id":"6c5e8451-a40a-4bb7-ab9a-0cb10a4c577d","my_name":"Bad name"}'
+            payload: '{"my_id":"6c5e8451-a40a-4bb7-ab9a-0cb10a4c577d","my_name":"Green color"}'
         },
         {
             metadata: {},
-            payload: '{"my_id":"b4c6378a-c1fb-4d3e-8e9b-7e5bdfc09dd3","my_name":"Ugly name"}'
+            payload: '{"my_id":"b4c6378a-c1fb-4d3e-8e9b-7e5bdfc09dd3","my_name":"Blue color"}'
         }
     ]
 }, null, 2);
