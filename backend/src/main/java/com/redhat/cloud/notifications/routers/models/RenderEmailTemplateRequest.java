@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers.models;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -10,9 +11,11 @@ import javax.validation.constraints.NotNull;
 public class RenderEmailTemplateRequest {
 
     @NotNull
+    @Schema(name = "subject_template")
     private String subjectTemplate;
 
     @NotNull
+    @Schema(name = "body_template")
     private String bodyTemplate;
 
     @NotNull

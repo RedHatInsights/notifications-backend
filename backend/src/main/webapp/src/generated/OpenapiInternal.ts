@@ -96,7 +96,11 @@ export namespace Schemas {
 
   export const EmailSubscriptionProperties =
     zodSchemaEmailSubscriptionProperties();
-  export type EmailSubscriptionProperties = unknown;
+  export type EmailSubscriptionProperties = {
+    group_id?: UUID | undefined | null;
+    ignore_preferences: boolean;
+    only_admins: boolean;
+  };
 
   export const EmailSubscriptionType = zodSchemaEmailSubscriptionType();
   export type EmailSubscriptionType = 'DAILY' | 'INSTANT';
@@ -341,9 +345,15 @@ export namespace Schemas {
   export const RenderEmailTemplateRequest =
     zodSchemaRenderEmailTemplateRequest();
   export type RenderEmailTemplateRequest = {
-    bodyTemplate: string;
+    body_template: string;
     payload: string;
-    subjectTemplate: string;
+    subject_template: string;
+  };
+
+  export const RequestEmailSubscriptionProperties =
+    zodSchemaRequestEmailSubscriptionProperties();
+  export type RequestEmailSubscriptionProperties = {
+    onlyAdmins: boolean;
   };
 
   export const Response = zodSchemaResponse();
@@ -506,7 +516,13 @@ export namespace Schemas {
   }
 
   function zodSchemaEmailSubscriptionProperties() {
-      return z.unknown();
+      return z
+      .object({
+          group_id: zodSchemaUUID().optional().nullable(),
+          ignore_preferences: z.boolean(),
+          only_admins: z.boolean()
+      })
+      .nonstrict();
   }
 
   function zodSchemaEmailSubscriptionType() {
@@ -771,9 +787,17 @@ export namespace Schemas {
   function zodSchemaRenderEmailTemplateRequest() {
       return z
       .object({
-          bodyTemplate: z.string(),
+          body_template: z.string(),
           payload: z.string(),
-          subjectTemplate: z.string()
+          subject_template: z.string()
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaRequestEmailSubscriptionProperties() {
+      return z
+      .object({
+          onlyAdmins: z.boolean()
       })
       .nonstrict();
   }
@@ -852,7 +876,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (): ActionCreator => {
-        const path = '/';
+        const path = './';
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
         .queryParams(query)
@@ -875,7 +899,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/admin';
+        const path = './admin';
         const query = {} as Record<string, any>;
         if (params.rhid !== undefined) {
             query.rhid = params.rhid;
@@ -902,7 +926,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/admin/status';
+        const path = './admin/status';
         const query = {} as Record<string, any>;
         if (params.status !== undefined) {
             query.status = params.status;
@@ -927,7 +951,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/applications';
+        const path = './applications';
         const query = {} as Record<string, any>;
         return actionBuilder('POST', path)
         .queryParams(query)
@@ -949,7 +973,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/applications/{appId}'.replace(
+        const path = './applications/{appId}'.replace(
             '{appId}',
             params.appId.toString()
         );
@@ -974,7 +998,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/applications/{appId}'.replace(
+        const path = './applications/{appId}'.replace(
             '{appId}',
             params.appId.toString()
         );
@@ -1001,7 +1025,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/applications/{appId}'.replace(
+        const path = './applications/{appId}'.replace(
             '{appId}',
             params.appId.toString()
         );
@@ -1027,7 +1051,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/applications/{appId}/eventTypes'.replace(
+        const path = './applications/{appId}/eventTypes'.replace(
             '{appId}',
             params.appId.toString()
         );
@@ -1049,7 +1073,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (): ActionCreator => {
-        const path = '/bundles';
+        const path = './bundles';
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
         .queryParams(query)
@@ -1070,7 +1094,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/bundles';
+        const path = './bundles';
         const query = {} as Record<string, any>;
         return actionBuilder('POST', path)
         .queryParams(query)
@@ -1092,7 +1116,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/bundles/{bundleId}'.replace(
+        const path = './bundles/{bundleId}'.replace(
             '{bundleId}',
             params.bundleId.toString()
         );
@@ -1117,7 +1141,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/bundles/{bundleId}'.replace(
+        const path = './bundles/{bundleId}'.replace(
             '{bundleId}',
             params.bundleId.toString()
         );
@@ -1144,7 +1168,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/bundles/{bundleId}'.replace(
+        const path = './bundles/{bundleId}'.replace(
             '{bundleId}',
             params.bundleId.toString()
         );
@@ -1170,7 +1194,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/bundles/{bundleId}/applications'.replace(
+        const path = './bundles/{bundleId}/applications'.replace(
             '{bundleId}',
             params.bundleId.toString()
         );
@@ -1196,7 +1220,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/email_endpoint/migrate';
+        const path = './email_endpoint/migrate';
         const query = {} as Record<string, any>;
         if (params.confirmationToken !== undefined) {
             query['confirmation-token'] = params.confirmationToken;
@@ -1223,7 +1247,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/eventTypes';
+        const path = './eventTypes';
         const query = {} as Record<string, any>;
         return actionBuilder('POST', path)
         .queryParams(query)
@@ -1247,7 +1271,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/eventTypes/{eventTypeId}'.replace(
+        const path = './eventTypes/{eventTypeId}'.replace(
             '{eventTypeId}',
             params.eventTypeId.toString()
         );
@@ -1273,7 +1297,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/status';
+        const path = './status';
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
         .queryParams(query)
@@ -1314,7 +1338,7 @@ export namespace Operations {
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = '/templates/email/render';
+        const path = './templates/email/render';
         const query = {} as Record<string, any>;
         return actionBuilder('POST', path)
         .queryParams(query)

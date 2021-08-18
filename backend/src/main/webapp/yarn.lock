@@ -8363,10 +8363,10 @@ open@^7.0.2:
     is-docker "^2.0.0"
     is-wsl "^2.1.1"
 
-openapi2typescript-cli@0.4.3:
-  version "0.4.3"
-  resolved "https://registry.yarnpkg.com/openapi2typescript-cli/-/openapi2typescript-cli-0.4.3.tgz#67cad734bf7af4864f14d4f6f5fdb00ef5b03a45"
-  integrity sha512-qzFLmbWxAhhkriCV7D8MxkO5Ez9SC7Vz2eO2jyo9rTBVoKl2lO+lQWU/xUv2IUGsBr/eLXKSqLgab3RxPCdYlQ==
+openapi2typescript-cli@0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/openapi2typescript-cli/-/openapi2typescript-cli-0.5.0.tgz#604f778c8f5c2bdf5879c3e2a146a7d0fc9a2f95"
+  integrity sha512-f0z8Eg6N8MeMesHJskbrOUSEVd1pHFV3snAmWci0n3k5hFau62c1hB0CcxXh16lkD1M/ulJdFX7rclv3R7VxOg==
   dependencies:
     camelcase "5.3.1"
     commander "7.2.0"
