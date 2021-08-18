@@ -10,7 +10,7 @@
     "@patternfly/react-core": "4.147.0",
     "@patternfly/react-icons": "4.11.8",
     "immer": "9.0.5",
-    "monaco-editor": "0.26.1",
+    "monaco-editor": "0.27.0",
     "monaco-editor-webpack-plugin": "4.1.2",
     "openapi2typescript": "0.2.0",
     "react": "17.0.2",
