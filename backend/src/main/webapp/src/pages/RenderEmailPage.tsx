@@ -127,8 +127,6 @@ export const RenderEmailPage: React.FunctionComponent = () => {
 
     let renderedProps: RenderedTemplateProps;
 
-    console.log(emailTemplate);
-
     if (emailTemplate.loading) {
         renderedProps = {
             isLoading: true
