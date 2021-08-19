@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.CronJobRun;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.jboss.logmanager.Level;
@@ -22,7 +21,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.*;
-import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.*;
 
 @ApplicationScoped
@@ -47,7 +45,6 @@ public class DailyEmailAggregationJob {
         for (AggregationCommand aggregationCommand : aggregationCommands) {
             try {
                 final String payload = objectMapper.writeValueAsString(aggregationCommand);
-                emitter.send(payload);
                 futures.add(emitter.send(payload).toCompletableFuture());
             } catch (JsonProcessingException e) {
                 LOG.warning("Could not transform AggregationCommand to JSON object.");
@@ -66,11 +63,8 @@ public class DailyEmailAggregationJob {
     }
 
     List<AggregationCommand> processAggregateEmails() {
-        Instant scheduledFireTime = emailAggregationResources.getLastCronJobRun().getLastRun();
-        Instant yesterdayScheduledFireTime = scheduledFireTime.minus(EmailSubscriptionType.DAILY.getDuration());
-
-        LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, UTC);
-        LocalDateTime startTime = LocalDateTime.ofInstant(yesterdayScheduledFireTime, UTC);
+        LocalDateTime endTime = LocalDateTime.now();
+        LocalDateTime startTime = emailAggregationResources.getLastCronJobRun().getLastRun();
 
         final LocalDateTime aggregateStarted = LocalDateTime.now();
 

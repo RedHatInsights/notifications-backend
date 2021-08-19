@@ -21,9 +21,6 @@ public class ResourceHelpers {
     @Inject
     Session session;
 
-    @Inject
-    EmailAggregationResources emailAggregationResources;
-
     public void createSubscription(String tenant, String username, String bundle, String application, EmailSubscriptionType type) {
         subscribe(tenant, username, bundle, application, type);
     }

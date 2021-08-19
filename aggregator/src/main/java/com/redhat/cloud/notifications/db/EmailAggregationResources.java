@@ -40,29 +40,15 @@ public class EmailAggregationResources {
     }
 
     @Transactional
-    public Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
-        final int result = session.createQuery(query)
-                .setParameter("accountId", key.getAccountId())
-                .setParameter("bundleName", key.getBundle())
-                .setParameter("applicationName", key.getApplication())
-                .setParameter("created", lastUsedTime)
-                .executeUpdate();
-        session.flush();
-        return result;
-    }
-
-    @Transactional
     public CronJobRun getLastCronJobRun() {
         String query = "SELECT id, last_run FROM cronjob_run";
         return session.createNativeQuery(query, CronJobRun.class).getSingleResult();
     }
 
     public void updateLastCronJobRun(UUID id, Instant lastRun) {
-        String query = "UPDATE cronjob_run SET last_run = :lastRun WHERE id = :id";
-        session.createNativeQuery(query, CronJobRun.class)
-                .setParameter("last_run", lastRun)
+        String query = "UPDATE CronJobRun SET lastRun = :lastRun WHERE id = :id";
+        session.createQuery(query)
                 .setParameter("id", id)
-                .executeUpdate();
+                .setParameter("lastRun", lastRun);
     }
 }
