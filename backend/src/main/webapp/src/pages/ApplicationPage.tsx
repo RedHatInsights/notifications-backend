@@ -13,9 +13,9 @@ type ApplicationPageParams = {
 
 export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
-    const applicationTypesQuery = useApplicationTypes(applicationId);
     const eventTypesQuery = useEventTypes(applicationId);
-    const columns = [ 'Event', 'Event Id', 'Description' ];
+    const applicationTypesQuery = useApplicationTypes(applicationId);
+    const columns = [ 'Event Type', 'Event Id', 'Description' ];
 
     if (eventTypesQuery.loading) {
         return <Spinner />;
@@ -33,8 +33,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
         <React.Fragment>
             <PageSection>
                 <Title headingLevel="h1"><Breadcrumb>
-                    <BreadcrumbItem> Red Hat Enterprise Linux </BreadcrumbItem>
-                    <BreadcrumbItem to='#' isActive> { applicationId } </BreadcrumbItem>
+                    <BreadcrumbItem to='#'> Red Hat Enterprise Linux </BreadcrumbItem>
+                    <BreadcrumbItem to='#'isActive> { applicationTypesQuery.payload.displayName } </BreadcrumbItem>
                 </Breadcrumb></Title>
             </PageSection>
             <TableComposable
