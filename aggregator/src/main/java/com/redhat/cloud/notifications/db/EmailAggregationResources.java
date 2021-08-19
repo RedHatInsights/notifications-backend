@@ -45,6 +45,7 @@ public class EmailAggregationResources {
         return session.createNativeQuery(query, CronJobRun.class).getSingleResult();
     }
 
+    @Transactional
     public void updateLastCronJobRun(UUID id, Instant lastRun) {
         String query = "UPDATE CronJobRun SET lastRun = :lastRun WHERE id = :id";
         session.createQuery(query)
