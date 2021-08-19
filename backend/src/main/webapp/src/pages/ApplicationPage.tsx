@@ -34,7 +34,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
             <PageSection>
                 <Title headingLevel="h1"><Breadcrumb>
                     <BreadcrumbItem to='#'> Red Hat Enterprise Linux </BreadcrumbItem>
-                    <BreadcrumbItem to='#'isActive> { applicationTypesQuery.payload.displayName } </BreadcrumbItem>
+                    <BreadcrumbItem to='#'isActive> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
+                        <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
                 </Breadcrumb></Title>
             </PageSection>
             <TableComposable
