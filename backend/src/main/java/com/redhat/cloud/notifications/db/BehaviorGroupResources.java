@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -179,22 +178,6 @@ public class BehaviorGroupResources {
                     .setParameter("accountId", accountId)
                     .setParameter("id", behaviorGroupId)
                     .getSingleResult()
-                    .onItem().call(() -> {
-
-                        // A behavior group must not contain more than one EMAIL_SUBSCRIPTION action.
-                        String checkEndpointTypeQuery = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId AND type = :type AND id IN (:endpointIds)";
-                        return session.createQuery(checkEndpointTypeQuery, Long.class)
-                                .setParameter("accountId", accountId)
-                                .setParameter("type", EndpointType.EMAIL_SUBSCRIPTION)
-                                .setParameter("endpointIds", endpointIds)
-                                .getSingleResult()
-                                .onItem().invoke(count -> {
-                                    if (count > 1) {
-                                        throw new IllegalArgumentException();
-                                    }
-                                });
-
-                    })
                     .onItem().call(() -> {
 
                         // All behavior group actions that should no longer exist must be deleted.

@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
-import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.OK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -211,7 +210,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         BehaviorGroup behaviorGroup = createBehaviorGroup("displayName", bundle.getId());
         Endpoint endpoint1 = createEndpoint(EMAIL_SUBSCRIPTION);
         Endpoint endpoint2 = createEndpoint(EMAIL_SUBSCRIPTION);
-        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), BAD_REQUEST, endpoint1.getId(), endpoint2.getId());
+        updateAndCheckBehaviorGroupActions(ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), OK, endpoint1.getId(), endpoint2.getId());
     }
 
     @Test
