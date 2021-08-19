@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +38,8 @@ import static org.mockserver.model.HttpResponse.response;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class WebhookTest extends DbIsolatedTest {
+
+    private static final long MAX_RETRY_ATTEMPTS = 3L;
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
@@ -55,7 +58,6 @@ public class WebhookTest extends DbIsolatedTest {
         return postReq;
     }
 
-
     @Test
     void testWebhook() {
         String url = String.format("http://%s/foobar", mockServerConfig.getRunningAddress());
@@ -68,50 +70,8 @@ public class WebhookTest extends DbIsolatedTest {
 
         HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
-        Action webhookActionMessage = new Action();
-        webhookActionMessage.setBundle("mybundle");
-        webhookActionMessage.setApplication("WebhookTest");
-        webhookActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
-        webhookActionMessage.setEventType("testWebhook");
-        webhookActionMessage.setAccountId("tenant");
-
-        Map<String, Object> payload1 = new HashMap<>();
-        payload1.put("any", "thing");
-        payload1.put("we", 1);
-        payload1.put("want", "here");
-
-        Map<String, Object> context = new HashMap<>();
-        context.put("free", "more");
-        context.put("format", 1);
-        context.put("here", "stuff");
-
-        webhookActionMessage.setEvents(
-                List.of(
-                        Event
-                                .newBuilder()
-                                .setMetadataBuilder(Metadata.newBuilder())
-                                .setPayload(payload1)
-                                .build(),
-                        Event
-                                .newBuilder()
-                                .setMetadataBuilder(Metadata.newBuilder())
-                                .setPayload(new HashMap())
-                                .build()
-                )
-        );
-
-        webhookActionMessage.setContext(context);
-
-        WebhookProperties properties = new WebhookProperties();
-        properties.setMethod(HttpType.POST);
-        properties.setUrl(url);
-
-        Endpoint ep = new Endpoint();
-        ep.setType(EndpointType.WEBHOOK);
-        ep.setName("positive feeling");
-        ep.setDescription("needle in the haystack");
-        ep.setEnabled(true);
-        ep.setProperties(properties);
+        Action webhookActionMessage = buildWebhookAction();
+        Endpoint ep = buildWebhookEndpoint(url);
 
         try {
             Multi<NotificationHistory> process = webhookTypeProcessor.process(webhookActionMessage, List.of(ep));
@@ -148,4 +108,93 @@ public class WebhookTest extends DbIsolatedTest {
 
     }
 
+    @Test
+    void testRetryWithFinalSuccess() {
+        testRetry(true);
+    }
+
+    @Test
+    void testRetryWithFinalFailure() {
+        testRetry(false);
+    }
+
+    private void testRetry(boolean shouldSucceedEventually) {
+        String url = String.format("http://%s/foobar", mockServerConfig.getRunningAddress());
+
+        AtomicInteger callsCounter = new AtomicInteger();
+        ExpectationResponseCallback expectationResponseCallback = request -> {
+            if (callsCounter.incrementAndGet() == MAX_RETRY_ATTEMPTS && shouldSucceedEventually) {
+                return response().withStatusCode(200);
+            } else {
+                return response().withStatusCode(500);
+            }
+        };
+
+        HttpRequest mockServerRequest = getMockHttpRequest(expectationResponseCallback);
+        try {
+            Action action = buildWebhookAction();
+            Endpoint ep = buildWebhookEndpoint(url);
+            Multi<NotificationHistory> process = webhookTypeProcessor.process(action, List.of(ep));
+            NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
+
+            assertEquals(shouldSucceedEventually, history.isInvocationResult());
+            assertEquals(MAX_RETRY_ATTEMPTS, callsCounter.get());
+        } finally {
+            // Remove expectations
+            mockServerConfig.getMockServerClient().clear(mockServerRequest);
+        }
+    }
+
+    private static Action buildWebhookAction() {
+        Action webhookActionMessage = new Action();
+        webhookActionMessage.setBundle("mybundle");
+        webhookActionMessage.setApplication("WebhookTest");
+        webhookActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        webhookActionMessage.setEventType("testWebhook");
+        webhookActionMessage.setAccountId("tenant");
+
+        Map<String, Object> payload1 = new HashMap<>();
+        payload1.put("any", "thing");
+        payload1.put("we", 1);
+        payload1.put("want", "here");
+
+        Map<String, Object> context = new HashMap<>();
+        context.put("free", "more");
+        context.put("format", 1);
+        context.put("here", "stuff");
+
+        webhookActionMessage.setEvents(
+                List.of(
+                        Event
+                                .newBuilder()
+                                .setMetadataBuilder(Metadata.newBuilder())
+                                .setPayload(payload1)
+                                .build(),
+                        Event
+                                .newBuilder()
+                                .setMetadataBuilder(Metadata.newBuilder())
+                                .setPayload(new HashMap())
+                                .build()
+                )
+        );
+
+        webhookActionMessage.setContext(context);
+
+        return webhookActionMessage;
+    }
+
+    private static Endpoint buildWebhookEndpoint(String url) {
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setUrl(url);
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.WEBHOOK);
+        ep.setName("positive feeling");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(properties);
+
+        return ep;
+    }
 }

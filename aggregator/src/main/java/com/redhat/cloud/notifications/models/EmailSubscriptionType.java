@@ -15,9 +15,4 @@ public enum EmailSubscriptionType {
     public Duration getDuration() {
         return this.duration;
     }
-
-    // This may seem unused but it is actually required for a RestEasy request parameter deserialization.
-    public static EmailSubscriptionType fromString(String value) {
-        return EmailSubscriptionType.valueOf(value.toUpperCase());
-    }
 }
