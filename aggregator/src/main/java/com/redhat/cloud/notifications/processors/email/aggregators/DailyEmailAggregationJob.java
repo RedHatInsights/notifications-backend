@@ -26,6 +26,8 @@ import static java.time.temporal.ChronoUnit.*;
 @ApplicationScoped
 public class DailyEmailAggregationJob {
 
+    public static final String AGGREGATION_CHANNEL = "aggregation";
+
     private static final Logger LOG = Logger.getLogger(DailyEmailAggregationJob.class.getName());
 
     @Inject
@@ -35,7 +37,7 @@ public class DailyEmailAggregationJob {
     ObjectMapper objectMapper;
 
     @Inject
-    @Channel("aggregation")
+    @Channel(AGGREGATION_CHANNEL)
     Emitter<String> emitter;
 
     public void processDailyEmail() {
