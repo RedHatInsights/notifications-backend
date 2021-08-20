@@ -39,7 +39,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 </Breadcrumb></Title>
             </PageSection>
             <TableComposable
-                aria-label="Simple table"
+                aria-label="Event types table"
             >
                 <Thead>
                     <Tr>
