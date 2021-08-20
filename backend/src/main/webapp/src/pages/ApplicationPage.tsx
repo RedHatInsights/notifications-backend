@@ -1,7 +1,10 @@
-import { List, ListItem, Spinner } from '@patternfly/react-core';
+import { Spinner } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, PageSection, Title } from '@patternfly/react-core';
+import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { useParams } from 'react-router';
 
+import { useApplicationTypes }  from '../services/GetApplication';
 import { useEventTypes } from '../services/GetEventTypes';
 
 type ApplicationPageParams = {
@@ -11,6 +14,8 @@ type ApplicationPageParams = {
 export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
+    const applicationTypesQuery = useApplicationTypes(applicationId);
+    const columns = [ 'Event Type', 'Event Id', 'Description' ];
 
     if (eventTypesQuery.loading) {
         return <Spinner />;
@@ -25,10 +30,34 @@ export const ApplicationPage: React.FunctionComponent = () => {
     }
 
     return (
-        <List>
-            { eventTypesQuery.payload.value.map(e => (
-                <ListItem key={ e.id }>{ e.displayName }</ListItem>
-            )) }
-        </List>
-    );
-};
+        <React.Fragment>
+            <PageSection>
+                <Title headingLevel="h1"><Breadcrumb>
+                    <BreadcrumbItem to='#'> Red Hat Enterprise Linux </BreadcrumbItem>
+                    <BreadcrumbItem to='#'isActive> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
+                        <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
+                </Breadcrumb></Title>
+            </PageSection>
+            <TableComposable
+                aria-label="Event types table"
+            >
+                <Thead>
+                    <Tr>
+                        {columns.map((column, columnIndex) => (
+                            <Th key={ columnIndex }>{column}</Th>
+                        ))}
+                    </Tr>
+                </Thead>
+                <Tbody>
+                    { eventTypesQuery.payload.value.map(e => (
+                        <Tr key={ e.id }>
+                            <Td>{ e.displayName }</Td>
+                            <Td>{ e.id }</Td>
+                            <Td>{ e.description }</Td>
+                        </Tr>
+                    ))}
+                </Tbody>
+            </TableComposable>
+        </React.Fragment>
+
+    );};
