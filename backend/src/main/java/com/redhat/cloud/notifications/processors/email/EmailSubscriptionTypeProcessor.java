@@ -22,6 +22,7 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -128,6 +129,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     @Incoming(AGGREGATION_CHANNEL)
+    @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
     public Uni<Void> consumeEmailAggregations(String aggregationCommandJson) {
         AggregationCommand aggregationCommand;
         try {
@@ -189,7 +191,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
-
         final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
 
         Multi<Tuple2<NotificationHistory, EmailAggregationKey>> doDelete = delete ?

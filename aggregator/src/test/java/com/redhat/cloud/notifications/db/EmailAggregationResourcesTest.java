@@ -66,7 +66,7 @@ public class EmailAggregationResourcesTest {
         assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
         assertEquals(APP_NAME, keys.get(0).getApplication());
 
-        Integer purged = purgeOldAggregation(key, end);
+        Integer purged = resourceHelpers.purgeOldAggregation(key, end);
         assertEquals(2, purged);
 
         aggregations = getEmailAggregation(key, start, end);
@@ -108,9 +108,5 @@ public class EmailAggregationResourcesTest {
 
     private List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
         return emailAggregationResources.getApplicationsWithPendingAggregation(start, end);
-    }
-
-    private Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        return emailAggregationResources.purgeOldAggregation(key, lastUsedTime);
     }
 }

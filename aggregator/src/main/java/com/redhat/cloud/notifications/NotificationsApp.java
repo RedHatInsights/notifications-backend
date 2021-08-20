@@ -35,6 +35,7 @@ public class NotificationsApp implements QuarkusApplication {
         LOG.info(readGitProperties());
 
         dailyEmailAggregationJob.processDailyEmail(Instant.now());
+
         return 0;
     }
 

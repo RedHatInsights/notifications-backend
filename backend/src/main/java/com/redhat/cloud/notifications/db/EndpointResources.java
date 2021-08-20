@@ -52,9 +52,9 @@ public class EndpointResources {
                         switch (endpoint.getType()) {
                             case CAMEL:
                             case WEBHOOK:
+                            case EMAIL_SUBSCRIPTION:
                                 return session.persist(endpoint.getProperties())
                                         .onItem().call(session::flush);
-                            case EMAIL_SUBSCRIPTION:
                             default:
                                 // Do nothing.
                                 break;
@@ -112,8 +112,7 @@ public class EndpointResources {
                 .onItem().transformToUni(emailEndpoints -> {
                     Optional<Endpoint> endpointOptional = emailEndpoints
                             .stream()
-                            // Todo: This should be changed once we store the properties - (properties are null right now)
-                            // .filter(endpoint -> properties.hasSameProperties((EmailSubscriptionProperties) endpoint.getProperties()))
+                            .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(EmailSubscriptionProperties.class)))
                             .findFirst();
                     if (endpointOptional.isPresent()) {
                         return Uni.createFrom().item(endpointOptional.get());
@@ -251,6 +250,10 @@ public class EndpointResources {
         String camelQuery = "UPDATE CamelProperties SET url = :url, subType = :subType, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
 
+        if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
+            throw new RuntimeException("Unable to update an endpoint of type EMAIL_SUBSCRIPTION");
+        }
+
         return session.createQuery(endpointQuery)
                 .setParameter("name", endpoint.getName())
                 .setParameter("description", endpoint.getDescription())
@@ -288,7 +291,6 @@ public class EndpointResources {
                                         .executeUpdate()
                                         .call(session::flush)
                                         .onItem().transform(rowCount -> rowCount > 0);
-                            case EMAIL_SUBSCRIPTION:
                             default:
                                 return Uni.createFrom().item(Boolean.TRUE);
                         }
@@ -309,8 +311,8 @@ public class EndpointResources {
         Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
         return this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK, useStatelessSession)
-                .chain(() -> loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL, useStatelessSession));
-        // use `.chain(() -> loadTyped...)` when adding other types
+                .chain(() -> loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL, useStatelessSession))
+                .chain(() -> loadTypedProperties(EmailSubscriptionProperties.class, endpointSet, EndpointType.EMAIL_SUBSCRIPTION, useStatelessSession));
     }
 
     private <T extends EndpointProperties> Uni<Void> loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type, boolean useStatelessSession) {

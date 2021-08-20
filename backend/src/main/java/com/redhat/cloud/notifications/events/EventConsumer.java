@@ -1,13 +1,9 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Uni;
-import org.apache.avro.io.DatumReader;
-import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.io.JsonDecoder;
-import org.apache.avro.specific.SpecificDatumReader;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -16,7 +12,6 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +29,9 @@ public class EventConsumer {
     @Inject
     EndpointProcessor endpointProcessor;
 
+    @Inject
+    ActionParser actionParser;
+
     private Counter rejectedCount;
     private Counter processingErrorCount;
 
@@ -49,7 +47,7 @@ public class EventConsumer {
     public Uni<Void> processAsync(Message<String> input) {
         return Uni.createFrom().item(() -> input.getPayload())
                 .stage(self -> self
-                                .onItem().transform(this::extractPayload)
+                                .onItem().transform(actionParser::fromJsonString)
                                 .onItem().invoke(payload -> log.info(() -> "Processing received payload: (" + payload.getAccountId() + ") " + payload.getBundle() + "/" + payload.getApplication() + "/" + payload.getEventType()))
                                 .onFailure().invoke(t -> rejectedCount.increment())
                 )
@@ -71,17 +69,4 @@ public class EventConsumer {
                 });
     }
 
-    private Action extractPayload(String payload) {
-        // I need the schema here..
-        Action action = new Action();
-        try {
-            // Which ones can I reuse?
-            JsonDecoder jsonDecoder = DecoderFactory.get().jsonDecoder(Action.getClassSchema(), payload);
-            DatumReader<Action> reader = new SpecificDatumReader<>(Action.class);
-            reader.read(action, jsonDecoder);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Payload extraction failed", e);
-        }
-        return action;
-    }
 }

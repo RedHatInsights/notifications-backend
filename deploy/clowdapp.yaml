@@ -13,10 +13,10 @@ objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
   metadata:
-    name: notifications
+    name: notifications-backend
     labels:
-      app: notifications
-      clowdapp: notifications
+      app: notifications-backend
+      clowdapp: notifications-backend
   spec:
     envName: ${ENV_NAME}
     deployments:
