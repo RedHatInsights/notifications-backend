@@ -7,7 +7,6 @@ import org.hibernate.Session;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -46,10 +45,11 @@ public class EmailAggregationResources {
     }
 
     @Transactional
-    public void updateLastCronJobRun(UUID id, Instant lastRun) {
+    public void updateLastCronJobRun(UUID id, LocalDateTime lastRun) {
         String query = "UPDATE CronJobRun SET lastRun = :lastRun WHERE id = :id";
         session.createQuery(query)
                 .setParameter("id", id)
-                .setParameter("lastRun", lastRun);
+                .setParameter("lastRun", lastRun)
+                .executeUpdate();
     }
 }

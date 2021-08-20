@@ -10,8 +10,8 @@ import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.jboss.logmanager.Level;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -39,7 +39,8 @@ public class DailyEmailAggregationJob {
     Emitter<String> emitter;
 
     public void processDailyEmail() {
-        List<AggregationCommand> aggregationCommands = processAggregateEmails();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        List<AggregationCommand> aggregationCommands = processAggregateEmails(now);
 
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (AggregationCommand aggregationCommand : aggregationCommands) {
@@ -52,7 +53,7 @@ public class DailyEmailAggregationJob {
         }
 
         final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
-        emailAggregationResources.updateLastCronJobRun(lastCronJobRun.getId(), Instant.now());
+        emailAggregationResources.updateLastCronJobRun(lastCronJobRun.getId(), now);
 
         try {
             CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
@@ -62,11 +63,8 @@ public class DailyEmailAggregationJob {
         }
     }
 
-    List<AggregationCommand> processAggregateEmails() {
-        LocalDateTime endTime = LocalDateTime.now();
+    List<AggregationCommand> processAggregateEmails(LocalDateTime endTime) {
         LocalDateTime startTime = emailAggregationResources.getLastCronJobRun().getLastRun();
-
-        final LocalDateTime aggregateStarted = LocalDateTime.now();
 
         LOG.info(String.format("Collecting email aggregation for period (%s, %s) and type %s", startTime, endTime, DAILY));
 
@@ -82,7 +80,7 @@ public class DailyEmailAggregationJob {
                         startTime,
                         endTime,
                         DAILY,
-                        SECONDS.between(aggregateStarted, LocalDateTime.now()),
+                        SECONDS.between(endTime, LocalDateTime.now()),
                         pendingAggregationCommands.size()
                 )
         );

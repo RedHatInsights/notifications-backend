@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import javax.inject.Inject;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.*;
@@ -64,7 +65,7 @@ class DailyEmailAggregationJobTest {
             helpers.addEmailAggregation(tenant1, "unknown-bundle", application, "policyid-01", "hostid-06");
             helpers.addEmailAggregation(tenant1, "unknown-bundle", "unknown-application", "policyid-01", "hostid-06");
 
-            final List<AggregationCommand> emailAggregations1 = dailyEmailAggregationJob.processAggregateEmails();
+            final List<AggregationCommand> emailAggregations1 = dailyEmailAggregationJob.processAggregateEmails(LocalDateTime.now());
 
             // 4 aggregationCommands
             assertEquals(4, emailAggregations1.size());
@@ -84,12 +85,12 @@ class DailyEmailAggregationJobTest {
             helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-25");
             helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-26");
 
-            final List<AggregationCommand> emailAggregations2 = dailyEmailAggregationJob.processAggregateEmails();
+            final List<AggregationCommand> emailAggregations2 = dailyEmailAggregationJob.processAggregateEmails(LocalDateTime.now());
             // 6 aggregationCommands, 2 new (tenant2, bundle, application) and (noSubscribed, bundle, application)
             assertEquals(6, emailAggregations2.size());
 
             helpers.createSubscription(noSubscribedUsersTenant, "test", bundle, application, DAILY);
-            final List<AggregationCommand> emailAggregations3 = dailyEmailAggregationJob.processAggregateEmails();
+            final List<AggregationCommand> emailAggregations3 = dailyEmailAggregationJob.processAggregateEmails(LocalDateTime.now());
             // still 6 - subscription not taken into account in this process
             assertEquals(6, emailAggregations3.size());
         } finally {
