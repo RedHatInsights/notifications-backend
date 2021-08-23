@@ -30,13 +30,13 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "40")
     Integer rbacElementsPerPage;
 
-    @ConfigProperty(name = "rbac.retry.max-attempts", defaultValue = "3")
+    @ConfigProperty(name = "recipient-provider.rbac.retry.max-attempts", defaultValue = "10")
     long maxRetryAttempts;
 
-    @ConfigProperty(name = "rbac.retry.back-off.initial-value", defaultValue = "0.1S")
+    @ConfigProperty(name = "recipient-provider.rbac.retry.back-off.initial-value", defaultValue = "10S")
     Duration initialBackOff;
 
-    @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
+    @ConfigProperty(name = "recipient-provider.rbac.retry.back-off.max-value", defaultValue = "1H")
     Duration maxBackOff;
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
