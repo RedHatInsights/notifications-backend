@@ -412,8 +412,8 @@ public class LifecycleITest extends DbIsolatedTest {
             mockServerConfig.getMockServerClient().clear(expectedRequestPattern);
         }
 
+        counterAssertionHelper.awaitAndAssertIncrement(PROCESSED_MESSAGES_COUNTER_NAME, 1);
         counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 0);
-        counterAssertionHelper.assertIncrement(PROCESSED_MESSAGES_COUNTER_NAME, 1);
         counterAssertionHelper.assertIncrement(PROCESSED_ENDPOINTS_COUNTER_NAME, expectedWebhookCalls);
         counterAssertionHelper.clear();
     }

@@ -27,11 +27,11 @@ public class NotificationResources {
     }
 
     public Uni<List<NotificationHistory>> getNotificationHistory(String tenant, UUID endpoint, boolean includeDetails, Query limiter) {
-        String query = "SELECT NEW NotificationHistory(nh.id, nh.accountId, nh.invocationTime, nh.invocationResult, nh.eventId, nh.endpoint, nh.created";
+        String query = "SELECT NEW NotificationHistory(nh.id, nh.invocationTime, nh.invocationResult, nh.endpoint, nh.created";
         if (includeDetails) {
             query += ", nh.details";
         }
-        query += ") FROM NotificationHistory nh WHERE nh.accountId = :accountId AND nh.endpoint.id = :endpointId";
+        query += ") FROM NotificationHistory nh WHERE nh.event.accountId = :accountId AND nh.endpoint.id = :endpointId";
 
         if (limiter != null) {
             query = limiter.getModifiedQuery(query);
@@ -51,7 +51,7 @@ public class NotificationResources {
     }
 
     public Uni<JsonObject> getNotificationDetails(String tenant, Query limiter, UUID endpoint, UUID historyId) {
-        String query = "SELECT details FROM NotificationHistory WHERE accountId = :accountId AND endpoint.id = :endpointId AND id = :historyId";
+        String query = "SELECT details FROM NotificationHistory WHERE event.accountId = :accountId AND endpoint.id = :endpointId AND id = :historyId";
         if (limiter != null) {
             query = limiter.getModifiedQuery(query);
         }

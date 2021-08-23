@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.templates.EmailTemplate;
@@ -72,10 +73,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     ObjectMapper objectMapper;
 
     @Override
-    public Multi<NotificationHistory> process(Action action, List<Endpoint> endpoints) {
+    public Multi<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
         if (endpoints == null || endpoints.isEmpty()) {
             return Multi.createFrom().empty();
         } else {
+            Action action = event.getAction();
             final EmailTemplate template = emailTemplateFactory.get(action.getBundle(), action.getApplication());
             final boolean shouldSaveAggregation = Arrays.stream(EmailSubscriptionType.values())
                     .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
@@ -100,7 +102,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             }
 
             return processUni.onItem().transformToMulti(_unused -> sendEmail(
-                    action,
+                    event,
                     Set.copyOf(endpoints),
                     EmailSubscriptionType.INSTANT,
                     template
@@ -108,7 +110,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         }
     }
 
-    private Multi<NotificationHistory> sendEmail(Action action, Set<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType, EmailTemplate emailTemplate) {
+    private Multi<NotificationHistory> sendEmail(Event event, Set<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType, EmailTemplate emailTemplate) {
+        Action action = event.getAction();
         if (!emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
             return Multi.createFrom().empty();
         }
@@ -125,7 +128,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 .onItem().transform(Set::copyOf)
                 .onItem().transformToUni(subscribers -> recipientResolver.recipientUsers(action.getAccountId(), endpoints, subscribers))
         .onItem().transformToMulti(Multi.createFrom()::iterable)
-        .onItem().transformToUniAndConcatenate(user -> emailSender.sendEmail(user, action, subject, body));
+        .onItem().transformToUniAndConcatenate(user -> emailSender.sendEmail(user, event, subject, body));
     }
 
     @Incoming(AGGREGATION_CHANNEL)
@@ -224,7 +227,10 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     action.setEventType(null);
                     action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 
-                    return emailSender.sendEmail(entries.getKey(), action, subject, body)
+                    Event event = new Event();
+                    event.setAction(action);
+
+                    return emailSender.sendEmail(entries.getKey(), event, subject, body)
                             .onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
                 })
                 .onTermination().call((throwable, aBoolean) -> {

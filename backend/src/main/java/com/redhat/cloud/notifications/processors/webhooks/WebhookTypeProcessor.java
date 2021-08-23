@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.processors.webhooks;
 
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
@@ -69,10 +69,10 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     }
 
     @Override
-    public Multi<NotificationHistory> process(Action action, List<Endpoint> endpoints) {
+    public Multi<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
         return Multi.createFrom().iterable(endpoints)
                 .onItem().transformToUniAndConcatenate(endpoint -> {
-                    Notification notification = new Notification(action, endpoint);
+                    Notification notification = new Notification(event, endpoint);
                     return process(notification);
                 });
     }
@@ -93,7 +93,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
             req.basicAuthentication(properties.getBasicAuthentication().getUsername(), properties.getBasicAuthentication().getPassword());
         }
 
-        Uni<JsonObject> payload = transformer.transform(item.getAction());
+        Uni<JsonObject> payload = transformer.transform(item.getEvent().getAction());
 
         return doHttpRequest(item, req, payload);
     }

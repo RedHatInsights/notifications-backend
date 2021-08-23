@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.processors.camel;
 
 import com.redhat.cloud.notifications.db.converters.MapConverter;
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
@@ -55,10 +55,10 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     }
 
     @Override
-    public Multi<NotificationHistory> process(Action action, List<Endpoint> endpoints) {
+    public Multi<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
         return Multi.createFrom().iterable(endpoints)
                 .onItem().transformToUniAndConcatenate(endpoint -> {
-                    Notification notification = new Notification(action, endpoint);
+                    Notification notification = new Notification(event, endpoint);
                     return process(notification);
                 });
     }
@@ -90,7 +90,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         metaData.put("extras", new MapConverter().convertToDatabaseColumn(properties.getExtras()));
 
-        Uni<JsonObject> payload = transformer.transform(item.getAction());
+        Uni<JsonObject> payload = transformer.transform(item.getEvent().getAction());
         return callCamel(item, metaData, payload);
     }
 

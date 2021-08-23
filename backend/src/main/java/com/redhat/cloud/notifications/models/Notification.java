@@ -1,27 +1,25 @@
 package com.redhat.cloud.notifications.models;
 
-import com.redhat.cloud.notifications.ingress.Action;
-
 public class Notification {
-    private Action action;
 
+    private final Event event;
     private final Endpoint endpoint;
 
-    public Notification(Action action, Endpoint endpoint) {
-        this.action = action;
+    public Notification(Event event, Endpoint endpoint) {
+        this.event = event;
         this.endpoint = endpoint;
     }
 
-    public Action getAction() {
-        return action;
+    public Event getEvent() {
+        return event;
     }
 
+    // TODO [Event log phase 2] Delete this method.
     public String getTenant() {
-        return action.getAccountId();
+        return event.getAction().getAccountId();
     }
 
     public Endpoint getEndpoint() {
         return endpoint;
     }
-
 }
