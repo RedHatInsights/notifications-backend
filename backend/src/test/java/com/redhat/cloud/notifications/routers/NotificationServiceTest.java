@@ -274,6 +274,19 @@ public class NotificationServiceTest extends DbIsolatedTest {
         Optional<Facet> policies = applications.stream().filter(facet -> facet.getName().equals("policies")).findFirst();
         assertTrue(policies.isPresent());
         assertEquals("Policies", policies.get().getDisplayName());
+
+        // Without bundle returns all applications across bundles
+        applications = given()
+                .header(identityHeader)
+                .when()
+                .get("/notifications/facets/applications")
+                .then()
+                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
+
+        assertTrue(applications.size() > 0);
+        policies = applications.stream().filter(facet -> facet.getName().equals("policies")).findFirst();
+        assertTrue(policies.isPresent());
+        assertEquals("Policies", policies.get().getDisplayName());
     }
 
     @Test

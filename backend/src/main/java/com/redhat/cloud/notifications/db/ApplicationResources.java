@@ -65,10 +65,18 @@ public class ApplicationResources {
     }
 
     public Uni<List<Application>> getApplications(String bundleName) {
-        String query = "FROM Application WHERE bundle.name = :bundleName";
-        return session.createQuery(query, Application.class)
-                .setParameter("bundleName", bundleName)
-                .getResultList();
+        String sql = "FROM Application";
+        if (bundleName != null) {
+            sql += " WHERE bundle.name = :bundleName";
+        }
+
+        var query = session.createQuery(sql, Application.class);
+
+        if (bundleName != null) {
+            query = query.setParameter("bundleName", bundleName);
+        }
+
+        return query.getResultList();
     }
 
     public Uni<Application> getApplication(UUID id) {
