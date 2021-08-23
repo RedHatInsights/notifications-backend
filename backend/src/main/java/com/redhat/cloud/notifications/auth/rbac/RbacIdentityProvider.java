@@ -46,7 +46,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     @ConfigProperty(name = "rbac.retry.max-attempts", defaultValue = "3")
     long maxRetryAttempts;
 
-    @ConfigProperty(name = "rbac.retry.back-off.initial-value", defaultValue = "0.1S")
+    @ConfigProperty(name = "rbac.retry.back-off.initial-value", defaultValue = "0.2S")
     Duration initialBackOff;
 
     @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
