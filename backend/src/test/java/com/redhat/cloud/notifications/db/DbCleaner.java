@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -55,6 +56,7 @@ public class DbCleaner {
         return session.withTransaction(transaction -> deleteAllFrom(EmailAggregation.class)
                 .chain(() -> deleteAllFrom(EmailSubscription.class))
                 .chain(() -> deleteAllFrom(NotificationHistory.class))
+                .chain(() -> deleteAllFrom(Event.class))
                 .chain(() -> deleteAllFrom(BehaviorGroupAction.class))
                 .chain(() -> deleteAllFrom(WebhookProperties.class))
                 .chain(() -> deleteAllFrom(Endpoint.class))

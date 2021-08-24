@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -19,6 +20,9 @@ public class ApplicationResources {
 
     @Inject
     Mutiny.Session session;
+
+    @Inject
+    Mutiny.StatelessSession statelessSession;
 
     public Uni<Application> createApp(Application app) {
         return session.find(Bundle.class, app.getBundleId())
@@ -91,13 +95,14 @@ public class ApplicationResources {
                 .getSingleResultOrNull();
     }
 
+    // Note: This method uses a stateless session
     public Uni<EventType> getEventType(String bundleName, String applicationName, String eventTypeName) {
         final String query = "FROM EventType WHERE name = :eventTypeName AND application.name = :applicationName AND application.bundle.name = :bundleName";
-        return session.createQuery(query, EventType.class)
+        return statelessSession.createQuery(query, EventType.class)
                 .setParameter("bundleName", bundleName)
                 .setParameter("applicationName", applicationName)
                 .setParameter("eventTypeName", eventTypeName)
-                .getSingleResultOrNull();
+                .getSingleResult();
     }
 
     public Uni<List<EventType>> getEventTypes(UUID appId) {
@@ -157,5 +162,12 @@ public class ApplicationResources {
         }
 
         return mutinyQuery.getResultList();
+    }
+
+    // Note: This method uses a stateless session
+    public Uni<Event> createEvent(Event event) {
+        event.prePersist(); // This method must be called manually while using a StatelessSession.
+        return statelessSession.insert(event)
+                .replaceWith(event);
     }
 }

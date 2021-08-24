@@ -2,9 +2,9 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.templates.Blank;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
@@ -24,7 +24,6 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Map;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
@@ -52,8 +51,7 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
 
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
-        final Action action = new Action("someBundle", "someApplication", "someEventType", LocalDateTime.now(), "someAccountId", Map.of(), List.of());
-        final Multi<NotificationHistory> process = testee.process(action, null);
+        final Multi<NotificationHistory> process = testee.process(new Event(), null);
 
         process.subscribe()
                 .withSubscriber(AssertSubscriber.create())
@@ -63,8 +61,7 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
 
     @Test
     void shouldNotProcessWhenEndpointsAreEmpty() {
-        final Action action = new Action("someBundle", "someApplication", "someEventType", LocalDateTime.now(), "someAccountId", Map.of(), List.of());
-        final Multi<NotificationHistory> process = testee.process(action, List.of());
+        final Multi<NotificationHistory> process = testee.process(new Event(), List.of());
 
         process.subscribe()
                 .withSubscriber(AssertSubscriber.create())

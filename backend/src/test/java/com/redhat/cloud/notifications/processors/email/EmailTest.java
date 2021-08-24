@@ -7,12 +7,12 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.recipients.rbac.RbacServiceToService;
 import com.redhat.cloud.notifications.recipients.rbac.RbacUser;
@@ -127,6 +127,9 @@ public class EmailTest extends DbIsolatedTest {
 
         Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application, "My test machine");
 
+        Event event = new Event();
+        event.setAction(emailActionMessage);
+
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
@@ -137,7 +140,7 @@ public class EmailTest extends DbIsolatedTest {
         ep.setProperties(properties);
 
         try {
-            Multi<NotificationHistory> process = emailProcessor.process(emailActionMessage, List.of(ep));
+            Multi<NotificationHistory> process = emailProcessor.process(event, List.of(ep));
             NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
             assertTrue(history.isInvocationResult());
         } catch (Exception e) {
@@ -208,8 +211,6 @@ public class EmailTest extends DbIsolatedTest {
         emailActionMessage.setBundle(bundle);
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
-        // Disabling event id until we need it
-        // emailActionMessage.setEventId(UUID.randomUUID().toString());
         emailActionMessage.setEventType(TestHelpers.eventType);
 
         emailActionMessage.setContext(Map.of(
@@ -219,7 +220,7 @@ public class EmailTest extends DbIsolatedTest {
                 "tags-what?", List.of()
         ));
         emailActionMessage.setEvents(List.of(
-                Event.newBuilder()
+                com.redhat.cloud.notifications.ingress.Event.newBuilder()
                         .setMetadataBuilder(Metadata.newBuilder())
                         .setPayload(Map.of(
                                 "foo", "bar"
@@ -228,6 +229,9 @@ public class EmailTest extends DbIsolatedTest {
         ));
 
         emailActionMessage.setAccountId(tenant);
+
+        Event event = new Event();
+        event.setAction(emailActionMessage);
 
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
@@ -239,7 +243,7 @@ public class EmailTest extends DbIsolatedTest {
         ep.setProperties(properties);
 
         try {
-            Multi<NotificationHistory> process = emailProcessor.process(emailActionMessage, List.of(ep));
+            Multi<NotificationHistory> process = emailProcessor.process(event, List.of(ep));
             // The processor returns a null history value but Multi does not support null values so the resulting Multi is empty.
             assertTrue(process.collect().asList().await().indefinitely().isEmpty());
         } catch (Exception e) {

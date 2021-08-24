@@ -5,10 +5,10 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
@@ -71,10 +71,12 @@ public class WebhookTest extends DbIsolatedTest {
         HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
         Action webhookActionMessage = buildWebhookAction();
+        Event event = new Event();
+        event.setAction(webhookActionMessage);
         Endpoint ep = buildWebhookEndpoint(url);
 
         try {
-            Multi<NotificationHistory> process = webhookTypeProcessor.process(webhookActionMessage, List.of(ep));
+            Multi<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
             NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
             assertTrue(history.isInvocationResult());
         } catch (Exception e) {
@@ -133,8 +135,10 @@ public class WebhookTest extends DbIsolatedTest {
         HttpRequest mockServerRequest = getMockHttpRequest(expectationResponseCallback);
         try {
             Action action = buildWebhookAction();
+            Event event = new Event();
+            event.setAction(action);
             Endpoint ep = buildWebhookEndpoint(url);
-            Multi<NotificationHistory> process = webhookTypeProcessor.process(action, List.of(ep));
+            Multi<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
             NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
 
             assertEquals(shouldSucceedEventually, history.isInvocationResult());
@@ -165,12 +169,12 @@ public class WebhookTest extends DbIsolatedTest {
 
         webhookActionMessage.setEvents(
                 List.of(
-                        Event
+                        com.redhat.cloud.notifications.ingress.Event
                                 .newBuilder()
                                 .setMetadataBuilder(Metadata.newBuilder())
                                 .setPayload(payload1)
                                 .build(),
-                        Event
+                        com.redhat.cloud.notifications.ingress.Event
                                 .newBuilder()
                                 .setMetadataBuilder(Metadata.newBuilder())
                                 .setPayload(new HashMap())
