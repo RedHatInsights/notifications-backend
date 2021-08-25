@@ -12,6 +12,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonArray;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -20,6 +22,7 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
+import static com.redhat.cloud.notifications.routers.EventLogMigrationService.BATCH_SIZE_KEY;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,6 +40,16 @@ public class EventLogMigrationServiceTest extends DbIsolatedTest {
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
+
+    @BeforeAll
+    static void beforeAll() {
+        System.setProperty(BATCH_SIZE_KEY, "2");
+    }
+
+    @AfterAll
+    static void afterAll() {
+        System.clearProperty(BATCH_SIZE_KEY);
+    }
 
     @Test
     void test() {

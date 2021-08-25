@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.logging.Logger;
 
@@ -25,11 +26,15 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 public class EventLogMigrationService {
 
     public static final String CONFIRMATION_TOKEN = "ready-set-go";
+    public static final String BATCH_SIZE_KEY = "event-log.migration-service.batch-size";
 
     private static final Logger LOGGER = Logger.getLogger(EventLogMigrationService.class);
 
     @Inject
     Mutiny.Session session;
+
+    @ConfigProperty(name = BATCH_SIZE_KEY, defaultValue = "1000")
+    int batchSize;
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -42,22 +47,32 @@ public class EventLogMigrationService {
         // All DB changes will be rolled-back if anything goes wrong.
         return session.withTransaction(tx -> {
             LOGGER.debug("[NOTIF-291] Start");
-            return session.createQuery("FROM NotificationHistory WHERE event IS NULL", NotificationHistory.class)
-                    .getResultList()
-                    .onItem().transformToMulti(Multi.createFrom()::iterable)
-                    .onItem().transformToUniAndConcatenate(history -> {
-                        Event event = new Event();
-                        event.setAccountId(history.getAccountId());
-                        return session.persist(event)
-                                .onItem().call(session::flush)
-                                .onItem().transformToUni(ignored ->
-                                        session.createQuery("UPDATE NotificationHistory SET event = :event WHERE id = :id")
-                                                .setParameter("event", event)
-                                                .setParameter("id", history.getId())
-                                                .executeUpdate()
-                                                .onItem().invoke(() -> report.getUpdatedHistoryRecords().incrementAndGet())
+            return Multi.createBy().repeating()
+                    .uni(() -> new AtomicLong(), counter -> {
+                        LOGGER.infof("[NOTIF-291] Migrating batch #%d", counter.getAndIncrement());
+                        return session.createQuery("FROM NotificationHistory WHERE event IS NULL", NotificationHistory.class)
+                                .setMaxResults(batchSize)
+                                .getResultList()
+                                .onItem().transformToUni(historyEntries ->
+                                        Multi.createFrom().iterable(historyEntries)
+                                                .onItem().transformToUniAndConcatenate(history -> {
+                                                    Event event = new Event();
+                                                    event.setAccountId(history.getAccountId());
+                                                    return session.persist(event)
+                                                            .onItem().call(session::flush)
+                                                            .onItem().transformToUni(ignored ->
+                                                                    session.createQuery("UPDATE NotificationHistory SET event = :event WHERE id = :id")
+                                                                            .setParameter("event", event)
+                                                                            .setParameter("id", history.getId())
+                                                                            .executeUpdate()
+                                                                            .onItem().invoke(() -> report.getUpdatedHistoryRecords().incrementAndGet())
+                                                            );
+                                                })
+                                                .onItem().ignoreAsUni()
+                                                .replaceWith(historyEntries.isEmpty())
                                 );
                     })
+                    .until(isEmpty -> isEmpty)
                     .onItem().ignoreAsUni();
         })
         .onItem().invoke(ignored -> {
