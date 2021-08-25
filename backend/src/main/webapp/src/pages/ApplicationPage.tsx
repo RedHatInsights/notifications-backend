@@ -2,9 +2,9 @@ import { Breadcrumb, BreadcrumbItem, PageSection, Spinner, Title } from '@patter
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { useParams } from 'react-router';
+
 import { useApplicationTypes } from '../services/GetApplication';
 import { useEventTypes } from '../services/GetEventTypes';
-
 
 type ApplicationPageParams = {
     applicationId: string;
@@ -14,7 +14,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
-    const columns = ['Event Type', 'Event Type Id', 'Description'];
+    const columns = [ 'Event Type', 'Event Type Id', 'Description' ];
 
     if (eventTypesQuery.loading) {
         return <Spinner />;
