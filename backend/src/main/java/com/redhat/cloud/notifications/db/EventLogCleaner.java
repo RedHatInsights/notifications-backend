@@ -19,7 +19,7 @@ public class EventLogCleaner {
     public static final String EVENT_LOG_CLEANER_DELETE_AFTER_CONF_KEY = "event-log-cleaner.delete-after";
 
     private static final Logger LOGGER = Logger.getLogger(EventLogCleaner.class);
-    private static final Duration DEFAULT_DELETE_DELAY = Duration.ofDays(14L);
+    private static final Duration DEFAULT_DELETE_DELAY = Duration.ofDays(31L);
 
     @Inject
     Mutiny.StatelessSession statelessSession;
