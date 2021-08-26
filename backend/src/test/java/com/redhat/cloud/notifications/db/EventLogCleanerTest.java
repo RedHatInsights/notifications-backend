@@ -45,7 +45,7 @@ public class EventLogCleanerTest {
     @Test
     void testWithDefaultConfiguration() {
         createEvent(now().minus(Duration.ofHours(1L)))
-                .chain(() -> createEvent(now().minus(Duration.ofDays(28L))))
+                .chain(() -> createEvent(now().minus(Duration.ofDays(62L))))
                 .subscribe().withSubscriber(UniAssertSubscriber.create())
                 .await()
                 .assertCompleted();
@@ -58,7 +58,7 @@ public class EventLogCleanerTest {
     void testWithCustomConfiguration() {
         System.setProperty(EVENT_LOG_CLEANER_DELETE_AFTER_CONF_KEY, "30m");
         createEvent(now().minus(Duration.ofHours(1L)))
-                .chain(() -> createEvent(now().minus(Duration.ofDays(28L))))
+                .chain(() -> createEvent(now().minus(Duration.ofDays(62L))))
                 .subscribe().withSubscriber(UniAssertSubscriber.create())
                 .await()
                 .assertCompleted();
