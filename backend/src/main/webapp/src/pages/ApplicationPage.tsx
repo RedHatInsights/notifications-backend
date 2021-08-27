@@ -1,4 +1,5 @@
-import { Breadcrumb, BreadcrumbItem, PageSection, Spinner, Title } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Split, SplitItem } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { useParams } from 'react-router';
@@ -9,6 +10,7 @@ import { useEventTypes } from '../services/GetEventTypes';
 type ApplicationPageParams = {
     applicationId: string;
 }
+type AddEventType = (newEventType: string) => void;
 
 export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
@@ -40,6 +42,13 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     aria-label="Event types table"
                 >
                     <Thead>
+                        <Toolbar>
+                            <ToolbarContent>
+                                <ToolbarItem>
+                                    <Button variant='primary' type='submit'> Create Event Type </Button>
+                                </ToolbarItem>
+                            </ToolbarContent>
+                        </Toolbar>
                         <Tr>
                             {columns.map((column, columnIndex) => (
                                 <Th key={ columnIndex }>{column}</Th>
