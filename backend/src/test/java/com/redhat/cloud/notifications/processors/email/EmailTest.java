@@ -110,7 +110,7 @@ public class EmailTest extends DbIsolatedTest {
         String application = "policies";
 
         for (String username : usernames) {
-            helpers.createSubscription(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
+            helpers.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
         }
 
         final List<String> bodyRequests = new ArrayList<>();
@@ -192,7 +192,7 @@ public class EmailTest extends DbIsolatedTest {
         String application = "policies";
 
         for (String username : usernames) {
-            helpers.createSubscription(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
+            helpers.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
         }
 
         final List<String> bodyRequests = new ArrayList<>();
@@ -278,22 +278,22 @@ public class EmailTest extends DbIsolatedTest {
         for (String accountId : accountIds) {
             UUID endpointId = helpers.emailSubscriptionEndpointId(accountId, new EmailSubscriptionProperties());
             UUID bundleId = helpers.getBundleId(bundle);
-            UUID behaviorGroupId = helpers.createBehaviorGroup(accountId, "test-behavior-group", bundleId);
+            UUID behaviorGroupId = helpers.createBehaviorGroup(accountId, "test-behavior-group", bundleId).getId();
 
             helpers.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupId));
             helpers.updateBehaviorGroupActions(accountId, behaviorGroupId, List.of(endpointId));
         }
 
         for (String username : tenant1Usernames) {
-            helpers.createSubscription(tenant1, username, bundle, application, EmailSubscriptionType.DAILY);
+            helpers.subscribe(tenant1, username, bundle, application, EmailSubscriptionType.DAILY);
         }
 
         for (String username : tenant2Usernames) {
-            helpers.createSubscription(tenant2, username, bundle, application, EmailSubscriptionType.DAILY);
+            helpers.subscribe(tenant2, username, bundle, application, EmailSubscriptionType.DAILY);
         }
 
         for (String username : noSubscribedUsersTenantTestUser) {
-            helpers.removeSubscription(noSubscribedUsersTenant, username, bundle, application, EmailSubscriptionType.DAILY);
+            helpers.unsubscribe(noSubscribedUsersTenant, username, bundle, application, EmailSubscriptionType.DAILY);
         }
 
         final Instant nowPlus5HoursInstant = Instant.now().plus(Duration.ofHours(5));
@@ -428,11 +428,11 @@ public class EmailTest extends DbIsolatedTest {
             }
 
             bodyRequests.clear();
-            helpers.createSubscription(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
+            helpers.subscribe(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
             emailProcessor.processDailyEmail(nowPlus5Hours);
             // 0 emails; previous aggregations were deleted in this step, even if no one was subscribed by that time
             assertEquals(0, bodyRequests.size());
-            helpers.removeSubscription(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
+            helpers.unsubscribe(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
 
         } catch (Exception e) {
             e.printStackTrace();
