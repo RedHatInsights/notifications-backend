@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.jboss.logmanager.Level;
@@ -39,23 +40,24 @@ public class DailyEmailAggregationJob {
     Emitter<String> emitter;
 
     public void processDailyEmail(Instant scheduledFireTime) {
-        List<AggregationCommand> aggregationCommands = processAggregateEmails(scheduledFireTime);
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-        for (AggregationCommand aggregationCommand : aggregationCommands) {
-            try {
-                final String payload = objectMapper.writeValueAsString(aggregationCommand);
-                emitter.send(payload);
-                futures.add(emitter.send(payload).toCompletableFuture());
-            } catch (JsonProcessingException e) {
-                LOG.warning("Could not transform AggregationCommand to JSON object.");
+        if (isCronJobEnabled()) {
+            List<AggregationCommand> aggregationCommands = processAggregateEmails(scheduledFireTime);
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
+            for (AggregationCommand aggregationCommand : aggregationCommands) {
+                try {
+                    final String payload = objectMapper.writeValueAsString(aggregationCommand);
+                    futures.add(emitter.send(payload).toCompletableFuture());
+                } catch (JsonProcessingException e) {
+                    LOG.warning("Could not transform AggregationCommand to JSON object.");
+                }
             }
-        }
 
-        try {
-            CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-            combinedDataCompletionStage.toCompletableFuture().get();
-        } catch (InterruptedException | ExecutionException ie) {
-            LOG.log(Level.SEVERE, "Writing AggregationCommands failed", ie);
+            try {
+                CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+                combinedDataCompletionStage.toCompletableFuture().get();
+            } catch (InterruptedException | ExecutionException ie) {
+                LOG.log(Level.SEVERE, "Writing AggregationCommands failed", ie);
+            }
         }
     }
 
@@ -86,5 +88,10 @@ public class DailyEmailAggregationJob {
         );
 
         return pendingAggregationCommands;
+    }
+
+    private boolean isCronJobEnabled() {
+        // The scheduled job is disabled by default.
+        return ConfigProvider.getConfig().getOptionalValue("notifications.aggregator.email.subscription.periodic.cron.enabled", Boolean.class).orElse(false);
     }
 }
