@@ -6,7 +6,7 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm.Field;
@@ -31,6 +31,8 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -49,7 +51,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
     MockServerClientConfig mockServerConfig;
 
     @Inject
-    EndpointEmailSubscriptionResources emailSubscriptionResources;
+    ResourceHelpers resourceHelpers;
 
     @InjectMock
     EmailTemplateFactory emailTemplateFactory;
@@ -79,8 +81,8 @@ public class UserConfigServiceTest extends DbIsolatedTest {
 
     private SettingsValues createSettingsValue(String bundle, String application, Boolean daily, Boolean instant) {
         ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
-        applicationSettingsValue.notifications.put(EmailSubscriptionType.DAILY, daily);
-        applicationSettingsValue.notifications.put(EmailSubscriptionType.INSTANT, instant);
+        applicationSettingsValue.notifications.put(DAILY, daily);
+        applicationSettingsValue.notifications.put(INSTANT, instant);
 
         BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
         bundleSettingsValue.applications.put(application, applicationSettingsValue);
@@ -253,7 +255,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
 
         // does not fail if we have unknown apps in our bundle's settings
         try {
-            emailSubscriptionResources.subscribe(tenant, username, bundle, "not-found-app", EmailSubscriptionType.DAILY).await().indefinitely();
+            resourceHelpers.subscribe(tenant, username, bundle, "not-found-app", DAILY);
             given()
                     .header(identityHeader)
                     .when()
@@ -263,7 +265,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                     .statusCode(200)
                     .contentType(JSON);
         } finally {
-            emailSubscriptionResources.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", EmailSubscriptionType.DAILY).await().indefinitely();
+            resourceHelpers.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", DAILY);
         }
 
         // Fails if we don't specify the bundleName
@@ -287,17 +289,8 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .statusCode(200)
                 .contentType(TEXT);
 
-        assertNull(
-                emailSubscriptionResources
-                        .getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", EmailSubscriptionType.DAILY)
-                        .await().indefinitely()
-        );
-
-        assertNull(
-                emailSubscriptionResources
-                        .getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", EmailSubscriptionType.INSTANT)
-                        .await().indefinitely()
-        );
+        assertNull(resourceHelpers.getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", DAILY));
+        assertNull(resourceHelpers.getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", INSTANT));
 
         // Does not add event type if is not supported by the templates
         Mockito
@@ -320,7 +313,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
 
                     @Override
                     public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
-                        return type == EmailSubscriptionType.INSTANT;
+                        return type == INSTANT;
                     }
                 });
 
