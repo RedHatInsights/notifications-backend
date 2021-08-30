@@ -7,6 +7,7 @@ export type CreateEventType = {
     displayName: string;
     description: string;
     applicationId: string;
+    name: string;
 
 }
 

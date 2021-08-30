@@ -10,7 +10,6 @@ import { useEventTypes } from '../services/GetEventTypes';
 type ApplicationPageParams = {
     applicationId: string;
 }
-type AddEventType = (newEventType: string) => void;
 
 export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
