@@ -38,8 +38,8 @@ public class EmailAggregationResources {
     }
 
     public CronJobRun getLastCronJobRun() {
-        String query = "SELECT id, last_run FROM cronjob_run";
-        return session.createNativeQuery(query, CronJobRun.class).getSingleResult();
+        String query = "FROM CronJobRun";
+        return session.createQuery(query, CronJobRun.class).getSingleResult();
     }
 
     @Transactional
