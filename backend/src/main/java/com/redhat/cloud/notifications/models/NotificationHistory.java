@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.db.converters.NotificationHistoryDetailsCo
 
 import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -20,6 +19,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
+import static javax.persistence.FetchType.LAZY;
 
 @Entity
 @Table(name = "notification_history")
@@ -30,6 +30,7 @@ public class NotificationHistory extends CreationTimestamped {
     @JsonProperty(access = READ_ONLY)
     private UUID id;
 
+    // TODO [Event log phase 2] After the data migration, delete this field and drop the corresponding DB field.
     @NotNull
     @Size(max = 50)
     @JsonIgnore
@@ -41,13 +42,17 @@ public class NotificationHistory extends CreationTimestamped {
     @NotNull
     private Boolean invocationResult;
 
-    private String eventId;
+    // TODO [Event log phase 2] Make this field @NotNull (in the SQL schema as well) and the @ManyToOne relationship not optional.
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "event_id")
+    @JsonIgnore
+    private Event event;
 
     @Transient
     private UUID endpointId;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = LAZY, optional = false)
     @JoinColumn(name = "endpoint_id")
     @JsonIgnore
     private Endpoint endpoint;
@@ -58,18 +63,16 @@ public class NotificationHistory extends CreationTimestamped {
     public NotificationHistory() {
     }
 
-    public NotificationHistory(UUID id, String accountId, Long invocationTime, Boolean invocationResult, String eventId, Endpoint endpoint, LocalDateTime created) {
+    public NotificationHistory(UUID id, Long invocationTime, Boolean invocationResult, Endpoint endpoint, LocalDateTime created) {
         this.id = id;
-        this.accountId = accountId;
         this.invocationTime = invocationTime;
         this.invocationResult = invocationResult;
-        this.eventId = eventId;
         this.endpoint = endpoint;
         setCreated(created);
     }
 
-    public NotificationHistory(UUID id, String accountId, Long invocationTime, Boolean invocationResult, String eventId, Endpoint endpoint, LocalDateTime created, Map<String, Object> details) {
-        this(id, accountId, invocationTime, invocationResult, eventId, endpoint, created);
+    public NotificationHistory(UUID id, Long invocationTime, Boolean invocationResult, Endpoint endpoint, LocalDateTime created, Map<String, Object> details) {
+        this(id, invocationTime, invocationResult, endpoint, created);
         this.details = details;
     }
 
@@ -105,12 +108,12 @@ public class NotificationHistory extends CreationTimestamped {
         this.invocationResult = invocationResult;
     }
 
-    public String getEventId() {
-        return eventId;
+    public Event getEvent() {
+        return event;
     }
 
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
+    public void setEvent(Event event) {
+        this.event = event;
     }
 
     public UUID getEndpointId() {
@@ -157,13 +160,12 @@ public class NotificationHistory extends CreationTimestamped {
         return Objects.hash(id);
     }
 
-
     public static NotificationHistory getHistoryStub(Notification item, long invocationTime, UUID historyId) {
         NotificationHistory history = new NotificationHistory();
         history.setInvocationTime(invocationTime);
         history.setEndpoint(item.getEndpoint());
         history.setAccountId(item.getTenant());
-        history.setEventId("");
+        history.setEvent(item.getEvent());
         history.setInvocationResult(false);
         history.setId(historyId);
         return history;

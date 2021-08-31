@@ -217,8 +217,8 @@ public class InternalService {
         user.setActive(true);
         user.setAdmin(false);
 
-        return Uni.createFrom().item(renderEmailTemplateRequest.getPayload())
-                .onItem().transform(actionParser::fromJsonString)
+        String payload = renderEmailTemplateRequest.getPayload();
+        return actionParser.fromJsonString(payload)
                 .onItem().transformToUni(action -> Uni.combine().all().unis(
                     emailTemplateService
                             .compileTemplate(renderEmailTemplateRequest.getSubjectTemplate(), "subject")

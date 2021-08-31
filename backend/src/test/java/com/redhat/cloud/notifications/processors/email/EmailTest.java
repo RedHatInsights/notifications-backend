@@ -7,12 +7,12 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.recipients.rbac.RbacServiceToService;
 import com.redhat.cloud.notifications.recipients.rbac.RbacUser;
@@ -110,7 +110,7 @@ public class EmailTest extends DbIsolatedTest {
         String application = "policies";
 
         for (String username : usernames) {
-            helpers.createSubscription(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
+            helpers.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
         }
 
         final List<String> bodyRequests = new ArrayList<>();
@@ -127,6 +127,9 @@ public class EmailTest extends DbIsolatedTest {
 
         Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application, "My test machine");
 
+        Event event = new Event();
+        event.setAction(emailActionMessage);
+
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
@@ -137,7 +140,7 @@ public class EmailTest extends DbIsolatedTest {
         ep.setProperties(properties);
 
         try {
-            Multi<NotificationHistory> process = emailProcessor.process(emailActionMessage, List.of(ep));
+            Multi<NotificationHistory> process = emailProcessor.process(event, List.of(ep));
             NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
             assertTrue(history.isInvocationResult());
         } catch (Exception e) {
@@ -189,7 +192,7 @@ public class EmailTest extends DbIsolatedTest {
         String application = "policies";
 
         for (String username : usernames) {
-            helpers.createSubscription(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
+            helpers.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
         }
 
         final List<String> bodyRequests = new ArrayList<>();
@@ -208,8 +211,6 @@ public class EmailTest extends DbIsolatedTest {
         emailActionMessage.setBundle(bundle);
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
-        // Disabling event id until we need it
-        // emailActionMessage.setEventId(UUID.randomUUID().toString());
         emailActionMessage.setEventType(TestHelpers.eventType);
 
         emailActionMessage.setContext(Map.of(
@@ -219,7 +220,7 @@ public class EmailTest extends DbIsolatedTest {
                 "tags-what?", List.of()
         ));
         emailActionMessage.setEvents(List.of(
-                Event.newBuilder()
+                com.redhat.cloud.notifications.ingress.Event.newBuilder()
                         .setMetadataBuilder(Metadata.newBuilder())
                         .setPayload(Map.of(
                                 "foo", "bar"
@@ -228,6 +229,9 @@ public class EmailTest extends DbIsolatedTest {
         ));
 
         emailActionMessage.setAccountId(tenant);
+
+        Event event = new Event();
+        event.setAction(emailActionMessage);
 
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
@@ -239,7 +243,7 @@ public class EmailTest extends DbIsolatedTest {
         ep.setProperties(properties);
 
         try {
-            Multi<NotificationHistory> process = emailProcessor.process(emailActionMessage, List.of(ep));
+            Multi<NotificationHistory> process = emailProcessor.process(event, List.of(ep));
             // The processor returns a null history value but Multi does not support null values so the resulting Multi is empty.
             assertTrue(process.collect().asList().await().indefinitely().isEmpty());
         } catch (Exception e) {
@@ -274,22 +278,22 @@ public class EmailTest extends DbIsolatedTest {
         for (String accountId : accountIds) {
             UUID endpointId = helpers.emailSubscriptionEndpointId(accountId, new EmailSubscriptionProperties());
             UUID bundleId = helpers.getBundleId(bundle);
-            UUID behaviorGroupId = helpers.createBehaviorGroup(accountId, "test-behavior-group", bundleId);
+            UUID behaviorGroupId = helpers.createBehaviorGroup(accountId, "test-behavior-group", bundleId).getId();
 
             helpers.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupId));
             helpers.updateBehaviorGroupActions(accountId, behaviorGroupId, List.of(endpointId));
         }
 
         for (String username : tenant1Usernames) {
-            helpers.createSubscription(tenant1, username, bundle, application, EmailSubscriptionType.DAILY);
+            helpers.subscribe(tenant1, username, bundle, application, EmailSubscriptionType.DAILY);
         }
 
         for (String username : tenant2Usernames) {
-            helpers.createSubscription(tenant2, username, bundle, application, EmailSubscriptionType.DAILY);
+            helpers.subscribe(tenant2, username, bundle, application, EmailSubscriptionType.DAILY);
         }
 
         for (String username : noSubscribedUsersTenantTestUser) {
-            helpers.removeSubscription(noSubscribedUsersTenant, username, bundle, application, EmailSubscriptionType.DAILY);
+            helpers.unsubscribe(noSubscribedUsersTenant, username, bundle, application, EmailSubscriptionType.DAILY);
         }
 
         final Instant nowPlus5HoursInstant = Instant.now().plus(Duration.ofHours(5));
@@ -424,11 +428,11 @@ public class EmailTest extends DbIsolatedTest {
             }
 
             bodyRequests.clear();
-            helpers.createSubscription(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
+            helpers.subscribe(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
             emailProcessor.processDailyEmail(nowPlus5Hours);
             // 0 emails; previous aggregations were deleted in this step, even if no one was subscribed by that time
             assertEquals(0, bodyRequests.size());
-            helpers.removeSubscription(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
+            helpers.unsubscribe(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
 
         } catch (Exception e) {
             e.printStackTrace();

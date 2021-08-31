@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.webclient.BopWebClient;
@@ -77,13 +78,14 @@ public class EmailSender {
         processTime = registry.timer("processor.email.process-time");
     }
 
-    public Uni<NotificationHistory> sendEmail(User user, Action action, TemplateInstance subject, TemplateInstance body) {
+    public Uni<NotificationHistory> sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
         LocalDateTime start = LocalDateTime.now(UTC);
 
+        Action action = event.getAction();
         return endpointResources.getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties())
                 .onItem().transformToUni(endpoint -> {
-                    Notification notification = new Notification(action, endpoint);
+                    Notification notification = new Notification(event, endpoint);
 
                     // TODO Add recipients processing from policies-notifications processing (failed recipients)
                     //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)

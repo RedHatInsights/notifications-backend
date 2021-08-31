@@ -4,9 +4,11 @@ import io.micrometer.core.instrument.MeterRegistry;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -31,6 +33,13 @@ public class CounterAssertionHelper {
     public void assertIncrement(String counterName, double expectedIncrement) {
         double actualIncrement = registry.counter(counterName).count() - counterValuesBeforeTest.getOrDefault(counterName, 0d);
         assertEquals(expectedIncrement, actualIncrement);
+    }
+
+    public void awaitAndAssertIncrement(String counterName, double expectedIncrement) {
+        await().atMost(Duration.ofSeconds(30L)).until(() -> {
+            double actualIncrement = registry.counter(counterName).count() - counterValuesBeforeTest.getOrDefault(counterName, 0d);
+            return expectedIncrement == actualIncrement;
+        });
     }
 
     public void clear() {

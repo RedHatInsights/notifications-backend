@@ -2,9 +2,9 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
@@ -13,13 +13,13 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -28,7 +28,7 @@ public class EndpointProcessor {
     public static final String PROCESSED_MESSAGES_COUNTER_NAME = "processor.input.processed";
     public static final String PROCESSED_ENDPOINTS_COUNTER_NAME = "processor.input.endpoint.processed";
 
-    private static final Logger LOGGER = Logger.getLogger(EndpointProcessor.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(EndpointProcessor.class);
 
     @Inject
     EndpointResources resources;
@@ -57,9 +57,9 @@ public class EndpointProcessor {
         endpointTargeted = registry.counter(PROCESSED_ENDPOINTS_COUNTER_NAME);
     }
 
-    public Uni<Void> process(Action action) {
+    public Uni<Void> process(Event event) {
         processedItems.increment();
-        return resources.getTargetEndpoints(action.getAccountId(), action.getBundle(), action.getApplication(), action.getEventType())
+        return resources.getTargetEndpoints(event.getAccountId(), event.getEventType())
 
                 // Target endpoints are grouped by endpoint type.
                 .onItem().transformToMulti(endpoints -> {
@@ -74,18 +74,18 @@ public class EndpointProcessor {
                  */
                 .onItem().transformToMultiAndConcatenate(entry -> {
                     EndpointTypeProcessor processor = endpointTypeToProcessor(entry.getKey());
-                    return processor.process(action, entry.getValue());
+                    return processor.process(event, entry.getValue());
                 })
 
                 // TODO Action processing and history persistence should be a single atomic operation.
                 // Now each history entry is persisted.
                 .onItem().transformToUniAndConcatenate(history -> notifResources.createNotificationHistory(history)
-                        .onFailure().invoke(failure -> LOGGER.severe("Notification history creation failed for " + history.getEndpoint()))
+                        .onFailure().invoke(failure -> LOGGER.errorf("Notification history creation failed for %s", history.getEndpoint()))
                 )
                 .onItem().ignoreAsUni();
     }
 
-    public EndpointTypeProcessor endpointTypeToProcessor(EndpointType endpointType) {
+    private EndpointTypeProcessor endpointTypeToProcessor(EndpointType endpointType) {
         switch (endpointType) {
             case CAMEL:
                 return camel;

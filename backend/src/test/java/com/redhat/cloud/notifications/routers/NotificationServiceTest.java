@@ -98,7 +98,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
         helpers.createTestAppAndEventTypes();
         Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-        List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
+        List<Application> applications = helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
         UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
 
         Response response = given()
@@ -126,8 +126,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
         helpers.createTestAppAndEventTypes();
         Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-        List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
-        UUID myBundleId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
+        List<Application> applications = helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
+        UUID myBundleId = applications.stream().filter(a -> a.getName().equals(helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
 
         Response response = given()
                 .when()
@@ -154,9 +154,9 @@ public class NotificationServiceTest extends DbIsolatedTest {
         helpers.createTestAppAndEventTypes();
         Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-        List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
-        UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getId();
-        UUID myBundleId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
+        List<Application> applications = helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
+        UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(helpers.TEST_APP_NAME_2)).findFirst().get().getId();
+        UUID myBundleId = applications.stream().filter(a -> a.getName().equals(helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
 
         Response response = given()
                 .when()
@@ -186,12 +186,12 @@ public class NotificationServiceTest extends DbIsolatedTest {
         String tenant = "testGetEventTypesAffectedByEndpoint";
         Header identityHeader = initRbacMock(tenant, "user", RbacAccess.FULL_ACCESS);
 
-        UUID behaviorGroupId1 = helpers.createBehaviorGroup(tenant, "behavior-group-1", bundleId);
-        UUID behaviorGroupId2 = helpers.createBehaviorGroup(tenant, "behavior-group-2", bundleId);
-        UUID applicationId = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME).stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
-        UUID ep1 = this.helpers.createWebhookEndpoint(tenant);
-        UUID ep2 = this.helpers.createWebhookEndpoint(tenant);
-        List<EventType> eventTypesFromApp1 = this.helpers.getEventTypesForApplication(applicationId);
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(tenant, "behavior-group-1", bundleId).getId();
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(tenant, "behavior-group-2", bundleId).getId();
+        UUID applicationId = helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME).stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
+        UUID ep1 = helpers.createWebhookEndpoint(tenant);
+        UUID ep2 = helpers.createWebhookEndpoint(tenant);
+        List<EventType> eventTypesFromApp1 = helpers.getEventTypesForApplication(applicationId);
         EventType ev0 = eventTypesFromApp1.get(0);
         EventType ev1 = eventTypesFromApp1.get(1);
 
@@ -272,6 +272,19 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
         assertTrue(applications.size() > 0);
         Optional<Facet> policies = applications.stream().filter(facet -> facet.getName().equals("policies")).findFirst();
+        assertTrue(policies.isPresent());
+        assertEquals("Policies", policies.get().getDisplayName());
+
+        // Without bundle returns all applications across bundles
+        applications = given()
+                .header(identityHeader)
+                .when()
+                .get("/notifications/facets/applications")
+                .then()
+                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
+
+        assertTrue(applications.size() > 0);
+        policies = applications.stream().filter(facet -> facet.getName().equals("policies")).findFirst();
         assertTrue(policies.isPresent());
         assertEquals("Policies", policies.get().getDisplayName());
     }
