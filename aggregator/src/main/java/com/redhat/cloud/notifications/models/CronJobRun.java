@@ -20,9 +20,6 @@ public class CronJobRun implements Serializable {
     @NotNull
     private LocalDateTime lastRun;
 
-    public CronJobRun() {
-    }
-
     public UUID getId() {
         return id;
     }
