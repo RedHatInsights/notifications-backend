@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "cronjob_run")
-public class CronJobRun implements Serializable {
+public class CronJobRun {
 
     @Id
     @GeneratedValue
