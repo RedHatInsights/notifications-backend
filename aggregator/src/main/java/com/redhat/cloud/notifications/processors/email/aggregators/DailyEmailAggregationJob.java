@@ -12,7 +12,6 @@ import org.jboss.logmanager.Level;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -22,6 +21,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.*;
+import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.*;
 
 @ApplicationScoped
@@ -41,9 +41,11 @@ public class DailyEmailAggregationJob {
     @Channel(AGGREGATION_CHANNEL)
     Emitter<String> emitter;
 
-    public void processDailyEmail(Instant scheduledFireTime) {
+    public void processDailyEmail() {
         if (isCronJobEnabled()) {
-            List<AggregationCommand> aggregationCommands = processAggregateEmails(scheduledFireTime);
+            LocalDateTime now = LocalDateTime.now(UTC);
+            List<AggregationCommand> aggregationCommands = processAggregateEmails(now);
+
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             for (AggregationCommand aggregationCommand : aggregationCommands) {
                 try {
@@ -52,16 +54,16 @@ public class DailyEmailAggregationJob {
                 } catch (JsonProcessingException e) {
                     LOG.warning("Could not transform AggregationCommand to JSON object.");
                 }
-            }
 
-        final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
-        emailAggregationResources.updateLastCronJobRun(lastCronJobRun.getId(), now);
+                final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
+                emailAggregationResources.updateLastCronJobRun(lastCronJobRun.getId(), now);
 
-            try {
-                CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-                combinedDataCompletionStage.toCompletableFuture().get();
-            } catch (InterruptedException | ExecutionException ie) {
-                LOG.log(Level.SEVERE, "Writing AggregationCommands failed", ie);
+                try {
+                    CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+                    combinedDataCompletionStage.toCompletableFuture().get();
+                } catch (InterruptedException | ExecutionException ie) {
+                    LOG.log(Level.SEVERE, "Writing AggregationCommands failed", ie);
+                }
             }
         }
     }
@@ -87,7 +89,6 @@ public class DailyEmailAggregationJob {
                         pendingAggregationCommands.size()
                 )
         );
-
         return pendingAggregationCommands;
     }
 
