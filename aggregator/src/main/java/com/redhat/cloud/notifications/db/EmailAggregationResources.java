@@ -17,7 +17,6 @@ public class EmailAggregationResources {
     @Inject
     Session session;
 
-    @Transactional
     public List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
         String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.EmailAggregationKey(ea.accountId, ea.bundleName, ea.applicationName) " +
                 "FROM EmailAggregation ea WHERE ea.created > :start AND ea.created <= :end";
@@ -38,7 +37,6 @@ public class EmailAggregationResources {
                 .getResultList();
     }
 
-    @Transactional
     public CronJobRun getLastCronJobRun() {
         String query = "SELECT id, last_run FROM cronjob_run";
         return session.createNativeQuery(query, CronJobRun.class).getSingleResult();
