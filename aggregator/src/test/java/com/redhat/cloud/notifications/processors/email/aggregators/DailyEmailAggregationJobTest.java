@@ -6,12 +6,11 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -32,86 +31,96 @@ class DailyEmailAggregationJobTest {
     @Inject
     ResourceHelpers helpers;
 
-    @Inject
-    @ConfigProperty(name = "notifications.aggregator.email.subscription.periodic.cron.enabled")
-    private Provider<String> key1;
-
     @BeforeAll
     void init() {
         testee = new DailyEmailAggregationJob(emailAggregationResources);
     }
 
-    @Test
-    void testEmailSubscriptionDaily() {
-        final String tenant1 = "tenant1";
-        final String tenant2 = "tenant2";
-        final String noSubscribedUsersTenant = "tenant3";
-
-        final String bundle = "rhel";
-        final String application = "policies";
-
-        try {
-            helpers.createSubscription(tenant1, "foo", bundle, application, DAILY);
-            helpers.createSubscription(tenant1, "bar", bundle, application, DAILY);
-            helpers.createSubscription(tenant1, "admin", bundle, application, DAILY);
-
-            helpers.createSubscription(tenant2, "baz", bundle, application, DAILY);
-            helpers.createSubscription(tenant2, "bar", bundle, application, DAILY);
-
-            helpers.removeSubscription(noSubscribedUsersTenant, "test", bundle, application, DAILY);
-
-            // applications without template or aggregations do not break the process
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-02", "hostid-02");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-03", "hostid-03");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-04");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-05");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-06");
-            helpers.addEmailAggregation(tenant1, bundle, "unknown-application", "policyid-01", "hostid-06");
-            helpers.addEmailAggregation(tenant1, "unknown-bundle", application, "policyid-01", "hostid-06");
-            helpers.addEmailAggregation(tenant1, "unknown-bundle", "unknown-application", "policyid-01", "hostid-06");
-
-            final List<AggregationCommand> emailAggregations1 = testee.processAggregateEmails(LocalDateTime.now());
-
-            // 4 aggregationCommands
-            assertEquals(4, emailAggregations1.size());
-
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-02", "hostid-02");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-03", "hostid-03");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-04");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-05");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-06");
-
-            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-11");
-            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-15");
-            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-16");
-
-            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-21");
-            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-25");
-            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-26");
-
-            final List<AggregationCommand> emailAggregations2 = testee.processAggregateEmails(LocalDateTime.now());
-            // 6 aggregationCommands, 2 new (tenant2, bundle, application) and (noSubscribed, bundle, application)
-            assertEquals(6, emailAggregations2.size());
-
-            helpers.createSubscription(noSubscribedUsersTenant, "test", bundle, application, DAILY);
-            final List<AggregationCommand> emailAggregations3 = testee.processAggregateEmails(LocalDateTime.now());
-            // still 6 - subscription not taken into account in this process
-            assertEquals(6, emailAggregations3.size());
-        } finally {
-            helpers.purgeAggregations();
-        }
+    @AfterEach
+    void tearDown() {
+        helpers.purgeAggregations();
     }
 
     @Test
-    void shouldNotProcessMailsWhenCronJobIsDisabledByDefault() {
-        testee.processDailyEmail();
-        verifyNoInteractions(mock(EmailAggregationResources.class));
+    void shouldNotChangeSomethingWhenCreatingSubscription() {
+        helpers.createDailySubscription("tenant", "admin", "rhel", "policies");
+        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
+
+        assertEquals(1, emailAggregations.size());
+        final AggregationCommand aggregationCommand = emailAggregations.get(0);
+        assertEquals("tenant", aggregationCommand.getAggregationKey().getAccountId());
+        assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
+        assertEquals("policies", aggregationCommand.getAggregationKey().getApplication());
+        assertEquals(DAILY, aggregationCommand.getSubscriptionType());
     }
 
     @Test
-    void shouldNotProcessMailsWhenCronJobIsDisabled() {
+    void shouldNotChangeSomethingWhenRemovingSubscription() {
+        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.removeDailySubscription("tenant", "admin", "rhel", "policies");
+
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
+
+        assertEquals(1, emailAggregations.size());
+        final AggregationCommand aggregationCommand = emailAggregations.get(0);
+        assertEquals("tenant", aggregationCommand.getAggregationKey().getAccountId());
+        assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
+        assertEquals("policies", aggregationCommand.getAggregationKey().getApplication());
+        assertEquals(DAILY, aggregationCommand.getSubscriptionType());
+    }
+
+    @Test
+    void shouldProcessFourSubscriptions() {
+        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "unknown-bundle", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
+
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
+
+        assertEquals(4, emailAggregations.size());
+    }
+
+    @Test
+    void shouldProcessOneSubscriptionOnly() {
+        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
+
+        assertEquals(1, emailAggregations.size());
+
+        final AggregationCommand aggregationCommand = emailAggregations.get(0);
+        assertEquals("tenant", aggregationCommand.getAggregationKey().getAccountId());
+        assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
+        assertEquals("policies", aggregationCommand.getAggregationKey().getApplication());
+        assertEquals(DAILY, aggregationCommand.getSubscriptionType());
+    }
+
+    @Test
+    void shouldNotIncreaseAggregationsWhenPolicyIdIsDifferent() {
+        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId1", "someHostId");
+        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId2", "someHostId");
+
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
+
+        assertEquals(1, emailAggregations.size());
+    }
+
+    @Test
+    void shouldNotIncreaseAggregationsWhenHostIdIsDifferent() {
+        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId1");
+        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId2");
+
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
+
+        assertEquals(1, emailAggregations.size());
+    }
+
+    @Test
+    void shouldNotProcessMailsWhenNewCronJobIsDisabledByDefault() {
         testee.processDailyEmail();
         verifyNoInteractions(mock(EmailAggregationResources.class));
     }
