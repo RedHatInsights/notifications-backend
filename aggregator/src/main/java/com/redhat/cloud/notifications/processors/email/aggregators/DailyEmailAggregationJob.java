@@ -61,6 +61,7 @@ public class DailyEmailAggregationJob {
 
             emailAggregationResources.updateLastCronJobRun(emailAggregationResources.getLastCronJobRun().getId(), now);
 
+            // resolve completable futures so the Quarkus main thread doesn't stop before everythin ghas been sent
             try {
                 CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
                 combinedDataCompletionStage.toCompletableFuture().get();
