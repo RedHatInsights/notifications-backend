@@ -11,7 +11,7 @@
     "@patternfly/react-icons": "4.11.14",
     "@patternfly/react-table": "4.29.58",
 
-    "immer": "9.0.5",
+    "immer": "9.0.6",
     "monaco-editor": "0.27.0",
     "monaco-editor-webpack-plugin": "4.1.2",
     "openapi2typescript": "0.2.0",
