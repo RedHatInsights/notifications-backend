@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
-import com.redhat.cloud.notifications.models.CronJobRun;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -31,8 +30,7 @@ public class DailyEmailAggregationJob {
 
     private static final Logger LOG = Logger.getLogger(DailyEmailAggregationJob.class.getName());
 
-    @Inject
-    EmailAggregationResources emailAggregationResources;
+    private final EmailAggregationResources emailAggregationResources;
 
     @Inject
     ObjectMapper objectMapper;
@@ -41,29 +39,33 @@ public class DailyEmailAggregationJob {
     @Channel(AGGREGATION_CHANNEL)
     Emitter<String> emitter;
 
+    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources) {
+        this.emailAggregationResources = emailAggregationResources;
+    }
+
     public void processDailyEmail() {
         if (isCronJobEnabled()) {
-            LocalDateTime now = LocalDateTime.now(UTC);
-            List<AggregationCommand> aggregationCommands = processAggregateEmails(now);
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now(UTC);
+        List<AggregationCommand> aggregationCommands = processAggregateEmails(now);
 
-            List<CompletableFuture<Void>> futures = new ArrayList<>();
-            for (AggregationCommand aggregationCommand : aggregationCommands) {
-                try {
-                    final String payload = objectMapper.writeValueAsString(aggregationCommand);
-                    futures.add(emitter.send(payload).toCompletableFuture());
-                } catch (JsonProcessingException e) {
-                    LOG.warning("Could not transform AggregationCommand to JSON object.");
-                }
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        for (AggregationCommand aggregationCommand : aggregationCommands) {
+            try {
+                final String payload = objectMapper.writeValueAsString(aggregationCommand);
+                futures.add(emitter.send(payload).toCompletableFuture());
+            } catch (JsonProcessingException e) {
+                LOG.warning("Could not transform AggregationCommand to JSON object.");
+            }
 
-                final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
-                emailAggregationResources.updateLastCronJobRun(lastCronJobRun.getId(), now);
+            emailAggregationResources.updateLastCronJobRun(emailAggregationResources.getLastCronJobRun().getId(), now);
 
-                try {
-                    CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-                    combinedDataCompletionStage.toCompletableFuture().get();
-                } catch (InterruptedException | ExecutionException ie) {
-                    LOG.log(Level.SEVERE, "Writing AggregationCommands failed", ie);
-                }
+            try {
+                CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+                combinedDataCompletionStage.toCompletableFuture().get();
+            } catch (InterruptedException | ExecutionException ie) {
+                LOG.log(Level.SEVERE, "Writing AggregationCommands failed", ie);
             }
         }
     }

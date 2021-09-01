@@ -6,33 +6,39 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
 
 @QuarkusTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @QuarkusTestResource(TestLifecycleManager.class)
 class DailyEmailAggregationJobTest {
 
+    private DailyEmailAggregationJob testee;
+
     @Inject
     EmailAggregationResources emailAggregationResources;
-
-    DailyEmailAggregationJob dailyEmailAggregationJob;
 
     @Inject
     ResourceHelpers helpers;
 
+    @Inject
+    @ConfigProperty(name = "notifications.aggregator.email.subscription.periodic.cron.enabled")
+    private Provider<String> key1;
+
     @BeforeAll
     void init() {
-        dailyEmailAggregationJob = new DailyEmailAggregationJob();
-        dailyEmailAggregationJob.emailAggregationResources = emailAggregationResources;
+        testee = new DailyEmailAggregationJob(emailAggregationResources);
     }
 
     @Test
@@ -65,7 +71,7 @@ class DailyEmailAggregationJobTest {
             helpers.addEmailAggregation(tenant1, "unknown-bundle", application, "policyid-01", "hostid-06");
             helpers.addEmailAggregation(tenant1, "unknown-bundle", "unknown-application", "policyid-01", "hostid-06");
 
-            final List<AggregationCommand> emailAggregations1 = dailyEmailAggregationJob.processAggregateEmails(LocalDateTime.now());
+            final List<AggregationCommand> emailAggregations1 = testee.processAggregateEmails(LocalDateTime.now());
 
             // 4 aggregationCommands
             assertEquals(4, emailAggregations1.size());
@@ -85,16 +91,28 @@ class DailyEmailAggregationJobTest {
             helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-25");
             helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-26");
 
-            final List<AggregationCommand> emailAggregations2 = dailyEmailAggregationJob.processAggregateEmails(LocalDateTime.now());
+            final List<AggregationCommand> emailAggregations2 = testee.processAggregateEmails(LocalDateTime.now());
             // 6 aggregationCommands, 2 new (tenant2, bundle, application) and (noSubscribed, bundle, application)
             assertEquals(6, emailAggregations2.size());
 
             helpers.createSubscription(noSubscribedUsersTenant, "test", bundle, application, DAILY);
-            final List<AggregationCommand> emailAggregations3 = dailyEmailAggregationJob.processAggregateEmails(LocalDateTime.now());
+            final List<AggregationCommand> emailAggregations3 = testee.processAggregateEmails(LocalDateTime.now());
             // still 6 - subscription not taken into account in this process
             assertEquals(6, emailAggregations3.size());
         } finally {
             helpers.purgeAggregations();
         }
+    }
+
+    @Test
+    void shouldNotProcessMailsWhenCronJobIsDisabledByDefault() {
+        testee.processDailyEmail();
+        verifyNoInteractions(mock(EmailAggregationResources.class));
+    }
+
+    @Test
+    void shouldNotProcessMailsWhenCronJobIsDisabled() {
+        testee.processDailyEmail();
+        verifyNoInteractions(mock(EmailAggregationResources.class));
     }
 }
