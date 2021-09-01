@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.CronJobRun;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -31,16 +32,15 @@ public class DailyEmailAggregationJob {
     private static final Logger LOG = Logger.getLogger(DailyEmailAggregationJob.class.getName());
 
     private final EmailAggregationResources emailAggregationResources;
-
-    @Inject
-    ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     @Inject
     @Channel(AGGREGATION_CHANNEL)
     Emitter<String> emitter;
 
-    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources) {
+    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper) {
         this.emailAggregationResources = emailAggregationResources;
+        this.objectMapper = objectMapper;
     }
 
     public void processDailyEmail() {
@@ -72,7 +72,8 @@ public class DailyEmailAggregationJob {
     }
 
     List<AggregationCommand> processAggregateEmails(LocalDateTime endTime) {
-        LocalDateTime startTime = emailAggregationResources.getLastCronJobRun().getLastRun();
+        final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
+        LocalDateTime startTime = lastCronJobRun.getLastRun();
 
         LOG.info(String.format("Collecting email aggregation for period (%s, %s) and type %s", startTime, endTime, DAILY));
 

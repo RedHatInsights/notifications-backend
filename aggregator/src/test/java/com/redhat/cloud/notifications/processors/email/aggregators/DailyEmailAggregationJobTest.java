@@ -1,9 +1,13 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.CronJobRun;
+import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
@@ -11,7 +15,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import javax.inject.Inject;
+import org.junitpioneer.jupiter.SetSystemProperty;
 import java.time.LocalDateTime;
+import java.util.LinkedList;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.*;
@@ -29,16 +35,49 @@ class DailyEmailAggregationJobTest {
     EmailAggregationResources emailAggregationResources;
 
     @Inject
+    ObjectMapper objectMapper;
+
+    @Inject
     ResourceHelpers helpers;
+
+//    @Inject
+//    @Any
+//    Emitter<String> emitter;
 
     @BeforeAll
     void init() {
-        testee = new DailyEmailAggregationJob(emailAggregationResources);
+        testee = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
     }
 
     @AfterEach
     void tearDown() {
         helpers.purgeAggregations();
+    }
+
+    @Test
+    @SetSystemProperty(key = "notifications.aggregator.email.subscription.periodic.cron.enabled", value = "false")
+    void shouldSendPayloadToKafkaTopic() throws JsonProcessingException {
+        final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
+        final ObjectMapper objectMapper = mock(ObjectMapper.class);
+//        final Emitter<String> emitter = mock(Emitter.class);
+        DailyEmailAggregationJob testee = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
+
+        final CronJobRun cronJobRun = mock(CronJobRun.class);
+        when(emailAggregationResources.getLastCronJobRun()).thenReturn(cronJobRun);
+        when(cronJobRun.getLastRun()).thenReturn(LocalDateTime.now().minusYears(1337));
+
+        final List<EmailAggregationKey> aggregationCommands = new LinkedList<>();
+        aggregationCommands.add(new EmailAggregationKey("tenant", "rhel", "policies"));
+        when(emailAggregationResources.getApplicationsWithPendingAggregation(any(), any())).thenReturn(aggregationCommands);
+
+        final ObjectMapper objectMapper1 = mock(ObjectMapper.class);
+        when(objectMapper1.writeValueAsString(anyString())).thenReturn("");
+
+//        verify(emitter).send(anyString());
+
+        // use InMemoryConnector to receive and test the payload
+
+        testee.processDailyEmail();
     }
 
     @Test
@@ -49,6 +88,7 @@ class DailyEmailAggregationJobTest {
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
 
         assertEquals(1, emailAggregations.size());
+
         final AggregationCommand aggregationCommand = emailAggregations.get(0);
         assertEquals("tenant", aggregationCommand.getAggregationKey().getAccountId());
         assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
@@ -64,6 +104,7 @@ class DailyEmailAggregationJobTest {
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
 
         assertEquals(1, emailAggregations.size());
+
         final AggregationCommand aggregationCommand = emailAggregations.get(0);
         assertEquals("tenant", aggregationCommand.getAggregationKey().getAccountId());
         assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
