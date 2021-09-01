@@ -44,7 +44,7 @@ public class DailyEmailAggregationJob {
     }
 
     public void processDailyEmail() {
-        if (isCronJobEnabled()) {
+        if (!isCronJobEnabled()) {
             return;
         }
         LocalDateTime now = LocalDateTime.now(UTC);
