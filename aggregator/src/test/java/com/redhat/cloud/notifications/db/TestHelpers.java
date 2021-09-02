@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications;
+package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -14,7 +14,7 @@ public class TestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
 
-    public static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String policyId, String inventoryId) {
+    static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String policyId, String inventoryId) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);

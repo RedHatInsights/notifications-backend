@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db;
 
-import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;

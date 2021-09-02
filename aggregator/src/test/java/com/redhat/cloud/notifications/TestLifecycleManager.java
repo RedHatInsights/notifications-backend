@@ -22,9 +22,11 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     @Override
     public Map<String, String> start() {
         System.out.println("++++  TestLifecycleManager start +++");
+        System.out.println(" -- configuring ObjectMapper");
         configureObjectMapper();
         Map<String, String> properties = new HashMap<>();
         try {
+            System.out.println(" -- setting up postgres");
             setupPostgres(properties);
         } catch (Exception e) {
             throw new RuntimeException(e);
