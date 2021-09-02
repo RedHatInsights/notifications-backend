@@ -40,6 +40,7 @@ class DailyEmailAggregationJobTest {
     @AfterEach
     void tearDown() {
         helpers.purgeAggregations();
+        helpers.purgeEmailSubscriptions();
     }
 
     @Test
