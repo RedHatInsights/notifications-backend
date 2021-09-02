@@ -1,26 +1,26 @@
 package com.redhat.cloud.notifications;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
-import com.redhat.cloud.notifications.models.CronJobRun;
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
+import io.smallrye.reactive.messaging.connectors.InMemorySink;
+import javax.enterprise.inject.Any;
+import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junitpioneer.jupiter.SetSystemProperty;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
-import java.util.LinkedList;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @QuarkusTest
@@ -28,21 +28,15 @@ import static org.mockito.Mockito.*;
 @QuarkusTestResource(TestLifecycleManager.class)
 class DailyEmailAggregationJobTest {
 
-    private DailyEmailAggregationJob testee;
-
-    @Inject
-    EmailAggregationResources emailAggregationResources;
-
-    @Inject
-    ObjectMapper objectMapper;
-
     @Inject
     ResourceHelpers helpers;
 
-    @BeforeAll
-    void init() {
-        testee = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
-    }
+    @Inject
+    DailyEmailAggregationJob testee;
+
+    @Inject
+    @Any
+    InMemoryConnector connector;
 
     @AfterEach
     void tearDown() {
@@ -50,26 +44,28 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
-    @SetSystemProperty(key = "notifications.aggregator.email.subscription.periodic.cron.enabled", value = "false")
-    void shouldSendPayloadToKafkaTopic() throws JsonProcessingException {
-        final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
-        final ObjectMapper objectMapper = mock(ObjectMapper.class);
-        DailyEmailAggregationJob dailyEmailAggregationJob = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
+    @SetSystemProperty(key = "notifications.aggregator.email.subscription.periodic.cron.enabled", value = "true")
+    void shouldSentTwoAggregationsToKafkaTopic() throws JSONException {
+        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
 
-        final CronJobRun cronJobRun = mock(CronJobRun.class);
-        when(emailAggregationResources.getLastCronJobRun()).thenReturn(cronJobRun);
-        when(cronJobRun.getLastRun()).thenReturn(LocalDateTime.now().minusYears(1337));
+        testee.processDailyEmail();
 
-        final List<EmailAggregationKey> aggregationCommands = new LinkedList<>();
-        aggregationCommands.add(new EmailAggregationKey("tenant", "rhel", "policies"));
-        when(emailAggregationResources.getApplicationsWithPendingAggregation(any(), any())).thenReturn(aggregationCommands);
+        InMemorySink<String> results = connector.sink("aggregation");
 
-        final ObjectMapper objectMapper1 = mock(ObjectMapper.class);
-        when(objectMapper1.writeValueAsString(anyString())).thenReturn("");
+        assertEquals(2, results.received().size());
 
-        // use InMemoryConnector to receive and test the payload
+        final String firstAggregation = results.received().get(0).getPayload();
+        assertTrue(firstAggregation.contains("accountId\":\"tenant"));
+        assertTrue(firstAggregation.contains("bundle\":\"rhel"));
+        assertTrue(firstAggregation.contains("application\":\"policies"));
+        assertTrue(firstAggregation.contains("subscriptionType\":\"DAILY"));
 
-        dailyEmailAggregationJob.processDailyEmail();
+        final String secondAggregation = results.received().get(1).getPayload();
+        assertTrue(secondAggregation.contains("accountId\":\"tenant"));
+        assertTrue(secondAggregation.contains("bundle\":\"rhel"));
+        assertTrue(secondAggregation.contains("application\":\"unknown-application"));
+        assertTrue(secondAggregation.contains("subscriptionType\":\"DAILY"));
     }
 
     @Test
