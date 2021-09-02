@@ -9,6 +9,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.connectors.InMemorySink;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junitpioneer.jupiter.SetSystemProperty;
@@ -36,6 +37,12 @@ class DailyEmailAggregationJobTest {
     @Inject
     @Any
     InMemoryConnector connector;
+
+    @BeforeEach
+    void setUp() {
+        helpers.purgeAggregations();
+        helpers.purgeEmailSubscriptions();
+    }
 
     @AfterEach
     void tearDown() {
