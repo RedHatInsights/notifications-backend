@@ -17,7 +17,7 @@ import java.util.List;
 @QuarkusTest
 public class AuthRequestFilterTest {
 
-    private static final String testToken = "{\"approval\":{\"secret\":\"123\"},\"advisor\":{\"secret\":\"456\"},\"notifications\":{\"secret\":\"789\"}}";
+    private static final String testToken = "{\"approval\":{\"secret\":\"123\"},\"advisor\":{\"alt-secret\":\"456\"},\"notifications\":{\"secret\":\"789\"}}";
 
     @BeforeEach
     public void clean() {
