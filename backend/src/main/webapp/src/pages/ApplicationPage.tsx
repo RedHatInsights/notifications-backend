@@ -1,9 +1,17 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
-import { Split, SplitItem } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, Button, Modal, ModalVariant, PageSection, Spinner, Title, Toolbar,
+    ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import {
+    ActionGroup,
+    Form,
+    FormGroup,
+    TextArea,
+    TextInput  } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router';
 
+import { useCreateEventType } from '../services/CreateEventTypes';
 import { useApplicationTypes } from '../services/GetApplication';
 import { useEventTypes } from '../services/GetEventTypes';
 
@@ -16,6 +24,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const columns = [ 'Event Type', 'Event Type Id', 'Description' ];
+    const [ isOpen, setIsOpen ] = useState(false);
+    const toggle = () => setIsOpen(!isOpen);
 
     if (eventTypesQuery.loading) {
         return <Spinner />;
@@ -44,7 +54,43 @@ export const ApplicationPage: React.FunctionComponent = () => {
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button variant='primary' type='submit'> Create Event Type </Button>
+                                    <Button variant='primary' type='submit' onClick={ toggle }> Create Event Type </Button>
+                                    <Modal
+                                        variant={ ModalVariant.medium }
+                                        title='Create Event Type'
+                                        isOpen={ isOpen }
+                                        onClose={ toggle }
+                                    ><Form isHorizontal><FormGroup label='Application Id' fieldId='application-id'
+                                            helperText='This is the id of the application'>
+                                            <TextInput
+                                                type='text'
+                                                value= { applicationId }
+                                                id='application-id' /></FormGroup>
+                                        <FormGroup label='Name' fieldId='name' isRequired
+                                            helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
+                                            <TextInput
+                                                type='text'
+                                                value=''
+                                                id='name' /></FormGroup>
+                                        <FormGroup label='Display name' fieldId='display-name' isRequired
+                                            helperText='This is the name you want to display on the UI'>
+                                            <TextInput
+                                                type='text'
+                                                value=''
+                                                id='display-name' /></FormGroup>
+                                        <FormGroup label='Description' fieldId='description'
+                                            helperText='Optional short description that appears in the UI to help admin descide how to notify users.'>
+                                            <TextArea
+                                                type='text'
+                                                value=''
+                                                id='description' /></FormGroup>
+                                        <ActionGroup>
+                                            <Button variant='primary'>Submit</Button>
+                                            <Button variant='link' onClick={ toggle }>Cancel</Button>
+
+                                        </ActionGroup>
+                                        </Form><></>
+                                    </Modal>
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
