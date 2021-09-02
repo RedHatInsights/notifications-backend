@@ -8,12 +8,11 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.connectors.InMemorySink;
-import javax.enterprise.inject.Any;
-import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junitpioneer.jupiter.SetSystemProperty;
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,7 +44,7 @@ class DailyEmailAggregationJobTest {
 
     @Test
     @SetSystemProperty(key = "notifications.aggregator.email.subscription.periodic.cron.enabled", value = "true")
-    void shouldSentTwoAggregationsToKafkaTopic() throws JSONException {
+    void shouldSentTwoAggregationsToKafkaTopic() {
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
 
