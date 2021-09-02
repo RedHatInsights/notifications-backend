@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +27,7 @@ class AuthRequestFilter implements ClientRequestFilter {
     // used by dev to by pass the service to service token: Uses user:password format
     static final String RBAC_SERVICE_TO_SERVICE_DEV_EXCEPTIONAL_AUTH_KEY = "rbac.service-to-service.exceptional.auth.info";
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private static class Secret {
         public String secret;
     }
