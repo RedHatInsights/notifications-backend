@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.email.aggregators;
+package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

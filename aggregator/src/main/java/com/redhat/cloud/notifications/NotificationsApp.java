@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.processors.email.aggregators.DailyEmailAggregationJob;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
 import org.eclipse.microprofile.config.inject.ConfigProperty;

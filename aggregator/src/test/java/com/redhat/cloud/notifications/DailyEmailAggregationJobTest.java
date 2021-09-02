@@ -1,8 +1,7 @@
-package com.redhat.cloud.notifications.processors.email.aggregators;
+package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
@@ -14,8 +13,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import javax.inject.Inject;
 import org.junitpioneer.jupiter.SetSystemProperty;
+import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,10 +39,6 @@ class DailyEmailAggregationJobTest {
     @Inject
     ResourceHelpers helpers;
 
-//    @Inject
-//    @Any
-//    Emitter<String> emitter;
-
     @BeforeAll
     void init() {
         testee = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
@@ -59,8 +54,7 @@ class DailyEmailAggregationJobTest {
     void shouldSendPayloadToKafkaTopic() throws JsonProcessingException {
         final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
         final ObjectMapper objectMapper = mock(ObjectMapper.class);
-//        final Emitter<String> emitter = mock(Emitter.class);
-        DailyEmailAggregationJob testee = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
+        DailyEmailAggregationJob dailyEmailAggregationJob = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
 
         final CronJobRun cronJobRun = mock(CronJobRun.class);
         when(emailAggregationResources.getLastCronJobRun()).thenReturn(cronJobRun);
@@ -73,11 +67,9 @@ class DailyEmailAggregationJobTest {
         final ObjectMapper objectMapper1 = mock(ObjectMapper.class);
         when(objectMapper1.writeValueAsString(anyString())).thenReturn("");
 
-//        verify(emitter).send(anyString());
-
         // use InMemoryConnector to receive and test the payload
 
-        testee.processDailyEmail();
+        dailyEmailAggregationJob.processDailyEmail();
     }
 
     @Test
@@ -162,7 +154,22 @@ class DailyEmailAggregationJobTest {
 
     @Test
     void shouldNotProcessMailsWhenNewCronJobIsDisabledByDefault() {
-        testee.processDailyEmail();
-        verifyNoInteractions(mock(EmailAggregationResources.class));
+        final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
+        final ObjectMapper objectMapper = mock(ObjectMapper.class);
+        DailyEmailAggregationJob dailyEmailAggregationJob = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
+
+        dailyEmailAggregationJob.processDailyEmail();
+        verifyNoInteractions(emailAggregationResources);
+    }
+
+    @Test
+    @SetSystemProperty(key = "notifications.aggregator.email.subscription.periodic.cron.enabled", value = "false")
+    void shouldNotProcessMailsWhenNewCronJobIsDisabledByEnvironmentVariable() {
+        final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
+        final ObjectMapper objectMapper = mock(ObjectMapper.class);
+        DailyEmailAggregationJob dailyEmailAggregationJob = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
+
+        dailyEmailAggregationJob.processDailyEmail();
+        verifyNoInteractions(emailAggregationResources);
     }
 }
