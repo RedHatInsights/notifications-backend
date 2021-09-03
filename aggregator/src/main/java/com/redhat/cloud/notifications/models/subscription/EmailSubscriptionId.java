@@ -1,5 +1,6 @@
-package com.redhat.cloud.notifications.models;
+package com.redhat.cloud.notifications.models.subscription;
 
+import com.redhat.cloud.notifications.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.converter.EmailSubscriptionTypeConverter;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;

@@ -2,8 +2,8 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
-import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
+import com.redhat.cloud.notifications.models.aggregation.EmailAggregation;
+import com.redhat.cloud.notifications.models.aggregation.EmailAggregationKey;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;

@@ -1,7 +1,8 @@
-package com.redhat.cloud.notifications.models;
+package com.redhat.cloud.notifications.models.aggregation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.redhat.cloud.notifications.db.converters.JsonObjectConverter;
+import com.redhat.cloud.notifications.models.subscription.creationtimestamped.CreationTimestamped;
 import io.vertx.core.json.JsonObject;
 
 import javax.persistence.Column;

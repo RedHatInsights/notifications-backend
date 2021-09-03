@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
-import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.aggregation.AggregationCommand;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -16,7 +16,7 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.*;
+import static com.redhat.cloud.notifications.EmailSubscriptionType.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;

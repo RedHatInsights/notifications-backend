@@ -1,5 +1,6 @@
-package com.redhat.cloud.notifications.models;
+package com.redhat.cloud.notifications.models.aggregation;
 
+import com.redhat.cloud.notifications.EmailSubscriptionType;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 

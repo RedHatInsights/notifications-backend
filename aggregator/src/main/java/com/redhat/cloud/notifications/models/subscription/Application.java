@@ -1,33 +1,32 @@
-package com.redhat.cloud.notifications.models;
+package com.redhat.cloud.notifications.models.subscription;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.redhat.cloud.notifications.models.subscription.creationtimestamped.CreationUpdateTimestamped;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
-/**
- * A bundle is an aggregation of applications.
- */
 @Entity
-@Table(name = "bundles")
+@Table(name = "applications")
 @JsonNaming(SnakeCaseStrategy.class)
-public class Bundle extends CreationUpdateTimestamped {
+public class Application extends CreationUpdateTimestamped {
 
     @Id
     @GeneratedValue
@@ -43,17 +42,15 @@ public class Bundle extends CreationUpdateTimestamped {
     @Schema(name = "display_name")
     private String displayName;
 
-    @OneToMany(mappedBy = "bundle", cascade = CascadeType.REMOVE)
+    @NotNull
+    @Transient
+    @Schema(name = "bundle_id")
+    private UUID bundleId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "bundle_id")
     @JsonIgnore
-    private Set<Application> applications;
-
-    public Bundle() {
-    }
-
-    public Bundle(String name, String displayName) {
-        this.name = name;
-        this.displayName = displayName;
-    }
+    private Bundle bundle;
 
     public UUID getId() {
         return id;
@@ -79,12 +76,23 @@ public class Bundle extends CreationUpdateTimestamped {
         this.displayName = displayName;
     }
 
-    public Set<Application> getApplications() {
-        return applications;
+    public UUID getBundleId() {
+        if (bundleId == null && bundle != null) {
+            bundleId = bundle.getId();
+        }
+        return bundleId;
     }
 
-    public void setApplications(Set<Application> applications) {
-        this.applications = applications;
+    public void setBundleId(UUID bundleId) {
+        this.bundleId = bundleId;
+    }
+
+    public Bundle getBundle() {
+        return bundle;
+    }
+
+    public void setBundle(Bundle bundle) {
+        this.bundle = bundle;
     }
 
     @Override
@@ -92,8 +100,8 @@ public class Bundle extends CreationUpdateTimestamped {
         if (this == o) {
             return true;
         }
-        if (o instanceof Bundle) {
-            Bundle other = (Bundle) o;
+        if (o instanceof Application) {
+            Application other = (Application) o;
             return Objects.equals(id, other.id);
         }
         return false;

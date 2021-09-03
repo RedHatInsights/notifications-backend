@@ -1,5 +1,6 @@
-package com.redhat.cloud.notifications.models;
+package com.redhat.cloud.notifications.models.subscription;
 
+import com.redhat.cloud.notifications.EmailSubscriptionType;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;

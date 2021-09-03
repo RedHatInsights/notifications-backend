@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.helpers;
 
-import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
+import com.redhat.cloud.notifications.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.aggregation.EmailAggregation;
+import com.redhat.cloud.notifications.models.aggregation.EmailAggregationKey;
 import org.hibernate.Session;
 import org.jboss.logging.Logger;
 
