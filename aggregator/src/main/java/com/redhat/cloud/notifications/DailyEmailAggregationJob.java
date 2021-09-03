@@ -59,7 +59,7 @@ public class DailyEmailAggregationJob {
                 LOG.warning("Could not transform AggregationCommand to JSON object.");
             }
 
-            emailAggregationResources.updateLastCronJobRun(emailAggregationResources.getLastCronJobRun().getId(), now);
+            emailAggregationResources.updateLastCronJobRun(now);
 
             // resolve completable futures so the Quarkus main thread doesn't stop before everythin ghas been sent
             try {
