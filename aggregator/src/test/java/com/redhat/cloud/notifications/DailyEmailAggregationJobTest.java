@@ -123,7 +123,6 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
-    @Disabled
     @TestTransaction
     void shouldNotIncreaseAggregationsWhenHostIdIsDifferent() {
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId1");
