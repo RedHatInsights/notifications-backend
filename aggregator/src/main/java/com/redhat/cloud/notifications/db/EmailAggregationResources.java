@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @ApplicationScoped
 public class EmailAggregationResources {
@@ -43,9 +44,10 @@ public class EmailAggregationResources {
     }
 
     @Transactional
-    public void updateLastCronJobRun(LocalDateTime lastRun) {
+    public void updateLastCronJobRun(UUID id, LocalDateTime lastRun) {
         String query = "UPDATE CronJobRun SET lastRun = :lastRun WHERE id = :id";
         session.createQuery(query)
+                .setParameter("id", id)
                 .setParameter("lastRun", lastRun)
                 .executeUpdate();
     }
