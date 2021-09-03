@@ -4,11 +4,14 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
+import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.List;
@@ -18,11 +21,21 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class RecipientResolver {
 
+    private static final Logger LOGGER = Logger.getLogger(RecipientResolver.class);
+
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
-    @ConfigProperty(name = "processor.email.rbac-user-query", defaultValue = "false")
+    @ConfigProperty(name = "processor.email.rbac-user-query", defaultValue = "true")
     boolean rbacUserQuery;
+
+    void logAtStartup(@Observes StartupEvent event) {
+        if (rbacUserQuery) {
+            LOGGER.info("RBAC user queries are enabled");
+        } else {
+            LOGGER.info("RBAC user queries are disabled");
+        }
+    }
 
     public Uni<Set<User>> recipientUsers(String accountId, Set<Endpoint> endpoints, Set<String> subscribers) {
         if (!rbacUserQuery) {
