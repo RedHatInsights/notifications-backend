@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
-import com.redhat.cloud.notifications.models.CronJobRun;
+import com.redhat.cloud.notifications.models.aggregation.CronJobRun;
 import com.redhat.cloud.notifications.models.aggregation.EmailAggregation;
 import com.redhat.cloud.notifications.models.aggregation.EmailAggregationKey;
 import org.hibernate.Session;

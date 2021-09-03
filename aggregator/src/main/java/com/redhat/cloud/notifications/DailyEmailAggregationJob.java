@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
-import com.redhat.cloud.notifications.models.CronJobRun;
+import com.redhat.cloud.notifications.models.aggregation.CronJobRun;
 import com.redhat.cloud.notifications.models.aggregation.AggregationCommand;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Channel;
