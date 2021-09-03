@@ -46,7 +46,7 @@ class DailyEmailAggregationJobTest {
 
         testee.processDailyEmail();
 
-        InMemorySink<String> results = connector.sink("aggregation");
+        InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL);
 
         assertEquals(2, results.received().size());
 
