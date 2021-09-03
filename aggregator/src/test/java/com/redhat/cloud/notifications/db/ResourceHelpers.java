@@ -20,21 +20,13 @@ public class ResourceHelpers {
     @Inject
     Session session;
 
-    public void createDailySubscription(String tenant, String username, String bundle, String application) {
-        subscribe(tenant, username, bundle, application);
-    }
-
-    public void removeDailySubscription(String tenant, String username, String bundle, String application) {
-        unsubscribe(tenant, username, bundle, application);
-    }
-
     public void addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
         EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, bundle, application, policyId, insightsId);
         addEmailAggregation(aggregation);
     }
 
     @Transactional
-    void subscribe(String accountNumber, String username, String bundleName, String applicationName) {
+    public void subscribe(String accountNumber, String username, String bundleName, String applicationName) {
         String query = "INSERT INTO endpoint_email_subscriptions(account_id, user_id, application_id, subscription_type) " +
                 "SELECT :accountId, :userId, a.id, :subscriptionType " +
                 "FROM applications a, bundles b WHERE a.bundle_id = b.id AND a.name = :applicationName AND b.name = :bundleName " +
@@ -50,7 +42,7 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    void unsubscribe(String accountNumber, String userId, String bundleName, String applicationName) {
+    public void unsubscribe(String accountNumber, String userId, String bundleName, String applicationName) {
         String query = "DELETE FROM EmailSubscription WHERE id.accountId = :accountId AND id.userId = :userId " +
                 "AND id.applicationId = (SELECT a.id FROM Application a, Bundle b WHERE a.bundle.id = b.id " +
                 "AND b.name = :bundleName AND a.name = :applicationName) AND id.subscriptionType = :subscriptionType";

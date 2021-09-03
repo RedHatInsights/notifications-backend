@@ -18,7 +18,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @QuarkusTest
@@ -78,7 +79,7 @@ class DailyEmailAggregationJobTest {
 
     @Test
     void shouldNotChangeSomethingWhenCreatingSubscription() {
-        helpers.createDailySubscription("tenant", "admin", "rhel", "policies");
+        helpers.subscribe("tenant", "admin", "rhel", "policies");
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
 
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
@@ -95,7 +96,7 @@ class DailyEmailAggregationJobTest {
     @Test
     void shouldNotChangeSomethingWhenRemovingSubscription() {
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
-        helpers.removeDailySubscription("tenant", "admin", "rhel", "policies");
+        helpers.unsubscribe("tenant", "admin", "rhel", "policies");
 
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
 
