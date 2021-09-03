@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.models.subscription;
 
 import com.redhat.cloud.notifications.EmailSubscriptionType;
-import com.redhat.cloud.notifications.models.converter.EmailSubscriptionTypeConverter;
+import com.redhat.cloud.notifications.db.converters.EmailSubscriptionTypeConverter;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import javax.validation.constraints.NotNull;
