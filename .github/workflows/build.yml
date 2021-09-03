@@ -31,7 +31,7 @@ jobs:
           distribution: adopt
           java-version: 11
       - name: Build with Maven
-        run: ./mvnw clean verify
+        run: ./mvnw clean install -U
       - uses: actions/upload-artifact@v2
         name: Upload notifications openapi.json
         with:
