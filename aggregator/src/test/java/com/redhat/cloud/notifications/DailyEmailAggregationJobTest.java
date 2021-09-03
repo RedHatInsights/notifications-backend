@@ -40,12 +40,14 @@ class DailyEmailAggregationJobTest {
     void setUp() {
         helpers.purgeAggregations();
         helpers.purgeEmailSubscriptions();
+        System.clearProperty("notifications.aggregator.email.subscription.periodic.cron.enabled");
     }
 
     @AfterEach
     void tearDown() {
         helpers.purgeAggregations();
         helpers.purgeEmailSubscriptions();
+        System.clearProperty("notifications.aggregator.email.subscription.periodic.cron.enabled");
     }
 
     @Test
