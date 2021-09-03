@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS cronjob_run CASCADE;
-
 CREATE TABLE cronjob_run (
     last_run TIMESTAMP,
     -- The following PK and CHECK constraints combination guarantees that the table will never contain more than one row.

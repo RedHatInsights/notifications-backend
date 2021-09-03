@@ -1,8 +1,0 @@
-CREATE TABLE cronjob_run (
-    id UUID NOT NULL,
-    last_run TIMESTAMP,
-    CONSTRAINT pk_cronjob_run PRIMARY KEY (id)
-);
-
-INSERT INTO cronjob_run (id, last_run) VALUES
-('3db0955b-751b-48cd-b531-c1d81596d133', '08/20/1900 09:34:19.503344+0');
