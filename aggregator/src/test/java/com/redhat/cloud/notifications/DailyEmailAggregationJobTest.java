@@ -11,7 +11,6 @@ import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.connectors.InMemorySink;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import javax.enterprise.inject.Any;
@@ -52,7 +51,6 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
-    @Disabled
     @TestTransaction
     void shouldSentTwoAggregationsToKafkaTopic() {
         System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "true");
@@ -80,7 +78,6 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
-    @Disabled
     @TestTransaction
     void shouldProcessFourSubscriptions() {
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
@@ -111,7 +108,6 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
-    @Disabled
     @TestTransaction
     void shouldNotIncreaseAggregationsWhenPolicyIdIsDifferent() {
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId1", "someHostId");
@@ -134,7 +130,6 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
-    @Disabled
     @TestTransaction
     void shouldNotProcessMailsWhenNewCronJobIsDisabledByDefault() {
         final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
@@ -146,7 +141,6 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
-    @Disabled
     @TestTransaction
     void shouldNotProcessMailsWhenNewCronJobIsDisabledByEnvironmentVariable() {
         System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "false");
