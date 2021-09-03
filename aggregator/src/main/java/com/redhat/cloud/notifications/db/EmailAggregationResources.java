@@ -38,7 +38,6 @@ public class EmailAggregationResources {
                 .getResultList();
     }
 
-    @Transactional
     public CronJobRun getLastCronJobRun() {
         String query = "FROM CronJobRun";
         return session.createQuery(query, CronJobRun.class).getSingleResult();
