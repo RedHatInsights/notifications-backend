@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
-import com.redhat.cloud.notifications.models.aggregation.AggregationCommand;
+import com.redhat.cloud.notifications.models.AggregationCommand;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -61,40 +61,6 @@ class DailyEmailAggregationJobTest {
         assertTrue(secondAggregation.contains("bundle\":\"rhel"));
         assertTrue(secondAggregation.contains("application\":\"unknown-application"));
         assertTrue(secondAggregation.contains("subscriptionType\":\"DAILY"));
-    }
-
-    @Test
-    @TestTransaction
-    void shouldNotChangeSomethingWhenCreatingSubscription() {
-        helpers.subscribe("tenant", "admin", "rhel", "policies");
-        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
-
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
-
-        assertEquals(1, emailAggregations.size());
-
-        final AggregationCommand aggregationCommand = emailAggregations.get(0);
-        assertEquals("tenant", aggregationCommand.getAggregationKey().getAccountId());
-        assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
-        assertEquals("policies", aggregationCommand.getAggregationKey().getApplication());
-        assertEquals(DAILY, aggregationCommand.getSubscriptionType());
-    }
-
-    @Test
-    @TestTransaction
-    void shouldNotChangeSomethingWhenRemovingSubscription() {
-        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
-        helpers.unsubscribe("tenant", "admin", "rhel", "policies");
-
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
-
-        assertEquals(1, emailAggregations.size());
-
-        final AggregationCommand aggregationCommand = emailAggregations.get(0);
-        assertEquals("tenant", aggregationCommand.getAggregationKey().getAccountId());
-        assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
-        assertEquals("policies", aggregationCommand.getAggregationKey().getApplication());
-        assertEquals(DAILY, aggregationCommand.getSubscriptionType());
     }
 
     @Test

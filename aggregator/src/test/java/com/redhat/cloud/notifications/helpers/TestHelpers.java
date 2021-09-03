@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.helpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
-import com.redhat.cloud.notifications.models.aggregation.EmailAggregation;
+import com.redhat.cloud.notifications.models.EmailAggregation;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;

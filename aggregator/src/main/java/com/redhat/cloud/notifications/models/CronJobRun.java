@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.models.aggregation;
+package com.redhat.cloud.notifications.models;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

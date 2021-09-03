@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.models.aggregation;
+package com.redhat.cloud.notifications.models;
 
 import com.redhat.cloud.notifications.EmailSubscriptionType;
 import javax.validation.constraints.NotNull;

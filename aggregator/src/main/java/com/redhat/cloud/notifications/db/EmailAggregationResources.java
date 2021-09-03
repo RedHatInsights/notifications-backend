@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.db;
 
-import com.redhat.cloud.notifications.models.aggregation.CronJobRun;
-import com.redhat.cloud.notifications.models.aggregation.EmailAggregation;
-import com.redhat.cloud.notifications.models.aggregation.EmailAggregationKey;
+import com.redhat.cloud.notifications.models.CronJobRun;
+import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import org.hibernate.Session;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -19,7 +19,7 @@ public class EmailAggregationResources {
 
     @Transactional
     public List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
-        String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.aggregation.EmailAggregationKey(ea.accountId, ea.bundleName, ea.applicationName) " +
+        String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.EmailAggregationKey(ea.accountId, ea.bundleName, ea.applicationName) " +
                 "FROM EmailAggregation ea WHERE ea.created > :start AND ea.created <= :end";
         return session.createQuery(query, EmailAggregationKey.class)
                 .setParameter("start", start)

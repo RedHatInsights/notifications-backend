@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.models.subscription.creationtimestamped;
+package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
