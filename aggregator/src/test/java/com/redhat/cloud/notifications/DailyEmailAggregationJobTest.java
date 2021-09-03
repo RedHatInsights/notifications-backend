@@ -12,15 +12,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junitpioneer.jupiter.SetSystemProperty;
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @QuarkusTest
@@ -51,8 +49,9 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
-    @SetSystemProperty(key = "notifications.aggregator.email.subscription.periodic.cron.enabled", value = "true")
     void shouldSentTwoAggregationsToKafkaTopic() {
+        System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "true");
+
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
 
@@ -166,8 +165,9 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
-    @SetSystemProperty(key = "notifications.aggregator.email.subscription.periodic.cron.enabled", value = "false")
     void shouldNotProcessMailsWhenNewCronJobIsDisabledByEnvironmentVariable() {
+        System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "false");
+
         final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
         final ObjectMapper objectMapper = mock(ObjectMapper.class);
         DailyEmailAggregationJob dailyEmailAggregationJob = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
