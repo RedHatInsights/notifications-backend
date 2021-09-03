@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.EmailSubscriptionType.*;
+import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -39,6 +40,7 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldSentTwoAggregationsToKafkaTopic() {
+        System.out.println("WHAT TIME IS NOW? : " + LocalDateTime.now());
         System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "true");
 
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
@@ -71,7 +73,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("tenant", "unknown-bundle", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("tenant", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
 
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
 
         assertEquals(4, emailAggregations.size());
     }
@@ -82,7 +84,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
 
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
 
         assertEquals(1, emailAggregations.size());
 
@@ -99,7 +101,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId1", "someHostId");
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId2", "someHostId");
 
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
 
         assertEquals(1, emailAggregations.size());
     }
@@ -110,7 +112,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId1");
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId2");
 
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now());
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
 
         assertEquals(1, emailAggregations.size());
     }
