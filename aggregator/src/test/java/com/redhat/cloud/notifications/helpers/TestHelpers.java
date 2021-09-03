@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import static java.time.ZoneOffset.UTC;
+
 public class TestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
@@ -19,6 +21,7 @@ public class TestHelpers {
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
         aggregation.setAccountId(tenant);
+        aggregation.setCreated(LocalDateTime.now(UTC).minusHours(5L));
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
