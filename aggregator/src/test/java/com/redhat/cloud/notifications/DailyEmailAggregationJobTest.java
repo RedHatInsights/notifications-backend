@@ -4,12 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import io.quarkus.test.TestTransaction;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.connectors.InMemorySink;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import javax.enterprise.inject.Any;
@@ -37,21 +36,8 @@ class DailyEmailAggregationJobTest {
     @Any
     InMemoryConnector connector;
 
-    @BeforeEach
-    void setUp() {
-        helpers.purgeAggregations();
-        helpers.purgeEmailSubscriptions();
-        System.clearProperty("notifications.aggregator.email.subscription.periodic.cron.enabled");
-    }
-
-    @AfterEach
-    void tearDown() {
-        helpers.purgeAggregations();
-        helpers.purgeEmailSubscriptions();
-        System.clearProperty("notifications.aggregator.email.subscription.periodic.cron.enabled");
-    }
-
     @Test
+    @TestTransaction
     void shouldSentTwoAggregationsToKafkaTopic() {
         System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "true");
 
@@ -78,6 +64,7 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
+    @TestTransaction
     void shouldNotChangeSomethingWhenCreatingSubscription() {
         helpers.subscribe("tenant", "admin", "rhel", "policies");
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
@@ -94,6 +81,7 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
+    @TestTransaction
     void shouldNotChangeSomethingWhenRemovingSubscription() {
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.unsubscribe("tenant", "admin", "rhel", "policies");
@@ -110,6 +98,7 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
+    @TestTransaction
     void shouldProcessFourSubscriptions() {
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
@@ -122,6 +111,7 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
+    @TestTransaction
     void shouldProcessOneSubscriptionOnly() {
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
@@ -138,6 +128,7 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
+    @TestTransaction
     void shouldNotIncreaseAggregationsWhenPolicyIdIsDifferent() {
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId1", "someHostId");
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId2", "someHostId");
@@ -148,6 +139,7 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
+    @TestTransaction
     void shouldNotIncreaseAggregationsWhenHostIdIsDifferent() {
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId1");
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId2");
@@ -158,6 +150,7 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
+    @TestTransaction
     void shouldNotProcessMailsWhenNewCronJobIsDisabledByDefault() {
         final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
         final ObjectMapper objectMapper = mock(ObjectMapper.class);
@@ -168,6 +161,7 @@ class DailyEmailAggregationJobTest {
     }
 
     @Test
+    @TestTransaction
     void shouldNotProcessMailsWhenNewCronJobIsDisabledByEnvironmentVariable() {
         System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "false");
 
