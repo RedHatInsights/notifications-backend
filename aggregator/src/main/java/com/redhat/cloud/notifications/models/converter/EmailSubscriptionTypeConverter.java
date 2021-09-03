@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db.converters;
+package com.redhat.cloud.notifications.models.converter;
 
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import javax.persistence.AttributeConverter;

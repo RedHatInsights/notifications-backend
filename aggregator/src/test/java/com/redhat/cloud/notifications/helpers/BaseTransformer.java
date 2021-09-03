@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.helpers;
 
 import com.redhat.cloud.notifications.ingress.Action;
 import io.vertx.core.json.JsonArray;
