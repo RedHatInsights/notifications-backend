@@ -38,13 +38,13 @@ public class ResourceHelpers {
 
     @Transactional
     public void purgeEmailSubscriptions() {
-        session.createQuery("DELETE FROM EmailSubscription").executeUpdate();
+        session.createSQLQuery("DELETE FROM EmailSubscription");
         session.flush();
     }
 
     @Transactional
     public void purgeAggregations() {
-        session.createQuery("DELETE FROM EmailAggregation").executeUpdate();
+        session.createSQLQuery("DELETE FROM EmailAggregation");
         session.flush();
     }
 
