@@ -40,7 +40,6 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldSentTwoAggregationsToKafkaTopic() {
-        System.out.println("WHAT TIME IS NOW? : " + LocalDateTime.now());
         System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "true");
 
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
