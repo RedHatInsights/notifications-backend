@@ -89,7 +89,7 @@ public class DailyEmailAggregationJob {
                         startTime,
                         endTime,
                         DAILY,
-                        SECONDS.between(endTime, LocalDateTime.now()),
+                        SECONDS.between(endTime, LocalDateTime.now(UTC)),
                         pendingAggregationCommands.size()
                 )
         );
