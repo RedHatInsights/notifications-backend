@@ -56,7 +56,7 @@ public class DailyEmailAggregationJob {
                 final String payload = objectMapper.writeValueAsString(aggregationCommand);
                 futures.add(emitter.send(payload).toCompletableFuture());
             } catch (JsonProcessingException e) {
-                LOG.warning("Could not transform AggregationCommand to JSON object.");
+                LOG.warning("Could not transform AggregationCommand to JSON object.", e);
             }
 
             emailAggregationResources.updateLastCronJobRun(now);
