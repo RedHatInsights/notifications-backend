@@ -2,6 +2,9 @@ package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.Page;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Multi;
@@ -9,10 +12,12 @@ import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -39,19 +44,41 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
     Duration maxBackOff;
 
+    @Inject
+    MeterRegistry meterRegistry;
+
+    private Counter getUsersCalls;
+    private Timer getUsersProcessTime;
+    private Counter getGroupUsersCalls;
+    private Timer getGroupUsersProcessTime;
+
+    @PostConstruct
+    public void initCounters() {
+        getUsersCalls = meterRegistry.counter("rbac-recipient-users-provider.get-users.calls");
+        getUsersProcessTime = meterRegistry.timer("rbac-recipient-users-provider.get-users.process-time");
+        getGroupUsersCalls = meterRegistry.counter("rbac-recipient-users-provider.get-group-users.calls");
+        getGroupUsersProcessTime = meterRegistry.timer("rbac-recipient-users-provider.get-group-users.process-time");
+    }
+
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
+        getUsersCalls.increment();
+        LocalDateTime start = LocalDateTime.now();
         return getWithPagination(
             page -> retryOnError(
                     rbacServiceToService
                             .getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
             )
+        )
+        .onItem().invoke(() -> getUsersProcessTime.record(Duration.between(start, LocalDateTime.now())))
         // .memoize().indefinitely() should be removed after the Quarkus 2.0 bump
-        ).memoize().indefinitely();
+        .memoize().indefinitely();
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
     public Uni<List<User>> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
+        getGroupUsersCalls.increment();
+        LocalDateTime start = LocalDateTime.now();
         return retryOnError(rbacServiceToService.getGroup(accountId, groupId))
                 .onItem().transformToUni(rbacGroup -> {
                     if (rbacGroup.isPlatformDefault()) {
@@ -72,8 +99,10 @@ public class RbacRecipientUsersProvider {
                             return users;
                         });
                     }
+                })
+                .onItem().invoke(() -> getGroupUsersProcessTime.record(Duration.between(start, LocalDateTime.now())))
                 // .memoize().indefinitely() should be removed after the Quarkus 2.0 bump
-                }).memoize().indefinitely();
+                .memoize().indefinitely();
     }
 
     private <T> Uni<T> retryOnError(Uni<T> uni) {
