@@ -37,84 +37,84 @@ class DailyEmailAggregationJobTest {
     @Any
     InMemoryConnector connector;
 
-//    @Test
-//    @TestTransaction
-//    void shouldSentTwoAggregationsToKafkaTopic() {
-//        System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "true");
-//
-//        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
-//        helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
-//
-//        testee.processDailyEmail();
-//
-//        InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL);
-//
-//        assertEquals(2, results.received().size());
-//
-//        final String firstAggregation = results.received().get(0).getPayload();
-//        assertTrue(firstAggregation.contains("accountId\":\"tenant"));
-//        assertTrue(firstAggregation.contains("bundle\":\"rhel"));
-//        assertTrue(firstAggregation.contains("application\":\"policies"));
-//        assertTrue(firstAggregation.contains("subscriptionType\":\"DAILY"));
-//
-//        final String secondAggregation = results.received().get(1).getPayload();
-//        assertTrue(secondAggregation.contains("accountId\":\"tenant"));
-//        assertTrue(secondAggregation.contains("bundle\":\"rhel"));
-//        assertTrue(secondAggregation.contains("application\":\"unknown-application"));
-//        assertTrue(secondAggregation.contains("subscriptionType\":\"DAILY"));
-//    }
+    @Test
+    @TestTransaction
+    void shouldSentTwoAggregationsToKafkaTopic() {
+        System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "true");
 
-//    @Test
-//    @TestTransaction
-//    void shouldProcessFourSubscriptions() {
-//        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
-//        helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
-//        helpers.addEmailAggregation("tenant", "unknown-bundle", "policies", "somePolicyId", "someHostId");
-//        helpers.addEmailAggregation("tenant", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
-//
-//        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
-//
-//        assertEquals(4, emailAggregations.size());
-//    }
+        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
 
-//    @Test
-//    @TestTransaction
-//    void shouldProcessOneSubscriptionOnly() {
-//        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
-//        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
-//
-//        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
-//
-//        assertEquals(1, emailAggregations.size());
-//
-//        final AggregationCommand aggregationCommand = emailAggregations.get(0);
-//        assertEquals("tenant", aggregationCommand.getAggregationKey().getAccountId());
-//        assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
-//        assertEquals("policies", aggregationCommand.getAggregationKey().getApplication());
-//        assertEquals(DAILY, aggregationCommand.getSubscriptionType());
-//    }
+        testee.processDailyEmail();
 
-//    @Test
-//    @TestTransaction
-//    void shouldNotIncreaseAggregationsWhenPolicyIdIsDifferent() {
-//        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId1", "someHostId");
-//        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId2", "someHostId");
-//
-//        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
-//
-//        assertEquals(1, emailAggregations.size());
-//    }
+        InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL);
 
-//    @Test
-//    @TestTransaction
-//    void shouldNotIncreaseAggregationsWhenHostIdIsDifferent() {
-//        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId1");
-//        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId2");
-//
-//        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
-//
-//        assertEquals(1, emailAggregations.size());
-//    }
+        assertEquals(2, results.received().size());
+
+        final String firstAggregation = results.received().get(0).getPayload();
+        assertTrue(firstAggregation.contains("accountId\":\"tenant"));
+        assertTrue(firstAggregation.contains("bundle\":\"rhel"));
+        assertTrue(firstAggregation.contains("application\":\"policies"));
+        assertTrue(firstAggregation.contains("subscriptionType\":\"DAILY"));
+
+        final String secondAggregation = results.received().get(1).getPayload();
+        assertTrue(secondAggregation.contains("accountId\":\"tenant"));
+        assertTrue(secondAggregation.contains("bundle\":\"rhel"));
+        assertTrue(secondAggregation.contains("application\":\"unknown-application"));
+        assertTrue(secondAggregation.contains("subscriptionType\":\"DAILY"));
+    }
+
+    @Test
+    @TestTransaction
+    void shouldProcessFourSubscriptions() {
+        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "unknown-bundle", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
+
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
+
+        assertEquals(4, emailAggregations.size());
+    }
+
+    @Test
+    @TestTransaction
+    void shouldProcessOneSubscriptionOnly() {
+        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
+
+        assertEquals(1, emailAggregations.size());
+
+        final AggregationCommand aggregationCommand = emailAggregations.get(0);
+        assertEquals("tenant", aggregationCommand.getAggregationKey().getAccountId());
+        assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
+        assertEquals("policies", aggregationCommand.getAggregationKey().getApplication());
+        assertEquals(DAILY, aggregationCommand.getSubscriptionType());
+    }
+
+    @Test
+    @TestTransaction
+    void shouldNotIncreaseAggregationsWhenPolicyIdIsDifferent() {
+        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId1", "someHostId");
+        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId2", "someHostId");
+
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
+
+        assertEquals(1, emailAggregations.size());
+    }
+
+    @Test
+    @TestTransaction
+    void shouldNotIncreaseAggregationsWhenHostIdIsDifferent() {
+        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId1");
+        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId2");
+
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
+
+        assertEquals(1, emailAggregations.size());
+    }
 
     @Test
     @TestTransaction
