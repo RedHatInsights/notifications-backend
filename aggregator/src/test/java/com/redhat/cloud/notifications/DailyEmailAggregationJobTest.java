@@ -8,6 +8,7 @@ import io.quarkus.test.TestTransaction;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import javax.enterprise.inject.Any;
@@ -35,6 +36,11 @@ class DailyEmailAggregationJobTest {
     @Any
     InMemoryConnector connector;
 
+    @BeforeEach
+    void setUp() {
+        helpers.purgeEmailAggregations();
+    }
+
     @Test
     @TestTransaction
     void shouldNotProcessMailsWhenNewCronJobIsDisabledByEnvironmentVariable() {
@@ -51,7 +57,6 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldProcessZeroAggregations() {
-        helpers.purgeEmailAggregations();
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
 
         assertEquals(0, emailAggregations.size());
