@@ -12,8 +12,10 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.vertx.core.json.JsonObject;
 
@@ -28,6 +30,7 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 
 @ApplicationScoped
 public class ResourceHelpers {
@@ -54,6 +57,9 @@ public class ResourceHelpers {
 
     @Inject
     BehaviorGroupResources behaviorGroupResources;
+
+    @Inject
+    NotificationResources notificationResources;
 
     public Bundle createBundle() {
         return createBundle("name", "displayName");
@@ -91,18 +97,17 @@ public class ResourceHelpers {
 
     public UUID createEventType(String bundleName, String applicationName, String eventTypeName) {
         Application app = appResources.getApplication(bundleName, applicationName).await().indefinitely();
-        return createEventType(app.getId(), eventTypeName, eventTypeName, "new event type");
+        return createEventType(app.getId(), eventTypeName, eventTypeName, "new event type").getId();
     }
 
-    public UUID createEventType(UUID applicationId, String name, String displayName, String description) {
+    public EventType createEventType(UUID applicationId, String name, String displayName, String description) {
         EventType eventType = new EventType();
         eventType.setName(name);
         eventType.setDisplayName(displayName);
         eventType.setDescription(description);
         eventType.setApplicationId(applicationId);
         return appResources.createEventType(eventType)
-                .await().indefinitely()
-                .getId();
+                .await().indefinitely();
     }
 
     public UUID createTestAppAndEventTypes() {
@@ -140,7 +145,7 @@ public class ResourceHelpers {
         properties.setMethod(HttpType.POST);
         properties.setUrl("https://localhost");
         String name = "Endpoint " + UUID.randomUUID();
-        return createEndpoint(accountId, WEBHOOK, name, "Automatically generated", properties, Boolean.TRUE).getId();
+        return createEndpoint(accountId, WEBHOOK, name, "Automatically generated", properties, TRUE).getId();
     }
 
     public Endpoint createEndpoint(String accountId, EndpointType type, String name, String description, EndpointProperties properties, Boolean enabled) {
@@ -183,6 +188,18 @@ public class ResourceHelpers {
                     .await().indefinitely();
         }
         return statsValues;
+    }
+
+    public NotificationHistory createNotificationHistory(Event event, Endpoint endpoint) {
+        NotificationHistory history = new NotificationHistory();
+        history.setId(UUID.randomUUID());
+        history.setAccountId(DEFAULT_ACCOUNT_ID);
+        history.setInvocationTime(1L);
+        history.setInvocationResult(TRUE);
+        history.setEvent(event);
+        history.setEndpoint(endpoint);
+        return notificationResources.createNotificationHistory(history)
+                .await().indefinitely();
     }
 
     public UUID emailSubscriptionEndpointId(String accountId, EmailSubscriptionProperties properties) {

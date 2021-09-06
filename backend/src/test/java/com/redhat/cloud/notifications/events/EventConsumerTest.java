@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.CounterAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.db.EventResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.Event;
@@ -57,6 +58,9 @@ public class EventConsumerTest {
 
     @InjectMock
     ApplicationResources appResources;
+
+    @InjectMock
+    EventResources eventResources;
 
     @Inject
     CounterAssertionHelper counterAssertionHelper;
@@ -118,7 +122,7 @@ public class EventConsumerTest {
         when(appResources.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(
                 Uni.createFrom().item(eventType)
         );
-        when(appResources.createEvent(any(Event.class))).thenAnswer(invocation -> {
+        when(eventResources.create(any(Event.class))).thenAnswer(invocation -> {
             Event event = invocation.getArgument(0);
             return Uni.createFrom().item(event);
         });
