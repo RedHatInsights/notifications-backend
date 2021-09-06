@@ -83,12 +83,10 @@ public class EventResources {
             query.setParameter("eventTypeName", eventTypeName);
         }
 
-        if (startDate != null && endDate != null) {
-            query.setParameter("startDate", startDate)
-                    .setParameter("endDate", endDate);
-        } else if (startDate != null) {
+        if (startDate != null) {
             query.setParameter("startDate", startDate);
-        } else if (endDate != null) {
+        }
+        if (endDate != null) {
             query.setParameter("endDate", endDate);
         }
 
