@@ -37,25 +37,7 @@ public class EventResources {
                 "LEFT JOIN FETCH e.historyEntries he LEFT JOIN FETCH he.endpoint " +
                 "WHERE e.accountId = :accountId";
 
-        if (bundleIds != null && !bundleIds.isEmpty()) {
-            hql += " AND b.id IN (:bundleIds)";
-        }
-
-        if (appIds != null && !appIds.isEmpty()) {
-            hql += " AND a.id IN (:appIds)";
-        }
-
-        if (eventTypeName != null) {
-            hql += " AND et.name = :eventTypeName";
-        }
-
-        if (startDate != null && endDate != null) {
-            hql += " AND DATE(e.created) BETWEEN :startDate AND :endDate";
-        } else if (startDate != null) {
-            hql += " AND DATE(e.created) >= :startDate";
-        } else if (endDate != null) {
-            hql += " AND DATE(e.created) <= :endDate";
-        }
+        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeName, startDate, endDate);
 
         if (sortBy == null) {
             hql += " ORDER BY e.created DESC";
@@ -68,27 +50,8 @@ public class EventResources {
             }
         }
 
-        Mutiny.Query<Event> query = session.createQuery(hql, Event.class)
-                .setParameter("accountId", accountId);
-
-        if (bundleIds != null && !bundleIds.isEmpty()) {
-            query.setParameter("bundleIds", bundleIds);
-        }
-
-        if (appIds != null && !appIds.isEmpty()) {
-            query.setParameter("appIds", appIds);
-        }
-
-        if (eventTypeName != null) {
-            query.setParameter("eventTypeName", eventTypeName);
-        }
-
-        if (startDate != null) {
-            query.setParameter("startDate", startDate);
-        }
-        if (endDate != null) {
-            query.setParameter("endDate", endDate);
-        }
+        Mutiny.Query<Event> query = session.createQuery(hql, Event.class);
+        setQueryParams(query, accountId, bundleIds, appIds, eventTypeName, startDate, endDate);
 
         if (limit != null) {
             query.setMaxResults(limit);
@@ -98,6 +61,60 @@ public class EventResources {
         }
 
         return query.getResultList();
+    }
+
+    public Uni<Long> count(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
+                      LocalDate startDate, LocalDate endDate) {
+        String hql = "SELECT COUNT(*) FROM Event e JOIN e.eventType et JOIN et.application a JOIN a.bundle b " +
+                "WHERE e.accountId = :accountId";
+
+        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeName, startDate, endDate);
+
+        Mutiny.Query<Long> query = session.createQuery(hql, Long.class);
+        setQueryParams(query, accountId, bundleIds, appIds, eventTypeName, startDate, endDate);
+
+        return query.getSingleResult();
+    }
+
+    private static String addHqlConditions(String hql, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
+                                           LocalDate startDate, LocalDate endDate) {
+        if (bundleIds != null && !bundleIds.isEmpty()) {
+            hql += " AND b.id IN (:bundleIds)";
+        }
+        if (appIds != null && !appIds.isEmpty()) {
+            hql += " AND a.id IN (:appIds)";
+        }
+        if (eventTypeName != null) {
+            hql += " AND et.name LIKE :eventTypeName";
+        }
+        if (startDate != null && endDate != null) {
+            hql += " AND DATE(e.created) BETWEEN :startDate AND :endDate";
+        } else if (startDate != null) {
+            hql += " AND DATE(e.created) >= :startDate";
+        } else if (endDate != null) {
+            hql += " AND DATE(e.created) <= :endDate";
+        }
+        return hql;
+    }
+
+    private static void setQueryParams(Mutiny.Query<?> query, String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
+                                       LocalDate startDate, LocalDate endDate) {
+        query.setParameter("accountId", accountId);
+        if (bundleIds != null && !bundleIds.isEmpty()) {
+            query.setParameter("bundleIds", bundleIds);
+        }
+        if (appIds != null && !appIds.isEmpty()) {
+            query.setParameter("appIds", appIds);
+        }
+        if (eventTypeName != null) {
+            query.setParameter("eventTypeName", "%" + eventTypeName + "%");
+        }
+        if (startDate != null) {
+            query.setParameter("startDate", startDate);
+        }
+        if (endDate != null) {
+            query.setParameter("endDate", endDate);
+        }
     }
 
     private static String getSortField(String field) {

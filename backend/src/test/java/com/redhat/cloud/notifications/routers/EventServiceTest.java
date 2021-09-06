@@ -14,8 +14,10 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
+import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.Header;
 import io.restassured.specification.RequestSpecification;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
@@ -26,7 +28,7 @@ import javax.inject.Inject;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -100,11 +102,13 @@ public class EventServiceTest extends DbIsolatedTest {
          * Request: No filter
          * Expected response: All event log entries from DEFAULT_ACCOUNT_ID should be returned
          */
-        List<EventLogEntry> eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, null, null, null, null, null, null, null);
-        assertEquals(3, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event2, history3);
-        assertSameEvent(eventLogEntries.get(1), event3, history4);
-        assertSameEvent(eventLogEntries.get(2), event1, history1, history2);
+        Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null);
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(3, page.getData().size());
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4);
+        assertSameEvent(page.getData().get(2), event1, history1, history2);
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #2
@@ -112,150 +116,182 @@ public class EventServiceTest extends DbIsolatedTest {
          * Request: No filter
          * Expected response: All event log entries from OTHER_ACCOUNT_ID should be returned
          */
-        eventLogEntries = getEventLogEntries(otherIdentityHeader, null, null, null, null, null, null, null, null);
-        assertEquals(1, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event4);
+        page = getEventLogPage(otherIdentityHeader, null, null, null, null, null, null, null, null);
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(1, page.getData().size());
+        assertSameEvent(page.getData().get(0), event4);
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #3
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Unknown bundle
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, Set.of(randomUUID()), null, null, null, null, null, null, null);
-        assertTrue(eventLogEntries.isEmpty());
+        page = getEventLogPage(defaultIdentityHeader, Set.of(randomUUID()), null, null, null, null, null, null, null);
+        assertEquals(0, page.getMeta().getCount());
+        assertTrue(page.getData().isEmpty());
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #4
          * Account: DEFAULT_ACCOUNT_ID
          * Request: One existing bundle
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, Set.of(bundle1.getId()), null, null, null, null, null, null, null);
-        assertEquals(1, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event1, history1, history2);
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId()), null, null, null, null, null, null, null);
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(1, page.getData().size());
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #5
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Multiple existing bundles, sort by ascending bundle names
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, Set.of(bundle1.getId(), bundle2.getId()), null, null, null, null, null, null, "bundle:asc");
-        assertEquals(3, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event1, history1, history2);
-        assertSameEvent(eventLogEntries.get(1), event2, history3);
-        assertSameEvent(eventLogEntries.get(2), event3, history4);
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId(), bundle2.getId()), null, null, null, null, null, null, "bundle:asc");
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(3, page.getData().size());
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(1), event2, history3);
+        assertSameEvent(page.getData().get(2), event3, history4);
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #6
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Unknown application
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, Set.of(randomUUID()), null, null, null, null, null, null);
-        assertTrue(eventLogEntries.isEmpty());
+        page = getEventLogPage(defaultIdentityHeader, null, Set.of(randomUUID()), null, null, null, null, null, null);
+        assertEquals(0, page.getMeta().getCount());
+        assertTrue(page.getData().isEmpty());
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #7
          * Account: DEFAULT_ACCOUNT_ID
          * Request: One existing application
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, Set.of(app2.getId()), null, null, null, null, null, null);
-        assertEquals(2, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event2, history3);
-        assertSameEvent(eventLogEntries.get(1), event3, history4);
+        page = getEventLogPage(defaultIdentityHeader, null, Set.of(app2.getId()), null, null, null, null, null, null);
+        assertEquals(2, page.getMeta().getCount());
+        assertEquals(2, page.getData().size());
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4);
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #8
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Multiple existing applications, sort by ascending application names
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, Set.of(app1.getId(), app2.getId()), null, null, null, null, null, "application:asc");
-        assertEquals(3, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event1, history1, history2);
-        assertSameEvent(eventLogEntries.get(1), event2, history3);
-        assertSameEvent(eventLogEntries.get(2), event3, history4);
+        page = getEventLogPage(defaultIdentityHeader, null, Set.of(app1.getId(), app2.getId()), null, null, null, null, null, "application:asc");
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(3, page.getData().size());
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(1), event2, history3);
+        assertSameEvent(page.getData().get(2), event3, history4);
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #9
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Unknown event type
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, null, "unknown", null, null, null, null, null);
-        assertTrue(eventLogEntries.isEmpty());
+        page = getEventLogPage(defaultIdentityHeader, null, null, "unknown", null, null, null, null, null);
+        assertEquals(0, page.getMeta().getCount());
+        assertTrue(page.getData().isEmpty());
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #10
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Existing event type
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, null, eventType1.getName(), null, null, null, null, null);
-        assertEquals(1, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event1, history1, history2);
+        page = getEventLogPage(defaultIdentityHeader, null, null, eventType1.getName().substring(2), null, null, null, null, null);
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(1, page.getData().size());
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #11
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Start date three days in the past
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), null, null, null, null);
-        assertEquals(2, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event2, history3);
-        assertSameEvent(eventLogEntries.get(1), event3, history4);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), null, null, null, null);
+        assertEquals(2, page.getMeta().getCount());
+        assertEquals(2, page.getData().size());
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4);
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #12
          * Account: DEFAULT_ACCOUNT_ID
          * Request: End date three days in the past
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, null, null, null, NOW.minusDays(3L), null, null, null);
-        assertEquals(1, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event1, history1, history2);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, NOW.minusDays(3L), null, null, null);
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(1, page.getData().size());
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #13
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Both start and end date are set
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), NOW.minusDays(1L), null, null, null);
-        assertEquals(1, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event3, history4);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), NOW.minusDays(1L), null, null, null);
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(1, page.getData().size());
+        assertSameEvent(page.getData().get(0), event3, history4);
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #14
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Let's try all request params at once!
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, Set.of(bundle2.getId()), Set.of(app2.getId()), eventType2.getName(), NOW.minusDays(3L), NOW.minusDays(1L), 10, 0, "created:desc");
-        assertEquals(1, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event3, history4);
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle2.getId()), Set.of(app2.getId()), eventType2.getName(), NOW.minusDays(3L), NOW.minusDays(1L), 10, 0, "created:desc");
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(1, page.getData().size());
+        assertSameEvent(page.getData().get(0), event3, history4);
+        assertLinks(page.getLinks(), "first", "last");
 
         /*
          * Test #15
          * Account: DEFAULT_ACCOUNT_ID
          * Request: No filter, limit without offset
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, null, null, null, null, 2, null, null);
-        assertEquals(2, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event2, history3);
-        assertSameEvent(eventLogEntries.get(1), event3, history4);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, 2, null, null);
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(2, page.getData().size());
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4);
+        assertLinks(page.getLinks(), "first", "last", "next");
 
         /*
          * Test #16
          * Account: DEFAULT_ACCOUNT_ID
          * Request: No filter, limit with offset
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, null, null, null, null, 1, 2, null);
-        assertEquals(1, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event1, history1, history2);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, 1, 2, null);
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(1, page.getData().size());
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertLinks(page.getLinks(), "first", "last", "prev");
 
         /*
          * Test #17
          * Account: DEFAULT_ACCOUNT_ID
          * Request: No filter, sort by ascending event names
          */
-        eventLogEntries = getEventLogEntries(defaultIdentityHeader, null, null, null, null, null, null, null, "event:asc");
-        assertEquals(3, eventLogEntries.size());
-        assertSameEvent(eventLogEntries.get(0), event1, history1, history2);
-        assertSameEvent(eventLogEntries.get(1), event2, history3);
-        assertSameEvent(eventLogEntries.get(2), event3, history4);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, "event:asc");
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(3, page.getData().size());
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(1), event2, history3);
+        assertSameEvent(page.getData().get(2), event3, history4);
+        assertLinks(page.getLinks(), "first", "last");
     }
 
     @Test
@@ -283,6 +319,27 @@ public class EventServiceTest extends DbIsolatedTest {
                 .contentType(JSON);
     }
 
+    @Test
+    void testInvalidLimit() {
+        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", FULL_ACCESS);
+        given()
+                .basePath(API_NOTIFICATIONS_V_1_0)
+                .header(identityHeader)
+                .param("limit", 0)
+                .when().get("/event")
+                .then()
+                .statusCode(400)
+                .contentType(JSON);
+        given()
+                .basePath(API_NOTIFICATIONS_V_1_0)
+                .header(identityHeader)
+                .param("limit", 999999)
+                .when().get("/event")
+                .then()
+                .statusCode(400)
+                .contentType(JSON);
+    }
+
     private Event createEvent(String accountId, EventType eventType, LocalDateTime created) {
         Event event = new Event();
         event.setAccountId(accountId);
@@ -301,8 +358,8 @@ public class EventServiceTest extends DbIsolatedTest {
         return TestHelpers.createIdentityHeader(identityHeaderValue);
     }
 
-    private static List<EventLogEntry> getEventLogEntries(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
-                                                          LocalDateTime startDate, LocalDateTime endDate, Integer limit, Integer offset, String sortBy) {
+    private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
+                                                       LocalDateTime startDate, LocalDateTime endDate, Integer limit, Integer offset, String sortBy) {
         RequestSpecification request = given()
                 .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader);
@@ -335,7 +392,7 @@ public class EventServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().body().jsonPath().getList(".", EventLogEntry.class);
+                .extract().body().as(new TypeRef<Page<EventLogEntry>>() { });
     }
 
     private static void assertSameEvent(EventLogEntry eventLogEntry, Event event, NotificationHistory... historyEntries) {
@@ -356,6 +413,13 @@ public class EventServiceTest extends DbIsolatedTest {
                 assertEquals(historyEntry.get().getEndpoint().getType(), eventLogEntryAction.getEndpointType());
                 assertEquals(historyEntry.get().isInvocationResult(), eventLogEntryAction.getInvocationResult());
             }
+        }
+    }
+
+    private static void assertLinks(Map<String, String> links, String... expectedKeys) {
+        assertEquals(expectedKeys.length, links.size());
+        for (String key : expectedKeys) {
+            assertTrue(links.containsKey(key));
         }
     }
 }
