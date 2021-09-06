@@ -137,7 +137,6 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldNotProcessMailsWhenNewCronJobIsDisabledByEnvironmentVariable() {
-        System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "false");
 
         final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
         final ObjectMapper objectMapper = mock(ObjectMapper.class);
