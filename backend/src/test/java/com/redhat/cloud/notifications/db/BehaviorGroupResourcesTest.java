@@ -1,16 +1,16 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -45,189 +45,244 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Inject
     ResourceHelpers resourceHelpers;
 
+    @Inject
+    BehaviorGroupResources behaviorGroupResources;
+
     @Test
-    public void testCreateAndUpdateAndDeleteBehaviorGroup() {
-        Bundle bundle = resourceHelpers.createBundle();
-
-        // Create behavior group.
-        BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        List<BehaviorGroup> behaviorGroups = resourceHelpers.findBehaviorGroupsByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
-        assertEquals(1, behaviorGroups.size());
-        assertEquals(behaviorGroup, behaviorGroups.get(0));
-        assertEquals(behaviorGroup.getDisplayName(), behaviorGroups.get(0).getDisplayName());
-        assertEquals(bundle.getId(), behaviorGroups.get(0).getBundle().getId());
-        assertNotNull(bundle.getCreated());
-
-        // Update behavior group.
-        String newDisplayName = "newDisplayName";
-        Boolean updated = updateBehaviorGroup(behaviorGroup.getId(), newDisplayName);
-        assertTrue(updated);
-        session.clear(); // We need to clear the session L1 cache before checking the update result.
-        behaviorGroups = resourceHelpers.findBehaviorGroupsByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
-        assertEquals(1, behaviorGroups.size());
-        assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
-        assertEquals(newDisplayName, behaviorGroups.get(0).getDisplayName());
-        assertEquals(bundle.getId(), behaviorGroups.get(0).getBundle().getId());
-
-        // Delete behavior group.
-        Boolean deleted = resourceHelpers.deleteBehaviorGroup(behaviorGroup.getId());
-        assertTrue(deleted);
-        behaviorGroups = resourceHelpers.findBehaviorGroupsByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
-        assertTrue(behaviorGroups.isEmpty());
+    void testCreateAndUpdateAndDeleteBehaviorGroup() {
+        resourceHelpers.createBundle()
+                // Create behavior group.
+                .call(bundle -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
+                        .call(behaviorGroup -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId())
+                                .invoke(behaviorGroups -> {
+                                    assertEquals(1, behaviorGroups.size());
+                                    assertEquals(behaviorGroup, behaviorGroups.get(0));
+                                    assertEquals(behaviorGroup.getDisplayName(), behaviorGroups.get(0).getDisplayName());
+                                    assertEquals(bundle.getId(), behaviorGroups.get(0).getBundle().getId());
+                                    assertNotNull(bundle.getCreated());
+                                })
+                                .chain(() -> {
+                                    // Update behavior group.
+                                    String newDisplayName = "newDisplayName";
+                                    return updateBehaviorGroup(behaviorGroup.getId(), newDisplayName)
+                                            .invoke(updated -> {
+                                                assertTrue(updated);
+                                                session.clear(); // We need to clear the session L1 cache before checking the update result.
+                                            })
+                                            .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId())
+                                                    .invoke(behaviorGroups -> {
+                                                        assertEquals(1, behaviorGroups.size());
+                                                        assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
+                                                        assertEquals(newDisplayName, behaviorGroups.get(0).getDisplayName());
+                                                        assertEquals(bundle.getId(), behaviorGroups.get(0).getBundle().getId());
+                                                    })
+                                            );
+                                })
+                                // Delete behavior group.
+                                .chain(() -> resourceHelpers.deleteBehaviorGroup(behaviorGroup.getId())
+                                        .invoke(Assertions::assertTrue)
+                                )
+                                .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId())
+                                        .invoke(behaviorGroups -> assertTrue(behaviorGroups.isEmpty()))
+                                )
+                        )
+                )
+                .await().indefinitely();
     }
 
     @Test
-    public void testCreateBehaviorGroupWithNullDisplayName() {
+    void testCreateBehaviorGroupWithNullDisplayName() {
         createBehaviorGroupWithIllegalDisplayName(null);
     }
 
     @Test
-    public void testCreateBehaviorGroupWithEmptyDisplayName() {
+    void testCreateBehaviorGroupWithEmptyDisplayName() {
         createBehaviorGroupWithIllegalDisplayName("");
     }
 
     @Test
-    public void testCreateBehaviorGroupWithBlankDisplayName() {
+    void testCreateBehaviorGroupWithBlankDisplayName() {
         createBehaviorGroupWithIllegalDisplayName(" ");
     }
 
     @Test
-    public void testCreateBehaviorGroupWithNullBundleId() {
+    void testCreateBehaviorGroupWithNullBundleId() {
         NotFoundException e = assertThrows(NotFoundException.class, () -> {
-            resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", null);
+            resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", null)
+                    .await().indefinitely();
         });
         assertEquals("bundle_id not found", e.getMessage());
     }
 
     @Test
-    public void testCreateBehaviorGroupWithUnknownBundleId() {
+    void testCreateBehaviorGroupWithUnknownBundleId() {
         NotFoundException e = assertThrows(NotFoundException.class, () -> {
-            resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", UUID.randomUUID());
+            resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", UUID.randomUUID())
+                    .await().indefinitely();
         });
         assertEquals("bundle_id not found", e.getMessage());
     }
 
     @Test
-    public void testfindByBundleIdOrdering() {
-        Bundle bundle = resourceHelpers.createBundle();
-        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        BehaviorGroup behaviorGroup3 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        List<BehaviorGroup> behaviorGroups = resourceHelpers.findBehaviorGroupsByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
-        assertEquals(3, behaviorGroups.size());
-        // Behavior groups should be sorted on descending creation date.
-        assertSame(behaviorGroup3, behaviorGroups.get(0));
-        assertSame(behaviorGroup2, behaviorGroups.get(1));
-        assertSame(behaviorGroup1, behaviorGroups.get(2));
+    void testfindByBundleIdOrdering() {
+        resourceHelpers.createBundle()
+                .call(bundle -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
+                        .call(behaviorGroup1 -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
+                                .call(behaviorGroup2 -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
+                                        .call(behaviorGroup3 -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId())
+                                                .invoke(behaviorGroups -> {
+                                                    assertEquals(3, behaviorGroups.size());
+                                                    // Behavior groups should be sorted on descending creation date.
+                                                    assertSame(behaviorGroup3, behaviorGroups.get(0));
+                                                    assertSame(behaviorGroup2, behaviorGroups.get(1));
+                                                    assertSame(behaviorGroup1, behaviorGroups.get(2));
+                                                })
+                                        )
+                                )
+                        )
+                )
+                .await().indefinitely();
     }
 
     @Test
-    public void testAddAndDeleteEventTypeBehavior() {
-        Bundle bundle = resourceHelpers.createBundle();
-        Application app = resourceHelpers.createApplication(bundle.getId());
-        EventType eventType = createEventType(app.getId());
-        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", bundle.getId());
-        BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 2", bundle.getId());
-        BehaviorGroup behaviorGroup3 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 3", bundle.getId());
-
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId(), behaviorGroup2.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup2.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId(), behaviorGroup2.getId(), behaviorGroup3.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true);
+    void testAddAndDeleteEventTypeBehavior() {
+        resourceHelpers.createBundle()
+                .call(bundle -> resourceHelpers.createApplication(bundle.getId())
+                        .call(app -> createEventType(app.getId())
+                                .call(eventType -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", bundle.getId())
+                                        .call(behaviorGroup1 -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 2", bundle.getId())
+                                                .call(behaviorGroup2 -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 3", bundle.getId())
+                                                        .call(behaviorGroup3 -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId())
+                                                                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId()))
+                                                                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId(), behaviorGroup2.getId()))
+                                                                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup2.getId()))
+                                                                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId(), behaviorGroup2.getId(), behaviorGroup3.getId()))
+                                                                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true))
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+                .await().indefinitely();
     }
 
     @Test
-    public void testFindEventTypesByBehaviorGroupId() {
-        Bundle bundle = resourceHelpers.createBundle();
-        Application app = resourceHelpers.createApplication(bundle.getId());
-        EventType eventType = createEventType(app.getId());
-        BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId());
-        List<EventType> eventTypes = resourceHelpers.findEventTypesByBehaviorGroupId(behaviorGroup.getId());
-        assertEquals(1, eventTypes.size());
-        assertEquals(eventType.getId(), eventTypes.get(0).getId());
+    void testFindEventTypesByBehaviorGroupId() {
+        resourceHelpers.createBundle()
+                .call(bundle -> resourceHelpers.createApplication(bundle.getId())
+                        .call(app -> createEventType(app.getId())
+                                .call(eventType -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
+                                        .call(behaviorGroup -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId())
+                                                .chain(() -> resourceHelpers.findEventTypesByBehaviorGroupId(behaviorGroup.getId())
+                                                        .invoke(eventTypes -> {
+                                                            assertEquals(1, eventTypes.size());
+                                                            assertEquals(eventType.getId(), eventTypes.get(0).getId());
+                                                        })
+                                                )
+                                        )
+                                )
+                        )
+                )
+                .await().indefinitely();
     }
 
     @Test
-    public void testFindBehaviorGroupsByEventTypeId() {
-        Bundle bundle = resourceHelpers.createBundle();
-        Application app = resourceHelpers.createApplication(bundle.getId());
-        EventType eventType = createEventType(app.getId());
-        BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId());
-        List<BehaviorGroup> behaviorGroups = resourceHelpers.findBehaviorGroupsByEventTypeId(eventType.getId());
-        assertEquals(1, behaviorGroups.size());
-        assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
+    void testFindBehaviorGroupsByEventTypeId() {
+        resourceHelpers.createBundle()
+                .call(bundle -> resourceHelpers.createApplication(bundle.getId())
+                        .call(app -> createEventType(app.getId())
+                                .call(eventType -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
+                                        .call(behaviorGroup -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId())
+                                                .chain(() -> resourceHelpers.findBehaviorGroupsByEventTypeId(eventType.getId())
+                                                        .invoke(behaviorGroups -> {
+                                                            assertEquals(1, behaviorGroups.size());
+                                                            assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
+                                                        })
+                                                )
+                                        )
+                                )
+                        )
+                )
+                .await().indefinitely();
     }
 
     @Test
-    public void testAddAndDeleteBehaviorGroupAction() {
-        Bundle bundle = resourceHelpers.createBundle();
-        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", bundle.getId());
-        BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 2", bundle.getId());
-        Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK);
-        Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK);
-        Endpoint endpoint3 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK);
-
-        // At the beginning of the test, endpoint1 shouldn't be linked with any behavior group.
-        findBehaviorGroupsByEndpointId(endpoint1.getId());
-
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId(), endpoint2.getId());
-
-        // Now, endpoint1 should be linked with behaviorGroup1.
-        findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId());
-
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup2.getId(), OK, endpoint1.getId());
-        // Then, endpoint1 should be linked with both behavior groups.
-        findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId(), behaviorGroup2.getId());
-
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint2.getId());
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint3.getId(), endpoint2.getId(), endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK);
-
-        // The link between endpoint1 and behaviorGroup1 was removed. Let's check it is still linked with behaviorGroup2.
-        findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup2.getId());
+    void testAddAndDeleteBehaviorGroupAction() {
+        resourceHelpers.createBundle()
+                .call(bundle -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", bundle.getId())
+                        .call(behaviorGroup1 -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 2", bundle.getId())
+                                .call(behaviorGroup2 -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
+                                        .call(endpoint1 -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
+                                                .call(endpoint2 -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
+                                                        // At the beginning of the test, endpoint1 shouldn't be linked with any behavior group.
+                                                        .call(endpoint3 -> findBehaviorGroupsByEndpointId(endpoint1.getId())
+                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId()))
+                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId()))
+                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId(), endpoint2.getId()))
+                                                                // Now, endpoint1 should be linked with behaviorGroup1.
+                                                                .chain(() -> findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId()))
+                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup2.getId(), OK, endpoint1.getId()))
+                                                                // Then, endpoint1 should be linked with both behavior groups.
+                                                                .chain(() -> findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId(), behaviorGroup2.getId()))
+                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint2.getId()))
+                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint3.getId(), endpoint2.getId(), endpoint1.getId()))
+                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK))
+                                                                // The link between endpoint1 and behaviorGroup1 was removed. Let's check it is still linked with behaviorGroup2.
+                                                                .chain(() -> findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup2.getId()))
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+                .await().indefinitely();
     }
 
     @Test
-    public void testAddMultipleEmailSubscriptionBehaviorGroupActions() {
-        Bundle bundle = resourceHelpers.createBundle();
-        BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION);
-        Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION);
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), OK, endpoint1.getId(), endpoint2.getId());
+    void testAddMultipleEmailSubscriptionBehaviorGroupActions() {
+        resourceHelpers.createBundle()
+                .call(bundle -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
+                        .call(behaviorGroup -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION)
+                                .call(endpoint1 -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION)
+                                        .call(endpoint2 -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), OK, endpoint1.getId(), endpoint2.getId()))
+                                )
+                        )
+                )
+                .await().indefinitely();
     }
 
     @Test
-    public void testUpdateBehaviorGroupActionsWithWrongAccountId() {
-        Bundle bundle = resourceHelpers.createBundle();
-        BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        Endpoint endpoint = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK);
-        updateAndCheckBehaviorGroupActions("unknownAccountId", bundle.getId(), behaviorGroup.getId(), NOT_FOUND, endpoint.getId());
+    void testUpdateBehaviorGroupActionsWithWrongAccountId() {
+        resourceHelpers.createBundle()
+                .call(bundle -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
+                        .call(behaviorGroup -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
+                                .call(endpoint -> updateAndCheckBehaviorGroupActions("unknownAccountId", bundle.getId(), behaviorGroup.getId(), NOT_FOUND, endpoint.getId()))
+                        )
+                )
+                .await().indefinitely();
     }
 
-    private EventType createEventType(UUID appID) {
+    private Uni<EventType> createEventType(UUID appID) {
         EventType eventType = new EventType();
         eventType.setApplicationId(appID);
         eventType.setName("name");
         eventType.setDisplayName("displayName");
-        return session.persist(eventType).call(session::flush).replaceWith(eventType).await().indefinitely();
+        return session.persist(eventType).call(session::flush).replaceWith(eventType);
     }
 
     private void createBehaviorGroupWithIllegalDisplayName(String displayName) {
-        Bundle bundle = resourceHelpers.createBundle();
+        Bundle bundle = resourceHelpers.createBundle()
+                .await().indefinitely();
         PersistenceException e = assertThrows(PersistenceException.class, () -> {
-            resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, displayName, bundle.getId());
+            resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, displayName, bundle.getId())
+                    .await().indefinitely();
         });
         assertSame(ConstraintViolationException.class, e.getCause().getCause().getClass());
         assertTrue(e.getCause().getCause().getMessage().contains("propertyPath=displayName"));
     }
 
-    private Boolean updateBehaviorGroup(UUID behaviorGroupId, String displayName) {
+    private Uni<Boolean> updateBehaviorGroup(UUID behaviorGroupId, String displayName) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setId(behaviorGroupId);
         behaviorGroup.setDisplayName(displayName);
@@ -235,55 +290,76 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         return resourceHelpers.updateBehaviorGroup(behaviorGroup);
     }
 
-    private void updateAndCheckEventTypeBehaviors(String accountId, UUID eventTypeId, boolean expectedResult, UUID... behaviorGroupIds) {
-        Boolean updated = resourceHelpers.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupIds));
-        // Is the update result the one we expected?
-        assertEquals(expectedResult, updated);
-        if (expectedResult) {
-            session.clear(); // We need to clear the session L1 cache before checking the update result.
-            // If we expected a success, the event type behaviors should match in any order the given behavior groups IDs.
-            List<EventTypeBehavior> behaviors = findEventTypeBehaviorByEventTypeId(eventTypeId);
-            assertEquals(behaviorGroupIds.length, behaviors.size());
-            for (UUID behaviorGroupId : behaviorGroupIds) {
-                assertEquals(1L, behaviors.stream().filter(behavior -> behavior.getBehaviorGroup().getId().equals(behaviorGroupId)).count());
-            }
-        }
+    private Uni<Void> updateAndCheckEventTypeBehaviors(String accountId, UUID eventTypeId, boolean expectedResult, UUID... behaviorGroupIds) {
+        return behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupIds))
+                .invoke(updated -> {
+                    // Is the update result the one we expected?
+                    assertEquals(expectedResult, updated);
+                })
+                .onItem().transformToUni(updated -> {
+                    if (expectedResult) {
+                        session.clear(); // We need to clear the session L1 cache before checking the update result.
+                        // If we expected a success, the event type behaviors should match in any order the given behavior groups IDs.
+                        return findEventTypeBehaviorByEventTypeId(eventTypeId)
+                                .invoke(behaviors -> {
+                                    assertEquals(behaviorGroupIds.length, behaviors.size());
+                                    for (UUID behaviorGroupId : behaviorGroupIds) {
+                                        assertEquals(1L, behaviors.stream().filter(behavior -> behavior.getBehaviorGroup().getId().equals(behaviorGroupId)).count());
+                                    }
+                                });
+                    } else {
+                        return Uni.createFrom().voidItem();
+                    }
+                })
+                .replaceWith(Uni.createFrom().voidItem());
     }
 
-    private List<EventTypeBehavior> findEventTypeBehaviorByEventTypeId(UUID eventTypeId) {
+    private Uni<List<EventTypeBehavior>> findEventTypeBehaviorByEventTypeId(UUID eventTypeId) {
         String query = "FROM EventTypeBehavior WHERE eventType.id = :eventTypeId";
         return session.createQuery(query, EventTypeBehavior.class)
                 .setParameter("eventTypeId", eventTypeId)
-                .getResultList()
-                .await().indefinitely();
+                .getResultList();
     }
 
-    private void updateAndCheckBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId, Status expectedResult, UUID... endpointIds) {
-        Status status = resourceHelpers.updateBehaviorGroupActions(accountId, behaviorGroupId, Arrays.asList(endpointIds));
-        // Is the update result the one we expected?
-        assertEquals(expectedResult, status);
-        if (expectedResult == Status.OK) {
-            session.clear(); // We need to clear the session L1 cache before checking the update result.
-            // If we expected a success, the behavior group actions should match exactly the given endpoint IDs.
-            List<BehaviorGroupAction> actions = findBehaviorGroupActions(accountId, bundleId, behaviorGroupId);
-            assertEquals(endpointIds.length, actions.size());
-            for (int i = 0; i < endpointIds.length; i++) {
-                assertEquals(endpointIds[i], actions.get(i).getEndpoint().getId());
-            }
-        }
+    private Uni<Void> updateAndCheckBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId, Status expectedResult, UUID... endpointIds) {
+        return behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, Arrays.asList(endpointIds))
+                .invoke(status -> {
+                    // Is the update result the one we expected?
+                    assertEquals(expectedResult, status);
+                })
+                .onItem().transformToUni(status -> {
+                    if (expectedResult == Status.OK) {
+                        session.clear(); // We need to clear the session L1 cache before checking the update result.
+                        // If we expected a success, the behavior group actions should match exactly the given endpoint IDs.
+                        return findBehaviorGroupActions(accountId, bundleId, behaviorGroupId)
+                                .invoke(actions -> {
+                                    assertEquals(endpointIds.length, actions.size());
+                                    for (int i = 0; i < endpointIds.length; i++) {
+                                        assertEquals(endpointIds[i], actions.get(i).getEndpoint().getId());
+                                    }
+                                });
+                    } else {
+                        return Uni.createFrom().voidItem();
+                    }
+                })
+                .replaceWith(Uni.createFrom().voidItem());
     }
 
-    private List<BehaviorGroupAction> findBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId) {
-        List<BehaviorGroup> behaviorGroups = resourceHelpers.findBehaviorGroupsByBundleId(accountId, bundleId);
-        return behaviorGroups
-                .stream().filter(behaviorGroup -> behaviorGroup.getId().equals(behaviorGroupId))
-                .findFirst().get().getActions();
+    private Uni<List<BehaviorGroupAction>> findBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId) {
+        return behaviorGroupResources.findByBundleId(accountId, bundleId)
+                .onItem().transform(behaviorGroups -> behaviorGroups
+                        .stream().filter(behaviorGroup -> behaviorGroup.getId().equals(behaviorGroupId))
+                        .findFirst().get().getActions()
+                );
     }
 
-    private void findBehaviorGroupsByEndpointId(UUID endpointId, UUID... expectedBehaviorGroupIds) {
-        List<UUID> actualBehaviorGroupIds = resourceHelpers.findBehaviorGroupsByEndpointId(endpointId)
-                .stream().map(BehaviorGroup::getId).collect(Collectors.toList());
-        assertEquals(expectedBehaviorGroupIds.length, actualBehaviorGroupIds.size());
-        assertTrue(actualBehaviorGroupIds.containsAll(Arrays.asList(expectedBehaviorGroupIds)));
+    private Uni<Void> findBehaviorGroupsByEndpointId(UUID endpointId, UUID... expectedBehaviorGroupIds) {
+        return resourceHelpers.findBehaviorGroupsByEndpointId(endpointId)
+                .invoke(behaviorGroups -> {
+                    List<UUID> actualBehaviorGroupIds = behaviorGroups.stream().map(BehaviorGroup::getId).collect(Collectors.toList());
+                    assertEquals(expectedBehaviorGroupIds.length, actualBehaviorGroupIds.size());
+                    assertTrue(actualBehaviorGroupIds.containsAll(Arrays.asList(expectedBehaviorGroupIds)));
+                })
+                .replaceWith(Uni.createFrom().voidItem());
     }
 }
