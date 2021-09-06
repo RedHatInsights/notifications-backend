@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.vertx.core.json.jackson.DatabindCodec;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -22,15 +23,23 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     @Override
     public Map<String, String> start() {
         System.out.println("++++  TestLifecycleManager start +++");
+        System.out.println(" -- configuring ObjectMapper");
         configureObjectMapper();
         Map<String, String> properties = new HashMap<>();
         try {
+            System.out.println(" -- setting up postgres");
             setupPostgres(properties);
+            System.out.println(" -- setting up InMemoryConnector");
+            setupInMemoryConnector(properties);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         System.out.println(" -- Running with properties: " + properties);
         return properties;
+    }
+
+    public void setupInMemoryConnector(Map<String, String> props) {
+        props.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory("aggregation"));
     }
 
     private void configureObjectMapper() {
@@ -42,6 +51,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     @Override
     public void stop() {
         postgreSQLContainer.stop();
+        InMemoryConnector.clear();
     }
 
     void setupPostgres(Map<String, String> props) throws SQLException {
