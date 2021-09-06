@@ -23,7 +23,7 @@
     "react-router-dom": "5.2.1",
     "react-scripts": "4.0.3",
     "typescript": "4.4.2",
-    "zod": "3.8.1"
+    "zod": "3.8.2"
   },
   "devDependencies": {
     "@testing-library/dom": "8.2.0",
