@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
