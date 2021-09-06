@@ -9,6 +9,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.connectors.InMemorySink;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -42,6 +43,13 @@ class DailyEmailAggregationJobTest {
     @BeforeEach
     void setUp() {
         helpers.purgeEmailAggregations();
+        System.clearProperty("notifications.aggregator.email.subscription.periodic.cron.enabled");
+    }
+
+    @AfterEach
+    void tearDown() {
+        helpers.purgeEmailAggregations();
+        System.clearProperty("notifications.aggregator.email.subscription.periodic.cron.enabled");
     }
 
     @Test
