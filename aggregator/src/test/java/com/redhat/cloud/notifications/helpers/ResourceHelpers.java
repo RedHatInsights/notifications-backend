@@ -43,12 +43,6 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public void purgeAggregations() {
-        session.createQuery("DELETE FROM EmailAggregation").executeUpdate();
-        session.flush();
-    }
-
-    @Transactional
     public Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
         String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
         final int result = session.createQuery(query)
