@@ -38,7 +38,6 @@ public class ResourceHelpers {
 
     @Transactional
     public void purgeEmailAggregations() {
-//        session.createQuery("DELETE FROM EmailSubscription").executeUpdate();
         session.createQuery("DELETE FROM EmailAggregation").executeUpdate();
         session.flush();
     }
