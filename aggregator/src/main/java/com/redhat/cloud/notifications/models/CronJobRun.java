@@ -17,7 +17,6 @@ public class CronJobRun {
      * contain more than one row. This is done with a combination of PK and CHECK SQL constraints.
      */
     @Id
-    @JsonIgnore
     private boolean preventMultipleRows = true;
 
     @NotNull
