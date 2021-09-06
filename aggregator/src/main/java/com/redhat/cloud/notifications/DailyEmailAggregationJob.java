@@ -22,8 +22,6 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.EmailSubscriptionType.*;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.*;
-import static org.jboss.logging.Logger.Level.ERROR;
-import static org.jboss.logging.Logger.Level.WARN;
 
 @ApplicationScoped
 public class DailyEmailAggregationJob {
@@ -57,7 +55,7 @@ public class DailyEmailAggregationJob {
                 final String payload = objectMapper.writeValueAsString(aggregationCommand);
                 futures.add(emitter.send(payload).toCompletableFuture());
             } catch (JsonProcessingException e) {
-                LOG.log(WARN, "Could not transform AggregationCommand to JSON object.", e);
+                LOG.warn("Could not transform AggregationCommand to JSON object.", e);
             }
 
             emailAggregationResources.updateLastCronJobRun(now);
@@ -67,7 +65,7 @@ public class DailyEmailAggregationJob {
                 CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
                 combinedDataCompletionStage.toCompletableFuture().get();
             } catch (InterruptedException | ExecutionException ie) {
-                LOG.log(ERROR, "Writing AggregationCommands failed", ie);
+                LOG.error("Writing AggregationCommands failed", ie);
             }
         }
     }
