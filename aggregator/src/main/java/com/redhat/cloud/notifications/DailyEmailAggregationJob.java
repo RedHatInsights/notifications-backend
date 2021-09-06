@@ -8,7 +8,7 @@ import com.redhat.cloud.notifications.models.CronJobRun;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
-import org.jboss.logmanager.Level;
+import org.jboss.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
@@ -17,12 +17,13 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.EmailSubscriptionType.*;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.*;
+import static org.jboss.logging.Logger.Level.ERROR;
+import static org.jboss.logging.Logger.Level.WARN;
 
 @ApplicationScoped
 public class DailyEmailAggregationJob {
@@ -56,17 +57,17 @@ public class DailyEmailAggregationJob {
                 final String payload = objectMapper.writeValueAsString(aggregationCommand);
                 futures.add(emitter.send(payload).toCompletableFuture());
             } catch (JsonProcessingException e) {
-                LOG.warning("Could not transform AggregationCommand to JSON object.", e);
+                LOG.log(WARN, "Could not transform AggregationCommand to JSON object.", e);
             }
 
             emailAggregationResources.updateLastCronJobRun(now);
 
-            // resolve completable futures so the Quarkus main thread doesn't stop before everythin ghas been sent
+            // resolve completable futures so the Quarkus main thread doesn't stop before everything has been sent
             try {
                 CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
                 combinedDataCompletionStage.toCompletableFuture().get();
             } catch (InterruptedException | ExecutionException ie) {
-                LOG.log(Level.SEVERE, "Writing AggregationCommands failed", ie);
+                LOG.log(ERROR, "Writing AggregationCommands failed", ie);
             }
         }
     }
