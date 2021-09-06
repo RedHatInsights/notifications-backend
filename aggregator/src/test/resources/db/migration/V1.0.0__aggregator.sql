@@ -18,7 +18,7 @@ CREATE TABLE email_aggregation (
 );
 
 CREATE TABLE cronjob_run (
-    last_run TIMESTAMP,
+    last_run TIMESTAMP NOT NULL,
     -- The following PK and CHECK constraints combination guarantees that the table will never contain more than one row.
     prevent_multiple_rows BOOLEAN PRIMARY KEY DEFAULT TRUE,
     CONSTRAINT cronjob_run_table_should_never_contain_multiple_rows CHECK (prevent_multiple_rows)
