@@ -34,6 +34,7 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldProcessZeroAggregations() {
+        helpers.purgeEmailAggregations();
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
 
         assertEquals(0, emailAggregations.size());
