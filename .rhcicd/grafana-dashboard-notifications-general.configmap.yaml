@@ -2543,7 +2543,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 1
+      "version": 16
     }  
 kind: ConfigMap
 metadata:
