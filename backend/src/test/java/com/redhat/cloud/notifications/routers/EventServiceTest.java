@@ -206,7 +206,7 @@ public class EventServiceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Existing event type
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, eventType1.getName().substring(2), null, null, null, null, null);
+        page = getEventLogPage(defaultIdentityHeader, null, null, eventType1.getDisplayName().substring(2).toUpperCase(), null, null, null, null, null);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event1, history1, history2);
@@ -251,7 +251,7 @@ public class EventServiceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Let's try all request params at once!
          */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle2.getId()), Set.of(app2.getId()), eventType2.getName(), NOW.minusDays(3L), NOW.minusDays(1L), 10, 0, "created:desc");
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle2.getId()), Set.of(app2.getId()), eventType2.getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), 10, 0, "created:desc");
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event3, history4);
@@ -358,7 +358,7 @@ public class EventServiceTest extends DbIsolatedTest {
         return TestHelpers.createIdentityHeader(identityHeaderValue);
     }
 
-    private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
+    private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                                        LocalDateTime startDate, LocalDateTime endDate, Integer limit, Integer offset, String sortBy) {
         RequestSpecification request = given()
                 .basePath(API_NOTIFICATIONS_V_1_0)
@@ -369,8 +369,8 @@ public class EventServiceTest extends DbIsolatedTest {
         if (appIds != null) {
             request.param("appIds", appIds);
         }
-        if (eventTypeName != null) {
-            request.param("eventTypeName", eventTypeName);
+        if (eventTypeDisplayName != null) {
+            request.param("eventTypeDisplayName", eventTypeDisplayName);
         }
         if (startDate != null) {
             request.param("startDate", startDate.toLocalDate().toString());

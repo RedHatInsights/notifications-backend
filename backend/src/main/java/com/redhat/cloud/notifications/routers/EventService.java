@@ -48,7 +48,7 @@ public class EventService {
     @RolesAllowed(RBAC_READ_NOTIFICATIONS)
     @Operation(summary = "Retrieve the event log entries.")
     public Uni<Page<EventLogEntry>> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
-                                              @RestQuery String eventTypeName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
+                                              @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
                                               @RestQuery @DefaultValue("10") int limit, @RestQuery @DefaultValue("0") int offset, @RestQuery String sortBy) {
         if (limit < 1 || limit > 200) {
             throw new BadRequestException("Invalid 'limit' query parameter, its value must be between 1 and 200");
@@ -58,7 +58,7 @@ public class EventService {
         }
         return getAccountId(securityContext)
                 .onItem().transformToUni(accountId ->
-                        eventResources.get(accountId, bundleIds, appIds, eventTypeName, startDate, endDate, limit, offset, sortBy)
+                        eventResources.get(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, limit, offset, sortBy)
                                 .onItem().transform(events ->
                                         events.stream().map(event -> {
                                             List<EventLogEntryAction> actions = event.getHistoryEntries().stream().map(historyEntry -> {
@@ -80,7 +80,7 @@ public class EventService {
                                         }).collect(Collectors.toList())
                                 )
                                 .onItem().transformToUni(entries ->
-                                        eventResources.count(accountId, bundleIds, appIds, eventTypeName, startDate, endDate)
+                                        eventResources.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate)
                                                 .onItem().transform(count -> {
                                                     Meta meta = new Meta();
                                                     meta.setCount(count);
