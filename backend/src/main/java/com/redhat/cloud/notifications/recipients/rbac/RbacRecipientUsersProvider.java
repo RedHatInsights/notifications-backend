@@ -17,7 +17,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -32,7 +31,7 @@ public class RbacRecipientUsersProvider {
     @RestClient
     RbacServiceToService rbacServiceToService;
 
-    @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "40")
+    @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     Integer rbacElementsPerPage;
 
     @ConfigProperty(name = "rbac.retry.max-attempts", defaultValue = "3")
@@ -47,48 +46,46 @@ public class RbacRecipientUsersProvider {
     @Inject
     MeterRegistry meterRegistry;
 
-    private Counter getUsersCalls;
-    private Timer getUsersProcessTime;
-    private Counter getGroupUsersCalls;
-    private Timer getGroupUsersProcessTime;
+    private Counter failuresCounter;
 
     @PostConstruct
     public void initCounters() {
-        getUsersCalls = meterRegistry.counter("rbac-recipient-users-provider.get-users.calls");
-        getUsersProcessTime = meterRegistry.timer("rbac-recipient-users-provider.get-users.process-time");
-        getGroupUsersCalls = meterRegistry.counter("rbac-recipient-users-provider.get-group-users.calls");
-        getGroupUsersProcessTime = meterRegistry.timer("rbac-recipient-users-provider.get-group-users.process-time");
+        failuresCounter = meterRegistry.counter("rbac.failures");
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
-        getUsersCalls.increment();
-        LocalDateTime start = LocalDateTime.now();
+        Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
         return getWithPagination(
-            page -> retryOnError(
-                    rbacServiceToService
-                            .getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
-            )
+            page -> {
+                Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
+                return retryOnError(
+                        rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
+                )
+                .onItem().invoke(() -> getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId)));
+            }
         )
-        .onItem().invoke(() -> getUsersProcessTime.record(Duration.between(start, LocalDateTime.now())))
+        .onItem().invoke(() -> getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId)))
         // .memoize().indefinitely() should be removed after the Quarkus 2.0 bump
         .memoize().indefinitely();
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
     public Uni<List<User>> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
-        getGroupUsersCalls.increment();
-        LocalDateTime start = LocalDateTime.now();
+        Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
         return retryOnError(rbacServiceToService.getGroup(accountId, groupId))
                 .onItem().transformToUni(rbacGroup -> {
                     if (rbacGroup.isPlatformDefault()) {
                         return getUsers(accountId, adminOnly);
                     } else {
                         return getWithPagination(
-                            page -> retryOnError(
-                                    rbacServiceToService
-                                            .getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage)
-                            )
+                            page -> {
+                                Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
+                                return retryOnError(
+                                        rbacServiceToService.getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage)
+                                )
+                                .onItem().invoke(() -> getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "accountId", accountId)));
+                            }
                         )
                         // getGroupUsers doesn't have an adminOnly param.
                         .onItem().transform(users -> {
@@ -100,14 +97,17 @@ public class RbacRecipientUsersProvider {
                         });
                     }
                 })
-                .onItem().invoke(() -> getGroupUsersProcessTime.record(Duration.between(start, LocalDateTime.now())))
+                .onItem().invoke(() -> getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountId)))
                 // .memoize().indefinitely() should be removed after the Quarkus 2.0 bump
                 .memoize().indefinitely();
     }
 
     private <T> Uni<T> retryOnError(Uni<T> uni) {
         return uni
-                .onFailure(failure -> failure.getClass() == IOException.class || failure.getClass() == ConnectTimeoutException.class)
+                .onFailure(failure -> {
+                    failuresCounter.increment();
+                    return failure.getClass() == IOException.class || failure.getClass() == ConnectTimeoutException.class;
+                })
                 .retry()
                 .withBackOff(initialBackOff, maxBackOff)
                 .atMost(maxRetryAttempts);
