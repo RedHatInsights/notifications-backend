@@ -18,7 +18,7 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1631091153869,
+      "iteration": 1631114801824,
       "links": [],
       "panels": [
         {
@@ -69,7 +69,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "processor_webhook_processed_total",
+              "expr": "increase(processor_webhook_processed_total[5m])",
               "interval": "",
               "legendFormat": "{{pod}}",
               "refId": "A"
@@ -95,6 +95,7 @@ data:
           },
           "yaxes": [
             {
+              "$$hashKey": "object:39",
               "format": "short",
               "label": null,
               "logBase": 1,
@@ -103,7 +104,8 @@ data:
               "show": true
             },
             {
-              "format": "short",
+              "$$hashKey": "object:40",
+              "format": "Misc",
               "label": null,
               "logBase": 1,
               "max": null,
@@ -791,7 +793,7 @@ data:
             "x": 8,
             "y": 35
           },
-          "id": 128,
+          "id": 137,
           "interval": null,
           "links": [],
           "mappingType": 1,
@@ -821,7 +823,7 @@ data:
             }
           ],
           "repeatDirection": "h",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631114801824,
           "repeatPanelId": 2,
           "scopedVars": {
             "service": {
@@ -924,7 +926,7 @@ data:
             "x": 16,
             "y": 35
           },
-          "id": 129,
+          "id": 138,
           "interval": null,
           "links": [],
           "mappingType": 1,
@@ -954,7 +956,7 @@ data:
             }
           ],
           "repeatDirection": "h",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631114801824,
           "repeatPanelId": 2,
           "scopedVars": {
             "service": {
@@ -1154,7 +1156,7 @@ data:
             "y": 40
           },
           "hiddenSeries": false,
-          "id": 130,
+          "id": 139,
           "legend": {
             "avg": false,
             "current": false,
@@ -1177,7 +1179,7 @@ data:
           "points": false,
           "renderer": "flot",
           "repeatDirection": "h",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631114801824,
           "repeatPanelId": 98,
           "scopedVars": {
             "service": {
@@ -1261,7 +1263,7 @@ data:
             "y": 40
           },
           "hiddenSeries": false,
-          "id": 131,
+          "id": 140,
           "legend": {
             "avg": false,
             "current": false,
@@ -1284,7 +1286,7 @@ data:
           "points": false,
           "renderer": "flot",
           "repeatDirection": "h",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631114801824,
           "repeatPanelId": 98,
           "scopedVars": {
             "service": {
@@ -1747,9 +1749,9 @@ data:
             "x": 0,
             "y": 59
           },
-          "id": 132,
+          "id": 141,
           "panels": [],
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631114801824,
           "repeatPanelId": 60,
           "scopedVars": {
             "jvmcontainer": {
@@ -1783,7 +1785,7 @@ data:
             "y": 60
           },
           "hiddenSeries": false,
-          "id": 133,
+          "id": 142,
           "legend": {
             "alignAsTable": true,
             "avg": true,
@@ -1811,7 +1813,7 @@ data:
           "renderer": "flot",
           "repeat": null,
           "repeatDirection": "h",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631114801824,
           "repeatPanelId": 72,
           "repeatedByRow": true,
           "scopedVars": {
@@ -1924,7 +1926,7 @@ data:
             "y": 60
           },
           "hiddenSeries": false,
-          "id": 134,
+          "id": 143,
           "legend": {
             "alignAsTable": true,
             "avg": false,
@@ -1949,7 +1951,7 @@ data:
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631114801824,
           "repeatPanelId": 74,
           "repeatedByRow": true,
           "scopedVars": {
@@ -2189,7 +2191,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 3
+      "version": 4
     }
 kind: ConfigMap
 metadata:
