@@ -16,6 +16,8 @@ import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.templates.EmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.ScheduledExecution;
@@ -26,6 +28,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Instant;
@@ -72,6 +75,16 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Inject
     ObjectMapper objectMapper;
 
+    @Inject
+    MeterRegistry registry;
+
+    private Counter processedCount;
+
+    @PostConstruct
+    void postConstruct() {
+        processedCount = registry.counter("processor.email.processed");
+    }
+
     @Override
     public Multi<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
         if (endpoints == null || endpoints.isEmpty()) {
@@ -111,6 +124,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     private Multi<NotificationHistory> sendEmail(Event event, Set<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType, EmailTemplate emailTemplate) {
+        processedCount.increment();
         Action action = event.getAction();
         if (!emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
             return Multi.createFrom().empty();
