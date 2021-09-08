@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import io.quarkus.scheduler.Scheduled;
+import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.logging.Logger;
@@ -34,16 +35,18 @@ public class EventLogCleaner {
      */
     @Scheduled(identity = "EventLogCleaner", delay = 10L, delayUnit = MINUTES, every = "{event-log-cleaner.period}")
     public void clean() {
+        testableClean().await().indefinitely();
+    }
+
+    Uni<Integer> testableClean() {
         Duration deleteDelay = ConfigProvider.getConfig().getOptionalValue(EVENT_LOG_CLEANER_DELETE_AFTER_CONF_KEY, Duration.class)
                 .orElse(DEFAULT_DELETE_DELAY);
         LocalDateTime deleteBefore = now().minus(deleteDelay);
         LOGGER.infof("Event log purge starting. Entries older than %s will be deleted.", deleteBefore.toString());
-        statelessSession.createQuery("DELETE FROM Event WHERE created < :deleteBefore")
+        return statelessSession.createQuery("DELETE FROM Event WHERE created < :deleteBefore")
                 .setParameter("deleteBefore", deleteBefore)
                 .executeUpdate()
-                .onItem().invoke(deleted -> LOGGER.infof("%d entries were deleted from the database.", deleted))
-                .await().indefinitely();
-        LOGGER.info("Event log purge ended.");
+                .invoke(deleted -> LOGGER.infof("Event log purge ended. %d entries were deleted from the database.", deleted));
     }
 
     public static LocalDateTime now() {

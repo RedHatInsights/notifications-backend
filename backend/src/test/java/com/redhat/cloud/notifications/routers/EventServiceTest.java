@@ -74,27 +74,39 @@ public class EventServiceTest extends DbIsolatedTest {
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", FULL_ACCESS);
         Header otherIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, "other-username", FULL_ACCESS);
 
-        Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1");
-        Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2");
+        Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1")
+                .await().indefinitely();
+        Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2")
+                .await().indefinitely();
 
-        Application app1 = resourceHelpers.createApplication(bundle1.getId(), "app-1", "Application 1");
-        Application app2 = resourceHelpers.createApplication(bundle2.getId(), "app-2", "Application 2");
+        Application app1 = resourceHelpers.createApplication(bundle1.getId(), "app-1", "Application 1")
+                .await().indefinitely();
+        Application app2 = resourceHelpers.createApplication(bundle2.getId(), "app-2", "Application 2")
+                .await().indefinitely();
 
-        EventType eventType1 = resourceHelpers.createEventType(app1.getId(), "event-type-1", "Event type 1", "Event type 1");
-        EventType eventType2 = resourceHelpers.createEventType(app2.getId(), "event-type-2", "Event type 2", "Event type 2");
+        EventType eventType1 = resourceHelpers.createEventType(app1.getId(), "event-type-1", "Event type 1", "Event type 1")
+                .await().indefinitely();
+        EventType eventType2 = resourceHelpers.createEventType(app2.getId(), "event-type-2", "Event type 2", "Event type 2")
+                .await().indefinitely();
 
         Event event1 = createEvent(DEFAULT_ACCOUNT_ID, eventType1, NOW.minusDays(5L));
         Event event2 = createEvent(DEFAULT_ACCOUNT_ID, eventType2, NOW);
         Event event3 = createEvent(DEFAULT_ACCOUNT_ID, eventType2, NOW.minusDays(2L));
         Event event4 = createEvent(OTHER_ACCOUNT_ID, eventType2, NOW.minusDays(10L));
 
-        Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK);
-        Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION);
+        Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
+                .await().indefinitely();
+        Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION)
+                .await().indefinitely();
 
-        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1);
-        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2);
-        NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1);
-        NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2);
+        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1)
+                .await().indefinitely();
+        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2)
+                .await().indefinitely();
+        NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1)
+                .await().indefinitely();
+        NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2)
+                .await().indefinitely();
 
         /*
          * Test #1

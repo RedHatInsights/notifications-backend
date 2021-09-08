@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
@@ -52,6 +53,9 @@ public class UserConfigServiceTest extends DbIsolatedTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
+
+    @Inject
+    EndpointEmailSubscriptionResources subscriptionResources;
 
     @InjectMock
     EmailTemplateFactory emailTemplateFactory;
@@ -255,7 +259,8 @@ public class UserConfigServiceTest extends DbIsolatedTest {
 
         // does not fail if we have unknown apps in our bundle's settings
         try {
-            resourceHelpers.subscribe(tenant, username, bundle, "not-found-app", DAILY);
+            subscriptionResources.subscribe(tenant, username, bundle, "not-found-app", DAILY)
+                    .await().indefinitely();
             given()
                     .header(identityHeader)
                     .when()
@@ -265,7 +270,8 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                     .statusCode(200)
                     .contentType(JSON);
         } finally {
-            resourceHelpers.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", DAILY);
+            subscriptionResources.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", DAILY)
+                    .await().indefinitely();
         }
 
         // Fails if we don't specify the bundleName
@@ -289,8 +295,10 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .statusCode(200)
                 .contentType(TEXT);
 
-        assertNull(resourceHelpers.getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", DAILY));
-        assertNull(resourceHelpers.getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", INSTANT));
+        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", DAILY)
+                .await().indefinitely());
+        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", INSTANT)
+                .await().indefinitely());
 
         // Does not add event type if is not supported by the templates
         Mockito

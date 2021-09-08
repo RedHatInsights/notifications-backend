@@ -4,10 +4,13 @@ import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -72,6 +75,12 @@ public class EmailTest extends DbIsolatedTest {
     @Inject
     ResourceHelpers helpers;
 
+    @Inject
+    EndpointEmailSubscriptionResources subscriptionResources;
+
+    @Inject
+    BehaviorGroupResources behaviorGroupResources;
+
     @InjectMock
     @RestClient
     RbacServiceToService rbacServiceToService;
@@ -109,78 +118,84 @@ public class EmailTest extends DbIsolatedTest {
         String bundle = "rhel";
         String application = "policies";
 
-        for (String username : usernames) {
-            helpers.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
-        }
+        Multi.createFrom().items(usernames)
+                .onItem().transformToUniAndConcatenate(username -> subscriptionResources.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT))
+                .onItem().ignoreAsUni()
+                .chain(() -> {
+                    final List<String> bodyRequests = new ArrayList<>();
 
-        final List<String> bodyRequests = new ArrayList<>();
+                    ExpectationResponseCallback verifyEmptyRequest = req -> {
+                        assertEquals(BOP_TOKEN, req.getHeader(EmailSender.BOP_APITOKEN_HEADER).get(0));
+                        assertEquals(BOP_CLIENT_ID, req.getHeader(EmailSender.BOP_CLIENT_ID_HEADER).get(0));
+                        assertEquals(BOP_ENV, req.getHeader(EmailSender.BOP_ENV_HEADER).get(0));
+                        bodyRequests.add(req.getBodyAsString());
+                        return response().withStatusCode(200);
+                    };
 
-        ExpectationResponseCallback verifyEmptyRequest = req -> {
-            assertEquals(BOP_TOKEN, req.getHeader(EmailSender.BOP_APITOKEN_HEADER).get(0));
-            assertEquals(BOP_CLIENT_ID, req.getHeader(EmailSender.BOP_CLIENT_ID_HEADER).get(0));
-            assertEquals(BOP_ENV, req.getHeader(EmailSender.BOP_ENV_HEADER).get(0));
-            bodyRequests.add(req.getBodyAsString());
-            return response().withStatusCode(200);
-        };
+                    HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
-        HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
+                    Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application, "My test machine");
 
-        Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application, "My test machine");
+                    Event event = new Event();
+                    event.setAction(emailActionMessage);
 
-        Event event = new Event();
-        event.setAction(emailActionMessage);
+                    EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
-        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+                    Endpoint ep = new Endpoint();
+                    ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+                    ep.setName("positive feeling");
+                    ep.setDescription("needle in the haystack");
+                    ep.setEnabled(true);
+                    ep.setProperties(properties);
 
-        Endpoint ep = new Endpoint();
-        ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
-        ep.setName("positive feeling");
-        ep.setDescription("needle in the haystack");
-        ep.setEnabled(true);
-        ep.setProperties(properties);
+                    return emailProcessor.process(event, List.of(ep))
+                            .onFailure().invoke(e -> {
+                                e.printStackTrace();
+                                fail(e);
+                            })
+                            .collect().asList()
+                            .eventually(() -> {
+                                // Remove expectations
+                                mockServerConfig.getMockServerClient().clear(postReq);
+                            })
+                            .invoke(historyEntries -> {
 
-        try {
-            Multi<NotificationHistory> process = emailProcessor.process(event, List.of(ep));
-            NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
-            assertTrue(history.isInvocationResult());
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail(e);
-        } finally {
-            // Remove expectations
-            mockServerConfig.getMockServerClient().clear(postReq);
-        }
+                                NotificationHistory history = historyEntries.get(0);
+                                assertTrue(history.isInvocationResult());
 
-        assertEquals(3, bodyRequests.size());
-        List<JsonObject> emailRequests = emailRequestIsOK(bodyRequests, usernames);
+                                assertEquals(3, bodyRequests.size());
+                                List<JsonObject> emailRequests = emailRequestIsOK(bodyRequests, usernames);
 
-        for (int i = 0; i < usernames.length; ++i) {
-            JsonObject body = emailRequests.get(i);
-            JsonArray emails = body.getJsonArray("emails");
-            assertNotNull(emails);
-            assertEquals(1, emails.size());
-            JsonObject firstEmail = emails.getJsonObject(0);
-            JsonArray recipients = firstEmail.getJsonArray("recipients");
-            assertEquals(1, recipients.size());
-            assertEquals(usernames[i], recipients.getString(0));
+                                for (int i = 0; i < usernames.length; ++i) {
+                                    JsonObject body = emailRequests.get(i);
+                                    JsonArray emails = body.getJsonArray("emails");
+                                    assertNotNull(emails);
+                                    assertEquals(1, emails.size());
+                                    JsonObject firstEmail = emails.getJsonObject(0);
+                                    JsonArray recipients = firstEmail.getJsonArray("recipients");
+                                    assertEquals(1, recipients.size());
+                                    assertEquals(usernames[i], recipients.getString(0));
 
-            JsonArray bccList = firstEmail.getJsonArray("bccList");
-            assertEquals(0, bccList.size());
+                                    JsonArray bccList = firstEmail.getJsonArray("bccList");
+                                    assertEquals(0, bccList.size());
 
-            String bodyRequest = body.toString();
+                                    String bodyRequest = body.toString();
 
-            assertTrue(bodyRequest.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
-            assertTrue(bodyRequest.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
+                                    assertTrue(bodyRequest.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
+                                    assertTrue(bodyRequest.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
 
-            assertTrue(bodyRequest.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
-            assertTrue(bodyRequest.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
+                                    assertTrue(bodyRequest.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
+                                    assertTrue(bodyRequest.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
 
-            // Display name
-            assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
+                                    // Display name
+                                    assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
 
-            // Formatted date
-            assertTrue(bodyRequest.contains("03 Aug 2020 15:22 UTC"));
-        }
+                                    // Formatted date
+                                    assertTrue(bodyRequest.contains("03 Aug 2020 15:22 UTC"));
+                                }
+                            });
+                })
+                .await().indefinitely();
     }
 
     @Test
@@ -191,71 +206,76 @@ public class EmailTest extends DbIsolatedTest {
         String bundle = "rhel";
         String application = "policies";
 
-        for (String username : usernames) {
-            helpers.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT);
-        }
+        Multi.createFrom().items(usernames)
+                .onItem().transformToUniAndConcatenate(username -> subscriptionResources.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT))
+                .onItem().ignoreAsUni()
+                .chain(() -> {
+                    final List<String> bodyRequests = new ArrayList<>();
 
-        final List<String> bodyRequests = new ArrayList<>();
+                    ExpectationResponseCallback verifyEmptyRequest = req -> {
+                        assertEquals(BOP_TOKEN, req.getHeader(EmailSender.BOP_APITOKEN_HEADER).get(0));
+                        assertEquals(BOP_CLIENT_ID, req.getHeader(EmailSender.BOP_CLIENT_ID_HEADER).get(0));
+                        assertEquals(BOP_ENV, req.getHeader(EmailSender.BOP_ENV_HEADER).get(0));
+                        bodyRequests.add(req.getBodyAsString());
+                        return response().withStatusCode(200);
+                    };
 
-        ExpectationResponseCallback verifyEmptyRequest = req -> {
-            assertEquals(BOP_TOKEN, req.getHeader(EmailSender.BOP_APITOKEN_HEADER).get(0));
-            assertEquals(BOP_CLIENT_ID, req.getHeader(EmailSender.BOP_CLIENT_ID_HEADER).get(0));
-            assertEquals(BOP_ENV, req.getHeader(EmailSender.BOP_ENV_HEADER).get(0));
-            bodyRequests.add(req.getBodyAsString());
-            return response().withStatusCode(200);
-        };
+                    HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
-        HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
+                    Action emailActionMessage = new Action();
+                    emailActionMessage.setBundle(bundle);
+                    emailActionMessage.setApplication(application);
+                    emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+                    emailActionMessage.setEventType(TestHelpers.eventType);
 
-        Action emailActionMessage = new Action();
-        emailActionMessage.setBundle(bundle);
-        emailActionMessage.setApplication(application);
-        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
-        emailActionMessage.setEventType(TestHelpers.eventType);
+                    emailActionMessage.setContext(Map.of(
+                            "inventory_id-wrong", "host-01",
+                            "system_check_in-wrong", "2020-08-03T15:22:42.199046",
+                            "display_name-wrong", "My test machine",
+                            "tags-what?", List.of()
+                    ));
+                    emailActionMessage.setEvents(List.of(
+                            com.redhat.cloud.notifications.ingress.Event.newBuilder()
+                                    .setMetadataBuilder(Metadata.newBuilder())
+                                    .setPayload(Map.of(
+                                            "foo", "bar"
+                                    ))
+                                    .build()
+                    ));
 
-        emailActionMessage.setContext(Map.of(
-                "inventory_id-wrong", "host-01",
-                "system_check_in-wrong", "2020-08-03T15:22:42.199046",
-                "display_name-wrong", "My test machine",
-                "tags-what?", List.of()
-        ));
-        emailActionMessage.setEvents(List.of(
-                com.redhat.cloud.notifications.ingress.Event.newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "foo", "bar"
-                        ))
-                        .build()
-        ));
+                    emailActionMessage.setAccountId(tenant);
 
-        emailActionMessage.setAccountId(tenant);
+                    Event event = new Event();
+                    event.setAction(emailActionMessage);
 
-        Event event = new Event();
-        event.setAction(emailActionMessage);
+                    EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
-        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+                    Endpoint ep = new Endpoint();
+                    ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+                    ep.setName("positive feeling");
+                    ep.setDescription("needle in the haystack");
+                    ep.setEnabled(true);
+                    ep.setProperties(properties);
 
-        Endpoint ep = new Endpoint();
-        ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
-        ep.setName("positive feeling");
-        ep.setDescription("needle in the haystack");
-        ep.setEnabled(true);
-        ep.setProperties(properties);
+                    return emailProcessor.process(event, List.of(ep))
+                            .onFailure().invoke(e -> {
+                                e.printStackTrace();
+                                fail(e);
+                            })
+                            .collect().asList()
+                            .eventually(() -> {
+                                // Remove expectations
+                                mockServerConfig.getMockServerClient().clear(postReq);
+                            })
+                            .invoke(historyEntries -> {
+                                // The processor returns a null history value but Multi does not support null values so the resulting Multi is empty.
+                                assertTrue(historyEntries.isEmpty());
 
-        try {
-            Multi<NotificationHistory> process = emailProcessor.process(event, List.of(ep));
-            // The processor returns a null history value but Multi does not support null values so the resulting Multi is empty.
-            assertTrue(process.collect().asList().await().indefinitely().isEmpty());
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail(e);
-        } finally {
-            // Remove expectations
-            mockServerConfig.getMockServerClient().clear(postReq);
-        }
-
-        // No email, invalid payload
-        assertEquals(0, bodyRequests.size());
+                                // No email, invalid payload
+                                assertEquals(0, bodyRequests.size());
+                            });
+                })
+                .await().indefinitely();
     }
 
     @Test
@@ -274,26 +294,36 @@ public class EmailTest extends DbIsolatedTest {
 
         final String[] accountIds = {tenant1, tenant2, noSubscribedUsersTenant};
         // Daily emails now use the BehaviorGroup -> actions. Need to create the links
-        UUID eventTypeId = helpers.createEventType(bundle, application, TestHelpers.eventType);
+        UUID eventTypeId = helpers.createEventType(bundle, application, TestHelpers.eventType)
+                .await().indefinitely();
         for (String accountId : accountIds) {
-            UUID endpointId = helpers.emailSubscriptionEndpointId(accountId, new EmailSubscriptionProperties());
-            UUID bundleId = helpers.getBundleId(bundle);
-            UUID behaviorGroupId = helpers.createBehaviorGroup(accountId, "test-behavior-group", bundleId).getId();
+            UUID endpointId = helpers.emailSubscriptionEndpointId(accountId, new EmailSubscriptionProperties())
+                    .await().indefinitely();
+            UUID bundleId = helpers.getBundleId(bundle)
+                    .await().indefinitely();
+            UUID behaviorGroupId = helpers.createBehaviorGroup(accountId, "test-behavior-group", bundleId)
+                    .onItem().transform(BehaviorGroup::getId)
+                    .await().indefinitely();
 
-            helpers.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupId));
-            helpers.updateBehaviorGroupActions(accountId, behaviorGroupId, List.of(endpointId));
+            behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupId))
+                    .await().indefinitely();
+            behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, List.of(endpointId))
+                    .await().indefinitely();
         }
 
         for (String username : tenant1Usernames) {
-            helpers.subscribe(tenant1, username, bundle, application, EmailSubscriptionType.DAILY);
+            subscriptionResources.subscribe(tenant1, username, bundle, application, EmailSubscriptionType.DAILY)
+                    .await().indefinitely();
         }
 
         for (String username : tenant2Usernames) {
-            helpers.subscribe(tenant2, username, bundle, application, EmailSubscriptionType.DAILY);
+            subscriptionResources.subscribe(tenant2, username, bundle, application, EmailSubscriptionType.DAILY)
+                    .await().indefinitely();
         }
 
         for (String username : noSubscribedUsersTenantTestUser) {
-            helpers.unsubscribe(noSubscribedUsersTenant, username, bundle, application, EmailSubscriptionType.DAILY);
+            subscriptionResources.unsubscribe(noSubscribedUsersTenant, username, bundle, application, EmailSubscriptionType.DAILY)
+                    .await().indefinitely();
         }
 
         final Instant nowPlus5HoursInstant = Instant.now().plus(Duration.ofHours(5));
@@ -330,12 +360,18 @@ public class EmailTest extends DbIsolatedTest {
         HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
         try {
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-02", "hostid-02");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-03", "hostid-03");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-04");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-05");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-06");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-02", "hostid-02")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-03", "hostid-03")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-04")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-05")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-06")
+                    .await().indefinitely();
             emailProcessor.processDailyEmail(nowPlus5Hours);
             // 3 emails (3 users in tenant1), as no aggregation for tenant2
             assertEquals(3, bodyRequests.size());
@@ -353,15 +389,24 @@ public class EmailTest extends DbIsolatedTest {
             bodyRequests.clear();
 
             // applications without template or aggregations do not break the process
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-02", "hostid-02");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-03", "hostid-03");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-04");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-05");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-06");
-            helpers.addEmailAggregation(tenant1, bundle, "unknown-application", "policyid-01", "hostid-06");
-            helpers.addEmailAggregation(tenant1, "unknown-bundle", application, "policyid-01", "hostid-06");
-            helpers.addEmailAggregation(tenant1, "unknown-bundle", "unknown-application", "policyid-01", "hostid-06");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-02", "hostid-02")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-03", "hostid-03")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-04")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-05")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-06")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, "unknown-application", "policyid-01", "hostid-06")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, "unknown-bundle", application, "policyid-01", "hostid-06")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, "unknown-bundle", "unknown-application", "policyid-01", "hostid-06")
+                    .await().indefinitely();
             emailProcessor.processDailyEmail(nowPlus5Hours);
             // 3 emails (3 users in tenant1), as no aggregation for tenant2
             assertEquals(3, bodyRequests.size());
@@ -382,20 +427,32 @@ public class EmailTest extends DbIsolatedTest {
             // 0 emails; previous aggregations were deleted in this step
             assertEquals(0, bodyRequests.size());
 
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-02", "hostid-02");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-03", "hostid-03");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-04");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-05");
-            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-06");
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-01")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-02", "hostid-02")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-03", "hostid-03")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-04")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-05")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant1, bundle, application, "policyid-01", "hostid-06")
+                    .await().indefinitely();
 
-            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-11");
-            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-15");
-            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-16");
+            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-11")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-15")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(tenant2, bundle, application, "policyid-11", "hostid-16")
+                    .await().indefinitely();
 
-            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-21");
-            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-25");
-            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-26");
+            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-21")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-25")
+                    .await().indefinitely();
+            helpers.addEmailAggregation(noSubscribedUsersTenant, bundle, application, "policyid-21", "hostid-26")
+                    .await().indefinitely();
 
             emailProcessor.processDailyEmail(nowPlus5Hours);
             // 5 emails (3 from tenant1 and 2 from tenant2), as no user is subscribed for noSubscribedUsersTenant
@@ -428,11 +485,13 @@ public class EmailTest extends DbIsolatedTest {
             }
 
             bodyRequests.clear();
-            helpers.subscribe(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
+            subscriptionResources.subscribe(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY)
+                    .await().indefinitely();
             emailProcessor.processDailyEmail(nowPlus5Hours);
             // 0 emails; previous aggregations were deleted in this step, even if no one was subscribed by that time
             assertEquals(0, bodyRequests.size());
-            helpers.unsubscribe(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY);
+            subscriptionResources.unsubscribe(noSubscribedUsersTenant, noSubscribedUsersTenantTestUser[0], bundle, application, EmailSubscriptionType.DAILY)
+                    .await().indefinitely();
 
         } catch (Exception e) {
             e.printStackTrace();
