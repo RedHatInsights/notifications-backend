@@ -5,20 +5,29 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
+import java.util.stream.IntStream;
+
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
+import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 
 @ApplicationScoped
 public class ResourceHelpers {
@@ -38,153 +47,190 @@ public class ResourceHelpers {
     BundleResources bundleResources;
 
     @Inject
-    EndpointEmailSubscriptionResources subscriptionResources;
-
-    @Inject
     EmailAggregationResources emailAggregationResources;
 
     @Inject
     BehaviorGroupResources behaviorGroupResources;
 
-    public List<Application> getApplications(String bundleName) {
-        return appResources.getApplications(bundleName).await().indefinitely();
+    @Inject
+    NotificationResources notificationResources;
+
+    public Uni<Bundle> createBundle() {
+        return createBundle("name", "displayName");
     }
 
-    public EmailSubscription getSubscription(String accountNumber, String username, String bundle, String application, EmailSubscriptionType type) {
-        return subscriptionResources.getEmailSubscription(accountNumber, username, bundle, application, type).await().indefinitely();
+    public Uni<Bundle> createBundle(String name, String displayName) {
+        Bundle bundle = new Bundle(name, displayName);
+        return bundleResources.createBundle(bundle);
     }
 
-    public UUID createTestAppAndEventTypes() {
-        Bundle bundle = new Bundle(TEST_BUNDLE_NAME, "...");
-        Bundle b = bundleResources.createBundle(bundle).await().indefinitely();
+    public Uni<UUID> getBundleId(String bundleName) {
+        return bundleResources.getBundle(bundleName)
+                .onItem().transform(Bundle::getId);
+    }
 
+    public Uni<Application> createApplication(UUID bundleId) {
+        return createApplication(bundleId, "name", "displayName");
+    }
+
+    public Uni<Application> createApplication(UUID bundleId, String name, String displayName) {
         Application app = new Application();
-        app.setBundleId(b.getId());
-        app.setName(TEST_APP_NAME);
-        app.setDisplayName("...");
-        app.setBundleId(b.getId());
-        Application added = appResources.createApp(app).await().indefinitely();
-
-        for (int i = 0; i < 100; i++) {
-            EventType eventType = new EventType();
-            eventType.setApplicationId(added.getId());
-            eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
-            eventType.setDisplayName("... -> " + i);
-            eventType.setDescription("Desc .. --> " + i);
-            appResources.createEventType(eventType).await().indefinitely();
-        }
-
-        Application app2 = new Application();
-        app2.setBundleId(b.getId());
-        app2.setName(TEST_APP_NAME_2);
-        app2.setDisplayName("...");
-        app2.setBundleId(b.getId());
-        Application added2 = appResources.createApp(app2).await().indefinitely();
-
-        for (int i = 0; i < 100; i++) {
-            EventType eventType = new EventType();
-            eventType.setApplicationId(added2.getId());
-            eventType.setName(String.format(TEST_EVENT_TYPE_FORMAT, i));
-            eventType.setDisplayName("... -> " + i);
-            appResources.createEventType(eventType).await().indefinitely();
-        }
-
-        return b.getId();
+        app.setBundleId(bundleId);
+        app.setName(name);
+        app.setDisplayName(displayName);
+        return appResources.createApp(app);
     }
 
-    public int[] createTestEndpoints(String tenant, int count) {
-        int[] statsValues = new int[3];
-        statsValues[0] = count;
-        for (int i = 0; i < count; i++) {
-            // Add new endpoints
-            WebhookProperties properties = new WebhookProperties();
-            properties.setMethod(HttpType.POST);
-            properties.setUrl("https://localhost");
-
-            Endpoint ep = new Endpoint();
-            ep.setType(EndpointType.WEBHOOK);
-            ep.setName(String.format("Endpoint %d", count - i));
-            ep.setDescription("Automatically generated");
-            boolean enabled = (i % (count / 5)) != 0;
-            if (!enabled) {
-                statsValues[1]++;
-            }
-            ep.setEnabled(enabled);
-            if (i > 0) {
-                statsValues[2]++;
-                ep.setProperties(properties);
-            }
-
-            ep.setAccountId(tenant);
-            endpointResources.createEndpoint(ep).await().indefinitely();
-        }
-        return statsValues;
+    public Uni<UUID> createEventType(String bundleName, String applicationName, String eventTypeName) {
+        return appResources.getApplication(bundleName, applicationName)
+                .onItem().transformToUni(app -> createEventType(app.getId(), eventTypeName, eventTypeName, "new event type"))
+                .onItem().transform(EventType::getId);
     }
 
-    public UUID createWebhookEndpoint(String tenant) {
+    public Uni<EventType> createEventType(UUID applicationId, String name, String displayName, String description) {
+        EventType eventType = new EventType();
+        eventType.setName(name);
+        eventType.setDisplayName(displayName);
+        eventType.setDescription(description);
+        eventType.setApplicationId(applicationId);
+        return appResources.createEventType(eventType);
+    }
+
+    public Uni<UUID> createTestAppAndEventTypes() {
+        return createBundle(TEST_BUNDLE_NAME, "...")
+                .call(bundle -> createApplication(bundle.getId(), TEST_APP_NAME, "...")
+                        .call(app -> Multi.createFrom().items(() -> IntStream.range(0, 100).boxed())
+                                .onItem().transformToUniAndConcatenate(i -> {
+                                    String name = String.format(TEST_EVENT_TYPE_FORMAT, i);
+                                    String displayName = "... -> " + i;
+                                    String description = "Desc .. --> " + i;
+                                    return createEventType(app.getId(), name, displayName, description);
+                                })
+                                .onItem().ignoreAsUni()
+                        )
+                )
+                .call(bundle -> createApplication(bundle.getId(), TEST_APP_NAME_2, "...")
+                        .call(app -> Multi.createFrom().items(() -> IntStream.range(0, 100).boxed())
+                                .onItem().transformToUniAndConcatenate(i -> {
+                                    String name = String.format(TEST_EVENT_TYPE_FORMAT, i);
+                                    String displayName = "... -> " + i;
+                                    return createEventType(app.getId(), name, displayName, null);
+                                })
+                                .onItem().ignoreAsUni()
+                        )
+                )
+                .onItem().transform(Bundle::getId);
+    }
+
+    public Uni<Endpoint> createEndpoint(String accountId, EndpointType type) {
+        return createEndpoint(accountId, type, "name", "description", null, FALSE);
+    }
+
+    public Uni<UUID> createWebhookEndpoint(String accountId) {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
         properties.setUrl("https://localhost");
-        Endpoint ep = new Endpoint();
-        ep.setType(EndpointType.WEBHOOK);
-        ep.setName(String.format("Endpoint %s", UUID.randomUUID().toString()));
-        ep.setDescription("Automatically generated");
-        ep.setEnabled(true);
-        ep.setAccountId(tenant);
-        ep.setProperties(properties);
-        return endpointResources.createEndpoint(ep).await().indefinitely().getId();
+        String name = "Endpoint " + UUID.randomUUID();
+        return createEndpoint(accountId, WEBHOOK, name, "Automatically generated", properties, TRUE)
+                .onItem().transform(Endpoint::getId);
     }
 
-    public UUID getBundleId(String bundleName) {
-        return bundleResources.getBundle(bundleName).await().indefinitely().getId();
+    public Uni<Endpoint> createEndpoint(String accountId, EndpointType type, String name, String description, EndpointProperties properties, Boolean enabled) {
+        Endpoint endpoint = new Endpoint();
+        endpoint.setAccountId(accountId);
+        endpoint.setType(type);
+        endpoint.setName(name);
+        endpoint.setDescription(description);
+        endpoint.setProperties(properties);
+        endpoint.setEnabled(enabled);
+        return endpointResources.createEndpoint(endpoint);
     }
 
-    public UUID createEventType(String bundleName, String applicationName, String eventTypeName) {
-        Application app = appResources.getApplication(bundleName, applicationName).await().indefinitely();
+    public Uni<int[]> createTestEndpoints(String tenant, int count) {
+        int[] statsValues = new int[3];
+        statsValues[0] = count;
+        return Multi.createFrom().items(() -> IntStream.range(0, count).boxed())
+                .onItem().transformToUniAndConcatenate(i -> {
+                    // Add new endpoints
+                    WebhookProperties properties = new WebhookProperties();
+                    properties.setMethod(HttpType.POST);
+                    properties.setUrl("https://localhost");
 
-        EventType eventType = new EventType();
-        eventType.setDescription("new event type");
-        eventType.setName(eventTypeName);
-        eventType.setDisplayName(eventTypeName);
-        eventType.setBehaviors(Set.of());
-        eventType.setApplication(app);
-        eventType.setApplicationId(app.getId());
-        return appResources.createEventType(eventType).await().indefinitely().getId();
+                    Endpoint ep = new Endpoint();
+                    ep.setType(WEBHOOK);
+                    ep.setName(String.format("Endpoint %d", count - i));
+                    ep.setDescription("Automatically generated");
+                    boolean enabled = (i % (count / 5)) != 0;
+                    if (!enabled) {
+                        statsValues[1]++;
+                    }
+                    ep.setEnabled(enabled);
+                    if (i > 0) {
+                        statsValues[2]++;
+                        ep.setProperties(properties);
+                    }
+
+                    ep.setAccountId(tenant);
+                    return endpointResources.createEndpoint(ep);
+                })
+                .onItem().ignoreAsUni()
+                .replaceWith(statsValues);
     }
 
-    public void createSubscription(String tenant, String username, String bundle, String application, EmailSubscriptionType type) {
-        subscriptionResources.subscribe(tenant, username, bundle, application, type).await().indefinitely();
+    public Uni<NotificationHistory> createNotificationHistory(Event event, Endpoint endpoint) {
+        NotificationHistory history = new NotificationHistory();
+        history.setId(UUID.randomUUID());
+        history.setAccountId(DEFAULT_ACCOUNT_ID);
+        history.setInvocationTime(1L);
+        history.setInvocationResult(TRUE);
+        history.setEvent(event);
+        history.setEndpoint(endpoint);
+        return notificationResources.createNotificationHistory(history);
     }
 
-    public void removeSubscription(String tenant, String username, String bundle, String application, EmailSubscriptionType type) {
-        subscriptionResources.unsubscribe(tenant, username, bundle, application, type).await().indefinitely();
+    public Uni<UUID> emailSubscriptionEndpointId(String accountId, EmailSubscriptionProperties properties) {
+        return endpointResources.getOrCreateEmailSubscriptionEndpoint(accountId, properties)
+                .onItem().transform(Endpoint::getId);
     }
 
-    public void addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
-        EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, bundle, application, policyId, insightsId);
-        emailAggregationResources.addEmailAggregation(aggregation).await().indefinitely();
-    }
-
-    public List<EventType> getEventTypesForApplication(UUID applicationId) {
-        return appResources.getEventTypes(applicationId).await().indefinitely();
-    }
-
-    public UUID createBehaviorGroup(String accountId, String name, UUID bundleId) {
+    public Uni<BehaviorGroup> createBehaviorGroup(String accountId, String displayName, UUID bundleId) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setDisplayName("Behavior group");
+        behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupResources.create(accountId, behaviorGroup).await().indefinitely().getId();
+        return behaviorGroupResources.create(accountId, behaviorGroup);
     }
 
-    public void updateEventTypeBehaviors(String accountId, UUID eventTypeId, Set<UUID> behaviorGroupIds) {
-        behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds).await().indefinitely();
+    public Uni<List<EventType>> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
+        return behaviorGroupResources.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, behaviorGroupId);
     }
 
-    public void updateBehaviorGroupActions(String accountId, UUID behaviorGroupId, List<UUID> endpointIds) {
-        behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds).await().indefinitely();
+    public Uni<List<BehaviorGroup>> findBehaviorGroupsByEventTypeId(UUID eventTypeId) {
+        return behaviorGroupResources.findBehaviorGroupsByEventTypeId(DEFAULT_ACCOUNT_ID, eventTypeId, new Query());
     }
 
-    public UUID emailSubscriptionEndpointId(String accountId, EmailSubscriptionProperties properties) {
-        return endpointResources.getOrCreateEmailSubscriptionEndpoint(accountId, properties).await().indefinitely().getId();
+    public Uni<List<BehaviorGroup>> findBehaviorGroupsByEndpointId(UUID endpointId) {
+        return behaviorGroupResources.findBehaviorGroupsByEndpointId(DEFAULT_ACCOUNT_ID, endpointId);
+    }
+
+    public Uni<Boolean> updateBehaviorGroup(BehaviorGroup behaviorGroup) {
+        return behaviorGroupResources.update(DEFAULT_ACCOUNT_ID, behaviorGroup);
+    }
+
+    public Uni<Boolean> deleteBehaviorGroup(UUID behaviorGroupId) {
+        return behaviorGroupResources.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
+    }
+
+    public Uni<Boolean> addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
+        EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, bundle, application, policyId, insightsId);
+        return emailAggregationResources.addEmailAggregation(aggregation);
+    }
+
+    public Uni<Boolean> addEmailAggregation(String accountId, String bundleName, String applicationName, JsonObject payload) {
+        EmailAggregation aggregation = new EmailAggregation();
+        aggregation.setAccountId(accountId);
+        aggregation.setBundleName(bundleName);
+        aggregation.setApplicationName(applicationName);
+        aggregation.setPayload(payload);
+        return emailAggregationResources.addEmailAggregation(aggregation);
     }
 }

@@ -74,7 +74,6 @@ public class DbCleaner {
                     app.setBundleId(bundle.getId());
                     app.setName(DEFAULT_APP_NAME);
                     app.setDisplayName(DEFAULT_APP_DISPLAY_NAME);
-                    app.setBundleId(bundle.getId());
                     return appResources.createApp(app);
                 })
                 .onItem().transformToUni(app -> {

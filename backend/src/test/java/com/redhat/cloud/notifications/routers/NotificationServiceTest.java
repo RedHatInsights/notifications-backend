@@ -6,6 +6,8 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
@@ -57,6 +59,12 @@ public class NotificationServiceTest extends DbIsolatedTest {
     @Inject
     ResourceHelpers helpers;
 
+    @Inject
+    ApplicationResources applicationResources;
+
+    @Inject
+    BehaviorGroupResources behaviorGroupResources;
+
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
@@ -71,7 +79,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testEventTypeFetching() {
-        helpers.createTestAppAndEventTypes();
+        helpers.createTestAppAndEventTypes()
+                .await().indefinitely();
         Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
@@ -95,10 +104,12 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testEventTypeFetchingByApplication() {
-        helpers.createTestAppAndEventTypes();
+        helpers.createTestAppAndEventTypes()
+                .await().indefinitely();
         Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-        List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
+        List<Application> applications = applicationResources.getApplications(ResourceHelpers.TEST_BUNDLE_NAME)
+                .await().indefinitely();
         UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
 
         Response response = given()
@@ -123,11 +134,13 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testEventTypeFetchingByBundle() {
-        helpers.createTestAppAndEventTypes();
+        helpers.createTestAppAndEventTypes()
+                .await().indefinitely();
         Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-        List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
-        UUID myBundleId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
+        List<Application> applications = applicationResources.getApplications(ResourceHelpers.TEST_BUNDLE_NAME)
+                .await().indefinitely();
+        UUID myBundleId = applications.stream().filter(a -> a.getName().equals(helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
 
         Response response = given()
                 .when()
@@ -151,12 +164,14 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testEventTypeFetchingByBundleAndApplicationId() {
-        helpers.createTestAppAndEventTypes();
+        helpers.createTestAppAndEventTypes()
+                .await().indefinitely();
         Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-        List<Application> applications = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME);
-        UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getId();
-        UUID myBundleId = applications.stream().filter(a -> a.getName().equals(this.helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
+        List<Application> applications = applicationResources.getApplications(ResourceHelpers.TEST_BUNDLE_NAME)
+                .await().indefinitely();
+        UUID myOtherTesterApplicationId = applications.stream().filter(a -> a.getName().equals(helpers.TEST_APP_NAME_2)).findFirst().get().getId();
+        UUID myBundleId = applications.stream().filter(a -> a.getName().equals(helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
 
         Response response = given()
                 .when()
@@ -182,22 +197,34 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testGetEventTypesAffectedByEndpoint() {
-        UUID bundleId = helpers.createTestAppAndEventTypes();
+        UUID bundleId = helpers.createTestAppAndEventTypes()
+                .await().indefinitely();
         String tenant = "testGetEventTypesAffectedByEndpoint";
         Header identityHeader = initRbacMock(tenant, "user", RbacAccess.FULL_ACCESS);
 
-        UUID behaviorGroupId1 = helpers.createBehaviorGroup(tenant, "behavior-group-1", bundleId);
-        UUID behaviorGroupId2 = helpers.createBehaviorGroup(tenant, "behavior-group-2", bundleId);
-        UUID applicationId = this.helpers.getApplications(ResourceHelpers.TEST_BUNDLE_NAME).stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
-        UUID ep1 = this.helpers.createWebhookEndpoint(tenant);
-        UUID ep2 = this.helpers.createWebhookEndpoint(tenant);
-        List<EventType> eventTypesFromApp1 = this.helpers.getEventTypesForApplication(applicationId);
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(tenant, "behavior-group-1", bundleId)
+                .onItem().transform(BehaviorGroup::getId)
+                .await().indefinitely();
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(tenant, "behavior-group-2", bundleId)
+                .onItem().transform(BehaviorGroup::getId)
+                .await().indefinitely();
+        UUID applicationId = applicationResources.getApplications(ResourceHelpers.TEST_BUNDLE_NAME)
+                .await().indefinitely()
+                .stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
+        UUID ep1 = helpers.createWebhookEndpoint(tenant)
+                .await().indefinitely();
+        UUID ep2 = helpers.createWebhookEndpoint(tenant)
+                .await().indefinitely();
+        List<EventType> eventTypesFromApp1 = applicationResources.getEventTypes(applicationId)
+                .await().indefinitely();
         EventType ev0 = eventTypesFromApp1.get(0);
         EventType ev1 = eventTypesFromApp1.get(1);
 
         // ep1 assigned to ev0; ep2 not assigned.
-        helpers.updateEventTypeBehaviors(tenant, ev0.getId(), Set.of(behaviorGroupId1));
-        helpers.updateBehaviorGroupActions(tenant, behaviorGroupId1, List.of(ep1));
+        behaviorGroupResources.updateEventTypeBehaviors(tenant, ev0.getId(), Set.of(behaviorGroupId1))
+                .await().indefinitely();
+        behaviorGroupResources.updateBehaviorGroupActions(tenant, behaviorGroupId1, List.of(ep1))
+                .await().indefinitely();
         String responseBody = given()
                 .header(identityHeader)
                 .pathParam("endpointId", ep1.toString())
@@ -227,8 +254,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
         assertEquals(0, behaviorGroups.size());
 
         // ep1 assigned to event ev0; ep2 assigned to event ev1
-        helpers.updateEventTypeBehaviors(tenant, ev1.getId(), Set.of(behaviorGroupId2));
-        helpers.updateBehaviorGroupActions(tenant, behaviorGroupId2, List.of(ep2));
+        behaviorGroupResources.updateEventTypeBehaviors(tenant, ev1.getId(), Set.of(behaviorGroupId2))
+                .await().indefinitely();
+        behaviorGroupResources.updateBehaviorGroupActions(tenant, behaviorGroupId2, List.of(ep2))
+                .await().indefinitely();
         responseBody = given()
                 .header(identityHeader)
                 .pathParam("endpointId", ep1.toString())

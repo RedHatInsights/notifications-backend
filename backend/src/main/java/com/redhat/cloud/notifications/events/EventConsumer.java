@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.db.EventResources;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
@@ -37,6 +38,9 @@ public class EventConsumer {
     @Inject
     ApplicationResources appResources;
 
+    @Inject
+    EventResources eventResources;
+
     private Counter rejectedCount;
     private Counter processingErrorCount;
 
@@ -68,7 +72,7 @@ public class EventConsumer {
                 .onItem().transformToUni(action -> appResources.getEventType(action.getBundle(), action.getApplication(), action.getEventType())
                         .onItem().transformToUni(eventType -> {
                             Event event = new Event(eventType, payload, action);
-                            return appResources.createEvent(event);
+                            return eventResources.create(event);
                         })
                 )
                 // If an exception was thrown during steps 1 or 2, the payload is considered rejected.

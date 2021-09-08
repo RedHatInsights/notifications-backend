@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications;
+package com.redhat.cloud.notifications.helpers;
 
 import com.redhat.cloud.notifications.ingress.Action;
 import io.vertx.core.json.JsonArray;
@@ -18,9 +18,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class BaseTransformer {
+class BaseTransformer {
 
-    public JsonObject transform(Action action) {
+    JsonObject transform(Action action) {
         return toJsonObject(action);
     }
 

@@ -7,18 +7,14 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.inject.Inject;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.List;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -33,7 +29,10 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
     private static final JsonObject PAYLOAD2 = new JsonObject("{\"hello\":\"world\"}");
 
     @Inject
-    EmailAggregationResources emailAggregationResources;
+    ResourceHelpers resourceHelpers;
+
+    @Inject
+    EmailAggregationResources aggregationResources;
 
     @Test
     void testAllMethods() {
@@ -41,76 +40,54 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
 
-        addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1, true);
-        addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2, true);
-        addEmailAggregation("other-account", BUNDLE_NAME, APP_NAME, PAYLOAD2, true);
-        addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2, true);
-        addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2, true);
+        resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1)
+                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2))
+                .chain(() -> resourceHelpers.addEmailAggregation("other-account", BUNDLE_NAME, APP_NAME, PAYLOAD2))
+                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2))
+                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2))
+                .chain(() -> {
+                    EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, BUNDLE_NAME, APP_NAME);
 
-        EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, BUNDLE_NAME, APP_NAME);
-
-        List<EmailAggregation> aggregations = getEmailAggregation(key, start, end);
-        assertEquals(2, aggregations.size());
-        assertTrue(aggregations.stream().map(EmailAggregation::getAccountId).allMatch(ACCOUNT_ID::equals));
-        assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
-        assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
-        assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
-        assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
-
-        List<EmailAggregationKey> keys = getApplicationsWithPendingAggregation(start, end);
-        assertEquals(4, keys.size());
-        assertEquals(ACCOUNT_ID, keys.get(0).getAccountId());
-        assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
-        assertEquals(APP_NAME, keys.get(0).getApplication());
-
-        Integer purged = purgeOldAggregation(key, end);
-        assertEquals(2, purged);
-
-        aggregations = getEmailAggregation(key, start, end);
-        assertEquals(0, aggregations.size());
-
-        keys = getApplicationsWithPendingAggregation(start, end);
-        assertEquals(3, keys.size());
-    }
-
-    @ParameterizedTest
-    @MethodSource("constraintViolations")
-    void addEmailAggregationWithConstraintViolations(String accountId, String bundleName, String applicationName, JsonObject payload) {
-        addEmailAggregation(accountId, bundleName, applicationName, payload, false);
-    }
-
-    private static Stream<Arguments> constraintViolations() {
-        return Stream.of(
-                Arguments.of(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null),
-                Arguments.of(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1),
-                Arguments.of(null, BUNDLE_NAME, APP_NAME, PAYLOAD1),
-                Arguments.of(null, BUNDLE_NAME, APP_NAME, PAYLOAD1)
-        );
-    }
-
-    private void addEmailAggregation(String accountId, String bundleName, String applicationName, JsonObject payload, boolean expectedResult) {
-        EmailAggregation aggregation = new EmailAggregation();
-        aggregation.setAccountId(accountId);
-        aggregation.setBundleName(bundleName);
-        aggregation.setApplicationName(applicationName);
-        aggregation.setPayload(payload);
-
-        Boolean added = emailAggregationResources.addEmailAggregation(aggregation).await().indefinitely();
-        assertEquals(expectedResult, added);
-    }
-
-    private List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
-        return emailAggregationResources.getEmailAggregation(key, start, end)
+                    return aggregationResources.getEmailAggregation(key, start, end)
+                            .invoke(aggregations -> {
+                                assertEquals(2, aggregations.size());
+                                assertTrue(aggregations.stream().map(EmailAggregation::getAccountId).allMatch(ACCOUNT_ID::equals));
+                                assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
+                                assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
+                                assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
+                                assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
+                            })
+                            .chain(() -> aggregationResources.getApplicationsWithPendingAggregation(start, end)
+                                    .invoke(keys -> {
+                                        assertEquals(4, keys.size());
+                                        assertEquals(ACCOUNT_ID, keys.get(0).getAccountId());
+                                        assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
+                                        assertEquals(APP_NAME, keys.get(0).getApplication());
+                                    })
+                            )
+                            .chain(() -> aggregationResources.purgeOldAggregation(key, end)
+                                    .invoke(purged -> assertEquals(2, purged))
+                            )
+                            .chain(() -> aggregationResources.getEmailAggregation(key, start, end)
+                                    .invoke(aggregations -> assertEquals(0, aggregations.size()))
+                            )
+                            .chain(aggregations -> aggregationResources.getApplicationsWithPendingAggregation(start, end)
+                                    .invoke(keys -> assertEquals(3, keys.size()))
+                            );
+                })
                 .await().indefinitely();
     }
 
-    private List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
-        return emailAggregationResources.getApplicationsWithPendingAggregation(start, end)
-                .await().indefinitely();
-    }
-
-    private Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        return emailAggregationResources.purgeOldAggregation(key, lastUsedTime)
+    @Test
+    void addEmailAggregationWithConstraintViolations() {
+        resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null)
+                .invoke(added -> assertFalse(added))
+                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1))
+                .invoke(added -> assertFalse(added))
+                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, null, APP_NAME, PAYLOAD1))
+                .invoke(added -> assertFalse(added))
+                .chain(() -> resourceHelpers.addEmailAggregation(null, BUNDLE_NAME, APP_NAME, PAYLOAD1))
+                .invoke(added -> assertFalse(added))
                 .await().indefinitely();
     }
 }

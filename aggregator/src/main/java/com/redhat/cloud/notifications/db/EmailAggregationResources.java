@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.models.CronJobRun;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import org.hibernate.Session;
@@ -34,5 +35,18 @@ public class EmailAggregationResources {
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getResultList();
+    }
+
+    public CronJobRun getLastCronJobRun() {
+        String query = "FROM CronJobRun";
+        return session.createQuery(query, CronJobRun.class).getSingleResult();
+    }
+
+    @Transactional
+    public void updateLastCronJobRun(LocalDateTime lastRun) {
+        String query = "UPDATE CronJobRun SET lastRun = :lastRun";
+        session.createQuery(query)
+                .setParameter("lastRun", lastRun)
+                .executeUpdate();
     }
 }
