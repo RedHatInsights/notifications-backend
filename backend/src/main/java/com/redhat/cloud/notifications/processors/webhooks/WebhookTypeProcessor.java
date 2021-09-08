@@ -58,14 +58,10 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     @Inject
     BaseTransformer transformer;
 
-    @Inject
-    MeterRegistry registry;
+    private final Counter processedCount;
 
-    private Counter processedCount;
-
-    @PostConstruct
-    void postConstruct() {
-        processedCount = registry.counter("processor.webhook.processed");
+    public WebhookTypeProcessor(MeterRegistry registry) {
+        processedCount = Counter.builder("processor.webhook.processed").register(registry);
     }
 
     @Override
