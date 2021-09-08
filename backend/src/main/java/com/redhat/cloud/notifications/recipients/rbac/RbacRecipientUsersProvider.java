@@ -119,7 +119,7 @@ public class RbacRecipientUsersProvider {
                     AtomicInteger::new,
                     state -> fetcher.apply(state.getAndIncrement())
                 )
-                .until(page -> page.getData().isEmpty())
+                .whilst(page -> page.getData().size() == rbacElementsPerPage)
                 .onItem().transform(page -> page.getData().stream().map(rbacUser -> {
                     User user = new User();
                     user.setUsername(rbacUser.getUsername());

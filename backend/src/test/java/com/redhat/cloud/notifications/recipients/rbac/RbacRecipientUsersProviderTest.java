@@ -55,7 +55,7 @@ public class RbacRecipientUsersProviderTest {
 
     @Test
     public void getAllUsersCache() {
-        int initialSize = 95;
+        int initialSize = 1095;
         mockGetUsers(initialSize, false);
 
         List<User> users = rbacRecipientUsersProvider.getUsers(accountId, false).await().indefinitely();
@@ -65,7 +65,7 @@ public class RbacRecipientUsersProviderTest {
             Assertions.assertEquals(String.format("username-%d", i), users.get(i).getUsername());
         }
 
-        int updatedSize = 323;
+        int updatedSize = 1323;
         mockGetUsers(updatedSize, false);
 
         // Should still have the initial size because of the cache
