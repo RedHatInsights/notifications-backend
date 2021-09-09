@@ -6,11 +6,11 @@ import io.quarkus.qute.TemplateInstance;
 
 // Name needs to be "Rhosak" to read templates from resources/templates/Rhosak
 public class Rhosak implements EmailTemplate {
-    private static final String SCHEDULED_UPGRADE = "scheduled_upgrade";
+    private static final String SCHEDULED_UPGRADE = "scheduled-upgrade";
     private static final String DISRUPTION = "disruption";
-    private static final String INSTANCE_CREATED = "instance_created";
-    private static final String INSTANCE_DELETED = "instance_deleted";
-    private static final String ACTION_REQUIRED = "action_required";
+    private static final String INSTANCE_CREATED = "instance-created";
+    private static final String INSTANCE_DELETED = "instance-deleted";
+    private static final String ACTION_REQUIRED = "action-required";
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
