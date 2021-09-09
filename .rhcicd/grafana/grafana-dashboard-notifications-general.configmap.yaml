@@ -18,9 +18,214 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1631168347956,
+      "iteration": 1631177702527,
       "links": [],
       "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "$datasource",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "hiddenSeries": false,
+          "id": 50,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.2.1",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "increase(processor_input_processed_total{namespace=\"$kubernetes_namespace\"}[5m])",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "received (per minute) {{kubernetes_pod_name}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "payload processed",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:107",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:108",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "$datasource",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {}
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "hiddenSeries": false,
+          "id": 113,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.2.1",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{container=\"notifications-backend\"}[5m]) * 60) by (status)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(increase(http_server_requests_seconds_count{service=\"notifications-backend\"}[1m])) by (status)",
+              "hide": true,
+              "interval": "",
+              "legendFormat": "{{status}}",
+              "refId": "C"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "http requests per minute",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
         {
           "aliasColors": {},
           "bars": false,
@@ -39,7 +244,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 0
+            "y": 8
           },
           "hiddenSeries": false,
           "id": 136,
@@ -137,7 +342,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 0
+            "y": 8
           },
           "hiddenSeries": false,
           "id": 144,
@@ -204,109 +409,6 @@ data:
             },
             {
               "$$hashKey": "object:39",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "$datasource",
-          "fieldConfig": {
-            "defaults": {
-              "custom": {}
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 8
-          },
-          "hiddenSeries": false,
-          "id": 113,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 1,
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.2.1",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "sum(rate(http_server_requests_seconds_count{container=\"notifications-backend\"}[5m]) * 60) by (status)",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "{{status}}",
-              "refId": "A"
-            },
-            {
-              "expr": "sum(increase(http_server_requests_seconds_count{service=\"notifications-backend\"}[1m])) by (status)",
-              "hide": true,
-              "interval": "",
-              "legendFormat": "{{status}}",
-              "refId": "C"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "http requests per minute",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
               "format": "short",
               "label": null,
               "logBase": 1,
@@ -892,7 +994,7 @@ data:
             "x": 8,
             "y": 35
           },
-          "id": 137,
+          "id": 145,
           "interval": null,
           "links": [],
           "mappingType": 1,
@@ -922,7 +1024,7 @@ data:
             }
           ],
           "repeatDirection": "h",
-          "repeatIteration": 1631168347956,
+          "repeatIteration": 1631177702527,
           "repeatPanelId": 2,
           "scopedVars": {
             "service": {
@@ -1025,7 +1127,7 @@ data:
             "x": 16,
             "y": 35
           },
-          "id": 138,
+          "id": 146,
           "interval": null,
           "links": [],
           "mappingType": 1,
@@ -1055,7 +1157,7 @@ data:
             }
           ],
           "repeatDirection": "h",
-          "repeatIteration": 1631168347956,
+          "repeatIteration": 1631177702527,
           "repeatPanelId": 2,
           "scopedVars": {
             "service": {
@@ -1255,7 +1357,7 @@ data:
             "y": 40
           },
           "hiddenSeries": false,
-          "id": 139,
+          "id": 147,
           "legend": {
             "avg": false,
             "current": false,
@@ -1278,7 +1380,7 @@ data:
           "points": false,
           "renderer": "flot",
           "repeatDirection": "h",
-          "repeatIteration": 1631168347956,
+          "repeatIteration": 1631177702527,
           "repeatPanelId": 98,
           "scopedVars": {
             "service": {
@@ -1362,7 +1464,7 @@ data:
             "y": 40
           },
           "hiddenSeries": false,
-          "id": 140,
+          "id": 148,
           "legend": {
             "avg": false,
             "current": false,
@@ -1385,7 +1487,7 @@ data:
           "points": false,
           "renderer": "flot",
           "repeatDirection": "h",
-          "repeatIteration": 1631168347956,
+          "repeatIteration": 1631177702527,
           "repeatPanelId": 98,
           "scopedVars": {
             "service": {
@@ -1448,7 +1550,7 @@ data:
           }
         },
         {
-          "collapsed": true,
+          "collapsed": false,
           "datasource": null,
           "gridPos": {
             "h": 1,
@@ -1457,114 +1559,7 @@ data:
             "y": 48
           },
           "id": 46,
-          "panels": [
-            {
-              "aliasColors": {},
-              "bars": false,
-              "dashLength": 10,
-              "dashes": false,
-              "datasource": "$datasource",
-              "fieldConfig": {
-                "defaults": {
-                  "custom": {},
-                  "links": []
-                },
-                "overrides": []
-              },
-              "fill": 1,
-              "fillGradient": 0,
-              "gridPos": {
-                "h": 9,
-                "w": 12,
-                "x": 0,
-                "y": 60
-              },
-              "hiddenSeries": false,
-              "id": 50,
-              "legend": {
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "show": true,
-                "total": false,
-                "values": false
-              },
-              "lines": true,
-              "linewidth": 1,
-              "links": [],
-              "nullPointMode": "null",
-              "options": {
-                "alertThreshold": true
-              },
-              "percentage": false,
-              "pluginVersion": "7.2.1",
-              "pointradius": 5,
-              "points": false,
-              "renderer": "flot",
-              "seriesOverrides": [],
-              "spaceLength": 10,
-              "stack": false,
-              "steppedLine": false,
-              "targets": [
-                {
-                  "expr": "rate(application_engine_input_processed_total{namespace=\"$kubernetes_namespace\"}[2m])",
-                  "format": "time_series",
-                  "intervalFactor": 1,
-                  "legendFormat": "Received (Per second) {{kubernetes_pod_name}}",
-                  "refId": "A"
-                },
-                {
-                  "expr": "rate(application_engine_input_processed_errors_total{namespace=\"$kubernetes_namespace\"}[2m])",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "legendFormat": "Errors (Absolute)  {{kubernetes_pod_name}}",
-                  "refId": "B"
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": null,
-              "timeRegions": [],
-              "timeShift": null,
-              "title": "Payload processed",
-              "tooltip": {
-                "shared": true,
-                "sort": 0,
-                "value_type": "individual"
-              },
-              "type": "graph",
-              "xaxis": {
-                "buckets": null,
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": []
-              },
-              "yaxes": [
-                {
-                  "format": "rps",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                },
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                }
-              ],
-              "yaxis": {
-                "align": false,
-                "alignLevel": null
-              }
-            }
-          ],
+          "panels": [],
           "title": "Kafka",
           "type": "row"
         },
@@ -1848,9 +1843,9 @@ data:
             "x": 0,
             "y": 59
           },
-          "id": 141,
+          "id": 149,
           "panels": [],
-          "repeatIteration": 1631168347956,
+          "repeatIteration": 1631177702527,
           "repeatPanelId": 60,
           "scopedVars": {
             "jvmcontainer": {
@@ -1884,7 +1879,7 @@ data:
             "y": 60
           },
           "hiddenSeries": false,
-          "id": 142,
+          "id": 150,
           "legend": {
             "alignAsTable": true,
             "avg": true,
@@ -1912,7 +1907,7 @@ data:
           "renderer": "flot",
           "repeat": null,
           "repeatDirection": "h",
-          "repeatIteration": 1631168347956,
+          "repeatIteration": 1631177702527,
           "repeatPanelId": 72,
           "repeatedByRow": true,
           "scopedVars": {
@@ -2025,7 +2020,7 @@ data:
             "y": 60
           },
           "hiddenSeries": false,
-          "id": 143,
+          "id": 151,
           "legend": {
             "alignAsTable": true,
             "avg": false,
@@ -2050,7 +2045,7 @@ data:
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
-          "repeatIteration": 1631168347956,
+          "repeatIteration": 1631177702527,
           "repeatPanelId": 74,
           "repeatedByRow": true,
           "scopedVars": {
@@ -2290,7 +2285,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 4
+      "version": 5
     }
 kind: ConfigMap
 metadata:
