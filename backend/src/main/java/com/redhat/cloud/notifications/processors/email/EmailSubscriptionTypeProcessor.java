@@ -215,7 +215,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         .onItem().transformToMulti(unused -> Multi.createFrom().empty()) :
                 Multi.createFrom().empty();
 
-        if (!emailTemplate.isSupported(null, emailSubscriptionType)) {
+        if (!emailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
             return doDelete;
         }
 
