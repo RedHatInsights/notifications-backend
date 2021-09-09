@@ -104,7 +104,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     onChange={ setDescription }
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
-                                                <Button variant='primary' type='submit' isDisabled
+                                                <Button variant='primary' type='submit'
                                                     onClick= { onSubmit }>Submit</Button>
                                                 <Button variant='link' onClick={ toggle }>Cancel</Button>
                                             </ActionGroup>
