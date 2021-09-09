@@ -18,7 +18,7 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1631091153869,
+      "iteration": 1631168347956,
       "links": [],
       "panels": [
         {
@@ -69,7 +69,8 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "processor_webhook_processed_total",
+              "expr": "increase(processor_webhook_processed_total[5m])",
+              "hide": false,
               "interval": "",
               "legendFormat": "{{pod}}",
               "refId": "A"
@@ -79,7 +80,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "processed notifications per webhooks ",
+          "title": "processed webhook notifications",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -95,6 +96,7 @@ data:
           },
           "yaxes": [
             {
+              "$$hashKey": "object:38",
               "format": "short",
               "label": null,
               "logBase": 1,
@@ -103,6 +105,105 @@ data:
               "show": true
             },
             {
+              "$$hashKey": "object:39",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "$datasource",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {}
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "hiddenSeries": false,
+          "id": 144,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.2.1",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "increase(processor_email_processed_total[5m])",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "processed email notifications",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:38",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:39",
               "format": "short",
               "label": null,
               "logBase": 1,
@@ -791,7 +892,7 @@ data:
             "x": 8,
             "y": 35
           },
-          "id": 128,
+          "id": 137,
           "interval": null,
           "links": [],
           "mappingType": 1,
@@ -821,7 +922,7 @@ data:
             }
           ],
           "repeatDirection": "h",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631168347956,
           "repeatPanelId": 2,
           "scopedVars": {
             "service": {
@@ -924,7 +1025,7 @@ data:
             "x": 16,
             "y": 35
           },
-          "id": 129,
+          "id": 138,
           "interval": null,
           "links": [],
           "mappingType": 1,
@@ -954,7 +1055,7 @@ data:
             }
           ],
           "repeatDirection": "h",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631168347956,
           "repeatPanelId": 2,
           "scopedVars": {
             "service": {
@@ -1154,7 +1255,7 @@ data:
             "y": 40
           },
           "hiddenSeries": false,
-          "id": 130,
+          "id": 139,
           "legend": {
             "avg": false,
             "current": false,
@@ -1177,7 +1278,7 @@ data:
           "points": false,
           "renderer": "flot",
           "repeatDirection": "h",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631168347956,
           "repeatPanelId": 98,
           "scopedVars": {
             "service": {
@@ -1261,7 +1362,7 @@ data:
             "y": 40
           },
           "hiddenSeries": false,
-          "id": 131,
+          "id": 140,
           "legend": {
             "avg": false,
             "current": false,
@@ -1284,7 +1385,7 @@ data:
           "points": false,
           "renderer": "flot",
           "repeatDirection": "h",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631168347956,
           "repeatPanelId": 98,
           "scopedVars": {
             "service": {
@@ -1747,9 +1848,9 @@ data:
             "x": 0,
             "y": 59
           },
-          "id": 132,
+          "id": 141,
           "panels": [],
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631168347956,
           "repeatPanelId": 60,
           "scopedVars": {
             "jvmcontainer": {
@@ -1783,7 +1884,7 @@ data:
             "y": 60
           },
           "hiddenSeries": false,
-          "id": 133,
+          "id": 142,
           "legend": {
             "alignAsTable": true,
             "avg": true,
@@ -1811,7 +1912,7 @@ data:
           "renderer": "flot",
           "repeat": null,
           "repeatDirection": "h",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631168347956,
           "repeatPanelId": 72,
           "repeatedByRow": true,
           "scopedVars": {
@@ -1924,7 +2025,7 @@ data:
             "y": 60
           },
           "hiddenSeries": false,
-          "id": 134,
+          "id": 143,
           "legend": {
             "alignAsTable": true,
             "avg": false,
@@ -1949,7 +2050,7 @@ data:
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
-          "repeatIteration": 1631091153869,
+          "repeatIteration": 1631168347956,
           "repeatPanelId": 74,
           "repeatedByRow": true,
           "scopedVars": {
@@ -2189,7 +2290,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 3
+      "version": 4
     }
 kind: ConfigMap
 metadata:
