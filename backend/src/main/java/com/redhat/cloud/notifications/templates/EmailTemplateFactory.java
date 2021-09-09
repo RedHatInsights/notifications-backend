@@ -32,7 +32,7 @@ public class EmailTemplateFactory {
             if (application.equalsIgnoreCase(ADVISOR)) {
                 return new AdvisorOpenshift();
             }
-        } else if (bundle.equals(APPLICATION_SERVICES)) {
+        } else if (bundle.equalsIgnoreCase(APPLICATION_SERVICES)) {
             if (application.equalsIgnoreCase(RHOSAK)) {
                 return new Rhosak();
             }
