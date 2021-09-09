@@ -17,7 +17,7 @@ const actionCreator = (params: CreateEventType) => Operations.InternalServiceCre
         application_id: params.applicationId,
         description: params.description,
         display_name: params.displayName,
-        name: params.displayName
+        name: params.name
 
     }
 });

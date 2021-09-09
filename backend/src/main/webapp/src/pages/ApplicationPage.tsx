@@ -13,6 +13,7 @@ import { useParams } from 'react-router';
 
 import { useCreateEventType } from '../services/CreateEventTypes';
 import { useApplicationTypes } from '../services/GetApplication';
+import { useBundles } from '../services/GetBundles';
 import { useEventTypes } from '../services/GetEventTypes';
 
 type ApplicationPageParams = {
@@ -23,12 +24,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
-    const columns = [ 'Event Type', 'Event Type Id', 'Description' ];
+    const getBundle = useBundles();
+    const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
     const newEvent = useCreateEventType();
     const [ id ] = React.useState<string | undefined>();
     const [ displayName, setDisplayName ] = React.useState<string | undefined>();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [ name, setName ] = React.useState<string | undefined>();
     const [ description, setDescription ] = React.useState<string | undefined>();
 
@@ -41,10 +42,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
             id: id ?? '',
             applicationId,
             displayName: displayName ?? '',
-            name: displayName ?? '',
+            name: name ?? '',
             description: description ?? ''
         });
-    }, [ newEvent.mutate, id, applicationId, displayName, description ]);
+    }, [ newEvent.mutate, id, applicationId, displayName, name, description ]);
 
     if (eventTypesQuery.loading) {
         return <Spinner />;
@@ -62,7 +63,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
         <React.Fragment>
             <PageSection>
                 <Title headingLevel="h1"><Breadcrumb>
-                    <BreadcrumbItem to='#'> </BreadcrumbItem>
+                    <BreadcrumbItem to='#'> { getBundle.isLoading ?
+                        <Spinner /> : getBundle.bundles.map(bundle => bundle.displayName)} </BreadcrumbItem>
                     <BreadcrumbItem to='#' isActive> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
                         <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
                 </Breadcrumb></Title>
@@ -73,41 +75,39 @@ export const ApplicationPage: React.FunctionComponent = () => {
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button variant='primary' type='submit' onClick={ toggle }> Create Event Type </Button>
+                                    <Button variant='primary' type='button' onClick={ toggle }> Create Event Type </Button>
                                     <Modal
                                         variant={ ModalVariant.medium }
-                                        title='Create Event Type'
+                                        title={ `Create Event Type for ${ (applicationTypesQuery.loading ||
+                                            applicationTypesQuery.payload?.status !== 200) ?
+                                            <Spinner /> : applicationTypesQuery.payload.value.displayName }` }
                                         isOpen={ isOpen }
                                         onClose={ toggle }
-                                    ><Form isHorizontal><FormGroup label='Application Id' fieldId='application-id'
-                                            helperText='This is the id of the application'>
-                                            <TextInput
-                                                type='text'
-                                                value= { applicationId }
-                                                id='application-id' /></FormGroup>
-                                        <FormGroup label='Name' fieldId='name' isRequired
-                                            helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
-                                            <TextInput
-                                                type='text'
-                                                onChange={ setName }
-                                                id='name' /></FormGroup>
-                                        <FormGroup label='Display name' fieldId='display-name' isRequired
-                                            helperText='This is the name you want to display on the UI'>
-                                            <TextInput
-                                                type='text'
-                                                onChange={ setDisplayName }
-                                                id='display-name' /></FormGroup>
-                                        <FormGroup label='Description' fieldId='description'
-                                            helperText='Optional short description that appears in the UI to help admin descide how to notify users.'>
-                                            <TextArea
-                                                type='text'
-                                                onChange={ setDescription }
-                                                id='description' /></FormGroup>
-                                        <ActionGroup>
-                                            <Button variant='primary' type='submit'
-                                                onClick= { onSubmit }>Submit</Button>
-                                            <Button variant='link' onClick={ toggle }>Cancel</Button>
-                                        </ActionGroup>
+                                    ><Form isHorizontal>
+                                            <FormGroup label='Name' fieldId='name' isRequired
+                                                helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
+                                                <TextInput
+                                                    type='text'
+                                                    onChange={ setName }
+                                                    id='name' /></FormGroup>
+                                            <FormGroup label='Display name' fieldId='display-name' isRequired
+                                                helperText='This is the name you want to display on the UI'>
+                                                <TextInput
+                                                    type='text'
+                                                    onChange={ setDisplayName }
+                                                    id='display-name' /></FormGroup>
+                                            <FormGroup label='Description' fieldId='description'
+                                                helperText='Optional short description that appears in the UI
+                                                to help admin descide how to notify users.'>
+                                                <TextArea
+                                                    type='text'
+                                                    onChange={ setDescription }
+                                                    id='description' /></FormGroup>
+                                            <ActionGroup>
+                                                <Button variant='primary' type='submit' isDisabled
+                                                    onClick= { onSubmit }>Submit</Button>
+                                                <Button variant='link' onClick={ toggle }>Cancel</Button>
+                                            </ActionGroup>
                                         </Form><></>
                                     </Modal>
                                 </ToolbarItem>
@@ -123,8 +123,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
                         { eventTypesQuery.payload.value.map(e => (
                             <Tr key={ e.id }>
                                 <Td>{ e.displayName }</Td>
-                                <Td>{ e.id }</Td>
+                                <Td>{ e.name }</Td>
                                 <Td>{ e.description }</Td>
+                                <Td>{ e.id }</Td>
+
                             </Tr>
                         ))}
                     </Tbody>

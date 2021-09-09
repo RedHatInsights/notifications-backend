@@ -12,6 +12,7 @@ export interface Application {
 export interface EventType {
     id: string;
     displayName: string;
+    name: string;
     description: string;
     applicationId: string;
 }

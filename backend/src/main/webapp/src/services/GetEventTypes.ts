@@ -10,6 +10,7 @@ const validateResponse = validationResponseTransformer(
         if (payload.status === 200) {
             const eventTypes: ReadonlyArray<EventType> = payload.value.map(value => ({
                 id: value.id ?? '',
+                name: value.name,
                 displayName: value.display_name,
                 description: value.description ?? '',
                 applicationId: value.application_id
