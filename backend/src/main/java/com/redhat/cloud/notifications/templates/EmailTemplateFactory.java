@@ -8,21 +8,33 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class EmailTemplateFactory {
 
+    private static final String RHOSAK = "rhosak";
+    private static final String APPLICATION_SERVICES = "application-services";
+    private static final String RHEL = "rhel";
+    private static final String POLICIES = "policies";
+    private static final String ADVISOR = "advisor";
+    private static final String DRIFT = "drift";
+    private static final String OPENSHIFT = "openshift";
+
     public EmailTemplate get(String bundle, String application) {
-        if (bundle.equalsIgnoreCase("rhel")) {
+        if (bundle.equalsIgnoreCase(RHEL)) {
             switch (application.toLowerCase()) {
-                case "policies":
+                case POLICIES:
                     return new Policies();
-                case "advisor":
+                case ADVISOR:
                     return new Advisor();
-                case "drift":
+                case DRIFT:
                     return new Drift();
                 default:
                     break;
             }
-        } else if (bundle.equalsIgnoreCase("openshift")) {
-            if (application.equalsIgnoreCase("advisor")) {
+        } else if (bundle.equalsIgnoreCase(OPENSHIFT)) {
+            if (application.equalsIgnoreCase(ADVISOR)) {
                 return new AdvisorOpenshift();
+            }
+        } else if (bundle.equalsIgnoreCase(APPLICATION_SERVICES)) {
+            if (application.equalsIgnoreCase(RHOSAK)) {
+                return new Rhosak();
             }
         }
         return new EmailTemplateNotSupported();

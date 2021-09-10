@@ -4,16 +4,28 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 
 public class EmailPayloadAggregatorFactory {
 
+    private static final String RHEL = "rhel";
+    private static final String APPLICATION_SERVICES = "application-services";
+    private static final String POLICIES = "policies";
+    private static final String DRIFT = "drift";
+    private static final String RHOSAK = "rhosak";
+
     private EmailPayloadAggregatorFactory() {
 
     }
 
     public static AbstractEmailPayloadAggregator by(EmailAggregationKey aggregationKey) {
-        if (aggregationKey.getBundle().equals("rhel") && aggregationKey.getApplication().equals("policies")) {
+        String bundle = aggregationKey.getBundle();
+        String application = aggregationKey.getApplication();
+
+        if (bundle.equals(RHEL) && application.equals(POLICIES)) {
             return new PoliciesEmailPayloadAggregator();
         }
-        if (aggregationKey.getBundle().equals("rhel") && aggregationKey.getApplication().equals("drift")) {
+        if (bundle.equals(RHEL) && application.equals(DRIFT)) {
             return new DriftEmailPayloadAggregator();
+        }
+        if (bundle.equals(APPLICATION_SERVICES) && application.equalsIgnoreCase(RHOSAK)) {
+            return new RhosakEmailAggregator();
         }
 
         return null;
