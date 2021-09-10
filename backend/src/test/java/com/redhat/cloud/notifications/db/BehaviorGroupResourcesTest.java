@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -18,6 +20,7 @@ import javax.persistence.PersistenceException;
 import javax.validation.ConstraintViolationException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response.Status;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -48,44 +51,58 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Inject
     BehaviorGroupResources behaviorGroupResources;
 
+    // This class is used to prevent reactive tests crazy nesting.
+    static class ModelInstancesHolder {
+        List<Bundle> bundles = new ArrayList<>();
+        List<Application> apps = new ArrayList<>();
+        List<EventType> eventTypes = new ArrayList<>();
+        List<BehaviorGroup> behaviorGroups = new ArrayList<>();
+        List<Endpoint> endpoints = new ArrayList<>();
+    }
+
+    // A new instance is automatically created by JUnit before each test is executed.
+    private ModelInstancesHolder model = new ModelInstancesHolder();
+
     @Test
     void testCreateAndUpdateAndDeleteBehaviorGroup() {
         resourceHelpers.createBundle()
+                .invoke(model.bundles::add)
                 // Create behavior group.
-                .call(bundle -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
-                        .call(behaviorGroup -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId())
-                                .invoke(behaviorGroups -> {
-                                    assertEquals(1, behaviorGroups.size());
-                                    assertEquals(behaviorGroup, behaviorGroups.get(0));
-                                    assertEquals(behaviorGroup.getDisplayName(), behaviorGroups.get(0).getDisplayName());
-                                    assertEquals(bundle.getId(), behaviorGroups.get(0).getBundle().getId());
-                                    assertNotNull(bundle.getCreated());
-                                })
-                                .chain(() -> {
-                                    // Update behavior group.
-                                    String newDisplayName = "newDisplayName";
-                                    return updateBehaviorGroup(behaviorGroup.getId(), newDisplayName)
-                                            .invoke(updated -> {
-                                                assertTrue(updated);
-                                                session.clear(); // We need to clear the session L1 cache before checking the update result.
-                                            })
-                                            .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId())
-                                                    .invoke(behaviorGroups -> {
-                                                        assertEquals(1, behaviorGroups.size());
-                                                        assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
-                                                        assertEquals(newDisplayName, behaviorGroups.get(0).getDisplayName());
-                                                        assertEquals(bundle.getId(), behaviorGroups.get(0).getBundle().getId());
-                                                    })
-                                            );
-                                })
-                                // Delete behavior group.
-                                .chain(() -> resourceHelpers.deleteBehaviorGroup(behaviorGroup.getId())
-                                        .invoke(Assertions::assertTrue)
-                                )
-                                .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId())
-                                        .invoke(behaviorGroups -> assertTrue(behaviorGroups.isEmpty()))
-                                )
-                        )
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
+                )
+                .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId())
+                        .invoke(behaviorGroups -> {
+                            assertEquals(1, behaviorGroups.size());
+                            assertEquals(model.behaviorGroups.get(0), behaviorGroups.get(0));
+                            assertEquals(model.behaviorGroups.get(0).getDisplayName(), behaviorGroups.get(0).getDisplayName());
+                            assertEquals(model.bundles.get(0).getId(), behaviorGroups.get(0).getBundle().getId());
+                            assertNotNull(model.bundles.get(0).getCreated());
+                        })
+                )
+                .chain(() -> {
+                    // Update behavior group.
+                    String newDisplayName = "newDisplayName";
+                    return updateBehaviorGroup(model.behaviorGroups.get(0).getId(), newDisplayName)
+                            .invoke(updated -> {
+                                assertTrue(updated);
+                                session.clear(); // We need to clear the session L1 cache before checking the update result.
+                            })
+                            .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId())
+                                    .invoke(behaviorGroups -> {
+                                        assertEquals(1, behaviorGroups.size());
+                                        assertEquals(model.behaviorGroups.get(0).getId(), behaviorGroups.get(0).getId());
+                                        assertEquals(newDisplayName, behaviorGroups.get(0).getDisplayName());
+                                        assertEquals(model.bundles.get(0).getId(), behaviorGroups.get(0).getBundle().getId());
+                                    })
+                            );
+                })
+                // Delete behavior group.
+                .chain(() -> resourceHelpers.deleteBehaviorGroup(model.behaviorGroups.get(0).getId())
+                        .invoke(Assertions::assertTrue)
+                )
+                .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId())
+                        .invoke(behaviorGroups -> assertTrue(behaviorGroups.isEmpty()))
                 )
                 .await().indefinitely();
     }
@@ -126,20 +143,24 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     void testfindByBundleIdOrdering() {
         resourceHelpers.createBundle()
-                .call(bundle -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
-                        .call(behaviorGroup1 -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
-                                .call(behaviorGroup2 -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
-                                        .call(behaviorGroup3 -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId())
-                                                .invoke(behaviorGroups -> {
-                                                    assertEquals(3, behaviorGroups.size());
-                                                    // Behavior groups should be sorted on descending creation date.
-                                                    assertSame(behaviorGroup3, behaviorGroups.get(0));
-                                                    assertSame(behaviorGroup2, behaviorGroups.get(1));
-                                                    assertSame(behaviorGroup1, behaviorGroups.get(2));
-                                                })
-                                        )
-                                )
-                        )
+                .invoke(model.bundles::add)
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
+                )
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
+                )
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
+                )
+                .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId())
+                        .invoke(behaviorGroups -> {
+                            assertEquals(3, behaviorGroups.size());
+                            // Behavior groups should be sorted on descending creation date.
+                            assertSame(model.behaviorGroups.get(2), behaviorGroups.get(0));
+                            assertSame(model.behaviorGroups.get(1), behaviorGroups.get(1));
+                            assertSame(model.behaviorGroups.get(0), behaviorGroups.get(2));
+                        })
                 )
                 .await().indefinitely();
     }
@@ -147,42 +168,50 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     void testAddAndDeleteEventTypeBehavior() {
         resourceHelpers.createBundle()
-                .call(bundle -> resourceHelpers.createApplication(bundle.getId())
-                        .call(app -> createEventType(app.getId())
-                                .call(eventType -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", bundle.getId())
-                                        .call(behaviorGroup1 -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 2", bundle.getId())
-                                                .call(behaviorGroup2 -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 3", bundle.getId())
-                                                        .call(behaviorGroup3 -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId())
-                                                                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId()))
-                                                                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId(), behaviorGroup2.getId()))
-                                                                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup2.getId()))
-                                                                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId(), behaviorGroup2.getId(), behaviorGroup3.getId()))
-                                                                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true))
-                                                        )
-                                                )
-                                        )
-                                )
-                        )
+                .invoke(model.bundles::add)
+                .chain(() -> resourceHelpers.createApplication(model.bundles.get(0).getId())
+                    .invoke(model.apps::add)
                 )
+                .chain(() -> createEventType(model.apps.get(0).getId())
+                        .invoke(model.eventTypes::add)
+                )
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
+                )
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 2", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
+                )
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 3", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
+                )
+                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0).getId(), true, model.behaviorGroups.get(0).getId()))
+                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0).getId(), true, model.behaviorGroups.get(0).getId()))
+                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0).getId(), true, model.behaviorGroups.get(0).getId(), model.behaviorGroups.get(1).getId()))
+                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0).getId(), true, model.behaviorGroups.get(1).getId()))
+                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0).getId(), true, model.behaviorGroups.get(0).getId(), model.behaviorGroups.get(1).getId(), model.behaviorGroups.get(2).getId()))
+                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0).getId(), true))
                 .await().indefinitely();
     }
 
     @Test
     void testFindEventTypesByBehaviorGroupId() {
         resourceHelpers.createBundle()
-                .call(bundle -> resourceHelpers.createApplication(bundle.getId())
-                        .call(app -> createEventType(app.getId())
-                                .call(eventType -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
-                                        .call(behaviorGroup -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId())
-                                                .chain(() -> resourceHelpers.findEventTypesByBehaviorGroupId(behaviorGroup.getId())
-                                                        .invoke(eventTypes -> {
-                                                            assertEquals(1, eventTypes.size());
-                                                            assertEquals(eventType.getId(), eventTypes.get(0).getId());
-                                                        })
-                                                )
-                                        )
-                                )
-                        )
+                .invoke(model.bundles::add)
+                .chain(() -> resourceHelpers.createApplication(model.bundles.get(0).getId())
+                        .invoke(model.apps::add)
+                )
+                .chain(() -> createEventType(model.apps.get(0).getId())
+                        .invoke(model.eventTypes::add)
+                )
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
+                )
+                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0).getId(), true, model.behaviorGroups.get(0).getId()))
+                .chain(() -> resourceHelpers.findEventTypesByBehaviorGroupId(model.behaviorGroups.get(0).getId())
+                        .invoke(eventTypes -> {
+                            assertEquals(1, eventTypes.size());
+                            assertEquals(model.eventTypes.get(0).getId(), eventTypes.get(0).getId());
+                        })
                 )
                 .await().indefinitely();
     }
@@ -190,19 +219,22 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     void testFindBehaviorGroupsByEventTypeId() {
         resourceHelpers.createBundle()
-                .call(bundle -> resourceHelpers.createApplication(bundle.getId())
-                        .call(app -> createEventType(app.getId())
-                                .call(eventType -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
-                                        .call(behaviorGroup -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId())
-                                                .chain(() -> resourceHelpers.findBehaviorGroupsByEventTypeId(eventType.getId())
-                                                        .invoke(behaviorGroups -> {
-                                                            assertEquals(1, behaviorGroups.size());
-                                                            assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
-                                                        })
-                                                )
-                                        )
-                                )
-                        )
+                .invoke(model.bundles::add)
+                .chain(() -> resourceHelpers.createApplication(model.bundles.get(0).getId())
+                        .invoke(model.apps::add)
+                )
+                .chain(() -> createEventType(model.apps.get(0).getId())
+                        .invoke(model.eventTypes::add)
+                )
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
+                )
+                .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0).getId(), true, model.behaviorGroups.get(0).getId()))
+                .chain(() -> resourceHelpers.findBehaviorGroupsByEventTypeId(model.eventTypes.get(0).getId())
+                        .invoke(behaviorGroups -> {
+                            assertEquals(1, behaviorGroups.size());
+                            assertEquals(model.behaviorGroups.get(0).getId(), behaviorGroups.get(0).getId());
+                        })
                 )
                 .await().indefinitely();
     }
@@ -210,56 +242,68 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     void testAddAndDeleteBehaviorGroupAction() {
         resourceHelpers.createBundle()
-                .call(bundle -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", bundle.getId())
-                        .call(behaviorGroup1 -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 2", bundle.getId())
-                                .call(behaviorGroup2 -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
-                                        .call(endpoint1 -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
-                                                .call(endpoint2 -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
-                                                        // At the beginning of the test, endpoint1 shouldn't be linked with any behavior group.
-                                                        .call(endpoint3 -> findBehaviorGroupsByEndpointId(endpoint1.getId())
-                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId()))
-                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId()))
-                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId(), endpoint2.getId()))
-                                                                // Now, endpoint1 should be linked with behaviorGroup1.
-                                                                .chain(() -> findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId()))
-                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup2.getId(), OK, endpoint1.getId()))
-                                                                // Then, endpoint1 should be linked with both behavior groups.
-                                                                .chain(() -> findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId(), behaviorGroup2.getId()))
-                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint2.getId()))
-                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint3.getId(), endpoint2.getId(), endpoint1.getId()))
-                                                                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK))
-                                                                // The link between endpoint1 and behaviorGroup1 was removed. Let's check it is still linked with behaviorGroup2.
-                                                                .chain(() -> findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup2.getId()))
-                                                        )
-                                                )
-                                        )
-                                )
-                        )
+                .invoke(model.bundles::add)
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
                 )
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 2", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
+                )
+                .chain(() -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
+                        .invoke(model.endpoints::add)
+                )
+                .chain(() -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
+                        .invoke(model.endpoints::add)
+                )
+                .chain(() -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
+                        .invoke(model.endpoints::add)
+                )
+                // At the beginning of the test, endpoint1 shouldn't be linked with any behavior group.
+                .chain(() -> findBehaviorGroupsByEndpointId(model.endpoints.get(0).getId()))
+                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId(), model.behaviorGroups.get(0).getId(), OK, model.endpoints.get(0).getId()))
+                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId(), model.behaviorGroups.get(0).getId(), OK, model.endpoints.get(0).getId()))
+                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId(), model.behaviorGroups.get(0).getId(), OK, model.endpoints.get(0).getId(), model.endpoints.get(1).getId()))
+                // Now, endpoint1 should be linked with behaviorGroup1.
+                .chain(() -> findBehaviorGroupsByEndpointId(model.endpoints.get(0).getId(), model.behaviorGroups.get(0).getId()))
+                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId(), model.behaviorGroups.get(1).getId(), OK, model.endpoints.get(0).getId()))
+                // Then, endpoint1 should be linked with both behavior groups.
+                .chain(() -> findBehaviorGroupsByEndpointId(model.endpoints.get(0).getId(), model.behaviorGroups.get(0).getId(), model.behaviorGroups.get(1).getId()))
+                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId(), model.behaviorGroups.get(0).getId(), OK, model.endpoints.get(1).getId()))
+                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId(), model.behaviorGroups.get(0).getId(), OK, model.endpoints.get(2).getId(), model.endpoints.get(1).getId(), model.endpoints.get(0).getId()))
+                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId(), model.behaviorGroups.get(0).getId(), OK))
+                // The link between endpoint1 and behaviorGroup1 was removed. Let's check it is still linked with behaviorGroup2.
+                .chain(() -> findBehaviorGroupsByEndpointId(model.endpoints.get(0).getId(), model.behaviorGroups.get(1).getId()))
                 .await().indefinitely();
     }
 
     @Test
     void testAddMultipleEmailSubscriptionBehaviorGroupActions() {
         resourceHelpers.createBundle()
-                .call(bundle -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
-                        .call(behaviorGroup -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION)
-                                .call(endpoint1 -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION)
-                                        .call(endpoint2 -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), OK, endpoint1.getId(), endpoint2.getId()))
-                                )
-                        )
+                .invoke(model.bundles::add)
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
                 )
+                .chain(() -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION)
+                        .invoke(model.endpoints::add)
+                )
+                .chain(() -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION)
+                        .invoke(model.endpoints::add)
+                )
+                .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId(), model.behaviorGroups.get(0).getId(), OK, model.endpoints.get(0).getId(), model.endpoints.get(1).getId()))
                 .await().indefinitely();
     }
 
     @Test
     void testUpdateBehaviorGroupActionsWithWrongAccountId() {
         resourceHelpers.createBundle()
-                .call(bundle -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId())
-                        .call(behaviorGroup -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
-                                .call(endpoint -> updateAndCheckBehaviorGroupActions("unknownAccountId", bundle.getId(), behaviorGroup.getId(), NOT_FOUND, endpoint.getId()))
-                        )
+                .invoke(model.bundles::add)
+                .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId())
+                        .invoke(model.behaviorGroups::add)
                 )
+                .chain(() -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
+                        .invoke(model.endpoints::add)
+                )
+                .chain(() -> updateAndCheckBehaviorGroupActions("unknownAccountId", model.bundles.get(0).getId(), model.behaviorGroups.get(0).getId(), NOT_FOUND, model.endpoints.get(0).getId()))
                 .await().indefinitely();
     }
 
