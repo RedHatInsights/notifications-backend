@@ -175,8 +175,12 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     private boolean isScheduleEnabled() {
-        // The scheduled job is enabled by default.
-        return ConfigProvider.getConfig().getOptionalValue("notifications.backend.email.subscription.periodic.cron.enabled", Boolean.class).orElse(true);
+        final String cronJobEnabled = System.getProperty("NOTIFICATIONS_BACKEND_EMAIL_SUBSCRIPTION_PERIODIC_CRON_ENABLED");
+        if (cronJobEnabled == null) {
+            // The scheduled job is disabled by default.
+            return ConfigProvider.getConfig().getOptionalValue("notifications.backend.email.subscription.periodic.cron.enabled", Boolean.class).orElse(true);
+        }
+        return cronJobEnabled.equals("true");
     }
 
     private Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime) {

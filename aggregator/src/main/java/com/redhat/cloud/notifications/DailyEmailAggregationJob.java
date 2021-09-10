@@ -96,7 +96,11 @@ public class DailyEmailAggregationJob {
     }
 
     private boolean isCronJobEnabled() {
-        // The scheduled job is disabled by default.
-        return ConfigProvider.getConfig().getOptionalValue("notifications.aggregator.email.subscription.periodic.cron.enabled", Boolean.class).orElse(false);
+        final String cronJobEnabled = System.getProperty("NOTIFICATIONS_AGGREGATOR_EMAIL_SUBSCRIPTION_PERIODIC_CRON_ENABLED");
+        if (cronJobEnabled == null) {
+            // The scheduled job is disabled by default.
+            return ConfigProvider.getConfig().getOptionalValue("notifications.aggregator.email.subscription.periodic.cron.enabled", Boolean.class).orElse(false);
+        }
+        return cronJobEnabled.equals("true");
     }
 }
