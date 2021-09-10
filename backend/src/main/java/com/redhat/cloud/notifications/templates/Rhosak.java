@@ -14,15 +14,19 @@ public class Rhosak implements EmailTemplate {
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
-        if (eventType.equals(SCHEDULED_UPGRADE)) {
-            return Templates.scheduledUpgradeTitle();
-        } else if (eventType.equals(DISRUPTION)) {
+        if (type == EmailSubscriptionType.DAILY) {
+            return Templates.dailyRhosakEmailsTitle();
+        }
+        if (eventType.equals(DISRUPTION)) {
             return Templates.serviceDisruptionTitle();
-        } else if (eventType.equals(INSTANCE_CREATED)) {
+        }
+        if (eventType.equals(INSTANCE_CREATED)) {
             return Templates.instanceCreatedTitle();
-        } else if (eventType.equals(INSTANCE_DELETED)) {
+        }
+        if (eventType.equals(INSTANCE_DELETED)) {
             return Templates.instanceDeletedTitle();
-        } else if (eventType.equals(ACTION_REQUIRED)) {
+        }
+        if (eventType.equals(ACTION_REQUIRED)) {
             return Templates.actionRequiredTitle();
         }
 
@@ -34,15 +38,19 @@ public class Rhosak implements EmailTemplate {
 
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
-        if (eventType.equals(SCHEDULED_UPGRADE)) {
-            return Templates.scheduledUpgradeBody();
-        } else if (eventType.equals(DISRUPTION)) {
+        if (type == EmailSubscriptionType.DAILY) {
+            return Templates.dailyRhosakEmailsBody();
+        }
+        if (eventType.equals(DISRUPTION)) {
             return Templates.serviceDisruptionBody();
-        } else if (eventType.equals(INSTANCE_CREATED)) {
+        }
+        if (eventType.equals(INSTANCE_CREATED)) {
             return Templates.instanceCreatedBody();
-        } else if (eventType.equals(INSTANCE_DELETED)) {
+        }
+        if (eventType.equals(INSTANCE_DELETED)) {
             return Templates.instanceDeletedBody();
-        } else if (eventType.equals(ACTION_REQUIRED)) {
+        }
+        if (eventType.equals(ACTION_REQUIRED)) {
             return Templates.actionRequiredBody();
         }
 
@@ -81,9 +89,9 @@ public class Rhosak implements EmailTemplate {
 
         public static native TemplateInstance instanceDeletedBody();
 
-        public static native TemplateInstance scheduledUpgradeTitle();
+        public static native TemplateInstance dailyRhosakEmailsTitle();
 
-        public static native TemplateInstance scheduledUpgradeBody();
+        public static native TemplateInstance dailyRhosakEmailsBody();
 
         public static native TemplateInstance serviceDisruptionTitle();
 
