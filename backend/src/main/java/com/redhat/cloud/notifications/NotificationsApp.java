@@ -1,18 +1,14 @@
 package com.redhat.cloud.notifications;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.runtime.StartupEvent;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
-import javax.annotation.PostConstruct;
 import javax.enterprise.event.Observes;
-import javax.inject.Inject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,24 +22,11 @@ public class NotificationsApp {
 
     private static final Logger LOG = Logger.getLogger(NotificationsApp.class);
 
-    @Inject
-    MeterRegistry registry;
-
-    AtomicInteger started;
-
-    @PostConstruct
-    void postConstruct() {
-        started = registry.gauge("notifications.backend.started", new AtomicInteger(0));
-    }
-
     // we do need a event as parameter here, otherwise the init method won't get called.
     void init(@Observes StartupEvent ev) {
-        started.set(1);
         initAccessLogFilter();
 
         LOG.info(readGitProperties());
-
-        started.set(0);
     }
 
     private void initAccessLogFilter() {
