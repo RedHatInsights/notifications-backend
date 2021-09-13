@@ -120,6 +120,17 @@ public class ApplicationResources {
                 });
     }
 
+    public Uni<Integer> updateEventType(UUID id, EventType eventType) {
+        String query = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description WHERE id = :id";
+        return session.createQuery(query)
+                .setParameter("name", eventType.getName())
+                .setParameter("displayName", eventType.getDisplayName())
+                .setParameter("description", eventType.getDescription())
+                .setParameter("id", id)
+                .executeUpdate()
+                .call(session::flush);
+    }
+
     public Uni<Boolean> deleteEventTypeById(UUID id) {
         String query = "DELETE FROM EventType WHERE id = :id";
         return session.createQuery(query)

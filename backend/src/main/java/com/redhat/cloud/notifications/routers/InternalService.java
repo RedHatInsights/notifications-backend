@@ -182,6 +182,21 @@ public class InternalService {
         return appResources.createEventType(eventType);
     }
 
+    @PUT
+    @Path("/eventTypes/{eventTypeId}")
+    @Consumes(APPLICATION_JSON)
+    @Produces(TEXT_PLAIN)
+    public Uni<Response> updateEventType(@PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
+        return appResources.updateEventType(eventTypeId, eventType)
+                .onItem().transform(rowCount -> {
+                    if (rowCount == 0) {
+                        return Response.status(Response.Status.NOT_FOUND).build();
+                    } else {
+                        return Response.ok().build();
+                    }
+                });
+    }
+
     @DELETE
     @Path("/eventTypes/{eventTypeId}")
     @Produces(APPLICATION_JSON)

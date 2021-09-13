@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -224,7 +225,7 @@ public class InternalServiceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testCreateAndGetAndDeleteEventType() {
+    void testCreateAndGetAndUpdateAndDeleteEventType() {
         // We need to persist a bundle and an app for this test.
         String bundleId = createBundle("bundle-name", "Bundle", OK).get();
         String appId = createApp(bundleId, "app-name", "App", OK).get();
@@ -235,6 +236,9 @@ public class InternalServiceTest extends DbIsolatedTest {
 
         // The app should contain two event types.
         getEventTypes(appId, OK, 2);
+
+        // Let's test the event type update API.
+        updateEventType(appId, eventTypeId, "event-type-2-new-name", "Event type 2 new display name", "Event type 2 new description", OK);
 
         // Let's test the event type delete API.
         deleteEventType(eventTypeId, true);
@@ -267,7 +271,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
-                .extract().body().asString();
+                .extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             JsonObject jsonBundle = new JsonObject(responseBody);
@@ -292,7 +296,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(JSON)
-                .extract().body().asString();
+                .extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             JsonObject jsonBundle = new JsonObject(responseBody);
@@ -360,7 +364,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
-                .extract().body().asString();
+                .extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             JsonObject jsonApp = new JsonObject(responseBody);
@@ -387,7 +391,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(JSON)
-                .extract().body().asString();
+                .extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             JsonArray jsonApps = new JsonArray(responseBody);
@@ -407,7 +411,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(JSON)
-                .extract().body().asString();
+                .extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             JsonObject jsonApp = new JsonObject(responseBody);
@@ -476,7 +480,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
-                .extract().body().asString();
+                .extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             JsonObject jsonEventType = new JsonObject(responseBody);
@@ -501,7 +505,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(JSON)
-                .extract().body().asString();
+                .extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             JsonArray jsonEventTypes = new JsonArray(responseBody);
@@ -509,6 +513,45 @@ public class InternalServiceTest extends DbIsolatedTest {
             if (expectedEventTypesCount > 0) {
                 for (int i = 0; i < expectedEventTypesCount; i++) {
                     jsonEventTypes.getJsonObject(0).mapTo(EventType.class);
+                }
+            }
+        }
+    }
+
+    private static void updateEventType(String appId, String eventTypeId, String name, String displayName, String description, int expectedStatusCode) {
+        EventType eventType = buildEventType(appId, name, displayName, description);
+
+        given()
+                .contentType(JSON)
+                .pathParam("eventTypeId", eventTypeId)
+                .body(Json.encode(eventType))
+                .put("/internal/eventTypes/{eventTypeId}")
+                .then()
+                .statusCode(expectedStatusCode)
+                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(TEXT.toString()) : any(String.class));
+
+        if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
+            String responseBody = given()
+                    .pathParam("appId", eventType.getApplicationId())
+                    .when()
+                    .get("/internal/applications/{appId}/eventTypes")
+                    .then()
+                    .statusCode(expectedStatusCode)
+                    .contentType(JSON)
+                    .extract().asString();
+
+            JsonArray jsonEventTypes = new JsonArray(responseBody);
+            for (int i = 0; i < jsonEventTypes.size(); i++) {
+                JsonObject jsonEventType = jsonEventTypes.getJsonObject(i);
+                jsonEventType.mapTo(EventType.class);
+                if (jsonEventType.getString("id").equals(eventTypeId)) {
+                    assertEquals(eventType.getName(), jsonEventType.getString("name"));
+                    assertEquals(eventType.getDisplayName(), jsonEventType.getString("display_name"));
+                    assertEquals(eventType.getDescription(), jsonEventType.getString("description"));
+                    break;
+                }
+                if (i == jsonEventTypes.size() - 1) {
+                    fail("Event type not found");
                 }
             }
         }
