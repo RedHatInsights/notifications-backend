@@ -37,7 +37,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path(PATH)
 public class EventService {
 
-    public static final String PATH = API_NOTIFICATIONS_V_1_0 + "/event";
+    public static final String PATH = API_NOTIFICATIONS_V_1_0 + "/notifications/events";
     public static final Pattern SORT_BY_PATTERN = Pattern.compile("^([a-z0-9_-]+):(asc|desc)$", CASE_INSENSITIVE);
 
     @Inject

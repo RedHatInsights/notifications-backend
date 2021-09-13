@@ -33,13 +33,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NO_ACCESS;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
+import static com.redhat.cloud.notifications.routers.EventService.PATH;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static java.time.ZoneOffset.UTC;
@@ -310,9 +310,8 @@ public class EventServiceTest extends DbIsolatedTest {
     void testInsufficientPrivileges() {
         Header noAccessIdentityHeader = mockRbac("tenant", "noAccess", NO_ACCESS);
         given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(noAccessIdentityHeader)
-                .when().get("/event")
+                .when().get(PATH)
                 .then()
                 .statusCode(403)
                 .contentType(JSON);
@@ -322,10 +321,9 @@ public class EventServiceTest extends DbIsolatedTest {
     void testInvalidSortBy() {
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", FULL_ACCESS);
         given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
                 .param("sortBy", "I am not valid!")
-                .when().get("/event")
+                .when().get(PATH)
                 .then()
                 .statusCode(400)
                 .contentType(JSON);
@@ -335,18 +333,16 @@ public class EventServiceTest extends DbIsolatedTest {
     void testInvalidLimit() {
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", FULL_ACCESS);
         given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
                 .param("limit", 0)
-                .when().get("/event")
+                .when().get(PATH)
                 .then()
                 .statusCode(400)
                 .contentType(JSON);
         given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
                 .param("limit", 999999)
-                .when().get("/event")
+                .when().get(PATH)
                 .then()
                 .statusCode(400)
                 .contentType(JSON);
@@ -373,7 +369,6 @@ public class EventServiceTest extends DbIsolatedTest {
     private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                                        LocalDateTime startDate, LocalDateTime endDate, Integer limit, Integer offset, String sortBy) {
         RequestSpecification request = given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader);
         if (bundleIds != null) {
             request.param("bundleIds", bundleIds);
@@ -400,7 +395,7 @@ public class EventServiceTest extends DbIsolatedTest {
             request.param("sortBy", sortBy);
         }
         return request
-                .when().get("/event")
+                .when().get(PATH)
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
