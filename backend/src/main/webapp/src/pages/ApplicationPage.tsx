@@ -88,12 +88,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
                                                 <TextInput
                                                     type='text'
+                                                    value={ name }
                                                     onChange={ setName }
                                                     id='name' /></FormGroup>
                                             <FormGroup label='Display name' fieldId='display-name' isRequired
                                                 helperText='This is the name you want to display on the UI'>
                                                 <TextInput
                                                     type='text'
+                                                    value={ displayName }
                                                     onChange={ setDisplayName }
                                                     id='display-name' /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
@@ -104,7 +106,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     onChange={ setDescription }
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
-                                                <Button variant='primary' type='submit'
+                                                <Button variant='primary' type='submit' isDisabled={ !name || !displayName }
                                                     onClick= { onSubmit }>Submit</Button>
                                                 <Button variant='link' onClick={ toggle }>Cancel</Button>
                                             </ActionGroup>
