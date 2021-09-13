@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
-import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.cache.CacheInvalidateAll;
@@ -9,7 +8,6 @@ import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -19,6 +17,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 public class RbacRecipientUsersProviderTest {
@@ -46,36 +46,39 @@ public class RbacRecipientUsersProviderTest {
         mockGetGroup(defaultGroup);
         mockGetUsers(elements, false);
 
-        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, defaultGroup.getUuid()).await().indefinitely();
-        Assertions.assertEquals(elements, users.size());
-        for (int i = 0; i < elements; ++i) {
-            Assertions.assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-        }
+        rbacRecipientUsersProvider.getGroupUsers(accountId, false, defaultGroup.getUuid())
+                .invoke(users -> {
+                    assertEquals(elements, users.size());
+                    for (int i = 0; i < elements; ++i) {
+                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+                    }
+                })
+                .await().indefinitely();
     }
 
     @Test
     public void getAllUsersCache() {
         int initialSize = 1095;
+        int updatedSize = 1323;
         mockGetUsers(initialSize, false);
 
-        List<User> users = rbacRecipientUsersProvider.getUsers(accountId, false).await().indefinitely();
-        Assertions.assertEquals(initialSize, users.size());
-
-        for (int i = 0; i < initialSize; ++i) {
-            Assertions.assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-        }
-
-        int updatedSize = 1323;
-        mockGetUsers(updatedSize, false);
-
-        // Should still have the initial size because of the cache
-        users = rbacRecipientUsersProvider.getUsers(accountId, false).await().indefinitely();
-        Assertions.assertEquals(initialSize, users.size());
-
-        clearCached();
-
-        users = rbacRecipientUsersProvider.getUsers(accountId, false).await().indefinitely();
-        Assertions.assertEquals(updatedSize, users.size());
+        rbacRecipientUsersProvider.getUsers(accountId, false)
+                .invoke(users -> {
+                    assertEquals(initialSize, users.size());
+                    for (int i = 0; i < initialSize; ++i) {
+                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+                    }
+                    mockGetUsers(updatedSize, false);
+                })
+                .chain(() -> rbacRecipientUsersProvider.getUsers(accountId, false))
+                .invoke(users -> {
+                    // Should still have the initial size because of the cache
+                    assertEquals(initialSize, users.size());
+                    clearCached();
+                })
+                .chain(() -> rbacRecipientUsersProvider.getUsers(accountId, false))
+                .invoke(users -> assertEquals(updatedSize, users.size()))
+                .await().indefinitely();
     }
 
     @Test
@@ -85,27 +88,28 @@ public class RbacRecipientUsersProviderTest {
         group.setUuid(UUID.randomUUID());
 
         int initialSize = 133;
+        int updatedSize = 323;
 
         mockGetGroup(group);
         mockGetGroupUsers(initialSize, group.getUuid());
 
-        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()).await().indefinitely();
-        Assertions.assertEquals(initialSize, users.size());
-        for (int i = 0; i < initialSize; ++i) {
-            Assertions.assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-        }
-
-        int updatedSize = 323;
-        mockGetGroupUsers(updatedSize, group.getUuid());
-
-        // Should still have the initial size because of the cache
-        users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()).await().indefinitely();
-        Assertions.assertEquals(initialSize, users.size());
-
-        clearCached();
-
-        users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()).await().indefinitely();
-        Assertions.assertEquals(updatedSize, users.size());
+        rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid())
+                .invoke(users -> {
+                    assertEquals(initialSize, users.size());
+                    for (int i = 0; i < initialSize; ++i) {
+                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+                    }
+                    mockGetGroupUsers(updatedSize, group.getUuid());
+                })
+                .chain(() -> rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()))
+                .invoke(users -> {
+                    // Should still have the initial size because of the cache
+                    assertEquals(initialSize, users.size());
+                    clearCached();
+                })
+                .chain(() -> rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()))
+                .invoke(users -> assertEquals(updatedSize, users.size()))
+                .await().indefinitely();
     }
 
     private void mockGetUsers(int elements, boolean adminsOnly) {
@@ -169,8 +173,8 @@ public class RbacRecipientUsersProviderTest {
 
         Uni<Page<RbacUser>> mockedUserAnswer(int offset, int limit, boolean adminsOnly) {
 
-            Assertions.assertEquals(rbacElementsPerPage.intValue(), limit);
-            Assertions.assertEquals(expectedAdminsOnly, adminsOnly);
+            assertEquals(rbacElementsPerPage.intValue(), limit);
+            assertEquals(expectedAdminsOnly, adminsOnly);
 
             int bound = Math.min(offset + limit, expectedElements);
 
