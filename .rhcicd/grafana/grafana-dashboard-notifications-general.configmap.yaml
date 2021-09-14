@@ -532,7 +532,9 @@ data:
           }
         },
         {
-          "aliasColors": {},
+          "aliasColors": {
+            "failures": "dark-red"
+          },
           "bars": false,
           "dashLength": 10,
           "dashes": false,
@@ -983,13 +985,13 @@ data:
             {
               "expr": "sum(rate(kafka_server_brokertopicmetrics_bytesout_total{topic=\"platform.notifications.ingress\"}[5m]))",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "out",
               "refId": "A"
             },
             {
               "expr": "sum(rate(kafka_server_brokertopicmetrics_bytesin_total{topic=\"platform.notifications.ingress\"}[5m]))",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "in",
               "refId": "B"
             }
           ],
@@ -2153,7 +2155,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 8
+      "version": 9
     }
 kind: ConfigMap
 metadata:
