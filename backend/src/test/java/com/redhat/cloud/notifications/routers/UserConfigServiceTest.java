@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
-import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm.Field;
@@ -23,7 +22,9 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.Json;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -32,6 +33,7 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.TestThreadHelper.runOnWorkerThread;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static io.restassured.RestAssured.given;
@@ -50,9 +52,6 @@ public class UserConfigServiceTest extends DbIsolatedTest {
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
-
-    @Inject
-    ResourceHelpers resourceHelpers;
 
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
@@ -257,22 +256,22 @@ public class UserConfigServiceTest extends DbIsolatedTest {
         assertEquals(true, preferences.getDailyEmail());
         assertEquals(true, preferences.getInstantEmail());
 
-        // does not fail if we have unknown apps in our bundle's settings
-        try {
-            subscriptionResources.subscribe(tenant, username, bundle, "not-found-app", DAILY)
-                    .await().indefinitely();
-            given()
-                    .header(identityHeader)
-                    .when()
-                    .queryParam("bundleName", bundle)
-                    .get("/user-config/notification-preference")
-                    .then()
-                    .statusCode(200)
-                    .contentType(JSON);
-        } finally {
-            subscriptionResources.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", DAILY)
-                    .await().indefinitely();
-        }
+        // This is necessary to limit the scope of an eventually() call below.
+        Uni.createFrom().nullItem()
+                // does not fail if we have unknown apps in our bundle's settings
+                .chain(() -> subscriptionResources.subscribe(tenant, username, bundle, "not-found-app", DAILY))
+                .chain(runOnWorkerThread(() -> {
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .queryParam("bundleName", bundle)
+                            .get("/user-config/notification-preference")
+                            .then()
+                            .statusCode(200)
+                            .contentType(JSON);
+                }))
+                .eventually(() -> subscriptionResources.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", DAILY))
+                .await().indefinitely();
 
         // Fails if we don't specify the bundleName
         given()
@@ -295,10 +294,11 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .statusCode(200)
                 .contentType(TEXT);
 
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", DAILY)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", INSTANT)
-                .await().indefinitely());
+        subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", DAILY)
+                .invoke(Assertions::assertNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", INSTANT))
+                .invoke(Assertions::assertNull)
+                .await().indefinitely();
 
         // Does not add event type if is not supported by the templates
         Mockito

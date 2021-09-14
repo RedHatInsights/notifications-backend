@@ -11,7 +11,6 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
@@ -26,6 +25,7 @@ import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +36,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.redhat.cloud.notifications.TestThreadHelper.runOnWorkerThread;
+import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
+import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -44,7 +49,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -535,59 +539,61 @@ public class EndpointServiceTest extends DbIsolatedTest {
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
         // Create 50 test-ones with sanely sortable name & enabled & disabled & type
-        int[] stats = helpers.createTestEndpoints(tenant, 50)
+        helpers.createTestEndpoints(tenant, 50)
+                .call(stats -> runOnWorkerThread(() -> {
+                    int disableCount = stats[1];
+                    int webhookCount = stats[2];
+
+                    Response response = given()
+                            .header(identityHeader)
+                            .when()
+                            .get("/endpoints")
+                            .then()
+                            .statusCode(200)
+                            .contentType(JSON)
+                            .extract().response();
+
+                    EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+                    Endpoint[] endpoints = endpointPage.getData().toArray(new Endpoint[0]);
+                    assertEquals(stats[0], endpoints.length);
+
+                    response = given()
+                            .header(identityHeader)
+                            .queryParam("sort_by", "enabled")
+                            .when()
+                            .get("/endpoints")
+                            .then()
+                            .statusCode(200)
+                            .contentType(JSON)
+                            .extract().response();
+
+                    endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+                    endpoints = endpointPage.getData().toArray(new Endpoint[0]);
+                    assertFalse(endpoints[0].isEnabled());
+                    assertFalse(endpoints[disableCount - 1].isEnabled());
+                    assertTrue(endpoints[disableCount].isEnabled());
+                    assertTrue(endpoints[stats[0] - 1].isEnabled());
+
+                    response = given()
+                            .header(identityHeader)
+                            .queryParam("sort_by", "name:desc")
+                            .queryParam("limit", "50")
+                            .queryParam("offset", stats[0] - 20)
+                            .when()
+                            .get("/endpoints")
+                            .then()
+                            .statusCode(200)
+                            .contentType(JSON)
+                            .extract().response();
+
+                    endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+                    endpoints = endpointPage.getData().toArray(new Endpoint[0]);
+                    assertEquals(20, endpoints.length);
+                    assertEquals("Endpoint 1", endpoints[endpoints.length - 1].getName());
+                    assertEquals("Endpoint 10", endpoints[endpoints.length - 2].getName());
+                    assertEquals("Endpoint 27", endpoints[0].getName());
+                }).get())
                 .await().indefinitely();
-        int disableCount = stats[1];
-        int webhookCount = stats[2];
-
-        Response response = given()
-                .header(identityHeader)
-                .when()
-                .get("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        Endpoint[] endpoints = endpointPage.getData().toArray(new Endpoint[0]);
-        assertEquals(stats[0], endpoints.length);
-
-        response = given()
-                .header(identityHeader)
-                .queryParam("sort_by", "enabled")
-                .when()
-                .get("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        endpoints = endpointPage.getData().toArray(new Endpoint[0]);
-        assertFalse(endpoints[0].isEnabled());
-        assertFalse(endpoints[disableCount - 1].isEnabled());
-        assertTrue(endpoints[disableCount].isEnabled());
-        assertTrue(endpoints[stats[0] - 1].isEnabled());
-
-        response = given()
-                .header(identityHeader)
-                .queryParam("sort_by", "name:desc")
-                .queryParam("limit", "50")
-                .queryParam("offset", stats[0] - 20)
-                .when()
-                .get("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        endpoints = endpointPage.getData().toArray(new Endpoint[0]);
-        assertEquals(20, endpoints.length);
-        assertEquals("Endpoint 1", endpoints[endpoints.length - 1].getName());
-        assertEquals("Endpoint 10", endpoints[endpoints.length - 2].getName());
-        assertEquals("Endpoint 27", endpoints[0].getName());
     }
 
     @Test
@@ -817,164 +823,164 @@ public class EndpointServiceTest extends DbIsolatedTest {
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
         helpers.createTestAppAndEventTypes()
+                .chain(runOnWorkerThread(() -> {
+                    // invalid bundle/application combination gives a 404
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .delete("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant")
+                            .then().statusCode(404)
+                            .contentType(JSON);
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant")
+                            .then().statusCode(404)
+                            .contentType(JSON);
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .put("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant")
+                            .then().statusCode(404)
+                            .contentType(JSON);
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant")
+                            .then().statusCode(404)
+                            .contentType(JSON);
+
+                    // Unknown bundle/apps give 404
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .delete("/endpoints/email/subscription/idontexist/meneither/instant")
+                            .then().statusCode(404)
+                            .contentType(JSON);
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .put("/endpoints/email/subscription/idontexist/meneither/instant")
+                            .then().statusCode(404)
+                            .contentType(JSON);
+
+                    // Disable everything as preparation
+                    // rhel/policies instant and daily
+                    // TEST_BUNDLE_NAME/TEST_APP_NAME instant and daily
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .delete("/endpoints/email/subscription/rhel/policies/instant")
+                            .then().statusCode(200)
+                            .contentType(JSON);
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/instant")
+                            .then().statusCode(200)
+                            .contentType(JSON);
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .delete("/endpoints/email/subscription/rhel/policies/daily")
+                            .then().statusCode(200)
+                            .contentType(JSON);
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/daily")
+                            .then().statusCode(200)
+                            .contentType(JSON);
+                }))
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
+                .invoke(Assertions::assertNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
+                .invoke(Assertions::assertNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull)
+                .chain(runOnWorkerThread(() -> {
+                    // Enable instant on rhel.policies
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .put("/endpoints/email/subscription/rhel/policies/instant")
+                            .then().statusCode(200).contentType(JSON);
+                }))
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
+                .invoke(Assertions::assertNotNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
+                .invoke(Assertions::assertNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull)
+                .chain(runOnWorkerThread(() -> {
+                    // Enable daily on rhel.policies
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .put("/endpoints/email/subscription/rhel/policies/daily")
+                            .then().statusCode(200).contentType(JSON);
+                }))
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
+                .invoke(Assertions::assertNotNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
+                .invoke(Assertions::assertNotNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull)
+                .chain(runOnWorkerThread(() -> {
+                    // Enable instant on TEST_BUNDLE_NAME.TEST_APP_NAME
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/instant")
+                            .then().statusCode(200).contentType(JSON);
+                }))
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
+                .invoke(Assertions::assertNotNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
+                .invoke(Assertions::assertNotNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNotNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull)
+                .chain(runOnWorkerThread(() -> {
+                    // Disable daily on rhel.policies
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .delete("/endpoints/email/subscription/rhel/policies/daily")
+                            .then().statusCode(200).contentType(JSON);
+                }))
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
+                .invoke(Assertions::assertNotNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
+                .invoke(Assertions::assertNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNotNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull)
+                .chain(runOnWorkerThread(() -> {
+                    // Disable instant on rhel.policies
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .delete("/endpoints/email/subscription/rhel/policies/instant")
+                            .then().statusCode(200).contentType(JSON);
+                }))
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
+                .invoke(Assertions::assertNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
+                .invoke(Assertions::assertNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNotNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull)
                 .await().indefinitely();
-
-        // invalid bundle/application combination gives a 404
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/rhel/" + ResourceHelpers.TEST_APP_NAME + "/instant")
-                .then().statusCode(404)
-                .contentType(JSON);
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/policies/instant")
-                .then().statusCode(404)
-                .contentType(JSON);
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/rhel/" + ResourceHelpers.TEST_APP_NAME + "/instant")
-                .then().statusCode(404)
-                .contentType(JSON);
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/policies/instant")
-                .then().statusCode(404)
-                .contentType(JSON);
-
-        // Unknown bundle/apps give 404
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/idontexist/meneither/instant")
-                .then().statusCode(404)
-                .contentType(JSON);
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/idontexist/meneither/instant")
-                .then().statusCode(404)
-                .contentType(JSON);
-
-        // Disable everything as preparation
-        // rhel/policies instant and daily
-        // TEST_BUNDLE_NAME/TEST_APP_NAME instant and daily
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/rhel/policies/instant")
-                .then().statusCode(200)
-                .contentType(JSON);
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/" + ResourceHelpers.TEST_APP_NAME + "/instant")
-                .then().statusCode(200)
-                .contentType(JSON);
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/rhel/policies/daily")
-                .then().statusCode(200)
-                .contentType(JSON);
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/" + ResourceHelpers.TEST_APP_NAME + "/daily")
-                .then().statusCode(200)
-                .contentType(JSON);
-
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY)
-                .await().indefinitely());
-
-        // Enable instant on rhel.policies
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/rhel/policies/instant")
-                .then().statusCode(200).contentType(JSON);
-
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY)
-                .await().indefinitely());
-
-        // Enable daily on rhel.policies
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/rhel/policies/daily")
-                .then().statusCode(200).contentType(JSON);
-
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY)
-                .await().indefinitely());
-
-        // Enable instant on TEST_BUNDLE_NAME.TEST_APP_NAME
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/" + ResourceHelpers.TEST_BUNDLE_NAME + "/" + ResourceHelpers.TEST_APP_NAME + "/instant")
-                .then().statusCode(200).contentType(JSON);
-
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY)
-                .await().indefinitely());
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY)
-                .await().indefinitely());
-
-        // Disable daily on rhel.policies
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/rhel/policies/daily")
-                .then().statusCode(200).contentType(JSON);
-
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY)
-                .await().indefinitely());
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY)
-                .await().indefinitely());
-
-        // Disable instant on rhel.policies
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/rhel/policies/instant")
-                .then().statusCode(200).contentType(JSON);
-
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", EmailSubscriptionType.DAILY)
-                .await().indefinitely());
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.INSTANT)
-                .await().indefinitely());
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, ResourceHelpers.TEST_BUNDLE_NAME, ResourceHelpers.TEST_APP_NAME, EmailSubscriptionType.DAILY)
-                .await().indefinitely());
     }
 
     //    @Test

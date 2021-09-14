@@ -5,10 +5,8 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.ModelInstancesHolder;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -20,7 +18,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.Header;
 import io.restassured.specification.RequestSpecification;
-import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
+import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +35,7 @@ import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NO_ACCESS;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
+import static com.redhat.cloud.notifications.TestThreadHelper.runOnWorkerThread;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.routers.EventService.PATH;
@@ -63,6 +62,9 @@ public class EventServiceTest extends DbIsolatedTest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
+    // A new instance is automatically created by JUnit before each test is executed.
+    private ModelInstancesHolder model = new ModelInstancesHolder();
+
     @Test
     void testAllQueryParams() {
         /*
@@ -74,236 +76,238 @@ public class EventServiceTest extends DbIsolatedTest {
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", FULL_ACCESS);
         Header otherIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, "other-username", FULL_ACCESS);
 
-        Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1")
+        resourceHelpers.createBundle("bundle-1", "Bundle 1")
+                .invoke(model.bundles::add)
+                .chain(() -> resourceHelpers.createBundle("bundle-2", "Bundle 2"))
+                .invoke(model.bundles::add)
+                .chain(() -> resourceHelpers.createApplication(model.bundles.get(0).getId(), "app-1", "Application 1"))
+                .invoke(model.applications::add)
+                .chain(() -> resourceHelpers.createApplication(model.bundles.get(1).getId(), "app-2", "Application 2"))
+                .invoke(model.applications::add)
+                .chain(() -> resourceHelpers.createEventType(model.applications.get(0).getId(), "event-type-1", "Event type 1", "Event type 1"))
+                .invoke(model.eventTypes::add)
+                .chain(() -> resourceHelpers.createEventType(model.applications.get(1).getId(), "event-type-2", "Event type 2", "Event type 2"))
+                .invoke(model.eventTypes::add)
+                .chain(() -> createEvent(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0), NOW.minusDays(5L)))
+                .invoke(model.events::add)
+                .chain(() -> createEvent(DEFAULT_ACCOUNT_ID, model.eventTypes.get(1), NOW))
+                .invoke(model.events::add)
+                .chain(() -> createEvent(DEFAULT_ACCOUNT_ID, model.eventTypes.get(1), NOW.minusDays(2L)))
+                .invoke(model.events::add)
+                .chain(() -> createEvent(OTHER_ACCOUNT_ID, model.eventTypes.get(1), NOW.minusDays(10L)))
+                .invoke(model.events::add)
+                .chain(() -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK))
+                .invoke(model.endpoints::add)
+                .chain(() -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION))
+                .invoke(model.endpoints::add)
+                .chain(() -> resourceHelpers.createNotificationHistory(model.events.get(0), model.endpoints.get(0)))
+                .invoke(model.notificationHistories::add)
+                .chain(() -> resourceHelpers.createNotificationHistory(model.events.get(0), model.endpoints.get(1)))
+                .invoke(model.notificationHistories::add)
+                .chain(() -> resourceHelpers.createNotificationHistory(model.events.get(1), model.endpoints.get(0)))
+                .invoke(model.notificationHistories::add)
+                .chain(() -> resourceHelpers.createNotificationHistory(model.events.get(2), model.endpoints.get(1)))
+                .invoke(model.notificationHistories::add)
+                .chain(runOnWorkerThread(() -> {
+
+                    /*
+                     * Test #1
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: No filter
+                     * Expected response: All event log entries from DEFAULT_ACCOUNT_ID should be returned
+                     */
+                    Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null);
+                    assertEquals(3, page.getMeta().getCount());
+                    assertEquals(3, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
+                    assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
+                    assertSameEvent(page.getData().get(2), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #2
+                     * Account: OTHER_ACCOUNT_ID
+                     * Request: No filter
+                     * Expected response: All event log entries from OTHER_ACCOUNT_ID should be returned
+                     */
+                    page = getEventLogPage(otherIdentityHeader, null, null, null, null, null, null, null, null);
+                    assertEquals(1, page.getMeta().getCount());
+                    assertEquals(1, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(3));
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #3
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: Unknown bundle
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, Set.of(randomUUID()), null, null, null, null, null, null, null);
+                    assertEquals(0, page.getMeta().getCount());
+                    assertTrue(page.getData().isEmpty());
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #4
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: One existing bundle
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(0).getId()), null, null, null, null, null, null, null);
+                    assertEquals(1, page.getMeta().getCount());
+                    assertEquals(1, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #5
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: Multiple existing bundles, sort by ascending bundle names
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(0).getId(), model.bundles.get(1).getId()), null, null, null, null, null, null, "bundle:asc");
+                    assertEquals(3, page.getMeta().getCount());
+                    assertEquals(3, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertSameEvent(page.getData().get(1), model.events.get(1), model.notificationHistories.get(2));
+                    assertSameEvent(page.getData().get(2), model.events.get(2), model.notificationHistories.get(3));
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #6
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: Unknown application
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, null, Set.of(randomUUID()), null, null, null, null, null, null);
+                    assertEquals(0, page.getMeta().getCount());
+                    assertTrue(page.getData().isEmpty());
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #7
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: One existing application
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, null, Set.of(model.applications.get(1).getId()), null, null, null, null, null, null);
+                    assertEquals(2, page.getMeta().getCount());
+                    assertEquals(2, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
+                    assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #8
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: Multiple existing applications, sort by ascending application names
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, null, Set.of(model.applications.get(0).getId(), model.applications.get(1).getId()), null, null, null, null, null, "application:asc");
+                    assertEquals(3, page.getMeta().getCount());
+                    assertEquals(3, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertSameEvent(page.getData().get(1), model.events.get(1), model.notificationHistories.get(2));
+                    assertSameEvent(page.getData().get(2), model.events.get(2), model.notificationHistories.get(3));
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #9
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: Unknown event type
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, null, null, "unknown", null, null, null, null, null);
+                    assertEquals(0, page.getMeta().getCount());
+                    assertTrue(page.getData().isEmpty());
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #10
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: Existing event type
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, null, null, model.eventTypes.get(0).getDisplayName().substring(2).toUpperCase(), null, null, null, null, null);
+                    assertEquals(1, page.getMeta().getCount());
+                    assertEquals(1, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #11
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: Start date three days in the past
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), null, null, null, null);
+                    assertEquals(2, page.getMeta().getCount());
+                    assertEquals(2, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
+                    assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #12
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: End date three days in the past
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, null, null, null, null, NOW.minusDays(3L), null, null, null);
+                    assertEquals(1, page.getMeta().getCount());
+                    assertEquals(1, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #13
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: Both start and end date are set
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), NOW.minusDays(1L), null, null, null);
+                    assertEquals(1, page.getMeta().getCount());
+                    assertEquals(1, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(2), model.notificationHistories.get(3));
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #14
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: Let's try all request params at once!
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(1).getId()), Set.of(model.applications.get(1).getId()), model.eventTypes.get(1).getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), 10, 0, "created:desc");
+                    assertEquals(1, page.getMeta().getCount());
+                    assertEquals(1, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(2), model.notificationHistories.get(3));
+                    assertLinks(page.getLinks(), "first", "last");
+
+                    /*
+                     * Test #15
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: No filter, limit without offset
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, 2, null, null);
+                    assertEquals(3, page.getMeta().getCount());
+                    assertEquals(2, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
+                    assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
+                    assertLinks(page.getLinks(), "first", "last", "next");
+
+                    /*
+                     * Test #16
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: No filter, limit with offset
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, 1, 2, null);
+                    assertEquals(3, page.getMeta().getCount());
+                    assertEquals(1, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertLinks(page.getLinks(), "first", "last", "prev");
+
+                    /*
+                     * Test #17
+                     * Account: DEFAULT_ACCOUNT_ID
+                     * Request: No filter, sort by ascending event names
+                     */
+                    page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, "event:asc");
+                    assertEquals(3, page.getMeta().getCount());
+                    assertEquals(3, page.getData().size());
+                    assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertSameEvent(page.getData().get(1), model.events.get(1), model.notificationHistories.get(2));
+                    assertSameEvent(page.getData().get(2), model.events.get(2), model.notificationHistories.get(3));
+                    assertLinks(page.getLinks(), "first", "last");
+                }))
                 .await().indefinitely();
-        Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2")
-                .await().indefinitely();
-
-        Application app1 = resourceHelpers.createApplication(bundle1.getId(), "app-1", "Application 1")
-                .await().indefinitely();
-        Application app2 = resourceHelpers.createApplication(bundle2.getId(), "app-2", "Application 2")
-                .await().indefinitely();
-
-        EventType eventType1 = resourceHelpers.createEventType(app1.getId(), "event-type-1", "Event type 1", "Event type 1")
-                .await().indefinitely();
-        EventType eventType2 = resourceHelpers.createEventType(app2.getId(), "event-type-2", "Event type 2", "Event type 2")
-                .await().indefinitely();
-
-        Event event1 = createEvent(DEFAULT_ACCOUNT_ID, eventType1, NOW.minusDays(5L));
-        Event event2 = createEvent(DEFAULT_ACCOUNT_ID, eventType2, NOW);
-        Event event3 = createEvent(DEFAULT_ACCOUNT_ID, eventType2, NOW.minusDays(2L));
-        Event event4 = createEvent(OTHER_ACCOUNT_ID, eventType2, NOW.minusDays(10L));
-
-        Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK)
-                .await().indefinitely();
-        Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION)
-                .await().indefinitely();
-
-        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1)
-                .await().indefinitely();
-        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2)
-                .await().indefinitely();
-        NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1)
-                .await().indefinitely();
-        NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2)
-                .await().indefinitely();
-
-        /*
-         * Test #1
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: No filter
-         * Expected response: All event log entries from DEFAULT_ACCOUNT_ID should be returned
-         */
-        Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null);
-        assertEquals(3, page.getMeta().getCount());
-        assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event3, history4);
-        assertSameEvent(page.getData().get(2), event1, history1, history2);
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #2
-         * Account: OTHER_ACCOUNT_ID
-         * Request: No filter
-         * Expected response: All event log entries from OTHER_ACCOUNT_ID should be returned
-         */
-        page = getEventLogPage(otherIdentityHeader, null, null, null, null, null, null, null, null);
-        assertEquals(1, page.getMeta().getCount());
-        assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event4);
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #3
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: Unknown bundle
-         */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(randomUUID()), null, null, null, null, null, null, null);
-        assertEquals(0, page.getMeta().getCount());
-        assertTrue(page.getData().isEmpty());
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #4
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: One existing bundle
-         */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId()), null, null, null, null, null, null, null);
-        assertEquals(1, page.getMeta().getCount());
-        assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #5
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: Multiple existing bundles, sort by ascending bundle names
-         */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId(), bundle2.getId()), null, null, null, null, null, null, "bundle:asc");
-        assertEquals(3, page.getMeta().getCount());
-        assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
-        assertSameEvent(page.getData().get(1), event2, history3);
-        assertSameEvent(page.getData().get(2), event3, history4);
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #6
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: Unknown application
-         */
-        page = getEventLogPage(defaultIdentityHeader, null, Set.of(randomUUID()), null, null, null, null, null, null);
-        assertEquals(0, page.getMeta().getCount());
-        assertTrue(page.getData().isEmpty());
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #7
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: One existing application
-         */
-        page = getEventLogPage(defaultIdentityHeader, null, Set.of(app2.getId()), null, null, null, null, null, null);
-        assertEquals(2, page.getMeta().getCount());
-        assertEquals(2, page.getData().size());
-        assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event3, history4);
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #8
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: Multiple existing applications, sort by ascending application names
-         */
-        page = getEventLogPage(defaultIdentityHeader, null, Set.of(app1.getId(), app2.getId()), null, null, null, null, null, "application:asc");
-        assertEquals(3, page.getMeta().getCount());
-        assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
-        assertSameEvent(page.getData().get(1), event2, history3);
-        assertSameEvent(page.getData().get(2), event3, history4);
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #9
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: Unknown event type
-         */
-        page = getEventLogPage(defaultIdentityHeader, null, null, "unknown", null, null, null, null, null);
-        assertEquals(0, page.getMeta().getCount());
-        assertTrue(page.getData().isEmpty());
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #10
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: Existing event type
-         */
-        page = getEventLogPage(defaultIdentityHeader, null, null, eventType1.getDisplayName().substring(2).toUpperCase(), null, null, null, null, null);
-        assertEquals(1, page.getMeta().getCount());
-        assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #11
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: Start date three days in the past
-         */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), null, null, null, null);
-        assertEquals(2, page.getMeta().getCount());
-        assertEquals(2, page.getData().size());
-        assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event3, history4);
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #12
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: End date three days in the past
-         */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, NOW.minusDays(3L), null, null, null);
-        assertEquals(1, page.getMeta().getCount());
-        assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #13
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: Both start and end date are set
-         */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), NOW.minusDays(1L), null, null, null);
-        assertEquals(1, page.getMeta().getCount());
-        assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event3, history4);
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #14
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: Let's try all request params at once!
-         */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle2.getId()), Set.of(app2.getId()), eventType2.getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), 10, 0, "created:desc");
-        assertEquals(1, page.getMeta().getCount());
-        assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event3, history4);
-        assertLinks(page.getLinks(), "first", "last");
-
-        /*
-         * Test #15
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: No filter, limit without offset
-         */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, 2, null, null);
-        assertEquals(3, page.getMeta().getCount());
-        assertEquals(2, page.getData().size());
-        assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event3, history4);
-        assertLinks(page.getLinks(), "first", "last", "next");
-
-        /*
-         * Test #16
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: No filter, limit with offset
-         */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, 1, 2, null);
-        assertEquals(3, page.getMeta().getCount());
-        assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
-        assertLinks(page.getLinks(), "first", "last", "prev");
-
-        /*
-         * Test #17
-         * Account: DEFAULT_ACCOUNT_ID
-         * Request: No filter, sort by ascending event names
-         */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, "event:asc");
-        assertEquals(3, page.getMeta().getCount());
-        assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
-        assertSameEvent(page.getData().get(1), event2, history3);
-        assertSameEvent(page.getData().get(2), event3, history4);
-        assertLinks(page.getLinks(), "first", "last");
     }
 
     @Test
@@ -348,16 +352,13 @@ public class EventServiceTest extends DbIsolatedTest {
                 .contentType(JSON);
     }
 
-    private Event createEvent(String accountId, EventType eventType, LocalDateTime created) {
+    private Uni<Event> createEvent(String accountId, EventType eventType, LocalDateTime created) {
         Event event = new Event();
         event.setAccountId(accountId);
         event.setEventType(eventType);
         event.setCreated(created);
-        statelessSession.insert(event)
-                .subscribe().withSubscriber(UniAssertSubscriber.create())
-                .await()
-                .assertCompleted();
-        return event;
+        return statelessSession.insert(event)
+                .replaceWith(event);
     }
 
     private Header mockRbac(String tenant, String username, RbacAccess access) {
