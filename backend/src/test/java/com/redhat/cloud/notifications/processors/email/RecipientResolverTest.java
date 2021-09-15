@@ -1,8 +1,5 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
-import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -25,15 +22,11 @@ public class RecipientResolverTest {
         RecipientResolver recipientResolver = new RecipientResolver();
         recipientResolver.rbacRecipientUsersProvider = rbacRecipientUsersProvider;
 
-        Endpoint endpoint = new Endpoint();
-        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
-        endpoint.setEnabled(true);
-        endpoint.setAccountId(ACCOUNT_ID);
-        endpoint.setProperties(new EmailSubscriptionProperties());
+        RecipientResolverRequest  request = RecipientResolverRequest.builder().build();
 
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
-                Set.of(endpoint),
+                Set.of(request),
                 Set.of("foo", "bar")
         )
                 .subscribe()

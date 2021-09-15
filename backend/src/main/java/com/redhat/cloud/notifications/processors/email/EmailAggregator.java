@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadA
 import com.redhat.cloud.notifications.recipients.User;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @ApplicationScoped
 public class EmailAggregator {
@@ -38,6 +40,9 @@ public class EmailAggregator {
 
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
     private static final String EVENT_TYPE_KEY = "event_type";
+    private static final String RECIPIENTS_KEY = "recipients";
+    private static final String RECIPIENT_NOTIFY_ADMIN_KEY = "notify_admins";
+    private static final String RECIPIENT_IGNORE_USER_PREF_KEY = "force_send";
 
     private Uni<Set<String>> getEmailSubscribers(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
         return subscriptionResources
@@ -68,7 +73,16 @@ public class EmailAggregator {
                                              * The actual recipients list is a subset of the candidates.
                                              * The target endpoints properties will determine whether or not each candidate will actually receive an email.
                                              */
-                                            recipientResolver.recipientUsers(aggregationKey.getAccountId(), endpoints, users)
+                                            recipientResolver.recipientUsers(
+                                                    aggregationKey.getAccountId(),
+                                                    Stream.concat(
+                                                            endpoints
+                                                                    .stream()
+                                                                    .map(RecipientResolverRequest::fromEmailSubscriptionEndpoint),
+                                                            getRecipientResolverRequests(aggregation).stream()
+                                                    ).collect(Collectors.toSet()),
+                                                    users
+                                            )
                                     )
                             )
                             /*
@@ -111,6 +125,20 @@ public class EmailAggregator {
 
     private String getEventType(EmailAggregation aggregation) {
         return aggregation.getPayload().getString(EVENT_TYPE_KEY);
+    }
+
+    private Set<RecipientResolverRequest> getRecipientResolverRequests(EmailAggregation aggregation) {
+        if (aggregation.getPayload().getJsonObject(RECIPIENTS_KEY) != null) {
+            JsonObject recipients = aggregation.getPayload().getJsonObject(RECIPIENTS_KEY);
+            return Set.of(
+                    RecipientResolverRequest.builder()
+                            .onlyAdmins(recipients.getBoolean(RECIPIENT_NOTIFY_ADMIN_KEY, false))
+                            .ignoreUserPreferences(recipients.getBoolean(RECIPIENT_IGNORE_USER_PREF_KEY, false))
+                            .build()
+            );
+        }
+
+        return Set.of();
     }
 
 }

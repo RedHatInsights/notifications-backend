@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
@@ -134,10 +135,24 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             return Multi.createFrom().empty();
         }
 
+        Set<RecipientResolverRequest> requests = endpoints.stream()
+                .map(RecipientResolverRequest::fromEmailSubscriptionEndpoint)
+                .collect(Collectors.toSet());
+
+        var recipients = action.getRecipients();
+        if (recipients != null) {
+            requests.add(
+                RecipientResolverRequest.builder()
+                        .onlyAdmins(recipients.getNotifyAdmins())
+                        .ignoreUserPreferences(recipients.getForceSend())
+                        .build()
+            );
+        }
+
         return subscriptionResources
                 .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType)
                 .onItem().transform(Set::copyOf)
-                .onItem().transformToUni(subscribers -> recipientResolver.recipientUsers(action.getAccountId(), endpoints, subscribers))
+                .onItem().transformToUni(subscribers -> recipientResolver.recipientUsers(action.getAccountId(), requests, subscribers))
         .onItem().transformToMulti(Multi.createFrom()::iterable)
         .onItem().transformToUniAndConcatenate(user -> emailSender.sendEmail(user, event, subject, body));
     }

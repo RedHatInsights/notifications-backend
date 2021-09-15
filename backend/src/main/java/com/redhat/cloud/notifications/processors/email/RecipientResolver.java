@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
-import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import io.smallrye.mutiny.Multi;
@@ -23,24 +21,22 @@ public class RecipientResolver {
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
-    public Uni<Set<User>> recipientUsers(String accountId, Set<Endpoint> endpoints, Set<String> subscribers) {
-        return Multi.createFrom().iterable(endpoints)
-                .onItem().transformToUni(e -> recipientUsers(accountId, e, subscribers))
+    public Uni<Set<User>> recipientUsers(String accountId, Set<RecipientResolverRequest> requests, Set<String> subscribers) {
+        return Multi.createFrom().iterable(requests)
+                .onItem().transformToUni(r -> recipientUsers(accountId, r, subscribers))
                 .concatenate().collect().in(HashSet::new, Set::addAll);
     }
 
-    private Uni<Set<User>> recipientUsers(String accountId, Endpoint endpoint, Set<String> subscribers) {
-        final EmailSubscriptionProperties props = endpoint.getProperties(EmailSubscriptionProperties.class);
-
+    private Uni<Set<User>> recipientUsers(String accountId, RecipientResolverRequest request, Set<String> subscribers) {
         Uni<List<User>> usersUni;
-        if (props.getGroupId() == null) {
-            usersUni = rbacRecipientUsersProvider.getUsers(accountId, props.isOnlyAdmins());
+        if (request.getGroupId() == null) {
+            usersUni = rbacRecipientUsersProvider.getUsers(accountId, request.isOnlyAdmins());
         } else {
-            usersUni = rbacRecipientUsersProvider.getGroupUsers(accountId, props.isOnlyAdmins(), props.getGroupId());
+            usersUni = rbacRecipientUsersProvider.getGroupUsers(accountId, request.isOnlyAdmins(), request.getGroupId());
         }
 
         return usersUni.onItem().transform(users -> {
-            if (props.isIgnorePreferences()) {
+            if (request.isIgnoreUserPreferences()) {
                 return Set.copyOf(users);
             }
 

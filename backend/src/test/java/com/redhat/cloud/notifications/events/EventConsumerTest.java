@@ -318,6 +318,7 @@ public class EventConsumerTest {
 
     private static Action buildValidAction() {
         Action action = new Action();
+        action.setVersion("v1.0.0");
         action.setBundle(BUNDLE);
         action.setApplication(APP);
         action.setEventType(EVENT_TYPE);
