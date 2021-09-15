@@ -1,6 +1,5 @@
-package com.redhat.cloud.notifications.processors.email;
+package com.redhat.cloud.notifications.recipients;
 
-import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
