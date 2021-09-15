@@ -8,7 +8,6 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
-import org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.jboss.logging.Logger;
@@ -17,12 +16,18 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import java.util.UUID;
+
+import static org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy.PRE_PROCESSING;
+
 @ApplicationScoped
 public class EventConsumer {
 
     public static final String INGRESS_CHANNEL = "ingress";
     public static final String REJECTED_COUNTER_NAME = "input.rejected";
     public static final String PROCESSING_ERROR_COUNTER_NAME = "input.processing.error";
+    public static final String DUPLICATE_COUNTER_NAME = "input.duplicate";
+    public static final String CONSUMED_COUNTER_NAME = "input.consumed";
 
     private static final Logger LOGGER = Logger.getLogger(EventConsumer.class);
 
@@ -41,56 +46,128 @@ public class EventConsumer {
     @Inject
     EventResources eventResources;
 
-    private Counter rejectedCount;
-    private Counter processingErrorCount;
+    @Inject
+    KafkaMessageDeduplicator kafkaMessageDeduplicator;
+
+    private Counter rejectedCounter;
+    private Counter processingErrorCounter;
+    private Counter duplicateCounter;
+    private Counter consumedCounter;
 
     @PostConstruct
     public void init() {
-        rejectedCount = registry.counter(REJECTED_COUNTER_NAME);
-        processingErrorCount = registry.counter(PROCESSING_ERROR_COUNTER_NAME);
+        rejectedCounter = registry.counter(REJECTED_COUNTER_NAME);
+        processingErrorCounter = registry.counter(PROCESSING_ERROR_COUNTER_NAME);
+        duplicateCounter = registry.counter(DUPLICATE_COUNTER_NAME);
+        consumedCounter = registry.counter(CONSUMED_COUNTER_NAME);
     }
 
     @Incoming(INGRESS_CHANNEL)
-    @Acknowledgment(Strategy.PRE_PROCESSING)
-    // Can be modified to use Multi<Message<String>> input also for more concurrency
-    public Uni<Void> processAsync(Message<String> input) {
-        String payload = input.getPayload();
+    @Acknowledgment(PRE_PROCESSING)
+    public Uni<Void> processAsync(Message<String> message) {
+        String payload = message.getPayload();
         /*
          * Step 1
-         * The payload JSON is parsed into an Action. It can throw an UncheckedIOException if the parsing fails.
+         * The payload (JSON) is parsed into an Action.
          */
         return actionParser.fromJsonString(payload)
-                .onItem().invoke(action -> LOGGER.infof("Processing received action: (%s) %s/%s/%s",
-                        action.getAccountId(), action.getBundle(), action.getApplication(), action.getEventType())
-                )
-                /*
-                 * Step 2
-                 * The payload JSON was successfully parsed. The resulting Action contains a bundle/app/eventType triplet
-                 * which is used to retrieve an EventType from the DB. If the event type is found, an Event is created
-                 * and persisted. Otherwise, a NoResultException is thrown.
-                 */
-                .onItem().transformToUni(action -> appResources.getEventType(action.getBundle(), action.getApplication(), action.getEventType())
-                        .onItem().transformToUni(eventType -> {
-                            Event event = new Event(eventType, payload, action);
-                            return eventResources.create(event);
-                        })
-                )
-                // If an exception was thrown during steps 1 or 2, the payload is considered rejected.
-                .onFailure().invoke(() -> rejectedCount.increment())
-                /*
-                 * Step 3
-                 * The Event and the Action it contains are processed by all relevant endpoint processors.
-                 */
-                .onItem().transformToUni(event -> endpointProcessor.process(event)
-                        .onFailure().invoke(() -> processingErrorCount.increment())
-                )
+                .onFailure().invoke(() -> {
+                    /*
+                     * An exception (most likely UncheckedIOException) was thrown during the payload parsing. The message
+                     * is therefore considered rejected.
+                     */
+                    rejectedCounter.increment();
+                })
+                .onItem().transformToUni(action -> {
+                    /*
+                     * The payload was successfully parsed. The resulting Action contains a bundle/app/eventType triplet
+                     * which is logged.
+                     */
+                    String bundleName = action.getBundle();
+                    String appName = action.getApplication();
+                    String eventTypeName = action.getEventType();
+                    LOGGER.infof("Processing received action: (%s) %s/%s/%s", action.getAccountId(), bundleName, appName, eventTypeName);
+                    /*
+                     * Step 2
+                     * The message ID is extracted from the Kafka message headers. It can be null for now to give the
+                     * onboarded apps time to change their integration and start sending the new header. The message ID
+                     * may become mandatory later. If so, we may want to throw an exception when it is null.
+                     */
+                    UUID messageId = kafkaMessageDeduplicator.findMessageId(bundleName, appName, message);
+                    /*
+                     * Step 3
+                     * It's time to check if the message ID is already known. For now, messages without an ID
+                     * (messageId == null) are always considered new.
+                     */
+                    return kafkaMessageDeduplicator.isDuplicate(messageId)
+                            .onItem().transformToUni(isDuplicate -> {
+                                if (isDuplicate) {
+                                    /*
+                                     * The message ID is already known which means we already processed the current
+                                     * message and sent notifications. The message is therefore ignored.
+                                     */
+                                    duplicateCounter.increment();
+                                    return Uni.createFrom().voidItem();
+                                } else {
+                                    /*
+                                     * Step 4
+                                     * The message ID is new. We need to retrieve an EventType from the DB using the
+                                     * bundle/app/eventType triplet from the parsed Action.
+                                     */
+                                    return appResources.getEventType(bundleName, appName, eventTypeName)
+                                            .onFailure().invoke(() -> {
+                                                /*
+                                                 * A NoResultException was thrown because no EventType was found. The
+                                                 * message is therefore considered rejected.
+                                                 */
+                                                rejectedCounter.increment();
+                                            })
+                                            .onItem().transformToUni(eventType -> {
+                                                /*
+                                                 * Step 5
+                                                 * The EventType was found. It's time to create an Event from the current
+                                                 * message and persist it.
+                                                 */
+                                                Event event = new Event(eventType, payload, action);
+                                                return eventResources.create(event);
+                                            })
+                                            /*
+                                             * Step 6
+                                             * The Event and the Action it contains are processed by all relevant endpoint
+                                             * processors.
+                                             */
+                                            .onItem().transformToUni(event -> endpointProcessor.process(event)
+                                                    .onFailure().invoke(() -> {
+                                                        /*
+                                                         * The Event processing failed.
+                                                         */
+                                                        processingErrorCounter.increment();
+                                                    })
+                                            )
+                                            .eventually(() -> {
+                                                /*
+                                                 * Step 7
+                                                 * The Kafka message processing is done and its ID is persisted no matter
+                                                 * what the processing outcome is (success or failure). That message ID
+                                                 * will never be processed again as long as it stays in the DB.
+                                                 */
+                                                return kafkaMessageDeduplicator.registerMessageId(messageId);
+                                            });
+                                }
+                            });
+                })
                 .onItemOrFailure().transformToUni((unused, throwable) -> {
-                    // If an exception was thrown during steps 1, 2 or 3, an INFO entry with the payload is added to the log.
                     if (throwable != null) {
+                        /*
+                         * An exception was thrown at some point during the Kafka message processing, it is logged.
+                         */
                         LOGGER.infof(throwable, "Could not process the payload: %s", payload);
                     }
+                    /*
+                     * This counter main purpose is to prevent a test race condition.
+                     */
+                    consumedCounter.increment();
                     return Uni.createFrom().voidItem();
                 });
     }
-
 }
