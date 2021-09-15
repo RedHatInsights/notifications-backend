@@ -143,8 +143,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         if (recipients != null) {
             requests.add(
                 RecipientResolverRequest.builder()
-                        .onlyAdmins(recipients.getNotifyAdmins())
-                        .ignoreUserPreferences(recipients.getForceSend())
+                        .onlyAdmins(recipients.getOnlyAdmins())
+                        .ignoreUserPreferences(recipients.getIgnoreUserPreferences())
                         .build()
             );
         }

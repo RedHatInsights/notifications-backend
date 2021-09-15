@@ -421,6 +421,7 @@ public class LifecycleITest extends DbIsolatedTest {
     private void emitMockedIngressAction() throws IOException {
         Action action = new Action();
         action.setAccountId("tenant");
+        action.setVersion("v1.0.0");
         action.setBundle(BUNDLE_NAME);
         action.setApplication(APP_NAME);
         action.setEventType(EVENT_TYPE_NAME);
