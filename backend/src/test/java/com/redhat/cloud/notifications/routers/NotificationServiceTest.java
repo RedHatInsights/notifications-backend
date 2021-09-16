@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import com.redhat.cloud.notifications.MockServerConfig;
@@ -19,7 +20,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +35,6 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.TestThreadHelper.runOnWorkerThread;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
-import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -358,8 +357,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .get("/notifications/eventTypes")
                 .then()
-                .statusCode(403)
-                .contentType(JSON);
+                .statusCode(403);
 
         given()
                 .header(noAccessIdentityHeader)
@@ -367,8 +365,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
                 .then()
-                .statusCode(403)
-                .contentType(JSON);
+                .statusCode(403);
 
         given()
                 .header(noAccessIdentityHeader)
@@ -376,8 +373,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
-                .statusCode(403)
-                .contentType(JSON);
+                .statusCode(403);
 
         given()
                 .header(readAccessIdentityHeader)
@@ -387,8 +383,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
                 .then()
-                .statusCode(403)
-                .contentType(TEXT);
+                .statusCode(403);
 
         given()
                 .header(noAccessIdentityHeader)
@@ -396,8 +391,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
                 .then()
-                .statusCode(403)
-                .contentType(JSON);
+                .statusCode(403);
 
         given()
                 .header(readAccessIdentityHeader)
@@ -407,8 +401,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .post("/notifications/behaviorGroups")
                 .then()
-                .statusCode(403)
-                .contentType(JSON);
+                .statusCode(403);
 
         given()
                 .header(readAccessIdentityHeader)
@@ -419,8 +412,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .put("/notifications/behaviorGroups/{id}")
                 .then()
-                .statusCode(403)
-                .contentType(JSON);
+                .statusCode(403);
 
         given()
                 .header(readAccessIdentityHeader)
@@ -428,8 +420,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .delete("/notifications/behaviorGroups/{id}")
                 .then()
-                .statusCode(403)
-                .contentType(JSON);
+                .statusCode(403);
 
         given()
                 .header(readAccessIdentityHeader)
@@ -439,8 +430,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
                 .then()
-                .statusCode(403)
-                .contentType(TEXT);
+                .statusCode(403);
 
         given()
                 .header(noAccessIdentityHeader)
@@ -448,7 +438,6 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .when()
                 .get("/notifications/bundles/{bundleId}/behaviorGroups")
                 .then()
-                .statusCode(403)
-                .contentType(JSON);
+                .statusCode(403);
     }
 }

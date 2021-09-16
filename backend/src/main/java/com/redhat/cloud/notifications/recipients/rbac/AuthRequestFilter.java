@@ -16,7 +16,7 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.logging.Logger;
 
-class AuthRequestFilter implements ClientRequestFilter {
+public class AuthRequestFilter implements ClientRequestFilter {
 
     static final String RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY = "rbac.service-to-service.application";
     static final String RBAC_SERVICE_TO_SERVICE_APPLICATION_DEFAULT = "notifications";

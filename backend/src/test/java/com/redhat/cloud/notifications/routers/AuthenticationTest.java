@@ -16,7 +16,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -67,8 +66,7 @@ public class AuthenticationTest {
                 .header(identityHeader)
                 .when().get("/endpoints")
                 .then()
-                .statusCode(403)
-                .contentType(JSON);
+                .statusCode(403);
 
         clearRbacCache();
 
