@@ -10,6 +10,7 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @QuarkusTest
 public class RecipientResolverTest {
@@ -18,6 +19,34 @@ public class RecipientResolverTest {
 
     @InjectMock
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
+
+    private static class TestRequest extends RecipientResolverRequest {
+
+        private final boolean onlyAdmins;
+        private final boolean ignoreUserPreferences;
+        private final UUID groupId;
+
+        public TestRequest(boolean onlyAdmins, boolean ignoreUserPreferences, UUID groupId) {
+            this.onlyAdmins = onlyAdmins;
+            this.ignoreUserPreferences = ignoreUserPreferences;
+            this.groupId = groupId;
+        }
+
+        @Override
+        public boolean isOnlyAdmins() {
+            return onlyAdmins;
+        }
+
+        @Override
+        public boolean isIgnoreUserPreferences() {
+            return ignoreUserPreferences;
+        }
+
+        @Override
+        public UUID getGroupId() {
+            return groupId;
+        }
+    }
 
     @Test
     public void withPersonalizedEmailOn() {
@@ -51,7 +80,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                    RecipientResolverRequest.builder().build()
+                        new TestRequest(false, false, null)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -71,7 +100,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        RecipientResolverRequest.builder().onlyAdmins(true).build()
+                        new TestRequest(true, false, null)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -91,7 +120,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        RecipientResolverRequest.builder().ignoreUserPreferences(true).build()
+                        new TestRequest(false, true, null)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -111,7 +140,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        RecipientResolverRequest.builder().onlyAdmins(true).ignoreUserPreferences(true).build()
+                        new TestRequest(true, true, null)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -131,8 +160,8 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        RecipientResolverRequest.builder().onlyAdmins(false).ignoreUserPreferences(false).build(),
-                        RecipientResolverRequest.builder().onlyAdmins(true).ignoreUserPreferences(true).build()
+                        new TestRequest(false, false, null),
+                        new TestRequest(true, true, null)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -156,8 +185,8 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        RecipientResolverRequest.builder().onlyAdmins(false).ignoreUserPreferences(true).build(),
-                        RecipientResolverRequest.builder().onlyAdmins(true).ignoreUserPreferences(true).build()
+                        new TestRequest(false, true, null),
+                        new TestRequest(true, true, null)
                 ),
                 subscribedUsers
         ).subscribe()

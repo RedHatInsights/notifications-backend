@@ -1,32 +1,13 @@
-package com.redhat.cloud.notifications.processors.email;
-
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
-import com.redhat.cloud.notifications.models.Endpoint;
+package com.redhat.cloud.notifications.recipients;
 
 import java.util.Objects;
 import java.util.UUID;
 
-public class RecipientResolverRequest {
+public abstract class RecipientResolverRequest {
 
-    private boolean sendToAdmins;
-    private boolean ignoreUserPreferences;
-    private UUID groupId;
-
-    private RecipientResolverRequest() {
-
-    }
-
-    public boolean isOnlyAdmins() {
-        return this.sendToAdmins;
-    }
-
-    public boolean isIgnoreUserPreferences() {
-        return this.ignoreUserPreferences;
-    }
-
-    public UUID getGroupId() {
-        return this.groupId;
-    }
+    public abstract boolean isOnlyAdmins();
+    public abstract boolean isIgnoreUserPreferences();
+    public abstract UUID getGroupId();
 
     @Override
     public boolean equals(Object o) {
@@ -39,60 +20,13 @@ public class RecipientResolverRequest {
         }
 
         RecipientResolverRequest that = (RecipientResolverRequest) o;
-        return sendToAdmins == that.sendToAdmins && ignoreUserPreferences == that.ignoreUserPreferences &&
-                Objects.equals(groupId, that.groupId);
+        return this.isOnlyAdmins() == that.isOnlyAdmins() && this.isIgnoreUserPreferences() == that.isIgnoreUserPreferences() &&
+                Objects.equals(this.getGroupId(), that.getGroupId());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sendToAdmins, ignoreUserPreferences, groupId);
+        return Objects.hash(isOnlyAdmins(), isIgnoreUserPreferences(), getGroupId());
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static RecipientResolverRequest fromEmailSubscriptionEndpoint(Endpoint endpoint) {
-        EmailSubscriptionProperties props = endpoint.getProperties(EmailSubscriptionProperties.class);
-        return RecipientResolverRequest
-                .builder()
-                .ignoreUserPreferences(props.isIgnorePreferences())
-                .onlyAdmins(props.isOnlyAdmins())
-                .setGroupId(props.getGroupId())
-                .build();
-    }
-
-    public static class Builder {
-
-        private boolean onlyAdmins;
-        private boolean ignoreUserPreferences;
-        private UUID groupId;
-
-        private Builder() {
-
-        }
-
-        public Builder onlyAdmins(boolean sendToAdmins) {
-            this.onlyAdmins = sendToAdmins;
-            return this;
-        }
-
-        public Builder ignoreUserPreferences(boolean forceSend) {
-            this.ignoreUserPreferences = forceSend;
-            return this;
-        }
-
-        public Builder setGroupId(UUID groupId) {
-            this.groupId = groupId;
-            return this;
-        }
-
-        public RecipientResolverRequest build() {
-            RecipientResolverRequest request = new RecipientResolverRequest();
-            request.sendToAdmins = this.onlyAdmins;
-            request.ignoreUserPreferences = this.ignoreUserPreferences;
-            request.groupId = this.groupId;
-            return request;
-        }
-    }
 }

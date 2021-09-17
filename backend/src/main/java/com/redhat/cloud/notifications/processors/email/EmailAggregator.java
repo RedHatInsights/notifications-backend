@@ -13,6 +13,8 @@ import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadA
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.RecipientResolverRequest;
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.request.adapter.ActionAdapter;
+import com.redhat.cloud.notifications.recipients.request.adapter.EndpointAdapter;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -79,7 +81,7 @@ public class EmailAggregator {
                                                                 Stream.concat(
                                                                         endpoints
                                                                                 .stream()
-                                                                                .map(RecipientResolverRequest::fromEmailSubscriptionEndpoint),
+                                                                                .map(EndpointAdapter::new),
                                                                         getRecipientResolverRequests(action).stream()
                                                                 ).collect(Collectors.toSet()),
                                                                 users
@@ -127,12 +129,7 @@ public class EmailAggregator {
 
     private Set<RecipientResolverRequest> getRecipientResolverRequests(Action action) {
         if (action.getRecipients() != null) {
-            return Set.of(
-                    RecipientResolverRequest.builder()
-                            .onlyAdmins(action.getRecipients().getOnlyAdmins())
-                            .ignoreUserPreferences(action.getRecipients().getIgnoreUserPreferences())
-                            .build()
-            );
+            return Set.of(new ActionAdapter(action));
         }
 
         return Set.of();
