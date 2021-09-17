@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import org.hibernate.Session;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
@@ -37,6 +38,7 @@ public class EmailAggregationResources {
                 .getResultList();
     }
 
+    @ActivateRequestContext
     public CronJobRun getLastCronJobRun() {
         String query = "FROM CronJobRun";
         return session.createQuery(query, CronJobRun.class).getSingleResult();
