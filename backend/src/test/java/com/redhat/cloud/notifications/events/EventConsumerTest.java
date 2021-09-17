@@ -11,8 +11,12 @@ import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
+import io.smallrye.reactive.messaging.kafka.OutgoingKafkaRecordMetadata;
+import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,11 +31,20 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
+import static com.redhat.cloud.notifications.events.EventConsumer.CONSUMED_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.EventConsumer.DUPLICATE_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_ERROR_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
+import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_INVALID_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_MISSING_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_VALID_COUNTER_NAME;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -44,7 +57,6 @@ import static org.mockito.Mockito.when;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class EventConsumerTest {
 
-    private static final String TENANT_ID = "test-tenant";
     private static final String BUNDLE = "my-bundle";
     private static final String APP = "Policies";
     private static final String EVENT_TYPE = "Any";
@@ -62,12 +74,23 @@ public class EventConsumerTest {
     @InjectMock
     EventResources eventResources;
 
+    @InjectSpy
+    KafkaMessageDeduplicator kafkaMessageDeduplicator;
+
     @Inject
     CounterAssertionHelper counterAssertionHelper;
 
     @BeforeEach
-    void init() {
-        counterAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSING_ERROR_COUNTER_NAME);
+    void beforeEach() {
+        counterAssertionHelper.saveCounterValuesBeforeTest(
+                REJECTED_COUNTER_NAME,
+                PROCESSING_ERROR_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_VALID_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                CONSUMED_COUNTER_NAME
+        );
     }
 
     @AfterEach
@@ -76,45 +99,169 @@ public class EventConsumerTest {
     }
 
     @Test
-    void testValidMessagePayload() throws IOException {
+    void testValidPayloadWithMessageId() throws IOException {
+        EventType eventType = mockGetEventTypeAndCreateEvent();
+        Action action = buildValidAction();
+        String payload = serializeAction(action);
+        UUID messageId = UUID.randomUUID();
+        Message message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
+        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
+
+        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
+        counterAssertionHelper.assertIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
+        assertNoIncrement(
+                REJECTED_COUNTER_NAME,
+                PROCESSING_ERROR_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME
+        );
+        verifyExactlyOneProcessing(eventType, payload, action);
+        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(messageId);
+    }
+
+    @Test
+    void testValidPayloadWithoutMessageId() throws IOException {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
         String payload = serializeAction(action);
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
-        counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 0);
-        counterAssertionHelper.assertIncrement(PROCESSING_ERROR_COUNTER_NAME, 0);
-        verifyProcessing(eventType, payload, action);
+
+        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
+        counterAssertionHelper.assertIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
+        assertNoIncrement(
+                REJECTED_COUNTER_NAME,
+                PROCESSING_ERROR_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_VALID_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME
+        );
+        verifyExactlyOneProcessing(eventType, payload, action);
+        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
     }
 
     @Test
-    void testInvalidMessagePayload() {
-        inMemoryConnector.source(INGRESS_CHANNEL).send("I am not a valid payload!");
+    void testInvalidPayloadWithMessageId() {
+        Message message = buildMessageWithId(UUID.randomUUID().toString().getBytes(UTF_8), "I am not a valid payload!");
+        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
+
+        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
         counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(PROCESSING_ERROR_COUNTER_NAME, 0);
+        assertNoIncrement(
+                PROCESSING_ERROR_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_VALID_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME
+        );
         verify(endpointProcessor, never()).process(any(Event.class));
+        verify(kafkaMessageDeduplicator, never()).registerMessageId(any(UUID.class));
     }
 
     @Test
-    void testUnknownEventType() throws IOException {
+    void testUnknownEventTypeWithoutMessageId() throws IOException {
         mockGetUnknownEventType();
         Action action = buildValidAction();
         String payload = serializeAction(action);
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
+
+        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
+        counterAssertionHelper.assertIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(PROCESSING_ERROR_COUNTER_NAME, 0);
+        assertNoIncrement(
+                PROCESSING_ERROR_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_VALID_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME
+        );
         verify(endpointProcessor, never()).process(any(Event.class));
+        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
     }
 
     @Test
-    void testProcessingError() throws IOException {
+    void testProcessingErrorWithoutMessageId() throws IOException {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         mockProcessingFailure();
         Action action = buildValidAction();
         String payload = serializeAction(action);
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
-        counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 0);
+
+        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
+        counterAssertionHelper.assertIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         counterAssertionHelper.assertIncrement(PROCESSING_ERROR_COUNTER_NAME, 1);
-        verifyProcessing(eventType, payload, action);
+        assertNoIncrement(
+                REJECTED_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_VALID_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME
+        );
+        verifyExactlyOneProcessing(eventType, payload, action);
+        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
+    }
+
+    @Test
+    void testDuplicatePayload() throws IOException {
+        EventType eventType = mockGetEventTypeAndCreateEvent();
+        Action action = buildValidAction();
+        String payload = serializeAction(action);
+        UUID messageId = UUID.randomUUID();
+        Message message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
+        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
+        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
+
+        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 2);
+        counterAssertionHelper.assertIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 2);
+        counterAssertionHelper.assertIncrement(DUPLICATE_COUNTER_NAME, 1);
+        assertNoIncrement(
+                REJECTED_COUNTER_NAME,
+                PROCESSING_ERROR_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME
+        );
+        verifyExactlyOneProcessing(eventType, payload, action);
+        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(messageId);
+    }
+
+    @Test
+    void testNullMessageId() throws IOException {
+        EventType eventType = mockGetEventTypeAndCreateEvent();
+        Action action = buildValidAction();
+        String payload = serializeAction(action);
+        Message message = buildMessageWithId(null, payload);
+        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
+
+        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
+        counterAssertionHelper.assertIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
+        assertNoIncrement(
+                REJECTED_COUNTER_NAME,
+                PROCESSING_ERROR_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_VALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME
+        );
+        verifyExactlyOneProcessing(eventType, payload, action);
+        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
+    }
+
+    @Test
+    void testInvalidMessageId() throws IOException {
+        EventType eventType = mockGetEventTypeAndCreateEvent();
+        Action action = buildValidAction();
+        String payload = serializeAction(action);
+        Message message = buildMessageWithId("I am not a valid UUID!".getBytes(UTF_8), payload);
+        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
+
+        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
+        counterAssertionHelper.assertIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
+        assertNoIncrement(
+                REJECTED_COUNTER_NAME,
+                PROCESSING_ERROR_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_VALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME
+        );
+        verifyExactlyOneProcessing(eventType, payload, action);
+        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
     }
 
     private EventType mockGetEventTypeAndCreateEvent() {
@@ -141,13 +288,19 @@ public class EventConsumerTest {
         );
     }
 
-    private void verifyProcessing(EventType eventType, String payload, Action action) {
+    private void verifyExactlyOneProcessing(EventType eventType, String payload, Action action) {
         ArgumentCaptor<Event> argumentCaptor = ArgumentCaptor.forClass(Event.class);
         verify(endpointProcessor, times(1)).process(argumentCaptor.capture());
-        assertEquals(TENANT_ID, argumentCaptor.getValue().getAccountId());
+        assertEquals(DEFAULT_ACCOUNT_ID, argumentCaptor.getValue().getAccountId());
         assertEquals(eventType, argumentCaptor.getValue().getEventType());
         assertEquals(payload, argumentCaptor.getValue().getPayload());
         assertEquals(action, argumentCaptor.getValue().getAction());
+    }
+
+    private void assertNoIncrement(String... counterNames) {
+        for (String counterName : counterNames) {
+            counterAssertionHelper.assertIncrement(counterName, 0);
+        }
     }
 
     private static Action buildValidAction() {
@@ -156,7 +309,7 @@ public class EventConsumerTest {
         action.setApplication(APP);
         action.setEventType(EVENT_TYPE);
         action.setTimestamp(LocalDateTime.now());
-        action.setAccountId(TENANT_ID);
+        action.setAccountId(DEFAULT_ACCOUNT_ID);
         action.setEvents(
                 List.of(
                         com.redhat.cloud.notifications.ingress.Event
@@ -169,5 +322,12 @@ public class EventConsumerTest {
 
         action.setContext(new HashMap());
         return action;
+    }
+
+    private static Message buildMessageWithId(byte[] messageId, String payload) {
+        OutgoingKafkaRecordMetadata metadata = OutgoingKafkaRecordMetadata.builder()
+                .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, messageId))
+                .build();
+        return Message.of(payload).addMetadata(metadata);
     }
 }
