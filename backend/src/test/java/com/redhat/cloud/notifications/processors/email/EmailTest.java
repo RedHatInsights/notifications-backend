@@ -34,7 +34,6 @@ import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
@@ -279,7 +278,6 @@ public class EmailTest extends DbIsolatedTest {
     }
 
     @Test
-    @Disabled
     void testEmailSubscriptionDaily() {
         mockGetUsers(8, false);
         final String tenant1 = "tenant1";
