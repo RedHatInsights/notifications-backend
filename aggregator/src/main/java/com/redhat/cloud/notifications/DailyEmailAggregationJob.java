@@ -10,6 +10,7 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.jboss.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ public class DailyEmailAggregationJob {
         this.objectMapper = objectMapper;
     }
 
+    @ActivateRequestContext
     public void processDailyEmail() {
         if (!isCronJobEnabled()) {
             return;
