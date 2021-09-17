@@ -13,7 +13,6 @@ import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.Facet;
 import io.smallrye.mutiny.Uni;
-import io.vertx.mutiny.core.Vertx;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -38,7 +37,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -54,16 +52,10 @@ import static javax.ws.rs.core.Response.Status;
 public class NotificationService {
 
     @Inject
-    Vertx vertx;
-
-    @Inject
     BundleResources bundleResources;
 
     @Inject
     ApplicationResources apps;
-
-    @Inject
-    EndpointResources resources;
 
     @Inject
     BehaviorGroupResources behaviorGroupResources;
@@ -78,25 +70,6 @@ public class NotificationService {
         });
     }
 
-// We do not yet use this API yet and the return type is polluting the openapi with "internal details" because we are
-// directly using an avro generated code.
-//    @GET
-//    @Produces(MediaType.SERVER_SENT_EVENTS)
-//    @Path("/updates")
-//    public Multi<Notification> getNotificationUpdates(@Context SecurityContext sec) {
-//        // TODO Check the Notification type if we want something else
-//        // TODO Process:
-//        //      - Fetch the last unread notifications (with some limit?)
-//        //         - If we're not previously subscribed, add the last n-days of notifications to our unread list?
-//        //          - Add subscription to our subscription base to receive future notifications
-//        //      - Subscribe to VertX eventBus listening for: notifications<tenantId><userId>
-//        return vertx.eventBus().consumer(getAddress(sec.getUserPrincipal()))
-//                .toMulti()
-//                // TODO Verify that toMulti subscribes to a hot stream, not cold!
-//                .onItem()
-//                .transform(m -> (Notification) m.body());
-//    }
-
     @DELETE
     @Path("/{id}")
     @Produces(TEXT_PLAIN)
@@ -105,18 +78,6 @@ public class NotificationService {
         // Mark the notification id for <tenantId><userId> 's subscription as read
         return Uni.createFrom().nullItem();
     }
-
-    // TODO Mark all as read?
-
-    // TODO DB structure? <tenantId><userId><notificationId><read> ? Will we show old read-messages or not? Do we vacuum old items from the subscriptions?
-
-    private String getAddress(Principal principal) {
-        // TODO This should call some global point which is used by the Processor interface to push data to the same queue names
-        RhIdPrincipal rhUser = (RhIdPrincipal) principal;
-        return String.format("notifications-%s", rhUser.getAccount());
-    }
-
-    // Event type linking
 
     @GET
     @Path("/eventTypes")
