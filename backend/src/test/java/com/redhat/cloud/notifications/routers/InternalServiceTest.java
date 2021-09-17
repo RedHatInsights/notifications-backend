@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.Application;
@@ -7,7 +8,6 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
@@ -21,6 +21,7 @@ import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
 import static javax.ws.rs.core.Response.Status.Family.familyOf;
 import static org.hamcrest.Matchers.any;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -320,7 +321,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .put("/internal/bundles/{bundleId}")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(TEXT.toString()) : any(String.class));
+                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? containsString(TEXT.toString()) : any(String.class));
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             getBundle(bundleId, bundle.getName(), bundle.getDisplayName(), OK);
@@ -435,7 +436,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .put("/internal/applications/{appId}")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(TEXT.toString()) : any(String.class));
+                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? containsString(TEXT.toString()) : any(String.class));
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             getApp(appId, app.getName(), app.getDisplayName(), OK);
@@ -528,7 +529,7 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .put("/internal/eventTypes/{eventTypeId}")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(TEXT.toString()) : any(String.class));
+                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? containsString(TEXT.toString()) : any(String.class));
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             String responseBody = given()

@@ -317,8 +317,7 @@ public class EventServiceTest extends DbIsolatedTest {
                 .header(noAccessIdentityHeader)
                 .when().get(PATH)
                 .then()
-                .statusCode(403)
-                .contentType(JSON);
+                .statusCode(403);
     }
 
     @Test

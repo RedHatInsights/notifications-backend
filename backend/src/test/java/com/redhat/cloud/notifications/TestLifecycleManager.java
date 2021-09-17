@@ -1,13 +1,7 @@
 package com.redhat.cloud.notifications;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ser.FilterProvider;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
-import io.vertx.core.json.jackson.DatabindCodec;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.MockServerContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -20,7 +14,6 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
@@ -35,7 +28,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     @Override
     public Map<String, String> start() {
         System.out.println("++++  TestLifecycleManager start +++");
-        configureObjectMapper();
         Map<String, String> properties = new HashMap<>();
         try {
             setupPostgres(properties);
@@ -53,14 +45,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
         System.out.println(" -- Running with properties: " + properties);
         return properties;
-    }
-
-    private void configureObjectMapper() {
-        FilterProvider filterProvider = new SimpleFilterProvider().addFilter(ApiResponseFilter.NAME, new ApiResponseFilter());
-        ObjectMapper mapper = DatabindCodec.mapper();
-        mapper.setFilterProvider(filterProvider);
-        mapper.registerModule(new JavaTimeModule());
-        mapper.configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     @Override

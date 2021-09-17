@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -11,7 +12,6 @@ import io.quarkus.cache.CacheInvalidate;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.Header;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
@@ -147,7 +147,7 @@ public class StatusServiceTest extends DbIsolatedTest {
                 .extract().asString();
 
         JsonObject jsonCurrentStatus = new JsonObject(responseBody);
-        jsonCurrentStatus.mapTo(CurrentStatus.class);
+        Json.decodeValue(responseBody, CurrentStatus.class);
         assertEquals(expectedStatus, jsonCurrentStatus.getString("status"));
         if (expectedStartTime == null) {
             assertNull(jsonCurrentStatus.getString("start_time"));

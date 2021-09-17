@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
@@ -23,7 +24,6 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -440,7 +440,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .contentType(JSON)
                 .when()
-                .body(Json.encode(responsePointSingle))
+                .body(responsePointSingle.encode())
                 .put(String.format("/endpoints/%s", responsePointSingle.getString("id")))
                 .then()
                 .statusCode(200)
