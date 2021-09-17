@@ -6,7 +6,9 @@ import java.util.UUID;
 public abstract class RecipientResolverRequest {
 
     public abstract boolean isOnlyAdmins();
+
     public abstract boolean isIgnoreUserPreferences();
+
     public abstract UUID getGroupId();
 
     @Override

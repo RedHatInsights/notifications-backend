@@ -26,7 +26,7 @@ public class RecipientResolverTest {
         private final boolean ignoreUserPreferences;
         private final UUID groupId;
 
-        public TestRequest(boolean onlyAdmins, boolean ignoreUserPreferences, UUID groupId) {
+        TestRequest(boolean onlyAdmins, boolean ignoreUserPreferences, UUID groupId) {
             this.onlyAdmins = onlyAdmins;
             this.ignoreUserPreferences = ignoreUserPreferences;
             this.groupId = groupId;
@@ -59,6 +59,9 @@ public class RecipientResolverTest {
         User admin1 = createUser("admin1", true);
         User admin2 = createUser("admin2", true);
 
+        UUID group1 = UUID.randomUUID();
+        UUID group2 = UUID.randomUUID();
+
         Set<String> subscribedUsers = Set.of("user1", "admin1");
 
         // Setting mocks
@@ -74,6 +77,38 @@ public class RecipientResolverTest {
                 Mockito.eq(true)
         )).thenReturn(Uni.createFrom().item(List.of(
                 admin1, admin2
+        )));
+
+        Mockito.when(rbacRecipientUsersProvider.getGroupUsers(
+                Mockito.eq(ACCOUNT_ID),
+                Mockito.eq(false),
+                Mockito.eq(group1)
+        )).thenReturn(Uni.createFrom().item(List.of(
+                user1, admin1
+        )));
+
+        Mockito.when(rbacRecipientUsersProvider.getGroupUsers(
+                Mockito.eq(ACCOUNT_ID),
+                Mockito.eq(true),
+                Mockito.eq(group1)
+        )).thenReturn(Uni.createFrom().item(List.of(
+                admin1
+        )));
+
+        Mockito.when(rbacRecipientUsersProvider.getGroupUsers(
+                Mockito.eq(ACCOUNT_ID),
+                Mockito.eq(false),
+                Mockito.eq(group2)
+        )).thenReturn(Uni.createFrom().item(List.of(
+                user2, admin2
+        )));
+
+        Mockito.when(rbacRecipientUsersProvider.getGroupUsers(
+                Mockito.eq(ACCOUNT_ID),
+                Mockito.eq(true),
+                Mockito.eq(group2)
+        )).thenReturn(Uni.createFrom().item(List.of(
+                admin2
         )));
 
         // Default request, all subscribed users
@@ -202,6 +237,88 @@ public class RecipientResolverTest {
         Mockito.verify(rbacRecipientUsersProvider, Mockito.times(1)).getUsers(
                 Mockito.eq(ACCOUNT_ID),
                 Mockito.eq(false)
+        );
+        Mockito.verifyNoMoreInteractions(rbacRecipientUsersProvider);
+        Mockito.clearInvocations(rbacRecipientUsersProvider);
+
+        // all subscribed users from group 1
+        recipientResolver.recipientUsers(
+                ACCOUNT_ID,
+                Set.of(
+                        new TestRequest(false, false, group1)
+                ),
+                subscribedUsers
+        ).subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .assertCompleted()
+                .assertItem(Set.of(
+                        user1, admin1
+                ));
+        Mockito.verify(rbacRecipientUsersProvider, Mockito.times(1)).getGroupUsers(
+                Mockito.eq(ACCOUNT_ID),
+                Mockito.eq(false),
+                Mockito.eq(group1)
+        );
+        Mockito.verifyNoMoreInteractions(rbacRecipientUsersProvider);
+        Mockito.clearInvocations(rbacRecipientUsersProvider);
+
+        // all subscribed admins from group 1
+        recipientResolver.recipientUsers(
+                ACCOUNT_ID,
+                Set.of(
+                        new TestRequest(true, false, group1)
+                ),
+                subscribedUsers
+        ).subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .assertCompleted()
+                .assertItem(Set.of(
+                        admin1
+                ));
+        Mockito.verify(rbacRecipientUsersProvider, Mockito.times(1)).getGroupUsers(
+                Mockito.eq(ACCOUNT_ID),
+                Mockito.eq(true),
+                Mockito.eq(group1)
+        );
+        Mockito.verifyNoMoreInteractions(rbacRecipientUsersProvider);
+        Mockito.clearInvocations(rbacRecipientUsersProvider);
+
+        // all subscribed users from group 2
+        recipientResolver.recipientUsers(
+                ACCOUNT_ID,
+                Set.of(
+                        new TestRequest(false, false, group2)
+                ),
+                subscribedUsers
+        ).subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .assertCompleted()
+                .assertItem(Set.of());
+        Mockito.verify(rbacRecipientUsersProvider, Mockito.times(1)).getGroupUsers(
+                Mockito.eq(ACCOUNT_ID),
+                Mockito.eq(false),
+                Mockito.eq(group2)
+        );
+        Mockito.verifyNoMoreInteractions(rbacRecipientUsersProvider);
+        Mockito.clearInvocations(rbacRecipientUsersProvider);
+
+        // all users from group 2 (ignoring preferences)
+        recipientResolver.recipientUsers(
+                ACCOUNT_ID,
+                Set.of(
+                        new TestRequest(false, true, group2)
+                ),
+                subscribedUsers
+        ).subscribe()
+                .withSubscriber(UniAssertSubscriber.create())
+                .assertCompleted()
+                .assertItem(Set.of(
+                        user2, admin2
+                ));
+        Mockito.verify(rbacRecipientUsersProvider, Mockito.times(1)).getGroupUsers(
+                Mockito.eq(ACCOUNT_ID),
+                Mockito.eq(false),
+                Mockito.eq(group2)
         );
         Mockito.verifyNoMoreInteractions(rbacRecipientUsersProvider);
         Mockito.clearInvocations(rbacRecipientUsersProvider);
