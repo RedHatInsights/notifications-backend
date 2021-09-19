@@ -19,6 +19,8 @@ objects:
       clowdapp: notifications-backend
   spec:
     envName: ${ENV_NAME}
+    testing:
+      iqePlugin: notifications
     deployments:
     - name: notifications-backend
       minReplicas: ${{MIN_REPLICAS}}
