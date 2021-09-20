@@ -204,7 +204,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                                     result.size()
                             )
                     );
-                });
+                })
+                .eventually(() -> emailAggregationResources.updateLastCronJobRun(endTime));
     }
 
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {

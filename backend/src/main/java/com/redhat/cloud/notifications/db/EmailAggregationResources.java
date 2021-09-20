@@ -52,4 +52,12 @@ public class EmailAggregationResources {
                 .setParameter("created", lastUsedTime)
                 .executeUpdate();
     }
+
+    // TODO Delete this method when we're done migrating to the new aggregator.
+    public Uni<Integer> updateLastCronJobRun(LocalDateTime lastRun) {
+        String query = "UPDATE cronjob_run SET last_run = :lastRun";
+        return statelessSession.createNativeQuery(query)
+                .setParameter("lastRun", lastRun)
+                .executeUpdate();
+    }
 }
