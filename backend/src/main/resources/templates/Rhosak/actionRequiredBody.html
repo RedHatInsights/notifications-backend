@@ -1,6 +1,48 @@
 {#include Rhosak/insightsEmailBody}
-{#content-title} Action Required - {action.context.system_check_in.toUtcFormat()}{/content-title}
+{#content-title}Action Required - {action.context.system_check_in.toUtcFormat()}{/content-title}
 {#content-body}
-<!-- TODO put email content here -->
+<tr>
+    <td class="rh-content__block">
+        <p>This notification is for your {action.events.size()} Kafka {#if action.events.size() is 1} instance {#else} instances{/if} below.</p>
+        <ul>
+            {#each action.events}
+            <li style="font-size: 14px;">
+                {it.payload.name}
+            </li>
+            {/each}
+        </ul>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <div class="rh-stack">
+            <b>{action.context.issue_description}</b>
+        </div>
+    </td>
+</tr>
+
+<tr>
+    <td class="rh-content__block">
+        <div class="rh-stack">
+            <b>{action.context.action_required}</b>
+        </div>
+    </td>
+</tr>
+
+<tr>
+    <td class="rh-content__block">
+        <table align="center">
+            <tr>
+                <td class="rh-cta-link" align="center">
+                    <a target="_blank" href="https://console.redhat.com/beta/application-services/streams/kafkas">
+                                <span>
+                                  Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+                                </span>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
 {/content-body}
 {/include}

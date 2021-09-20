@@ -1,1 +1,1 @@
-{action.context.system_check_in.toUtcFormat()} - {action.events.size()} {#if action.events.size() is 1} Action {#else} Actions {/if} Required on {action.context.display_name}
+Action Required {action.context.system_check_in.toUtcFormat()} - This notification is for your {action.events.size()} Kafka {#if action.events.size() is 1} instance {#else} instances{/if}
