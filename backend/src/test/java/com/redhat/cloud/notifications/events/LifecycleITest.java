@@ -427,6 +427,7 @@ public class LifecycleITest extends DbIsolatedTest {
         action.setEventType(EVENT_TYPE_NAME);
         action.setTimestamp(LocalDateTime.now());
         action.setContext(Map.of());
+        action.setRecipients(List.of());
         action.setEvents(List.of(
                 Event.newBuilder()
                         .setMetadataBuilder(Metadata.newBuilder())

@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -11,9 +10,8 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
-import com.redhat.cloud.notifications.recipients.RecipientResolverRequest;
 import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.recipients.request.adapter.ActionAdapter;
+import com.redhat.cloud.notifications.recipients.request.adapter.ActionRecipientAdapter;
 import com.redhat.cloud.notifications.recipients.request.adapter.EndpointAdapter;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.smallrye.mutiny.Multi;
@@ -82,7 +80,7 @@ public class EmailAggregator {
                                                                         endpoints
                                                                                 .stream()
                                                                                 .map(EndpointAdapter::new),
-                                                                        getRecipientResolverRequests(action).stream()
+                                                                        ActionRecipientAdapter.fromAction(action).stream()
                                                                 ).collect(Collectors.toSet()),
                                                                 users
                                                         )
@@ -125,14 +123,6 @@ public class EmailAggregator {
     private void fillUsers(EmailAggregationKey aggregationKey, User user, Map<User, AbstractEmailPayloadAggregator> aggregated, EmailAggregation emailAggregation) {
         AbstractEmailPayloadAggregator aggregator = aggregated.computeIfAbsent(user, ignored -> EmailPayloadAggregatorFactory.by(aggregationKey));
         aggregator.aggregate(emailAggregation);
-    }
-
-    private Set<RecipientResolverRequest> getRecipientResolverRequests(Action action) {
-        if (action.getRecipients() != null) {
-            return Set.of(new ActionAdapter(action));
-        }
-
-        return Set.of();
     }
 
 }

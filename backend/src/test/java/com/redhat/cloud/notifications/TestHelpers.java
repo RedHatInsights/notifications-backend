@@ -110,6 +110,7 @@ public class TestHelpers {
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         emailActionMessage.setEventType(eventType);
+        emailActionMessage.setRecipients(List.of());
 
         emailActionMessage.setContext(Map.of(
                 "inventory_id", "host-01",

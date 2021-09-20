@@ -324,6 +324,7 @@ public class EventConsumerTest {
         action.setEventType(EVENT_TYPE);
         action.setTimestamp(LocalDateTime.now());
         action.setAccountId(DEFAULT_ACCOUNT_ID);
+        action.setRecipients(List.of());
         action.setEvents(
                 List.of(
                         com.redhat.cloud.notifications.ingress.Event
