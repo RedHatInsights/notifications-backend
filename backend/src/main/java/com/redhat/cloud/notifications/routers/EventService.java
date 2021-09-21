@@ -58,7 +58,7 @@ public class EventService {
         }
         return getAccountId(securityContext)
                 .onItem().transformToUni(accountId ->
-                        eventResources.get(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, limit, offset, sortBy)
+                        eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, limit, offset, sortBy)
                                 .onItem().transform(events ->
                                         events.stream().map(event -> {
                                             List<EventLogEntryAction> actions = event.getHistoryEntries().stream().map(historyEntry -> {
