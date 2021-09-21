@@ -3,6 +3,7 @@
 {#content-body}
 <tr>
     <td class="rh-content__block">
+        <div>Hello {user.firstName} {user.lastName},</div>
         <p>This notification is for your {action.events.size()} Kafka {#if action.events.size() is 1} instance {#else} instances{/if} below.</p>
         <ul>
             {#each action.events}
