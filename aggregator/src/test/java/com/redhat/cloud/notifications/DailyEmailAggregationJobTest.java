@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -44,6 +45,7 @@ class DailyEmailAggregationJobTest {
     void setUp() {
         helpers.purgeEmailAggregations();
         System.clearProperty("notifications.aggregator.email.subscription.periodic.cron.enabled");
+        testee.registry = new SimpleMeterRegistry();
     }
 
     @AfterEach
@@ -136,7 +138,7 @@ class DailyEmailAggregationJobTest {
     void shouldNotProcessMailsWhenNewCronJobIsDisabledByDefault() {
         final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
         final ObjectMapper objectMapper = mock(ObjectMapper.class);
-        DailyEmailAggregationJob dailyEmailAggregationJob = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
+        DailyEmailAggregationJob dailyEmailAggregationJob = new DailyEmailAggregationJob(emailAggregationResources, objectMapper, new SimpleMeterRegistry());
 
         dailyEmailAggregationJob.processDailyEmail();
         verifyNoInteractions(emailAggregationResources);
@@ -148,7 +150,7 @@ class DailyEmailAggregationJobTest {
 
         final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
         final ObjectMapper objectMapper = mock(ObjectMapper.class);
-        DailyEmailAggregationJob dailyEmailAggregationJob = new DailyEmailAggregationJob(emailAggregationResources, objectMapper);
+        DailyEmailAggregationJob dailyEmailAggregationJob = new DailyEmailAggregationJob(emailAggregationResources, objectMapper, new SimpleMeterRegistry());
 
         dailyEmailAggregationJob.processDailyEmail();
         verifyNoInteractions(emailAggregationResources);
