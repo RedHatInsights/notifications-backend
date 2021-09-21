@@ -82,7 +82,7 @@ public class DriftEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
         JsonObject baseline = drift.getJsonObject(baselineId);
         JsonArray systems = baseline.getJsonArray(HOST_KEY);
         for (int i = 0; i < systems.size(); i++) {
-            if (systems.getJsonObject(i).getString(INVENTORY_ID) == insightsId) {
+            if (systems.getJsonObject(i).getString(INVENTORY_ID).equals(insightsId)) {
                 return true;
             }
         }
