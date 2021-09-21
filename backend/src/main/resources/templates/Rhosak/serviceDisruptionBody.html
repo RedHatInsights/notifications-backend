@@ -1,6 +1,61 @@
-{#include Rhosak/insightsEmailBody}
-{#content-title}Unplanned Service Disruption - {action.context.system_check_in.toUtcFormat()}{/content-title}
+{#include Rhosak/rhosakEmailBody}
+{#content-title}Service Disruption{/content-title}
 {#content-body}
-<!-- TODO put email content here -->
+<tr>
+    <td class="rh-content__block">
+        <div>Hello {user.firstName} {user.lastName},</div>
+        <p>This notification is for your {action.events.size()} OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if} below.</p>
+        <ul>
+            {#each action.events}
+            <li style="font-size: 14px;">
+                {it.payload.name}
+            </li>
+            {/each}
+        </ul>
+    </td>
+</tr>
+
+<tr>
+    <td class="rh-content__block">
+        <div class="rh-stack">
+            Our monitoring systems have identified a service disruption that’s impacting the {action.context.impacted_area} of your OpenShift Streams/Kafka instance(s).
+            Red Hat SRE is currently resolving this issue.
+        </div>
+    </td>
+</tr>
+
+<tr>
+    <td class="rh-content__block">
+        <div class="rh-stack">
+            You can monitor the status of the Red Hat OpenShift Streams for Apache Kafka service on our <a target="_blank"  href="https://status.redhat.com/">status page</a>, where you can also subscribe to receive notifications whenever Red Hat creates, updates or resolves an incident.
+            You will receive another notification when the current disruption is resolved.
+        </div>
+    </td>
+</tr>
+
+<tr>
+    <td class="rh-content__block">
+        <div class="rh-stack">
+            If you have any questions, please <a target="_blank" href="https://access.redhat.com/support/contact/technicalSupport/">contact us</a>.
+            Review the <a target="_blank" href="https://access.redhat.com/support/policy/support_process">support process</a> for guidance on working with Red Hat support.
+        </div>
+    </td>
+</tr>
+
+<tr>
+    <td class="rh-content__block">
+        <table align="center">
+            <tr>
+                <td class="rh-cta-link" align="center">
+                    <a target="_blank" href="https://console.redhat.com/beta/application-services/streams/kafkas">
+                                <span>
+                                  Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+                                </span>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
 {/content-body}
 {/include}
