@@ -8,6 +8,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -30,37 +31,25 @@ public class EventResources {
                 .replaceWith(event);
     }
 
-    public Uni<List<Event>> get(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+    public Uni<List<Event>> getEvents(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                 LocalDate startDate, LocalDate endDate, Integer limit, Integer offset, String sortBy) {
-        String hql = "SELECT DISTINCT e FROM Event e " +
-                "JOIN FETCH e.eventType et JOIN FETCH et.application a JOIN FETCH a.bundle b " +
-                "LEFT JOIN FETCH e.historyEntries he LEFT JOIN FETCH he.endpoint " +
-                "WHERE e.accountId = :accountId";
+        Optional<String> orderByCondition = getOrderByCondition(sortBy);
+        return getEventIds(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, limit, offset, orderByCondition)
+                .onItem().transformToUni(eventIds -> {
+                    String hql = "SELECT DISTINCT e FROM Event e " +
+                            "JOIN FETCH e.eventType et JOIN FETCH et.application a JOIN FETCH a.bundle b " +
+                            "LEFT JOIN FETCH e.historyEntries he LEFT JOIN FETCH he.endpoint " +
+                            "WHERE e.accountId = :accountId AND e.id IN (:eventIds)";
 
-        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate);
+                    if (orderByCondition.isPresent()) {
+                        hql += orderByCondition.get();
+                    }
 
-        if (sortBy == null) {
-            hql += " ORDER BY e.created DESC";
-        } else {
-            Matcher sortByMatcher = SORT_BY_PATTERN.matcher(sortBy);
-            if (sortByMatcher.matches()) {
-                String sortField = getSortField(sortByMatcher.group(1));
-                String sortDirection = sortByMatcher.group(2);
-                hql += " ORDER BY " + sortField + " " + sortDirection + ", e.created DESC";
-            }
-        }
-
-        Mutiny.Query<Event> query = session.createQuery(hql, Event.class);
-        setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate);
-
-        if (limit != null) {
-            query.setMaxResults(limit);
-        }
-        if (offset != null) {
-            query.setFirstResult(offset);
-        }
-
-        return query.getResultList();
+                    return session.createQuery(hql, Event.class)
+                            .setParameter("accountId", accountId)
+                            .setParameter("eventIds", eventIds)
+                            .getResultList();
+                });
     }
 
     public Uni<Long> count(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
@@ -74,6 +63,45 @@ public class EventResources {
         setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate);
 
         return query.getSingleResult();
+    }
+
+    private Optional<String> getOrderByCondition(String sortBy) {
+        if (sortBy == null) {
+            return Optional.of(" ORDER BY e.created DESC");
+        } else {
+            Matcher sortByMatcher = SORT_BY_PATTERN.matcher(sortBy);
+            if (sortByMatcher.matches()) {
+                String sortField = getSortField(sortByMatcher.group(1));
+                String sortDirection = sortByMatcher.group(2);
+                return Optional.of(" ORDER BY " + sortField + " " + sortDirection + ", e.created DESC");
+            } else {
+                return Optional.empty();
+            }
+        }
+    }
+
+    private Uni<List<UUID>> getEventIds(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+                                        LocalDate startDate, LocalDate endDate, Integer limit, Integer offset, Optional<String> orderByCondition) {
+        String hql = "SELECT e.id FROM Event e JOIN e.eventType et JOIN et.application a JOIN a.bundle b " +
+                "WHERE e.accountId = :accountId";
+
+        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate);
+
+        if (orderByCondition.isPresent()) {
+            hql += orderByCondition.get();
+        }
+
+        Mutiny.Query<UUID> query = session.createQuery(hql, UUID.class);
+        setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate);
+
+        if (limit != null) {
+            query.setMaxResults(limit);
+        }
+        if (offset != null) {
+            query.setFirstResult(offset);
+        }
+
+        return query.getResultList();
     }
 
     private static String addHqlConditions(String hql, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
