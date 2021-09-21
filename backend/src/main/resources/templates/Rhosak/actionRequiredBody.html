@@ -1,5 +1,5 @@
 {#include Rhosak/insightsEmailBody}
-{#content-title}Action Required - {action.context.system_check_in.toUtcFormat()}{/content-title}
+{#content-title}Action Required - {action.context.action_completion_time.toUtcFormat()}{/content-title}
 {#content-body}
 <tr>
     <td class="rh-content__block">
@@ -16,7 +16,7 @@
 <tr>
     <td class="rh-content__block">
         <div class="rh-stack">
-            <b>{action.context.issue_description}</b>
+            {action.context.issue_description}
         </div>
     </td>
 </tr>
@@ -24,7 +24,16 @@
 <tr>
     <td class="rh-content__block">
         <div class="rh-stack">
-            <b>{action.context.action_required}</b>
+            {action.context.action_required}
+        </div>
+    </td>
+</tr>
+
+<tr>
+    <td class="rh-content__block">
+        <div class="rh-stack">
+            If you have any questions, please <a target="_blank" href="https://access.redhat.com/support/contact/technicalSupport/">contact us</a>.
+            Review the <a target="_blank" href="https://access.redhat.com/support/policy/support_process">support process</a> for guidance on working with Red Hat support.
         </div>
     </td>
 </tr>
