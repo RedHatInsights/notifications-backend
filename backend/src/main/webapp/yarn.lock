@@ -1735,10 +1735,10 @@
     mkdirp "^1.0.4"
     rimraf "^3.0.2"
 
-"@patternfly/patternfly@4.132.2":
-  version "4.132.2"
-  resolved "https://registry.yarnpkg.com/@patternfly/patternfly/-/patternfly-4.132.2.tgz#6ec662e6b21a28302a52c5c1d702c9616d4cea04"
-  integrity sha512-66qBgIpwPPeTUMTUUO6Z73XApvNXxn3uFaXMeVa09viYGDKzEX3L1FIfc4VzVk2okhk/9KJIYYgxofeuGi5v6A==
+"@patternfly/patternfly@4.135.2":
+  version "4.135.2"
+  resolved "https://registry.yarnpkg.com/@patternfly/patternfly/-/patternfly-4.135.2.tgz#beaf93c18372d90794e560b72fe2860038fcbb3d"
+  integrity sha512-oxLGfGdQNN5yGzvOSH51XR6AuoLjxajteLIOzXJKllqDSQgVP6nZQRCjjB0sUYuin5cUue7lRLqr7clzYd6Zbw==
 
 "@patternfly/react-code-editor@4.3.61":
   version "4.3.61"
