@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.CronJobRun;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.EmailSubscriptionType.*;
@@ -34,13 +36,20 @@ public class DailyEmailAggregationJob {
     private final EmailAggregationResources emailAggregationResources;
     private final ObjectMapper objectMapper;
 
+    MeterRegistry registry;
+
+    private final AtomicInteger processedGauge;
+
     @Inject
     @Channel(AGGREGATION_CHANNEL)
     Emitter<String> emitter;
 
-    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper) {
+    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper, MeterRegistry registry) {
         this.emailAggregationResources = emailAggregationResources;
         this.objectMapper = objectMapper;
+        this.registry = registry;
+
+        processedGauge = registry.gauge("daily.email.aggregation.job.processed", new AtomicInteger(0));
     }
 
     @ActivateRequestContext
@@ -94,6 +103,9 @@ public class DailyEmailAggregationJob {
                         pendingAggregationCommands.size()
                 )
         );
+
+        processedGauge.set(pendingAggregationCommands.size());
+
         return pendingAggregationCommands;
     }
 
