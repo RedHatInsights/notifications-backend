@@ -15,7 +15,7 @@ public class DriftTestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
 
-    public static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String baselineId, String inventory_id) {
+    public static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String baselineId, String baselineName, String inventory_id, String inventory_name) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
@@ -30,7 +30,7 @@ public class DriftTestHelpers {
         emailActionMessage.setContext(Map.of(
                 "inventory_id", inventory_id,
                 "system_check_in", "2021-07-13T15:22:42.199046",
-                "display_name", "Drift test machine",
+                "display_name", inventory_name,
                 "tags", List.of()
         ));
         emailActionMessage.setEvents(List.of(
@@ -39,7 +39,7 @@ public class DriftTestHelpers {
                         .setMetadataBuilder(Metadata.newBuilder())
                         .setPayload(Map.of(
                             "baseline_id", baselineId,
-                            "baseline_name", "drift_baseline_test"
+                            "baseline_name", baselineName
                         ))
                         .build()
         ));
