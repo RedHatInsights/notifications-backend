@@ -1,1 +1,1 @@
-{action.context.system_check_in.toUtcFormat()} - Service Disruption
+Service Disruption for your {action.events.size()} OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if}
