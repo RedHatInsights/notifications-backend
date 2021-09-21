@@ -35,7 +35,6 @@ public class DriftEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
 
     void processEmailAggregation(EmailAggregation notification) {
         JsonObject notificationJson = notification.getPayload();
-
         JsonObject drift = context.getJsonObject(DRIFT_KEY);
         JsonObject context = notificationJson.getJsonObject(CONTEXT_KEY);
 
@@ -59,12 +58,15 @@ public class DriftEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
                 drift.put(baselineId, newBaseline);
                 uniqueHostPerBaseline.put(baselineId, new HashSet<>());
             }
-
-            JsonObject baseline = drift.getJsonObject(baselineId);
             String insightsId = host.getString(INVENTORY_ID);
-            baseline.getJsonArray(HOST_KEY).add(host);
-            uniqueHostPerBaseline.get(baselineId).add(insightsId);
-            baseline.put(UNIQUE_SYSTEM_COUNT, this.uniqueHostPerBaseline.get(baselineId).size());
+
+            if (!hasSystem(drift, baselineId, insightsId)) {
+                JsonObject baseline = drift.getJsonObject(baselineId);
+                baseline.getJsonArray(HOST_KEY).add(host);
+                uniqueHostPerBaseline.get(baselineId).add(insightsId);
+                baseline.put(UNIQUE_SYSTEM_COUNT, this.uniqueHostPerBaseline.get(baselineId).size());
+            }
+
         });
 
         String insightsId = host.getString(INVENTORY_ID);
@@ -74,6 +76,17 @@ public class DriftEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
 
     public Integer getUniqueHostCount() {
         return this.uniqueHosts.size();
+    }
+
+    public Boolean hasSystem(JsonObject drift, String baselineId, String insightsId) {
+        JsonObject baseline = drift.getJsonObject(baselineId);
+        JsonArray systems = baseline.getJsonArray(HOST_KEY);
+        for (int i = 0; i < systems.size(); i++) {
+            if (systems.getJsonObject(i).getString(INVENTORY_ID).equals(insightsId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
