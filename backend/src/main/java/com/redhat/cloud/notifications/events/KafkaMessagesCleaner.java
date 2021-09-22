@@ -34,7 +34,7 @@ public class KafkaMessagesCleaner {
      * TODO The scheduling is delayed to prevent an unwanted execution during tests. Remove the delay and set the period
      * to `disabled` after the Quarkus 2 bump. See https://quarkus.io/guides/scheduler-reference for more details.
      */
-    @Scheduled(identity = "KafkaMessagesCleaner", delay = 10L, delayUnit = MINUTES, every = "{kafka-messages-cleaner.period}")
+    @Scheduled(identity = "KafkaMessagesCleaner", delay = 10L, delayUnit = MINUTES, every = "{notifications.kafka-messages-cleaner.period}")
     public void clean() {
         testableClean().await().indefinitely();
     }
