@@ -62,6 +62,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
                 .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId()))
                 .invoke(behaviorGroups -> {
                     assertEquals(1, behaviorGroups.size());
+                    assertNotNull(behaviorGroups.get(0).getAccountId());
                     assertEquals(model.behaviorGroups.get(0), behaviorGroups.get(0));
                     assertEquals(model.behaviorGroups.get(0).getDisplayName(), behaviorGroups.get(0).getDisplayName());
                     assertEquals(model.bundles.get(0).getId(), behaviorGroups.get(0).getBundle().getId());

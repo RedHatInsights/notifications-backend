@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.hibernate.jpa.QueryHints;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -28,10 +27,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 import static javax.persistence.FetchType.LAZY;
+import static org.hibernate.jpa.QueryHints.HINT_PASS_DISTINCT_THROUGH;
 
 @Entity
 @Table(name = "behavior_group")
@@ -48,9 +48,9 @@ import static javax.persistence.FetchType.LAZY;
 @NamedQuery(
         name = "findByBundleId",
         query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
-                "WHERE b.accountId = :accountId AND b.bundle.id = :bundleId " +
+                "WHERE (b.accountId = :accountId OR b.lockedBy IS NOT NULL) AND b.bundle.id = :bundleId " +
                 "ORDER BY b.created DESC, a.position ASC",
-        hints = @QueryHint(name = QueryHints.HINT_PASS_DISTINCT_THROUGH, value = "false")
+        hints = @QueryHint(name = HINT_PASS_DISTINCT_THROUGH, value = "false")
 )
 public class BehaviorGroup extends CreationUpdateTimestamped {
 
@@ -75,15 +75,21 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     @ManyToOne(fetch = LAZY, optional = false)
     @JoinColumn(name = "bundle_id")
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(NON_NULL)
     private Bundle bundle;
+
+    @ManyToOne
+    @JoinColumn(name = "locked_by_application_id")
+    @JsonProperty(access = READ_ONLY)
+    @JsonInclude(NON_NULL)
+    private Application lockedBy;
 
     @Transient
     @JsonIgnore
     private boolean filterOutBundle;
 
     @OneToMany(mappedBy = "behaviorGroup", cascade = CascadeType.REMOVE)
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(NON_NULL)
     private List<BehaviorGroupAction> actions;
 
     @Transient
@@ -135,6 +141,14 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     public void setBundle(Bundle bundle) {
         this.bundle = bundle;
+    }
+
+    public Application getLockedBy() {
+        return lockedBy;
+    }
+
+    public void setLockedBy(Application lockedBy) {
+        this.lockedBy = lockedBy;
     }
 
     public boolean isFilterOutBundle() {

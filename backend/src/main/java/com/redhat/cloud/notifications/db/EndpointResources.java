@@ -147,7 +147,8 @@ public class EndpointResources {
     // Note: This method uses a stateless session
     public Uni<List<Endpoint>> getTargetEndpoints(String tenant, EventType eventType) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled = TRUE AND b.eventType = :eventType AND bga.behaviorGroup.accountId = :accountId";
+                "WHERE e.enabled = TRUE AND b.eventType = :eventType " +
+                "AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.lockedBy IS NOT NULL)";
 
         return statelessSession.createQuery(query, Endpoint.class)
                 .setParameter("eventType", eventType)

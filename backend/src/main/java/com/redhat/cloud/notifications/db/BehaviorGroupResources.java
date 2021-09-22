@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static java.lang.Boolean.TRUE;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.OK;
@@ -35,6 +36,7 @@ public class BehaviorGroupResources {
                 .onItem().ifNull().failWith(new NotFoundException("bundle_id not found"))
                 .onItem().invoke(bundle -> {
                     behaviorGroup.setBundle(bundle);
+                    // The accountId argument can be null when the behavior group is locked by an application.
                     behaviorGroup.setAccountId(accountId);
                 })
                 .replaceWith(session.persist(behaviorGroup))
@@ -51,7 +53,6 @@ public class BehaviorGroupResources {
                 .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutBundle));
     }
 
-    // TODO Should this be forbidden for default behavior groups?
     public Uni<Boolean> update(String accountId, BehaviorGroup behaviorGroup) {
         String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE accountId = :accountId AND id = :id";
         return session.createQuery(query)
@@ -63,7 +64,6 @@ public class BehaviorGroupResources {
                 .onItem().transform(rowCount -> rowCount > 0);
     }
 
-    // TODO Should this be forbidden for default behavior groups?
     public Uni<Boolean> delete(String accountId, UUID behaviorGroupId) {
         String query = "DELETE FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
         return session.createQuery(query)
@@ -126,7 +126,7 @@ public class BehaviorGroupResources {
 
                     })
                     .collect().asList()
-                    .replaceWith(Boolean.TRUE)
+                    .replaceWith(TRUE)
                     // The following exception will be thrown if the event type is not found with the first query.
                     .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
         });
