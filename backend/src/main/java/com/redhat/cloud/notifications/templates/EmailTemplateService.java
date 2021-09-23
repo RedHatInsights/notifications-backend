@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.recipients.User;
 import io.quarkus.qute.Engine;
 import io.quarkus.qute.Template;
+import io.quarkus.qute.TemplateException;
 import io.quarkus.qute.TemplateInstance;
 import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
@@ -30,13 +31,19 @@ public class EmailTemplateService {
                 .data("user", user)
                 .createUni()
                 .onFailure().invoke(templateEx -> {
-                    logger.warnf(templateEx,
-                            "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",
-                            action.getBundle(),
-                            action.getApplication(),
-                            action.getEventType()
-                    );
+                    if (!(templateEx instanceof TemplateException) && !isInternalUser(user)) {
+                        logger.warnf(templateEx,
+                                "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",
+                                action.getBundle(),
+                                action.getApplication(),
+                                action.getEventType()
+                        );
+                    }
                 });
+    }
+
+    private boolean isInternalUser(User user) {
+        return user.isActive() && user.getLastName().equals("John") && user.getLastName().equals("Doe") && user.getEmail().equals("jdoe@jdoe.com");
     }
 
 }
