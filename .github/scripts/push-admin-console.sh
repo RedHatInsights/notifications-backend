@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
-DEPLOY_REPO="https://${GITHUB_ACTOR}:${1}@github.com/josejulio/notifications-frontend-admin-build.git"
+DEPLOY_REPO="https://${GITHUB_ACTOR}:${1}@github.com/RedHatInsights/notifications-frontend-admin-build.git"
 BRANCH="main"
 
-# remove
-mkdir -p admin-console/src/main/webapp/build/
 cd admin-console/src/main/webapp/build/ || exit
 
 git config --global user.name "${GITHUB_ACTOR}"
