@@ -37,16 +37,13 @@ jobs:
         uses: tj-actions/changed-files@v1.1.2
         with:
           files: admin-console
-      - name: Build admin UI
-        if: steps.admin-ui-changed.outputs.any_changed == 'true'
-        run: ./mvnw clean verify -Padmin-console -pl :checkstyle -pl :admin-console
+      #- name: Build admin UI
+      #  if: steps.admin-ui-changed.outputs.any_changed == 'true'
+      #  run: ./mvnw clean verify -Padmin-console -pl :checkstyle -pl :admin-console
       - name: Push admin console
-        if: steps.admin-ui-changed.outputs.any_changed == 'true'
-        run: bash .github/scripts/push-admin-console.sh
+        if: steps.admin-ui-changed.outputs.any_changed == 'true' && github.event_name == 'push' # && github.ref == 'refs/heads/master'
+        run: bash .github/scripts/push-admin-console.sh ${{ secrets.GH_ACCESS_TOKEN }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          GH_USER: ${{ secrets.GH_USER }}
-          GH_MAIL: ${{ secrets.GH_MAIL }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
       - name: Build with Maven
         run: ./mvnw clean verify
