@@ -6,8 +6,8 @@ BRANCH="main"
 
 cd admin-console/src/main/webapp/build/ || exit
 
-git config --global user.name "${COMMIT_AUTHOR_USERNAME}"
-git config --global user.email "${COMMIT_AUTHOR_EMAIL}"
+git config --global user.name "${GITHUB_ACTOR}"
+git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
 if git ls-remote --exit-code ${DEPLOY_REPO:-$REPO} ${BRANCH} &>/dev/null; then
   # Handle where the target branch exists
