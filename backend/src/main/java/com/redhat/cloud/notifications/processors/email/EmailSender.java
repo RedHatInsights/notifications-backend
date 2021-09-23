@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.templates.EmailTemplateService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import io.quarkus.qute.TemplateException;
 import io.quarkus.qute.TemplateInstance;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -20,6 +21,7 @@ import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -28,7 +30,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Set;
-import java.util.logging.Logger;
 
 @ApplicationScoped
 public class EmailSender {
@@ -110,6 +111,16 @@ public class EmailSender {
                 emailTemplateService.renderTemplate(user, action, body)
         )
                 .asTuple()
+                .onFailure().invoke(templateEx -> {
+                    if (!(templateEx instanceof TemplateException) && !isInternalUser(user)) {
+                        logger.warnf(templateEx,
+                                "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",
+                                action.getBundle(),
+                                action.getApplication(),
+                                action.getEventType()
+                        );
+                    }
+                })
                 .onItem().transform(rendered -> {
                     Emails emails = new Emails();
                     emails.addEmail(buildEmail(
@@ -119,6 +130,10 @@ public class EmailSender {
                     ));
                     return JsonObject.mapFrom(emails);
                 });
+    }
+
+    private boolean isInternalUser(User user) {
+        return user.isActive() && user.getLastName().equals("John") && user.getLastName().equals("Doe") && user.getEmail().equals("jdoe@jdoe.com");
     }
 
     protected HttpRequest<Buffer> buildBOPHttpRequest() {
