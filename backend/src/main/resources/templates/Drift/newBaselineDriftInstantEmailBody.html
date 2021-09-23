@@ -1,34 +1,119 @@
 {#include Drift/insightsEmailBody}
-{#content-title}Drift from baseline notification - {action.timestamp.toUtcFormat()}{/content-title}
+{#content-title}Baseline Drifts Instant Notification - {action.timestamp.toStringFormat()}{/content-title}
 {#content-body}
 <tr>
-    <td class="rh-content__block">
-        <p>Baseline drift notification for <b>{action.context.display_name}</b>. System checked in at {action.context.system_check_in.toUtcFormat()} and has drifted from {action.events.size()} baseline{#if action.events.size() > 1}s{/if}.</p>
-    </td>
-</tr>
-<tr>
-    <td class="rh-content__block">
-        <div class="rh-stack">
-            <a class="rh-url" href="https://console.redhat.com/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a>
-        </div>
-    </td>
-</tr>
-<tr>
-    <td class="rh-content__block">
-        <table class="rh-data-table rh-m-bordered">
-            <thead>
-            <tr>
-                <th>Baseline</th>
-            </tr>
-            </thead>
+    <td class="rh-body rh-multi-column">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
             <tbody>
-                {#if action.events.size() > 0}
-                    {#each action.events}
-                <tr style="font-size: 14px;">
-                    <a href="https://console.redhat.com/insights/drift/?baseline_ids={it.payload.baseline_id}&reference_id={it.payload.baseline_id}&system_ids={action.context.inventory_id}" target="_blank">{it.payload.baseline_name}</a>
-                </tr>
-                    {/each}
-                {/if}
+            <!-- Content block -->
+            <tr>
+                <td>
+                    <div class="container">
+                      <div class="rh-card">
+                        <div class="rh-card__header">
+                          <h2>
+                            Baselines <a class="rh-url" href="https://console.redhat.com/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a> has drifted from
+                          </h2>
+                        </div>
+                        <div>
+                          <span class="rh-metric__count">{action.events.size()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- end 50 col -->
+                    <!--[if (gte mso 9)|(IE)]>
+                    </td>
+                    </tr>
+                    </table>
+                    <![endif]-->
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+<!-- Body section -->
+<tr>
+    <td class="rh-body">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <p>
+                        <!-- Hi {{user.first_name}},
+                        <br>
+                        <br> -->
+                        Hi,
+                        <br>
+                        <br>
+                        Your system <a class="rh-url" href="https://console.redhat.com/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a> has drifted from {action.events.size()} baseline{#if action.events.size() > 1}s{/if}
+                    </p>
+                </td>
+            </tr>
+            <!-- end content block -->
+
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" class="rh-button-table">
+                        <tr>
+                            <td class="rh-cta-link" align="center">
+                                <a target="_blank" href="https://console.redhat.com/insights/drift/baselines">
+                                        <span>
+                                          Go to Baselines
+                                        </span>
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+<!-- Body section -->
+<tr>
+    <td class="rh-body">
+        <table class="rh-content rh-m-plain" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                  <div class="rh-card__header">
+                    <h2>
+                      Baselines <a class="rh-url" href="https://console.redhat.com/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a> has drifted from
+                    </h2>
+                    <p></p>
+                  </div>
+                    <table width:="" 100%;="" class="rh-data-table rh-m-bordered">
+                        <thead>
+                        <tr>
+                            <th>Baseline</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                          {#if action.events.size() > 0}
+                          {#each action.events}
+                            <tr style="font-size: 14px;">
+                              <td>
+                                <a href="https://console.redhat.com/insights/drift/baselines/{it.payload.baseline_id}" target="_blank">{it.payload.baseline_name}</a>
+                              </td>
+                            </tr>
+                                {/each}
+                            {/if}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <!-- end content block -->
             </tbody>
         </table>
     </td>

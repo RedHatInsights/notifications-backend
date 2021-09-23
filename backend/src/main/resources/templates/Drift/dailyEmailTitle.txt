@@ -1,1 +1,1 @@
-{action.context.start_time.toStringFormat()} - {action.context.drift.size()} {#if action.context.drift.size() == 1}baseline{#else}baselines{/if} drifted on {action.context.unique_system_count} {#if action.context.unique_system_count == 1}system{#else}unique systems{/if}
+{action.context.start_time.toStringFormat()} - {action.context.drift.size()} {#if action.context.drift.size() == 1}drift{#else}drifts{/if} from baseline detected on {action.context.unique_system_count} {#if action.context.unique_system_count == 1}system{#else}unique systems{/if}

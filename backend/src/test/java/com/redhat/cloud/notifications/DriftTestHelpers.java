@@ -51,4 +51,41 @@ public class DriftTestHelpers {
 
         return aggregation;
     }
+
+    public static Action createDriftAction(String tenant, String bundle, String application, String inventory_id, String inventory_name) {
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle(bundle);
+        emailActionMessage.setApplication(application);
+        emailActionMessage.setTimestamp(LocalDateTime.now());
+        emailActionMessage.setEventType("testEmailSubscriptionInstant");
+
+        emailActionMessage.setContext(Map.of(
+                "inventory_id", inventory_id,
+                "system_check_in", "2021-07-13T15:22:42.199046",
+                "display_name", inventory_name,
+                "tags", List.of()
+        ));
+        emailActionMessage.setEvents(List.of(
+                Event
+                        .newBuilder()
+                        .setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(Map.of(
+                            "baseline_id", "baseline_01",
+                            "baseline_name", "Baseline 1"
+                        ))
+                        .build(),
+                Event
+                        .newBuilder()
+                        .setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(Map.of(
+                            "baseline_id", "baseline_02",
+                            "baseline_name", "Baseline 2"
+                        ))
+                        .build()
+        ));
+
+        emailActionMessage.setAccountId(tenant);
+
+        return emailActionMessage;
+    }
 }
