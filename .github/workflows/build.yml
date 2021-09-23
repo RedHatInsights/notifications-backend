@@ -43,6 +43,11 @@ jobs:
       - name: Push admin console
         if: steps.admin-ui-changed.outputs.any_changed == 'true'
         run: bash .github/scripts/push-admin-console.sh
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_USER: ${{ secrets.GH_USER }}
+          GH_MAIL: ${{ secrets.GH_MAIL }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
       - name: Build with Maven
         run: ./mvnw clean verify
       - uses: actions/upload-artifact@v2
