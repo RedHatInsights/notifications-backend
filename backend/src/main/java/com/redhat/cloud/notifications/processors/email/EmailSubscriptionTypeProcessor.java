@@ -28,18 +28,14 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static java.time.ZoneOffset.UTC;
 
 @ApplicationScoped
 public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
@@ -161,35 +157,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 // Delete on daily
                 aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY)
         ).onItem().ignoreAsUni();
-    }
-
-    private Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime) {
-        Instant yesterdayScheduledFireTime = scheduledFireTime.minus(EmailSubscriptionType.DAILY.getDuration());
-
-        LocalDateTime endTime = LocalDateTime.ofInstant(scheduledFireTime, UTC);
-        LocalDateTime startTime = LocalDateTime.ofInstant(yesterdayScheduledFireTime, UTC);
-        final LocalDateTime aggregateStarted = LocalDateTime.now();
-
-        log.info(String.format("Running %s email aggregation for period (%s, %s)", EmailSubscriptionType.DAILY, startTime, endTime));
-
-        return emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToMultiAndConcatenate(aggregationKey -> processAggregateEmailsByAggregationKey(aggregationKey, startTime, endTime, EmailSubscriptionType.DAILY, true))
-                .collect().asList()
-                .onItem().invoke(result -> {
-                    final LocalDateTime aggregateFinished = LocalDateTime.now();
-                    log.info(
-                            String.format(
-                                    "Finished running %s email aggregation for period (%s, %s) after %d seconds. %d (accountIds, applications) pairs were processed",
-                                    EmailSubscriptionType.DAILY,
-                                    startTime,
-                                    endTime,
-                                    ChronoUnit.SECONDS.between(aggregateStarted, aggregateFinished),
-                                    result.size()
-                            )
-                    );
-                })
-                .eventually(() -> emailAggregationResources.updateLastCronJobRun(endTime));
     }
 
     private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
