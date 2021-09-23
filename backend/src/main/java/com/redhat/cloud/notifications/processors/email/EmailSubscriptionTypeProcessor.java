@@ -19,12 +19,9 @@ import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.qute.TemplateInstance;
-import io.quarkus.scheduler.Scheduled;
-import io.quarkus.scheduler.ScheduledExecution;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 
@@ -164,19 +161,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 // Delete on daily
                 aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY)
         ).onItem().ignoreAsUni();
-    }
-
-    @Scheduled(identity = "dailyEmailProcessor", cron = "{notifications.backend.email.subscription.daily.cron}")
-    public void processDailyEmail(ScheduledExecution se) {
-        // Only delete on the largest aggregate time frame. Currently daily.
-        if (isScheduleEnabled()) {
-            processAggregateEmails(se.getScheduledFireTime()).await().indefinitely();
-        }
-    }
-
-    private boolean isScheduleEnabled() {
-        // The scheduled job is enabled by default.
-        return ConfigProvider.getConfig().getOptionalValue("notifications.backend.email.subscription.periodic.cron.enabled", Boolean.class).orElse(true);
     }
 
     private Uni<List<Tuple2<NotificationHistory, EmailAggregationKey>>> processAggregateEmails(Instant scheduledFireTime) {

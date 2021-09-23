@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -23,8 +21,6 @@ import static com.redhat.cloud.notifications.EmailSubscriptionType.DAILY;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 @QuarkusTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -44,21 +40,17 @@ class DailyEmailAggregationJobTest {
     @BeforeEach
     void setUp() {
         helpers.purgeEmailAggregations();
-        System.clearProperty("notifications.aggregator.email.subscription.periodic.cron.enabled");
         testee.registry = new SimpleMeterRegistry();
     }
 
     @AfterEach
     void tearDown() {
         helpers.purgeEmailAggregations();
-        System.clearProperty("notifications.aggregator.email.subscription.periodic.cron.enabled");
     }
 
     @Test
     @TestTransaction
     void shouldSentTwoAggregationsToKafkaTopic() {
-        System.setProperty("notifications.aggregator.email.subscription.periodic.cron.enabled", "true");
-
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
 
@@ -131,29 +123,6 @@ class DailyEmailAggregationJobTest {
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
 
         assertEquals(1, emailAggregations.size());
-    }
-
-    @Test
-    @TestTransaction
-    void shouldNotProcessMailsWhenNewCronJobIsDisabledByDefault() {
-        final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
-        final ObjectMapper objectMapper = mock(ObjectMapper.class);
-        DailyEmailAggregationJob dailyEmailAggregationJob = new DailyEmailAggregationJob(emailAggregationResources, objectMapper, new SimpleMeterRegistry());
-
-        dailyEmailAggregationJob.processDailyEmail();
-        verifyNoInteractions(emailAggregationResources);
-    }
-
-    @Test
-    @TestTransaction
-    void shouldNotProcessMailsWhenNewCronJobIsDisabledByEnvironmentVariable() {
-
-        final EmailAggregationResources emailAggregationResources = mock(EmailAggregationResources.class);
-        final ObjectMapper objectMapper = mock(ObjectMapper.class);
-        DailyEmailAggregationJob dailyEmailAggregationJob = new DailyEmailAggregationJob(emailAggregationResources, objectMapper, new SimpleMeterRegistry());
-
-        dailyEmailAggregationJob.processDailyEmail();
-        verifyNoInteractions(emailAggregationResources);
     }
 
     @Test
