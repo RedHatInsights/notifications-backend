@@ -48,7 +48,6 @@
   "scripts": {
     "start": "ESLINT_NO_DEV_ERRORS=true react-app-rewired start",
     "build": "react-app-rewired build",
-    "build:prod": "yarn build && rm -rf ../resources/META-INF/resources/internal && mkdir -p ../resources/META-INF/resources/internal && cp -R build/* ../resources/META-INF/resources/internal",
     "openapi": "openapi2typescript -i http://localhost:8085/internal/openapi.json -o src/generated/OpenapiInternal.ts -a react-fetching-library -ed --no-strict --explicit-types --api-base-path '.'",
     "lint": "eslint --ext js,ts,tsx config src config-overrides.js",
     "test": "react-app-rewired test",

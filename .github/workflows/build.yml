@@ -30,6 +30,17 @@ jobs:
         with:
           distribution: adopt
           java-version: 11
+      - name: Verify if admin changed
+        id: admin-ui-changed
+        uses: tj-actions/changed-files@v1.1.2
+        with:
+          files: admin-console
+      - name: Build admin UI
+        if: steps.admin-ui-changed.outputs.any_changed == 'true'
+        run: ./mvnw clean verify -Padmin-console -pl :admin-console
+      - name: Push admin console
+        if: steps.admin-ui-changed.outputs.any_changed == 'true'
+        run: bash .github/scripts/push-admin-console.sh
       - name: Build with Maven
         run: ./mvnw clean verify
       - uses: actions/upload-artifact@v2

@@ -15,6 +15,15 @@
         <module>backend</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>admin-console</id>
+            <modules>
+                <module>admin-console</module>
+            </modules>
+        </profile>
+    </profiles>
+
     <properties>
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
