@@ -224,13 +224,7 @@ public class InternalService {
             })
     })
     public Uni<Response> renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {
-        User user = new User();
-        user.setUsername("jdoe");
-        user.setEmail("jdoe@jdoe.com");
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setActive(true);
-        user.setAdmin(false);
+        User user = createInternalUser();
 
         String payload = renderEmailTemplateRequest.getPayload();
         return actionParser.fromJsonString(payload)
@@ -252,5 +246,16 @@ public class InternalService {
                 ).asTuple()
         ).onItem().transform(titleAndBody -> Response.ok(new RenderEmailTemplateResponse.Success(titleAndBody.getItem1(), titleAndBody.getItem2())).build())
         .onFailure().recoverWithItem(throwable -> Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(throwable.getMessage())).build());
+    }
+
+    private User createInternalUser() {
+        User user = new User();
+        user.setUsername("jdoe");
+        user.setEmail("jdoe@jdoe.com");
+        user.setFirstName("John");
+        user.setLastName("Doe");
+        user.setActive(true);
+        user.setAdmin(false);
+        return user;
     }
 }

@@ -20,6 +20,7 @@ import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -28,7 +29,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Set;
-import java.util.logging.Logger;
 
 @ApplicationScoped
 public class EmailSender {
@@ -110,6 +110,14 @@ public class EmailSender {
                 emailTemplateService.renderTemplate(user, action, body)
         )
                 .asTuple()
+                .onFailure().invoke(templateEx -> {
+                    logger.warnf(templateEx,
+                            "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",
+                            action.getBundle(),
+                            action.getApplication(),
+                            action.getEventType()
+                    );
+                })
                 .onItem().transform(rendered -> {
                     Emails emails = new Emails();
                     emails.addEmail(buildEmail(
