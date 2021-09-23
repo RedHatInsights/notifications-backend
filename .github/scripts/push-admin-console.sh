@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
+set -x
 
 DEPLOY_REPO="git@github.com:RedHatInsights/notifications-frontend-admin-build.git"
 BRANCH="main"
 
 cd admin-console/src/main/webapp/build/ || exit
 
-git config --global user.name $COMMIT_AUTHOR_USERNAME
-git config --global user.email $COMMIT_AUTHOR_EMAIL
+git config --global user.name "${COMMIT_AUTHOR_USERNAME}"
+git config --global user.email "${COMMIT_AUTHOR_EMAIL}"
 
 if git ls-remote --exit-code ${DEPLOY_REPO:-$REPO} ${BRANCH} &>/dev/null; then
   # Handle where the target branch exists
@@ -23,4 +24,4 @@ fi
 git config core.bare false
 git add -A
 git commit -m "${TRAVIS_COMMIT_MESSAGE}"
-git push origin ${BRANCH
+git push origin ${BRANCH}
