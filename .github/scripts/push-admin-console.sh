@@ -4,6 +4,10 @@ DEPLOY_REPO="git@github.com:RedHatInsights/notifications-frontend-admin-build.gi
 BRANCH="main"
 
 cd admin-console/src/main/webapp/build/ || exit
+
+git config --global user.name $COMMIT_AUTHOR_USERNAME
+git config --global user.email $COMMIT_AUTHOR_EMAIL
+
 if git ls-remote --exit-code ${DEPLOY_REPO:-$REPO} ${BRANCH} &>/dev/null; then
   # Handle where the target branch exists
   git clone --bare --branch ${BRANCH} --depth 1 ${DEPLOY_REPO:-$REPO} .git
