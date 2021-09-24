@@ -21,10 +21,11 @@ RUN microdnf install openssl curl ca-certificates ${JAVA_PACKAGE} \
 
 ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
-COPY --from=build --chown=1001 /home/jboss/aggregator/target/quarkus-app/lib/ /deployments/lib/
-COPY --from=build --chown=1001 /home/jboss/aggregator/target/quarkus-app/*.jar /deployments/
-COPY --from=build --chown=1001 /home/jboss/aggregator/target/quarkus-app/app/ /deployments/app/
-COPY --from=build --chown=1001 /home/jboss/aggregator/target/quarkus-app/quarkus/ /deployments/quarkus/
+COPY --from=build --chown=1001 /home/jboss/aggregator/target/quarkus-app/ /deployments/
+#COPY --from=build --chown=1001 /home/jboss/aggregator/target/quarkus-app/lib/ /deployments/lib/
+#COPY --from=build --chown=1001 /home/jboss/aggregator/target/quarkus-app/*.jar /deployments/
+#COPY --from=build --chown=1001 /home/jboss/aggregator/target/quarkus-app/app/ /deployments/app/
+#COPY --from=build --chown=1001 /home/jboss/aggregator/target/quarkus-app/quarkus/ /deployments/quarkus/
 
 EXPOSE 8080
 USER 1001
