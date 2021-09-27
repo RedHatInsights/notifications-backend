@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.CounterAssertionHelper;
+import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.EventResources;
@@ -35,7 +35,7 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
-import static com.redhat.cloud.notifications.events.EventConsumer.CONSUMED_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.EventConsumer.CONSUMED_TIMER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.DUPLICATE_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_ERROR_COUNTER_NAME;
@@ -78,24 +78,25 @@ public class EventConsumerTest {
     KafkaMessageDeduplicator kafkaMessageDeduplicator;
 
     @Inject
-    CounterAssertionHelper counterAssertionHelper;
+    MicrometerAssertionHelper micrometerAssertionHelper;
 
     @BeforeEach
     void beforeEach() {
-        counterAssertionHelper.saveCounterValuesBeforeTest(
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME,
-                CONSUMED_COUNTER_NAME
+                MESSAGE_ID_MISSING_COUNTER_NAME
         );
+        micrometerAssertionHelper.removeDynamicTimer(CONSUMED_TIMER_NAME);
     }
 
     @AfterEach
     void clear() {
-        counterAssertionHelper.clear();
+        micrometerAssertionHelper.clearSavedValues();
+        micrometerAssertionHelper.removeDynamicTimer(CONSUMED_TIMER_NAME);
     }
 
     @Test
@@ -107,9 +108,9 @@ public class EventConsumerTest {
         Message message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
-        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
-        assertNoIncrement(
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
+        assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
@@ -127,9 +128,9 @@ public class EventConsumerTest {
         String payload = serializeAction(action);
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
-        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
-        assertNoIncrement(
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
+        assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
@@ -145,9 +146,9 @@ public class EventConsumerTest {
         Message message = buildMessageWithId(UUID.randomUUID().toString().getBytes(UTF_8), "I am not a valid payload!");
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
-        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 1);
-        assertNoIncrement(
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
+        assertNoCounterIncrement(
                 PROCESSING_ERROR_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
@@ -165,10 +166,10 @@ public class EventConsumerTest {
         String payload = serializeAction(action);
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
-        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 1);
-        assertNoIncrement(
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
+        assertNoCounterIncrement(
                 PROCESSING_ERROR_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
@@ -186,10 +187,10 @@ public class EventConsumerTest {
         String payload = serializeAction(action);
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
-        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(PROCESSING_ERROR_COUNTER_NAME, 1);
-        assertNoIncrement(
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSING_ERROR_COUNTER_NAME, 1);
+        assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
@@ -209,10 +210,10 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
-        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 2);
-        counterAssertionHelper.assertIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 2);
-        counterAssertionHelper.assertIncrement(DUPLICATE_COUNTER_NAME, 1);
-        assertNoIncrement(
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 2);
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 2);
+        micrometerAssertionHelper.assertCounterIncrement(DUPLICATE_COUNTER_NAME, 1);
+        assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
@@ -230,9 +231,9 @@ public class EventConsumerTest {
         Message message = buildMessageWithId(null, payload);
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
-        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
-        assertNoIncrement(
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
+        assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
@@ -251,9 +252,9 @@ public class EventConsumerTest {
         Message message = buildMessageWithId("I am not a valid UUID!".getBytes(UTF_8), payload);
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
-        counterAssertionHelper.awaitAndAssertIncrement(CONSUMED_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
-        assertNoIncrement(
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
+        assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
@@ -297,9 +298,9 @@ public class EventConsumerTest {
         assertEquals(action, argumentCaptor.getValue().getAction());
     }
 
-    private void assertNoIncrement(String... counterNames) {
+    private void assertNoCounterIncrement(String... counterNames) {
         for (String counterName : counterNames) {
-            counterAssertionHelper.assertIncrement(counterName, 0);
+            micrometerAssertionHelper.assertCounterIncrement(counterName, 0);
         }
     }
 
