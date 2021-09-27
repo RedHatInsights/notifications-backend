@@ -4,6 +4,9 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 
+import java.util.Arrays;
+import java.util.List;
+
 // Name needs to be "Rhosak" to read templates from resources/templates/Rhosak
 public class Rhosak implements EmailTemplate {
     private static final String SCHEDULED_UPGRADE = "scheduled-upgrade";
@@ -11,6 +14,7 @@ public class Rhosak implements EmailTemplate {
     private static final String INSTANCE_CREATED = "instance-created";
     private static final String INSTANCE_DELETED = "instance-deleted";
     private static final String ACTION_REQUIRED = "action-required";
+    private static final List<String> ALLOWED_EVENT_TYPES = Arrays.asList(SCHEDULED_UPGRADE, DISRUPTION, INSTANCE_DELETED, INSTANCE_CREATED, ACTION_REQUIRED);
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
@@ -29,7 +33,9 @@ public class Rhosak implements EmailTemplate {
         if (eventType.equals(ACTION_REQUIRED)) {
             return Templates.actionRequiredTitle();
         }
-
+        if (eventType.equals(SCHEDULED_UPGRADE)) {
+            return Templates.scheduledUpgradeTitle();
+        }
         throw new UnsupportedOperationException(String.format(
                 "No email title template for RHOSAK event_type: %s and EmailSubscription: %s found.",
                 eventType, type
@@ -53,6 +59,9 @@ public class Rhosak implements EmailTemplate {
         if (eventType.equals(ACTION_REQUIRED)) {
             return Templates.actionRequiredBody();
         }
+        if (eventType.equals(SCHEDULED_UPGRADE)) {
+            return Templates.scheduledUpgradeBody();
+        }
 
         throw new UnsupportedOperationException(String.format(
                 "No email body template for RHOSAK event_type: %s and EmailSubscription: %s found.",
@@ -62,11 +71,7 @@ public class Rhosak implements EmailTemplate {
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        if (eventType.equals(SCHEDULED_UPGRADE)) {
-            return type == EmailSubscriptionType.DAILY; // scheduled upgrades emails are sent on daily basis
-        }
-
-        return true;
+        return ALLOWED_EVENT_TYPES.contains(eventType);
     }
 
     @Override
@@ -96,5 +101,9 @@ public class Rhosak implements EmailTemplate {
         public static native TemplateInstance serviceDisruptionTitle();
 
         public static native TemplateInstance serviceDisruptionBody();
+
+        public static native TemplateInstance scheduledUpgradeTitle();
+
+        public static native TemplateInstance scheduledUpgradeBody();
     }
 }
