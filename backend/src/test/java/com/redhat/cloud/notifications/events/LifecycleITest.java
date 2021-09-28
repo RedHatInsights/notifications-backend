@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.CounterAssertionHelper;
 import com.redhat.cloud.notifications.Json;
+import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -86,7 +86,7 @@ public class LifecycleITest extends DbIsolatedTest {
     InMemoryConnector inMemoryConnector;
 
     @Inject
-    CounterAssertionHelper counterAssertionHelper;
+    MicrometerAssertionHelper micrometerAssertionHelper;
 
     private Header initRbacMock(String tenant, String username, MockServerClientConfig.RbacAccess access) {
         String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);
@@ -391,7 +391,7 @@ public class LifecycleITest extends DbIsolatedTest {
      * Depending on the event type, behavior groups and endpoints configuration, it will trigger zero or more webhook calls.
      */
     private void pushMessage(int expectedWebhookCalls) throws IOException, InterruptedException {
-        counterAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
 
         CountDownLatch requestsCounter = new CountDownLatch(expectedWebhookCalls);
         HttpRequest expectedRequestPattern = null;
@@ -412,10 +412,10 @@ public class LifecycleITest extends DbIsolatedTest {
             mockServerConfig.getMockServerClient().clear(expectedRequestPattern);
         }
 
-        counterAssertionHelper.awaitAndAssertIncrement(PROCESSED_MESSAGES_COUNTER_NAME, 1);
-        counterAssertionHelper.assertIncrement(REJECTED_COUNTER_NAME, 0);
-        counterAssertionHelper.assertIncrement(PROCESSED_ENDPOINTS_COUNTER_NAME, expectedWebhookCalls);
-        counterAssertionHelper.clear();
+        micrometerAssertionHelper.awaitAndAssertCounterIncrement(PROCESSED_MESSAGES_COUNTER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 0);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_ENDPOINTS_COUNTER_NAME, expectedWebhookCalls);
+        micrometerAssertionHelper.clearSavedValues();
     }
 
     private void emitMockedIngressAction() throws IOException {
