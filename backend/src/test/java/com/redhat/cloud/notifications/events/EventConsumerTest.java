@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -80,6 +81,9 @@ public class EventConsumerTest {
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
 
+    @Inject
+    MeterRegistry registry;
+
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(
@@ -109,6 +113,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
@@ -129,6 +134,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
@@ -147,6 +153,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", "", "application", "").count());
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 PROCESSING_ERROR_COUNTER_NAME,
@@ -167,6 +174,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
         assertNoCounterIncrement(
@@ -188,6 +196,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_ERROR_COUNTER_NAME, 1);
         assertNoCounterIncrement(
@@ -211,6 +220,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 2);
+        assertEquals(2L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 2);
         micrometerAssertionHelper.assertCounterIncrement(DUPLICATE_COUNTER_NAME, 1);
         assertNoCounterIncrement(
@@ -232,6 +242,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
@@ -253,6 +264,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
