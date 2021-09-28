@@ -1,6 +1,6 @@
 FROM registry.access.redhat.com/ubi8/openjdk-11:latest AS build
 USER root
-COPY . /home/jboss/
+COPY . /home/jboss
 WORKDIR /home/jboss
 RUN ./mvnw clean package -DskipTests --projects :checkstyle,:notifications-backend
 
@@ -19,7 +19,6 @@ RUN microdnf install openssl curl ca-certificates ${JAVA_PACKAGE} \
     && chown 1001:root /deployments \
     && echo "securerandom.source=file:/dev/urandom" >> /etc/alternatives/jre/lib/security/java.security
 
-# Configure the JAVA_OPTIONS, you can add -XshowSettings:vm to also display the heap size.
 ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
 COPY --from=build --chown=1001 /home/jboss/backend/target/quarkus-app/lib/ /deployments/lib/
