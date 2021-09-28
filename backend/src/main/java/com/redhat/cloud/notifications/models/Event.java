@@ -30,8 +30,8 @@ public class Event extends CreationTimestamped {
     @Size(max = 50)
     private String accountId;
 
-    // TODO [Event log phase 2] Make this field @NotNull (in the SQL schema as well) and the @ManyToOne relationship not optional.
-    @ManyToOne
+    @NotNull
+    @ManyToOne(optional = false)
     @JoinColumn(name = "event_type_id")
     private EventType eventType;
 

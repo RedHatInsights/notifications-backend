@@ -13,7 +13,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
@@ -31,20 +30,14 @@ public class NotificationHistory extends CreationTimestamped {
     @JsonProperty(access = READ_ONLY)
     private UUID id;
 
-    // TODO [Event log phase 2] After the data migration, delete this field and drop the corresponding DB field.
-    @NotNull
-    @Size(max = 50)
-    @JsonIgnore
-    private String accountId;
-
     @NotNull
     private Long invocationTime;
 
     @NotNull
     private Boolean invocationResult;
 
-    // TODO [Event log phase 2] Make this field @NotNull (in the SQL schema as well) and the @ManyToOne relationship not optional.
-    @ManyToOne(fetch = LAZY)
+    @NotNull
+    @ManyToOne(fetch = LAZY, optional = false)
     @JoinColumn(name = "event_id")
     @JsonIgnore
     private Event event;
@@ -91,14 +84,6 @@ public class NotificationHistory extends CreationTimestamped {
 
     public void setId(UUID id) {
         this.id = id;
-    }
-
-    public String getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(String accountId) {
-        this.accountId = accountId;
     }
 
     public Long getInvocationTime() {
@@ -182,7 +167,6 @@ public class NotificationHistory extends CreationTimestamped {
         history.setInvocationTime(invocationTime);
         history.setEndpoint(item.getEndpoint());
         history.setEndpointType(item.getEndpoint().getType());
-        history.setAccountId(item.getTenant());
         history.setEvent(item.getEvent());
         history.setInvocationResult(false);
         history.setId(historyId);
