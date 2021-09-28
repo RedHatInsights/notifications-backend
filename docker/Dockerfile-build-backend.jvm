@@ -28,7 +28,7 @@ RUN microdnf install openssl curl ca-certificates ${JAVA_PACKAGE} \
 
 ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -XX:+ExitOnOutOfMemoryError"
 
-# We make four distinct layers so if there are application changes the library layers can be re-used
+# Use four distinct layers so if there are application changes the library layers can be re-used
 COPY --from=build --chown=1001 /home/jboss/backend/target/quarkus-app/lib/ /deployments/lib/
 COPY --from=build --chown=1001 /home/jboss/backend/target/quarkus-app/*.jar /deployments/
 COPY --from=build --chown=1001 /home/jboss/backend/target/quarkus-app/app/ /deployments/app/
