@@ -3,10 +3,14 @@ import { Breadcrumb, BreadcrumbItem, Button, Modal, ModalVariant, PageSection, S
 import {
     ActionGroup,
     Form,
-    FormGroup,
-    TextArea,
+    FormGroup, TextArea,
     TextInput  } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { PencilAltIcon } from '@patternfly/react-icons';
+import {
+    TableComposable,
+    Tbody,
+    Td,  Th,   Thead,
+    Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router';
@@ -36,7 +40,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ isOpen, setIsOpen ] = useState(false);
     const toggle = () => setIsOpen(!isOpen);
 
-    const onSubmit = React.useCallback(() => {
+    const handleSubmit = React.useCallback(() => {
         const mutate = newEvent.mutate;
         mutate({
             id: id ?? '',
@@ -45,6 +49,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             name: name ?? '',
             description: description ?? ''
         });
+
     }, [ newEvent.mutate, id, applicationId, displayName, name, description ]);
 
     if (eventTypesQuery.loading) {
@@ -107,7 +112,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='submit' isDisabled={ !name || !displayName }
-                                                    onClick= { onSubmit }>Submit</Button>
+                                                    { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
+                                                        <Spinner /> : eventTypesQuery.payload.value }
+                                                    onClick={ handleSubmit }>Submit</Button>
                                                 <Button variant='link' onClick={ toggle }>Cancel</Button>
                                             </ActionGroup>
                                         </Form><></>
@@ -128,7 +135,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <Td>{ e.name }</Td>
                                 <Td>{ e.description }</Td>
                                 <Td>{ e.id }</Td>
-
+                                <ActionGroup>
+                                    <PencilAltIcon />
+                                </ActionGroup>
                             </Tr>
                         ))}
                     </Tbody>
