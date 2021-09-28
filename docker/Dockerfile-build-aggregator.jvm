@@ -19,7 +19,7 @@ RUN microdnf install openssl curl ca-certificates ${JAVA_PACKAGE} \
     && chown 1001:root /deployments \
     && echo "securerandom.source=file:/dev/urandom" >> /etc/alternatives/jre/lib/security/java.security
 
-ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -XX:+ExitOnOutOfMemoryError"
 
 COPY --from=build --chown=1001 /home/jboss/aggregator/target/quarkus-app/lib/ /deployments/lib/
 COPY --from=build --chown=1001 /home/jboss/aggregator/target/quarkus-app/*.jar /deployments/
