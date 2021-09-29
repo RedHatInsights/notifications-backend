@@ -71,6 +71,87 @@ objects:
         volumeMounts:
         - mountPath: /tmp
           name: tmpdir
+    - name: notifications-aggregator
+      podSpec:
+        image: ${IMAGE_NAMESPACE}/notifications-aggregator:${IMAGE_TAG}
+        env:
+          - name: CLOWDER_FILE
+            value: ${CLOWDER_FILE}
+          - name: CLOWDER_ENABLED
+            value: ${CLOWDER_ENABLED}
+          - name: QUARKUS_LOG_CLOUDWATCH_LOG_GROUP
+            valueFrom:
+              secretKeyRef:
+                name: cloudwatch
+                key: log_group_name
+          - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
+            value: ${CLOUDWATCH_LOG_STREAM_NAME}
+          - name: NOTIFICATIONS_AGGREGATOR_EMAIL_SUBSCRIPTION_PERIODIC_CRON_ENABLED
+            value: ${CRONJOB_ENABLED}
+          - name: QUARKUS_LOG_CLOUDWATCH_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: cloudwatch
+                key: aws_access_key_id
+          - name: QUARKUS_LOG_CLOUDWATCH_ACCESS_KEY_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: cloudwatch
+                key: aws_secret_access_key
+          - name: QUARKUS_LOG_CLOUDWATCH_REGION
+            valueFrom:
+              secretKeyRef:
+                name: cloudwatch
+                key: aws_region
+          - name: KAFKA_BOOTSTRAP_SERVERS
+            value: ${KAFKA_BOOTSTRAP_HOST}:${KAFKA_BOOTSTRAP_PORT}
+          - name: DATABASE_HOST
+            valueFrom:
+              secretKeyRef:
+                name: ${DB_SECRET_NAME}
+                key: db.host
+          - name: DATABASE_PORT
+            valueFrom:
+              secretKeyRef:
+                name: ${DB_SECRET_NAME}
+                key: db.port
+          - name: QUARKUS_HTTP_PORT
+            value: "8080"
+          - name: QUARKUS_DATASOURCE_JDBC_URL
+            value: jdbc:postgresql://${DATABASE_HOST}:${DATABASE_PORT}/notifications_backend
+          - name: QUARKUS_DATASOURCE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${DB_SECRET_NAME}
+                key: db.password
+          - name: QUARKUS_DATASOURCE_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: ${DB_SECRET_NAME}
+                key: db.user
+          - name: PGSSLMODE
+            value: ${PGSSLMODE}
+          - name: PGSSLROOTCERT
+            value: /etc/rds-certs/rds-cacert
+          - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
+            value: ${ENV_NAME}
+          - name: QUARKUS_LOG_SENTRY_DSN
+            value: >-
+              https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
+          - name: QUARKUS_LOG_SENTRY
+            value: ${SENTRY_ENABLED}
+          - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+            value: ${CLOUDWATCH_LOGGING_ENABLED}
+          - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
+            value: ${COMPONENT_DEBUG_LEVEL}
+      resources:
+        limits:
+          cpu: ${CPU_LIMIT}
+          memory: ${MEMORY_LIMIT}
+        requests:
+          cpu: ${CPU_REQUEST}
+          memory: ${MEMORY_REQUEST}
+      restartPolicy: OnFailure
     kafkaTopics:
     - replicas: 3
       partitions: 64
@@ -99,15 +180,12 @@ parameters:
   value: 250Mi
 - name: MIN_REPLICAS
   value: '1'
-- description: Image tag
-  name: IMAGE_TAG
-  required: true
 - description: Image name
   name: IMAGE
   value: quay.io/cloudservices/notifications-backend
 - description: Determines Clowder deployment
   name: CLOWDER_ENABLED
-  value: "false"
+  value: "true"
 - description: ClowdEnv Name
   name: ENV_NAME
   required: true
@@ -128,4 +206,35 @@ parameters:
   value: http
 - name: CLOUDWATCH_LOGGING_ENABLED
   description: Enable Cloudwatch (or not)
+  value: "false"
+- name: CLOUDWATCH_LOG_STREAM_NAME
+  value: ${HOSTNAME}
+- name: CRONJOB_ENABLED
+  displayName: Enable the cron job
+  value: "false"
+- name: COMPONENT_DEBUG_LEVEL
+  description: Debug level for com.redhat.cloud.notifications
+  value: INFO
+- name: DB_SECRET_NAME
+  value: notifications-backend-db
+- name: IMAGE_NAMESPACE
+  displayName: Image Namespace
+  description: Namespace which contains the image stream to pull from
+  value: {%- if local_image_namespace %} {{ parameters['NAMESPACE'] }} {% else %} buildfactory {%- endif %}
+- name: IMAGE_TAG
+  value: latest
+- name: KAFKA_BOOTSTRAP_HOST
+  displayName: Message Queue Hostname
+  description: Hostname which will be used to contact the message queue.
+  value: mq-kafka
+- name: KAFKA_BOOTSTRAP_PORT
+  displayName: Message Queue Port
+  description: Port which will be used to contact the message queue.
+  value: "29092"
+- name: PGSSLMODE
+  displayName: Postgres SSL mode
+  description: "Options can be found in the doc: https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-SSLMODE-STATEMENTS"
+  value: 'prefer'
+- name: SENTRY_ENABLED
+  displayName: Enable Sentry (or not)
   value: "false"
