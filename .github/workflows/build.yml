@@ -41,10 +41,9 @@ jobs:
         if: steps.admin-ui-changed.outputs.any_changed == 'true'
         run: ./mvnw clean verify -Padmin-console -pl :checkstyle -pl :admin-console
       - name: Push admin console
-        if: steps.admin-ui-changed.outputs.any_changed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        run: bash .github/scripts/push-admin-console.sh ${{ secrets.GH_ACCESS_TOKEN }}
-        env:
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        # Test on local branch with NOTIF-328
+        if: steps.admin-ui-changed.outputs.any_changed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/NOTIF-328'
+        run: bash .github/scripts/push-admin-console.sh
       - name: Build with Maven
         run: ./mvnw clean verify
       - uses: actions/upload-artifact@v2

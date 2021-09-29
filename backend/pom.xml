@@ -232,67 +232,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <version>2.6</version>
-                <executions>
-                    <execution>
-                        <id>Delete META-INF</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <excludeDefaultDirectories>true</excludeDefaultDirectories>
-                    <filesets>
-                        <fileset>
-                            <directory>${project.build.outputDirectory}/META-INF</directory>
-                            <followSymlinks>false</followSymlinks>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.googlecode.maven-download-plugin</groupId>
-                <artifactId>download-maven-plugin</artifactId>
-                <version>1.6.7</version>
-                <executions>
-                    <execution>
-                        <id>install-admin-ui</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <url>https://github.com/RedHatInsights/notifications-frontend-admin-build/archive/refs/heads/main.zip</url>
-                    <unpack>true</unpack>
-                    <outputDirectory>${project.build.outputDirectory}/META-INF/resources/</outputDirectory>
-                    <outputFileName>internal.zip</outputFileName>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.coderplus.maven.plugins</groupId>
-                <artifactId>copy-rename-maven-plugin</artifactId>
-                <version>1.0</version>
-                <executions>
-                    <execution>
-                        <id>copy-file</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>rename</goal>
-                        </goals>
-                        <configuration>
-                            <sourceFile>${project.build.outputDirectory}/META-INF/resources/notifications-frontend-admin-build-main</sourceFile>
-                            <destinationFile>${project.build.outputDirectory}/META-INF/resources/internal</destinationFile>
-                            <overWrite>true</overWrite>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>io.github.git-commit-id</groupId>
                 <artifactId>git-commit-id-maven-plugin</artifactId>
                 <version>5.0.0</version>
