@@ -73,7 +73,7 @@ objects:
           name: tmpdir
     - name: notifications-aggregator
       podSpec:
-        image: ${IMAGE_AGGREGATOR}/notifications-aggregator:${IMAGE_TAG}
+        image: ${IMAGE_AGGREGATOR}:${IMAGE_TAG}
         env:
           - name: CLOWDER_FILE
             value: ${CLOWDER_FILE}
