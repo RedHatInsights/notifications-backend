@@ -4832,7 +4832,7 @@ data:
       "timezone": "browser",
       "title": "JVM (Micrometer)",
       "uid": "nID67wNnz",
-      "version": 5
+      "version": 1
     }
 kind: ConfigMap
 metadata:
