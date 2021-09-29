@@ -1,12 +1,15 @@
 import produce from 'immer';
 import { useCallback, useEffect, useState } from 'react';
 import { useClient } from 'react-fetching-library';
+import { useUnmountPromise } from 'react-use';
 
 import { Operations } from '../generated/OpenapiInternal';
 import { Bundle } from '../types/Notifications';
 
 export const useBundles = () => {
     const client = useClient();
+    const mounted = useUnmountPromise();
+
     const [ bundles, setBundles ] = useState<ReadonlyArray<Bundle>>([]);
 
     const [ isLoading, setLoading ] = useState<boolean>();
@@ -48,11 +51,11 @@ export const useBundles = () => {
                 }
             }), bundles);
 
-            setBundles(reducedBundles);
+            (await mounted(Promise.resolve(() => setBundles((reducedBundles)))))();
         }
 
         setLoading(false);
-    }, [ client.query ]);
+    }, [ client.query, mounted ]);
 
     useEffect(() => {
         query();
