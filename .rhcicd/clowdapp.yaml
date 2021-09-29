@@ -73,7 +73,7 @@ objects:
           name: tmpdir
     - name: notifications-aggregator
       podSpec:
-        image: ${IMAGE_NAMESPACE}/notifications-aggregator:${IMAGE_TAG}
+        image: ${IMAGE_AGGREGATOR}/notifications-aggregator:${IMAGE_TAG}
         env:
           - name: CLOWDER_FILE
             value: ${CLOWDER_FILE}
@@ -180,8 +180,8 @@ parameters:
   value: 250Mi
 - name: MIN_REPLICAS
   value: '1'
-- description: Image name
-  name: IMAGE
+- name: IMAGE
+  description: Image name
   value: quay.io/cloudservices/notifications-backend
 - description: Determines Clowder deployment
   name: CLOWDER_ENABLED
@@ -217,10 +217,10 @@ parameters:
   value: INFO
 - name: DB_SECRET_NAME
   value: notifications-backend-db
-- name: IMAGE_NAMESPACE
-  displayName: Image Namespace
-  description: Namespace which contains the image stream to pull from
-  value: {%- if local_image_namespace %} {{ parameters['NAMESPACE'] }} {% else %} buildfactory {%- endif %}
+- name: IMAGE_AGGREGATOR
+  displayName: Image aggregator
+  description: Image name for aggregator
+  value: quay.io/cloudservices/notifications-aggregator
 - name: IMAGE_TAG
   value: latest
 - name: KAFKA_BOOTSTRAP_HOST
