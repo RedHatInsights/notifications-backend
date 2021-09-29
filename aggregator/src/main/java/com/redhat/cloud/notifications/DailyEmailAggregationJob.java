@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.CronJobRun;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.jboss.logging.Logger;
@@ -54,9 +53,6 @@ public class DailyEmailAggregationJob {
 
     @ActivateRequestContext
     public void processDailyEmail() {
-        if (!isCronJobEnabled()) {
-            return;
-        }
         LocalDateTime now = LocalDateTime.now(UTC);
         List<AggregationCommand> aggregationCommands = processAggregateEmails(now);
 
@@ -107,10 +103,5 @@ public class DailyEmailAggregationJob {
         processedGauge.set(pendingAggregationCommands.size());
 
         return pendingAggregationCommands;
-    }
-
-    private boolean isCronJobEnabled() {
-        // The scheduled job is disabled by default.
-        return ConfigProvider.getConfig().getOptionalValue("notifications.aggregator.email.subscription.periodic.cron.enabled", Boolean.class).orElse(false);
     }
 }
