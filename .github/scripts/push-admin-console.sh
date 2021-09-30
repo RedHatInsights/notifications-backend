@@ -8,8 +8,8 @@ rm -rf "${TARGET}"
 mkdir -p "${TARGET}"
 cp -r admin-console/src/main/webapp/build/* "${TARGET}"
 
-git config --global user.name "${GITHUB_ACTOR}[automatic action]"
+git config --global user.name "${GITHUB_ACTOR}[admin-console push script]"
 git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 git add -f "${TARGET}"
-git commit -m "Updating admin-console build"
+git commit -m "Update admin-console build artifacts"
 git push
