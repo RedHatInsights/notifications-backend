@@ -9,6 +9,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
       - name: Prepare cache key
         id: cache-key
         shell: bash
@@ -30,6 +32,17 @@ jobs:
         with:
           distribution: adopt
           java-version: 11
+      - name: Verify if admin-console changed
+        id: admin-console-changed
+        uses: tj-actions/changed-files@v1.1.2
+        with:
+          files: admin-console
+      - name: Build admin-console
+        if: steps.admin-console-changed.outputs.any_changed == 'true'
+        run: ./mvnw clean verify -Padmin-console -pl :checkstyle,:notifications-admin-console
+      - name: Push admin-console
+        if: steps.admin-console-changed.outputs.any_changed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: bash .github/scripts/push-admin-console.sh
       - name: Build with Maven
         run: ./mvnw clean verify
       - uses: actions/upload-artifact@v2
