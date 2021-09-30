@@ -39,7 +39,7 @@ jobs:
           files: admin-console
       - name: Build admin UI
         if: steps.admin-ui-changed.outputs.any_changed == 'true'
-        run: ./mvnw clean verify -Padmin-console -pl :checkstyle -pl :admin-console
+        run: ./mvnw clean verify -Padmin-console -pl :checkstyle -pl :notifications-admin-console
       - name: Push admin console
         if: steps.admin-ui-changed.outputs.any_changed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: bash .github/scripts/push-admin-console.sh
