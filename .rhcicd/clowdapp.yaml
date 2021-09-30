@@ -56,8 +56,6 @@ objects:
           value: ${RBAC_SCHEME}://${RBAC_HOST}:${RBAC_PORT}
         - name: RBAC_MP_REST_URL
           value: ${RBAC_SCHEME}://${RBAC_HOST}:${RBAC_PORT}
-        - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
-          value: ${CLOUDWATCH_LOGGING_ENABLED}
         resources:
           limits:
             cpu: ${CPU_LIMIT}
@@ -79,30 +77,8 @@ objects:
             value: ${CLOWDER_FILE}
           - name: CLOWDER_ENABLED
             value: ${CLOWDER_ENABLED}
-          - name: QUARKUS_LOG_CLOUDWATCH_LOG_GROUP
-            valueFrom:
-              secretKeyRef:
-                name: cloudwatch
-                key: log_group_name
-          - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
-            value: ${CLOUDWATCH_LOG_STREAM_NAME}
           - name: NOTIFICATIONS_AGGREGATOR_EMAIL_SUBSCRIPTION_PERIODIC_CRON_ENABLED
             value: ${CRONJOB_ENABLED}
-          - name: QUARKUS_LOG_CLOUDWATCH_ACCESS_KEY_ID
-            valueFrom:
-              secretKeyRef:
-                name: cloudwatch
-                key: aws_access_key_id
-          - name: QUARKUS_LOG_CLOUDWATCH_ACCESS_KEY_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: cloudwatch
-                key: aws_secret_access_key
-          - name: QUARKUS_LOG_CLOUDWATCH_REGION
-            valueFrom:
-              secretKeyRef:
-                name: cloudwatch
-                key: aws_region
           - name: KAFKA_BOOTSTRAP_SERVERS
             value: ${KAFKA_BOOTSTRAP_HOST}:${KAFKA_BOOTSTRAP_PORT}
           - name: DATABASE_HOST
@@ -140,8 +116,6 @@ objects:
               https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
           - name: QUARKUS_LOG_SENTRY
             value: ${SENTRY_ENABLED}
-          - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
-            value: ${CLOUDWATCH_LOGGING_ENABLED}
           - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
             value: ${COMPONENT_DEBUG_LEVEL}
       resources:
@@ -204,11 +178,6 @@ parameters:
   displayName: Rbac Service Scheme
   description: Scheme to use for the RBAC service URL. Can be either http or https
   value: http
-- name: CLOUDWATCH_LOGGING_ENABLED
-  description: Enable Cloudwatch (or not)
-  value: "false"
-- name: CLOUDWATCH_LOG_STREAM_NAME
-  value: ${HOSTNAME}
 - name: CRONJOB_ENABLED
   displayName: Enable the cron job
   value: "false"
