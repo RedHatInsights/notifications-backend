@@ -185,6 +185,7 @@ public class ResourceHelpers {
         history.setInvocationResult(TRUE);
         history.setEvent(event);
         history.setEndpoint(endpoint);
+        history.setEndpointType(endpoint.getType());
         return notificationResources.createNotificationHistory(history);
     }
 

@@ -64,7 +64,7 @@ public class EventService {
                                             List<EventLogEntryAction> actions = event.getHistoryEntries().stream().map(historyEntry -> {
                                                 EventLogEntryAction action = new EventLogEntryAction();
                                                 action.setId(historyEntry.getId());
-                                                action.setEndpointType(historyEntry.getEndpoint().getType());
+                                                action.setEndpointType(historyEntry.getEndpointType());
                                                 action.setInvocationResult(historyEntry.isInvocationResult());
                                                 return action;
                                             }).collect(Collectors.toList());

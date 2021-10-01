@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.ModelInstancesHolder;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Event;
@@ -59,6 +60,9 @@ public class EventServiceTest extends DbIsolatedTest {
     @Inject
     ResourceHelpers resourceHelpers;
 
+    @Inject
+    EndpointResources endpointResources;
+
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
@@ -108,6 +112,8 @@ public class EventServiceTest extends DbIsolatedTest {
                 .invoke(model.notificationHistories::add)
                 .chain(() -> resourceHelpers.createNotificationHistory(model.events.get(2), model.endpoints.get(1)))
                 .invoke(model.notificationHistories::add)
+                .chain(() -> endpointResources.deleteEndpoint(DEFAULT_ACCOUNT_ID, model.endpoints.get(0).getId()))
+                .chain(() -> endpointResources.deleteEndpoint(DEFAULT_ACCOUNT_ID, model.endpoints.get(1).getId()))
                 .chain(runOnWorkerThread(() -> {
 
                     /*
@@ -417,7 +423,7 @@ public class EventServiceTest extends DbIsolatedTest {
                 Optional<NotificationHistory> historyEntry = Arrays.stream(historyEntries)
                         .filter(entry -> entry.getId().equals(eventLogEntryAction.getId())).findAny();
                 assertTrue(historyEntry.isPresent());
-                assertEquals(historyEntry.get().getEndpoint().getType(), eventLogEntryAction.getEndpointType());
+                assertEquals(historyEntry.get().getEndpointType(), eventLogEntryAction.getEndpointType());
                 assertEquals(historyEntry.get().isInvocationResult(), eventLogEntryAction.getInvocationResult());
             }
         }
