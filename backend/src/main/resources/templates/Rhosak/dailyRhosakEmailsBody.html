@@ -1,6 +1,132 @@
 {#include Rhosak/rhosakEmailBody}
-{#content-title}Red Hat OpenShift Streams for Apache Kafka Daily Digest - {action.context.system_check_in.toUtcFormat()}{/content-title}
+{#content-title}Red Hat OpenShift Streams for Apache Kafka Daily Report - {action.context.system_check_in.toUtcFormat()}{/content-title}
 {#content-body}
-<!-- TODO put email content here -->
+<tr>
+    <td class="rh-body rh-multi-column">
+        <div>Hello {user.firstName} {user.lastName}, this is the daily report for your OpenShift Streams instances</div>
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td>
+                    <div class="container">
+                        <div class="rh-card" style="margin-right: 12px;">
+                            <div class="rh-card__header">
+                                <h2>
+                                    OpenShift Streams Instances with Kafka Upgrades
+                                </h2>
+                            </div>
+                            <div>
+                                <span class="rh-metric__count">{action.context.upgrades.size()}</span>
+                            </div>
+                        </div>
+                        <div class="rh-card" style="margin-left: 12px;">
+                            <div class="rh-card__header">
+                                <h2>
+                                    OpenShift Streams Instances that are impacted by service disruption
+                                </h2>
+                            </div>
+                            <div>
+                                <p></p>
+                                <span class="rh-metric__count">{action.context.disruptions.size()}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end 50 col -->
+                    <!--[if (gte mso 9)|(IE)]>
+                    </td>
+                    </tr>
+                    </table>
+                    <![endif]-->
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+{#if action.context.upgrades.size() > 0}
+<tr>
+    <td class="rh-content__block">
+        <p>Daily service disruption summary for triggered on <b>{action.context.upgrades.size()} {#if action.context.upgrades.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.</p>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table class="rh-data-table rh-m-bordered">
+            <thead>
+            <tr>
+                <th>Kafka name</th>
+                <th>Kafka version upgrade</th>
+            </tr>
+            </thead>
+            <tbody>
+            {#for key in action.context.upgrades.keySet()}
+            <tr>
+                <td>{action.context.upgrades.get(key).name}</td>
+                <td>{action.context.upgrades.get(key).kafka_version}</td>
+            </tr>
+            {/for}
+            </tbody>
+        </table>
+    </td>
+</tr>
+{#else}
+<b>No Kafka upgrade for any of your OpenShift Streams Instance</b>
+{/if}
+
+{#if action.context.disruptions.size() > 0}
+<tr>
+    <td class="rh-content__block">
+        <p>Daily service disruption summary for triggered on <b>{action.context.disruptions.size()} {#if action.context.disruptions.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.</p>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table class="rh-data-table rh-m-bordered">
+            <thead>
+            <tr>
+                <th>Kafka name</th>
+                <th>Service disruption impact on</th>
+            </tr>
+            </thead>
+            <tbody>
+            {#for key in action.context.disruptions.keySet()}
+            <tr>
+                <td>{action.context.disruptions.get(key).name}</td>
+                <td>{action.context.disruptions.get(key).impacted_area}</td>
+            </tr>
+            {/for}
+            </tbody>
+        </table>
+    </td>
+</tr>
+{#else}
+<b>No service disruption for any your OpenShift Streams Instance</b>
+{/if}
+<tr>
+    <td class="rh-content__block">
+        <div class="rh-stack">
+            If you have any questions, please <a target="_blank" href="https://access.redhat.com/support/contact/technicalSupport/">contact us</a>.
+            Review the <a target="_blank" href="https://access.redhat.com/support/policy/support_process">support process</a> for guidance on working with Red Hat support.
+        </div>
+    </td>
+</tr>
+
+<tr>
+    <td class="rh-content__block">
+        <table align="center">
+            <tr>
+                <td class="rh-cta-link" align="center">
+                    <a target="_blank" href="https://console.redhat.com/beta/application-services/streams/kafkas">
+                                <span>
+                                  Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+                                </span>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
 {/content-body}
 {/include}
