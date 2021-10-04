@@ -1,6 +1,75 @@
 {#include Rhosak/rhosakEmailBody}
-{#content-title}Kafka Instance Created - {action.context.system_check_in.toUtcFormat()}{/content-title}
+{#content-title}OpenShift Streams instance {action.context.name} created at {action.context.created_at.toUtcFormat()}{/content-title}
 {#content-body}
-<!-- TODO put email content here -->
+<tr>
+    <td class="rh-body">
+        <table
+                class="rh-content"
+                role="presentation"
+                align="center"
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                width="100%"
+        >
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <p>
+                        Hello {user.firstName} {user.lastName},
+                        <br/>
+                        <br/>
+                        Your OpenShift Streams instance, with the name {action.context.name}, has been successfully created.
+                        <br/>
+                        <br/>
+                        You can access your instance by following this <a href="{action.context.browserUrl}" target="_blank">link</a>
+                        <br/>
+                        <br/>
+                        The bootstrap server host and port of your OpenShift Streams instance are: <i>{action.context.bootstrap_server_host}</i>
+                        <br/>
+                        <br/>
+                        You can get more information on how to get started with OpenShift Streams by following the
+                        <a href="https://console.redhat.com/beta/application-services/streams/resources?quickstart=getting-started" target="_blank">Getting Started Quick Start</a>
+                        and/or reading the
+                        <a href="https://access.redhat.com/documentation/en-us/red_hat_openshift_streams_for_apache_kafka/1/guide/f351c4bd-9840-42ef-bcf2-b0c9be4ee30a" target="_blank">Getting Started with Red Hat OpenShift Streams for Apache Kafka Guide</a>
+                        <br/>
+                        <br/>
+                        If you have any questions, please
+                        <a href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank">contact us</a>. Review the
+                        <a href="https://access.redhat.com/support/policy/support_process" target="_blank">support process</a>for guidance on working with Red Hat support.
+                        <br/>
+                        <br/>
+                        Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+                    </p>
+                </td>
+            </tr>
+            <!-- end content block -->
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <table
+                            role="presentation"
+                            border="0"
+                            cellpadding="0"
+                            cellspacing="0"
+                            align="center"
+                            class="rh-button-table"
+                    >
+                        <tr>
+                            <td class="rh-cta-link" align="center">
+                                <a target="_blank" href="https://console.redhat.com/beta/application-services/streams/kafkas">
+                                    <span>Go to Kafka Instances page</span>
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
 {/content-body}
 {/include}
