@@ -1,6 +1,57 @@
 {#include Rhosak/rhosakEmailBody}
-{#content-title}Kafka Instance Deleted - {action.context.system_check_in.toUtcFormat()}{/content-title}
+{#content-title}OpenShift Streams instance {action.context.name} deleted{/content-title}
 {#content-body}
-<!-- TODO put email content here -->
+<tr>
+    <td class="rh-body">
+        <table
+                class="rh-content"
+                role="presentation"
+                align="center"
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                width="100%"
+        >
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <p>
+                        Hello {user.firstName} {user.lastName},
+                        <br/>
+                        <br/>
+                        Your OpenShift Streams instance, with the name {action.context.name}, has been successfully deleted.
+                        <br/>
+                        <br/>
+                        Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+                    </p>
+                </td>
+            </tr>
+            <!-- end content block -->
+
+            <tr>
+                <td class="rh-content__block">
+                    <table
+                            role="presentation"
+                            border="0"
+                            cellpadding="0"
+                            cellspacing="0"
+                            align="center"
+                            class="rh-button-table"
+                    >
+                        <tr>
+                            <td class="rh-cta-link" align="center">
+                                <a target="_blank" href="https://console.redhat.com/beta/application-services/streams/kafkas">
+                                    <span>Go to Kafka Instances page</span>
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </td>
+</tr>
 {/content-body}
 {/include}
