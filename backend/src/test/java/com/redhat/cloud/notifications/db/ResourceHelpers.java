@@ -180,7 +180,6 @@ public class ResourceHelpers {
     public Uni<NotificationHistory> createNotificationHistory(Event event, Endpoint endpoint) {
         NotificationHistory history = new NotificationHistory();
         history.setId(UUID.randomUUID());
-        history.setAccountId(DEFAULT_ACCOUNT_ID);
         history.setInvocationTime(1L);
         history.setInvocationResult(TRUE);
         history.setEvent(event);
