@@ -74,6 +74,13 @@
             <version>${insights-notification-schemas-java.version}</version>
         </dependency>
 
+        <!-- Configuration dependencies -->
+        <dependency>
+            <groupId>com.redhat.cloud.common</groupId>
+            <artifactId>clowder-quarkus-config-source</artifactId>
+            <version>${clowder-quarkus-config-source.version}</version>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>io.quarkus</groupId>
