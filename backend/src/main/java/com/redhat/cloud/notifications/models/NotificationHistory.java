@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.redhat.cloud.notifications.db.converters.EndpointTypeConverter;
 import com.redhat.cloud.notifications.db.converters.NotificationHistoryDetailsConverter;
 
 import javax.persistence.Convert;
@@ -51,11 +52,19 @@ public class NotificationHistory extends CreationTimestamped {
     @Transient
     private UUID endpointId;
 
-    @NotNull
-    @ManyToOne(fetch = LAZY, optional = false)
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "endpoint_id")
     @JsonIgnore
     private Endpoint endpoint;
+
+    /*
+     * This is a duplicate of the Endpoint#type field. We need it to guarantee that the endpoint type will remain
+     * available for the event log even if the endpoint is deleted by an org admin.
+     */
+    @NotNull
+    @Convert(converter = EndpointTypeConverter.class)
+    @JsonIgnore
+    private EndpointType endpointType;
 
     @Convert(converter = NotificationHistoryDetailsConverter.class)
     private Map<String, Object> details;
@@ -135,6 +144,14 @@ public class NotificationHistory extends CreationTimestamped {
         this.endpoint = endpoint;
     }
 
+    public EndpointType getEndpointType() {
+        return endpointType;
+    }
+
+    public void setEndpointType(EndpointType endpointType) {
+        this.endpointType = endpointType;
+    }
+
     public Map<String, Object> getDetails() {
         return details;
     }
@@ -164,6 +181,7 @@ public class NotificationHistory extends CreationTimestamped {
         NotificationHistory history = new NotificationHistory();
         history.setInvocationTime(invocationTime);
         history.setEndpoint(item.getEndpoint());
+        history.setEndpointType(item.getEndpoint().getType());
         history.setAccountId(item.getTenant());
         history.setEvent(item.getEvent());
         history.setInvocationResult(false);

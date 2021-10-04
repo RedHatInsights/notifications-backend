@@ -38,7 +38,7 @@ public class EventResources {
                 .onItem().transformToUni(eventIds -> {
                     String hql = "SELECT DISTINCT e FROM Event e " +
                             "JOIN FETCH e.eventType et JOIN FETCH et.application a JOIN FETCH a.bundle b " +
-                            "LEFT JOIN FETCH e.historyEntries he LEFT JOIN FETCH he.endpoint " +
+                            "LEFT JOIN FETCH e.historyEntries he " +
                             "WHERE e.accountId = :accountId AND e.id IN (:eventIds)";
 
                     if (orderByCondition.isPresent()) {

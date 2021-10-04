@@ -74,7 +74,7 @@ public class Endpoint extends CreationUpdateTimestamped {
     @JsonIgnore
     private Set<BehaviorGroupAction> behaviorGroupActions;
 
-    @OneToMany(mappedBy = "endpoint", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "endpoint")
     @JsonIgnore
     private Set<NotificationHistory> notificationHistories;
 
