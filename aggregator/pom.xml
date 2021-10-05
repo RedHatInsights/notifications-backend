@@ -18,13 +18,6 @@
     </properties>
 
     <dependencies>
-
-        <!--        <dependency>-->
-        <!--            <groupId>com.redhat.cloud.notifications</groupId>-->
-        <!--            <artifactId>notifications-models</artifactId>-->
-        <!--            <version>1.0.0-SNAPSHOT</version>-->
-        <!--        </dependency>-->
-
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
