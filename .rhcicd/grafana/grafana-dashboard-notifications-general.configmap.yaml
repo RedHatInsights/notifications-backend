@@ -503,7 +503,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(increase(processor_input_processed_total{namespace=\"$kubernetes_namespace\"}[5m]))",
+              "expr": "sum(increase(processor_input_processed_total[5m]))",
               "format": "time_series",
               "hide": false,
               "interval": "",
