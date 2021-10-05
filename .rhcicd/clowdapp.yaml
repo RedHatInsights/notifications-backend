@@ -69,7 +69,10 @@ objects:
         volumeMounts:
         - mountPath: /tmp
           name: tmpdir
+    jobs:
     - name: notifications-aggregator
+      schedule: ${CRON_SCHEDULE_USER_METRICS}
+      restartPolicy: OnFailure
       podSpec:
         image: ${IMAGE_AGGREGATOR}:${IMAGE_TAG}
         env:
@@ -79,32 +82,8 @@ objects:
             value: ${CLOWDER_ENABLED}
           - name: NOTIFICATIONS_AGGREGATOR_EMAIL_SUBSCRIPTION_PERIODIC_CRON_ENABLED
             value: ${CRONJOB_ENABLED}
-          - name: KAFKA_BOOTSTRAP_SERVERS
-            value: ${KAFKA_BOOTSTRAP_HOST}:${KAFKA_BOOTSTRAP_PORT}
-          - name: DATABASE_HOST
-            valueFrom:
-              secretKeyRef:
-                name: ${DB_SECRET_NAME}
-                key: db.host
-          - name: DATABASE_PORT
-            valueFrom:
-              secretKeyRef:
-                name: ${DB_SECRET_NAME}
-                key: db.port
           - name: QUARKUS_HTTP_PORT
             value: "8080"
-          - name: QUARKUS_DATASOURCE_JDBC_URL
-            value: jdbc:postgresql://${DATABASE_HOST}:${DATABASE_PORT}/notifications_backend
-          - name: QUARKUS_DATASOURCE_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: ${DB_SECRET_NAME}
-                key: db.password
-          - name: QUARKUS_DATASOURCE_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: ${DB_SECRET_NAME}
-                key: db.user
           - name: PGSSLMODE
             value: ${PGSSLMODE}
           - name: PGSSLROOTCERT
@@ -125,7 +104,6 @@ objects:
         requests:
           cpu: ${CPU_REQUEST}
           memory: ${MEMORY_REQUEST}
-      restartPolicy: OnFailure
     kafkaTopics:
     - replicas: 3
       partitions: 64
@@ -192,14 +170,6 @@ parameters:
   value: quay.io/cloudservices/notifications-aggregator
 - name: IMAGE_TAG
   value: latest
-- name: KAFKA_BOOTSTRAP_HOST
-  displayName: Message Queue Hostname
-  description: Hostname which will be used to contact the message queue.
-  value: mq-kafka
-- name: KAFKA_BOOTSTRAP_PORT
-  displayName: Message Queue Port
-  description: Port which will be used to contact the message queue.
-  value: "29092"
 - name: PGSSLMODE
   displayName: Postgres SSL mode
   description: "Options can be found in the doc: https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-SSLMODE-STATEMENTS"
@@ -207,3 +177,7 @@ parameters:
 - name: SENTRY_ENABLED
   displayName: Enable Sentry (or not)
   value: "false"
+- description: User metrics capture job schedule
+  name: CRON_SCHEDULE_USER_METRICS
+  required: true
+  value: "0 0 * * *"
