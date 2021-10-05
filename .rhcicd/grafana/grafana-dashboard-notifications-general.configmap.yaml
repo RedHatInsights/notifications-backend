@@ -71,7 +71,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(increase(processor_input_processed_total[5m]))",
+              "expr": "sum(increase(processor_input_processed_total{service=\"notifications-backend\"}[5m]))",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -80,7 +80,7 @@ data:
               "refId": "A"
             },
             {
-              "expr": "sum(increase(input_rejected_total[5m]))",
+              "expr": "sum(increase(input_rejected_total{service=\"notifications-backend\"}[5m]))",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -2061,7 +2061,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 12
+      "version": 13
     }
 kind: ConfigMap
 metadata:
