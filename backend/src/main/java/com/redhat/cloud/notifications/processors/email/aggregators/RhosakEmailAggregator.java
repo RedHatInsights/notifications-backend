@@ -15,7 +15,7 @@ public class RhosakEmailAggregator extends AbstractEmailPayloadAggregator {
     private static final String SERVICE_DISRUPTION_EVENT_TYPE = "disruption";
     private static final String CONTEXT = "context";
     private static final String EVENTS = "events";
-    private static final String PAYLOAD = "events";
+    private static final String PAYLOAD = "payload";
 
     private static final String PAYLOAD_NAME = "name";
     private static final String KAFKA_VERSION = "kafka_version";
