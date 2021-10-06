@@ -35,7 +35,7 @@ public class Policies implements EmailTemplate {
         return true;
     }
 
-    @CheckedTemplate
+    @CheckedTemplate(requireTypeSafeExpressions = false)
     public static class Templates {
 
         public static native TemplateInstance instantEmailTitle();

@@ -70,7 +70,7 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
     }
 
     @Test
-    void shouldSuccessfullySendEmail() {
+    void shouldSuccessfullySendEmail() throws InterruptedException {
         AggregationCommand aggregationCommand1 = new AggregationCommand(
                 new EmailAggregationKey("account-1", "bundle-1", "app-1"),
                 LocalDateTime.now(),
@@ -88,6 +88,9 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
 
         inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
         inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
+
+        // TODO Replace fixed delay with a dynamic one (wait until the message has been processed).
+        Thread.sleep(5000L);
 
         // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
         verify(emailAggregationResources, times(1)).getEmailAggregation(

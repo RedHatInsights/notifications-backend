@@ -79,7 +79,7 @@ public class Rhosak implements EmailTemplate {
         return true;
     }
 
-    @CheckedTemplate
+    @CheckedTemplate(requireTypeSafeExpressions = false)
     public static class Templates {
 
         public static native TemplateInstance actionRequiredTitle();

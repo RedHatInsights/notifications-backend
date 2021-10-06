@@ -4,7 +4,7 @@ import com.redhat.cloud.notifications.models.KafkaMessage;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.reactive.messaging.kafka.KafkaMessageMetadata;
+import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
 import org.apache.kafka.common.header.Header;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -32,7 +32,7 @@ public class KafkaMessageDeduplicator {
     private static final String ACCEPTED_UUID_VERSION = "4";
 
     @Inject
-    Mutiny.StatelessSession statelessSession;
+    Mutiny.SessionFactory sessionFactory;
 
     @Inject
     MeterRegistry meterRegistry;
@@ -112,10 +112,12 @@ public class KafkaMessageDeduplicator {
             return Uni.createFrom().item(FALSE);
         } else {
             String hql = "SELECT TRUE FROM KafkaMessage WHERE id = :messageId";
-            return statelessSession.createQuery(hql, Boolean.class)
-                    .setParameter("messageId", messageId)
-                    .getSingleResultOrNull()
-                    .onItem().ifNull().continueWith(FALSE);
+            return sessionFactory.withStatelessSession(statelessSession -> {
+                return statelessSession.createQuery(hql, Boolean.class)
+                        .setParameter("messageId", messageId)
+                        .getSingleResultOrNull()
+                        .onItem().ifNull().continueWith(FALSE);
+            });
         }
     }
 
@@ -125,7 +127,9 @@ public class KafkaMessageDeduplicator {
         } else {
             KafkaMessage kafkaMessage = new KafkaMessage(messageId);
             kafkaMessage.prePersist(); // This method must be called manually while using a StatelessSession.
-            return statelessSession.insert(kafkaMessage);
+            return sessionFactory.withStatelessSession(statelessSession -> {
+                return statelessSession.insert(kafkaMessage);
+            });
         }
     }
 }

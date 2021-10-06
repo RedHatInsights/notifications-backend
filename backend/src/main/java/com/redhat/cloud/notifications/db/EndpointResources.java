@@ -29,119 +29,126 @@ public class EndpointResources {
     private static final Logger LOGGER = Logger.getLogger(EndpointResources.class.getName());
 
     @Inject
-    Mutiny.Session session;
-
-    @Inject
-    Mutiny.StatelessSession statelessSession;
+    Mutiny.SessionFactory sessionFactory;
 
     public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
-        return session.persist(endpoint)
-                .onItem().call(session::flush)
-                .onItem().call(() -> {
-                    // If the endpoint properties are null, they won't be persisted.
-                    if (endpoint.getProperties() != null) {
-                        /*
-                         * As weird as it seems, we need the following line because the Endpoint instance was
-                         * deserialized from JSON and that JSON did not contain any information about the
-                         * @OneToOne relation from EndpointProperties to Endpoint.
-                         */
-                        endpoint.getProperties().setEndpoint(endpoint);
-                        switch (endpoint.getType()) {
-                            case CAMEL:
-                            case WEBHOOK:
-                            case EMAIL_SUBSCRIPTION:
-                                return session.persist(endpoint.getProperties())
-                                        .onItem().call(session::flush);
-                            default:
-                                // Do nothing.
-                                break;
+        return sessionFactory.withSession(session -> {
+            return session.persist(endpoint)
+                    .onItem().call(session::flush)
+                    .onItem().call(() -> {
+                        // If the endpoint properties are null, they won't be persisted.
+                        if (endpoint.getProperties() != null) {
+                            /*
+                             * As weird as it seems, we need the following line because the Endpoint instance was
+                             * deserialized from JSON and that JSON did not contain any information about the
+                             * @OneToOne relation from EndpointProperties to Endpoint.
+                             */
+                            endpoint.getProperties().setEndpoint(endpoint);
+                            switch (endpoint.getType()) {
+                                case CAMEL:
+                                case WEBHOOK:
+                                case EMAIL_SUBSCRIPTION:
+                                    return session.persist(endpoint.getProperties())
+                                            .onItem().call(session::flush);
+                                default:
+                                    // Do nothing.
+                                    break;
+                            }
                         }
-                    }
-                    /*
-                     * If this line is reached, it means the endpoint properties are null or we don't support
-                     * persisting properties for the endpoint type. We still have to return something.
-                     */
-                    return Uni.createFrom().voidItem();
-                })
-                .replaceWith(endpoint);
+                        /*
+                         * If this line is reached, it means the endpoint properties are null or we don't support
+                         * persisting properties for the endpoint type. We still have to return something.
+                         */
+                        return Uni.createFrom().voidItem();
+                    })
+                    .replaceWith(endpoint);
+        });
     }
 
     public Uni<List<Endpoint>> getEndpointsPerType(String tenant, EndpointType type, Boolean activeOnly, Query limiter) {
-        // TODO Modify the parameter to take a vararg of Functions that modify the query
-        // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
-        String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.type = :endpointType";
-        if (activeOnly != null) {
-            query += " AND enabled = :enabled";
-        }
+        return sessionFactory.withSession(session -> {
+            // TODO Modify the parameter to take a vararg of Functions that modify the query
+            // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
+            String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.type = :endpointType";
+            if (activeOnly != null) {
+                query += " AND enabled = :enabled";
+            }
 
-        if (limiter != null) {
-            query = limiter.getModifiedQuery(query);
-        }
+            if (limiter != null) {
+                query = limiter.getModifiedQuery(query);
+            }
 
-        Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
-                .setParameter("accountId", tenant)
-                .setParameter("endpointType", type);
+            Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
+                    .setParameter("accountId", tenant)
+                    .setParameter("endpointType", type);
 
-        if (activeOnly != null) {
-            mutinyQuery = mutinyQuery.setParameter("enabled", activeOnly);
-        }
+            if (activeOnly != null) {
+                mutinyQuery = mutinyQuery.setParameter("enabled", activeOnly);
+            }
 
-        if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-            mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
-                    .setFirstResult(limiter.getLimit().getOffset());
-        }
+            if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
+                mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
+                        .setFirstResult(limiter.getLimit().getOffset());
+            }
 
-        return mutinyQuery.getResultList()
-                .onItem().call(this::loadProperties);
+            return mutinyQuery.getResultList()
+                    .onItem().call(this::loadProperties);
+        });
     }
 
     public Uni<EndpointType> getEndpointTypeById(String accountId, UUID endpointId) {
         String query = "Select e.type from Endpoint e WHERE e.accountId = :accountId AND e.id = :endpointId";
-        return session.createQuery(query, EndpointType.class)
-                .setParameter("accountId", accountId)
-                .setParameter("endpointId", endpointId)
-                .getSingleResultOrNull();
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query, EndpointType.class)
+                    .setParameter("accountId", accountId)
+                    .setParameter("endpointId", endpointId)
+                    .getSingleResultOrNull();
+        });
     }
 
     public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties) {
-        return getEndpointsPerType(accountId, EndpointType.EMAIL_SUBSCRIPTION, null, null)
-                .onItem().call(this::loadProperties)
-                .onItem().transformToUni(emailEndpoints -> {
-                    Optional<Endpoint> endpointOptional = emailEndpoints
-                            .stream()
-                            .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(EmailSubscriptionProperties.class)))
-                            .findFirst();
-                    if (endpointOptional.isPresent()) {
-                        return Uni.createFrom().item(endpointOptional.get());
-                    }
+        return sessionFactory.withSession(session -> {
+            return getEndpointsPerType(accountId, EndpointType.EMAIL_SUBSCRIPTION, null, null)
+                    .onItem().call(this::loadProperties)
+                    .onItem().transformToUni(emailEndpoints -> {
+                        Optional<Endpoint> endpointOptional = emailEndpoints
+                                .stream()
+                                .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(EmailSubscriptionProperties.class)))
+                                .findFirst();
+                        if (endpointOptional.isPresent()) {
+                            return Uni.createFrom().item(endpointOptional.get());
+                        }
 
-                    Endpoint endpoint = new Endpoint();
-                    endpoint.setProperties(properties);
-                    endpoint.setAccountId(accountId);
-                    endpoint.setEnabled(true);
-                    endpoint.setDescription("System email endpoint");
-                    endpoint.setName("Email endpoint");
-                    endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+                        Endpoint endpoint = new Endpoint();
+                        endpoint.setProperties(properties);
+                        endpoint.setAccountId(accountId);
+                        endpoint.setEnabled(true);
+                        endpoint.setDescription("System email endpoint");
+                        endpoint.setName("Email endpoint");
+                        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
-                    return createEndpoint(endpoint);
-                });
+                        return createEndpoint(endpoint);
+                    });
+        });
     }
 
     public Uni<Long> getEndpointsCountPerType(String tenant, EndpointType type, Boolean activeOnly) {
-        String query = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId AND type = :endpointType";
-        if (activeOnly != null) {
-            query += " AND enabled = :enabled";
-        }
+        return sessionFactory.withSession(session -> {
+            String query = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId AND type = :endpointType";
+            if (activeOnly != null) {
+                query += " AND enabled = :enabled";
+            }
 
-        Mutiny.Query<Long> mutinyQuery = session.createQuery(query, Long.class)
-                .setParameter("accountId", tenant)
-                .setParameter("endpointType", type);
+            Mutiny.Query<Long> mutinyQuery = session.createQuery(query, Long.class)
+                    .setParameter("accountId", tenant)
+                    .setParameter("endpointType", type);
 
-        if (activeOnly != null) {
-            mutinyQuery = mutinyQuery.setParameter("enabled", activeOnly);
-        }
+            if (activeOnly != null) {
+                mutinyQuery = mutinyQuery.setParameter("enabled", activeOnly);
+            }
 
-        return mutinyQuery.getSingleResult();
+            return mutinyQuery.getSingleResult();
+        });
     }
 
     // Note: This method uses a stateless session
@@ -149,11 +156,13 @@ public class EndpointResources {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                 "WHERE e.enabled = TRUE AND b.eventType = :eventType AND bga.behaviorGroup.accountId = :accountId";
 
-        return statelessSession.createQuery(query, Endpoint.class)
-                .setParameter("eventType", eventType)
-                .setParameter("accountId", tenant)
-                .getResultList()
-                .onItem().call(endpoints -> loadProperties(endpoints, true));
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createQuery(query, Endpoint.class)
+                    .setParameter("eventType", eventType)
+                    .setParameter("accountId", tenant)
+                    .getResultList()
+                    .onItem().call(endpoints -> loadProperties(endpoints, true));
+        });
     }
 
     // Note: This method uses a stateless session
@@ -163,61 +172,71 @@ public class EndpointResources {
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
                 "AND e.type = :endpointType";
 
-        return statelessSession.createQuery(query, Endpoint.class)
-                .setParameter("applicationName", applicationName)
-                .setParameter("eventTypeName", eventTypeName)
-                .setParameter("accountId", tenant)
-                .setParameter("bundleName", bundleName)
-                .setParameter("endpointType", endpointType)
-                .getResultList()
-                .onItem().call(endpoints -> loadProperties(endpoints, true));
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createQuery(query, Endpoint.class)
+                    .setParameter("applicationName", applicationName)
+                    .setParameter("eventTypeName", eventTypeName)
+                    .setParameter("accountId", tenant)
+                    .setParameter("bundleName", bundleName)
+                    .setParameter("endpointType", endpointType)
+                    .getResultList()
+                    .onItem().call(endpoints -> loadProperties(endpoints, true));
+        });
     }
 
     public Uni<List<Endpoint>> getEndpoints(String tenant, Query limiter) {
-        // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
-        //      or should I just create a new method for it?
-        String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId";
+        return sessionFactory.withSession(session -> {
+            // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
+            //      or should I just create a new method for it?
+            String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId";
 
-        if (limiter != null) {
-            query = limiter.getModifiedQuery(query);
-        }
+            if (limiter != null) {
+                query = limiter.getModifiedQuery(query);
+            }
 
-        Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
-                .setParameter("accountId", tenant);
+            Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
+                    .setParameter("accountId", tenant);
 
-        if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-            mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
-                    .setFirstResult(limiter.getLimit().getOffset());
-        }
+            if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
+                mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
+                        .setFirstResult(limiter.getLimit().getOffset());
+            }
 
-        return mutinyQuery.getResultList()
-                .onItem().call(this::loadProperties);
+            return mutinyQuery.getResultList()
+                    .onItem().call(this::loadProperties);
+        });
     }
 
     public Uni<Long> getEndpointsCount(String tenant) {
         String query = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId";
-        return session.createQuery(query, Long.class)
-                .setParameter("accountId", tenant)
-                .getSingleResult();
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query, Long.class)
+                    .setParameter("accountId", tenant)
+                    .getSingleResult();
+        });
     }
 
     public Uni<Endpoint> getEndpoint(String tenant, UUID id) {
         String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.id = :id";
-        return session.createQuery(query, Endpoint.class)
-                .setParameter("id", id)
-                .setParameter("accountId", tenant)
-                .getSingleResultOrNull()
-                .onItem().ifNotNull().transformToUni(endpoint -> loadProperties(endpoint));
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query, Endpoint.class)
+                    .setParameter("id", id)
+                    .setParameter("accountId", tenant)
+                    .getSingleResultOrNull()
+                    .onItem().ifNotNull().transformToUni(endpoint -> loadProperties(endpoint));
+        });
     }
 
     public Uni<Boolean> deleteEndpoint(String tenant, UUID id) {
         String query = "DELETE FROM Endpoint WHERE accountId = :accountId AND id = :id";
-        return session.createQuery(query)
-                .setParameter("id", id)
-                .setParameter("accountId", tenant)
-                .executeUpdate()
-                .call(session::flush)
-                .onItem().transform(rowCount -> rowCount > 0);
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query)
+                    .setParameter("id", id)
+                    .setParameter("accountId", tenant)
+                    .executeUpdate()
+                    .call(session::flush)
+                    .onItem().transform(rowCount -> rowCount > 0);
+        });
         // Actually, the endpoint targeting this should be repeatable
     }
 
@@ -232,13 +251,15 @@ public class EndpointResources {
     private Uni<Boolean> modifyEndpointStatus(String tenant, UUID id, boolean enabled) {
         String query = "UPDATE Endpoint SET enabled = :enabled WHERE accountId = :accountId AND id = :id";
 
-        return session.createQuery(query)
-                .setParameter("id", id)
-                .setParameter("accountId", tenant)
-                .setParameter("enabled", enabled)
-                .executeUpdate()
-                .call(session::flush)
-                .onItem().transform(rowCount -> rowCount > 0);
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query)
+                    .setParameter("id", id)
+                    .setParameter("accountId", tenant)
+                    .setParameter("enabled", enabled)
+                    .executeUpdate()
+                    .call(session::flush)
+                    .onItem().transform(rowCount -> rowCount > 0);
+        });
     }
 
     public Uni<Boolean> updateEndpoint(Endpoint endpoint) {
@@ -255,48 +276,50 @@ public class EndpointResources {
             throw new RuntimeException("Unable to update an endpoint of type EMAIL_SUBSCRIPTION");
         }
 
-        return session.createQuery(endpointQuery)
-                .setParameter("name", endpoint.getName())
-                .setParameter("description", endpoint.getDescription())
-                .setParameter("enabled", endpoint.isEnabled())
-                .setParameter("accountId", endpoint.getAccountId())
-                .setParameter("id", endpoint.getId())
-                .executeUpdate()
-                .call(session::flush)
-                .onItem().transformToUni(endpointRowCount -> {
-                    if (endpointRowCount == 0) {
-                        return Uni.createFrom().item(Boolean.FALSE);
-                    } else if (endpoint.getProperties() == null) {
-                        return Uni.createFrom().item(Boolean.TRUE);
-                    } else {
-                        switch (endpoint.getType()) {
-                            case WEBHOOK:
-                                WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
-                                return session.createQuery(webhookQuery)
-                                        .setParameter("url", properties.getUrl())
-                                        .setParameter("method", properties.getMethod())
-                                        .setParameter("disableSslVerification", properties.getDisableSslVerification())
-                                        .setParameter("secretToken", properties.getSecretToken())
-                                        .setParameter("endpointId", endpoint.getId())
-                                        .executeUpdate()
-                                        .call(session::flush)
-                                        .onItem().transform(rowCount -> rowCount > 0);
-                            case CAMEL:
-                                CamelProperties cAttr = (CamelProperties) endpoint.getProperties();
-                                return session.createQuery(camelQuery)
-                                        .setParameter("url", cAttr.getUrl())
-                                        .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
-                                        .setParameter("secretToken", cAttr.getSecretToken())
-                                        .setParameter("endpointId", endpoint.getId())
-                                        .setParameter("subType", endpoint.getType())
-                                        .executeUpdate()
-                                        .call(session::flush)
-                                        .onItem().transform(rowCount -> rowCount > 0);
-                            default:
-                                return Uni.createFrom().item(Boolean.TRUE);
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(endpointQuery)
+                    .setParameter("name", endpoint.getName())
+                    .setParameter("description", endpoint.getDescription())
+                    .setParameter("enabled", endpoint.isEnabled())
+                    .setParameter("accountId", endpoint.getAccountId())
+                    .setParameter("id", endpoint.getId())
+                    .executeUpdate()
+                    .call(session::flush)
+                    .onItem().transformToUni(endpointRowCount -> {
+                        if (endpointRowCount == 0) {
+                            return Uni.createFrom().item(Boolean.FALSE);
+                        } else if (endpoint.getProperties() == null) {
+                            return Uni.createFrom().item(Boolean.TRUE);
+                        } else {
+                            switch (endpoint.getType()) {
+                                case WEBHOOK:
+                                    WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
+                                    return session.createQuery(webhookQuery)
+                                            .setParameter("url", properties.getUrl())
+                                            .setParameter("method", properties.getMethod())
+                                            .setParameter("disableSslVerification", properties.getDisableSslVerification())
+                                            .setParameter("secretToken", properties.getSecretToken())
+                                            .setParameter("endpointId", endpoint.getId())
+                                            .executeUpdate()
+                                            .call(session::flush)
+                                            .onItem().transform(rowCount -> rowCount > 0);
+                                case CAMEL:
+                                    CamelProperties cAttr = (CamelProperties) endpoint.getProperties();
+                                    return session.createQuery(camelQuery)
+                                            .setParameter("url", cAttr.getUrl())
+                                            .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
+                                            .setParameter("secretToken", cAttr.getSecretToken())
+                                            .setParameter("endpointId", endpoint.getId())
+                                            .setParameter("subType", endpoint.getType())
+                                            .executeUpdate()
+                                            .call(session::flush)
+                                            .onItem().transform(rowCount -> rowCount > 0);
+                                default:
+                                    return Uni.createFrom().item(Boolean.TRUE);
+                            }
                         }
-                    }
-                });
+                    });
+        });
     }
 
     public Uni<Void> loadProperties(List<Endpoint> endpoints) {
@@ -338,11 +361,15 @@ public class EndpointResources {
     private <T extends EndpointProperties> Uni<List<T>> find(Class<T> typedEndpointClass, Set<UUID> endpointIds, boolean useStatelessSession) {
         if (useStatelessSession) {
             String query = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:endpointIds)";
-            return statelessSession.createQuery(query, typedEndpointClass)
-                    .setParameter("endpointIds", endpointIds)
-                    .getResultList();
+            return sessionFactory.withStatelessSession(statelessSession -> {
+                return statelessSession.createQuery(query, typedEndpointClass)
+                        .setParameter("endpointIds", endpointIds)
+                        .getResultList();
+            });
         } else {
-            return session.find(typedEndpointClass, endpointIds.toArray());
+            return sessionFactory.withSession(session -> {
+                return session.find(typedEndpointClass, endpointIds.toArray());
+            });
         }
     }
 

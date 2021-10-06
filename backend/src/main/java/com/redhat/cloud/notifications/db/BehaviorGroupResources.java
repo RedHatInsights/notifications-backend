@@ -28,50 +28,58 @@ public class BehaviorGroupResources {
     private static final ZoneId UTC = ZoneId.of("UTC");
 
     @Inject
-    Mutiny.Session session;
+    Mutiny.SessionFactory sessionFactory;
 
     public Uni<BehaviorGroup> create(String accountId, BehaviorGroup behaviorGroup) {
-        return session.find(Bundle.class, behaviorGroup.getBundleId())
-                .onItem().ifNull().failWith(new NotFoundException("bundle_id not found"))
-                .onItem().invoke(bundle -> {
-                    behaviorGroup.setBundle(bundle);
-                    behaviorGroup.setAccountId(accountId);
-                })
-                .replaceWith(session.persist(behaviorGroup))
-                .call(session::flush)
-                .replaceWith(behaviorGroup)
-                .onItem().invoke(BehaviorGroup::filterOutBundle);
+        return sessionFactory.withSession(session -> {
+            return session.find(Bundle.class, behaviorGroup.getBundleId())
+                    .onItem().ifNull().failWith(new NotFoundException("bundle_id not found"))
+                    .onItem().invoke(bundle -> {
+                        behaviorGroup.setBundle(bundle);
+                        behaviorGroup.setAccountId(accountId);
+                    })
+                    .replaceWith(session.persist(behaviorGroup))
+                    .call(session::flush)
+                    .replaceWith(behaviorGroup)
+                    .onItem().invoke(BehaviorGroup::filterOutBundle);
+        });
     }
 
     public Uni<List<BehaviorGroup>> findByBundleId(String accountId, UUID bundleId) {
-        return session.createNamedQuery("findByBundleId", BehaviorGroup.class)
-                .setParameter("accountId", accountId)
-                .setParameter("bundleId", bundleId)
-                .getResultList()
-                .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutBundle));
+        return sessionFactory.withSession(session -> {
+            return session.createNamedQuery("findByBundleId", BehaviorGroup.class)
+                    .setParameter("accountId", accountId)
+                    .setParameter("bundleId", bundleId)
+                    .getResultList()
+                    .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutBundle));
+        });
     }
 
     // TODO Should this be forbidden for default behavior groups?
     public Uni<Boolean> update(String accountId, BehaviorGroup behaviorGroup) {
         String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE accountId = :accountId AND id = :id";
-        return session.createQuery(query)
-                .setParameter("displayName", behaviorGroup.getDisplayName())
-                .setParameter("accountId", accountId)
-                .setParameter("id", behaviorGroup.getId())
-                .executeUpdate()
-                .call(session::flush)
-                .onItem().transform(rowCount -> rowCount > 0);
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query)
+                    .setParameter("displayName", behaviorGroup.getDisplayName())
+                    .setParameter("accountId", accountId)
+                    .setParameter("id", behaviorGroup.getId())
+                    .executeUpdate()
+                    .call(session::flush)
+                    .onItem().transform(rowCount -> rowCount > 0);
+        });
     }
 
     // TODO Should this be forbidden for default behavior groups?
     public Uni<Boolean> delete(String accountId, UUID behaviorGroupId) {
         String query = "DELETE FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
-        return session.createQuery(query)
-                .setParameter("accountId", accountId)
-                .setParameter("id", behaviorGroupId)
-                .executeUpdate()
-                .call(session::flush)
-                .onItem().transform(rowCount -> rowCount > 0);
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query)
+                    .setParameter("accountId", accountId)
+                    .setParameter("id", behaviorGroupId)
+                    .executeUpdate()
+                    .call(session::flush)
+                    .onItem().transform(rowCount -> rowCount > 0);
+        });
     }
 
     /*
@@ -80,7 +88,7 @@ public class BehaviorGroupResources {
      * If an exception other than NoResultException is thrown during the update, the DB transaction will be rolled back.
      */
     public Uni<Boolean> updateEventTypeBehaviors(String accountId, UUID eventTypeId, Set<UUID> behaviorGroupIds) {
-        return session.withTransaction(tx -> {
+        return sessionFactory.withTransaction((session, tx) -> {
 
             // First, let's make sure the event type exists.
             return session.find(EventType.class, eventTypeId)
@@ -135,32 +143,36 @@ public class BehaviorGroupResources {
     public Uni<List<EventType>> findEventTypesByBehaviorGroupId(String accountId, UUID behaviorGroupId) {
         String query = "SELECT e FROM EventType e LEFT JOIN FETCH e.application JOIN e.behaviors b " +
                 "WHERE b.behaviorGroup.accountId = :accountId AND b.behaviorGroup.id = :behaviorGroupId";
-        return session.createQuery(query, EventType.class)
-                .setParameter("accountId", accountId)
-                .setParameter("behaviorGroupId", behaviorGroupId)
-                .getResultList();
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query, EventType.class)
+                    .setParameter("accountId", accountId)
+                    .setParameter("behaviorGroupId", behaviorGroupId)
+                    .getResultList();
+        });
     }
 
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByEventTypeId(String accountId, UUID eventTypeId, Query limiter) {
-        String query = "SELECT bg FROM BehaviorGroup bg JOIN bg.behaviors b WHERE bg.accountId = :accountId AND b.eventType.id = :eventTypeId";
+        return sessionFactory.withSession(session -> {
+            String query = "SELECT bg FROM BehaviorGroup bg JOIN bg.behaviors b WHERE bg.accountId = :accountId AND b.eventType.id = :eventTypeId";
 
-        if (limiter != null) {
-            query = limiter.getModifiedQuery(query);
-        }
+            if (limiter != null) {
+                query = limiter.getModifiedQuery(query);
+            }
 
-        Mutiny.Query<BehaviorGroup> mutinyQuery = session.createQuery(query, BehaviorGroup.class)
-                .setParameter("accountId", accountId)
-                .setParameter("eventTypeId", eventTypeId);
+            Mutiny.Query<BehaviorGroup> mutinyQuery = session.createQuery(query, BehaviorGroup.class)
+                    .setParameter("accountId", accountId)
+                    .setParameter("eventTypeId", eventTypeId);
 
-        if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-            mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
-                    .setFirstResult(limiter.getLimit().getOffset());
-        }
+            if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
+                mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
+                        .setFirstResult(limiter.getLimit().getOffset());
+            }
 
-        return mutinyQuery.getResultList()
-                .onItem().invoke(behaviorGroups ->
-                        behaviorGroups.forEach(behaviorGroup -> behaviorGroup.filterOutBundle().filterOutActions())
-                );
+            return mutinyQuery.getResultList()
+                    .onItem().invoke(behaviorGroups ->
+                            behaviorGroups.forEach(behaviorGroup -> behaviorGroup.filterOutBundle().filterOutActions())
+                    );
+        });
     }
 
     /*
@@ -170,7 +182,7 @@ public class BehaviorGroupResources {
      * If an exception other than NoResultException is thrown during the update, the DB transaction will be rolled back.
      */
     public Uni<Status> updateBehaviorGroupActions(String accountId, UUID behaviorGroupId, List<UUID> endpointIds) {
-        return session.withTransaction(tx -> {
+        return sessionFactory.withTransaction((session, tx) -> {
 
             // First, let's make sure the behavior group exists and is owned by the current account.
             String checkBehaviorGroupQuery = "SELECT 1 FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
@@ -226,10 +238,12 @@ public class BehaviorGroupResources {
 
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByEndpointId(String accountId, UUID endpointId) {
         String query = "SELECT bg FROM BehaviorGroup bg LEFT JOIN FETCH bg.bundle JOIN bg.actions a WHERE bg.accountId = :accountId AND a.endpoint.id = :endpointId";
-        return session.createQuery(query, BehaviorGroup.class)
-                .setParameter("accountId", accountId)
-                .setParameter("endpointId", endpointId)
-                .getResultList()
-                .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutActions));
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query, BehaviorGroup.class)
+                    .setParameter("accountId", accountId)
+                    .setParameter("endpointId", endpointId)
+                    .getResultList()
+                    .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutActions));
+        });
     }
 }

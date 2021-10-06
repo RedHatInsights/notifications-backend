@@ -14,6 +14,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.ConnectTimeoutException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.impl.HttpRequestImpl;
 import io.vertx.mutiny.core.buffer.Buffer;
@@ -83,7 +84,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
 
         final HttpRequest<Buffer> req = getWebClient(properties.getDisableSslVerification())
-                .rawAbs(properties.getMethod().name(), properties.getUrl());
+                .requestAbs(HttpMethod.valueOf(properties.getMethod().name()), properties.getUrl());
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
             req.putHeader(TOKEN_HEADER, properties.getSecretToken());
@@ -137,7 +138,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                             if (!history.isInvocationResult()) {
                                 JsonObject details = new JsonObject();
                                 details.put("url", getCallUrl(reqImpl));
-                                details.put("method", reqImpl.rawMethod());
+                                details.put("method", reqImpl.method().name());
                                 details.put("code", resp.statusCode());
                                 // This isn't async body reading, lets hope vertx handles it async underneath before calling this apply method
                                 details.put("response_body", resp.bodyAsString());

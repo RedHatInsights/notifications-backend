@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ModelInstancesHolder;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.Facet;
@@ -20,8 +21,11 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
+import io.smallrye.mutiny.vertx.MutinyHelper;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +36,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NO_ACCESS;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.READ_ACCESS;
 import static com.redhat.cloud.notifications.TestThreadHelper.runOnWorkerThread;
+import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME_2;
+import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,6 +64,12 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
+
+    @Inject
+    Vertx vertx;
+
+    @Inject
+    Mutiny.SessionFactory sessionFactory;
 
     @Inject
     ResourceHelpers helpers;
@@ -82,7 +97,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testEventTypeFetching() {
-        helpers.createTestAppAndEventTypes()
+        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
                 .chain(runOnWorkerThread(() -> {
                     Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
@@ -104,23 +119,24 @@ public class NotificationServiceTest extends DbIsolatedTest {
                     assertNotNull(policiesAll.getJsonObject("application"));
                     assertNotNull(policiesAll.getJsonObject("application").getString("id"));
                 }))
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void testEventTypeFetchingByApplication() {
-        helpers.createTestAppAndEventTypes()
-                .chain(() -> applicationResources.getApplications(ResourceHelpers.TEST_BUNDLE_NAME))
-                .invoke(model.applications::addAll)
+        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
+                .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
+                .invoke(apps -> {
+                    UUID myOtherTesterApplicationId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getId();
+                    model.applicationIds.add(myOtherTesterApplicationId);
+                })
                 .chain(runOnWorkerThread(() -> {
                     Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
-
-                    UUID myOtherTesterApplicationId = model.applications.stream().filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2)).findFirst().get().getId();
 
                     Response response = given()
                             .when()
                             .header(identityHeader)
-                            .queryParam("applicationIds", myOtherTesterApplicationId)
+                            .queryParam("applicationIds", model.applicationIds.get(0))
                             .get("/notifications/eventTypes")
                             .then()
                             .statusCode(200)
@@ -131,28 +147,29 @@ public class NotificationServiceTest extends DbIsolatedTest {
                     for (int i = 0; i < eventTypes.size(); i++) {
                         JsonObject ev = eventTypes.getJsonObject(i);
                         ev.mapTo(EventType.class);
-                        assertEquals(myOtherTesterApplicationId.toString(), ev.getJsonObject("application").getString("id"));
+                        assertEquals(model.applicationIds.get(0).toString(), ev.getJsonObject("application").getString("id"));
                     }
 
                     assertEquals(100, eventTypes.size());
                 }))
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void testEventTypeFetchingByBundle() {
-        helpers.createTestAppAndEventTypes()
-                .chain(() -> applicationResources.getApplications(ResourceHelpers.TEST_BUNDLE_NAME))
-                .invoke(model.applications::addAll)
+        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
+                .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
+                .invoke(apps -> {
+                    UUID myBundleId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getBundleId();
+                    model.bundleIds.add(myBundleId);
+                })
                 .chain(runOnWorkerThread(() -> {
                     Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
-
-                    UUID myBundleId = model.applications.stream().filter(a -> a.getName().equals(helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
 
                     Response response = given()
                             .when()
                             .header(identityHeader)
-                            .queryParam("bundleId", myBundleId)
+                            .queryParam("bundleId", model.bundleIds.get(0))
                             .get("/notifications/eventTypes")
                             .then()
                             .statusCode(200)
@@ -163,30 +180,33 @@ public class NotificationServiceTest extends DbIsolatedTest {
                     for (int i = 0; i < eventTypes.size(); i++) {
                         JsonObject ev = eventTypes.getJsonObject(i);
                         ev.mapTo(EventType.class);
-                        assertEquals(myBundleId.toString(), ev.getJsonObject("application").getString("bundle_id"));
+                        assertEquals(model.bundleIds.get(0).toString(), ev.getJsonObject("application").getString("bundle_id"));
                     }
 
                     assertEquals(200, eventTypes.size());
                 }))
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void testEventTypeFetchingByBundleAndApplicationId() {
-        helpers.createTestAppAndEventTypes()
-                .chain(() -> applicationResources.getApplications(ResourceHelpers.TEST_BUNDLE_NAME))
-                .invoke(model.applications::addAll)
+        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
+                .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
+                .invoke(apps -> {
+                    Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
+                    UUID myOtherTesterApplicationId = app.getId();
+                    model.applicationIds.add(myOtherTesterApplicationId);
+                    UUID myBundleId = app.getBundleId();
+                    model.bundleIds.add(myBundleId);
+                })
                 .chain(runOnWorkerThread(() -> {
                     Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
-
-                    UUID myOtherTesterApplicationId = model.applications.stream().filter(a -> a.getName().equals(helpers.TEST_APP_NAME_2)).findFirst().get().getId();
-                    UUID myBundleId = model.applications.stream().filter(a -> a.getName().equals(helpers.TEST_APP_NAME_2)).findFirst().get().getBundleId();
 
                     Response response = given()
                             .when()
                             .header(identityHeader)
-                            .queryParam("bundleId", myBundleId)
-                            .queryParam("applicationIds", myOtherTesterApplicationId)
+                            .queryParam("bundleId", model.bundleIds.get(0))
+                            .queryParam("applicationIds", model.applicationIds.get(0))
                             .get("/notifications/eventTypes")
                             .then()
                             .statusCode(200)
@@ -197,20 +217,20 @@ public class NotificationServiceTest extends DbIsolatedTest {
                     for (int i = 0; i < eventTypes.size(); i++) {
                         JsonObject ev = eventTypes.getJsonObject(i);
                         ev.mapTo(EventType.class);
-                        assertEquals(myBundleId.toString(), ev.getJsonObject("application").getString("bundle_id"));
-                        assertEquals(myOtherTesterApplicationId.toString(), ev.getJsonObject("application").getString("id"));
+                        assertEquals(model.bundleIds.get(0).toString(), ev.getJsonObject("application").getString("bundle_id"));
+                        assertEquals(model.applicationIds.get(0).toString(), ev.getJsonObject("application").getString("id"));
                     }
 
                     assertEquals(100, eventTypes.size());
                 }))
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void testGetEventTypesAffectedByEndpoint() {
         String tenant = "testGetEventTypesAffectedByEndpoint";
-        Header identityHeader = initRbacMock(tenant, "user", RbacAccess.FULL_ACCESS);
-        helpers.createTestAppAndEventTypes()
+        Header identityHeader = initRbacMock(tenant, "user", FULL_ACCESS);
+        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
                 .invoke(model.bundleIds::add)
                 .chain(() -> helpers.createBehaviorGroup(tenant, "behavior-group-1", model.bundleIds.get(0)))
                 .onItem().transform(BehaviorGroup::getId)
@@ -218,10 +238,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .chain(() -> helpers.createBehaviorGroup(tenant, "behavior-group-2", model.bundleIds.get(0)))
                 .onItem().transform(BehaviorGroup::getId)
                 .invoke(model.behaviorGroupIds::add)
-                .chain(() -> applicationResources.getApplications(ResourceHelpers.TEST_BUNDLE_NAME))
+                .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
                 .onItem().transform(applications ->
                         applications.stream()
-                                .filter(a -> a.getName().equals(ResourceHelpers.TEST_APP_NAME_2))
+                                .filter(a -> a.getName().equals(TEST_APP_NAME_2))
                                 .findFirst().get().getId()
                 )
                 .invoke(model.applicationIds::add)
@@ -263,6 +283,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                     behaviorGroups = new JsonArray(responseBody);
                     assertEquals(0, behaviorGroups.size());
                 }))
+                .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 // ep1 assigned to event ev0; ep2 assigned to event ev1
                 .chain(() -> behaviorGroupResources.updateEventTypeBehaviors(tenant, model.eventTypes.get(0).getId(), Set.of(model.behaviorGroupIds.get(1))))
                 .chain(() -> behaviorGroupResources.updateBehaviorGroupActions(tenant, model.behaviorGroupIds.get(1), List.of(model.endpointIds.get(1))))
@@ -298,12 +319,12 @@ public class NotificationServiceTest extends DbIsolatedTest {
                     behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
                     assertEquals(model.behaviorGroupIds.get(1).toString(), behaviorGroups.getJsonObject(0).getString("id"));
                 }))
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void testGetApplicationFacets() {
-        Header identityHeader = initRbacMock("test", "user", RbacAccess.READ_ACCESS);
+        Header identityHeader = initRbacMock("test", "user", READ_ACCESS);
         List<Facet> applications = given()
                 .header(identityHeader)
                 .when()
@@ -332,7 +353,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testGetBundlesFacets() {
-        Header identityHeader = initRbacMock("test", "user", RbacAccess.READ_ACCESS);
+        Header identityHeader = initRbacMock("test", "user", READ_ACCESS);
         List<Facet> bundles = given()
                 .header(identityHeader)
                 .when()
@@ -349,8 +370,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testInsufficientPrivileges() {
-        Header noAccessIdentityHeader = initRbacMock("tenant", "noAccess", RbacAccess.NO_ACCESS);
-        Header readAccessIdentityHeader = initRbacMock("tenant", "readAccess", RbacAccess.READ_ACCESS);
+        Header noAccessIdentityHeader = initRbacMock("tenant", "noAccess", NO_ACCESS);
+        Header readAccessIdentityHeader = initRbacMock("tenant", "readAccess", READ_ACCESS);
 
         given()
                 .header(noAccessIdentityHeader)

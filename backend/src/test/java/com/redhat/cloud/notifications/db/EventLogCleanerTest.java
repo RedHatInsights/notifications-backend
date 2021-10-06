@@ -8,9 +8,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import org.hibernate.reactive.mutiny.Mutiny;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -19,6 +17,7 @@ import java.time.LocalDateTime;
 
 import static com.redhat.cloud.notifications.db.EventLogCleaner.EVENT_LOG_CLEANER_DELETE_AFTER_CONF_KEY;
 import static com.redhat.cloud.notifications.db.EventLogCleaner.now;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -31,46 +30,46 @@ public class EventLogCleanerTest extends DbIsolatedTest {
      * session.
      */
     @Inject
-    Mutiny.StatelessSession statelessSession;
+    Mutiny.SessionFactory sessionFactory;
 
     @Inject
     EventLogCleaner eventLogCleaner;
 
-    @BeforeEach
-    void beforeEach() {
-        statelessSession.createQuery("DELETE FROM Event")
-                .executeUpdate()
-                .subscribe().withSubscriber(UniAssertSubscriber.create())
-                .await()
-                .assertCompleted();
-    }
-
     @Test
     void testWithDefaultConfiguration() {
-        createEventType()
+        sessionFactory.withStatelessSession(statelessSession -> deleteAllEvents()
+                .chain(() -> createEventType())
                 .call(eventType -> createEvent(eventType, now().minus(Duration.ofHours(1L))))
                 .call(eventType -> createEvent(eventType, now().minus(Duration.ofDays(62L))))
-                .subscribe().withSubscriber(UniAssertSubscriber.create())
-                .await()
-                .assertCompleted();
-        assertCount(2L);
-        eventLogCleaner.clean();
-        assertCount(1L);
+                .chain(() -> count())
+                .invoke(count -> assertEquals(2L, count))
+                .chain(() -> eventLogCleaner.testableClean())
+                .chain(() -> count())
+                .invoke(count -> assertEquals(1L, count))
+        ).await().indefinitely();
     }
 
     @Test
     void testWithCustomConfiguration() {
-        System.setProperty(EVENT_LOG_CLEANER_DELETE_AFTER_CONF_KEY, "30m");
-        createEventType()
+        sessionFactory.withStatelessSession(statelessSession -> deleteAllEvents()
+                .invoke(() -> System.setProperty(EVENT_LOG_CLEANER_DELETE_AFTER_CONF_KEY, "30m"))
+                .chain(() -> createEventType())
                 .call(eventType -> createEvent(eventType, now().minus(Duration.ofHours(1L))))
                 .call(eventType -> createEvent(eventType, now().minus(Duration.ofDays(62L))))
-                .subscribe().withSubscriber(UniAssertSubscriber.create())
-                .await()
-                .assertCompleted();
-        assertCount(2L);
-        eventLogCleaner.clean();
-        assertCount(0L);
-        System.clearProperty(EVENT_LOG_CLEANER_DELETE_AFTER_CONF_KEY);
+                .chain(() -> count())
+                .invoke(count -> assertEquals(2L, count))
+                .chain(() -> eventLogCleaner.testableClean())
+                .chain(() -> count())
+                .invoke(count -> assertEquals(0L, count))
+                .invoke(() -> System.clearProperty(EVENT_LOG_CLEANER_DELETE_AFTER_CONF_KEY))
+        ).await().indefinitely();
+    }
+
+    private Uni<Integer> deleteAllEvents() {
+        return sessionFactory.withStatelessSession(statelessSession ->
+                statelessSession.createQuery("DELETE FROM Event")
+                    .executeUpdate()
+        );
     }
 
     private Uni<EventType> createEventType() {
@@ -90,10 +89,12 @@ public class EventLogCleanerTest extends DbIsolatedTest {
         eventType.setName("event-type");
         eventType.setDisplayName("Event type");
 
-        return statelessSession.insert(bundle)
-                .call(() -> statelessSession.insert(app))
-                .call(() -> statelessSession.insert(eventType))
-                .replaceWith(eventType);
+        return sessionFactory.withStatelessSession(statelessSession ->
+                statelessSession.insert(bundle)
+                        .call(() -> statelessSession.insert(app))
+                        .call(() -> statelessSession.insert(eventType))
+                        .replaceWith(eventType)
+        );
     }
 
     private Uni<Void> createEvent(EventType eventType, LocalDateTime created) {
@@ -101,15 +102,13 @@ public class EventLogCleanerTest extends DbIsolatedTest {
         event.setEventType(eventType);
         event.setAccountId("account-id");
         event.setCreated(created);
-        return statelessSession.insert(event);
+        return sessionFactory.withStatelessSession(statelessSession -> statelessSession.insert(event));
     }
 
-    private void assertCount(long expectedCount) {
-        statelessSession.createQuery("SELECT COUNT(*) FROM Event", Long.class)
-                .getSingleResult()
-                .subscribe().withSubscriber(UniAssertSubscriber.create())
-                .await()
-                .assertItem(expectedCount)
-                .assertCompleted();
+    private Uni<Long> count() {
+        return sessionFactory.withStatelessSession(statelessSession ->
+                statelessSession.createQuery("SELECT COUNT(*) FROM Event", Long.class)
+                        .getSingleResult()
+        );
     }
 }
