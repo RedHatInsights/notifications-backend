@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.processors.webclient.BopWebClient;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.EmailTemplateService;
+import com.redhat.cloud.notifications.utils.LineBreakCleaner;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -76,6 +77,12 @@ public class EmailSender {
     public void init() {
         processedCount = registry.counter("processor.email.processed");
         processTime = registry.timer("processor.email.process-time");
+        /*
+         * The token value we receive contains a line break because of the standard mime encryption. Gabor Burges tried
+         * to remove it but that didn't work, so we have to do it here because Vert.x 4 does not allow line breaks in
+         * HTTP headers.
+         */
+        bopApiToken = LineBreakCleaner.clean(bopApiToken);
     }
 
     public Uni<NotificationHistory> sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body) {
