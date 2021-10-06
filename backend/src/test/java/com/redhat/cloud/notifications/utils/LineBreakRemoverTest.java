@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.utils.LineBreakCleaner.clean;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LineBreakRemoverTest {
@@ -32,5 +33,10 @@ public class LineBreakRemoverTest {
         String cleanedValue = clean(initialValue);
         assertFalse(cleanedValue.contains("\r"));
         assertFalse(cleanedValue.contains("\n"));
+    }
+
+    @Test
+    void testNull() {
+        assertNull(clean(null));
     }
 }
