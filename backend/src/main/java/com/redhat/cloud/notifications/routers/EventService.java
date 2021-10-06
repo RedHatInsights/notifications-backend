@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.EventResources;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
 import com.redhat.cloud.notifications.routers.models.Meta;
@@ -49,6 +50,7 @@ public class EventService {
     @Operation(summary = "Retrieve the event log entries.")
     public Uni<Page<EventLogEntry>> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
                                               @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
+                                              @RestQuery Set<EndpointType> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                               @RestQuery @DefaultValue("10") int limit, @RestQuery @DefaultValue("0") int offset, @RestQuery String sortBy) {
         if (limit < 1 || limit > 200) {
             throw new BadRequestException("Invalid 'limit' query parameter, its value must be between 1 and 200");
@@ -58,7 +60,7 @@ public class EventService {
         }
         return getAccountId(securityContext)
                 .onItem().transformToUni(accountId ->
-                        eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, limit, offset, sortBy)
+                        eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, sortBy)
                                 .onItem().transform(events ->
                                         events.stream().map(event -> {
                                             List<EventLogEntryAction> actions = event.getHistoryEntries().stream().map(historyEntry -> {
@@ -80,7 +82,7 @@ public class EventService {
                                         }).collect(Collectors.toList())
                                 )
                                 .onItem().transformToUni(entries ->
-                                        eventResources.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate)
+                                        eventResources.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults)
                                                 .onItem().transform(count -> {
                                                     Meta meta = new Meta();
                                                     meta.setCount(count);

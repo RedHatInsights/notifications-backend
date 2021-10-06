@@ -177,11 +177,11 @@ public class ResourceHelpers {
                 .replaceWith(statsValues);
     }
 
-    public Uni<NotificationHistory> createNotificationHistory(Event event, Endpoint endpoint) {
+    public Uni<NotificationHistory> createNotificationHistory(Event event, Endpoint endpoint, Boolean invocationResult) {
         NotificationHistory history = new NotificationHistory();
         history.setId(UUID.randomUUID());
         history.setInvocationTime(1L);
-        history.setInvocationResult(TRUE);
+        history.setInvocationResult(invocationResult);
         history.setEvent(event);
         history.setEndpoint(endpoint);
         history.setEndpointType(endpoint.getType());
