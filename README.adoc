@@ -5,6 +5,21 @@
 When using IntelliJ IDEA, use the 'default' style. This is matched by checkstyle,
 which is invoked when running maven.
 
+## Updating the Grafana Dashboard
+
+.If you want to update the grafana dashboard on stage you need to:
+* Change the grafana dashboard in the ui
+* Copy the dashboard json
+* Update the dashboard file in the .rhcicd folder in the respective project
+* Change the version entry at the bottom of the dashboard json
+* After that, create a Pull Request and merge it after all the checks have been successful
+* Then the dashboard will be updated on stage automatically
+
+.If you also want to update the dashboard on prod:
+* Switch to app-interface project
+* Go into data/services/obervability/cicd/saas/saas-grafana.yaml
+* And update the ref entry for the prod dashboard to the revision number of your formerly created Pull Request
+
 ## Usage of the Clowder Config Source
 
 This project uses the Clowder Config Source from https://github.com/RedHatInsights/clowder-quarkus-config-source.
