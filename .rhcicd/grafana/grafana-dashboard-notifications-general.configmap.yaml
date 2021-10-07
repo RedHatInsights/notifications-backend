@@ -18,7 +18,7 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1633606928261,
+      "iteration": 1633607391346,
       "links": [],
       "panels": [
         {
@@ -1446,13 +1446,13 @@ data:
           {
             "allValue": null,
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "stage",
               "value": "crcs02ue1-prometheus"
             },
             "hide": 0,
             "includeAll": false,
-            "label": "Datasource",
+            "label": "environment",
             "multi": false,
             "name": "datasource",
             "options": [
@@ -1469,6 +1469,85 @@ data:
             ],
             "query": "crcs02ue1-prometheus, crcp01ue1-prometheus",
             "queryValue": "",
+            "skipUrlSync": false,
+            "type": "custom"
+          },
+          {
+            "allValue": null,
+            "current": {
+              "selected": false,
+              "text": [
+                "All"
+              ],
+              "value": [
+                "$__all"
+              ]
+            },
+            "hide": 2,
+            "includeAll": true,
+            "label": "",
+            "multi": true,
+            "name": "service",
+            "options": [
+              {
+                "selected": true,
+                "text": "All",
+                "value": "$__all"
+              },
+              {
+                "selected": false,
+                "text": "notifications-gw",
+                "value": "notifications-gw"
+              },
+              {
+                "selected": false,
+                "text": "notifications-backend",
+                "value": "notifications-backend"
+              },
+              {
+                "selected": false,
+                "text": "policies-notifications",
+                "value": "policies-notifications"
+              }
+            ],
+            "query": "notifications-gw, notifications-backend",
+            "skipUrlSync": false,
+            "type": "custom"
+          },
+          {
+            "allValue": null,
+            "current": {
+              "selected": false,
+              "text": [
+                "All"
+              ],
+              "value": [
+                "$__all"
+              ]
+            },
+            "hide": 2,
+            "includeAll": true,
+            "label": null,
+            "multi": true,
+            "name": "jvmcontainer",
+            "options": [
+              {
+                "selected": true,
+                "text": "All",
+                "value": "$__all"
+              },
+              {
+                "selected": false,
+                "text": "notifications-backend",
+                "value": "notifications-backend"
+              },
+              {
+                "selected": false,
+                "text": "notifications-gw",
+                "value": "notifications-gw"
+              }
+            ],
+            "query": "notifications-backend, notifications-gw",
             "skipUrlSync": false,
             "type": "custom"
           }
@@ -1506,7 +1585,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 17
+      "version": 18
     }
 kind: ConfigMap
 metadata:
