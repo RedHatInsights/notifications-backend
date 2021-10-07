@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -268,7 +269,13 @@ public class EndpointService {
         boolean doDetail = includeDetail != null && includeDetail;
         return sessionFactory.withSession(session -> {
             return notifResources.getNotificationHistory(principal.getAccount(), id, doDetail, query);
-        });
+        })
+        /*
+         * If the response List contains a huge number of items, the event loop thread will be blocked during the List
+         * serialization by Jackson. To prevent blocking the event loop, the serialization is dispatched to a worker
+         * thread from the Quarkus worker threads pool.
+         */
+        .emitOn(Infrastructure.getDefaultWorkerPool());
     }
 
     @GET
