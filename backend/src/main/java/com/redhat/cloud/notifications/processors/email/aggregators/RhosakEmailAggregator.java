@@ -44,6 +44,29 @@ public class RhosakEmailAggregator extends AbstractEmailPayloadAggregator {
         }
     }
 
+    private void buildUpgradesPayload(JsonObject aggregationPayload, JsonObject context) {
+        JsonObject upgrades = this.context.getJsonObject(UPGRADES);
+        String kafkaVersion = context.getString(KAFKA_VERSION).trim();
+        aggregationPayload.getJsonArray(EVENTS).stream().forEach(eventObject -> {
+            JsonObject event = (JsonObject) eventObject;
+            JsonObject payload = event.getJsonObject(PAYLOAD);
+            String name = payload.getString(PAYLOAD_NAME);
+            JsonObject kafkaUpgrade;
+            if (!upgrades.containsKey(name)) {
+                kafkaUpgrade = new JsonObject();
+                kafkaUpgrade.put(PAYLOAD_NAME, name);
+                kafkaUpgrade.put(KAFKA_VERSION, kafkaVersion);
+                upgrades.put(name, kafkaUpgrade);
+            } else {
+                kafkaUpgrade = upgrades.getJsonObject(name);
+                String existingKafkaVersions = kafkaUpgrade.getString(KAFKA_VERSION, "");
+                if (!existingKafkaVersions.contains(kafkaVersion)) {
+                    kafkaUpgrade.put(KAFKA_VERSION, existingKafkaVersions + ", " + kafkaVersion);
+                }
+            }
+        });
+    }
+
     private void buildServiceDisruptionPayload(JsonObject aggregationPayload, JsonObject context) {
         String serviceDisruptionImpact = context.getString(SERVICE_DISRUPTION_IMPACT);
         boolean currentDisruptionImpactPerformance = serviceDisruptionImpact.contains(PERFORMANCE);
@@ -85,26 +108,4 @@ public class RhosakEmailAggregator extends AbstractEmailPayloadAggregator {
         });
     }
 
-    private void buildUpgradesPayload(JsonObject aggregationPayload, JsonObject context) {
-        JsonObject upgrades = this.context.getJsonObject(UPGRADES);
-        String kafkaVersion = context.getString(KAFKA_VERSION);
-        aggregationPayload.getJsonArray(EVENTS).stream().forEach(eventObject -> {
-            JsonObject event = (JsonObject) eventObject;
-            JsonObject payload = event.getJsonObject(PAYLOAD);
-            String name = payload.getString(PAYLOAD_NAME);
-            JsonObject kafkaUpgrade;
-            if (!upgrades.containsKey(name)) {
-                kafkaUpgrade = new JsonObject();
-                kafkaUpgrade.put(PAYLOAD_NAME, name);
-                kafkaUpgrade.put(KAFKA_VERSION, kafkaVersion);
-                upgrades.put(name, kafkaUpgrade);
-            } else {
-                kafkaUpgrade = upgrades.getJsonObject(name);
-                String existingKafkaVersions = kafkaUpgrade.getString(KAFKA_VERSION, "");
-                if (!existingKafkaVersions.contains(kafkaVersion)) {
-                    kafkaUpgrade.put(kafkaVersion, existingKafkaVersions + ", " + kafkaVersion);
-                }
-            }
-        });
-    }
 }
