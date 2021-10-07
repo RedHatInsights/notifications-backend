@@ -18,7 +18,7 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1633523287927,
+      "iteration": 1633603211701,
       "links": [],
       "panels": [
         {
@@ -1000,7 +1000,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "notifications-backend - memory usage",
+          "title": "notifications-gw - memory usage",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1714,9 +1714,9 @@ data:
             "x": 0,
             "y": 51
           },
-          "id": 168,
+          "id": 173,
           "panels": [],
-          "repeatIteration": 1633523287927,
+          "repeatIteration": 1633603211701,
           "repeatPanelId": 60,
           "scopedVars": {
             "jvmcontainer": {
@@ -1750,7 +1750,7 @@ data:
             "y": 52
           },
           "hiddenSeries": false,
-          "id": 169,
+          "id": 174,
           "legend": {
             "alignAsTable": true,
             "avg": true,
@@ -1778,7 +1778,7 @@ data:
           "renderer": "flot",
           "repeat": null,
           "repeatDirection": "h",
-          "repeatIteration": 1633523287927,
+          "repeatIteration": 1633603211701,
           "repeatPanelId": 72,
           "repeatedByRow": true,
           "scopedVars": {
@@ -1891,7 +1891,7 @@ data:
             "y": 52
           },
           "hiddenSeries": false,
-          "id": 170,
+          "id": 175,
           "legend": {
             "alignAsTable": true,
             "avg": false,
@@ -1916,7 +1916,7 @@ data:
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
-          "repeatIteration": 1633523287927,
+          "repeatIteration": 1633603211701,
           "repeatPanelId": 74,
           "repeatedByRow": true,
           "scopedVars": {
@@ -2156,7 +2156,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 14
+      "version": 15
     }
 kind: ConfigMap
 metadata:
