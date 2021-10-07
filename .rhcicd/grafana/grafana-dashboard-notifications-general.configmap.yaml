@@ -18,7 +18,7 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1633603211701,
+      "iteration": 1633606152132,
       "links": [],
       "panels": [
         {
@@ -1716,7 +1716,7 @@ data:
           },
           "id": 173,
           "panels": [],
-          "repeatIteration": 1633603211701,
+          "repeatIteration": 1633606152132,
           "repeatPanelId": 60,
           "scopedVars": {
             "jvmcontainer": {
@@ -1778,7 +1778,7 @@ data:
           "renderer": "flot",
           "repeat": null,
           "repeatDirection": "h",
-          "repeatIteration": 1633603211701,
+          "repeatIteration": 1633606152132,
           "repeatPanelId": 72,
           "repeatedByRow": true,
           "scopedVars": {
@@ -1916,7 +1916,7 @@ data:
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
-          "repeatIteration": 1633603211701,
+          "repeatIteration": 1633606152132,
           "repeatPanelId": 74,
           "repeatedByRow": true,
           "scopedVars": {
@@ -1993,8 +1993,9 @@ data:
       "templating": {
         "list": [
           {
+            "allValue": null,
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "crcs02ue1-prometheus",
               "value": "crcs02ue1-prometheus"
             },
@@ -2003,13 +2004,22 @@ data:
             "label": "Datasource",
             "multi": false,
             "name": "datasource",
-            "options": [],
-            "query": "prometheus",
+            "options": [
+              {
+                "selected": true,
+                "text": "crcs02ue1-prometheus",
+                "value": "crcs02ue1-prometheus"
+              },
+              {
+                "selected": false,
+                "text": "crcp01ue1-prometheus",
+                "value": "crcp01ue1-prometheus"
+              }
+            ],
+            "query": "crcs02ue1-prometheus, crcp01ue1-prometheus",
             "queryValue": "",
-            "refresh": 1,
-            "regex": "",
             "skipUrlSync": false,
-            "type": "datasource"
+            "type": "custom"
           },
           {
             "allValue": null,
@@ -2089,38 +2099,6 @@ data:
             "query": "notifications-backend, notifications-gw",
             "skipUrlSync": false,
             "type": "custom"
-          },
-          {
-            "allValue": null,
-            "current": {
-              "selected": false,
-              "text": "notifications-prod",
-              "value": "notifications-prod"
-            },
-            "datasource": "$datasource",
-            "definition": "up",
-            "hide": 0,
-            "includeAll": false,
-            "label": "Kubernetes Namespace",
-            "multi": false,
-            "name": "kubernetes_namespace",
-            "options": [
-              {
-                "selected": true,
-                "text": "notifications-prod",
-                "value": "notifications-prod"
-              }
-            ],
-            "query": "up",
-            "refresh": 0,
-            "regex": "/.*namespace=\"(notifications-[^\"]*).*/",
-            "skipUrlSync": false,
-            "sort": 0,
-            "tagValuesQuery": "",
-            "tags": [],
-            "tagsQuery": "",
-            "type": "query",
-            "useTags": false
           }
         ]
       },
@@ -2156,7 +2134,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 15
+      "version": 16
     }
 kind: ConfigMap
 metadata:
