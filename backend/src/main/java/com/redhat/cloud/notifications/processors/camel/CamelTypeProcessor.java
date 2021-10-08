@@ -27,7 +27,6 @@ import org.jboss.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -99,28 +98,28 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         metaData.put("extras", new MapConverter().convertToDatabaseColumn(properties.getExtras()));
 
         Uni<JsonObject> payload = transformer.transform(item.getEvent().getAction());
-        return callCamel(item, metaData, payload);
+        UUID historyId = UUID.randomUUID();
+
+        payload = payload.onItem().transform(json -> {
+            JsonObject metadata = new JsonObject();
+            json.put("notif-metadata",metadata);
+            metaData.forEach(metadata::put);
+            return json;
+        });
+        return callCamel(item, historyId, payload);
     }
 
-    public Uni<NotificationHistory> callCamel(Notification item, Map<String, String> meta, Uni<JsonObject> payload) {
+    public Uni<NotificationHistory> callCamel(Notification item, UUID historyId, Uni<JsonObject> payload) {
 
         final long startTime = System.currentTimeMillis();
-        final Map<String, Object> tmp = new HashMap<>();
 
-        UUID historyId = UUID.randomUUID();
-        meta.put("historyId", historyId.toString());
         String accountId = item.getEndpoint().getAccountId();
         // the next could give a CCE, but we only come here when it is a camel endpoint anyway
         String subType = item.getEndpoint().getProperties(CamelProperties.class).getSubType();
 
-        Uni<NotificationHistory> historyUni = payload.onItem()
-                .transform(json -> {
-                    tmp.put("meta", meta);
-                    tmp.put("payload", json);
-                    return tmp;
-                })
+        return payload.onItem()
 
-                .onItem().transformToUni(json -> reallyCallCamel(json, historyId, accountId, subType)
+                .transformToUni(json -> reallyCallCamel(json, historyId, accountId, subType)
                         .onItem().transform(resp -> {
                             final long endTime = System.currentTimeMillis();
                             // We only create a basic stub. The FromCamel filler will update it later
@@ -128,16 +127,13 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                             return history;
                         })
                 );
-
-        return historyUni;
     }
 
-    public Uni<Boolean> reallyCallCamel(Map<String, Object> body, UUID historyId, String accountId, String subType) {
+    public Uni<Boolean> reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
 
-        JsonObject jo = JsonObject.mapFrom(body);
 
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
-        Message<String> msg = Message.of(jo.encode()); //, Metadata.of(tracingMetadata));
+        Message<String> msg = Message.of(body.encode());
         msg = msg.addMetadata(OutgoingCloudEventMetadata.builder()
                 .withId(historyId.toString())
                 .withExtension("rh-account", accountId)
