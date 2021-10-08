@@ -15,10 +15,14 @@ import io.opentelemetry.context.Context;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.TracingMetadata;
+import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
+import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.JsonObject;
+import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -30,7 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
 public class CamelTypeProcessor implements EndpointTypeProcessor {
@@ -43,6 +49,8 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     @Inject
     @Channel("toCamel")
     Emitter<String> emitter;
+
+    private static final Logger LOGGER = Logger.getLogger(CamelTypeProcessor.class);
 
     @Inject
     MeterRegistry registry;
@@ -84,7 +92,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
             StringBuilder sb = new StringBuilder(basicAuthentication.getUsername());
             sb.append(":");
             sb.append(basicAuthentication.getPassword());
-            String b64 = Base64.getEncoder().encodeToString(sb.toString().getBytes(StandardCharsets.UTF_8));
+            String b64 = Base64.getEncoder().encodeToString(sb.toString().getBytes(UTF_8));
             metaData.put("basicAuth", b64);
         }
 
@@ -98,8 +106,12 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         final long startTime = System.currentTimeMillis();
         final Map<String, Object> tmp = new HashMap<>();
+
         UUID historyId = UUID.randomUUID();
         meta.put("historyId", historyId.toString());
+        String accountId = item.getEndpoint().getAccountId();
+        // the next could give a CCE, but we only come here when it is a camel endpoint anyway
+        String subType = item.getEndpoint().getProperties(CamelProperties.class).getSubType();
 
         Uni<NotificationHistory> historyUni = payload.onItem()
                 .transform(json -> {
@@ -107,7 +119,8 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                     tmp.put("payload", json);
                     return tmp;
                 })
-                .onItem().transformToUni(json -> reallyCallCamel(json)
+
+                .onItem().transformToUni(json -> reallyCallCamel(json, historyId, accountId, subType)
                         .onItem().transform(resp -> {
                             final long endTime = System.currentTimeMillis();
                             // We only create a basic stub. The FromCamel filler will update it later
@@ -119,15 +132,28 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         return historyUni;
     }
 
-    public Uni<Boolean> reallyCallCamel(Map<String, Object> body) {
+    public Uni<Boolean> reallyCallCamel(Map<String, Object> body, UUID historyId, String accountId, String subType) {
 
         JsonObject jo = JsonObject.mapFrom(body);
 
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
         Message<String> msg = Message.of(jo.encode()); //, Metadata.of(tracingMetadata));
-
+        msg = msg.addMetadata(OutgoingCloudEventMetadata.builder()
+                .withId(historyId.toString())
+                .withExtension("rh-account", accountId)
+                .withType("com.redhat.console.notification.toCamel." + subType)
+                .build()
+        );
+        msg = msg.addMetadata(OutgoingKafkaRecordMetadata.builder()
+            .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, historyId.toString().getBytes(UTF_8))
+                    .add("CAMEL_SUBTYPE",subType.getBytes(UTF_8) ))
+                .build()
+        );
+        msg = msg.addMetadata(tracingMetadata);
+        LOGGER.infof("Sending for account " + accountId + " and history id " + historyId);
+        Message<String> finalMsg = msg;
         return Uni.createFrom().item(() -> {
-            emitter.send(jo.encode()); // TODO use msg
+            emitter.send(finalMsg);
             return true;
         });
 
