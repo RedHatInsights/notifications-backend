@@ -548,7 +548,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
         // Create 50 test-ones with sanely sortable name & enabled & disabled & type
-        sessionFactory.withSession(session -> helpers.createTestEndpoints(tenant, 50)
+        sessionFactory.withSession(session -> helpers.createTestEndpoints(tenant, 50))
                 .call(stats -> runOnWorkerThread(() -> {
                     int disableCount = stats[1];
                     int webhookCount = stats[2];
@@ -601,7 +601,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                     assertEquals("Endpoint 1", endpoints[endpoints.length - 1].getName());
                     assertEquals("Endpoint 10", endpoints[endpoints.length - 2].getName());
                     assertEquals("Endpoint 27", endpoints[0].getName());
-                }).get())
+                }).get()
         ).await().indefinitely();
     }
 
