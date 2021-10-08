@@ -97,7 +97,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testEventTypeFetching() {
-        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
+        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes())
                 .chain(runOnWorkerThread(() -> {
                     Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
@@ -118,112 +118,112 @@ public class NotificationServiceTest extends DbIsolatedTest {
                     assertNotNull(policiesAll.getString("id"));
                     assertNotNull(policiesAll.getJsonObject("application"));
                     assertNotNull(policiesAll.getJsonObject("application").getString("id"));
-                }))
+                })
         ).await().indefinitely();
     }
 
     @Test
     void testEventTypeFetchingByApplication() {
-        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
-                .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
-                .invoke(apps -> {
-                    UUID myOtherTesterApplicationId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getId();
-                    model.applicationIds.add(myOtherTesterApplicationId);
-                })
-                .chain(runOnWorkerThread(() -> {
-                    Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        sessionFactory.withSession(session -> {
+            return helpers.createTestAppAndEventTypes()
+                    .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
+                    .invoke(apps -> {
+                        UUID myOtherTesterApplicationId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getId();
+                        model.applicationIds.add(myOtherTesterApplicationId);
+                    });
+        }).chain(runOnWorkerThread(() -> {
+            Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-                    Response response = given()
-                            .when()
-                            .header(identityHeader)
-                            .queryParam("applicationIds", model.applicationIds.get(0))
-                            .get("/notifications/eventTypes")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().response();
+            Response response = given()
+                    .when()
+                    .header(identityHeader)
+                    .queryParam("applicationIds", model.applicationIds.get(0))
+                    .get("/notifications/eventTypes")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().response();
 
-                    JsonArray eventTypes = new JsonArray(response.getBody().asString());
-                    for (int i = 0; i < eventTypes.size(); i++) {
-                        JsonObject ev = eventTypes.getJsonObject(i);
-                        ev.mapTo(EventType.class);
-                        assertEquals(model.applicationIds.get(0).toString(), ev.getJsonObject("application").getString("id"));
-                    }
+            JsonArray eventTypes = new JsonArray(response.getBody().asString());
+            for (int i = 0; i < eventTypes.size(); i++) {
+                JsonObject ev = eventTypes.getJsonObject(i);
+                ev.mapTo(EventType.class);
+                assertEquals(model.applicationIds.get(0).toString(), ev.getJsonObject("application").getString("id"));
+            }
 
-                    assertEquals(100, eventTypes.size());
-                }))
-        ).await().indefinitely();
+            assertEquals(100, eventTypes.size());
+        })).await().indefinitely();
     }
 
     @Test
     void testEventTypeFetchingByBundle() {
-        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
-                .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
-                .invoke(apps -> {
-                    UUID myBundleId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getBundleId();
-                    model.bundleIds.add(myBundleId);
-                })
-                .chain(runOnWorkerThread(() -> {
-                    Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        sessionFactory.withSession(session -> {
+            return helpers.createTestAppAndEventTypes()
+                    .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
+                    .invoke(apps -> {
+                        UUID myBundleId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getBundleId();
+                        model.bundleIds.add(myBundleId);
+                    });
+        }).chain(runOnWorkerThread(() -> {
+            Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-                    Response response = given()
-                            .when()
-                            .header(identityHeader)
-                            .queryParam("bundleId", model.bundleIds.get(0))
-                            .get("/notifications/eventTypes")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().response();
+            Response response = given()
+                    .when()
+                    .header(identityHeader)
+                    .queryParam("bundleId", model.bundleIds.get(0))
+                    .get("/notifications/eventTypes")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().response();
 
-                    JsonArray eventTypes = new JsonArray(response.getBody().asString());
-                    for (int i = 0; i < eventTypes.size(); i++) {
-                        JsonObject ev = eventTypes.getJsonObject(i);
-                        ev.mapTo(EventType.class);
-                        assertEquals(model.bundleIds.get(0).toString(), ev.getJsonObject("application").getString("bundle_id"));
-                    }
+            JsonArray eventTypes = new JsonArray(response.getBody().asString());
+            for (int i = 0; i < eventTypes.size(); i++) {
+                JsonObject ev = eventTypes.getJsonObject(i);
+                ev.mapTo(EventType.class);
+                assertEquals(model.bundleIds.get(0).toString(), ev.getJsonObject("application").getString("bundle_id"));
+            }
 
-                    assertEquals(200, eventTypes.size());
-                }))
-        ).await().indefinitely();
+            assertEquals(200, eventTypes.size());
+        })).await().indefinitely();
     }
 
     @Test
     void testEventTypeFetchingByBundleAndApplicationId() {
-        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
-                .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
-                .invoke(apps -> {
-                    Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
-                    UUID myOtherTesterApplicationId = app.getId();
-                    model.applicationIds.add(myOtherTesterApplicationId);
-                    UUID myBundleId = app.getBundleId();
-                    model.bundleIds.add(myBundleId);
-                })
-                .chain(runOnWorkerThread(() -> {
-                    Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        sessionFactory.withSession(session -> {
+            return helpers.createTestAppAndEventTypes()
+                    .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
+                    .invoke(apps -> {
+                        Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
+                        UUID myOtherTesterApplicationId = app.getId();
+                        model.applicationIds.add(myOtherTesterApplicationId);
+                        UUID myBundleId = app.getBundleId();
+                        model.bundleIds.add(myBundleId);
+                    });
+        }).chain(runOnWorkerThread(() -> {
+            Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-                    Response response = given()
-                            .when()
-                            .header(identityHeader)
-                            .queryParam("bundleId", model.bundleIds.get(0))
-                            .queryParam("applicationIds", model.applicationIds.get(0))
-                            .get("/notifications/eventTypes")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().response();
+            Response response = given()
+                    .when()
+                    .header(identityHeader)
+                    .queryParam("bundleId", model.bundleIds.get(0))
+                    .queryParam("applicationIds", model.applicationIds.get(0))
+                    .get("/notifications/eventTypes")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().response();
 
-                    JsonArray eventTypes = new JsonArray(response.getBody().asString());
-                    for (int i = 0; i < eventTypes.size(); i++) {
-                        JsonObject ev = eventTypes.getJsonObject(i);
-                        ev.mapTo(EventType.class);
-                        assertEquals(model.bundleIds.get(0).toString(), ev.getJsonObject("application").getString("bundle_id"));
-                        assertEquals(model.applicationIds.get(0).toString(), ev.getJsonObject("application").getString("id"));
-                    }
+            JsonArray eventTypes = new JsonArray(response.getBody().asString());
+            for (int i = 0; i < eventTypes.size(); i++) {
+                JsonObject ev = eventTypes.getJsonObject(i);
+                ev.mapTo(EventType.class);
+                assertEquals(model.bundleIds.get(0).toString(), ev.getJsonObject("application").getString("bundle_id"));
+                assertEquals(model.applicationIds.get(0).toString(), ev.getJsonObject("application").getString("id"));
+            }
 
-                    assertEquals(100, eventTypes.size());
-                }))
-        ).await().indefinitely();
+            assertEquals(100, eventTypes.size());
+        })).await().indefinitely();
     }
 
     @Test
