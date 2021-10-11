@@ -3,52 +3,13 @@
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
-        <div>Hello {user.firstName} {user.lastName}, this is the daily report for your OpenShift Streams instances</div>
-        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
-            <tbody>
-            <!-- Content block -->
-            <tr>
-                <td>
-                    <div class="container">
-                        <div class="rh-card" style="margin-right: 12px;">
-                            <div class="rh-card__header">
-                                <h2>
-                                    OpenShift Streams Instances with Kafka Upgrades
-                                </h2>
-                            </div>
-                            <div>
-                                <span class="rh-metric__count">{action.context.upgrades.size()}</span>
-                            </div>
-                        </div>
-                        <div class="rh-card" style="margin-left: 12px;">
-                            <div class="rh-card__header">
-                                <h2>
-                                    OpenShift Streams Instances that are impacted by service disruption
-                                </h2>
-                            </div>
-                            <div>
-                                <p></p>
-                                <span class="rh-metric__count">{action.context.disruptions.size()}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- end 50 col -->
-                    <!--[if (gte mso 9)|(IE)]>
-                    </td>
-                    </tr>
-                    </table>
-                    <![endif]-->
-                </td>
-            </tr>
-            <!-- end content block -->
-            </tbody>
-        </table>
+        <div>Hello {user.firstName}, this is the daily report for your OpenShift Streams instances</div>
     </td>
 </tr>
 {#if action.context.upgrades.size() > 0}
 <tr>
     <td class="rh-content__block">
-        <p>Daily service disruption summary for triggered on <b>{action.context.upgrades.size()} {#if action.context.upgrades.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.</p>
+        <p>Daily Kafka upgrades summary triggered for <b>{action.context.upgrades.size()} {#if action.context.upgrades.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.</p>
     </td>
 </tr>
 <tr>
@@ -76,7 +37,7 @@
 {#if action.context.disruptions.size() > 0}
 <tr>
     <td class="rh-content__block">
-        <p>Daily service disruption summary for triggered on <b>{action.context.disruptions.size()} {#if action.context.disruptions.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.</p>
+        <p>Daily service disruption summary triggered for <b>{action.context.disruptions.size()} {#if action.context.disruptions.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.</p>
     </td>
 </tr>
 <tr>

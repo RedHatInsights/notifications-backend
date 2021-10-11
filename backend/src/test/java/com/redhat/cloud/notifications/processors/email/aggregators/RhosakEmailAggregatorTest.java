@@ -4,6 +4,9 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.templates.Rhosak.Templates;
+import io.quarkus.qute.TemplateInstance;
+import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +18,7 @@ import java.util.Map;
 import static com.redhat.cloud.notifications.TestHelpers.baseTransformer;
 import static org.junit.jupiter.api.Assertions.*;
 
+@QuarkusTest
 class RhosakEmailAggregatorTest {
     public static final String APPLICATION_SERVICES = "application-services";
     public static final String RHOSAK = "rhosak";
@@ -163,6 +167,20 @@ class RhosakEmailAggregatorTest {
 
         assertEquals(1, disruptions.size(), "aggregator should have content in disruption body");
         assertEquals(1, upgrades.size(), "aggregator should have content in upgrades body");
+
+        // test template render
+        TemplateInstance dailyBodyTemplateInstance = Templates.dailyRhosakEmailsBody();
+        TemplateInstance dailyTittleTemplateInstance = Templates.dailyRhosakEmailsTitle();
+
+        Action emailActionMessage = new Action();
+        aggregator.setStartTime(LocalDateTime.now());
+        emailActionMessage.setContext(aggregator.getContext());
+        String title = dailyTittleTemplateInstance.data("action", emailActionMessage).render();
+        assertTrue(title.contains("Red Hat OpenShift Streams for Apache Kafka Daily Report"), "Title must contain RHOSAK related digest info");
+        String body = dailyBodyTemplateInstance.data("action", emailActionMessage).data("user", Map.of("firstName", "machi1990", "lastName", "Last Name")).render();
+        assertTrue(body.contains("Daily service disruption summary triggered for"), "Body must contain service disruption summary");
+        assertTrue(body.contains("Daily Kafka upgrades summary triggered for"), "Body must contain upgrades summary");
+        assertTrue(body.contains("Hello machi1990, this is the daily report for your OpenShift Streams instances"), "Body must contain greeting message");
     }
 
     private static EmailAggregation createDisruptionEmailAggregation(String kafkaName, String impactedArea) {
