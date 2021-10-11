@@ -2,79 +2,101 @@
 {#content-title}Upgrade Notification - {action.context.upgrade_time.toUtcFormat()}{/content-title}
 {#content-body}
 <tr>
-    <td class="rh-content__block">
-        <div>Hello {user.firstName} {user.lastName},</div>
-        <p>This notification is for your {action.events.size()} OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if} below.</p>
-        <ul>
-            {#each action.events}
-            <li style="font-size: 14px;">
-                {it.payload.name}
-            </li>
-            {/each}
-        </ul>
-
-        Your {#if action.events.size() is 1} instance is {#else} instances are{/if} scheduled for upgrade maintenance to {action.context.kafka_version} Kafka version on {action.context.upgrade_time.toUtcFormat()}
-
-        Please contact Red Hat support if you have any questions.
-    </td>
-</tr>
-
-<tr>
-    <td class="rh-content__block">
-        <div class="rh-stack">
-            <b>What can you expect?</b>
-            <ul>
-                <li style="font-size: 14px;">
-                    Your OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if} maximum throughput might decrease briefly during the rolling upgrade of your Kafka broker nodes. Your OpenShift Streams/Kafka instance will remain operational during the upgrade.
-                </li>
-                <li style="font-size: 14px;">
-                    Your OpenShift Streams {#if action.events.size() is 1} instance{#else} instances{/if} producers and consumers will briefly disconnect from their current broker and failover to one of the remaining brokers while the brokers are going through a rolling upgrade.
-                </li>
-                <li style="font-size: 14px;">
-                    We will send reminders as we get closer to the upgrade date. The maintenance window for the upgrade is variable and should take approximately {action.context.upgrade_duration} minutes.
-                </li>
-            </ul>
-        </div>
-    </td>
-</tr>
-{#if action.context.actions_to_minimize_impacts.size() > 0}
-<tr>
-    <td class="rh-content__block">
-        <div class="rh-stack">
-            <b>What should you do to minimize impact?</b>
-            <ul>
-                {#each action.context.actions_to_minimize_impacts}
-                <li style="font-size: 14px;">
-                    {it}
-                </li>
-                {/each}
-            </ul>
-        </div>
-    </td>
-</tr>
-{/if}
-<tr>
-    <td class="rh-content__block">
-        <div class="rh-stack">
-            <b>For more information, refer to our <a target="_blank" href="{action.context.guide}"> guide</a></b><br><br/>
-            If you have any questions, please <a target="_blank" href="https://access.redhat.com/support/contact/technicalSupport/">contact us</a>.
-            Review the <a target="_blank" href="https://access.redhat.com/support/policy/support_process">support process</a> for guidance on working with Red Hat support.
-        </div>
-    </td>
-</tr>
-
-<tr>
-    <td class="rh-content__block">
-        <table align="center">
+    <td class="rh-body">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0"
+               width="100%">
+            <tbody>
+            <!-- Content block -->
             <tr>
-                <td class="rh-cta-link" align="center">
-                    <a target="_blank" href="https://console.redhat.com/beta/application-services/streams/kafkas">
-                                <span>
-                                  Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
-                                </span>
-                    </a>
+                <td class="rh-content__block">
+                    <p>
+                        Hello {user.firstName},
+                        <br>
+                        <br>
+                        This notification is for your
+
+                    <ul>
+                        {#each action.events}
+                        <li style="font-size: 14px;">
+                            {it.payload.name}
+                        </li>
+                        {/each}
+                    </ul>
+                    OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if}.
+                    <br>
+                    <br>
+                    Your {#if action.events.size() is 1} instance is {#else} instances are{/if} scheduled for upgrade
+                    maintenance to
+                    {action.context.kafka_version} Kafka version on {action.context.upgrade_time.toUtcFormat()}.
+                    <br>
+                    <br>
+                    Please contact Red Hat support if you have any questions.
+                    <br>
+                    <br>
+                    <b>What can you expect?</b>
+                    <br>
+                    <ul>
+                        <li>Your OpenShift Streams/Kafka instance maximum throughput might decrease briefly during the
+                            rolling upgrade of your Kafka broker nodes. Your OpenShift Streams/Kafka instance will
+                            remain operational during the upgrade.
+                        </li>
+                        <li>Your OpenShift Streams produces and consumers will briefly disconnect from their current
+                            broker and failover to one of the remaining brokers while the brokers are going through a
+                            rolling upgrade.
+                        </li>
+                        <li>We will send reminders as we get closer to the upgrade date. The maintenance window for the
+                            upgrade is variable and should take approximately {action.context.upgrade_duration} minutes.
+                        </li>
+                    </ul>
+                    <br>
+                    {#if action.context.actions_to_minimize_impacts.size() > 0}
+                    <b>What should you do to minimize impact?</b>
+                    <br>
+                    <ul>
+                        {#each action.context.actions_to_minimize_impacts}
+                        <li style="font-size: 14px;">
+                            {it}
+                        </li>
+                        {/each}
+                    </ul>
+                    <br>
+                    {/if}
+                    <b>For more information, refer to our <a target="_blank" href="{action.context.guide}">guide</a></b>
+                    <br>
+                    <br>
+                    If you have any questions, please <a
+                        href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank">contact
+                    us</a>. Review the <a href="https://access.redhat.com/support/policy/support_process"
+                                          target="_blank">support process</a> for guidance on working with Red Hat
+                    support.
+                    <br>
+                    <br>
+                    Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+                    </p>
                 </td>
             </tr>
+            <!-- end content block -->
+
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center"
+                           class="rh-button-table">
+                        <tr>
+                            <td class="rh-cta-link" align="center">
+                                <a target="_blank"
+                                   href="https://console.redhat.com/beta/application-services/streams/kafkas">
+                                    <span>
+                                      Go to Kafka Instances page
+                                    </span>
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
         </table>
     </td>
 </tr>
