@@ -12,6 +12,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 // TODO Replace this with an OpenShift cronjob.
 @ApplicationScoped
 public class KafkaMessagesCleaner {
@@ -28,7 +30,7 @@ public class KafkaMessagesCleaner {
      * The Kafka messages identifiers are stored in the database until their retention time is reached.
      * This scheduled job deletes from the database the expired Kafka messages identifiers.
      */
-    @Scheduled(identity = "KafkaMessagesCleaner", every = "${notifications.kafka-messages-cleaner.period}")
+    @Scheduled(identity = "KafkaMessagesCleaner", every = "${notifications.kafka-messages-cleaner.period}", delay = 5L, delayUnit = MINUTES)
     public void clean() {
         testableClean().await().indefinitely();
     }

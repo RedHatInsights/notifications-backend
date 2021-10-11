@@ -12,6 +12,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 @ApplicationScoped
 public class EventLogCleaner {
 
@@ -27,7 +29,7 @@ public class EventLogCleaner {
      * The event log entries are stored in the database until their retention time is reached.
      * This scheduled job deletes from the database the expired event log entries.
      */
-    @Scheduled(identity = "EventLogCleaner", every = "${event-log-cleaner.period}")
+    @Scheduled(identity = "EventLogCleaner", every = "${event-log-cleaner.period}", delay = 5L, delayUnit = MINUTES)
     public void clean() {
         testableClean().await().indefinitely();
     }
