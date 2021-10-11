@@ -10,11 +10,10 @@
             <tr>
                 <td class="rh-content__block">
                     <p>
-                        Hello {user.firstName},
-                        <br>
-                        <br>
-                        This notification is for your
-
+                        Hello {user.firstName}.
+                        <br/>
+                        <br/>
+                        This notification is for your OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if} listed below:
                     <ul>
                         {#each action.events}
                         <li style="font-size: 14px;">
@@ -22,7 +21,6 @@
                         </li>
                         {/each}
                     </ul>
-                    OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if}.
                     <br>
                     <br>
                     Your {#if action.events.size() is 1} instance is {#else} instances are{/if} scheduled for upgrade
