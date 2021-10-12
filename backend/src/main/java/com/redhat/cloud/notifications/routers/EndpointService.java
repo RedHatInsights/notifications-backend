@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.db.NotificationResources.MAX_NOTIFICATION_HISTORY_RESULTS;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
@@ -246,7 +247,7 @@ public class EndpointService {
         @Parameter(
                     name = "limit",
                     in = ParameterIn.QUERY,
-                    description = "Number of items per page, if not specified or 0 is used, returns all elements",
+                    description = "Number of items per page, if not specified or 0 is used, returns a maximum of " + MAX_NOTIFICATION_HISTORY_RESULTS + " elements.",
                     schema = @Schema(type = SchemaType.INTEGER)
             ),
         @Parameter(
