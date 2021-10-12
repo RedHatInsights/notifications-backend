@@ -9,7 +9,8 @@
 {#if action.context.upgrades.size() > 0}
 <tr>
     <td class="rh-content__block">
-        <p>Daily Kafka upgrades summary triggered for <b>{action.context.upgrades.size()} {#if action.context.upgrades.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.</p>
+        <p>Daily Kafka upgrades summary triggered for <b>{action.context.upgrades.size()} {#if action.context.upgrades.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.
+        </p>
     </td>
 </tr>
 <tr>
@@ -37,7 +38,8 @@
 {#if action.context.disruptions.size() > 0}
 <tr>
     <td class="rh-content__block">
-        <p>Daily service disruption summary triggered for <b>{action.context.disruptions.size()} {#if action.context.disruptions.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.</p>
+        <p>Daily service disruption summary triggered for <b>{action.context.disruptions.size()} {#if action.context.disruptions.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.
+        </p>
     </td>
 </tr>
 <tr>
@@ -63,21 +65,38 @@
 {/if}
 <tr>
     <td class="rh-content__block">
-        <div class="rh-stack">
-            If you have any questions, please <a target="_blank" href="https://access.redhat.com/support/contact/technicalSupport/">contact us</a>.
-            Review the <a target="_blank" href="https://access.redhat.com/support/policy/support_process">support process</a> for guidance on working with Red Hat support.
-        </div>
+        <p>
+            <br/>
+            If you have any questions, please
+            <a href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank">contact us</a>. Review
+            the <a href="https://access.redhat.com/support/policy/support_process" target="_blank">support process</a>for
+            guidance on working with Red Hat support.
+            <br/>
+            <br/>
+            Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+        </p>
     </td>
 </tr>
 
+<!-- Content block -->
 <tr>
     <td class="rh-content__block">
-        <table align="center">
+        <table
+                role="presentation"
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                align="center"
+                class="rh-button-table"
+        >
             <tr>
                 <td class="rh-cta-link" align="center">
-                    <a target="_blank" href="https://console.redhat.com/beta/application-services/streams/kafkas">
+                    <a
+                            target="_blank"
+                            href="https://console.redhat.com/beta/application-services/streams/kafkas"
+                    >
                                 <span>
-                                  Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+                                  Go to Kafka Instances page
                                 </span>
                     </a>
                 </td>
