@@ -21,11 +21,8 @@
                         </li>
                         {/each}
                     </ul>
-                    <br>
-                    <br>
                     Your {#if action.events.size() is 1} instance is {#else} instances are{/if} scheduled for upgrade
-                    maintenance to
-                    {action.context.kafka_version} Kafka version on {action.context.upgrade_time.toUtcFormat()}.
+                    maintenance to {action.context.kafka_version} Kafka version on {action.context.upgrade_time.toUtcFormat()}.
                     <br>
                     <br>
                     Please contact Red Hat support if you have any questions.
