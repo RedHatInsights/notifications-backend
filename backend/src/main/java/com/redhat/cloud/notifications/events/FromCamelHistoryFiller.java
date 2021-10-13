@@ -54,8 +54,11 @@ public class FromCamelHistoryFiller {
 
     private Map<String, Object> decodeItem(String s) {
 
-        Map<String, Object> map = Json.decodeValue(s, Map.class);
+        // 1st step CloudEvent as String -> map
+        Map<String, Object> ceMap = Json.decodeValue(s, Map.class);
 
+        // 2nd step data item (as String) to final map
+        Map<String,Object> map = Json.decodeValue((String) ceMap.get("data"), Map.class);
         return map;
     }
 
