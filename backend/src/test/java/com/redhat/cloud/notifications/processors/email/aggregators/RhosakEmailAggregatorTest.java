@@ -178,7 +178,7 @@ class RhosakEmailAggregatorTest {
         String title = dailyTittleTemplateInstance.data("action", emailActionMessage).render();
         assertTrue(title.contains("Red Hat OpenShift Streams for Apache Kafka Daily Report"), "Title must contain RHOSAK related digest info");
         String body = dailyBodyTemplateInstance.data("action", emailActionMessage).data("user", Map.of("firstName", "machi1990", "lastName", "Last Name")).render();
-        assertTrue(body.contains("Daily service disruption summary triggered for"), "Body must contain service disruption summary");
+        assertTrue(body.contains("Daily service disruptions summary triggered for"), "Body must contain service disruption summary");
         assertTrue(body.contains("Daily Kafka upgrades summary triggered for"), "Body must contain upgrades summary");
         assertTrue(body.contains("Hello machi1990, this is the daily report for your OpenShift Streams instances"), "Body must contain greeting message");
     }

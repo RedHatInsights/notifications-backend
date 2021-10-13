@@ -20,7 +20,7 @@
                         Hello {user.firstName}.
                         <br/>
                         <br/>
-                        This notification is for your OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if} listed below:
+                        This notification is for your OpenShift Streams instance{#if action.events.size() > 1}s{/if} listed below:
                     <ul>
                         {#each action.events}
                         <li style="font-size: 14px;">
@@ -29,7 +29,7 @@
                         {/each}
                     </ul>
                     Our monitoring systems have identified a service disruption that’s impacting the {action.context.impacted_area} of your
-                    OpenShift Streams/Kafka {#if action.events.size() is 1} instance {#else} instances{/if}. Red Hat SRE is currently resolving this issue.
+                    OpenShift Streams/Kafka instance{#if action.events.size() > 1}s{/if}. Red Hat SRE is currently resolving this issue.
                     <br/>
                     <br/>
                     You can monitor the status of the Red Hat OpenShift Streams for Apache Kafka service on our

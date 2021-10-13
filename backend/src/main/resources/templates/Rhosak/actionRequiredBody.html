@@ -20,7 +20,7 @@
                         Hello {user.firstName}.
                         <br/>
                         <br/>
-                        This notification is for your OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if} listed below:
+                        This notification is for your OpenShift Streams instance{#if action.events.size() > 1}s{/if} listed below:
                     <ul>
                         {#each action.events}
                         <li style="font-size: 14px;">

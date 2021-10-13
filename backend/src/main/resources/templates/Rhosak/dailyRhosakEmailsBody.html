@@ -9,7 +9,7 @@
 {#if action.context.upgrades.size() > 0}
 <tr>
     <td class="rh-content__block">
-        <p>Daily Kafka upgrades summary triggered for <b>{action.context.upgrades.size()} {#if action.context.upgrades.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.
+        <p>Daily Kafka upgrades summary triggered for <b>{action.context.upgrades.size()} OpenShift Streams instance{#if action.context.upgrades.size() > 1}s{/if}</b>.
         </p>
     </td>
 </tr>
@@ -38,7 +38,7 @@
 {#if action.context.disruptions.size() > 0}
 <tr>
     <td class="rh-content__block">
-        <p>Daily service disruption summary triggered for <b>{action.context.disruptions.size()} {#if action.context.disruptions.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.
+        <p>Daily service disruptions summary triggered for <b>{action.context.disruptions.size()} OpenShift Streams instance{#if action.context.disruptions.size() > 1}s{/if}</b>.
         </p>
     </td>
 </tr>
