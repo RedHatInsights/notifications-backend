@@ -15,7 +15,7 @@ import javax.ws.rs.core.MediaType;
 import java.util.UUID;
 
 @Path("/api/rbac/v1")
-@RegisterRestClient(configKey = "rbac")
+@RegisterRestClient(configKey = "rbac-s2s")
 @RegisterProvider(AuthRequestFilter.class)
 public interface RbacServiceToService {
 

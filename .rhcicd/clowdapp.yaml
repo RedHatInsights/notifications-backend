@@ -54,7 +54,9 @@ objects:
           value: ${CLOWDER_ENABLED}
         - name: RBAC_URL
           value: ${RBAC_SCHEME}://${RBAC_HOST}:${RBAC_PORT}
-        - name: RBAC_MP_REST_URL
+        - name: RBAC_AUTHENTICATION_MP_REST_URL
+          value: ${RBAC_SCHEME}://${RBAC_HOST}:${RBAC_PORT}
+        - name: RBAC_S2S_MP_REST_URL
           value: ${RBAC_SCHEME}://${RBAC_HOST}:${RBAC_PORT}
         resources:
           limits:
