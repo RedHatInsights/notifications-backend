@@ -45,11 +45,24 @@ props = {
     "url": "http://localhost:8085",
     "method": "PUT",
     "secret_token": "bla-token",
-    "sub_type": "webhook"
+    "type": "webhook"
 }
-ep_id = helpers.create_endpoint("bla", x_rh_id, props)
+ep_id = helpers.create_endpoint("bla-webhook", x_rh_id, props)
 
 print(">>> link endpoint to behaviour group ")
 helpers.link_bg_endpoint(bg_id, ep_id, x_rh_id)
+
+print(">>> create camel endpoint")
+props = {
+    "url": "http://does-not-matter",
+    "sub_type": "demo-log",
+    "extras": {
+        "mode": "random"
+    }
+}
+ep_id = helpers.create_endpoint("demo-log", x_rh_id, props, "camel")
+
+print(">>> link camel endpoint to behaviour group")
+
 
 
