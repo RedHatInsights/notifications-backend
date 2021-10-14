@@ -14,6 +14,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.ConnectTimeoutException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.impl.HttpRequestImpl;
@@ -38,6 +39,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
     private static final Logger LOGGER = Logger.getLogger(WebhookTypeProcessor.class);
     private static final String TOKEN_HEADER = "X-Insight-Token";
+    private static final String CONNECTION_CLOSED_MSG = "Connection was closed";
 
     @ConfigProperty(name = "processor.webhook.retry.max-attempts", defaultValue = "3")
     long maxRetryAttempts;
@@ -202,6 +204,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     private boolean shouldRetry(Throwable throwable) {
         return throwable instanceof ServerErrorException ||
                 throwable instanceof IOException ||
-                throwable instanceof ConnectTimeoutException;
+                throwable instanceof ConnectTimeoutException ||
+                throwable instanceof VertxException && CONNECTION_CLOSED_MSG.equals(throwable.getMessage());
     }
 }
