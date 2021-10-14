@@ -18,7 +18,7 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1633608675003,
+      "iteration": 1634192850274,
       "links": [],
       "panels": [
         {
@@ -37,12 +37,432 @@ data:
           "fillGradient": 0,
           "gridPos": {
             "h": 8,
-            "w": 12,
+            "w": 6,
             "x": 0,
             "y": 0
           },
           "hiddenSeries": false,
           "id": 113,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": false,
+          "linewidth": 1,
+          "nullPointMode": "null as zero",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.2.1",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/integrations.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/integrations.*\"}[5m])) by (uri) * 60",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "average response time in seconds",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:62",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:63",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": true,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "$datasource",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {}
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "hiddenSeries": false,
+          "id": 175,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": false,
+          "linewidth": 1,
+          "nullPointMode": "null as zero",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.2.1",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/user-config.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/user-config.*\"}[5m])) by (uri) * 60",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "average response time in seconds",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:62",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:63",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": true,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "$datasource",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {}
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
+          "hiddenSeries": false,
+          "id": 176,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": false,
+          "linewidth": 1,
+          "nullPointMode": "null as zero",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.2.1",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/facets.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/facets.*\"}[5m])) by (uri) * 60",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/events.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/events.*\"}[5m])) by (uri) * 60",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "B"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "average response time in seconds",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:62",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:63",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": true,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "$datasource",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {}
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "hiddenSeries": false,
+          "id": 177,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": false,
+          "linewidth": 1,
+          "nullPointMode": "null as zero",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.2.1",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri) * 60",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri) * 60",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) * 60",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "C"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "average response time in seconds",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:62",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:63",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": true,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "$datasource",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {}
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 8
+          },
+          "hiddenSeries": false,
+          "id": 174,
           "legend": {
             "avg": false,
             "current": false,
@@ -147,7 +567,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 0
+            "y": 8
           },
           "hiddenSeries": false,
           "id": 144,
@@ -245,7 +665,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 0
+            "y": 8
           },
           "hiddenSeries": false,
           "id": 136,
@@ -343,7 +763,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 8
+            "y": 16
           },
           "hiddenSeries": false,
           "id": 172,
@@ -439,7 +859,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 8
+            "y": 16
           },
           "hiddenSeries": false,
           "id": 50,
@@ -549,7 +969,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 8
+            "y": 16
           },
           "hiddenSeries": false,
           "id": 153,
@@ -653,7 +1073,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 8
+            "y": 16
           },
           "hiddenSeries": false,
           "id": 161,
@@ -759,7 +1179,7 @@ data:
             "h": 7,
             "w": 4,
             "x": 0,
-            "y": 16
+            "y": 24
           },
           "id": 163,
           "options": {
@@ -808,7 +1228,7 @@ data:
             "h": 7,
             "w": 8,
             "x": 4,
-            "y": 16
+            "y": 24
           },
           "hiddenSeries": false,
           "id": 166,
@@ -911,7 +1331,7 @@ data:
             "h": 7,
             "w": 4,
             "x": 12,
-            "y": 16
+            "y": 24
           },
           "id": 164,
           "options": {
@@ -960,7 +1380,7 @@ data:
             "h": 7,
             "w": 8,
             "x": 16,
-            "y": 16
+            "y": 24
           },
           "hiddenSeries": false,
           "id": 167,
@@ -1044,7 +1464,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 23
+            "y": 31
           },
           "id": 24,
           "panels": [],
@@ -1071,7 +1491,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 24
+            "y": 32
           },
           "hiddenSeries": false,
           "id": 22,
@@ -1208,7 +1628,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 24
+            "y": 32
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -1304,7 +1724,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 33
+            "y": 41
           },
           "hiddenSeries": false,
           "id": 85,
@@ -1447,8 +1867,8 @@ data:
             "allValue": null,
             "current": {
               "selected": true,
-              "text": "stage",
-              "value": "crcs02ue1-prometheus"
+              "text": "prod",
+              "value": "crcp01ue1-prometheus"
             },
             "hide": 0,
             "includeAll": false,
@@ -1457,12 +1877,12 @@ data:
             "name": "datasource",
             "options": [
               {
-                "selected": true,
+                "selected": false,
                 "text": "stage",
                 "value": "crcs02ue1-prometheus"
               },
               {
-                "selected": false,
+                "selected": true,
                 "text": "prod",
                 "value": "crcp01ue1-prometheus"
               }
@@ -1506,7 +1926,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 19
+      "version": 20
     }
 kind: ConfigMap
 metadata:
