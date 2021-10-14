@@ -74,7 +74,7 @@ public class Main extends RouteBuilder {
 
                 // We check that this is our type.
                 // Otherwise, we ignore the message there will be another component that takes care
-                .filter().simple("${header.ce-type} != '" + COMPONENT_NAME + "'") // TODO ==
+                .filter().simple("${header.ce-type} == '" + COMPONENT_NAME + "'")
                 .to("direct:doTheWork")
                 .end();
 
