@@ -111,6 +111,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
         configurator = new MockServerClientConfig(mockEngineServer.getContainerIpAddress(), mockEngineServer.getServerPort());
 
-        props.put("rbac/mp-rest/url", mockServerUrl);
+        props.put("rbac-authentication/mp-rest/url", mockServerUrl);
+        props.put("rbac-s2s/mp-rest/url", mockServerUrl);
     }
 }
