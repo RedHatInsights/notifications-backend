@@ -25,6 +25,8 @@ public class RhosakEmailAggregator extends AbstractEmailPayloadAggregator {
     private static final String PERFORMANCE = "performance";
     private static final String LATENCY = "latency";
     private static final String THROUGHPUT = "throughput";
+    private static final String AVAILABILITY = "availability";
+    public static final String UPGRADE_TIME = "upgrade_time";
 
     public RhosakEmailAggregator() {
         context.put(UPGRADES, new JsonObject());
@@ -47,6 +49,7 @@ public class RhosakEmailAggregator extends AbstractEmailPayloadAggregator {
     private void buildUpgradesPayload(JsonObject aggregationPayload, JsonObject context) {
         JsonObject upgrades = this.context.getJsonObject(UPGRADES);
         String kafkaVersion = context.getString(KAFKA_VERSION).trim();
+        String kafkaUpgradeTime = context.getString(UPGRADE_TIME).trim();
         aggregationPayload.getJsonArray(EVENTS).stream().forEach(eventObject -> {
             JsonObject event = (JsonObject) eventObject;
             JsonObject payload = event.getJsonObject(PAYLOAD);
@@ -56,6 +59,7 @@ public class RhosakEmailAggregator extends AbstractEmailPayloadAggregator {
                 kafkaUpgrade = new JsonObject();
                 kafkaUpgrade.put(PAYLOAD_NAME, name);
                 kafkaUpgrade.put(KAFKA_VERSION, kafkaVersion);
+                kafkaUpgrade.put(UPGRADE_TIME, kafkaUpgradeTime);
                 upgrades.put(name, kafkaUpgrade);
             } else {
                 kafkaUpgrade = upgrades.getJsonObject(name);
@@ -72,6 +76,7 @@ public class RhosakEmailAggregator extends AbstractEmailPayloadAggregator {
         boolean currentDisruptionImpactPerformance = serviceDisruptionImpact.contains(PERFORMANCE);
         boolean currentDisruptionImpactLatency = serviceDisruptionImpact.contains(LATENCY);
         boolean currentDisruptionImpactTroughPut = serviceDisruptionImpact.contains(THROUGHPUT);
+        boolean currentDisruptionImpactAvailability = serviceDisruptionImpact.contains(AVAILABILITY);
 
         JsonObject disruptions = this.context.getJsonObject(SERVICE_DISRUPTIONS);
         aggregationPayload.getJsonArray(EVENTS).stream().forEach(eventObject -> {
@@ -90,6 +95,7 @@ public class RhosakEmailAggregator extends AbstractEmailPayloadAggregator {
                 boolean hasPerformanceImpact = existingImpacts.contains(PERFORMANCE);
                 boolean hasLatencyImpact = existingImpacts.contains(LATENCY);
                 boolean hasTroughPutImpact = existingImpacts.contains(THROUGHPUT);
+                boolean hasAvailabilityImpact = existingImpacts.contains(AVAILABILITY);
 
                 List<String> impacts = new ArrayList<>();
                 if (currentDisruptionImpactPerformance || hasPerformanceImpact) {
@@ -100,6 +106,9 @@ public class RhosakEmailAggregator extends AbstractEmailPayloadAggregator {
                 }
                 if (currentDisruptionImpactTroughPut || hasTroughPutImpact) {
                     impacts.add(THROUGHPUT);
+                }
+                if (currentDisruptionImpactAvailability || hasAvailabilityImpact) {
+                    impacts.add(AVAILABILITY);
                 }
 
                 String newImpacts = impacts.stream().collect(Collectors.joining(", "));

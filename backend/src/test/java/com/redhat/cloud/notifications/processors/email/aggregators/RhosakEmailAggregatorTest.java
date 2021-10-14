@@ -58,6 +58,7 @@ class RhosakEmailAggregatorTest {
         String kafkaName = "my-kafka";
         String firstKafkaVersion = "2.8.0";
         String kafkaVersion = "kafka_version";
+        String upgrade_time = "upgrade_time";
 
         // test first aggregation
         EmailAggregation aggregation = createUpgradeEmailAggregation(kafkaName, firstKafkaVersion);
@@ -67,6 +68,7 @@ class RhosakEmailAggregatorTest {
         JsonObject entry = upgrades.getJsonObject(kafkaName);
         assertNotNull(entry);
         assertEquals(firstKafkaVersion, entry.getString(kafkaVersion));
+        assertNotNull(entry.getString(upgrade_time));
 
         // test second aggregation
         String secondKafkaVersion = "3.0.0";
@@ -132,13 +134,13 @@ class RhosakEmailAggregatorTest {
         assertEquals(perf + ", " + latency + ", " + throughput, entry.getString(impactedArea));
 
         // test fourth aggregation
-        String impactedArea1 = "latency, performance, throughput";
+        String impactedArea1 = "latency, performance, throughput, availability";
         aggregation = createDisruptionEmailAggregation(kafkaName, impactedArea1);
         aggregator.processEmailAggregation(aggregation);
 
         assertEquals(1, disruptions.size(), "aggregator should still have one disruption body");
         entry = disruptions.getJsonObject(kafkaName);
-        assertEquals(perf + ", " + latency + ", " + throughput, entry.getString(impactedArea));
+        assertEquals(perf + ", " + latency + ", " + throughput + ", availability", entry.getString(impactedArea));
 
         // test fifth aggregation with another kafka
         String kafkaName1 = "another-kafka-name";
@@ -178,9 +180,10 @@ class RhosakEmailAggregatorTest {
         String title = dailyTittleTemplateInstance.data("action", emailActionMessage).render();
         assertTrue(title.contains("Red Hat OpenShift Streams for Apache Kafka Daily Report"), "Title must contain RHOSAK related digest info");
         String body = dailyBodyTemplateInstance.data("action", emailActionMessage).data("user", Map.of("firstName", "machi1990", "lastName", "Last Name")).render();
-        assertTrue(body.contains("Daily service disruptions summary triggered for"), "Body must contain service disruption summary");
-        assertTrue(body.contains("Daily Kafka upgrades summary triggered for"), "Body must contain upgrades summary");
-        assertTrue(body.contains("Hello machi1990, this is the daily report for your OpenShift Streams instances"), "Body must contain greeting message");
+        assertTrue(body.contains("The following table summarizes the OpenShift Streams instances affected by unexpected disruption of the OpenShift Streams service"), "Body must contain service disruption summary");
+        assertTrue(body.contains("The following table summarizes Kafka upgrade activity for your OpenShift Streams instances."), "Body must contain upgrades summary");
+        assertTrue(body.contains("Hello machi1990."), "Body must contain greeting message");
+        assertTrue(body.contains("This is the daily report for your OpenShift Streams instances"), "Body must contain greeting message");
     }
 
     private static EmailAggregation createDisruptionEmailAggregation(String kafkaName, String impactedArea) {
@@ -230,7 +233,8 @@ class RhosakEmailAggregatorTest {
         emailActionMessage.setEventType(SCHEDULED_UPGRADE);
 
         emailActionMessage.setContext(Map.of(
-                "kafka_version", kafkaVersion
+                "kafka_version", kafkaVersion,
+                "upgrade_time", LocalDateTime.now().toString()
         ));
         emailActionMessage.setEvents(List.of(
                 Event

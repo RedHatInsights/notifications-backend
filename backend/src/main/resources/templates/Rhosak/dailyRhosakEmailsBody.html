@@ -3,13 +3,16 @@
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
-        <div>Hello {user.firstName}, this is the daily report for your OpenShift Streams instances</div>
+        <p>Hello {user.firstName}.<br/><br/>This is the daily report for your OpenShift Streams instances</p>
     </td>
 </tr>
 {#if action.context.upgrades.size() > 0}
 <tr>
     <td class="rh-content__block">
-        <p>Daily Kafka upgrades summary triggered for <b>{action.context.upgrades.size()} OpenShift Streams instance{#if action.context.upgrades.size() > 1}s{/if}</b>.
+        <p>
+            <b>Kafka version upgrades</b>
+            <br/>
+            The following table summarizes Kafka upgrade activity for your OpenShift Streams instances. The table shows the date and time that upgrade of each instance began. The table also shows the Kafka version to which each instance was upgraded.
         </p>
     </td>
 </tr>
@@ -18,7 +21,8 @@
         <table class="rh-data-table rh-m-bordered">
             <thead>
             <tr>
-                <th>Kafka name</th>
+                <th>OpenShift Streams instance name</th>
+                <th>Upgrade start time</th>
                 <th>Kafka version upgrade</th>
             </tr>
             </thead>
@@ -26,6 +30,7 @@
             {#for key in action.context.upgrades.keySet()}
             <tr>
                 <td>{action.context.upgrades.get(key).name}</td>
+                <td>{action.context.upgrades.get(key).upgrade_time.toUtcFormat()}</td>
                 <td>{action.context.upgrades.get(key).kafka_version}</td>
             </tr>
             {/for}
@@ -38,7 +43,9 @@
 {#if action.context.disruptions.size() > 0}
 <tr>
     <td class="rh-content__block">
-        <p>Daily service disruptions summary triggered for <b>{action.context.disruptions.size()} OpenShift Streams instance{#if action.context.disruptions.size() > 1}s{/if}</b>.
+        <p>
+            <b>Service disruptions</b>
+            The following table summarizes the OpenShift Streams instances affected by unexpected disruption of the OpenShift Streams service. The table also shows the possible performance impacts on each instance due to this disruption.
         </p>
     </td>
 </tr>
@@ -47,8 +54,8 @@
         <table class="rh-data-table rh-m-bordered">
             <thead>
             <tr>
-                <th>Kafka name</th>
-                <th>Service disruption impact on</th>
+                <th>OpenShift Streams instance name</th>
+                <th>Possible impacts</th>
             </tr>
             </thead>
             <tbody>
