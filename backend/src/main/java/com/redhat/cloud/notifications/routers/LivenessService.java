@@ -39,10 +39,12 @@ public class LivenessService implements AsyncHealthCheck {
     }
 
     private Uni<Boolean> postgresConnectionHealth() {
-        return sessionFactory.withStatelessSession(statelessSession -> statelessSession.createNativeQuery("SELECT 1")
-                .getSingleResult()
-                .replaceWith(Boolean.TRUE)
-                .onFailure().recoverWithItem(Boolean.FALSE)).runSubscriptionOn(
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createNativeQuery("SELECT 1")
+                    .getSingleResult()
+                    .replaceWith(Boolean.TRUE)
+                    .onFailure().recoverWithItem(Boolean.FALSE);
+        }).runSubscriptionOn(
                 /*
                  * AsyncHealthCheck does not work with Hibernate Reactive. The following line is a workaround for that issue.
                  * TODO Remove it ASAP.
