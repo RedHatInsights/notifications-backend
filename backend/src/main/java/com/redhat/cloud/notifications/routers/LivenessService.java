@@ -13,8 +13,8 @@ import org.hibernate.reactive.mutiny.Mutiny;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
-@ApplicationScoped
 @Liveness
+@ApplicationScoped
 public class LivenessService implements AsyncHealthCheck {
 
     @Inject
@@ -22,22 +22,6 @@ public class LivenessService implements AsyncHealthCheck {
 
     @Inject
     Vertx vertx;
-
-    Uni<Boolean> postgresConnectionHealth() {
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createNativeQuery("SELECT 1")
-                    .getSingleResult()
-                    .replaceWith(Boolean.TRUE)
-                    .onFailure().recoverWithItem(Boolean.FALSE);
-        }).runSubscriptionOn(
-                /*
-                 * AsyncHealthCheck does not work with Hibernate Reactive. The following line is a workaround for that issue.
-                 * TODO Remove it ASAP.
-                 * See https://github.com/quarkusio/quarkus/issues/20166 for more details.
-                 */
-                MutinyHelper.executor(vertx.getOrCreateContext())
-        );
-    }
 
     @Override
     public Uni<HealthCheckResponse> call() {
@@ -51,6 +35,20 @@ public class LivenessService implements AsyncHealthCheck {
         }
         return postgresConnectionHealth().onItem().transform(dbState ->
                     response.status(dbState).withData("reactive-db-check", dbState).build()
+        );
+    }
+
+    private Uni<Boolean> postgresConnectionHealth() {
+        return sessionFactory.withStatelessSession(statelessSession -> statelessSession.createNativeQuery("SELECT 1")
+                .getSingleResult()
+                .replaceWith(Boolean.TRUE)
+                .onFailure().recoverWithItem(Boolean.FALSE)).runSubscriptionOn(
+                /*
+                 * AsyncHealthCheck does not work with Hibernate Reactive. The following line is a workaround for that issue.
+                 * TODO Remove it ASAP.
+                 * See https://github.com/quarkusio/quarkus/issues/20166 for more details.
+                 */
+                MutinyHelper.executor(vertx.getOrCreateContext())
         );
     }
 }
