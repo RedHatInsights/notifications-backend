@@ -1,1 +1,1 @@
-Red Hat OpenShift Streams for Apache Kafka Daily Report - {action.context.start_time.toStringFormat()}
+Red Hat OpenShift Streams for Apache Kafka Daily Report - {action.context.start_time.toUtcFormat()}

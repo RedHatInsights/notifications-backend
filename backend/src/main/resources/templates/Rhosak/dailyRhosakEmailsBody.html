@@ -3,52 +3,17 @@
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
-        <div>Hello {user.firstName} {user.lastName}, this is the daily report for your OpenShift Streams instances</div>
-        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
-            <tbody>
-            <!-- Content block -->
-            <tr>
-                <td>
-                    <div class="container">
-                        <div class="rh-card" style="margin-right: 12px;">
-                            <div class="rh-card__header">
-                                <h2>
-                                    OpenShift Streams Instances with Kafka Upgrades
-                                </h2>
-                            </div>
-                            <div>
-                                <span class="rh-metric__count">{action.context.upgrades.size()}</span>
-                            </div>
-                        </div>
-                        <div class="rh-card" style="margin-left: 12px;">
-                            <div class="rh-card__header">
-                                <h2>
-                                    OpenShift Streams Instances that are impacted by service disruption
-                                </h2>
-                            </div>
-                            <div>
-                                <p></p>
-                                <span class="rh-metric__count">{action.context.disruptions.size()}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- end 50 col -->
-                    <!--[if (gte mso 9)|(IE)]>
-                    </td>
-                    </tr>
-                    </table>
-                    <![endif]-->
-                </td>
-            </tr>
-            <!-- end content block -->
-            </tbody>
-        </table>
+        <p>Hello {user.firstName}.<br/><br/>This is the daily report for your OpenShift Streams instances</p>
     </td>
 </tr>
 {#if action.context.upgrades.size() > 0}
 <tr>
     <td class="rh-content__block">
-        <p>Daily service disruption summary for triggered on <b>{action.context.upgrades.size()} {#if action.context.upgrades.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.</p>
+        <p>
+            <b>Kafka version upgrades</b>
+            <br/>
+            The following table summarizes Kafka upgrade activity for your OpenShift Streams instances. The table shows the date and time that upgrade of each instance began. The table also shows the Kafka version to which each instance was upgraded.
+        </p>
     </td>
 </tr>
 <tr>
@@ -56,7 +21,8 @@
         <table class="rh-data-table rh-m-bordered">
             <thead>
             <tr>
-                <th>Kafka name</th>
+                <th>OpenShift Streams instance name</th>
+                <th>Upgrade start time</th>
                 <th>Kafka version upgrade</th>
             </tr>
             </thead>
@@ -64,6 +30,7 @@
             {#for key in action.context.upgrades.keySet()}
             <tr>
                 <td>{action.context.upgrades.get(key).name}</td>
+                <td>{action.context.upgrades.get(key).upgrade_time.toUtcFormat()}</td>
                 <td>{action.context.upgrades.get(key).kafka_version}</td>
             </tr>
             {/for}
@@ -71,14 +38,15 @@
         </table>
     </td>
 </tr>
-{#else}
-<b>No Kafka upgrade for any of your OpenShift Streams Instance</b>
 {/if}
 
 {#if action.context.disruptions.size() > 0}
 <tr>
     <td class="rh-content__block">
-        <p>Daily service disruption summary for triggered on <b>{action.context.disruptions.size()} {#if action.context.disruptions.size() == 1}OpenShift Streams instance{#else}OpenShift Streams instance{/if}</b>.</p>
+        <p>
+            <b>Service disruptions</b>
+            The following table summarizes the OpenShift Streams instances affected by unexpected disruption of the OpenShift Streams service. The table also shows the possible performance impacts on each instance due to this disruption.
+        </p>
     </td>
 </tr>
 <tr>
@@ -86,8 +54,8 @@
         <table class="rh-data-table rh-m-bordered">
             <thead>
             <tr>
-                <th>Kafka name</th>
-                <th>Service disruption impact on</th>
+                <th>OpenShift Streams instance name</th>
+                <th>Possible impacts</th>
             </tr>
             </thead>
             <tbody>
@@ -101,26 +69,41 @@
         </table>
     </td>
 </tr>
-{#else}
-<b>No service disruption for any your OpenShift Streams Instance</b>
 {/if}
 <tr>
     <td class="rh-content__block">
-        <div class="rh-stack">
-            If you have any questions, please <a target="_blank" href="https://access.redhat.com/support/contact/technicalSupport/">contact us</a>.
-            Review the <a target="_blank" href="https://access.redhat.com/support/policy/support_process">support process</a> for guidance on working with Red Hat support.
-        </div>
+        <p>
+            <br/>
+            If you have any questions, please
+            <a href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank">contact us</a>. Review
+            the <a href="https://access.redhat.com/support/policy/support_process" target="_blank">support process</a>for
+            guidance on working with Red Hat support.
+            <br/>
+            <br/>
+            Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+        </p>
     </td>
 </tr>
 
+<!-- Content block -->
 <tr>
     <td class="rh-content__block">
-        <table align="center">
+        <table
+                role="presentation"
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                align="center"
+                class="rh-button-table"
+        >
             <tr>
                 <td class="rh-cta-link" align="center">
-                    <a target="_blank" href="https://console.redhat.com/beta/application-services/streams/kafkas">
+                    <a
+                            target="_blank"
+                            href="https://console.redhat.com/beta/application-services/streams/kafkas"
+                    >
                                 <span>
-                                  Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+                                  Go to Kafka Instances page
                                 </span>
                     </a>
                 </td>
