@@ -60,7 +60,7 @@ public class EmailAggregator {
                 .onItem().transformToMulti(Multi.createFrom()::iterable)
                 // For each aggregation...
                 .onItem().transformToUniAndConcatenate(aggregation -> {
-                    // We need its event type to determine the target endpoints.
+                    // We need to parse the action to determine the target endpoints.
                     return actionParser.fromJsonString(aggregation.getPayload().encode())
                             .onItem().transformToUni(action -> {
                                 // Let's retrieve these targets.
@@ -71,8 +71,8 @@ public class EmailAggregator {
                                                 // All users who subscribed to the current application and subscription type combination are recipients candidates.
                                                 subscribers.onItem().transformToUni(users ->
                                                         /*
-                                                         * The actual recipients list is a subset of the candidates.
-                                                         * The target endpoints properties will determine whether or not each candidate will actually receive an email.
+                                                         * The actual recipients list may differ from the candidates depending on the endpoint properties and the action settings.
+                                                         * The target endpoints properties and the action settings will determine whether or not each candidate will actually receive an email.
                                                          */
                                                         recipientResolver.recipientUsers(
                                                                 aggregationKey.getAccountId(),
