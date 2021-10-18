@@ -135,9 +135,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <Td>{ e.name }</Td>
                                 <Td>{ e.description }</Td>
                                 <Td>{ e.id }</Td>
-                                <ActionGroup>
-                                    <PencilAltIcon />
-                                </ActionGroup>
+                                <Td><PencilAltIcon key={ e.id } open={ isOpen } onClick={ toggle } /></Td>
                             </Tr>
                         ))}
                     </Tbody>
