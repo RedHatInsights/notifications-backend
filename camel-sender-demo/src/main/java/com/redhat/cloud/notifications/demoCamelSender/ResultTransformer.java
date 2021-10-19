@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Transformer to create a CloudEvent from the outcome
+ * Transformer to create a Map from the outcome
  * of the actual component.
  */
 public class ResultTransformer implements Processor {
@@ -31,6 +31,8 @@ public class ResultTransformer implements Processor {
 
         Map<String, Object> out = new HashMap<>();
         out.put("outcome", oldBody);
+        boolean isFail = Boolean.parseBoolean((String) in.getHeader("outcome-fail", "false"));
+        out.put("successful", !isFail);
         out.put("historyId", cid);
         out.put("finishTime", System.currentTimeMillis());
         out.put("duration", timeDiff);
@@ -39,10 +41,7 @@ public class ResultTransformer implements Processor {
         details.put("type", (String) in.getHeader("Ce-type"));
         out.put("details", details);
 
-        // TODO wrap in CloudEvent
-
         in.setBody(out);
     }
-
 
 }

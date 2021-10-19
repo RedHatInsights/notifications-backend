@@ -33,3 +33,22 @@ The component itself only logs the input and then returns a success
 
 You can use the `create_application_full.py` script in `../backend/helpers` for a setup.
 
+Required properties are:
+
+[source,python]
+----
+props = {
+    "url": "http://does-not-matter",  #<1>
+    "sub_type": "demo-log",           #<2>
+    "extras": {
+        "mode": "random",             #<3>
+        "channel": "myLogger"         #<4>
+    }
+}
+<1> The url is not needed in this component, but always required
+<2> The subtype is the component name and required
+<3> mode random makes the component randomly fail
+<4> channel is the name of the logger to use
+
+
+----

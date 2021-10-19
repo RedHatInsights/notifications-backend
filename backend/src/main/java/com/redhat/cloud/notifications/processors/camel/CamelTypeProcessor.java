@@ -101,9 +101,9 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         UUID historyId = UUID.randomUUID();
 
         payload = payload.onItem().transform(json -> {
-            JsonObject metadata = new JsonObject();
-            json.put("notif-metadata",metadata);
-            metaData.forEach(metadata::put);
+            JsonObject metadataAsJson = new JsonObject();
+            json.put("notif-metadata", metadataAsJson);
+            metaData.forEach(metadataAsJson::put);
             return json;
         });
         return callCamel(item, historyId, payload);
@@ -131,7 +131,6 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
     public Uni<Boolean> reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
 
-
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
         Message<String> msg = Message.of(body.encode());
         msg = msg.addMetadata(OutgoingCloudEventMetadata.builder()
@@ -142,11 +141,11 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         );
         msg = msg.addMetadata(OutgoingKafkaRecordMetadata.builder()
             .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, historyId.toString().getBytes(UTF_8))
-                    .add("CAMEL_SUBTYPE",subType.getBytes(UTF_8) ))
+                    .add("CAMEL_SUBTYPE", subType.getBytes(UTF_8)))
                 .build()
         );
         msg = msg.addMetadata(tracingMetadata);
-        LOGGER.infof("Sending for account " + accountId + " and history id " + historyId);
+        LOGGER.infof("Sending for account %s and history id %s", accountId, historyId);
         Message<String> finalMsg = msg;
         return Uni.createFrom().item(() -> {
             emitter.send(finalMsg);

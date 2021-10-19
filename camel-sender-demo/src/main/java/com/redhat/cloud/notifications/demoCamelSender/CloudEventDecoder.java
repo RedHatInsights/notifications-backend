@@ -6,6 +6,7 @@ import org.apache.camel.Processor;
 import org.apache.camel.util.json.JsonObject;
 import org.apache.camel.util.json.Jsoner;
 
+
 /**
  * We decode a CloudEvent, set the headers accordingly and
  * put the CE payload as the new body
@@ -25,6 +26,15 @@ public class CloudEventDecoder implements Processor {
             in.setHeader("Ce-" + key, ceIn.getString(key));
         }
 
-        in.setBody(ceIn.getString("data"));
+        // Extract metadata, put it in headers and then delete from the body.
+        JsonObject bodyObject = (JsonObject) Jsoner.deserialize(ceIn.getString("data"));
+        JsonObject metaData = (JsonObject) bodyObject.get("notif-metadata");
+        in.setHeader("metadata", metaData);
+        JsonObject extras = (JsonObject) Jsoner.deserialize(metaData.getString("extras"));
+        in.setHeader("extras", extras);
+
+        bodyObject.remove("notif-metadata");
+
+        in.setBody(bodyObject);
     }
 }

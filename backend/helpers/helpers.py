@@ -187,8 +187,8 @@ def create_endpoint(name, xrhid, properties, ep_type="webhook"):
     return epid
 
 
-def find_behavior_group(name, bundle_id, account_id, x_rhid):
-    """Find a behavior group by its name"""
+def find_behavior_group(display_name, bundle_id, x_rhid):
+    """Find a behavior group by its display name"""
 
     headers = {"x-rh-identity": x_rhid}
     r = requests.get(notifications_prefix + "/notifications/bundles/" + bundle_id + "/behaviorGroups",
@@ -199,7 +199,7 @@ def find_behavior_group(name, bundle_id, account_id, x_rhid):
 
     j = r.json()
     for bg in j:
-        if bg["display_name"] == name:
+        if bg["display_name"] == display_name:
             return bg["id"]
 
     return None
@@ -208,7 +208,7 @@ def find_behavior_group(name, bundle_id, account_id, x_rhid):
 def create_behavior_group(name, bundle_id, account_id, x_rhid):
     """Creates a behavior group"""
 
-    bg_id = find_behavior_group(name, bundle_id, account_id, x_rhid)
+    bg_id = find_behavior_group(name, bundle_id, x_rhid)
     if bg_id is not None:
         return bg_id
 
