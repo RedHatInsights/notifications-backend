@@ -57,8 +57,12 @@ public class FromCamelHistoryFiller {
         // 1st step CloudEvent as String -> map
         Map<String, Object> ceMap = Json.decodeValue(s, Map.class);
 
+        // Take the id from the CloudEvent as the historyId
+        String id = (String) ceMap.get("id");
+
         // 2nd step data item (as String) to final map
         Map<String, Object> map = Json.decodeValue((String) ceMap.get("data"), Map.class);
+        map.put("historyId", id);
         return map;
     }
 

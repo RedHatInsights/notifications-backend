@@ -18,8 +18,6 @@ public class ResultTransformer implements Processor {
         Message in = exchange.getIn();
         String oldBody = in.getBody(String.class);
 
-        String cid = in.getHeader("Ce-Id", String.class);
-
         Object timeHeader = in.getHeader("timeIn");
         long timeIn;
         if (timeHeader != null) {
@@ -33,7 +31,6 @@ public class ResultTransformer implements Processor {
         out.put("outcome", oldBody);
         boolean isFail = Boolean.parseBoolean((String) in.getHeader("outcome-fail", "false"));
         out.put("successful", !isFail);
-        out.put("historyId", cid);
         out.put("finishTime", System.currentTimeMillis());
         out.put("duration", timeDiff);
         Map<String, String> details = new HashMap<>();
