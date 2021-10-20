@@ -13,7 +13,6 @@ app_display_name = "My application"
 event_type = "et1"
 event_type_display_name = "First Event Type"
 bg_name = "A BG"
-account_id = "54321"
 
 f = open("rhid.txt", "r")
 
@@ -35,7 +34,7 @@ print(">>> add eventType to application")
 et_id = helpers.add_event_type(app_id, event_type, event_type_display_name)
 
 print(">>> create a behavior group")
-bg_id = helpers.create_behavior_group(bg_name, bundle_id, account_id, x_rh_id )
+bg_id = helpers.create_behavior_group(bg_name, bundle_id, x_rh_id )
 
 print(">>> add event type to behavior group")
 helpers.add_event_type_to_behavior_group(et_id, bg_id, x_rh_id)

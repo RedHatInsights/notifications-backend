@@ -205,7 +205,7 @@ def find_behavior_group(display_name, bundle_id, x_rhid):
     return None
 
 
-def create_behavior_group(name, bundle_id, account_id, x_rhid):
+def create_behavior_group(name, bundle_id, x_rhid):
     """Creates a behavior group"""
 
     bg_id = find_behavior_group(name, bundle_id, x_rhid)
@@ -213,7 +213,6 @@ def create_behavior_group(name, bundle_id, account_id, x_rhid):
         return bg_id
 
     bg_json = {"display_name": name,
-               "account_id": account_id,
                "bundle_id": bundle_id}
 
     headers = {"x-rh-identity": x_rhid}
