@@ -29,9 +29,9 @@ public class Main extends RouteBuilder {
     public static final String COMPONENT_NAME = "demo-log";
     // We receive our commands from here
     // The groupId is basically our type and must be different for each component type
-    public static final String INCOMING_CHANNEL = "kafka:platform.notifications.toCamel?groupId=" + COMPONENT_NAME;
+    public static final String INCOMING_CHANNEL = "kafka:platform.notifications.tocamel?groupId=" + COMPONENT_NAME;
     // We send  our outcome on this one.
-    public static final String RETURN_CHANNEL = "kafka:platform.notifications.fromCamel";
+    public static final String RETURN_CHANNEL = "kafka:platform.notifications.fromcamel";
     // The (CloudEvent) type for the return channel
     public static final String RETURN_TYPE = "com.redhat.cloud.notifications.history";
 
