@@ -145,7 +145,7 @@ def find_bundle(name):
 
 def find_event_type(application_id, name):
     """Find an event type by name for an application.
-    Returns its id or None if not found
+    Returns the full type or None if not found
     """
     r = requests.get(__APPLICATION_PREFIX + "/" + application_id + "/eventTypes")
 
@@ -155,7 +155,7 @@ def find_event_type(application_id, name):
     j = r.json()
     for et in j:
         if et["name"] == name:
-            return et["id"]
+            return et
 
     return None
 
@@ -252,9 +252,35 @@ def add_endpoint_to_event_type(event_type_id, endpoint_id, x_rhid):
     print(r.status_code)
 
 
-def print_history_for_event_type(event_type_id, x_rhid):
+def shorten_path(path):
+    """Shorten an incoming domain name like path to
+       only have the first char of each segment except the last
+       e.g. foo.bar.baz -> f.b.baz
+     """
+    out = ""
+    segments = path.split(".")
+    l = len(segments)
+    i = 0
+    while i < l:
+        element = segments[i]
+        if i < l-1:
+            out = out + element[0]
+            out = out + "."
+        else:
+            out = out + element
+        i += 1
+
+    return out
+
+
+def print_history_for_event_type(bundle_id, app_id, event_type_name, x_rhid):
     headers = {"x-rh-identity": x_rhid}
-    r = requests.get(notifications_prefix + "/notifications/eventTypes/" + event_type_id,
+    params={"bundleIds": bundle_id,
+            "appIds": app_id,
+            "includeDetails": True,
+            "eventTypeDisplayName": event_type_name}
+    r = requests.get(notifications_prefix + "/notifications/events/",
+                     params=params,
                      headers=headers)
 
     if r.status_code != 200:
@@ -262,32 +288,20 @@ def print_history_for_event_type(event_type_id, x_rhid):
         exit(1)
 
     response_json = r.json()
-    for ep in response_json:
-        st = ''
-        url = ep["properties"]["url"]
-        if ep["type"] == "camel":
-            st = ep["properties"]["sub_type"]
+    data = response_json['data']
+    for entry in data:
+        print("Entry created at " + entry["created"] )
 
-        ep_id = ep['id']
-        print("Endpoint  >" + ep["name"] + "< of type " + ep["type"], end='')
-        if st != '':
-            print(f"({st})", end='')
-
-        print(f", url={url}, created at {ep['created']}, id= {ep_id}")
-
-        r2 = requests.get(integrations_prefix + "/endpoints/" + ep_id + "/history"
-                          + "?includeDetail=true&limit=5",
-                          headers=headers)
-
-        reply = r2.json()
-        if r2.status_code != 200:
-            print("Reading history failed: " + r2.status_code)
-            exit(r2.status_code)
-
-        for entry in reply:
-            print("   " + entry["created"] + ", successful: " + str(entry["invocationResult"])
-                  + ", duration= " + str(entry['invocationTime']))
-            print("     Details: " + str(entry["details"]))
+        for action in entry["actions"]:
+            print(f"  Type  {action['endpoint_type']}, success= {action['invocation_result']}")
+            if action['endpoint_type'] == 'camel':
+                details = action['details']
+                if details is None:
+                    print("    No details provided")
+                else:
+                    print("    sub_type   " + shorten_path(details['type']))
+                    print("    target url " + details['target'])
+                    print("    outcome    " + details['outcome'])
 
 
 def add_event_type_to_behavior_group(et_id, bg_id, x_rh_id):
