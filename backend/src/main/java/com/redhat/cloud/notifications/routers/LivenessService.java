@@ -3,8 +3,6 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.StuffHolder;
 import io.smallrye.health.api.AsyncHealthCheck;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.vertx.MutinyHelper;
-import io.vertx.core.Vertx;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Liveness;
@@ -19,9 +17,6 @@ public class LivenessService implements AsyncHealthCheck {
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
-
-    @Inject
-    Vertx vertx;
 
     @Override
     public Uni<HealthCheckResponse> call() {
@@ -44,13 +39,6 @@ public class LivenessService implements AsyncHealthCheck {
                     .getSingleResult()
                     .replaceWith(Boolean.TRUE)
                     .onFailure().recoverWithItem(Boolean.FALSE);
-        }).runSubscriptionOn(
-                /*
-                 * AsyncHealthCheck does not work with Hibernate Reactive. The following line is a workaround for that issue.
-                 * TODO Remove it ASAP.
-                 * See https://github.com/quarkusio/quarkus/issues/20166 for more details.
-                 */
-                MutinyHelper.executor(vertx.getOrCreateContext())
-        );
+        });
     }
 }
