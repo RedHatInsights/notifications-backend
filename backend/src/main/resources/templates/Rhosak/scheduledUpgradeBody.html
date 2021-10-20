@@ -21,8 +21,8 @@
                         </li>
                         {/each}
                     </ul>
-                    Your {#if action.events.size() is 1} instance is{#else} instances are{/if} scheduled for upgrade
-                    maintenance to {action.context.kafka_version} Kafka version on {action.context.upgrade_time.toUtcFormat()}.
+                    The listed {#if action.events.size() is 1} instance is{#else} instances are{/if} scheduled for upgrade maintenance to {action.context.kafka_version} on {action.context.upgrade_time.toUtcFormat()}.
+                    The maintenance window for the upgrade is variable, but should take approximately {action.context.upgrade_duration} minutes.
                     <br>
                     <br>
                     Please contact Red Hat support if you have any questions.
@@ -31,17 +31,9 @@
                     <b>What can you expect?</b>
                     <br>
                     <ul>
-                        <li>Your OpenShift Streams/Kafka instance maximum throughput might decrease briefly during the
-                            rolling upgrade of your Kafka broker nodes. Your OpenShift Streams/Kafka instance will
-                            remain operational during the upgrade.
-                        </li>
-                        <li>Your OpenShift Streams produces and consumers will briefly disconnect from their current
-                            broker and failover to one of the remaining brokers while the brokers are going through a
-                            rolling upgrade.
-                        </li>
-                        <li>We will send reminders as we get closer to the upgrade date. The maintenance window for the
-                            upgrade is variable and should take approximately {action.context.upgrade_duration} minutes.
-                        </li>
+                        <li>Maximum throughput of an OpenShift Streams instance might briefly decrease during upgrade. However, the instance will remain operational.</li>
+                        <li>The Kafka brokers in an OpenShift Streams instance will be upgraded one at a time. During this process, a producer or consumer will briefly disconnect from its current broker and fail over to one of the other brokers in the instance.</li>
+                        <li>We’ll send you further reminders as we get closer to the upgrade date.</li>
                     </ul>
                     <br>
                     {#if action.context.actions_to_minimize_impacts.size() > 0}
@@ -56,13 +48,13 @@
                     </ul>
                     <br>
                     {/if}
-                    <b>For more information, refer to our <a target="_blank" href="{action.context.guide}">guide</a></b>
+                    <b>More information</b>
                     <br>
+                    <ul>
+                        <li>To learn more about OpenShift Streams, see our <a href="https://access.redhat.com/documentation/en-us/red_hat_openshift_streams_for_apache_kafka/1" target="_blank">documentation</a>.</li>
+                    </ul>
                     <br>
-                    If you have any questions, please <a
-                        href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank">contact
-                    us</a>. Review the <a href="https://access.redhat.com/support/policy/support_process"
-                                          target="_blank">support process</a> for guidance on working with Red Hat
+                    If you have any questions, please <a href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank">contact us</a>. Review the <a href="https://access.redhat.com/support/policy/support_process" target="_blank">support process</a> for guidance on working with Red Hat
                     support.
                     <br>
                     <br>
