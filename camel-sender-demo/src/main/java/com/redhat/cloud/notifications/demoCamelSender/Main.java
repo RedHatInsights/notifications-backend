@@ -9,7 +9,7 @@ import java.io.IOException;
 
 /**
  * The main class that does the work setting up the Camel routes.
- * Entry point for messages is blow 'from(INCOMING_CHANNEL)
+ * Entry point for messages is below 'from(INCOMING_CHANNEL)'
  * Upon success/failure a message is returned to the RETURN_CHANNEL
  * topic.
  */
@@ -25,7 +25,7 @@ import java.io.IOException;
 @ApplicationScoped
 public class Main extends RouteBuilder {
 
-    // Tha name of our component. Must be unique
+    // The name of our component. Must be unique
     public static final String COMPONENT_NAME = "demo-log";
     // We receive our commands from here
     // The groupId is basically our type and must be different for each component type

@@ -9,13 +9,13 @@ delivery of an event via Camel.
 Notifications has an integration type "camel" with subtypes.
 Each subtype is for a different integration.
 
-If a notification is meant for a Camel integration, the event is enriched with the integration properties and put on the `platform.notifications.toCamel` topic as a CloudEvent
+If a notification is meant for a Camel integration, the event is enriched with the integration properties and put on the `platform.notifications.tocamel` topic as a CloudEvent
 
 image::notifications-camel-setup.png[Setup]
 
 The integration picks the message from Kafka, does its work and creates a new Event.
 This event describes the outcome of the Components action, which it put on the
-`platform.notifications.fromCamel` topic.
+`platform.notifications.fromcamel` topic.
 
 .NOTE
 Each consumer (Camel Sender) type needs to listen on the same topic, but must be
