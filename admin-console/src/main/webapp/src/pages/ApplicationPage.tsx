@@ -12,7 +12,6 @@ import {
     Td,  Th,   Thead,
     Tr } from '@patternfly/react-table';
 import * as React from 'react';
-import { useState } from 'react';
 import { useParams } from 'react-router';
 
 import { useCreateEventType } from '../services/CreateEventTypes';
@@ -22,6 +21,11 @@ import { useEventTypes } from '../services/GetEventTypes';
 
 type ApplicationPageParams = {
     applicationId: string;
+}
+
+export interface ModalProps {
+    isEdit: boolean;
+    error?: string;
 }
 
 export const ApplicationPage: React.FunctionComponent = () => {
@@ -37,8 +41,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ name, setName ] = React.useState<string | undefined>();
     const [ description, setDescription ] = React.useState<string | undefined>();
 
-    const [ isOpen, setIsOpen ] = useState(false);
+    const [ isOpen, setIsOpen ] = React.useState(false);
     const toggle = () => setIsOpen(!isOpen);
+
+    const [ isEdit, setIsEdit ] = React.useState(false);
+    const isEditing = () => setIsEdit(!isEdit);
 
     const handleSubmit = React.useCallback(() => {
         const mutate = newEvent.mutate;
@@ -93,14 +100,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
                                                 <TextInput
                                                     type='text'
-                                                    value={ name }
+                                                    defaultValue={ name }
                                                     onChange={ setName }
                                                     id='name' /></FormGroup>
                                             <FormGroup label='Display name' fieldId='display-name' isRequired
                                                 helperText='This is the name you want to display on the UI'>
                                                 <TextInput
                                                     type='text'
-                                                    value={ displayName }
+                                                    defaultValue={ displayName }
                                                     onChange={ setDisplayName }
                                                     id='display-name' /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
@@ -114,7 +121,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 <Button variant='primary' type='submit' isDisabled={ !name || !displayName }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
-                                                    onClick={ handleSubmit }>Submit</Button>
+                                                    onSubmit={ handleSubmit } >Submit</Button>
                                                 <Button variant='link' onClick={ toggle }>Cancel</Button>
                                             </ActionGroup>
                                         </Form><></>
@@ -135,7 +142,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <Td>{ e.name }</Td>
                                 <Td>{ e.description }</Td>
                                 <Td>{ e.id }</Td>
-                                <Td><PencilAltIcon key={ e.id } open={ isOpen } onClick={ toggle } /></Td>
+                                <Td><Button type='button' variant='plain' onClick={ isEditing }> { <PencilAltIcon /> } </Button></Td>
                             </Tr>
                         ))}
                     </Tbody>
