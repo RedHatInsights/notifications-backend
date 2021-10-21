@@ -40,13 +40,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @ApplicationScoped
 public class CamelTypeProcessor implements EndpointTypeProcessor {
 
+    public static final String TOCAMEL_CHANNEL = "toCamel";
+
     private static final String TOKEN_HEADER = "X-Insight-Token";
 
     @Inject
     BaseTransformer transformer;
 
     @Inject
-    @Channel("toCamel")
+    @Channel(TOCAMEL_CHANNEL)
     Emitter<String> emitter;
 
     private static final Logger LOGGER = Logger.getLogger(CamelTypeProcessor.class);

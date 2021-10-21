@@ -20,6 +20,8 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class FromCamelHistoryFiller {
 
+    public static final String FROMCAMEL_CHANNEL = "fromCamel";
+
     private static final Logger log = Logger.getLogger(FromCamelHistoryFiller.class.getName());
 
     @Inject
@@ -29,7 +31,7 @@ public class FromCamelHistoryFiller {
     Mutiny.SessionFactory sessionFactory;
 
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
-    @Incoming("fromCamel")
+    @Incoming(FROMCAMEL_CHANNEL)
     // Can be modified to use Multi<Message<String>> input also for more concurrency
     public Uni<Void> processAsync(Message<String> input) {
         return Uni.createFrom().item(() -> input.getPayload())

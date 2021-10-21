@@ -14,6 +14,9 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
+import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.FROMCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
@@ -40,8 +43,10 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
          * We'll use an in-memory Reactive Messaging connector to send payloads.
          * See https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/2/testing/testing.html
          */
-        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory("ingress"));
+        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(INGRESS_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(AGGREGATION_CHANNEL));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(TOCAMEL_CHANNEL));
+        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(FROMCAMEL_CHANNEL));
 
         System.out.println(" -- Running with properties: " + properties);
         return properties;
