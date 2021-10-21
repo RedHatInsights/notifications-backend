@@ -45,7 +45,16 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const toggle = () => setIsOpen(!isOpen);
 
     const [ isEdit, setIsEdit ] = React.useState(false);
-    const isEditing = () => setIsEdit(!isEdit);
+
+    const handleClick = () => {
+        setIsOpen(o => !o);
+        setIsEdit(e => !e);
+
+        if (isOpen && isEdit) {
+            toggle();
+        }
+
+    };
 
     const handleSubmit = React.useCallback(() => {
         const mutate = newEvent.mutate;
@@ -87,13 +96,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button variant='primary' type='button' onClick={ toggle }> Create Event Type </Button>
+                                    <Button variant='primary' type='button'
+                                        onClick={ handleClick }> Create Event Type </Button>
                                     <Modal
                                         variant={ ModalVariant.medium }
                                         title={ `Create Event Type for ${ (applicationTypesQuery.loading ||
                                             applicationTypesQuery.payload?.status !== 200) ?
                                             <Spinner /> : applicationTypesQuery.payload.value.displayName }` }
-                                        isOpen={ isOpen }
+                                        isOpen={ isOpen && isEdit }
                                         onClose={ toggle }
                                     ><Form isHorizontal>
                                             <FormGroup label='Name' fieldId='name' isRequired
@@ -142,7 +152,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <Td>{ e.name }</Td>
                                 <Td>{ e.description }</Td>
                                 <Td>{ e.id }</Td>
-                                <Td><Button type='button' variant='plain' onClick={ isEditing }> { <PencilAltIcon /> } </Button></Td>
+                                <Td><Button type='button' variant='plain' onClick={ handleClick }> { <PencilAltIcon /> } </Button></Td>
                             </Tr>
                         ))}
                     </Tbody>
