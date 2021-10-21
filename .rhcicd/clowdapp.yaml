@@ -52,8 +52,6 @@ objects:
           value: ${CLOWDER_FILE}
         - name: CLOWDER_ENABLED
           value: ${CLOWDER_ENABLED}
-        - name: RBAC_URL
-          value: ${RBAC_SCHEME}://${RBAC_HOST}:${RBAC_PORT}
         - name: RBAC_AUTHENTICATION_MP_REST_URL
           value: ${RBAC_SCHEME}://${RBAC_HOST}:${RBAC_PORT}
         - name: RBAC_S2S_MP_REST_URL
@@ -85,7 +83,7 @@ objects:
           - name: NOTIFICATIONS_AGGREGATOR_EMAIL_SUBSCRIPTION_PERIODIC_CRON_ENABLED
             value: ${CRONJOB_ENABLED}
           - name: QUARKUS_HTTP_PORT
-            value: "8080"
+            value: "8000"
           - name: PGSSLMODE
             value: ${PGSSLMODE}
           - name: PGSSLROOTCERT
