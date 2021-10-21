@@ -47,12 +47,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ isEdit, setIsEdit ] = React.useState(false);
 
     const handleClick = () => {
-        setIsOpen(o => !o);
-        setIsEdit(e => !e);
-
-        if (isOpen && isEdit) {
-            toggle();
-        }
+        setIsEdit(!isEdit);
+        toggle();
 
     };
 
@@ -103,7 +99,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         title={ `Create Event Type for ${ (applicationTypesQuery.loading ||
                                             applicationTypesQuery.payload?.status !== 200) ?
                                             <Spinner /> : applicationTypesQuery.payload.value.displayName }` }
-                                        isOpen={ isOpen && isEdit }
+                                        isOpen={ isOpen }
                                         onClose={ toggle }
                                     ><Form isHorizontal>
                                             <FormGroup label='Name' fieldId='name' isRequired
@@ -152,7 +148,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <Td>{ e.name }</Td>
                                 <Td>{ e.description }</Td>
                                 <Td>{ e.id }</Td>
-                                <Td><Button type='button' variant='plain' onClick={ handleClick }> { <PencilAltIcon /> } </Button></Td>
+                                <Td><Button type='button' variant='plain'
+                                    onClick={ handleClick }> { <PencilAltIcon /> } </Button></Td>
                             </Tr>
                         ))}
                     </Tbody>
