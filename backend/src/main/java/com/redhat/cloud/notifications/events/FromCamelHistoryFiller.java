@@ -20,6 +20,8 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class FromCamelHistoryFiller {
 
+    public static final String FROMCAMEL_CHANNEL = "fromCamel";
+
     private static final Logger log = Logger.getLogger(FromCamelHistoryFiller.class.getName());
 
     @Inject
@@ -29,7 +31,7 @@ public class FromCamelHistoryFiller {
     Mutiny.SessionFactory sessionFactory;
 
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
-    @Incoming("fromCamel")
+    @Incoming(FROMCAMEL_CHANNEL)
     // Can be modified to use Multi<Message<String>> input also for more concurrency
     public Uni<Void> processAsync(Message<String> input) {
         return Uni.createFrom().item(() -> input.getPayload())
@@ -54,8 +56,15 @@ public class FromCamelHistoryFiller {
 
     private Map<String, Object> decodeItem(String s) {
 
-        Map<String, Object> map = Json.decodeValue(s, Map.class);
+        // 1st step CloudEvent as String -> map
+        Map<String, Object> ceMap = Json.decodeValue(s, Map.class);
 
+        // Take the id from the CloudEvent as the historyId
+        String id = (String) ceMap.get("id");
+
+        // 2nd step data item (as String) to final map
+        Map<String, Object> map = Json.decodeValue((String) ceMap.get("data"), Map.class);
+        map.put("historyId", id);
         return map;
     }
 
