@@ -20,13 +20,13 @@ public class RecipientResolver {
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
-    public Uni<Set<User>> recipientUsers(String accountId, Set<RecipientResolverRequest> requests, Set<String> subscribers) {
+    public Uni<Set<User>> recipientUsers(String accountId, Set<RecipientSettings> requests, Set<String> subscribers) {
         return Multi.createFrom().iterable(requests)
                 .onItem().transformToUni(r -> recipientUsers(accountId, r, subscribers))
                 .concatenate().collect().in(HashSet::new, Set::addAll);
     }
 
-    private Uni<Set<User>> recipientUsers(String accountId, RecipientResolverRequest request, Set<String> subscribers) {
+    private Uni<Set<User>> recipientUsers(String accountId, RecipientSettings request, Set<String> subscribers) {
         Uni<List<User>> usersUni;
         if (request.getGroupId() == null) {
             usersUni = rbacRecipientUsersProvider.getUsers(accountId, request.isOnlyAdmins());

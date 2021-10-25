@@ -27,13 +27,13 @@ public class RecipientResolverTest {
     @InjectMock
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
-    private static class TestRequest extends RecipientResolverRequest {
+    private static class TestRecipientSettings extends RecipientSettings {
 
         private final boolean onlyAdmins;
         private final boolean ignoreUserPreferences;
         private final UUID groupId;
 
-        TestRequest(boolean onlyAdmins, boolean ignoreUserPreferences, UUID groupId) {
+        TestRecipientSettings(boolean onlyAdmins, boolean ignoreUserPreferences, UUID groupId) {
             this.onlyAdmins = onlyAdmins;
             this.ignoreUserPreferences = ignoreUserPreferences;
             this.groupId = groupId;
@@ -122,7 +122,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRequest(false, false, null)
+                        new TestRecipientSettings(false, false, null)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -142,7 +142,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRequest(true, false, null)
+                        new TestRecipientSettings(true, false, null)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -162,7 +162,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRequest(false, true, null)
+                        new TestRecipientSettings(false, true, null)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -182,7 +182,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRequest(true, true, null)
+                        new TestRecipientSettings(true, true, null)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -202,8 +202,8 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRequest(false, false, null),
-                        new TestRequest(true, true, null)
+                        new TestRecipientSettings(false, false, null),
+                        new TestRecipientSettings(true, true, null)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -227,8 +227,8 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRequest(false, true, null),
-                        new TestRequest(true, true, null)
+                        new TestRecipientSettings(false, true, null),
+                        new TestRecipientSettings(true, true, null)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -252,7 +252,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRequest(false, false, group1)
+                        new TestRecipientSettings(false, false, group1)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -273,7 +273,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRequest(true, false, group1)
+                        new TestRecipientSettings(true, false, group1)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -294,7 +294,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRequest(false, false, group2)
+                        new TestRecipientSettings(false, false, group2)
                 ),
                 subscribedUsers
         ).subscribe()
@@ -313,7 +313,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRequest(false, true, group2)
+                        new TestRecipientSettings(false, true, group2)
                 ),
                 subscribedUsers
         ).subscribe()

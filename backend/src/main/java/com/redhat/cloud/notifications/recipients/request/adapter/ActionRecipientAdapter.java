@@ -2,17 +2,17 @@ package com.redhat.cloud.notifications.recipients.request.adapter;
 
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Recipient;
-import com.redhat.cloud.notifications.recipients.RecipientResolverRequest;
+import com.redhat.cloud.notifications.recipients.RecipientSettings;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class ActionRecipientAdapter extends RecipientResolverRequest {
+public class ActionRecipientAdapter extends RecipientSettings {
 
     private final Recipient recipient;
 
-    public ActionRecipientAdapter(Recipient recipient) {
+    ActionRecipientAdapter(Recipient recipient) {
         this.recipient = recipient;
     }
 

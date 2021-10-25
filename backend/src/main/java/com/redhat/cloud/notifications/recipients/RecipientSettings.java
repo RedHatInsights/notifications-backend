@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.recipients;
 import java.util.Objects;
 import java.util.UUID;
 
-public abstract class RecipientResolverRequest {
+public abstract class RecipientSettings {
 
     public abstract boolean isOnlyAdmins();
 
@@ -17,11 +17,11 @@ public abstract class RecipientResolverRequest {
             return true;
         }
 
-        if (!(o instanceof RecipientResolverRequest)) {
+        if (!(o instanceof RecipientSettings)) {
             return false;
         }
 
-        RecipientResolverRequest that = (RecipientResolverRequest) o;
+        RecipientSettings that = (RecipientSettings) o;
         return this.isOnlyAdmins() == that.isOnlyAdmins() && this.isIgnoreUserPreferences() == that.isIgnoreUserPreferences() &&
                 Objects.equals(this.getGroupId(), that.getGroupId());
     }

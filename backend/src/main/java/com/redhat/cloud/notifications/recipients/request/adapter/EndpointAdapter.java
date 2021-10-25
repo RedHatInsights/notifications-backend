@@ -2,11 +2,11 @@ package com.redhat.cloud.notifications.recipients.request.adapter;
 
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.recipients.RecipientResolverRequest;
+import com.redhat.cloud.notifications.recipients.RecipientSettings;
 
 import java.util.UUID;
 
-public class EndpointAdapter extends RecipientResolverRequest {
+public class EndpointAdapter extends RecipientSettings {
 
     private final Endpoint endpoint;
 

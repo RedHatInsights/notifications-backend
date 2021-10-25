@@ -14,7 +14,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
-import com.redhat.cloud.notifications.recipients.RecipientResolverRequest;
+import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.request.adapter.ActionRecipientAdapter;
 import com.redhat.cloud.notifications.recipients.request.adapter.EndpointAdapter;
 import com.redhat.cloud.notifications.templates.EmailTemplate;
@@ -140,7 +140,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             return Multi.createFrom().empty();
         }
 
-        Set<RecipientResolverRequest> requests = Stream.concat(
+        Set<RecipientSettings> requests = Stream.concat(
                 endpoints.stream().map(EndpointAdapter::new),
                 ActionRecipientAdapter.fromAction(action).stream()
         ).collect(Collectors.toSet());
