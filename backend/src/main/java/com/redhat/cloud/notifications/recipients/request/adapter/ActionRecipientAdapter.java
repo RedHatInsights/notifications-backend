@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipients.request.adapter;
+package com.redhat.cloud.notifications.recipients.request;
 
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Recipient;
@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class ActionRecipientAdapter extends RecipientSettings {
+public class ActionRecipientSettings extends RecipientSettings {
 
     private final Recipient recipient;
 
