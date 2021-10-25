@@ -21,9 +21,23 @@ public class RecipientResolver {
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
     public Uni<Set<User>> recipientUsers(String accountId, Set<RecipientSettings> requests, Set<String> subscribers) {
-        return Multi.createFrom().iterable(requests)
+        return Multi.createFrom().iterable(filterOutExtraSettings(requests))
                 .onItem().transformToUni(r -> recipientUsers(accountId, r, subscribers))
                 .concatenate().collect().in(HashSet::new, Set::addAll);
+    }
+
+    // If there is any settings that fetches all users, use it instead of using all.
+    private Set<RecipientSettings> filterOutExtraSettings(Set<RecipientSettings> requests) {
+        Set<RecipientSettings> allUsersRequest = requests
+                .stream()
+                .filter(recipientSettings -> !recipientSettings.isOnlyAdmins() && recipientSettings.getGroupId() == null)
+                .collect(Collectors.toSet());
+
+        if (allUsersRequest.size() > 0) {
+            return allUsersRequest;
+        }
+
+        return requests;
     }
 
     private Uni<Set<User>> recipientUsers(String accountId, RecipientSettings request, Set<String> subscribers) {
