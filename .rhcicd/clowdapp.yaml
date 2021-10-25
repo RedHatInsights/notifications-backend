@@ -50,8 +50,8 @@ objects:
         env:
         - name: CLOWDER_FILE
           value: ${CLOWDER_FILE}
-        - name: CLOWDER_ENABLED
-          value: ${CLOWDER_ENABLED}
+        - name: QUARKUS_HTTP_PORT
+          value: "8000"
         resources:
           limits:
             cpu: ${CPU_LIMIT}
@@ -74,8 +74,6 @@ objects:
         env:
           - name: CLOWDER_FILE
             value: ${CLOWDER_FILE}
-          - name: CLOWDER_ENABLED
-            value: ${CLOWDER_ENABLED}
           - name: NOTIFICATIONS_AGGREGATOR_EMAIL_SUBSCRIPTION_PERIODIC_CRON_ENABLED
             value: ${CRONJOB_ENABLED}
           - name: QUARKUS_HTTP_PORT
@@ -131,9 +129,6 @@ parameters:
 - name: IMAGE
   description: Image name
   value: quay.io/cloudservices/notifications-backend
-- description: Determines Clowder deployment
-  name: CLOWDER_ENABLED
-  value: "true"
 - description: ClowdEnv Name
   name: ENV_NAME
   required: true
