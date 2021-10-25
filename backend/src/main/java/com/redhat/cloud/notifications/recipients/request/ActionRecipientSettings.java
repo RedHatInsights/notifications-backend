@@ -12,7 +12,7 @@ public class ActionRecipientSettings extends RecipientSettings {
 
     private final Recipient recipient;
 
-    ActionRecipientAdapter(Recipient recipient) {
+    ActionRecipientSettings(Recipient recipient) {
         this.recipient = recipient;
     }
 
@@ -31,11 +31,11 @@ public class ActionRecipientSettings extends RecipientSettings {
         return null;
     }
 
-    public static List<ActionRecipientAdapter> fromAction(Action action) {
+    public static List<ActionRecipientSettings> fromAction(Action action) {
         return action
                 .getRecipients()
                 .stream()
-                .map(ActionRecipientAdapter::new)
+                .map(ActionRecipientSettings::new)
                 .collect(Collectors.toList());
     }
 }

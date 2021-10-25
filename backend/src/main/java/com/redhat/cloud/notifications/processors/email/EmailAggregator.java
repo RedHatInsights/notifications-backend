@@ -11,8 +11,8 @@ import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmail
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.recipients.request.adapter.ActionRecipientAdapter;
-import com.redhat.cloud.notifications.recipients.request.adapter.EndpointAdapter;
+import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings;
+import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -79,8 +79,8 @@ public class EmailAggregator {
                                                                 Stream.concat(
                                                                         endpoints
                                                                                 .stream()
-                                                                                .map(EndpointAdapter::new),
-                                                                        ActionRecipientAdapter.fromAction(action).stream()
+                                                                                .map(EndpointRecipientSettings::new),
+                                                                        ActionRecipientSettings.fromAction(action).stream()
                                                                 ).collect(Collectors.toSet()),
                                                                 users
                                                         )

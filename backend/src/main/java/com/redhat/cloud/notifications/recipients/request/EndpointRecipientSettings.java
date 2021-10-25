@@ -10,7 +10,7 @@ public class EndpointRecipientSettings extends RecipientSettings {
 
     private final Endpoint endpoint;
 
-    public EndpointAdapter(Endpoint endpoint) {
+    public EndpointRecipientSettings(Endpoint endpoint) {
         this.endpoint = endpoint;
     }
 
