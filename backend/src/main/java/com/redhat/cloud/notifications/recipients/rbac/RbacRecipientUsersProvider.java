@@ -11,6 +11,7 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -26,6 +27,8 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class RbacRecipientUsersProvider {
+
+    private static final Logger LOGGER = Logger.getLogger(RbacRecipientUsersProvider.class);
 
     @Inject
     @RestClient
@@ -106,7 +109,9 @@ public class RbacRecipientUsersProvider {
                 })
                 .retry()
                 .withBackOff(initialBackOff, maxBackOff)
-                .atMost(maxRetryAttempts);
+                .atMost(maxRetryAttempts)
+                // All retry attempts failed, let's log a warning about the failure.
+                .onFailure().invoke(failure -> LOGGER.warnf("RBAC S2S call failed: %s", failure.getMessage()));
     }
 
     private Uni<List<User>> getWithPagination(Function<Integer, Uni<Page<RbacUser>>> fetcher) {
