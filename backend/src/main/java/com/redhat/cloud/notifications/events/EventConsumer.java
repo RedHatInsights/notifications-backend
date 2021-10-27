@@ -17,6 +17,7 @@ import org.jboss.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.NoResultException;
 
 import java.util.UUID;
 
@@ -32,6 +33,7 @@ public class EventConsumer {
     public static final String CONSUMED_TIMER_NAME = "input.consumed";
 
     private static final Logger LOGGER = Logger.getLogger(EventConsumer.class);
+    private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for [bundleName=%s, applicationName=%s, eventTypeName=%s]";
 
     @Inject
     MeterRegistry registry;
@@ -124,6 +126,9 @@ public class EventConsumer {
                                          * bundle/app/eventType triplet from the parsed Action.
                                          */
                                         return appResources.getEventType(bundleName[0], appName[0], eventTypeName)
+                                                .onFailure(NoResultException.class).transform(e ->
+                                                        new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, bundleName[0], appName[0], eventTypeName))
+                                                )
                                                 .onFailure().invoke(() -> {
                                                     /*
                                                      * A NoResultException was thrown because no EventType was found. The
