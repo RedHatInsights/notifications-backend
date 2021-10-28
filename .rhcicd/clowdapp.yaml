@@ -4,21 +4,33 @@ kind: Template
 metadata:
   name: notifications-backend
 objects:
-- apiVersion: v1
-  kind: Secret # For ephemeral/local environment
-  metadata:
-    name: notifications-backend-secrets
-    labels:
-      app: notifications-backend
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
   metadata:
     name: notifications-backend
     labels:
       app: notifications-backend
-      clowdapp: notifications-backend
   spec:
     envName: ${ENV_NAME}
+    dependencies:
+    - rbac
+    - ingress
+    database:
+      name: notifications_backend
+      version: 12
+    kafkaTopics:
+    - topicName: platform.notifications.ingress
+      partitions: 3
+      replicas: 3
+    - topicName: platform.notifications.tocamel
+      partitions: 3
+      replicas: 3
+    - topicName: platform.notifications.fromcamel
+      partitions: 3
+      replicas: 3
+    - topicName: platform.notifications.aggregation
+      partitions: 2
+      replicas: 3
     testing:
       iqePlugin: notifications
     deployments:
@@ -26,137 +38,215 @@ objects:
       minReplicas: ${{MIN_REPLICAS}}
       web: true
       podSpec:
-        image: ${IMAGE}:${IMAGE_TAG}
-        livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /health/live
-            port: 8000
-            scheme: HTTP
-          initialDelaySeconds: 40
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
+        image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+        resources:
+          requests:
+            cpu: ${BACKEND_CPU_REQUEST}
+            memory: ${BACKEND_MEMORY_REQUEST}
+          limits:
+            cpu: ${BACKEND_CPU_LIMIT}
+            memory: ${BACKEND_MEMORY_LIMIT}
+        volumes:
+        - name: rds-client-ca
+          emptyDir: {}
+        volumeMounts:
+        - name: rds-client-ca
+          mountPath: /tmp
         readinessProbe:
-          failureThreshold: 3
           httpGet:
             path: /health/ready
             port: 8000
             scheme: HTTP
           initialDelaySeconds: 40
           periodSeconds: 10
-          successThreshold: 1
           timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
         env:
-        - name: CLOWDER_FILE
-          value: ${CLOWDER_FILE}
+        - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
+          value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS}
+        - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
+          value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS}
+        - name: PROCESSOR_EMAIL_BOP_APITOKEN
+          valueFrom:
+            secretKeyRef:
+              name: backoffice
+              key: token
+        - name: PROCESSOR_EMAIL_BOP_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: backoffice
+              key: client-id
+        - name: PROCESSOR_EMAIL_BOP_ENV
+          value: ${BACKOFFICE_CLIENT_ENV}
+        - name: PROCESSOR_EMAIL_BOP_URL
+          value: https://${BACKOFFICE_HOST}/v1/sendEmails
+        - name: PROCESSOR_EMAIL_NO_REPLY
+          value: ${PROCESSOR_EMAIL_NO_REPLY}
+        - name: RBAC_S2S_MP_REST_READTIMEOUT
+          value: ${RBAC_S2S_READ_TIMEOUT}
+        - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
+          value: ${RBAC_SERVICE_TO_SERVICE_APP}
+        - name: RBAC_SERVICE_TO_SERVICE_SECRET_MAP
+          valueFrom:
+            secretKeyRef:
+              name: rbac-psks
+              key: psks.json
+        - name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
+          value: ${RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE}
+        - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_USERS_EXPIRE_AFTER_WRITE
+          value: ${RBAC_USERS_RETENTION_DELAY}
+        - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
+          value: ${RBAC_GROUP_USERS_RETENTION_DELAY}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
-        resources:
-          limits:
-            cpu: ${CPU_LIMIT}
-            memory: ${MEMORY_LIMIT}
-          requests:
-            cpu: ${CPU_REQUEST}
-            memory: ${MEMORY_REQUEST}
-        volumes:
-        - emptyDir: {}
-          name: tmpdir
-        volumeMounts:
-        - mountPath: /tmp
-          name: tmpdir
+        - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
+          value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+          value: ${CLOUDWATCH_ENABLED}
+        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
+          value: ${HOSTNAME}
+        - name: QUARKUS_LOG_SENTRY
+          value: ${SENTRY_ENABLED}
+        - name: QUARKUS_LOG_SENTRY_DSN
+          value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
+        - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
+          value: ${ENV_NAME}
     jobs:
     - name: notifications-aggregator
-      schedule: ${CRON_SCHEDULE_USER_METRICS}
+      schedule: ${CRONTAB_AGGREGATION_JOB}
+      suspend: ${{SUSPEND_AGGREGATION_JOB}}
+      startingDeadlineSeconds: ${{STARTING_DEADLINE}}
+      successfulJobsHistoryLimit: 7
+      failedJobsHistoryLimit: 7
+      concurrencyPolicy: Forbid
       restartPolicy: OnFailure
       podSpec:
-        image: ${IMAGE_AGGREGATOR}:${IMAGE_TAG}
+        image: ${AGGREGATOR_IMAGE}:${IMAGE_TAG}
+        resources:
+          requests:
+            cpu: ${AGGREGATOR_CPU_REQUEST}
+            memory: ${AGGREGATOR_MEMORY_REQUEST}
+          limits:
+            cpu: ${AGGREGATOR_CPU_LIMIT}
+            memory: ${AGGREGATOR_MEMORY_LIMIT}
+        volumes:
+        - name: rds-client-ca
+          emptyDir: {}
+        volumeMounts:
+        - name: rds-client-ca
+          mountPath: /tmp
         env:
-          - name: CLOWDER_FILE
-            value: ${CLOWDER_FILE}
-          - name: NOTIFICATIONS_AGGREGATOR_EMAIL_SUBSCRIPTION_PERIODIC_CRON_ENABLED
-            value: ${CRONJOB_ENABLED}
-          - name: QUARKUS_HTTP_PORT
-            value: "8000"
-          - name: PGSSLMODE
-            value: ${PGSSLMODE}
-          - name: PGSSLROOTCERT
-            value: /etc/rds-certs/rds-cacert
-          - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
-            value: ${ENV_NAME}
-          - name: QUARKUS_LOG_SENTRY_DSN
-            value: >-
-              https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
-          - name: QUARKUS_LOG_SENTRY
-            value: ${SENTRY_ENABLED}
-          - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
-            value: ${COMPONENT_DEBUG_LEVEL}
-      resources:
-        limits:
-          cpu: ${CPU_LIMIT}
-          memory: ${MEMORY_LIMIT}
-        requests:
-          cpu: ${CPU_REQUEST}
-          memory: ${MEMORY_REQUEST}
-    kafkaTopics:
-    - replicas: 3
-      partitions: 64
-      topicName: platform.notifications.ingress
-    database:
-      name: notifications
-      version: 12
-    optionalDependencies:
-      - rbac
-      - ingress
-
+        - name: NOTIFICATIONS_AGGREGATOR_EMAIL_SUBSCRIPTION_PERIODIC_CRON_ENABLED
+          value: ${CRONJOB_ENABLED}
+        - name: QUARKUS_HTTP_PORT
+          value: "8000"
+        - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
+          value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+          value: ${CLOUDWATCH_ENABLED}
+        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
+          value: ${HOSTNAME}
+        - name: QUARKUS_LOG_SENTRY
+          value: ${SENTRY_ENABLED}
+        - name: QUARKUS_LOG_SENTRY_DSN
+          value: https://39032857c8214cedaf226c4a26709b5b@o271843.ingest.sentry.io/5987783?environment=${ENV_NAME}
+        - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
+          value: ${ENV_NAME}
 parameters:
-- name: LOG_LEVEL
-  value: INFO
-- description: Cpu limit of service
-  name: CPU_LIMIT
+- name: AGGREGATOR_CPU_LIMIT
+  description: Aggregator CPU limit on ephemeral
   value: 500m
-- description: memory limit of service
-  name: MEMORY_LIMIT
-  value: 500Mi
-- name: CPU_REQUEST
-  description: The cpu request
+- name: AGGREGATOR_CPU_REQUEST
+  description: Aggregator CPU request on ephemeral
   value: 500m
-- name: MEMORY_REQUEST
-  description: The memory request
-  value: 250Mi
-- name: MIN_REPLICAS
-  value: '1'
-- name: IMAGE
-  description: Image name
-  value: quay.io/cloudservices/notifications-backend
-- description: ClowdEnv Name
-  name: ENV_NAME
-  required: true
-- name: CLOWDER_FILE
-  value: /cdapp/cdappconfig.json
-  description: default path for cdappconfig file
-- name: CRONJOB_ENABLED
-  displayName: Enable the cron job
-  value: "false"
-- name: COMPONENT_DEBUG_LEVEL
-  description: Debug level for com.redhat.cloud.notifications
-  value: INFO
-- name: DB_SECRET_NAME
-  value: notifications-backend-db
-- name: IMAGE_AGGREGATOR
-  displayName: Image aggregator
-  description: Image name for aggregator
+- name: AGGREGATOR_IMAGE
+  description: Aggregator image URL
   value: quay.io/cloudservices/notifications-aggregator
+- name: AGGREGATOR_MEMORY_LIMIT
+  description: Aggregator memory limit on ephemeral
+  value: 500Mi
+- name: AGGREGATOR_MEMORY_REQUEST
+  description: Aggregator memory request on ephemeral
+  value: 250Mi
+- name: BACKEND_CPU_LIMIT
+  description: Backend CPU limit on ephemeral
+  value: 500m
+- name: BACKEND_CPU_REQUEST
+  description: Backend CPU request on ephemeral
+  value: 500m
+- name: BACKEND_IMAGE
+  description: Backend image URL
+  value: quay.io/cloudservices/notifications-backend
+- name: BACKEND_MEMORY_LIMIT
+  description: Backend memory limit on ephemeral
+  value: 500Mi
+- name: BACKEND_MEMORY_REQUEST
+  description: Backend memory request on ephemeral
+  value: 250Mi
+- name: BACKOFFICE_CLIENT_ENV
+  description: Back-office client environment
+  value: qa
+- name: BACKOFFICE_HOST
+  description: backoffice URL
+  value: backoffice-proxy-insights-services.ext.us-east.aws.preprod.paas.redhat.com
+- name: CLOUDWATCH_ENABLED
+  description: Enable Cloudwatch (or not)
+  value: "false"
+- name: CRONTAB_AGGREGATION_JOB
+  value: "0 0 * * *"
+- name: CRONJOB_ENABLED
+  description: Enable the cron job
+  value: "false"
+- name: ENV_NAME
+  description: ClowdEnvironment name (stage, prod, ephemeral)
+  required: true
 - name: IMAGE_TAG
   value: latest
-- name: PGSSLMODE
-  displayName: Postgres SSL mode
-  description: "Options can be found in the doc: https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-SSLMODE-STATEMENTS"
-  value: 'prefer'
+- name: MIN_REPLICAS
+  value: "1"
+- name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
+  description: Maximum delay between invocations of poll()
+  value: "300000"
+- name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
+  description: Maximum number of records returned in a single call to poll()
+  value: "500"
+- name: NOTIFICATIONS_LOG_LEVEL
+  description: Log level for com.redhat.cloud.notifications
+  value: INFO
+- name: PROCESSOR_EMAIL_NO_REPLY
+  description: Email address
+  value: no-reply@redhat.com
+- name: RBAC_S2S_READ_TIMEOUT
+  description: Delay in milliseconds before an RBAC S2S query is interrupted
+  value: "120000"
+- name : RBAC_GROUP_USERS_RETENTION_DELAY
+  description: RBAC group users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT10M
+- name: RBAC_SERVICE_TO_SERVICE_APP
+  description: RBAC application name to use for service-to-service communication
+  value: notifications
+- name : RBAC_USERS_RETENTION_DELAY
+  description: RBAC users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT10M
+- name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
+  description: Limit value sent as a query param to the RBAC REST API while querying RBAC users.
+  value: "1000"
 - name: SENTRY_ENABLED
-  displayName: Enable Sentry (or not)
+  description: Enable Sentry (or not)
   value: "false"
-- description: User metrics capture job schedule
-  name: CRON_SCHEDULE_USER_METRICS
-  required: true
-  value: "0 0 * * *"
+- name: STARTING_DEADLINE
+  value: "300"
+- name: SUSPEND_AGGREGATION_JOB
+  description: Should the aggregation cron job be disabled?
+  value: "false"
