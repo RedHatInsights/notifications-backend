@@ -8,8 +8,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
- * Filter to look at the response (code) from the Rbac server.
- * Log a warning if we have trouble reaching the server.
+ * Filter to look at the response (code) from the Rbac server. Log a warning if we have trouble reaching the server.
  */
 public class RbacClientResponseFilter implements ClientResponseFilter {
 
@@ -20,7 +19,8 @@ public class RbacClientResponseFilter implements ClientResponseFilter {
         Response.StatusType statusInfo = responseContext.getStatusInfo();
         int status = statusInfo.getStatusCode();
         if (status != 200) {
-            log.warning(() -> "Call to the Rbac server failed with code " + status + ", " + statusInfo.getReasonPhrase());
+            log.warning(
+                    () -> "Call to the Rbac server failed with code " + status + ", " + statusInfo.getReasonPhrase());
         }
     }
 }

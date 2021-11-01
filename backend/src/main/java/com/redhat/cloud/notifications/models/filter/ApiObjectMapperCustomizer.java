@@ -12,7 +12,8 @@ public class ApiObjectMapperCustomizer implements ObjectMapperCustomizer {
 
     @Override
     public void customize(ObjectMapper mapper) {
-        FilterProvider filterProvider = new SimpleFilterProvider().addFilter(ApiResponseFilter.NAME, new ApiResponseFilter());
+        FilterProvider filterProvider = new SimpleFilterProvider().addFilter(ApiResponseFilter.NAME,
+                new ApiResponseFilter());
         mapper.setFilterProvider(filterProvider);
     }
 }

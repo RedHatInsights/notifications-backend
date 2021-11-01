@@ -22,8 +22,8 @@ public class BehaviorGroupActionId implements Serializable {
         }
         if (o instanceof BehaviorGroupActionId) {
             BehaviorGroupActionId other = (BehaviorGroupActionId) o;
-            return Objects.equals(behaviorGroupId, other.behaviorGroupId) &&
-                    Objects.equals(endpointId, other.endpointId);
+            return Objects.equals(behaviorGroupId, other.behaviorGroupId)
+                    && Objects.equals(endpointId, other.endpointId);
         }
         return false;
     }

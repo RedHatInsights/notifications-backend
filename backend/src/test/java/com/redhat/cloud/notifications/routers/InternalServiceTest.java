@@ -82,7 +82,8 @@ public class InternalServiceTest extends DbIsolatedTest {
         createEventType(buildEventType(null, "i-am-valid", "I am valid", NOT_USED), BAD_REQUEST);
         createEventType(buildEventType(appId, null, "I am valid", NOT_USED), BAD_REQUEST);
         createEventType(buildEventType(appId, "i-am-valid", null, NOT_USED), BAD_REQUEST);
-        createEventType(buildEventType(appId, "I violate the @Pattern constraint", "I am valid", NOT_USED), BAD_REQUEST);
+        createEventType(buildEventType(appId, "I violate the @Pattern constraint", "I am valid", NOT_USED),
+                BAD_REQUEST);
     }
 
     @Test
@@ -239,7 +240,8 @@ public class InternalServiceTest extends DbIsolatedTest {
         getEventTypes(appId, OK, 2);
 
         // Let's test the event type update API.
-        updateEventType(appId, eventTypeId, "event-type-2-new-name", "Event type 2 new display name", "Event type 2 new description", OK);
+        updateEventType(appId, eventTypeId, "event-type-2-new-name", "Event type 2 new display name",
+                "Event type 2 new description", OK);
 
         // Let's test the event type delete API.
         deleteEventType(eventTypeId, true);
@@ -264,14 +266,10 @@ public class InternalServiceTest extends DbIsolatedTest {
     }
 
     private static Optional<String> createBundle(Bundle bundle, int expectedStatusCode) {
-        String responseBody = given()
-                .contentType(JSON)
-                .body(Json.encode(bundle))
-                .when()
-                .post("/internal/bundles")
-                .then()
-                .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
+        String responseBody = given().contentType(JSON).body(Json.encode(bundle)).when().post("/internal/bundles")
+                .then().statusCode(expectedStatusCode)
+                .contentType(
+                        familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
@@ -290,14 +288,10 @@ public class InternalServiceTest extends DbIsolatedTest {
         }
     }
 
-    private static void getBundle(String bundleId, String expectedName, String expectedDisplayName, int expectedStatusCode) {
-        String responseBody = given()
-                .pathParam("bundleId", bundleId)
-                .get("/internal/bundles/{bundleId}")
-                .then()
-                .statusCode(expectedStatusCode)
-                .contentType(JSON)
-                .extract().asString();
+    private static void getBundle(String bundleId, String expectedName, String expectedDisplayName,
+            int expectedStatusCode) {
+        String responseBody = given().pathParam("bundleId", bundleId).get("/internal/bundles/{bundleId}").then()
+                .statusCode(expectedStatusCode).contentType(JSON).extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             JsonObject jsonBundle = new JsonObject(responseBody);
@@ -314,14 +308,10 @@ public class InternalServiceTest extends DbIsolatedTest {
     }
 
     private static void updateBundle(String bundleId, Bundle bundle, int expectedStatusCode) {
-        given()
-                .contentType(JSON)
-                .pathParam("bundleId", bundleId)
-                .body(Json.encode(bundle))
-                .put("/internal/bundles/{bundleId}")
-                .then()
-                .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? containsString(TEXT.toString()) : any(String.class));
+        given().contentType(JSON).pathParam("bundleId", bundleId).body(Json.encode(bundle))
+                .put("/internal/bundles/{bundleId}").then().statusCode(expectedStatusCode)
+                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? containsString(TEXT.toString())
+                        : any(String.class));
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             getBundle(bundleId, bundle.getName(), bundle.getDisplayName(), OK);
@@ -329,14 +319,8 @@ public class InternalServiceTest extends DbIsolatedTest {
     }
 
     private static void deleteBundle(String bundleId, boolean expectedResult) {
-        Boolean result = given()
-                .pathParam("bundleId", bundleId)
-                .when()
-                .delete("/internal/bundles/{bundleId}")
-                .then()
-                .statusCode(OK)
-                .contentType(JSON)
-                .extract().body().as(Boolean.class);
+        Boolean result = given().pathParam("bundleId", bundleId).when().delete("/internal/bundles/{bundleId}").then()
+                .statusCode(OK).contentType(JSON).extract().body().as(Boolean.class);
 
         assertEquals(expectedResult, result);
     }
@@ -351,20 +335,17 @@ public class InternalServiceTest extends DbIsolatedTest {
         return app;
     }
 
-    private static Optional<String> createApp(String bundleId, String name, String displayName, int expectedStatusCode) {
+    private static Optional<String> createApp(String bundleId, String name, String displayName,
+            int expectedStatusCode) {
         Application app = buildApp(bundleId, name, displayName);
         return createApp(app, expectedStatusCode);
     }
 
     private static Optional<String> createApp(Application app, int expectedStatusCode) {
-        String responseBody = given()
-                .contentType(JSON)
-                .body(Json.encode(app))
-                .when()
-                .post("/internal/applications")
-                .then()
-                .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
+        String responseBody = given().contentType(JSON).body(Json.encode(app)).when().post("/internal/applications")
+                .then().statusCode(expectedStatusCode)
+                .contentType(
+                        familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
@@ -385,14 +366,9 @@ public class InternalServiceTest extends DbIsolatedTest {
     }
 
     private static void getApps(String bundleId, int expectedStatusCode, int expectedAppsCount) {
-        String responseBody = given()
-                .pathParam("bundleId", bundleId)
-                .when()
-                .get("/internal/bundles/{bundleId}/applications")
-                .then()
-                .statusCode(expectedStatusCode)
-                .contentType(JSON)
-                .extract().asString();
+        String responseBody = given().pathParam("bundleId", bundleId).when()
+                .get("/internal/bundles/{bundleId}/applications").then().statusCode(expectedStatusCode)
+                .contentType(JSON).extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             JsonArray jsonApps = new JsonArray(responseBody);
@@ -406,13 +382,8 @@ public class InternalServiceTest extends DbIsolatedTest {
     }
 
     private static void getApp(String appId, String expectedName, String expectedDisplayName, int expectedStatusCode) {
-        String responseBody = given()
-                .pathParam("appId", appId)
-                .get("/internal/applications/{appId}")
-                .then()
-                .statusCode(expectedStatusCode)
-                .contentType(JSON)
-                .extract().asString();
+        String responseBody = given().pathParam("appId", appId).get("/internal/applications/{appId}").then()
+                .statusCode(expectedStatusCode).contentType(JSON).extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             JsonObject jsonApp = new JsonObject(responseBody);
@@ -423,20 +394,16 @@ public class InternalServiceTest extends DbIsolatedTest {
         }
     }
 
-    private static void updateApp(String bundleId, String appId, String name, String displayName, int expectedStatusCode) {
+    private static void updateApp(String bundleId, String appId, String name, String displayName,
+            int expectedStatusCode) {
         Application app = buildApp(bundleId, name, displayName);
         updateApp(appId, app, expectedStatusCode);
     }
 
     private static void updateApp(String appId, Application app, int expectedStatusCode) {
-        given()
-                .contentType(JSON)
-                .pathParam("appId", appId)
-                .body(Json.encode(app))
-                .put("/internal/applications/{appId}")
-                .then()
-                .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? containsString(TEXT.toString()) : any(String.class));
+        given().contentType(JSON).pathParam("appId", appId).body(Json.encode(app)).put("/internal/applications/{appId}")
+                .then().statusCode(expectedStatusCode).contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL
+                        ? containsString(TEXT.toString()) : any(String.class));
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             getApp(appId, app.getName(), app.getDisplayName(), OK);
@@ -444,14 +411,8 @@ public class InternalServiceTest extends DbIsolatedTest {
     }
 
     private static void deleteApp(String appId, boolean expectedResult) {
-        Boolean result = given()
-                .pathParam("appId", appId)
-                .when()
-                .delete("/internal/applications/{appId}")
-                .then()
-                .statusCode(OK)
-                .contentType(JSON)
-                .extract().body().as(Boolean.class);
+        Boolean result = given().pathParam("appId", appId).when().delete("/internal/applications/{appId}").then()
+                .statusCode(OK).contentType(JSON).extract().body().as(Boolean.class);
 
         assertEquals(expectedResult, result);
     }
@@ -467,20 +428,17 @@ public class InternalServiceTest extends DbIsolatedTest {
         return eventType;
     }
 
-    private static Optional<String> createEventType(String appId, String name, String displayName, String description, int expectedStatusCode) {
+    private static Optional<String> createEventType(String appId, String name, String displayName, String description,
+            int expectedStatusCode) {
         EventType eventType = buildEventType(appId, name, displayName, description);
         return createEventType(eventType, expectedStatusCode);
     }
 
     private static Optional<String> createEventType(EventType eventType, int expectedStatusCode) {
-        String responseBody = given()
-                .contentType(JSON)
-                .body(Json.encode(eventType))
-                .when()
-                .post("/internal/eventTypes")
-                .then()
-                .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
+        String responseBody = given().contentType(JSON).body(Json.encode(eventType)).when().post("/internal/eventTypes")
+                .then().statusCode(expectedStatusCode)
+                .contentType(
+                        familyOf(expectedStatusCode) == Family.SUCCESSFUL ? is(JSON.toString()) : any(String.class))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
@@ -499,14 +457,8 @@ public class InternalServiceTest extends DbIsolatedTest {
     }
 
     private static void getEventTypes(String appId, int expectedStatusCode, int expectedEventTypesCount) {
-        String responseBody = given()
-                .pathParam("appId", appId)
-                .when()
-                .get("/internal/applications/{appId}/eventTypes")
-                .then()
-                .statusCode(expectedStatusCode)
-                .contentType(JSON)
-                .extract().asString();
+        String responseBody = given().pathParam("appId", appId).when().get("/internal/applications/{appId}/eventTypes")
+                .then().statusCode(expectedStatusCode).contentType(JSON).extract().asString();
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
             JsonArray jsonEventTypes = new JsonArray(responseBody);
@@ -519,27 +471,19 @@ public class InternalServiceTest extends DbIsolatedTest {
         }
     }
 
-    private static void updateEventType(String appId, String eventTypeId, String name, String displayName, String description, int expectedStatusCode) {
+    private static void updateEventType(String appId, String eventTypeId, String name, String displayName,
+            String description, int expectedStatusCode) {
         EventType eventType = buildEventType(appId, name, displayName, description);
 
-        given()
-                .contentType(JSON)
-                .pathParam("eventTypeId", eventTypeId)
-                .body(Json.encode(eventType))
-                .put("/internal/eventTypes/{eventTypeId}")
-                .then()
-                .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? containsString(TEXT.toString()) : any(String.class));
+        given().contentType(JSON).pathParam("eventTypeId", eventTypeId).body(Json.encode(eventType))
+                .put("/internal/eventTypes/{eventTypeId}").then().statusCode(expectedStatusCode)
+                .contentType(familyOf(expectedStatusCode) == Family.SUCCESSFUL ? containsString(TEXT.toString())
+                        : any(String.class));
 
         if (familyOf(expectedStatusCode) == Family.SUCCESSFUL) {
-            String responseBody = given()
-                    .pathParam("appId", eventType.getApplicationId())
-                    .when()
-                    .get("/internal/applications/{appId}/eventTypes")
-                    .then()
-                    .statusCode(expectedStatusCode)
-                    .contentType(JSON)
-                    .extract().asString();
+            String responseBody = given().pathParam("appId", eventType.getApplicationId()).when()
+                    .get("/internal/applications/{appId}/eventTypes").then().statusCode(expectedStatusCode)
+                    .contentType(JSON).extract().asString();
 
             JsonArray jsonEventTypes = new JsonArray(responseBody);
             for (int i = 0; i < jsonEventTypes.size(); i++) {
@@ -559,14 +503,9 @@ public class InternalServiceTest extends DbIsolatedTest {
     }
 
     private static void deleteEventType(String eventTypeId, boolean expectedResult) {
-        Boolean result = given()
-                .pathParam("eventTypeId", eventTypeId)
-                .when()
-                .delete("/internal/eventTypes/{eventTypeId}")
-                .then()
-                .statusCode(OK)
-                .contentType(JSON)
-                .extract().body().as(Boolean.class);
+        Boolean result = given().pathParam("eventTypeId", eventTypeId).when()
+                .delete("/internal/eventTypes/{eventTypeId}").then().statusCode(OK).contentType(JSON).extract().body()
+                .as(Boolean.class);
 
         assertEquals(expectedResult, result);
     }

@@ -65,11 +65,10 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
     @Override
     public Multi<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
-        return Multi.createFrom().iterable(endpoints)
-                .onItem().transformToUniAndConcatenate(endpoint -> {
-                    Notification notification = new Notification(event, endpoint);
-                    return process(notification);
-                });
+        return Multi.createFrom().iterable(endpoints).onItem().transformToUniAndConcatenate(endpoint -> {
+            Notification notification = new Notification(event, endpoint);
+            return process(notification);
+        });
     }
 
     private Uni<NotificationHistory> process(Notification item) {
@@ -121,31 +120,26 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         return payload.onItem()
 
-                .transformToUni(json -> reallyCallCamel(json, historyId, accountId, subType)
-                        .onItem().transform(resp -> {
+                .transformToUni(
+                        json -> reallyCallCamel(json, historyId, accountId, subType).onItem().transform(resp -> {
                             final long endTime = System.currentTimeMillis();
                             // We only create a basic stub. The FromCamel filler will update it later
                             NotificationHistory history = getHistoryStub(item, endTime - startTime, historyId);
                             return history;
-                        })
-                );
+                        }));
     }
 
     public Uni<Boolean> reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
 
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
         Message<String> msg = Message.of(body.encode());
-        msg = msg.addMetadata(OutgoingCloudEventMetadata.builder()
-                .withId(historyId.toString())
-                .withExtension("rh-account", accountId)
-                .withType("com.redhat.console.notification.toCamel." + subType)
-                .build()
-        );
+        msg = msg.addMetadata(
+                OutgoingCloudEventMetadata.builder().withId(historyId.toString()).withExtension("rh-account", accountId)
+                        .withType("com.redhat.console.notification.toCamel." + subType).build());
         msg = msg.addMetadata(OutgoingKafkaRecordMetadata.builder()
-            .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, historyId.toString().getBytes(UTF_8))
-                    .add("CAMEL_SUBTYPE", subType.getBytes(UTF_8)))
-                .build()
-        );
+                .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, historyId.toString().getBytes(UTF_8))
+                        .add("CAMEL_SUBTYPE", subType.getBytes(UTF_8)))
+                .build());
         msg = msg.addMetadata(tracingMetadata);
         LOGGER.infof("Sending for account %s and history id %s", accountId, historyId);
         Message<String> finalMsg = msg;

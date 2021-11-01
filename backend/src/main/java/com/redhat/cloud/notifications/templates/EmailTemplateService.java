@@ -17,14 +17,10 @@ public class EmailTemplateService {
     Engine engine;
 
     public Uni<TemplateInstance> compileTemplate(String template, String name) {
-        return Uni.createFrom().item(engine.parse(template, null, name))
-                .onItem().transform(Template::instance);
+        return Uni.createFrom().item(engine.parse(template, null, name)).onItem().transform(Template::instance);
     }
 
     public Uni<String> renderTemplate(User user, Action action, TemplateInstance templateInstance) {
-        return templateInstance
-                .data("action", action)
-                .data("user", user)
-                .createUni();
+        return templateInstance.data("action", action).data("user", user).createUni();
     }
 }

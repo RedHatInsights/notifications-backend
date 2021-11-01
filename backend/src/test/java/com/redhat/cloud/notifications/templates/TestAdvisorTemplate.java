@@ -23,7 +23,7 @@ public class TestAdvisorTemplate {
         assertFalse(advisor.isSupported("some-recommendation", DAILY));
     }
 
-    @ValueSource(strings = {"new-recommendation", "resolved-recommendation" })
+    @ValueSource(strings = { "new-recommendation", "resolved-recommendation" })
     @ParameterizedTest
     void shouldSupportNewAndResolvedRecommendations(String eventType) {
         assertTrue(advisor.isSupported(eventType, INSTANT));
@@ -34,7 +34,9 @@ public class TestAdvisorTemplate {
         Exception exception = assertThrows(UnsupportedOperationException.class, () -> {
             advisor.getTitle("some-eventtype", DAILY);
         });
-        assertEquals("No email title template for Advisor event_type: some-eventtype and EmailSubscription: DAILY found.", exception.getMessage());
+        assertEquals(
+                "No email title template for Advisor event_type: some-eventtype and EmailSubscription: DAILY found.",
+                exception.getMessage());
     }
 
     @Test
@@ -42,24 +44,24 @@ public class TestAdvisorTemplate {
         Exception exception = assertThrows(UnsupportedOperationException.class, () -> {
             advisor.getBody("some-eventtype", DAILY);
         });
-        assertEquals("No email body template for Advisor event_type: some-eventtype and EmailSubscription: DAILY found.", exception.getMessage());
+        assertEquals(
+                "No email body template for Advisor event_type: some-eventtype and EmailSubscription: DAILY found.",
+                exception.getMessage());
     }
 
     @Test
     void testInstantEmailTitleForResolvedRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", "resolved-recommendation");
-        String result = Advisor.Templates.resolvedRecommendationInstantEmailTitle()
-                .data("action", action)
-                .render();
+        String result = Advisor.Templates.resolvedRecommendationInstantEmailTitle().data("action", action).render();
 
-        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 4 resolved recommendations", result, "Title contains the number of reports created");
+        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 4 resolved recommendations", result,
+                "Title contains the number of reports created");
 
         // Action with only 1 event
         action.setEvents(List.of(action.getEvents().get(0)));
-        result = Advisor.Templates.resolvedRecommendationInstantEmailTitle()
-                .data("action", action)
-                .render();
-        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 1 resolved recommendation", result, "Title contains the number of reports created");
+        result = Advisor.Templates.resolvedRecommendationInstantEmailTitle().data("action", action).render();
+        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 1 resolved recommendation", result,
+                "Title contains the number of reports created");
     }
 
     @Test
@@ -75,36 +77,28 @@ public class TestAdvisorTemplate {
     @Test
     public void testInstantEmailTitleForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", "new-recommendation");
-        String result = Advisor.Templates.newRecommendationInstantEmailTitle()
-                .data("action", action)
-                .render();
+        String result = Advisor.Templates.newRecommendationInstantEmailTitle().data("action", action).render();
 
-        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 4 new recommendations", result, "Title contains the number of reports created");
+        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 4 new recommendations", result,
+                "Title contains the number of reports created");
 
         // Action with only 1 event
         action.setEvents(List.of(action.getEvents().get(0)));
-        result = Advisor.Templates.newRecommendationInstantEmailTitle()
-                .data("action", action)
-                .render();
-        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 1 new recommendation", result, "Title contains the number of reports created");
+        result = Advisor.Templates.newRecommendationInstantEmailTitle().data("action", action).render();
+        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 1 new recommendation", result,
+                "Title contains the number of reports created");
     }
 
     @Test
     public void testInstantEmailBody() {
         Action action = TestHelpers.createAdvisorAction("123456", "new-recommendation");
-        final String result = Advisor.Templates.newRecommendationInstantEmailBody()
-                .data("action", action)
-                .render();
+        final String result = Advisor.Templates.newRecommendationInstantEmailBody().data("action", action).render();
 
         action.getEvents().forEach(event -> {
-            assertTrue(
-                    result.contains(event.getPayload().get("rule_id").toString()),
-                    "Body should contain rule id" + event.getPayload().get("rule_id")
-            );
-            assertTrue(
-                    result.contains(event.getPayload().get("rule_description").toString()),
-                    "Body should contain rule description" + event.getPayload().get("rule_description")
-            );
+            assertTrue(result.contains(event.getPayload().get("rule_id").toString()),
+                    "Body should contain rule id" + event.getPayload().get("rule_id"));
+            assertTrue(result.contains(event.getPayload().get("rule_description").toString()),
+                    "Body should contain rule description" + event.getPayload().get("rule_description"));
         });
 
         assertTrue(result.contains("alt=\"Low severity\""), "Body should contain low severity rule image");
@@ -115,14 +109,16 @@ public class TestAdvisorTemplate {
         // Display name
         assertTrue(result.contains("My Host"), "Body should contain the display_name");
 
-        action.setEvents(action.getEvents().stream().filter(event -> event.getPayload().get("total_risk").equals("1")).collect(Collectors.toList()));
-        String result2 = Advisor.Templates.newRecommendationInstantEmailBody()
-                .data("action", action)
-                .render();
+        action.setEvents(action.getEvents().stream().filter(event -> event.getPayload().get("total_risk").equals("1"))
+                .collect(Collectors.toList()));
+        String result2 = Advisor.Templates.newRecommendationInstantEmailBody().data("action", action).render();
 
         assertTrue(result2.contains("alt=\"Low severity\""), "Body 2 should contain low severity rule image");
-        assertFalse(result2.contains("alt=\"Moderate severity\""), "Body 2 should not contain moderate severity rule image");
-        assertFalse(result2.contains("alt=\"Important severity\""), "Body 2 should not contain important severity rule image");
-        assertFalse(result2.contains("alt=\"Critical severity\""), "Body 2 should not contain critical severity rule image");
+        assertFalse(result2.contains("alt=\"Moderate severity\""),
+                "Body 2 should not contain moderate severity rule image");
+        assertFalse(result2.contains("alt=\"Important severity\""),
+                "Body 2 should not contain important severity rule image");
+        assertFalse(result2.contains("alt=\"Critical severity\""),
+                "Body 2 should not contain critical severity rule image");
     }
 }

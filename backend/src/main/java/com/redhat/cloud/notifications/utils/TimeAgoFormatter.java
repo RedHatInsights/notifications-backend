@@ -34,20 +34,16 @@ public class TimeAgoFormatter {
         return Math.round(numerator / denominator);
     }
 
-    private static final List<Configuration> config = List.of(
-            new Configuration(MINUTE, count -> "Just now"),
+    private static final List<Configuration> config = List.of(new Configuration(MINUTE, count -> "Just now"),
             new Configuration(HOUR, count -> formatTime(roundDiv(count, MINUTE), "minute")),
             new Configuration(DAY, count -> formatTime(roundDiv(count, HOUR), "hour")),
             new Configuration(MONTH, count -> formatTime(roundDiv(count, DAY), "day")),
             new Configuration(YEAR, count -> formatTime(roundDiv(count, MONTH), "month")),
-            new Configuration(Long.MAX_VALUE, count -> formatTime(roundDiv(count, YEAR), "year"))
-    );
+            new Configuration(Long.MAX_VALUE, count -> formatTime(roundDiv(count, YEAR), "year")));
 
     static {
-        List<Configuration> fallbackConfiguration = TimeAgoFormatter.config
-                .stream()
-                .filter(configuration -> configuration.boundary == Long.MAX_VALUE)
-                .collect(Collectors.toList());
+        List<Configuration> fallbackConfiguration = TimeAgoFormatter.config.stream()
+                .filter(configuration -> configuration.boundary == Long.MAX_VALUE).collect(Collectors.toList());
 
         if (fallbackConfiguration.size() == 0) {
             throw new RuntimeException("Configuration does not have a fallback label");

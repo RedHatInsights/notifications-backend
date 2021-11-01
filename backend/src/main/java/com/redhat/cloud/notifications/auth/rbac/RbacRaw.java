@@ -8,7 +8,6 @@ public class RbacRaw {
     public Map<String, Integer> meta;
     public List<Map<String, Object>> data;
 
-
     public boolean canRead(String application, String item) {
         return findPermission(application, item, "read");
     }

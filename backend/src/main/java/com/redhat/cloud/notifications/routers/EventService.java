@@ -52,11 +52,11 @@ public class EventService {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_READ_NOTIFICATIONS)
     @Operation(summary = "Retrieve the event log entries.")
-    public Uni<Page<EventLogEntry>> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
-                                              @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
-                                              @RestQuery Set<EndpointType> endpointTypes, @RestQuery Set<Boolean> invocationResults,
-                                              @RestQuery @DefaultValue("10") int limit, @RestQuery @DefaultValue("0") int offset, @RestQuery String sortBy,
-                                              @RestQuery boolean includeDetails) {
+    public Uni<Page<EventLogEntry>> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds,
+            @RestQuery Set<UUID> appIds, @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate,
+            @RestQuery LocalDate endDate, @RestQuery Set<EndpointType> endpointTypes,
+            @RestQuery Set<Boolean> invocationResults, @RestQuery @DefaultValue("10") int limit,
+            @RestQuery @DefaultValue("0") int offset, @RestQuery String sortBy, @RestQuery boolean includeDetails) {
         if (limit < 1 || limit > 200) {
             throw new BadRequestException("Invalid 'limit' query parameter, its value must be between 1 and 200");
         }
@@ -64,48 +64,48 @@ public class EventService {
             throw new BadRequestException("Invalid 'sortBy' query parameter");
         }
         return sessionFactory.withSession(session -> {
-            return getAccountId(securityContext)
-                    .onItem().transformToUni(accountId ->
-                            eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, sortBy)
-                                    .onItem().transform(events ->
-                                            events.stream().map(event -> {
-                                                List<EventLogEntryAction> actions = event.getHistoryEntries().stream().map(historyEntry -> {
-                                                    EventLogEntryAction action = new EventLogEntryAction();
-                                                    action.setId(historyEntry.getId());
-                                                    action.setEndpointType(historyEntry.getEndpointType());
-                                                    action.setInvocationResult(historyEntry.isInvocationResult());
-                                                    if (includeDetails) {
-                                                        action.setDetails(historyEntry.getDetails());
-                                                    }
-                                                    return action;
-                                                }).collect(Collectors.toList());
+            return getAccountId(securityContext).onItem()
+                    .transformToUni(accountId -> eventResources
+                            .getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate,
+                                    endpointTypes, invocationResults, limit, offset, sortBy)
+                            .onItem().transform(events -> events.stream().map(event -> {
+                                List<EventLogEntryAction> actions = event.getHistoryEntries().stream()
+                                        .map(historyEntry -> {
+                                            EventLogEntryAction action = new EventLogEntryAction();
+                                            action.setId(historyEntry.getId());
+                                            action.setEndpointType(historyEntry.getEndpointType());
+                                            action.setInvocationResult(historyEntry.isInvocationResult());
+                                            if (includeDetails) {
+                                                action.setDetails(historyEntry.getDetails());
+                                            }
+                                            return action;
+                                        }).collect(Collectors.toList());
 
-                                                EventLogEntry entry = new EventLogEntry();
-                                                entry.setId(event.getId());
-                                                entry.setCreated(event.getCreated());
-                                                entry.setBundle(event.getEventType().getApplication().getBundle().getDisplayName());
-                                                entry.setApplication(event.getEventType().getApplication().getDisplayName());
-                                                entry.setEventType(event.getEventType().getDisplayName());
-                                                entry.setActions(actions);
-                                                return entry;
-                                            }).collect(Collectors.toList())
-                                    )
-                                    .onItem().transformToUni(entries ->
-                                            eventResources.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults)
-                                                    .onItem().transform(count -> {
-                                                        Meta meta = new Meta();
-                                                        meta.setCount(count);
+                                EventLogEntry entry = new EventLogEntry();
+                                entry.setId(event.getId());
+                                entry.setCreated(event.getCreated());
+                                entry.setBundle(event.getEventType().getApplication().getBundle().getDisplayName());
+                                entry.setApplication(event.getEventType().getApplication().getDisplayName());
+                                entry.setEventType(event.getEventType().getDisplayName());
+                                entry.setActions(actions);
+                                return entry;
+                            }).collect(Collectors.toList())).onItem().transformToUni(
+                                    entries -> eventResources
+                                            .count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate,
+                                                    endDate, endpointTypes, invocationResults)
+                                            .onItem().transform(count -> {
+                                                Meta meta = new Meta();
+                                                meta.setCount(count);
 
-                                                        Map<String, String> links = PageLinksBuilder.build(PATH, count, limit, offset);
+                                                Map<String, String> links = PageLinksBuilder.build(PATH, count, limit,
+                                                        offset);
 
-                                                        Page<EventLogEntry> page = new Page<>();
-                                                        page.setData(entries);
-                                                        page.setMeta(meta);
-                                                        page.setLinks(links);
-                                                        return page;
-                                                    })
-                                    )
-                    );
+                                                Page<EventLogEntry> page = new Page<>();
+                                                page.setData(entries);
+                                                page.setMeta(meta);
+                                                page.setLinks(links);
+                                                return page;
+                                            })));
         });
     }
 }

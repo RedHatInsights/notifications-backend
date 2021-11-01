@@ -19,7 +19,8 @@ public class Json {
 
     private static ObjectMapper init() {
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setFilterProvider(new SimpleFilterProvider().addFilter(ApiResponseFilter.NAME, new ApiResponseFilter()));
+        objectMapper.setFilterProvider(
+                new SimpleFilterProvider().addFilter(ApiResponseFilter.NAME, new ApiResponseFilter()));
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
         return objectMapper;

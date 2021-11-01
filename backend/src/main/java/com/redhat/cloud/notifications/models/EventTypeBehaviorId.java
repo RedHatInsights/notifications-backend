@@ -22,8 +22,8 @@ public class EventTypeBehaviorId implements Serializable {
         }
         if (o instanceof EventTypeBehaviorId) {
             EventTypeBehaviorId other = (EventTypeBehaviorId) o;
-            return Objects.equals(eventTypeId, other.eventTypeId) &&
-                    Objects.equals(behaviorGroupId, other.behaviorGroupId);
+            return Objects.equals(eventTypeId, other.eventTypeId)
+                    && Objects.equals(behaviorGroupId, other.behaviorGroupId);
         }
         return false;
     }

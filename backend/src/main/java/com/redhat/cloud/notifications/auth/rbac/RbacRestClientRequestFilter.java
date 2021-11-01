@@ -9,8 +9,8 @@ import java.util.Base64;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Filter to optionally add data on outgoing requests to the RBAC service.
- * This is meant for local development and not production.
+ * Filter to optionally add data on outgoing requests to the RBAC service. This is meant for local development and not
+ * production.
  */
 public class RbacRestClientRequestFilter implements ClientRequestFilter {
 

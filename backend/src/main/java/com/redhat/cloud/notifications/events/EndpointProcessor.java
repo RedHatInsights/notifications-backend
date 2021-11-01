@@ -64,13 +64,15 @@ public class EndpointProcessor {
                 // Target endpoints are grouped by endpoint type.
                 .onItem().transformToMulti(endpoints -> {
                     endpointTargeted.increment(endpoints.size());
-                    Map<EndpointType, List<Endpoint>> endpointsByType = endpoints.stream().collect(Collectors.groupingBy(Endpoint::getType));
+                    Map<EndpointType, List<Endpoint>> endpointsByType = endpoints.stream()
+                            .collect(Collectors.groupingBy(Endpoint::getType));
                     return Multi.createFrom().iterable(endpointsByType.entrySet());
                 })
 
                 /*
-                 * For each endpoint type, the list of target endpoints is sent alongside with the action to the relevant processor.
-                 * Each processor returns a list of history entries. All of the returned lists are flattened into a single list.
+                 * For each endpoint type, the list of target endpoints is sent alongside with the action to the
+                 * relevant processor. Each processor returns a list of history entries. All of the returned lists are
+                 * flattened into a single list.
                  */
                 .onItem().transformToMultiAndConcatenate(entry -> {
                     EndpointTypeProcessor processor = endpointTypeToProcessor(entry.getKey());
@@ -79,22 +81,23 @@ public class EndpointProcessor {
 
                 // TODO Action processing and history persistence should be a single atomic operation.
                 // Now each history entry is persisted.
-                .onItem().transformToUniAndConcatenate(history -> notifResources.createNotificationHistory(history)
-                        .onFailure().invoke(failure -> LOGGER.errorf("Notification history creation failed for %s", history.getEndpoint()))
-                )
+                .onItem()
+                .transformToUniAndConcatenate(history -> notifResources.createNotificationHistory(history).onFailure()
+                        .invoke(failure -> LOGGER.errorf("Notification history creation failed for %s",
+                                history.getEndpoint())))
                 .onItem().ignoreAsUni();
     }
 
     private EndpointTypeProcessor endpointTypeToProcessor(EndpointType endpointType) {
         switch (endpointType) {
-            case CAMEL:
-                return camel;
-            case WEBHOOK:
-                return webhooks;
-            case EMAIL_SUBSCRIPTION:
-                return emails;
-            default:
-                return (action, endpoints) -> Multi.createFrom().empty();
+        case CAMEL:
+            return camel;
+        case WEBHOOK:
+            return webhooks;
+        case EMAIL_SUBSCRIPTION:
+            return emails;
+        default:
+            return (action, endpoints) -> Multi.createFrom().empty();
         }
     }
 }

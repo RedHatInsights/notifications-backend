@@ -43,7 +43,8 @@ public class DailyEmailAggregationJob {
     @Channel(AGGREGATION_CHANNEL)
     Emitter<String> emitter;
 
-    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper, MeterRegistry registry) {
+    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper,
+            MeterRegistry registry) {
         this.emailAggregationResources = emailAggregationResources;
         this.objectMapper = objectMapper;
         this.registry = registry;
@@ -69,7 +70,8 @@ public class DailyEmailAggregationJob {
 
             // resolve completable futures so the Quarkus main thread doesn't stop before everything has been sent
             try {
-                CompletionStage<Void> combinedDataCompletionStage = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+                CompletionStage<Void> combinedDataCompletionStage = CompletableFuture
+                        .allOf(futures.toArray(new CompletableFuture[0]));
                 combinedDataCompletionStage.toCompletableFuture().get();
             } catch (InterruptedException | ExecutionException ie) {
                 LOG.error("Writing AggregationCommands failed", ie);
@@ -81,24 +83,18 @@ public class DailyEmailAggregationJob {
         final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
         LocalDateTime startTime = lastCronJobRun.getLastRun();
 
-        LOG.info(String.format("Collecting email aggregation for period (%s, %s) and type %s", startTime, endTime, DAILY));
+        LOG.info(String.format("Collecting email aggregation for period (%s, %s) and type %s", startTime, endTime,
+                DAILY));
 
-        final List<AggregationCommand> pendingAggregationCommands =
-                emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
-                        .stream()
-                        .map(aggregationKey -> new AggregationCommand(aggregationKey, startTime, endTime, DAILY))
-                        .collect(Collectors.toList());
+        final List<AggregationCommand> pendingAggregationCommands = emailAggregationResources
+                .getApplicationsWithPendingAggregation(startTime, endTime).stream()
+                .map(aggregationKey -> new AggregationCommand(aggregationKey, startTime, endTime, DAILY))
+                .collect(Collectors.toList());
 
-        LOG.info(
-                String.format(
-                        "Finished collecting email aggregations for period (%s, %s) and type %s after %d seconds. %d (accountIds, applications) pairs were processed",
-                        startTime,
-                        endTime,
-                        DAILY,
-                        SECONDS.between(endTime, LocalDateTime.now(UTC)),
-                        pendingAggregationCommands.size()
-                )
-        );
+        LOG.info(String.format(
+                "Finished collecting email aggregations for period (%s, %s) and type %s after %d seconds. %d (accountIds, applications) pairs were processed",
+                startTime, endTime, DAILY, SECONDS.between(endTime, LocalDateTime.now(UTC)),
+                pendingAggregationCommands.size()));
 
         processedGauge.set(pendingAggregationCommands.size());
 

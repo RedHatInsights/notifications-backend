@@ -35,11 +35,8 @@ public class AdminService {
 
         Uni<RbacRaw> rbacRawUni = rbacServer.getRbacInfo("notifications,integrations", rhid);
 
-        return rbacRawUni
-                .onItem()
-                .transform(r -> Response.ok(r.data).build())
-                .onFailure()
-                .call(t -> Uni.createFrom().item(Response.serverError().entity("Rbac call failed -- see logs").build()));
+        return rbacRawUni.onItem().transform(r -> Response.ok(r.data).build()).onFailure().call(
+                t -> Uni.createFrom().item(Response.serverError().entity("Rbac call failed -- see logs").build()));
 
     }
 
@@ -53,25 +50,21 @@ public class AdminService {
         StuffHolder th = StuffHolder.getInstance();
 
         switch (status.orElse("ok")) {
-            case "ok":
-                th.setDegraded(false);
-                th.setAdminDown(false);
-                builder = Response.ok()
-                        .entity("Reset state to ok");
-                break;
-            case "degraded":
-                th.setDegraded(true);
-                builder = Response.ok()
-                        .entity("Set degraded state");
-                break;
-            case "admin-down":
-                th.setAdminDown(true);
-                builder = Response.ok()
-                        .entity("Set admin down state");
-                break;
-            default:
-                builder = Response.status(Response.Status.BAD_REQUEST)
-                        .entity("Unknown status passed");
+        case "ok":
+            th.setDegraded(false);
+            th.setAdminDown(false);
+            builder = Response.ok().entity("Reset state to ok");
+            break;
+        case "degraded":
+            th.setDegraded(true);
+            builder = Response.ok().entity("Set degraded state");
+            break;
+        case "admin-down":
+            th.setAdminDown(true);
+            builder = Response.ok().entity("Set admin down state");
+            break;
+        default:
+            builder = Response.status(Response.Status.BAD_REQUEST).entity("Unknown status passed");
         }
 
         return builder.build();

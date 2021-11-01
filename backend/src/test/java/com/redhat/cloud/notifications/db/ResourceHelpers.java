@@ -69,8 +69,7 @@ public class ResourceHelpers {
     }
 
     public Uni<UUID> getBundleId(String bundleName) {
-        return bundleResources.getBundle(bundleName)
-                .onItem().transform(Bundle::getId);
+        return bundleResources.getBundle(bundleName).onItem().transform(Bundle::getId);
     }
 
     public Uni<Application> createApplication(UUID bundleId) {
@@ -86,8 +85,8 @@ public class ResourceHelpers {
     }
 
     public Uni<UUID> createEventType(String bundleName, String applicationName, String eventTypeName) {
-        return appResources.getApplication(bundleName, applicationName)
-                .onItem().transformToUni(app -> createEventType(app.getId(), eventTypeName, eventTypeName, "new event type"))
+        return appResources.getApplication(bundleName, applicationName).onItem()
+                .transformToUni(app -> createEventType(app.getId(), eventTypeName, eventTypeName, "new event type"))
                 .onItem().transform(EventType::getId);
     }
 
@@ -102,29 +101,20 @@ public class ResourceHelpers {
 
     public Uni<UUID> createTestAppAndEventTypes() {
         return sessionFactory.withSession(session -> createBundle(TEST_BUNDLE_NAME, "...")
-                .call(bundle -> createApplication(bundle.getId(), TEST_APP_NAME, "...")
-                        .call(app -> Multi.createFrom().items(() -> IntStream.range(0, 100).boxed())
-                                .onItem().transformToUniAndConcatenate(i -> {
-                                    String name = String.format(TEST_EVENT_TYPE_FORMAT, i);
-                                    String displayName = "... -> " + i;
-                                    String description = "Desc .. --> " + i;
-                                    return createEventType(app.getId(), name, displayName, description);
-                                })
-                                .onItem().ignoreAsUni()
-                        )
-                )
-                .call(bundle -> createApplication(bundle.getId(), TEST_APP_NAME_2, "...")
-                        .call(app -> Multi.createFrom().items(() -> IntStream.range(0, 100).boxed())
-                                .onItem().transformToUniAndConcatenate(i -> {
-                                    String name = String.format(TEST_EVENT_TYPE_FORMAT, i);
-                                    String displayName = "... -> " + i;
-                                    return createEventType(app.getId(), name, displayName, null);
-                                })
-                                .onItem().ignoreAsUni()
-                        )
-                )
-                .onItem().transform(Bundle::getId)
-        );
+                .call(bundle -> createApplication(bundle.getId(), TEST_APP_NAME, "...").call(app -> Multi.createFrom()
+                        .items(() -> IntStream.range(0, 100).boxed()).onItem().transformToUniAndConcatenate(i -> {
+                            String name = String.format(TEST_EVENT_TYPE_FORMAT, i);
+                            String displayName = "... -> " + i;
+                            String description = "Desc .. --> " + i;
+                            return createEventType(app.getId(), name, displayName, description);
+                        }).onItem().ignoreAsUni()))
+                .call(bundle -> createApplication(bundle.getId(), TEST_APP_NAME_2, "...").call(app -> Multi.createFrom()
+                        .items(() -> IntStream.range(0, 100).boxed()).onItem().transformToUniAndConcatenate(i -> {
+                            String name = String.format(TEST_EVENT_TYPE_FORMAT, i);
+                            String displayName = "... -> " + i;
+                            return createEventType(app.getId(), name, displayName, null);
+                        }).onItem().ignoreAsUni()))
+                .onItem().transform(Bundle::getId));
     }
 
     public Uni<Endpoint> createEndpoint(String accountId, EndpointType type) {
@@ -136,11 +126,12 @@ public class ResourceHelpers {
         properties.setMethod(HttpType.POST);
         properties.setUrl("https://localhost");
         String name = "Endpoint " + UUID.randomUUID();
-        return createEndpoint(accountId, WEBHOOK, name, "Automatically generated", properties, TRUE)
-                .onItem().transform(Endpoint::getId);
+        return createEndpoint(accountId, WEBHOOK, name, "Automatically generated", properties, TRUE).onItem()
+                .transform(Endpoint::getId);
     }
 
-    public Uni<Endpoint> createEndpoint(String accountId, EndpointType type, String name, String description, EndpointProperties properties, Boolean enabled) {
+    public Uni<Endpoint> createEndpoint(String accountId, EndpointType type, String name, String description,
+            EndpointProperties properties, Boolean enabled) {
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
         endpoint.setType(type);
@@ -154,8 +145,8 @@ public class ResourceHelpers {
     public Uni<int[]> createTestEndpoints(String tenant, int count) {
         int[] statsValues = new int[3];
         statsValues[0] = count;
-        return Multi.createFrom().items(() -> IntStream.range(0, count).boxed())
-                .onItem().transformToUniAndConcatenate(i -> {
+        return Multi.createFrom().items(() -> IntStream.range(0, count).boxed()).onItem()
+                .transformToUniAndConcatenate(i -> {
                     // Add new endpoints
                     WebhookProperties properties = new WebhookProperties();
                     properties.setMethod(HttpType.POST);
@@ -177,12 +168,11 @@ public class ResourceHelpers {
 
                     ep.setAccountId(tenant);
                     return endpointResources.createEndpoint(ep);
-                })
-                .onItem().ignoreAsUni()
-                .replaceWith(statsValues);
+                }).onItem().ignoreAsUni().replaceWith(statsValues);
     }
 
-    public Uni<NotificationHistory> createNotificationHistory(Event event, Endpoint endpoint, Boolean invocationResult) {
+    public Uni<NotificationHistory> createNotificationHistory(Event event, Endpoint endpoint,
+            Boolean invocationResult) {
         NotificationHistory history = new NotificationHistory();
         history.setId(UUID.randomUUID());
         history.setInvocationTime(1L);
@@ -194,8 +184,8 @@ public class ResourceHelpers {
     }
 
     public Uni<UUID> emailSubscriptionEndpointId(String accountId, EmailSubscriptionProperties properties) {
-        return endpointResources.getOrCreateEmailSubscriptionEndpoint(accountId, properties)
-                .onItem().transform(Endpoint::getId);
+        return endpointResources.getOrCreateEmailSubscriptionEndpoint(accountId, properties).onItem()
+                .transform(Endpoint::getId);
     }
 
     public Uni<BehaviorGroup> createBehaviorGroup(String accountId, String displayName, UUID bundleId) {
@@ -225,12 +215,15 @@ public class ResourceHelpers {
         return behaviorGroupResources.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
     }
 
-    public Uni<Boolean> addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
-        EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, bundle, application, policyId, insightsId);
+    public Uni<Boolean> addEmailAggregation(String tenant, String bundle, String application, String policyId,
+            String insightsId) {
+        EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, bundle, application, policyId,
+                insightsId);
         return emailAggregationResources.addEmailAggregation(aggregation);
     }
 
-    public Uni<Boolean> addEmailAggregation(String accountId, String bundleName, String applicationName, JsonObject payload) {
+    public Uni<Boolean> addEmailAggregation(String accountId, String bundleName, String applicationName,
+            JsonObject payload) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setAccountId(accountId);
         aggregation.setBundleName(bundleName);

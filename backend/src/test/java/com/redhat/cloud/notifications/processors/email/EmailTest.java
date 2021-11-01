@@ -85,13 +85,8 @@ public class EmailTest extends DbIsolatedTest {
     }
 
     private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {
-        HttpRequest postReq = new HttpRequest()
-                .withPath("/v1/sendEmails")
-                .withMethod("POST");
-        mockServerConfig.getMockServerClient()
-                .withSecure(false)
-                .when(postReq)
-                .respond(verifyEmptyRequest);
+        HttpRequest postReq = new HttpRequest().withPath("/v1/sendEmails").withMethod("POST");
+        mockServerConfig.getMockServerClient().withSecure(false).when(postReq).respond(verifyEmptyRequest);
         return postReq;
     }
 
@@ -100,13 +95,12 @@ public class EmailTest extends DbIsolatedTest {
         mockGetUsers(8, false);
 
         final String tenant = "instant-email-tenant";
-        final String[] usernames = {"username-1", "username-2", "username-4"};
+        final String[] usernames = { "username-1", "username-2", "username-4" };
         String bundle = "rhel";
         String application = "policies";
 
-        Multi.createFrom().items(usernames)
-                .onItem().transformToUniAndConcatenate(username -> subscriptionResources.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT))
-                .onItem().ignoreAsUni()
+        Multi.createFrom().items(usernames).onItem().transformToUniAndConcatenate(username -> subscriptionResources
+                .subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT)).onItem().ignoreAsUni()
                 .chain(() -> {
                     final List<String> bodyRequests = new ArrayList<>();
 
@@ -120,7 +114,8 @@ public class EmailTest extends DbIsolatedTest {
 
                     HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
-                    Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application, "My test machine");
+                    Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application,
+                            "My test machine");
 
                     Event event = new Event();
                     event.setAction(emailActionMessage);
@@ -134,68 +129,67 @@ public class EmailTest extends DbIsolatedTest {
                     ep.setEnabled(true);
                     ep.setProperties(properties);
 
-                    return emailProcessor.process(event, List.of(ep))
-                            .onFailure().invoke(e -> {
-                                e.printStackTrace();
-                                fail(e);
-                            })
-                            .collect().asList()
-                            .eventually(() -> {
-                                // Remove expectations
-                                mockServerConfig.getMockServerClient().clear(postReq);
-                            })
-                            .invoke(historyEntries -> {
+                    return emailProcessor.process(event, List.of(ep)).onFailure().invoke(e -> {
+                        e.printStackTrace();
+                        fail(e);
+                    }).collect().asList().eventually(() -> {
+                        // Remove expectations
+                        mockServerConfig.getMockServerClient().clear(postReq);
+                    }).invoke(historyEntries -> {
 
-                                NotificationHistory history = historyEntries.get(0);
-                                assertTrue(history.isInvocationResult());
+                        NotificationHistory history = historyEntries.get(0);
+                        assertTrue(history.isInvocationResult());
 
-                                assertEquals(3, bodyRequests.size());
-                                List<JsonObject> emailRequests = emailRequestIsOK(bodyRequests, usernames);
+                        assertEquals(3, bodyRequests.size());
+                        List<JsonObject> emailRequests = emailRequestIsOK(bodyRequests, usernames);
 
-                                for (int i = 0; i < usernames.length; ++i) {
-                                    JsonObject body = emailRequests.get(i);
-                                    JsonArray emails = body.getJsonArray("emails");
-                                    assertNotNull(emails);
-                                    assertEquals(1, emails.size());
-                                    JsonObject firstEmail = emails.getJsonObject(0);
-                                    JsonArray recipients = firstEmail.getJsonArray("recipients");
-                                    assertEquals(1, recipients.size());
-                                    assertEquals(usernames[i], recipients.getString(0));
+                        for (int i = 0; i < usernames.length; ++i) {
+                            JsonObject body = emailRequests.get(i);
+                            JsonArray emails = body.getJsonArray("emails");
+                            assertNotNull(emails);
+                            assertEquals(1, emails.size());
+                            JsonObject firstEmail = emails.getJsonObject(0);
+                            JsonArray recipients = firstEmail.getJsonArray("recipients");
+                            assertEquals(1, recipients.size());
+                            assertEquals(usernames[i], recipients.getString(0));
 
-                                    JsonArray bccList = firstEmail.getJsonArray("bccList");
-                                    assertEquals(0, bccList.size());
+                            JsonArray bccList = firstEmail.getJsonArray("bccList");
+                            assertEquals(0, bccList.size());
 
-                                    String bodyRequest = body.toString();
+                            String bodyRequest = body.toString();
 
-                                    assertTrue(bodyRequest.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
-                                    assertTrue(bodyRequest.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
+                            assertTrue(bodyRequest.contains(TestHelpers.policyId1),
+                                    "Body should contain policy id" + TestHelpers.policyId1);
+                            assertTrue(bodyRequest.contains(TestHelpers.policyName1),
+                                    "Body should contain policy name" + TestHelpers.policyName1);
 
-                                    assertTrue(bodyRequest.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
-                                    assertTrue(bodyRequest.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
+                            assertTrue(bodyRequest.contains(TestHelpers.policyId2),
+                                    "Body should contain policy id" + TestHelpers.policyId2);
+                            assertTrue(bodyRequest.contains(TestHelpers.policyName2),
+                                    "Body should contain policy name" + TestHelpers.policyName2);
 
-                                    // Display name
-                                    assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
+                            // Display name
+                            assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
 
-                                    // Formatted date
-                                    assertTrue(bodyRequest.contains("03 Aug 2020 15:22 UTC"));
-                                }
-                            });
-                })
-                .await().indefinitely();
+                            // Formatted date
+                            assertTrue(bodyRequest.contains("03 Aug 2020 15:22 UTC"));
+                        }
+                    });
+                }).await().indefinitely();
     }
 
     @Test
     void testEmailSubscriptionInstantWrongPayload() {
         mockGetUsers(8, false);
         final String tenant = "instant-email-tenant-wrong-payload";
-        final String[] usernames = {"username-1", "username-2", "username-4"};
+        final String[] usernames = { "username-1", "username-2", "username-4" };
         String bundle = "rhel";
         String application = "policies";
 
-        sessionFactory.withSession(session -> Multi.createFrom().items(usernames)
-                .onItem().transformToUniAndConcatenate(username -> subscriptionResources.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT))
-                .onItem().ignoreAsUni()
-                .chain(() -> {
+        sessionFactory.withSession(session -> Multi
+                .createFrom().items(usernames).onItem().transformToUniAndConcatenate(username -> subscriptionResources
+                        .subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT))
+                .onItem().ignoreAsUni().chain(() -> {
                     final List<String> bodyRequests = new ArrayList<>();
 
                     ExpectationResponseCallback verifyEmptyRequest = req -> {
@@ -214,20 +208,11 @@ public class EmailTest extends DbIsolatedTest {
                     emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
                     emailActionMessage.setEventType(TestHelpers.eventType);
 
-                    emailActionMessage.setContext(Map.of(
-                            "inventory_id-wrong", "host-01",
-                            "system_check_in-wrong", "2020-08-03T15:22:42.199046",
-                            "display_name-wrong", "My test machine",
-                            "tags-what?", List.of()
-                    ));
-                    emailActionMessage.setEvents(List.of(
-                            com.redhat.cloud.notifications.ingress.Event.newBuilder()
-                                    .setMetadataBuilder(Metadata.newBuilder())
-                                    .setPayload(Map.of(
-                                            "foo", "bar"
-                                    ))
-                                    .build()
-                    ));
+                    emailActionMessage.setContext(Map.of("inventory_id-wrong", "host-01", "system_check_in-wrong",
+                            "2020-08-03T15:22:42.199046", "display_name-wrong", "My test machine", "tags-what?",
+                            List.of()));
+                    emailActionMessage.setEvents(List.of(com.redhat.cloud.notifications.ingress.Event.newBuilder()
+                            .setMetadataBuilder(Metadata.newBuilder()).setPayload(Map.of("foo", "bar")).build()));
 
                     emailActionMessage.setAccountId(tenant);
 
@@ -243,29 +228,25 @@ public class EmailTest extends DbIsolatedTest {
                     ep.setEnabled(true);
                     ep.setProperties(properties);
 
-                    return emailProcessor.process(event, List.of(ep))
-                            .onFailure().invoke(e -> {
-                                e.printStackTrace();
-                                fail(e);
-                            })
-                            .collect().asList()
-                            .eventually(() -> {
-                                // Remove expectations
-                                mockServerConfig.getMockServerClient().clear(postReq);
-                            })
-                            .invoke(historyEntries -> {
-                                // The processor returns a null history value but Multi does not support null values so the resulting Multi is empty.
-                                assertTrue(historyEntries.isEmpty());
+                    return emailProcessor.process(event, List.of(ep)).onFailure().invoke(e -> {
+                        e.printStackTrace();
+                        fail(e);
+                    }).collect().asList().eventually(() -> {
+                        // Remove expectations
+                        mockServerConfig.getMockServerClient().clear(postReq);
+                    }).invoke(historyEntries -> {
+                        // The processor returns a null history value but Multi does not support null values so the
+                        // resulting Multi is empty.
+                        assertTrue(historyEntries.isEmpty());
 
-                                // No email, invalid payload
-                                assertEquals(0, bodyRequests.size());
-                            });
-                })
-        ).await().indefinitely();
+                        // No email, invalid payload
+                        assertEquals(0, bodyRequests.size());
+                    });
+                })).await().indefinitely();
     }
 
     private String usernameOfRequest(String request, String[] users) {
-        for (String user: users) {
+        for (String user : users) {
             if (request.contains(user)) {
                 return user;
             }
@@ -302,16 +283,10 @@ public class EmailTest extends DbIsolatedTest {
 
     private void mockGetUsers(int elements, boolean adminsOnly) {
         MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
-        Mockito.when(rbacServiceToService.getUsers(
-                Mockito.any(),
-                Mockito.any(),
-                Mockito.anyInt(),
-                Mockito.anyInt()
-        )).then(invocationOnMock -> answer.mockedUserAnswer(
-                invocationOnMock.getArgument(2, Integer.class),
-                invocationOnMock.getArgument(3, Integer.class),
-                invocationOnMock.getArgument(1, Boolean.class)
-        ));
+        Mockito.when(rbacServiceToService.getUsers(Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.anyInt()))
+                .then(invocationOnMock -> answer.mockedUserAnswer(invocationOnMock.getArgument(2, Integer.class),
+                        invocationOnMock.getArgument(3, Integer.class),
+                        invocationOnMock.getArgument(1, Boolean.class)));
     }
 
     class MockedUserAnswer {

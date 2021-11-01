@@ -79,20 +79,20 @@ public class EmailAggregationResourcesTest {
 
     @ParameterizedTest
     @MethodSource("constraintViolations")
-    void addEmailAggregationWithConstraintViolations(String accountId, String bundleName, String applicationName, JsonObject payload) {
+    void addEmailAggregationWithConstraintViolations(String accountId, String bundleName, String applicationName,
+            JsonObject payload) {
         addEmailAggregation(accountId, bundleName, applicationName, payload, false);
     }
 
     private static Stream<Arguments> constraintViolations() {
-        return Stream.of(
-                Arguments.of(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null),
+        return Stream.of(Arguments.of(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null),
                 Arguments.of(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1),
                 Arguments.of(null, BUNDLE_NAME, APP_NAME, PAYLOAD1),
-                Arguments.of(null, BUNDLE_NAME, APP_NAME, PAYLOAD1)
-        );
+                Arguments.of(null, BUNDLE_NAME, APP_NAME, PAYLOAD1));
     }
 
-    private void addEmailAggregation(String accountId, String bundleName, String applicationName, JsonObject payload, boolean expectedResult) {
+    private void addEmailAggregation(String accountId, String bundleName, String applicationName, JsonObject payload,
+            boolean expectedResult) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setAccountId(accountId);
         aggregation.setBundleName(bundleName);
@@ -103,7 +103,8 @@ public class EmailAggregationResourcesTest {
         assertEquals(expectedResult, added);
     }
 
-    private List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
+    private List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start,
+            LocalDateTime end) {
         return emailAggregationResources.getEmailAggregation(key, start, end);
     }
 

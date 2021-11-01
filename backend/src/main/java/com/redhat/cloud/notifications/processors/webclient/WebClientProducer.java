@@ -45,9 +45,14 @@ public class WebClientProducer {
     }
 
     private WebClientOptions buildOptions(boolean trustAll) {
-        WebClientOptions options = new WebClientOptions()
-                .setTrustAll(trustAll)
-                .setConnectTimeout(3000); // TODO Should this be configurable by the system? We need a maximum in any case
+        WebClientOptions options = new WebClientOptions().setTrustAll(trustAll).setConnectTimeout(3000); // TODO Should
+                                                                                                         // this be
+                                                                                                         // configurable
+                                                                                                         // by the
+                                                                                                         // system? We
+                                                                                                         // need a
+                                                                                                         // maximum in
+                                                                                                         // any case
         if (maxPoolSize.isPresent()) {
             LOGGER.debugf("Producing a WebClient with a configured max pool size: %d", maxPoolSize.get());
             options = options.setMaxPoolSize(maxPoolSize.get());

@@ -25,7 +25,8 @@ class DriftEmailPayloadAggregatorTest {
 
     @Test
     void shouldHaveOneSingleHost() {
-        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_01", "baseline_1", "host-01", "Machine 1"));
+        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_01",
+                "baseline_1", "host-01", "Machine 1"));
         Assertions.assertEquals("tenant", aggregator.getAccountId());
 
         // 1 host
@@ -38,10 +39,14 @@ class DriftEmailPayloadAggregatorTest {
         LocalDateTime startTime = LocalDateTime.of(2021, 4, 22, 13, 15, 33);
         LocalDateTime endTime = LocalDateTime.of(2021, 4, 22, 14, 15, 33);
 
-        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_01", "baseline_1", "host-01", "Machine 1"));
-        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_01", "baseline_1", "host-02",  "Machine 2"));
-        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_02", "baseline_2", "host-01", "Machine 1"));
-        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_02", "baseline_2", "host-03", "Machine 3"));
+        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_01",
+                "baseline_1", "host-01", "Machine 1"));
+        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_01",
+                "baseline_1", "host-02", "Machine 2"));
+        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_02",
+                "baseline_2", "host-01", "Machine 1"));
+        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_02",
+                "baseline_2", "host-03", "Machine 3"));
         Map<String, Object> drift = aggregator.getContext();
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());

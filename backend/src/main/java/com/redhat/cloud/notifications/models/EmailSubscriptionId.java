@@ -36,10 +36,9 @@ public class EmailSubscriptionId implements Serializable {
         }
         if (o instanceof EmailSubscriptionId) {
             EmailSubscriptionId other = (EmailSubscriptionId) o;
-            return Objects.equals(accountId, other.accountId) &&
-                    Objects.equals(userId, other.userId) &&
-                    Objects.equals(subscriptionType, other.subscriptionType) &&
-                    Objects.equals(applicationId, other.applicationId);
+            return Objects.equals(accountId, other.accountId) && Objects.equals(userId, other.userId)
+                    && Objects.equals(subscriptionType, other.subscriptionType)
+                    && Objects.equals(applicationId, other.applicationId);
         }
         return false;
     }

@@ -24,20 +24,15 @@ public class LivenessService implements AsyncHealthCheck {
 
         HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications readiness check");
         if (adminDown) {
-            return Uni.createFrom().item(() ->
-                    response.down().withData("status", "admin-down").build()
-            );
+            return Uni.createFrom().item(() -> response.down().withData("status", "admin-down").build());
         }
-        return postgresConnectionHealth().onItem().transform(dbState ->
-                    response.status(dbState).withData("reactive-db-check", dbState).build()
-        );
+        return postgresConnectionHealth().onItem()
+                .transform(dbState -> response.status(dbState).withData("reactive-db-check", dbState).build());
     }
 
     private Uni<Boolean> postgresConnectionHealth() {
         return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createNativeQuery("SELECT 1")
-                    .getSingleResult()
-                    .replaceWith(Boolean.TRUE)
+            return statelessSession.createNativeQuery("SELECT 1").getSingleResult().replaceWith(Boolean.TRUE)
                     .onFailure().recoverWithItem(Boolean.FALSE);
         });
     }

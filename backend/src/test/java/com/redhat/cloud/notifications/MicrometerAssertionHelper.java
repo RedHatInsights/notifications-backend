@@ -34,13 +34,15 @@ public class MicrometerAssertionHelper {
     }
 
     public void assertCounterIncrement(String counterName, double expectedIncrement) {
-        double actualIncrement = registry.counter(counterName).count() - counterValuesBeforeTest.getOrDefault(counterName, 0D);
+        double actualIncrement = registry.counter(counterName).count()
+                - counterValuesBeforeTest.getOrDefault(counterName, 0D);
         assertEquals(expectedIncrement, actualIncrement);
     }
 
     public void awaitAndAssertCounterIncrement(String counterName, double expectedIncrement) {
         await().atMost(Duration.ofSeconds(30L)).until(() -> {
-            double actualIncrement = registry.counter(counterName).count() - counterValuesBeforeTest.getOrDefault(counterName, 0D);
+            double actualIncrement = registry.counter(counterName).count()
+                    - counterValuesBeforeTest.getOrDefault(counterName, 0D);
             return expectedIncrement == actualIncrement;
         });
     }
@@ -69,8 +71,8 @@ public class MicrometerAssertionHelper {
     }
 
     /**
-     * Finds a timer from its name only, tags are ignored.
-     * If multiple timers match the name, the first one will be returned.
+     * Finds a timer from its name only, tags are ignored. If multiple timers match the name, the first one will be
+     * returned.
      */
     private Timer findTimerByNameOnly(String name) {
         return registry.find(name).timer();

@@ -90,58 +90,45 @@ public class EmailSender {
         LocalDateTime start = LocalDateTime.now(UTC);
 
         Action action = event.getAction();
-        return endpointResources.getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties())
-                .onItem().transformToUni(endpoint -> {
+        return endpointResources
+                .getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties()).onItem()
+                .transformToUni(endpoint -> {
                     Notification notification = new Notification(event, endpoint);
 
                     // TODO Add recipients processing from policies-notifications processing (failed recipients)
-                    //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)
+                    // by checking the NotificationHistory's details section (if missing payload - fix in
+                    // WebhookTypeProcessor)
 
                     // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
-                    //      also add metrics for these failures
+                    // also add metrics for these failures
 
-                    return webhookSender.doHttpRequest(
-                            notification,
-                            bopRequest,
-                            getPayload(user, action, subject, body)
-                    ).onItem().invoke(unused -> {
-                        processedCount.increment();
-                        processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
-                    });
+                    return webhookSender
+                            .doHttpRequest(notification, bopRequest, getPayload(user, action, subject, body)).onItem()
+                            .invoke(unused -> {
+                                processedCount.increment();
+                                processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
+                            });
                 }).onFailure().recoverWithNull();
     }
 
     private Uni<JsonObject> getPayload(User user, Action action, TemplateInstance subject, TemplateInstance body) {
-        return Uni.combine().all().unis(
-                emailTemplateService.renderTemplate(user, action, subject),
-                emailTemplateService.renderTemplate(user, action, body)
-        )
-                .asTuple()
-                .onFailure().invoke(templateEx -> {
+        return Uni.combine().all()
+                .unis(emailTemplateService.renderTemplate(user, action, subject),
+                        emailTemplateService.renderTemplate(user, action, body))
+                .asTuple().onFailure().invoke(templateEx -> {
                     logger.warnf(templateEx,
                             "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",
-                            action.getBundle(),
-                            action.getApplication(),
-                            action.getEventType()
-                    );
-                })
-                .onItem().transform(rendered -> {
+                            action.getBundle(), action.getApplication(), action.getEventType());
+                }).onItem().transform(rendered -> {
                     Emails emails = new Emails();
-                    emails.addEmail(buildEmail(
-                            user.getUsername(),
-                            rendered.getItem1(),
-                            rendered.getItem2()
-                    ));
+                    emails.addEmail(buildEmail(user.getUsername(), rendered.getItem1(), rendered.getItem2()));
                     return JsonObject.mapFrom(emails);
                 });
     }
 
     protected HttpRequest<Buffer> buildBOPHttpRequest() {
-        return bopWebClient
-                .postAbs(bopUrl)
-                .putHeader(BOP_APITOKEN_HEADER, bopApiToken)
-                .putHeader(BOP_CLIENT_ID_HEADER, bopClientId)
-                .putHeader(BOP_ENV_HEADER, bopEnv);
+        return bopWebClient.postAbs(bopUrl).putHeader(BOP_APITOKEN_HEADER, bopApiToken)
+                .putHeader(BOP_CLIENT_ID_HEADER, bopClientId).putHeader(BOP_ENV_HEADER, bopEnv);
     }
 
     protected Email buildEmail(String recipient, String subject, String body) {

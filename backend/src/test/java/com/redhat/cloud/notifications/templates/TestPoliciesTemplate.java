@@ -18,9 +18,7 @@ public class TestPoliciesTemplate {
     @Test
     public void testInstantEmailTitle() {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
-        String result = Policies.Templates.instantEmailTitle()
-                .data("action", action)
-                .render();
+        String result = Policies.Templates.instantEmailTitle().data("action", action).render();
 
         assertTrue(result.contains("2"), "Title contains the number of policies triggered");
         assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
@@ -29,15 +27,15 @@ public class TestPoliciesTemplate {
     @Test
     public void testInstantEmailBody() {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
-        String result = Policies.Templates.instantEmailBody()
-                .data("action", action)
-                .render();
+        String result = Policies.Templates.instantEmailBody().data("action", action).render();
 
         assertTrue(result.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
-        assertTrue(result.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
+        assertTrue(result.contains(TestHelpers.policyName1),
+                "Body should contain policy name" + TestHelpers.policyName1);
 
         assertTrue(result.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
-        assertTrue(result.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
+        assertTrue(result.contains(TestHelpers.policyName2),
+                "Body should contain policy name" + TestHelpers.policyName2);
 
         // Display name
         assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
@@ -72,9 +70,7 @@ public class TestPoliciesTemplate {
         payload.put("policies", policies);
         payload.put("unique_system_count", 3);
 
-        String result = Policies.Templates.dailyEmailTitle()
-                .data("action", Map.of("context", payload))
-                .render();
+        String result = Policies.Templates.dailyEmailTitle().data("action", Map.of("context", payload)).render();
 
         assertEquals("22 Apr 2021 - 3 policies triggered on 3 unique systems", result);
     }
@@ -99,9 +95,7 @@ public class TestPoliciesTemplate {
         payload.put("policies", policies);
         payload.put("unique_system_count", 1);
 
-        String result = Policies.Templates.dailyEmailTitle()
-                .data("action", Map.of("context", payload))
-                .render();
+        String result = Policies.Templates.dailyEmailTitle().data("action", Map.of("context", payload)).render();
 
         assertEquals("22 Apr 2021 - 1 policy triggered on 1 system", result);
     }
@@ -138,9 +132,7 @@ public class TestPoliciesTemplate {
         payload.put("policies", policies);
         payload.put("unique_system_count", 3);
 
-        String result = Policies.Templates.dailyEmailBody()
-                .data("action", Map.of("context", payload))
-                .render();
+        String result = Policies.Templates.dailyEmailBody().data("action", Map.of("context", payload)).render();
 
         assertTrue(result.contains("<b>3 policies</b> triggered on <b>3 unique systems</b>"));
     }
@@ -165,9 +157,7 @@ public class TestPoliciesTemplate {
         payload.put("policies", policies);
         payload.put("unique_system_count", 1);
 
-        String result = Policies.Templates.dailyEmailBody()
-                .data("action", Map.of("context", payload))
-                .render();
+        String result = Policies.Templates.dailyEmailBody().data("action", Map.of("context", payload)).render();
 
         assertTrue(result.contains("<b>1 policy</b> triggered on <b>1 system</b>"));
     }

@@ -19,8 +19,7 @@ import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Do some basic verification of the created
- * openapi.*.json files
+ * Do some basic verification of the created openapi.*.json files
  */
 @QuarkusTest
 public class OpenApiTest {
@@ -50,7 +49,7 @@ public class OpenApiTest {
     @Test
     public void validateOpenApi() throws Exception {
 
-        URL[] urls = {nUrl, iUrl, nUrl1, iUrl1, privateUrl, internalUrl};
+        URL[] urls = { nUrl, iUrl, nUrl1, iUrl1, privateUrl, internalUrl };
 
         for (URL url : urls) {
             OpenApi3 model = new OpenApi3Parser().parse(url, true);
@@ -65,12 +64,8 @@ public class OpenApiTest {
 
     @Test
     void testIgnoreUnknownWhat() {
-        given()
-                .accept("application/json")
-                .when()
-                .get(badUrl)
-                .then()
-                .statusCode(401); // We do credential checks before path check.
+        given().accept("application/json").when().get(badUrl).then().statusCode(401); // We do credential checks before
+                                                                                      // path check.
     }
 
     @Test

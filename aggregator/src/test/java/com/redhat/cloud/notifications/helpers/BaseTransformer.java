@@ -31,10 +31,11 @@ class BaseTransformer {
         message.put("event_type", action.getEventType());
         message.put("account_id", action.getAccountId());
         message.put("timestamp", action.getTimestamp().toString());
-        message.put("events", new JsonArray(action.getEvents().stream().map(event -> Map.of(
-                "metadata", new JsonObject(serializeAvroSchema(event.getMetadata())),
-                "payload", JsonObject.mapFrom(event.getPayload())
-        )).collect(Collectors.toList())));
+        message.put("events",
+                new JsonArray(action.getEvents().stream()
+                        .map(event -> Map.of("metadata", new JsonObject(serializeAvroSchema(event.getMetadata())),
+                                "payload", JsonObject.mapFrom(event.getPayload())))
+                        .collect(Collectors.toList())));
         message.put("context", action.getContext());
 
         return message;

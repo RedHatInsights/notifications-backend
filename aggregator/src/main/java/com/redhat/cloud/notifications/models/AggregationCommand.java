@@ -18,7 +18,8 @@ public class AggregationCommand {
     @NotNull
     private final EmailSubscriptionType subscriptionType;
 
-    public AggregationCommand(EmailAggregationKey aggregationKey, LocalDateTime start, LocalDateTime end, EmailSubscriptionType subscriptionType) {
+    public AggregationCommand(EmailAggregationKey aggregationKey, LocalDateTime start, LocalDateTime end,
+            EmailSubscriptionType subscriptionType) {
         this.aggregationKey = aggregationKey;
         this.start = start;
         this.end = end;

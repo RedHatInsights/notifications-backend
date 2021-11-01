@@ -42,19 +42,14 @@ public class AuthenticationTest {
         // Fetch endpoint without any Rbac details - errors cause 401 -- unauthorized
         given()
                 // Don't set the header at all
-                .when().get("/endpoints")
-                .then()
-                .statusCode(401);
+                .when().get("/endpoints").then().statusCode(401);
 
         clearRbacCache();
 
         // Fetch endpoint without any Rbac details - errors cause 401
         given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get("/endpoints")
-                .then()
-                .statusCode(401);
+                .header(identityHeader).when().get("/endpoints").then().statusCode(401);
 
         clearRbacCache();
 
@@ -63,25 +58,18 @@ public class AuthenticationTest {
 
         given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get("/endpoints")
-                .then()
-                .statusCode(403);
+                .header(identityHeader).when().get("/endpoints").then().statusCode(403);
 
         clearRbacCache();
 
         // Test bogus x-rh-identity header that fails Base64 decoding
-        given()
-                .header(new Header("x-rh-identity", "00000"))
-                .when().get("/endpoints")
-                .then()
-                .statusCode(401);
+        given().header(new Header("x-rh-identity", "00000")).when().get("/endpoints").then().statusCode(401);
     }
 
     private void clearRbacCache() {
         /*
-         * TODO Replace with real programmatic API call when it will be available. For now we have to rely on this "hack".
-         * See https://github.com/quarkusio/quarkus/pull/8631
+         * TODO Replace with real programmatic API call when it will be available. For now we have to rely on this
+         * "hack". See https://github.com/quarkusio/quarkus/pull/8631
          */
         ((CaffeineCache) cache).invalidateAll();
     }

@@ -8,8 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Transformer to create a Map from the outcome
- * of the actual component.
+ * Transformer to create a Map from the outcome of the actual component.
  */
 public class ResultTransformer implements Processor {
 

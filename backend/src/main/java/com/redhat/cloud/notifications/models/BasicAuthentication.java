@@ -6,7 +6,8 @@ public class BasicAuthentication {
     private String username;
     private String password;
 
-    public BasicAuthentication() { }
+    public BasicAuthentication() {
+    }
 
     public BasicAuthentication(String username, String password) {
         this.username = username;
@@ -28,8 +29,7 @@ public class BasicAuthentication {
         }
         if (o instanceof BasicAuthentication) {
             BasicAuthentication other = (BasicAuthentication) o;
-            return Objects.equals(username, other.username) &&
-                    Objects.equals(password, other.password);
+            return Objects.equals(username, other.username) && Objects.equals(password, other.password);
         }
         return false;
     }

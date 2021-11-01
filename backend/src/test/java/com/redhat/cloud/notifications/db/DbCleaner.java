@@ -27,20 +27,9 @@ import java.util.List;
 @ApplicationScoped
 public class DbCleaner {
 
-    private static final List<Class<?>> ENTITIES = List.of(
-            EmailAggregation.class,
-            EmailSubscription.class,
-            NotificationHistory.class,
-            Event.class,
-            BehaviorGroupAction.class,
-            WebhookProperties.class,
-            Endpoint.class,
-            EventTypeBehavior.class,
-            BehaviorGroup.class,
-            EventType.class,
-            Application.class,
-            Bundle.class
-    );
+    private static final List<Class<?>> ENTITIES = List.of(EmailAggregation.class, EmailSubscription.class,
+            NotificationHistory.class, Event.class, BehaviorGroupAction.class, WebhookProperties.class, Endpoint.class,
+            EventTypeBehavior.class, BehaviorGroup.class, EventType.class, Application.class, Bundle.class);
     private static final String DEFAULT_BUNDLE_NAME = "rhel";
     private static final String DEFAULT_BUNDLE_DISPLAY_NAME = "Red Hat Enterprise Linux";
     private static final String DEFAULT_APP_NAME = "policies";
@@ -67,36 +56,29 @@ public class DbCleaner {
      */
     public Uni<Void> clean() {
         return sessionFactory.withTransaction((session, transaction) -> {
-            return Multi.createFrom().iterable(ENTITIES)
-                    .onItem().transformToUniAndConcatenate(entity ->
-                            session.createQuery("DELETE FROM " + entity.getSimpleName()).executeUpdate()
-                    )
-                    .onItem().ignoreAsUni()
-                    .chain(() -> {
+            return Multi.createFrom().iterable(ENTITIES).onItem()
+                    .transformToUniAndConcatenate(
+                            entity -> session.createQuery("DELETE FROM " + entity.getSimpleName()).executeUpdate())
+                    .onItem().ignoreAsUni().chain(() -> {
                         Bundle bundle = new Bundle(DEFAULT_BUNDLE_NAME, DEFAULT_BUNDLE_DISPLAY_NAME);
                         return bundleResources.createBundle(bundle);
-                    })
-                    .onItem().transformToUni(bundle -> {
+                    }).onItem().transformToUni(bundle -> {
                         Application app = new Application();
                         app.setBundleId(bundle.getId());
                         app.setName(DEFAULT_APP_NAME);
                         app.setDisplayName(DEFAULT_APP_DISPLAY_NAME);
                         return appResources.createApp(app);
-                    })
-                    .onItem().transformToUni(app -> {
+                    }).onItem().transformToUni(app -> {
                         EventType eventType = new EventType();
                         eventType.setApplicationId(app.getId());
                         eventType.setName(DEFAULT_EVENT_TYPE_NAME);
                         eventType.setDisplayName(DEFAULT_EVENT_TYPE_DISPLAY_NAME);
                         eventType.setDescription(DEFAULT_EVENT_TYPE_DESCRIPTION);
                         return appResources.createEventType(eventType);
-                    })
-                    .chain(() -> {
+                    }).chain(() -> {
                         return session.createQuery("UPDATE CurrentStatus SET status = :status")
-                                .setParameter("status", Status.UP)
-                                .executeUpdate();
-                    })
-                    .replaceWith(Uni.createFrom().voidItem());
+                                .setParameter("status", Status.UP).executeUpdate();
+                    }).replaceWith(Uni.createFrom().voidItem());
         });
     }
 }

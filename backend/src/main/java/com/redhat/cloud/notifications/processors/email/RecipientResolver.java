@@ -24,9 +24,9 @@ public class RecipientResolver {
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
     public Uni<Set<User>> recipientUsers(String accountId, Set<Endpoint> endpoints, Set<String> subscribers) {
-        return Multi.createFrom().iterable(endpoints)
-                .onItem().transformToUni(e -> recipientUsers(accountId, e, subscribers))
-                .concatenate().collect().in(HashSet::new, Set::addAll);
+        return Multi.createFrom().iterable(endpoints).onItem()
+                .transformToUni(e -> recipientUsers(accountId, e, subscribers)).concatenate().collect()
+                .in(HashSet::new, Set::addAll);
     }
 
     private Uni<Set<User>> recipientUsers(String accountId, Endpoint endpoint, Set<String> subscribers) {
@@ -45,10 +45,8 @@ public class RecipientResolver {
             }
 
             return users.stream()
-                    .filter(user -> subscribers
-                            .stream()
-                            .anyMatch(subscriber -> subscriber.equalsIgnoreCase(user.getUsername()))
-                    )
+                    .filter(user -> subscribers.stream()
+                            .anyMatch(subscriber -> subscriber.equalsIgnoreCase(user.getUsername())))
                     .collect(Collectors.toSet());
         });
     }

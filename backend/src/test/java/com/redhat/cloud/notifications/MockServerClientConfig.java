@@ -34,29 +34,19 @@ public class MockServerClientConfig {
 
     public void addMockRbacAccess(String xRhIdentity, RbacAccess access) {
         this.mockServerClient
-                .when(request()
-                        .withPath("/api/rbac/v1/access/")
+                .when(request().withPath("/api/rbac/v1/access/")
                         .withQueryStringParameter("application", "notifications,integrations")
-                        .withHeader(RHIdentityAuthMechanism.IDENTITY_HEADER, xRhIdentity)
-                )
-                .respond(response()
-                        .withStatusCode(200)
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader(RHIdentityAuthMechanism.IDENTITY_HEADER, xRhIdentity))
+                .respond(response().withStatusCode(200).withHeader("Content-Type", "application/json")
                         .withBody(access.getPayload()));
     }
 
     public void addHttpTestEndpoint(HttpRequest request, HttpResponse response, boolean secure) {
-        this.mockServerClient
-                .withSecure(secure)
-                .when(request)
-                .respond(response);
+        this.mockServerClient.withSecure(secure).when(request).respond(response);
     }
 
     public void clearRbac() {
-        this.mockServerClient.clear(request()
-                .withPath("/api/rbac/v1/access/"),
-                ClearType.EXPECTATIONS
-        );
+        this.mockServerClient.clear(request().withPath("/api/rbac/v1/access/"), ClearType.EXPECTATIONS);
     }
 
     public void removeHttpTestEndpoint(HttpRequest request) {
@@ -68,7 +58,8 @@ public class MockServerClientConfig {
     }
 
     public String getRunningAddress() {
-        return String.format("%s:%d", mockServerClient.remoteAddress().getHostName(), mockServerClient.remoteAddress().getPort());
+        return String.format("%s:%d", mockServerClient.remoteAddress().getHostName(),
+                mockServerClient.remoteAddress().getPort());
     }
 
 }

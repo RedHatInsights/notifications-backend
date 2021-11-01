@@ -48,13 +48,8 @@ public class WebhookTest extends DbIsolatedTest {
     WebhookTypeProcessor webhookTypeProcessor;
 
     private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {
-        HttpRequest postReq = new HttpRequest()
-                .withPath("/foobar")
-                .withMethod("POST");
-        mockServerConfig.getMockServerClient()
-                .withSecure(false)
-                .when(postReq)
-                .respond(verifyEmptyRequest);
+        HttpRequest postReq = new HttpRequest().withPath("/foobar").withMethod("POST");
+        mockServerConfig.getMockServerClient().withSecure(false).when(postReq).respond(verifyEmptyRequest);
         return postReq;
     }
 
@@ -167,20 +162,11 @@ public class WebhookTest extends DbIsolatedTest {
         context.put("format", 1);
         context.put("here", "stuff");
 
-        webhookActionMessage.setEvents(
-                List.of(
-                        com.redhat.cloud.notifications.ingress.Event
-                                .newBuilder()
-                                .setMetadataBuilder(Metadata.newBuilder())
-                                .setPayload(payload1)
-                                .build(),
-                        com.redhat.cloud.notifications.ingress.Event
-                                .newBuilder()
-                                .setMetadataBuilder(Metadata.newBuilder())
-                                .setPayload(new HashMap())
-                                .build()
-                )
-        );
+        webhookActionMessage.setEvents(List.of(
+                com.redhat.cloud.notifications.ingress.Event.newBuilder().setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(payload1).build(),
+                com.redhat.cloud.notifications.ingress.Event.newBuilder().setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(new HashMap()).build()));
 
         webhookActionMessage.setContext(context);
 

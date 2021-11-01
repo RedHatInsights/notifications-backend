@@ -25,7 +25,7 @@ public interface RbacServer {
     @Produces("application/json")
     @CacheResult(cacheName = "rbac-cache")
     Uni<RbacRaw> getRbacInfo(@QueryParam("application") String application,
-                             @HeaderParam(RHIdentityAuthMechanism.IDENTITY_HEADER) String rhIdentity
+            @HeaderParam(RHIdentityAuthMechanism.IDENTITY_HEADER) String rhIdentity
 
     );
 }

@@ -6,10 +6,8 @@ import org.apache.camel.Processor;
 import org.apache.camel.util.json.JsonObject;
 import org.apache.camel.util.json.Jsoner;
 
-
 /**
- * We decode a CloudEvent, set the headers accordingly and
- * put the CE payload as the new body
+ * We decode a CloudEvent, set the headers accordingly and put the CE payload as the new body
  */
 public class CloudEventDecoder implements Processor {
 

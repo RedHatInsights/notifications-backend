@@ -34,7 +34,6 @@ class NotificationsAppTest {
         assertTrue(Pattern.matches(FILTER_REGEX, kubeMessage));
     }
 
-
     @Test
     void shouldMatchWhenHttpVersionIsTwo() {
         String inputWithHttpTwoZero = "127.0.0.1 - - 09/Jun/2021:16:07:07 +0200 \"GET /q/health HTTP/2.0\" 200 46 \"-\" \"Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0\"\n";

@@ -105,8 +105,7 @@ public class InternalService {
     @Produces(APPLICATION_JSON)
     public Uni<Bundle> getBundle(@PathParam("bundleId") UUID bundleId) {
         return sessionFactory.withSession(session -> {
-            return bundleResources.getBundle(bundleId)
-                    .onItem().ifNull().failWith(new NotFoundException());
+            return bundleResources.getBundle(bundleId).onItem().ifNull().failWith(new NotFoundException());
         });
     }
 
@@ -116,14 +115,13 @@ public class InternalService {
     @Produces(TEXT_PLAIN)
     public Uni<Response> updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
         return sessionFactory.withSession(session -> {
-            return bundleResources.updateBundle(bundleId, bundle)
-                    .onItem().transform(rowCount -> {
-                        if (rowCount == 0) {
-                            return Response.status(Response.Status.NOT_FOUND).build();
-                        } else {
-                            return Response.ok().build();
-                        }
-                    });
+            return bundleResources.updateBundle(bundleId, bundle).onItem().transform(rowCount -> {
+                if (rowCount == 0) {
+                    return Response.status(Response.Status.NOT_FOUND).build();
+                } else {
+                    return Response.ok().build();
+                }
+            });
         });
     }
 
@@ -160,8 +158,7 @@ public class InternalService {
     @Produces(APPLICATION_JSON)
     public Uni<Application> getApplication(@PathParam("appId") UUID appId) {
         return sessionFactory.withSession(session -> {
-            return appResources.getApplication(appId)
-                    .onItem().ifNull().failWith(new NotFoundException());
+            return appResources.getApplication(appId).onItem().ifNull().failWith(new NotFoundException());
         });
     }
 
@@ -171,14 +168,13 @@ public class InternalService {
     @Produces(TEXT_PLAIN)
     public Uni<Response> updateApplication(@PathParam("appId") UUID appId, @NotNull @Valid Application app) {
         return sessionFactory.withSession(session -> {
-            return appResources.updateApplication(appId, app)
-                    .onItem().transform(rowCount -> {
-                        if (rowCount == 0) {
-                            return Response.status(Response.Status.NOT_FOUND).build();
-                        } else {
-                            return Response.ok().build();
-                        }
-                    });
+            return appResources.updateApplication(appId, app).onItem().transform(rowCount -> {
+                if (rowCount == 0) {
+                    return Response.status(Response.Status.NOT_FOUND).build();
+                } else {
+                    return Response.ok().build();
+                }
+            });
         });
     }
 
@@ -214,16 +210,16 @@ public class InternalService {
     @Path("/eventTypes/{eventTypeId}")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    public Uni<Response> updateEventType(@PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
+    public Uni<Response> updateEventType(@PathParam("eventTypeId") UUID eventTypeId,
+            @NotNull @Valid EventType eventType) {
         return sessionFactory.withSession(session -> {
-            return appResources.updateEventType(eventTypeId, eventType)
-                    .onItem().transform(rowCount -> {
-                        if (rowCount == 0) {
-                            return Response.status(Response.Status.NOT_FOUND).build();
-                        } else {
-                            return Response.ok().build();
-                        }
-                    });
+            return appResources.updateEventType(eventTypeId, eventType).onItem().transform(rowCount -> {
+                if (rowCount == 0) {
+                    return Response.status(Response.Status.NOT_FOUND).build();
+                } else {
+                    return Response.ok().build();
+                }
+            });
         });
     }
 
@@ -249,37 +245,28 @@ public class InternalService {
     @Path("/templates/email/render")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @APIResponses(value = {
-            @APIResponse(responseCode = "200", content = {
-                    @Content(schema = @Schema(title = "RenderEmailTemplateResponseSuccess", implementation = RenderEmailTemplateResponse.Success.class))
-            }),
+    @APIResponses(value = { @APIResponse(responseCode = "200", content = {
+            @Content(schema = @Schema(title = "RenderEmailTemplateResponseSuccess", implementation = RenderEmailTemplateResponse.Success.class)) }),
             @APIResponse(responseCode = "400", content = {
-                    @Content(schema = @Schema(title = "RenderEmailTemplateResponseError", implementation = RenderEmailTemplateResponse.Error.class))
-            })
-    })
+                    @Content(schema = @Schema(title = "RenderEmailTemplateResponseError", implementation = RenderEmailTemplateResponse.Error.class)) }) })
     public Uni<Response> renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {
         User user = createInternalUser();
 
         String payload = renderEmailTemplateRequest.getPayload();
-        return actionParser.fromJsonString(payload)
-                .onItem().transformToUni(action -> Uni.combine().all().unis(
-                    emailTemplateService
-                            .compileTemplate(renderEmailTemplateRequest.getSubjectTemplate(), "subject")
-                            .onItem().transformToUni(templateInstance -> emailTemplateService.renderTemplate(
-                            user,
-                            action,
-                            templateInstance
-                    )),
-                    emailTemplateService
-                            .compileTemplate(renderEmailTemplateRequest.getBodyTemplate(), "body")
-                            .onItem().transformToUni(templateInstance -> emailTemplateService.renderTemplate(
-                            user,
-                            action,
-                            templateInstance
-                    ))
-                ).asTuple()
-        ).onItem().transform(titleAndBody -> Response.ok(new RenderEmailTemplateResponse.Success(titleAndBody.getItem1(), titleAndBody.getItem2())).build())
-        .onFailure().recoverWithItem(throwable -> Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(throwable.getMessage())).build());
+        return actionParser.fromJsonString(payload).onItem().transformToUni(action -> Uni.combine().all().unis(
+                emailTemplateService.compileTemplate(renderEmailTemplateRequest.getSubjectTemplate(), "subject")
+                        .onItem()
+                        .transformToUni(templateInstance -> emailTemplateService.renderTemplate(user, action,
+                                templateInstance)),
+                emailTemplateService.compileTemplate(renderEmailTemplateRequest.getBodyTemplate(), "body").onItem()
+                        .transformToUni(templateInstance -> emailTemplateService.renderTemplate(user, action,
+                                templateInstance)))
+                .asTuple()).onItem()
+                .transform(titleAndBody -> Response
+                        .ok(new RenderEmailTemplateResponse.Success(titleAndBody.getItem1(), titleAndBody.getItem2()))
+                        .build())
+                .onFailure().recoverWithItem(throwable -> Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new RenderEmailTemplateResponse.Error(throwable.getMessage())).build());
     }
 
     private User createInternalUser() {

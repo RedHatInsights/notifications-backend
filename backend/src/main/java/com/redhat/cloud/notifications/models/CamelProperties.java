@@ -30,7 +30,7 @@ public class CamelProperties extends EndpointProperties {
     private String secretToken; // TODO Should be optional
 
     // TODO we should basic-auth encode this when receiving and then store in encoded form only.
-    //      likewise for the webhooks case.
+    // likewise for the webhooks case.
     @Convert(converter = BasicAuthenticationConverter.class)
     @Schema(name = "basic_authentication")
     private BasicAuthentication basicAuthentication;
@@ -84,11 +84,8 @@ public class CamelProperties extends EndpointProperties {
 
     @Override
     public String toString() {
-        return "CamelProperties{" +
-                "subType=" + subType +
-                ", url='" + url + '\'' +
-                ", disableSSLVerification=" + disableSslVerification +
-                '}';
+        return "CamelProperties{" + "subType=" + subType + ", url='" + url + '\'' + ", disableSSLVerification="
+                + disableSslVerification + '}';
     }
 
     public void setExtras(Map<String, String> extras) {

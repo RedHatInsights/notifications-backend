@@ -97,12 +97,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Test empty tenant
         given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get("/endpoints")
-                .then()
-                .statusCode(200) // TODO Maybe 204 here instead?
-                .contentType(JSON)
-                .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
+                .header(identityHeader).when().get("/endpoints").then().statusCode(200) // TODO Maybe 204 here instead?
+                .contentType(JSON).body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
         // Add new endpoints
         WebhookProperties properties = new WebhookProperties();
@@ -118,16 +114,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        Response response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+        Response response = given().header(identityHeader).when().contentType(JSON).body(Json.encode(ep))
+                .post("/endpoints").then().statusCode(200).contentType(JSON).extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(Endpoint.class);
@@ -136,12 +124,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Fetch the list
         response = given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+                .header(identityHeader).when().get("/endpoints").then().statusCode(200).contentType(JSON).extract()
+                .response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
         List<Endpoint> endpoints = endpointPage.getData();
@@ -153,13 +137,9 @@ public class EndpointServiceTest extends DbIsolatedTest {
         assertTrue(responsePointSingle.getBoolean("enabled"));
 
         // Disable and fetch
-        String body =
-                given()
-                        .header(identityHeader)
-                        .when().delete("/endpoints/" + responsePoint.getString("id") + "/enable")
-                        .then()
-                        .statusCode(204)
-                        .extract().body().asString();
+        String body = given().header(identityHeader).when()
+                .delete("/endpoints/" + responsePoint.getString("id") + "/enable").then().statusCode(204).extract()
+                .body().asString();
         assertEquals(0, body.length());
 
         responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
@@ -167,58 +147,36 @@ public class EndpointServiceTest extends DbIsolatedTest {
         assertFalse(responsePointSingle.getBoolean("enabled"));
 
         // Enable and fetch
-        given()
-                .header(identityHeader)
-                .when().put("/endpoints/" + responsePoint.getString("id") + "/enable")
-                .then()
-                .statusCode(200)
-                .contentType(TEXT)
-                .contentType(ContentType.TEXT);
+        given().header(identityHeader).when().put("/endpoints/" + responsePoint.getString("id") + "/enable").then()
+                .statusCode(200).contentType(TEXT).contentType(ContentType.TEXT);
 
         responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertTrue(responsePointSingle.getBoolean("enabled"));
 
         // Delete
-        body =
-                given()
-                        .header(identityHeader)
-                        .when().delete("/endpoints/" + responsePoint.getString("id"))
-                        .then()
-                        .statusCode(204)
-                        .extract().body().asString();
+        body = given().header(identityHeader).when().delete("/endpoints/" + responsePoint.getString("id")).then()
+                .statusCode(204).extract().body().asString();
         assertEquals(0, body.length());
 
         // Fetch single
         given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get("/endpoints/" + responsePoint.getString("id"))
-                .then()
-                .statusCode(404)
+                .header(identityHeader).when().get("/endpoints/" + responsePoint.getString("id")).then().statusCode(404)
                 .contentType(JSON);
 
         // Fetch all, nothing should be left
         given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
+                .header(identityHeader).when().get("/endpoints").then().statusCode(200).contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
     }
 
     private JsonObject fetchSingle(String id, Header identityHeader) {
         Response response = given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get("/endpoints/" + id)
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .body("id", equalTo(id))
-                .extract().response();
+                .header(identityHeader).when().get("/endpoints/" + id).then().statusCode(200).contentType(JSON)
+                .body("id", equalTo(id)).extract().response();
 
         JsonObject endpoint = new JsonObject(response.getBody().asString());
         endpoint.mapTo(Endpoint.class);
@@ -241,15 +199,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         ep.setDescription("Destined to fail");
         ep.setEnabled(true);
 
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .contentType(JSON);
+        given().header(identityHeader).when().contentType(JSON).body(Json.encode(ep)).post("/endpoints").then()
+                .statusCode(400).contentType(JSON);
 
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
@@ -261,13 +212,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         ep.setProperties(properties);
         ep.setType(null);
 
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
+        given().header(identityHeader).when().contentType(JSON).body(Json.encode(ep)).post("/endpoints").then()
                 .statusCode(400);
 
         // Test with incorrect webhook properties
@@ -275,15 +220,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         ep.setName("endpoint with incorrect webhook properties");
         properties.setMethod(null);
 
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .contentType(JSON);
+        given().header(identityHeader).when().contentType(JSON).body(Json.encode(ep)).post("/endpoints").then()
+                .statusCode(400).contentType(JSON);
 
         // Type and attributes don't match
         properties.setMethod(HttpType.POST);
@@ -316,16 +254,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(cAttr);
 
-        String responseBody = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+        String responseBody = given().header(identityHeader).when().contentType(JSON).body(Json.encode(ep))
+                .post("/endpoints").then().statusCode(200).contentType(JSON).extract().asString();
 
         JsonObject responsePoint = new JsonObject(responseBody);
         responsePoint.mapTo(Endpoint.class);
@@ -340,7 +270,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
             assertEquals("ansible", properties.getString("sub_type"));
             JsonObject extrasObject = properties.getJsonObject("extras");
             assertNotNull(extrasObject);
-            String template  = extrasObject.getString("template");
+            String template = extrasObject.getString("template");
             assertEquals("11", template);
 
             JsonObject basicAuth = properties.getJsonObject("basic_authentication");
@@ -352,12 +282,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
 
         } finally {
 
-            given()
-                    .header(identityHeader)
-                    .when().delete("/endpoints/" + id)
-                    .then()
-                    .statusCode(204)
-                    .extract().body().asString();
+            given().header(identityHeader).when().delete("/endpoints/" + id).then().statusCode(204).extract().body()
+                    .asString();
         }
     }
 
@@ -373,12 +299,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Test empty tenant
         given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get("/endpoints")
-                .then()
-                .statusCode(200) // TODO Maybe 204 here instead?
-                .contentType(JSON)
-                .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
+                .header(identityHeader).when().get("/endpoints").then().statusCode(200) // TODO Maybe 204 here instead?
+                .contentType(JSON).body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
         // Add new endpoints
         WebhookProperties properties = new WebhookProperties();
@@ -394,16 +316,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        Response response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+        Response response = given().header(identityHeader).when().contentType(JSON).body(Json.encode(ep))
+                .post("/endpoints").then().statusCode(200).contentType(JSON).extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(Endpoint.class);
@@ -412,13 +326,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Fetch the list
         response = given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .contentType(JSON)
-                .when().get("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+                .header(identityHeader).contentType(JSON).when().get("/endpoints").then().statusCode(200)
+                .contentType(JSON).extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
         List<Endpoint> endpoints = endpointPage.getData();
@@ -436,23 +345,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
         attrSingle.put("secret_token", "not-so-secret-anymore");
 
         // Update without payload
-        given()
-                .header(identityHeader)
-                .contentType(JSON)
-                .when()
-                .put(String.format("/endpoints/%s", responsePointSingle.getString("id")))
-                .then()
-                .statusCode(400);
+        given().header(identityHeader).contentType(JSON).when()
+                .put(String.format("/endpoints/%s", responsePointSingle.getString("id"))).then().statusCode(400);
 
         // With payload
-        given()
-                .header(identityHeader)
-                .contentType(JSON)
-                .when()
-                .body(responsePointSingle.encode())
-                .put(String.format("/endpoints/%s", responsePointSingle.getString("id")))
-                .then()
-                .statusCode(200)
+        given().header(identityHeader).contentType(JSON).when().body(responsePointSingle.encode())
+                .put(String.format("/endpoints/%s", responsePointSingle.getString("id"))).then().statusCode(200)
                 .contentType(TEXT);
 
         // Fetch single one again to see that the updates were done
@@ -487,16 +385,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
             ep.setEnabled(true);
             ep.setProperties(properties);
 
-            Response response = given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(JSON)
-                    .body(Json.encode(ep))
-                    .post("/endpoints")
-                    .then()
-                    .statusCode(200)
-                    .contentType(JSON)
-                    .extract().response();
+            Response response = given().header(identityHeader).when().contentType(JSON).body(Json.encode(ep))
+                    .post("/endpoints").then().statusCode(200).contentType(JSON).extract().response();
 
             JsonObject responsePoint = new JsonObject(response.getBody().asString());
             responsePoint.mapTo(Endpoint.class);
@@ -506,14 +396,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Fetch the list, page 1
         Response response = given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .queryParam("limit", "10")
-                .queryParam("offset", "0")
-                .when().get("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+                .header(identityHeader).queryParam("limit", "10").queryParam("offset", "0").when().get("/endpoints")
+                .then().statusCode(200).contentType(JSON).extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
         List<Endpoint> endpoints = endpointPage.getData();
@@ -523,14 +407,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Fetch the list, page 3
         response = given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .queryParam("limit", "10")
-                .queryParam("pageNumber", "2")
-                .when().get("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+                .header(identityHeader).queryParam("limit", "10").queryParam("pageNumber", "2").when().get("/endpoints")
+                .then().statusCode(200).contentType(JSON).extract().response();
 
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
         endpoints = endpointPage.getData();
@@ -553,28 +431,15 @@ public class EndpointServiceTest extends DbIsolatedTest {
                     int disableCount = stats[1];
                     int webhookCount = stats[2];
 
-                    Response response = given()
-                            .header(identityHeader)
-                            .when()
-                            .get("/endpoints")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().response();
+                    Response response = given().header(identityHeader).when().get("/endpoints").then().statusCode(200)
+                            .contentType(JSON).extract().response();
 
                     EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
                     Endpoint[] endpoints = endpointPage.getData().toArray(new Endpoint[0]);
                     assertEquals(stats[0], endpoints.length);
 
-                    response = given()
-                            .header(identityHeader)
-                            .queryParam("sort_by", "enabled")
-                            .when()
-                            .get("/endpoints")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().response();
+                    response = given().header(identityHeader).queryParam("sort_by", "enabled").when().get("/endpoints")
+                            .then().statusCode(200).contentType(JSON).extract().response();
 
                     endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
                     endpoints = endpointPage.getData().toArray(new Endpoint[0]);
@@ -583,17 +448,9 @@ public class EndpointServiceTest extends DbIsolatedTest {
                     assertTrue(endpoints[disableCount].isEnabled());
                     assertTrue(endpoints[stats[0] - 1].isEnabled());
 
-                    response = given()
-                            .header(identityHeader)
-                            .queryParam("sort_by", "name:desc")
-                            .queryParam("limit", "50")
-                            .queryParam("offset", stats[0] - 20)
-                            .when()
-                            .get("/endpoints")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().response();
+                    response = given().header(identityHeader).queryParam("sort_by", "name:desc")
+                            .queryParam("limit", "50").queryParam("offset", stats[0] - 20).when().get("/endpoints")
+                            .then().statusCode(200).contentType(JSON).extract().response();
 
                     endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
                     endpoints = endpointPage.getData().toArray(new Endpoint[0]);
@@ -601,8 +458,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                     assertEquals("Endpoint 1", endpoints[endpoints.length - 1].getName());
                     assertEquals("Endpoint 10", endpoints[endpoints.length - 2].getName());
                     assertEquals("Endpoint 27", endpoints[0].getName());
-                }).get()
-        ).await().indefinitely();
+                }).get()).await().indefinitely();
     }
 
     @Test
@@ -629,16 +485,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        Response response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+        Response response = given().header(identityHeader).when().contentType(JSON).body(Json.encode(ep))
+                .post("/endpoints").then().statusCode(200).contentType(JSON).extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(Endpoint.class);
@@ -677,31 +525,17 @@ public class EndpointServiceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        String stringResponse = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .extract().asString();
+        String stringResponse = given().header(identityHeader).when().contentType(JSON).body(Json.encode(ep))
+                .post("/endpoints").then().statusCode(400).extract().asString();
 
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
         RequestEmailSubscriptionProperties requestProps = new RequestEmailSubscriptionProperties();
 
         // EmailSubscription can be fetch from the properties
-        Response response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(requestProps))
-                .post("/endpoints/system/email_subscription")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+        Response response = given().header(identityHeader).when().contentType(JSON).body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription").then().statusCode(200).contentType(JSON).extract()
+                .response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(Endpoint.class);
@@ -713,16 +547,9 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Calling again yields the same endpoint id
         String defaultEndpointId = responsePoint.getString("id");
 
-        response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(requestProps))
-                .post("/endpoints/system/email_subscription")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+        response = given().header(identityHeader).when().contentType(JSON).body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription").then().statusCode(200).contentType(JSON).extract()
+                .response();
 
         responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(Endpoint.class);
@@ -734,72 +561,40 @@ public class EndpointServiceTest extends DbIsolatedTest {
 
         requestProps.setOnlyAdmins(true);
 
-        response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(requestProps))
-                .post("/endpoints/system/email_subscription")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+        response = given().header(identityHeader).when().contentType(JSON).body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription").then().statusCode(200).contentType(JSON).extract()
+                .response();
 
         responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(Endpoint.class);
         assertFalse(endpointIds.contains(responsePoint.getString("id")));
         endpointIds.add(responsePoint.getString("id"));
 
-        response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(requestProps))
-                .post("/endpoints/system/email_subscription")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+        response = given().header(identityHeader).when().contentType(JSON).body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription").then().statusCode(200).contentType(JSON).extract()
+                .response();
 
         responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(Endpoint.class);
         assertTrue(endpointIds.contains(responsePoint.getString("id")));
 
         // It is not possible to delete it
-        stringResponse = given()
-                .header(identityHeader)
-                .when().delete("/endpoints/" + defaultEndpointId)
-                .then()
-                .statusCode(400)
-                .extract().asString();
+        stringResponse = given().header(identityHeader).when().delete("/endpoints/" + defaultEndpointId).then()
+                .statusCode(400).extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
         // It is not possible to disable or enable it
-        stringResponse = given()
-                .header(identityHeader)
-                .when().delete("/endpoints/" + defaultEndpointId + "/enable")
-                .then()
-                .statusCode(400)
-                .extract().asString();
+        stringResponse = given().header(identityHeader).when().delete("/endpoints/" + defaultEndpointId + "/enable")
+                .then().statusCode(400).extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
-        stringResponse = given()
-                .header(identityHeader)
-                .when().put("/endpoints/" + defaultEndpointId + "/enable")
-                .then()
-                .statusCode(400)
-                .extract().asString();
+        stringResponse = given().header(identityHeader).when().put("/endpoints/" + defaultEndpointId + "/enable").then()
+                .statusCode(400).extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
         // It is not possible to update it
-        stringResponse = given()
-                .header(identityHeader)
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .when().put("/endpoints/" + defaultEndpointId)
-                .then()
-                .statusCode(400)
-                .extract().asString();
+        stringResponse = given().header(identityHeader).contentType(JSON).body(Json.encode(ep)).when()
+                .put("/endpoints/" + defaultEndpointId).then().statusCode(400).extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
         // It is not possible to update it to other type
@@ -812,14 +607,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         webhookProperties.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
         ep.setProperties(webhookProperties);
 
-        stringResponse = given()
-                .header(identityHeader)
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .when().put("/endpoints/" + defaultEndpointId)
-                .then()
-                .statusCode(400)
-                .extract().asString();
+        stringResponse = given().header(identityHeader).contentType(JSON).body(Json.encode(ep)).when()
+                .put("/endpoints/" + defaultEndpointId).then().statusCode(400).extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
     }
 
@@ -831,180 +620,137 @@ public class EndpointServiceTest extends DbIsolatedTest {
         Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
-                .chain(runOnWorkerThread(() -> {
-                    // invalid bundle/application combination gives a 404
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .delete("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant")
-                            .then().statusCode(404)
-                            .contentType(JSON);
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant")
-                            .then().statusCode(404)
-                            .contentType(JSON);
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .put("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant")
-                            .then().statusCode(404)
-                            .contentType(JSON);
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant")
-                            .then().statusCode(404)
-                            .contentType(JSON);
+        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes().chain(runOnWorkerThread(() -> {
+            // invalid bundle/application combination gives a 404
+            given().header(identityHeader).when()
+                    .delete("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant").then().statusCode(404)
+                    .contentType(JSON);
+            given().header(identityHeader).when()
+                    .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant").then()
+                    .statusCode(404).contentType(JSON);
+            given().header(identityHeader).when()
+                    .put("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant").then().statusCode(404)
+                    .contentType(JSON);
+            given().header(identityHeader).when()
+                    .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant").then()
+                    .statusCode(404).contentType(JSON);
 
-                    // Unknown bundle/apps give 404
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .delete("/endpoints/email/subscription/idontexist/meneither/instant")
-                            .then().statusCode(404)
-                            .contentType(JSON);
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .put("/endpoints/email/subscription/idontexist/meneither/instant")
-                            .then().statusCode(404)
-                            .contentType(JSON);
+            // Unknown bundle/apps give 404
+            given().header(identityHeader).when().delete("/endpoints/email/subscription/idontexist/meneither/instant")
+                    .then().statusCode(404).contentType(JSON);
+            given().header(identityHeader).when().put("/endpoints/email/subscription/idontexist/meneither/instant")
+                    .then().statusCode(404).contentType(JSON);
 
-                    // Disable everything as preparation
-                    // rhel/policies instant and daily
-                    // TEST_BUNDLE_NAME/TEST_APP_NAME instant and daily
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .delete("/endpoints/email/subscription/rhel/policies/instant")
-                            .then().statusCode(200)
-                            .contentType(JSON);
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/instant")
-                            .then().statusCode(200)
-                            .contentType(JSON);
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .delete("/endpoints/email/subscription/rhel/policies/daily")
-                            .then().statusCode(200)
-                            .contentType(JSON);
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/daily")
-                            .then().statusCode(200)
-                            .contentType(JSON);
-                }))
-                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+            // Disable everything as preparation
+            // rhel/policies instant and daily
+            // TEST_BUNDLE_NAME/TEST_APP_NAME instant and daily
+            given().header(identityHeader).when().delete("/endpoints/email/subscription/rhel/policies/instant").then()
+                    .statusCode(200).contentType(JSON);
+            given().header(identityHeader).when()
+                    .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/instant")
+                    .then().statusCode(200).contentType(JSON);
+            given().header(identityHeader).when().delete("/endpoints/email/subscription/rhel/policies/daily").then()
+                    .statusCode(200).contentType(JSON);
+            given().header(identityHeader).when()
+                    .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/daily").then()
+                    .statusCode(200).contentType(JSON);
+        }))
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop
+                // thread for Hibernate Reactive.
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
                 .invoke(Assertions::assertNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
-                .invoke(Assertions::assertNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
-                .invoke(Assertions::assertNull)
-                .chain(runOnWorkerThread(() -> {
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME,
+                        TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNull).chain(() -> subscriptionResources.getEmailSubscription(tenant, username,
+                        TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull).chain(runOnWorkerThread(() -> {
                     // Enable instant on rhel.policies
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .put("/endpoints/email/subscription/rhel/policies/instant")
+                    given().header(identityHeader).when().put("/endpoints/email/subscription/rhel/policies/instant")
                             .then().statusCode(200).contentType(JSON);
                 }))
-                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop
+                // thread for Hibernate Reactive.
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNotNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
                 .invoke(Assertions::assertNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
-                .invoke(Assertions::assertNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
-                .invoke(Assertions::assertNull)
-                .chain(runOnWorkerThread(() -> {
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME,
+                        TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNull).chain(() -> subscriptionResources.getEmailSubscription(tenant, username,
+                        TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull).chain(runOnWorkerThread(() -> {
                     // Enable daily on rhel.policies
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .put("/endpoints/email/subscription/rhel/policies/daily")
+                    given().header(identityHeader).when().put("/endpoints/email/subscription/rhel/policies/daily")
                             .then().statusCode(200).contentType(JSON);
                 }))
-                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop
+                // thread for Hibernate Reactive.
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNotNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
                 .invoke(Assertions::assertNotNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
-                .invoke(Assertions::assertNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
-                .invoke(Assertions::assertNull)
-                .chain(runOnWorkerThread(() -> {
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME,
+                        TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNull).chain(() -> subscriptionResources.getEmailSubscription(tenant, username,
+                        TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull).chain(runOnWorkerThread(() -> {
                     // Enable instant on TEST_BUNDLE_NAME.TEST_APP_NAME
-                    given()
-                            .header(identityHeader)
-                            .when()
+                    given().header(identityHeader).when()
                             .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/instant")
                             .then().statusCode(200).contentType(JSON);
                 }))
-                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop
+                // thread for Hibernate Reactive.
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNotNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
                 .invoke(Assertions::assertNotNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
-                .invoke(Assertions::assertNotNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
-                .invoke(Assertions::assertNull)
-                .chain(runOnWorkerThread(() -> {
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME,
+                        TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNotNull).chain(() -> subscriptionResources.getEmailSubscription(tenant,
+                        username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull).chain(runOnWorkerThread(() -> {
                     // Disable daily on rhel.policies
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .delete("/endpoints/email/subscription/rhel/policies/daily")
+                    given().header(identityHeader).when().delete("/endpoints/email/subscription/rhel/policies/daily")
                             .then().statusCode(200).contentType(JSON);
                 }))
-                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop
+                // thread for Hibernate Reactive.
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNotNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
                 .invoke(Assertions::assertNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
-                .invoke(Assertions::assertNotNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
-                .invoke(Assertions::assertNull)
-                .chain(runOnWorkerThread(() -> {
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME,
+                        TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNotNull).chain(() -> subscriptionResources.getEmailSubscription(tenant,
+                        username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull).chain(runOnWorkerThread(() -> {
                     // Disable instant on rhel.policies
-                    given()
-                            .header(identityHeader)
-                            .when()
-                            .delete("/endpoints/email/subscription/rhel/policies/instant")
+                    given().header(identityHeader).when().delete("/endpoints/email/subscription/rhel/policies/instant")
                             .then().statusCode(200).contentType(JSON);
                 }))
-                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop
+                // thread for Hibernate Reactive.
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
                 .invoke(Assertions::assertNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT))
-                .invoke(Assertions::assertNotNull)
-                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
-                .invoke(Assertions::assertNull)
-        ).await().indefinitely();
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME,
+                        TEST_APP_NAME, INSTANT))
+                .invoke(Assertions::assertNotNull).chain(() -> subscriptionResources.getEmailSubscription(tenant,
+                        username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
+                .invoke(Assertions::assertNull)).await().indefinitely();
     }
 
-    //    @Test
+    // @Test
     void testConnectionCount() {
         String tenant = "count";
         String userName = "user";
@@ -1016,12 +762,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
         // Test empty tenant
         given()
                 // Set header to x-rh-identity
-                .header(identityHeader)
-                .when().get("/endpoints")
-                .then()
-                .statusCode(200) // TODO Maybe 204 here instead?
-                .contentType(JSON)
-                .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
+                .header(identityHeader).when().get("/endpoints").then().statusCode(200) // TODO Maybe 204 here instead?
+                .contentType(JSON).body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
         for (int i = 0; i < 200; i++) {
             // Add new endpoints
@@ -1038,16 +780,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
             ep.setEnabled(true);
             ep.setProperties(properties);
 
-            Response response = given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(JSON)
-                    .body(Json.encode(ep))
-                    .post("/endpoints")
-                    .then()
-                    .statusCode(200)
-                    .contentType(JSON)
-                    .extract().response();
+            Response response = given().header(identityHeader).when().contentType(JSON).body(Json.encode(ep))
+                    .post("/endpoints").then().statusCode(200).contentType(JSON).extract().response();
 
             JsonObject responsePoint = new JsonObject(response.getBody().asString());
             responsePoint.mapTo(Endpoint.class);
@@ -1056,20 +790,14 @@ public class EndpointServiceTest extends DbIsolatedTest {
             // Fetch the list
             given()
                     // Set header to x-rh-identity
-                    .header(identityHeader)
-                    .when().get("/endpoints")
-                    .then()
-                    .statusCode(200)
-                    .contentType(JSON)
-                    .extract().response();
+                    .header(identityHeader).when().get("/endpoints").then().statusCode(200).contentType(JSON).extract()
+                    .response();
         }
     }
 
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
         assertTrue(message.contains(String.format(
-                "Is not possible to create or alter endpoint with type %s, check API for alternatives",
-                endpointType
-        )));
+                "Is not possible to create or alter endpoint with type %s, check API for alternatives", endpointType)));
     }
 
 }

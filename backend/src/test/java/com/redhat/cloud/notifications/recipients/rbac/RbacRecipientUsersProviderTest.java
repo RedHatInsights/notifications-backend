@@ -46,14 +46,12 @@ public class RbacRecipientUsersProviderTest {
         mockGetGroup(defaultGroup);
         mockGetUsers(elements, false);
 
-        rbacRecipientUsersProvider.getGroupUsers(accountId, false, defaultGroup.getUuid())
-                .invoke(users -> {
-                    assertEquals(elements, users.size());
-                    for (int i = 0; i < elements; ++i) {
-                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-                    }
-                })
-                .await().indefinitely();
+        rbacRecipientUsersProvider.getGroupUsers(accountId, false, defaultGroup.getUuid()).invoke(users -> {
+            assertEquals(elements, users.size());
+            for (int i = 0; i < elements; ++i) {
+                assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+            }
+        }).await().indefinitely();
     }
 
     @Test
@@ -62,23 +60,18 @@ public class RbacRecipientUsersProviderTest {
         int updatedSize = 1323;
         mockGetUsers(initialSize, false);
 
-        rbacRecipientUsersProvider.getUsers(accountId, false)
-                .invoke(users -> {
-                    assertEquals(initialSize, users.size());
-                    for (int i = 0; i < initialSize; ++i) {
-                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-                    }
-                    mockGetUsers(updatedSize, false);
-                })
-                .chain(() -> rbacRecipientUsersProvider.getUsers(accountId, false))
-                .invoke(users -> {
-                    // Should still have the initial size because of the cache
-                    assertEquals(initialSize, users.size());
-                    clearCached();
-                })
-                .chain(() -> rbacRecipientUsersProvider.getUsers(accountId, false))
-                .invoke(users -> assertEquals(updatedSize, users.size()))
-                .await().indefinitely();
+        rbacRecipientUsersProvider.getUsers(accountId, false).invoke(users -> {
+            assertEquals(initialSize, users.size());
+            for (int i = 0; i < initialSize; ++i) {
+                assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+            }
+            mockGetUsers(updatedSize, false);
+        }).chain(() -> rbacRecipientUsersProvider.getUsers(accountId, false)).invoke(users -> {
+            // Should still have the initial size because of the cache
+            assertEquals(initialSize, users.size());
+            clearCached();
+        }).chain(() -> rbacRecipientUsersProvider.getUsers(accountId, false))
+                .invoke(users -> assertEquals(updatedSize, users.size())).await().indefinitely();
     }
 
     @Test
@@ -93,66 +86,46 @@ public class RbacRecipientUsersProviderTest {
         mockGetGroup(group);
         mockGetGroupUsers(initialSize, group.getUuid());
 
-        rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid())
-                .invoke(users -> {
-                    assertEquals(initialSize, users.size());
-                    for (int i = 0; i < initialSize; ++i) {
-                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-                    }
-                    mockGetGroupUsers(updatedSize, group.getUuid());
-                })
-                .chain(() -> rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()))
-                .invoke(users -> {
-                    // Should still have the initial size because of the cache
-                    assertEquals(initialSize, users.size());
-                    clearCached();
-                })
-                .chain(() -> rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()))
-                .invoke(users -> assertEquals(updatedSize, users.size()))
-                .await().indefinitely();
+        rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()).invoke(users -> {
+            assertEquals(initialSize, users.size());
+            for (int i = 0; i < initialSize; ++i) {
+                assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+            }
+            mockGetGroupUsers(updatedSize, group.getUuid());
+        }).chain(() -> rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid())).invoke(users -> {
+            // Should still have the initial size because of the cache
+            assertEquals(initialSize, users.size());
+            clearCached();
+        }).chain(() -> rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()))
+                .invoke(users -> assertEquals(updatedSize, users.size())).await().indefinitely();
     }
 
     private void mockGetUsers(int elements, boolean adminsOnly) {
         MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
-        Mockito.when(rbacServiceToService.getUsers(
-                Mockito.eq(accountId),
-                Mockito.eq(adminsOnly),
-                Mockito.anyInt(),
-                Mockito.anyInt()
-        )).then(invocationOnMock -> answer.mockedUserAnswer(
-                invocationOnMock.getArgument(2, Integer.class),
-                invocationOnMock.getArgument(3, Integer.class),
-                invocationOnMock.getArgument(1, Boolean.class)
-        ));
+        Mockito.when(rbacServiceToService.getUsers(Mockito.eq(accountId), Mockito.eq(adminsOnly), Mockito.anyInt(),
+                Mockito.anyInt()))
+                .then(invocationOnMock -> answer.mockedUserAnswer(invocationOnMock.getArgument(2, Integer.class),
+                        invocationOnMock.getArgument(3, Integer.class),
+                        invocationOnMock.getArgument(1, Boolean.class)));
     }
 
     private void mockGetGroup(RbacGroup group) {
-        Mockito.when(rbacServiceToService.getGroup(
-                Mockito.eq(accountId),
-                Mockito.eq(group.getUuid())
-        )).thenReturn(Uni.createFrom().item(group));
+        Mockito.when(rbacServiceToService.getGroup(Mockito.eq(accountId), Mockito.eq(group.getUuid())))
+                .thenReturn(Uni.createFrom().item(group));
     }
 
     private void mockGetGroupUsers(int elements, UUID groupId) {
-        Mockito.when(rbacServiceToService.getGroupUsers(
-                Mockito.eq(accountId),
-                Mockito.eq(groupId),
-                Mockito.anyInt(),
-                Mockito.anyInt()
-        )).then(invocationOnMock -> {
-            MockedUserAnswer answer = new MockedUserAnswer(elements, false);
-            return answer.mockedUserAnswer(
-                    invocationOnMock.getArgument(2, Integer.class),
-                    invocationOnMock.getArgument(3, Integer.class),
-                    false
-            );
-        });
+        Mockito.when(rbacServiceToService.getGroupUsers(Mockito.eq(accountId), Mockito.eq(groupId), Mockito.anyInt(),
+                Mockito.anyInt())).then(invocationOnMock -> {
+                    MockedUserAnswer answer = new MockedUserAnswer(elements, false);
+                    return answer.mockedUserAnswer(invocationOnMock.getArgument(2, Integer.class),
+                            invocationOnMock.getArgument(3, Integer.class), false);
+                });
     }
 
     /*
      * This would normally happen after a certain duration fixed in application.properties with the
-     * quarkus.cache.caffeine.rbac-recipient-users-provider-get-group-users.expire-after-write
-     * and
+     * quarkus.cache.caffeine.rbac-recipient-users-provider-get-group-users.expire-after-write and
      * quarkus.cache.caffeine.rbac-recipient-users-provider-get-users.expire-after-write key.
      */
     @CacheInvalidateAll(cacheName = "rbac-recipient-users-provider-get-users")

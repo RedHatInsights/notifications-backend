@@ -119,7 +119,8 @@ public class LifecycleITest extends DbIsolatedTest {
         addBehaviorGroupActions(identityHeader, behaviorGroupId1, endpointId1, endpointId2);
         addBehaviorGroupActions(identityHeader, behaviorGroupId2, endpointId3);
 
-        // Let's push a first message! It should not trigger any webhook call since we didn't link the event type with any behavior group.
+        // Let's push a first message! It should not trigger any webhook call since we didn't link the event type with
+        // any behavior group.
         pushMessage(0);
 
         // Now we'll link the event type with one behavior group.
@@ -147,7 +148,8 @@ public class LifecycleITest extends DbIsolatedTest {
 
         /*
          * Let's change the behavior group actions configuration by adding an action to the second behavior group.
-         * Endpoint 2 is now an action for both behavior groups, but it should not be notified twice on each message because we don't want duplicate notifications.
+         * Endpoint 2 is now an action for both behavior groups, but it should not be notified twice on each message
+         * because we don't want duplicate notifications.
          */
         addBehaviorGroupActions(identityHeader, behaviorGroupId2, endpointId3, endpointId2);
 
@@ -160,8 +162,8 @@ public class LifecycleITest extends DbIsolatedTest {
         retry(() -> checkEndpointHistory(identityHeader, endpointId3, 2, false, 400));
 
         /*
-         * What happens if we unlink the event type from the behavior groups?
-         * Pushing a new message should not trigger any webhook call.
+         * What happens if we unlink the event type from the behavior groups? Pushing a new message should not trigger
+         * any webhook call.
          */
         updateEventTypeBehaviors(identityHeader, eventTypeId);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId);
@@ -173,8 +175,8 @@ public class LifecycleITest extends DbIsolatedTest {
         retry(() -> checkEndpointHistory(identityHeader, endpointId3, 2, false, 400));
 
         /*
-         * We'll finish with a bundle removal.
-         * Why would we do that here? I don't really know, it was there before the big test refactor... :)
+         * We'll finish with a bundle removal. Why would we do that here? I don't really know, it was there before the
+         * big test refactor... :)
          */
         deleteBundle(bundleId);
     }
@@ -182,16 +184,8 @@ public class LifecycleITest extends DbIsolatedTest {
     private String createBundle() {
         Bundle bundle = new Bundle(BUNDLE_NAME, "A bundle");
 
-        String responseBody = given()
-                .basePath(INTERNAL_BASE_PATH)
-                .contentType(JSON)
-                .body(Json.encode(bundle))
-                .when()
-                .post("/internal/bundles")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().asString();
+        String responseBody = given().basePath(INTERNAL_BASE_PATH).contentType(JSON).body(Json.encode(bundle)).when()
+                .post("/internal/bundles").then().statusCode(200).contentType(JSON).extract().body().asString();
 
         JsonObject jsonBundle = new JsonObject(responseBody);
         jsonBundle.mapTo(Bundle.class);
@@ -209,16 +203,8 @@ public class LifecycleITest extends DbIsolatedTest {
         app.setName(APP_NAME);
         app.setDisplayName("The best app in the life");
 
-        String responseBody = given()
-                .when()
-                .basePath(INTERNAL_BASE_PATH)
-                .contentType(JSON)
-                .body(Json.encode(app))
-                .post("/internal/applications")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().asString();
+        String responseBody = given().when().basePath(INTERNAL_BASE_PATH).contentType(JSON).body(Json.encode(app))
+                .post("/internal/applications").then().statusCode(200).contentType(JSON).extract().body().asString();
 
         JsonObject jsonApp = new JsonObject(responseBody);
         jsonApp.mapTo(Application.class);
@@ -238,16 +224,8 @@ public class LifecycleITest extends DbIsolatedTest {
         eventType.setDisplayName("Policies will take care of the rules");
         eventType.setDescription("Policies is super cool, you should use it");
 
-        String responseBody = given()
-                .when()
-                .basePath(INTERNAL_BASE_PATH)
-                .contentType(JSON)
-                .body(Json.encode(eventType))
-                .post("/internal/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().asString();
+        String responseBody = given().when().basePath(INTERNAL_BASE_PATH).contentType(JSON).body(Json.encode(eventType))
+                .post("/internal/eventTypes").then().statusCode(200).contentType(JSON).extract().body().asString();
 
         JsonObject jsonEventType = new JsonObject(responseBody);
         jsonEventType.mapTo(EventType.class);
@@ -260,15 +238,8 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private void checkAllEventTypes(Header identityHeader) {
-        String responseBody = given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
-                .when()
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().asString();
+        String responseBody = given().basePath(API_NOTIFICATIONS_V_1_0).header(identityHeader).when()
+                .get("/notifications/eventTypes").then().statusCode(200).contentType(JSON).extract().body().asString();
 
         JsonArray jsonEventTypes = new JsonArray(responseBody);
         assertEquals(2, jsonEventTypes.size()); // One from the current test, one from the default DB records.
@@ -279,17 +250,9 @@ public class LifecycleITest extends DbIsolatedTest {
         behaviorGroup.setDisplayName("Behavior group");
         behaviorGroup.setBundleId(UUID.fromString(bundleId));
 
-        String responseBody = given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
-                .contentType(JSON)
-                .body(Json.encode(behaviorGroup))
-                .when()
-                .post("/notifications/behaviorGroups")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().asString();
+        String responseBody = given().basePath(API_NOTIFICATIONS_V_1_0).header(identityHeader).contentType(JSON)
+                .body(Json.encode(behaviorGroup)).when().post("/notifications/behaviorGroups").then().statusCode(200)
+                .contentType(JSON).extract().body().asString();
 
         JsonObject jsonBehaviorGroup = new JsonObject(responseBody);
         jsonBehaviorGroup.mapTo(BehaviorGroup.class);
@@ -316,16 +279,8 @@ public class LifecycleITest extends DbIsolatedTest {
         endpoint.setEnabled(true);
         endpoint.setProperties(properties);
 
-        String responseBody = given()
-                .basePath(API_INTEGRATIONS_V_1_0)
-                .header(identityHeader)
-                .contentType(JSON)
-                .body(Json.encode(endpoint))
-                .when()
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
+        String responseBody = given().basePath(API_INTEGRATIONS_V_1_0).header(identityHeader).contentType(JSON)
+                .body(Json.encode(endpoint)).when().post("/endpoints").then().statusCode(200).contentType(JSON)
                 .extract().body().asString();
 
         JsonObject jsonEndpoint = new JsonObject(responseBody);
@@ -340,7 +295,8 @@ public class LifecycleITest extends DbIsolatedTest {
         JsonObject jsonWebhookProperties = jsonEndpoint.getJsonObject("properties");
         jsonWebhookProperties.mapTo(WebhookProperties.class);
         assertEquals(properties.getMethod().name(), jsonWebhookProperties.getString("method"));
-        assertEquals(properties.getDisableSslVerification(), jsonWebhookProperties.getBoolean("disable_ssl_verification"));
+        assertEquals(properties.getDisableSslVerification(),
+                jsonWebhookProperties.getBoolean("disable_ssl_verification"));
         if (properties.getSecretToken() != null) {
             assertEquals(properties.getSecretToken(), jsonWebhookProperties.getString("secret_token"));
         }
@@ -350,15 +306,8 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private void checkEndpoints(Header identityHeader, String... expectedEndpointIds) {
-        String responseBody = given()
-                .basePath(API_INTEGRATIONS_V_1_0)
-                .header(identityHeader)
-                .when()
-                .get("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().asString();
+        String responseBody = given().basePath(API_INTEGRATIONS_V_1_0).header(identityHeader).when().get("/endpoints")
+                .then().statusCode(200).contentType(JSON).extract().body().asString();
 
         JsonArray jsonEndpoints = new JsonObject(responseBody).getJsonArray("data");
         assertEquals(expectedEndpointIds.length, jsonEndpoints.size());
@@ -373,25 +322,19 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private void addBehaviorGroupActions(Header identityHeader, String behaviorGroupId, String... endpointIds) {
-        given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
-                .contentType(JSON)
-                .pathParam("behaviorGroupId", behaviorGroupId)
-                .body(Json.encode(Arrays.asList(endpointIds)))
-                .when()
-                .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
-                .then()
-                .statusCode(200)
+        given().basePath(API_NOTIFICATIONS_V_1_0).header(identityHeader).contentType(JSON)
+                .pathParam("behaviorGroupId", behaviorGroupId).body(Json.encode(Arrays.asList(endpointIds))).when()
+                .put("/notifications/behaviorGroups/{behaviorGroupId}/actions").then().statusCode(200)
                 .contentType(TEXT);
     }
 
     /*
-     * Pushes a single message to the 'ingress' channel.
-     * Depending on the event type, behavior groups and endpoints configuration, it will trigger zero or more webhook calls.
+     * Pushes a single message to the 'ingress' channel. Depending on the event type, behavior groups and endpoints
+     * configuration, it will trigger zero or more webhook calls.
      */
     private void pushMessage(int expectedWebhookCalls) throws IOException, InterruptedException {
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME,
+                PROCESSED_ENDPOINTS_COUNTER_NAME);
 
         CountDownLatch requestsCounter = new CountDownLatch(expectedWebhookCalls);
         HttpRequest expectedRequestPattern = null;
@@ -405,7 +348,8 @@ public class LifecycleITest extends DbIsolatedTest {
         if (expectedWebhookCalls > 0) {
             if (!requestsCounter.await(30, TimeUnit.SECONDS)) {
                 fail("HttpServer never received the requests");
-                HttpRequest[] httpRequests = mockServerConfig.getMockServerClient().retrieveRecordedRequests(expectedRequestPattern);
+                HttpRequest[] httpRequests = mockServerConfig.getMockServerClient()
+                        .retrieveRecordedRequests(expectedRequestPattern);
                 assertEquals(2, httpRequests.length);
                 // Verify calls were correct, sort first?
             }
@@ -426,64 +370,40 @@ public class LifecycleITest extends DbIsolatedTest {
         action.setEventType(EVENT_TYPE_NAME);
         action.setTimestamp(LocalDateTime.now());
         action.setContext(Map.of());
-        action.setEvents(List.of(
-                Event.newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of())
-                        .build()
-        ));
+        action.setEvents(
+                List.of(Event.newBuilder().setMetadataBuilder(Metadata.newBuilder()).setPayload(Map.of()).build()));
 
         String serializedAction = serializeAction(action);
         inMemoryConnector.source("ingress").send(serializedAction);
     }
 
     private HttpRequest setupWebhookMock(CountDownLatch requestsCounter) {
-        HttpRequest expectedRequestPattern = new HttpRequest()
-                .withPath(WEBHOOK_MOCK_PATH)
-                .withMethod("POST");
+        HttpRequest expectedRequestPattern = new HttpRequest().withPath(WEBHOOK_MOCK_PATH).withMethod("POST");
 
-        mockServerConfig.getMockServerClient()
-                .withSecure(false)
-                .when(expectedRequestPattern)
-                .respond(request -> {
-                    requestsCounter.countDown();
-                    List<String> header = request.getHeader("X-Insight-Token");
-                    if (header != null && header.size() == 1 && SECRET_TOKEN.equals(header.get(0))) {
-                        return response().withStatusCode(200)
-                                .withBody("Success");
-                    } else {
-                        return response().withStatusCode(400)
-                                .withBody("{ \"message\": \"Time is running out\" }");
-                    }
-                });
+        mockServerConfig.getMockServerClient().withSecure(false).when(expectedRequestPattern).respond(request -> {
+            requestsCounter.countDown();
+            List<String> header = request.getHeader("X-Insight-Token");
+            if (header != null && header.size() == 1 && SECRET_TOKEN.equals(header.get(0))) {
+                return response().withStatusCode(200).withBody("Success");
+            } else {
+                return response().withStatusCode(400).withBody("{ \"message\": \"Time is running out\" }");
+            }
+        });
 
         return expectedRequestPattern;
     }
 
     private void updateEventTypeBehaviors(Header identityHeader, String eventTypeId, String... behaviorGroupIds) {
-        given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
-                .contentType(JSON)
-                .pathParam("eventTypeId", eventTypeId)
-                .body(Json.encode(Arrays.asList(behaviorGroupIds)))
-                .when()
-                .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
-                .then()
-                .statusCode(200)
-                .contentType(TEXT);
+        given().basePath(API_NOTIFICATIONS_V_1_0).header(identityHeader).contentType(JSON)
+                .pathParam("eventTypeId", eventTypeId).body(Json.encode(Arrays.asList(behaviorGroupIds))).when()
+                .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups").then().statusCode(200).contentType(TEXT);
     }
 
-    private void checkEventTypeBehaviorGroups(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {
-        String responseBody = given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
-                .pathParam("eventTypeId", eventTypeId)
-                .when()
-                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
+    private void checkEventTypeBehaviorGroups(Header identityHeader, String eventTypeId,
+            String... expectedBehaviorGroupIds) {
+        String responseBody = given().basePath(API_NOTIFICATIONS_V_1_0).header(identityHeader)
+                .pathParam("eventTypeId", eventTypeId).when()
+                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups").then().statusCode(200).contentType(JSON)
                 .extract().body().asString();
 
         JsonArray jsonBehaviorGroups = new JsonArray(responseBody);
@@ -497,25 +417,17 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private void retry(Supplier<Boolean> checkEndpointHistoryResult) {
-        await()
-                .pollInterval(Duration.ofSeconds(1L))
-                .atMost(Duration.ofSeconds(5L))
+        await().pollInterval(Duration.ofSeconds(1L)).atMost(Duration.ofSeconds(5L))
                 .until(() -> checkEndpointHistoryResult.get());
     }
 
-    private boolean checkEndpointHistory(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
+    private boolean checkEndpointHistory(Header identityHeader, String endpointId, int expectedHistoryEntries,
+            boolean expectedInvocationResult, int expectedHttpStatus) {
         try {
 
-            String responseBody = given()
-                    .basePath(API_INTEGRATIONS_V_1_0)
-                    .header(identityHeader)
-                    .pathParam("endpointId", endpointId)
-                    .when()
-                    .get("/endpoints/{endpointId}/history")
-                    .then()
-                    .statusCode(200)
-                    .contentType(JSON)
-                    .extract().body().asString();
+            String responseBody = given().basePath(API_INTEGRATIONS_V_1_0).header(identityHeader)
+                    .pathParam("endpointId", endpointId).when().get("/endpoints/{endpointId}/history").then()
+                    .statusCode(200).contentType(JSON).extract().body().asString();
 
             JsonArray jsonEndpointHistory = new JsonArray(responseBody);
             assertEquals(expectedHistoryEntries, jsonEndpointHistory.size());
@@ -526,17 +438,11 @@ public class LifecycleITest extends DbIsolatedTest {
                 assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
 
                 if (!expectedInvocationResult) {
-                    responseBody = given()
-                            .basePath(API_INTEGRATIONS_V_1_0)
-                            .header(identityHeader)
+                    responseBody = given().basePath(API_INTEGRATIONS_V_1_0).header(identityHeader)
                             .pathParam("endpointId", endpointId)
-                            .pathParam("historyId", jsonNotificationHistory.getString("id"))
-                            .when()
-                            .get("/endpoints/{endpointId}/history/{historyId}/details")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().body().asString();
+                            .pathParam("historyId", jsonNotificationHistory.getString("id")).when()
+                            .get("/endpoints/{endpointId}/history/{historyId}/details").then().statusCode(200)
+                            .contentType(JSON).extract().body().asString();
 
                     JsonObject jsonDetails = new JsonObject(responseBody);
                     assertFalse(jsonDetails.isEmpty());
@@ -554,13 +460,7 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private void deleteBundle(String bundleId) {
-        given()
-                .basePath("/")
-                .when()
-                .pathParam("bundleId", bundleId)
-                .delete("/internal/bundles/{bundleId}")
-                .then()
-                .statusCode(200)
-                .contentType(JSON);
+        given().basePath("/").when().pathParam("bundleId", bundleId).delete("/internal/bundles/{bundleId}").then()
+                .statusCode(200).contentType(JSON);
     }
 }

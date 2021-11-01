@@ -37,35 +37,27 @@ public class KafkaMessagesCleanerTest {
     void testWithDefaultConfiguration() {
         sessionFactory.withStatelessSession(statelessSession -> deleteAllKafkaMessages()
                 .chain(() -> createKafkaMessage(now().minus(Duration.ofHours(13L))))
-                .chain(() -> createKafkaMessage(now().minus(Duration.ofDays(2L))))
-                .chain(() -> count())
-                .invoke(count -> assertEquals(2L, count))
-                .chain(() -> kafkaMessagesCleaner.testableClean())
-                .chain(() -> count())
-                .invoke(count -> assertEquals(1L, count))
-        ).await().indefinitely();
+                .chain(() -> createKafkaMessage(now().minus(Duration.ofDays(2L)))).chain(() -> count())
+                .invoke(count -> assertEquals(2L, count)).chain(() -> kafkaMessagesCleaner.testableClean())
+                .chain(() -> count()).invoke(count -> assertEquals(1L, count))).await().indefinitely();
     }
 
     @Test
     void testWithCustomConfiguration() {
-        sessionFactory.withStatelessSession(statelessSession -> deleteAllKafkaMessages()
-                .invoke(() -> System.setProperty(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY, "12h"))
-                .chain(() -> createKafkaMessage(now().minus(Duration.ofHours(13L))))
-                .chain(() -> createKafkaMessage(now().minus(Duration.ofDays(2L))))
-                .chain(() -> count())
-                .invoke(count -> assertEquals(2L, count))
-                .chain(() -> kafkaMessagesCleaner.testableClean())
-                .chain(() -> count())
-                .invoke(count -> assertEquals(0L, count))
-                .invoke(() -> System.clearProperty(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY))
-        ).await().indefinitely();
+        sessionFactory
+                .withStatelessSession(statelessSession -> deleteAllKafkaMessages()
+                        .invoke(() -> System.setProperty(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY, "12h"))
+                        .chain(() -> createKafkaMessage(now().minus(Duration.ofHours(13L))))
+                        .chain(() -> createKafkaMessage(now().minus(Duration.ofDays(2L)))).chain(() -> count())
+                        .invoke(count -> assertEquals(2L, count)).chain(() -> kafkaMessagesCleaner.testableClean())
+                        .chain(() -> count()).invoke(count -> assertEquals(0L, count))
+                        .invoke(() -> System.clearProperty(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY)))
+                .await().indefinitely();
     }
 
     private Uni<Integer> deleteAllKafkaMessages() {
-        return sessionFactory.withStatelessSession(statelessSession ->
-                statelessSession.createQuery("DELETE FROM KafkaMessage")
-                        .executeUpdate()
-        );
+        return sessionFactory.withStatelessSession(
+                statelessSession -> statelessSession.createQuery("DELETE FROM KafkaMessage").executeUpdate());
     }
 
     private Uni<Void> createKafkaMessage(LocalDateTime created) {
@@ -75,9 +67,7 @@ public class KafkaMessagesCleanerTest {
     }
 
     private Uni<Long> count() {
-        return sessionFactory.withStatelessSession(statelessSession ->
-                statelessSession.createQuery("SELECT COUNT(*) FROM KafkaMessage", Long.class)
-                        .getSingleResult()
-        );
+        return sessionFactory.withStatelessSession(statelessSession -> statelessSession
+                .createQuery("SELECT COUNT(*) FROM KafkaMessage", Long.class).getSingleResult());
     }
 }

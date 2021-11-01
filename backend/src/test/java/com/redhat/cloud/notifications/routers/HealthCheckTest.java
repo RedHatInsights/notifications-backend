@@ -22,12 +22,9 @@ public class HealthCheckTest {
     }
 
     private String normalHealthCheck() {
-        String body =
-                when()
-                        .get("/health")
-                        .then()
-                        .statusCode(in(new Integer[]{200, 503})) // may be 503 as there is no Kafka we can talk to
-                        .extract().asString();
+        String body = when().get("/health").then().statusCode(in(new Integer[] { 200, 503 })) // may be 503 as there is
+                                                                                              // no Kafka we can talk to
+                .extract().asString();
         assertFalse(body.contains("admin-down"));
         return body;
     }
@@ -35,29 +32,14 @@ public class HealthCheckTest {
     @Test
     void testAdminDown() {
 
-        with()
-                .queryParam("status", "admin-down")
-                .when()
-                .post("/internal/admin/status")
-                .then()
-                .statusCode(200)
+        with().queryParam("status", "admin-down").when().post("/internal/admin/status").then().statusCode(200)
                 .contentType(TEXT);
 
         try {
-            String body =
-                    when()
-                            .get("/health")
-                            .then()
-                            .statusCode(503)
-                            .extract().asString();
+            String body = when().get("/health").then().statusCode(503).extract().asString();
             assertTrue(body.contains("admin-down"));
         } finally {
-            with()
-                    .queryParam("status", "ok")
-                    .when()
-                    .post("/internal/admin/status")
-                    .then()
-                    .statusCode(200)
+            with().queryParam("status", "ok").when().post("/internal/admin/status").then().statusCode(200)
                     .contentType(TEXT);
         }
     }

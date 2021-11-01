@@ -97,52 +97,38 @@ public class NotificationServiceTest extends DbIsolatedTest {
 
     @Test
     void testEventTypeFetching() {
-        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes())
-                .chain(runOnWorkerThread(() -> {
-                    Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()).chain(runOnWorkerThread(() -> {
+            Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-                    Response response = given()
-                            .when()
-                            .header(identityHeader)
-                            .get("/notifications/eventTypes")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().response();
+            Response response = given().when().header(identityHeader).get("/notifications/eventTypes").then()
+                    .statusCode(200).contentType(JSON).extract().response();
 
-                    JsonArray eventTypes = new JsonArray(response.getBody().asString());
-                    assertEquals(201, eventTypes.size()); // One of the event types is part of the default DB records.
+            JsonArray eventTypes = new JsonArray(response.getBody().asString());
+            assertEquals(201, eventTypes.size()); // One of the event types is part of the default DB records.
 
-                    JsonObject policiesAll = eventTypes.getJsonObject(0);
-                    policiesAll.mapTo(EventType.class);
-                    assertNotNull(policiesAll.getString("id"));
-                    assertNotNull(policiesAll.getJsonObject("application"));
-                    assertNotNull(policiesAll.getJsonObject("application").getString("id"));
-                })
-        ).await().indefinitely();
+            JsonObject policiesAll = eventTypes.getJsonObject(0);
+            policiesAll.mapTo(EventType.class);
+            assertNotNull(policiesAll.getString("id"));
+            assertNotNull(policiesAll.getJsonObject("application"));
+            assertNotNull(policiesAll.getJsonObject("application").getString("id"));
+        })).await().indefinitely();
     }
 
     @Test
     void testEventTypeFetchingByApplication() {
         sessionFactory.withSession(session -> {
             return helpers.createTestAppAndEventTypes()
-                    .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
-                    .invoke(apps -> {
-                        UUID myOtherTesterApplicationId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getId();
+                    .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME)).invoke(apps -> {
+                        UUID myOtherTesterApplicationId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2))
+                                .findFirst().get().getId();
                         model.applicationIds.add(myOtherTesterApplicationId);
                     });
         }).chain(runOnWorkerThread(() -> {
             Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-            Response response = given()
-                    .when()
-                    .header(identityHeader)
-                    .queryParam("applicationIds", model.applicationIds.get(0))
-                    .get("/notifications/eventTypes")
-                    .then()
-                    .statusCode(200)
-                    .contentType(JSON)
-                    .extract().response();
+            Response response = given().when().header(identityHeader)
+                    .queryParam("applicationIds", model.applicationIds.get(0)).get("/notifications/eventTypes").then()
+                    .statusCode(200).contentType(JSON).extract().response();
 
             JsonArray eventTypes = new JsonArray(response.getBody().asString());
             for (int i = 0; i < eventTypes.size(); i++) {
@@ -159,23 +145,16 @@ public class NotificationServiceTest extends DbIsolatedTest {
     void testEventTypeFetchingByBundle() {
         sessionFactory.withSession(session -> {
             return helpers.createTestAppAndEventTypes()
-                    .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
-                    .invoke(apps -> {
-                        UUID myBundleId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getBundleId();
+                    .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME)).invoke(apps -> {
+                        UUID myBundleId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst()
+                                .get().getBundleId();
                         model.bundleIds.add(myBundleId);
                     });
         }).chain(runOnWorkerThread(() -> {
             Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-            Response response = given()
-                    .when()
-                    .header(identityHeader)
-                    .queryParam("bundleId", model.bundleIds.get(0))
-                    .get("/notifications/eventTypes")
-                    .then()
-                    .statusCode(200)
-                    .contentType(JSON)
-                    .extract().response();
+            Response response = given().when().header(identityHeader).queryParam("bundleId", model.bundleIds.get(0))
+                    .get("/notifications/eventTypes").then().statusCode(200).contentType(JSON).extract().response();
 
             JsonArray eventTypes = new JsonArray(response.getBody().asString());
             for (int i = 0; i < eventTypes.size(); i++) {
@@ -192,9 +171,9 @@ public class NotificationServiceTest extends DbIsolatedTest {
     void testEventTypeFetchingByBundleAndApplicationId() {
         sessionFactory.withSession(session -> {
             return helpers.createTestAppAndEventTypes()
-                    .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
-                    .invoke(apps -> {
-                        Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
+                    .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME)).invoke(apps -> {
+                        Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst()
+                                .get();
                         UUID myOtherTesterApplicationId = app.getId();
                         model.applicationIds.add(myOtherTesterApplicationId);
                         UUID myBundleId = app.getBundleId();
@@ -203,16 +182,9 @@ public class NotificationServiceTest extends DbIsolatedTest {
         }).chain(runOnWorkerThread(() -> {
             Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
-            Response response = given()
-                    .when()
-                    .header(identityHeader)
-                    .queryParam("bundleId", model.bundleIds.get(0))
-                    .queryParam("applicationIds", model.applicationIds.get(0))
-                    .get("/notifications/eventTypes")
-                    .then()
-                    .statusCode(200)
-                    .contentType(JSON)
-                    .extract().response();
+            Response response = given().when().header(identityHeader).queryParam("bundleId", model.bundleIds.get(0))
+                    .queryParam("applicationIds", model.applicationIds.get(0)).get("/notifications/eventTypes").then()
+                    .statusCode(200).contentType(JSON).extract().response();
 
             JsonArray eventTypes = new JsonArray(response.getBody().asString());
             for (int i = 0; i < eventTypes.size(); i++) {
@@ -230,119 +202,90 @@ public class NotificationServiceTest extends DbIsolatedTest {
     void testGetEventTypesAffectedByEndpoint() {
         String tenant = "testGetEventTypesAffectedByEndpoint";
         Header identityHeader = initRbacMock(tenant, "user", FULL_ACCESS);
-        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
-                .invoke(model.bundleIds::add)
-                .chain(() -> helpers.createBehaviorGroup(tenant, "behavior-group-1", model.bundleIds.get(0)))
-                .onItem().transform(BehaviorGroup::getId)
-                .invoke(model.behaviorGroupIds::add)
-                .chain(() -> helpers.createBehaviorGroup(tenant, "behavior-group-2", model.bundleIds.get(0)))
-                .onItem().transform(BehaviorGroup::getId)
-                .invoke(model.behaviorGroupIds::add)
-                .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME))
-                .onItem().transform(applications ->
-                        applications.stream()
-                                .filter(a -> a.getName().equals(TEST_APP_NAME_2))
-                                .findFirst().get().getId()
-                )
-                .invoke(model.applicationIds::add)
-                .chain(() -> helpers.createWebhookEndpoint(tenant))
-                .invoke(model.endpointIds::add)
-                .chain(() -> helpers.createWebhookEndpoint(tenant))
+        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes().invoke(model.bundleIds::add)
+                .chain(() -> helpers.createBehaviorGroup(tenant, "behavior-group-1", model.bundleIds.get(0))).onItem()
+                .transform(BehaviorGroup::getId).invoke(model.behaviorGroupIds::add)
+                .chain(() -> helpers.createBehaviorGroup(tenant, "behavior-group-2", model.bundleIds.get(0))).onItem()
+                .transform(BehaviorGroup::getId).invoke(model.behaviorGroupIds::add)
+                .chain(() -> applicationResources.getApplications(TEST_BUNDLE_NAME)).onItem()
+                .transform(applications -> applications.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2))
+                        .findFirst().get().getId())
+                .invoke(model.applicationIds::add).chain(() -> helpers.createWebhookEndpoint(tenant))
+                .invoke(model.endpointIds::add).chain(() -> helpers.createWebhookEndpoint(tenant))
                 .invoke(model.endpointIds::add)
                 .chain(() -> applicationResources.getEventTypes(model.applicationIds.get(0)))
                 .invoke(model.eventTypes::addAll)
                 // ep1 assigned to ev0; ep2 not assigned.
-                .chain(() -> behaviorGroupResources.updateEventTypeBehaviors(tenant, model.eventTypes.get(0).getId(), Set.of(model.behaviorGroupIds.get(0))))
-                .chain(() -> behaviorGroupResources.updateBehaviorGroupActions(tenant, model.behaviorGroupIds.get(0), List.of(model.endpointIds.get(0))))
+                .chain(() -> behaviorGroupResources.updateEventTypeBehaviors(tenant, model.eventTypes.get(0).getId(),
+                        Set.of(model.behaviorGroupIds.get(0))))
+                .chain(() -> behaviorGroupResources.updateBehaviorGroupActions(tenant, model.behaviorGroupIds.get(0),
+                        List.of(model.endpointIds.get(0))))
                 .chain(runOnWorkerThread(() -> {
-                    String responseBody = given()
-                            .header(identityHeader)
-                            .pathParam("endpointId", model.endpointIds.get(0).toString())
-                            .when()
-                            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().asString();
+                    String responseBody = given().header(identityHeader)
+                            .pathParam("endpointId", model.endpointIds.get(0).toString()).when()
+                            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}").then()
+                            .statusCode(200).contentType(JSON).extract().asString();
 
                     JsonArray behaviorGroups = new JsonArray(responseBody);
                     assertEquals(1, behaviorGroups.size());
                     behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
-                    assertEquals(model.behaviorGroupIds.get(0).toString(), behaviorGroups.getJsonObject(0).getString("id"));
+                    assertEquals(model.behaviorGroupIds.get(0).toString(),
+                            behaviorGroups.getJsonObject(0).getString("id"));
 
-                    responseBody = given()
-                            .header(identityHeader)
-                            .pathParam("endpointId", model.endpointIds.get(1).toString())
-                            .when()
-                            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().asString();
+                    responseBody = given().header(identityHeader)
+                            .pathParam("endpointId", model.endpointIds.get(1).toString()).when()
+                            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}").then()
+                            .statusCode(200).contentType(JSON).extract().asString();
 
                     behaviorGroups = new JsonArray(responseBody);
                     assertEquals(0, behaviorGroups.size());
-                }))
-                .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
+                })).emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 // ep1 assigned to event ev0; ep2 assigned to event ev1
-                .chain(() -> behaviorGroupResources.updateEventTypeBehaviors(tenant, model.eventTypes.get(0).getId(), Set.of(model.behaviorGroupIds.get(1))))
-                .chain(() -> behaviorGroupResources.updateBehaviorGroupActions(tenant, model.behaviorGroupIds.get(1), List.of(model.endpointIds.get(1))))
+                .chain(() -> behaviorGroupResources.updateEventTypeBehaviors(tenant, model.eventTypes.get(0).getId(),
+                        Set.of(model.behaviorGroupIds.get(1))))
+                .chain(() -> behaviorGroupResources.updateBehaviorGroupActions(tenant, model.behaviorGroupIds.get(1),
+                        List.of(model.endpointIds.get(1))))
                 .chain(runOnWorkerThread(() -> {
 
-                    String responseBody = given()
-                            .header(identityHeader)
-                            .pathParam("endpointId", model.endpointIds.get(0).toString())
-                            .when()
-                            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().asString();
+                    String responseBody = given().header(identityHeader)
+                            .pathParam("endpointId", model.endpointIds.get(0).toString()).when()
+                            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}").then()
+                            .statusCode(200).contentType(JSON).extract().asString();
 
                     JsonArray behaviorGroups = new JsonArray(responseBody);
                     assertEquals(1, behaviorGroups.size());
                     behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
-                    assertEquals(model.behaviorGroupIds.get(0).toString(), behaviorGroups.getJsonObject(0).getString("id"));
+                    assertEquals(model.behaviorGroupIds.get(0).toString(),
+                            behaviorGroups.getJsonObject(0).getString("id"));
 
-                    responseBody = given()
-                            .header(identityHeader)
-                            .pathParam("endpointId", model.endpointIds.get(1).toString())
-                            .when()
-                            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().asString();
+                    responseBody = given().header(identityHeader)
+                            .pathParam("endpointId", model.endpointIds.get(1).toString()).when()
+                            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}").then()
+                            .statusCode(200).contentType(JSON).extract().asString();
 
                     behaviorGroups = new JsonArray(responseBody);
                     assertEquals(1, behaviorGroups.size());
                     behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
-                    assertEquals(model.behaviorGroupIds.get(1).toString(), behaviorGroups.getJsonObject(0).getString("id"));
-                }))
-        ).await().indefinitely();
+                    assertEquals(model.behaviorGroupIds.get(1).toString(),
+                            behaviorGroups.getJsonObject(0).getString("id"));
+                }))).await().indefinitely();
     }
 
     @Test
     void testGetApplicationFacets() {
         Header identityHeader = initRbacMock("test", "user", READ_ACCESS);
-        List<Facet> applications = given()
-                .header(identityHeader)
-                .when()
-                .get("/notifications/facets/applications?bundleName=rhel")
-                .then()
-                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
+        List<Facet> applications = given().header(identityHeader).when()
+                .get("/notifications/facets/applications?bundleName=rhel").then().statusCode(200).contentType(JSON)
+                .extract().response().jsonPath().getList(".", Facet.class);
 
         assertTrue(applications.size() > 0);
-        Optional<Facet> policies = applications.stream().filter(facet -> facet.getName().equals("policies")).findFirst();
+        Optional<Facet> policies = applications.stream().filter(facet -> facet.getName().equals("policies"))
+                .findFirst();
         assertTrue(policies.isPresent());
         assertEquals("Policies", policies.get().getDisplayName());
 
         // Without bundle returns all applications across bundles
-        applications = given()
-                .header(identityHeader)
-                .when()
-                .get("/notifications/facets/applications")
-                .then()
+        applications = given().header(identityHeader).when().get("/notifications/facets/applications").then()
                 .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
 
         assertTrue(applications.size() > 0);
@@ -354,13 +297,9 @@ public class NotificationServiceTest extends DbIsolatedTest {
     @Test
     void testGetBundlesFacets() {
         Header identityHeader = initRbacMock("test", "user", READ_ACCESS);
-        List<Facet> bundles = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .get("/notifications/facets/bundles")
-                .then()
-                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
+        List<Facet> bundles = given().header(identityHeader).when().contentType(JSON)
+                .get("/notifications/facets/bundles").then().statusCode(200).contentType(JSON).extract().response()
+                .jsonPath().getList(".", Facet.class);
 
         assertTrue(bundles.size() > 0);
         Optional<Facet> rhel = bundles.stream().filter(facet -> facet.getName().equals("rhel")).findFirst();
@@ -373,92 +312,40 @@ public class NotificationServiceTest extends DbIsolatedTest {
         Header noAccessIdentityHeader = initRbacMock("tenant", "noAccess", NO_ACCESS);
         Header readAccessIdentityHeader = initRbacMock("tenant", "readAccess", READ_ACCESS);
 
-        given()
-                .header(noAccessIdentityHeader)
-                .when()
-                .get("/notifications/eventTypes")
-                .then()
+        given().header(noAccessIdentityHeader).when().get("/notifications/eventTypes").then().statusCode(403);
+
+        given().header(noAccessIdentityHeader).pathParam("behaviorGroupId", UUID.randomUUID()).when()
+                .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}").then()
                 .statusCode(403);
 
-        given()
-                .header(noAccessIdentityHeader)
-                .pathParam("behaviorGroupId", UUID.randomUUID())
-                .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
-                .then()
-                .statusCode(403);
+        given().header(noAccessIdentityHeader).pathParam("endpointId", UUID.randomUUID()).when()
+                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}").then().statusCode(403);
 
-        given()
-                .header(noAccessIdentityHeader)
-                .pathParam("endpointId", UUID.randomUUID())
-                .when()
-                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                .then()
-                .statusCode(403);
+        given().header(readAccessIdentityHeader).contentType(JSON).pathParam("eventTypeId", UUID.randomUUID())
+                .body(Json.encode(List.of(UUID.randomUUID()))).when()
+                .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups").then().statusCode(403);
 
-        given()
-                .header(readAccessIdentityHeader)
-                .contentType(JSON)
-                .pathParam("eventTypeId", UUID.randomUUID())
-                .body(Json.encode(List.of(UUID.randomUUID())))
-                .when()
-                .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
-                .then()
-                .statusCode(403);
+        given().header(noAccessIdentityHeader).pathParam("eventTypeId", UUID.randomUUID()).when()
+                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups").then().statusCode(403);
 
-        given()
-                .header(noAccessIdentityHeader)
-                .pathParam("eventTypeId", UUID.randomUUID())
-                .when()
-                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
-                .then()
-                .statusCode(403);
-
-        given()
-                .header(readAccessIdentityHeader)
-                .contentType(JSON)
+        given().header(readAccessIdentityHeader).contentType(JSON)
                 // TODO Remove the body when https://github.com/quarkusio/quarkus/issues/16897 is fixed
-                .body(Json.encode(new BehaviorGroup()))
-                .when()
-                .post("/notifications/behaviorGroups")
-                .then()
+                .body(Json.encode(new BehaviorGroup())).when().post("/notifications/behaviorGroups").then()
                 .statusCode(403);
 
-        given()
-                .header(readAccessIdentityHeader)
-                .contentType(JSON)
-                .pathParam("id", UUID.randomUUID())
+        given().header(readAccessIdentityHeader).contentType(JSON).pathParam("id", UUID.randomUUID())
                 // TODO Remove the body when https://github.com/quarkusio/quarkus/issues/16897 is fixed
-                .body(Json.encode(new BehaviorGroup()))
-                .when()
-                .put("/notifications/behaviorGroups/{id}")
-                .then()
+                .body(Json.encode(new BehaviorGroup())).when().put("/notifications/behaviorGroups/{id}").then()
                 .statusCode(403);
 
-        given()
-                .header(readAccessIdentityHeader)
-                .pathParam("id", UUID.randomUUID())
-                .when()
-                .delete("/notifications/behaviorGroups/{id}")
-                .then()
-                .statusCode(403);
+        given().header(readAccessIdentityHeader).pathParam("id", UUID.randomUUID()).when()
+                .delete("/notifications/behaviorGroups/{id}").then().statusCode(403);
 
-        given()
-                .header(readAccessIdentityHeader)
-                .contentType(JSON)
-                .pathParam("behaviorGroupId", UUID.randomUUID())
-                .body(Json.encode(List.of(UUID.randomUUID())))
-                .when()
-                .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
-                .then()
-                .statusCode(403);
+        given().header(readAccessIdentityHeader).contentType(JSON).pathParam("behaviorGroupId", UUID.randomUUID())
+                .body(Json.encode(List.of(UUID.randomUUID()))).when()
+                .put("/notifications/behaviorGroups/{behaviorGroupId}/actions").then().statusCode(403);
 
-        given()
-                .header(noAccessIdentityHeader)
-                .pathParam("bundleId", UUID.randomUUID())
-                .when()
-                .get("/notifications/bundles/{bundleId}/behaviorGroups")
-                .then()
-                .statusCode(403);
+        given().header(noAccessIdentityHeader).pathParam("bundleId", UUID.randomUUID()).when()
+                .get("/notifications/bundles/{bundleId}/behaviorGroups").then().statusCode(403);
     }
 }

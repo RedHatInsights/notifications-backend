@@ -45,46 +45,45 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
         EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, BUNDLE_NAME, APP_NAME);
 
-        sessionFactory.withSession(session -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1)
+        sessionFactory.withSession(session -> resourceHelpers
+                .addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1)
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2))
                 .chain(() -> resourceHelpers.addEmailAggregation("other-account", BUNDLE_NAME, APP_NAME, PAYLOAD2))
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2))
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2))
-                .chain(() -> aggregationResources.getEmailAggregation(key, start, end))
-                .invoke(aggregations -> {
+                .chain(() -> aggregationResources.getEmailAggregation(key, start, end)).invoke(aggregations -> {
                     assertEquals(2, aggregations.size());
                     assertTrue(aggregations.stream().map(EmailAggregation::getAccountId).allMatch(ACCOUNT_ID::equals));
-                    assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
-                    assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
-                    assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
-                    assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
-                })
-                .chain(() -> aggregationResources.getApplicationsWithPendingAggregation(start, end))
-                .invoke(keys -> {
+                    assertTrue(
+                            aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
+                    assertTrue(
+                            aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
+                    assertEquals(1,
+                            aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
+                    assertEquals(1,
+                            aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
+                }).chain(() -> aggregationResources.getApplicationsWithPendingAggregation(start, end)).invoke(keys -> {
                     assertEquals(4, keys.size());
                     assertEquals(ACCOUNT_ID, keys.get(0).getAccountId());
                     assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
                     assertEquals(APP_NAME, keys.get(0).getApplication());
-                })
-                .chain(() -> aggregationResources.purgeOldAggregation(key, end))
+                }).chain(() -> aggregationResources.purgeOldAggregation(key, end))
                 .invoke(purged -> assertEquals(2, purged))
                 .chain(() -> aggregationResources.getEmailAggregation(key, start, end))
                 .invoke(aggregations -> assertEquals(0, aggregations.size()))
                 .chain(aggregations -> aggregationResources.getApplicationsWithPendingAggregation(start, end))
-                .invoke(keys -> assertEquals(3, keys.size()))
-        ).await().indefinitely();
+                .invoke(keys -> assertEquals(3, keys.size()))).await().indefinitely();
     }
 
     @Test
     void addEmailAggregationWithConstraintViolations() {
-        sessionFactory.withSession(session -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null)
-                .invoke(Assertions::assertFalse)
+        sessionFactory.withSession(session -> resourceHelpers
+                .addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null).invoke(Assertions::assertFalse)
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1))
                 .invoke(Assertions::assertFalse)
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, null, APP_NAME, PAYLOAD1))
                 .invoke(Assertions::assertFalse)
                 .chain(() -> resourceHelpers.addEmailAggregation(null, BUNDLE_NAME, APP_NAME, PAYLOAD1))
-                .invoke(Assertions::assertFalse)
-        ).await().indefinitely();
+                .invoke(Assertions::assertFalse)).await().indefinitely();
     }
 }

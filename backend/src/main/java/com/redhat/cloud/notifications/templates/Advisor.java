@@ -17,10 +17,9 @@ public class Advisor implements EmailTemplate {
             }
         }
 
-        throw new UnsupportedOperationException(String.format(
-                "No email title template for Advisor event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
+        throw new UnsupportedOperationException(
+                String.format("No email title template for Advisor event_type: %s and EmailSubscription: %s found.",
+                        eventType, type));
     }
 
     @Override
@@ -34,14 +33,13 @@ public class Advisor implements EmailTemplate {
         }
 
         throw new UnsupportedOperationException(String.format(
-                "No email body template for Advisor event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
+                "No email body template for Advisor event_type: %s and EmailSubscription: %s found.", eventType, type));
     }
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return (eventType.equals("new-recommendation") || eventType.equals("resolved-recommendation")) && type == EmailSubscriptionType.INSTANT;
+        return (eventType.equals("new-recommendation") || eventType.equals("resolved-recommendation"))
+                && type == EmailSubscriptionType.INSTANT;
     }
 
     @Override

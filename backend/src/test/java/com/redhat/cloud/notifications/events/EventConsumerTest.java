@@ -86,14 +86,9 @@ public class EventConsumerTest {
 
     @BeforeEach
     void beforeEach() {
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(
-                REJECTED_COUNTER_NAME,
-                PROCESSING_ERROR_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
-                MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
-        );
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSING_ERROR_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME, MESSAGE_ID_VALID_COUNTER_NAME, MESSAGE_ID_INVALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME);
         micrometerAssertionHelper.removeDynamicTimer(CONSUMED_TIMER_NAME);
     }
 
@@ -113,15 +108,12 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry
+                .timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication())
+                .count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
-        assertNoCounterIncrement(
-                REJECTED_COUNTER_NAME,
-                PROCESSING_ERROR_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
-        );
+        assertNoCounterIncrement(REJECTED_COUNTER_NAME, PROCESSING_ERROR_COUNTER_NAME, DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME, MESSAGE_ID_MISSING_COUNTER_NAME);
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(messageId);
     }
@@ -134,15 +126,12 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry
+                .timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication())
+                .count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
-        assertNoCounterIncrement(
-                REJECTED_COUNTER_NAME,
-                PROCESSING_ERROR_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
-                MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME
-        );
+        assertNoCounterIncrement(REJECTED_COUNTER_NAME, PROCESSING_ERROR_COUNTER_NAME, DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_VALID_COUNTER_NAME, MESSAGE_ID_INVALID_COUNTER_NAME);
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
     }
@@ -155,13 +144,8 @@ public class EventConsumerTest {
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
         assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", "", "application", "").count());
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
-        assertNoCounterIncrement(
-                PROCESSING_ERROR_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
-                MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
-        );
+        assertNoCounterIncrement(PROCESSING_ERROR_COUNTER_NAME, DUPLICATE_COUNTER_NAME, MESSAGE_ID_VALID_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME, MESSAGE_ID_MISSING_COUNTER_NAME);
         verify(endpointProcessor, never()).process(any(Event.class));
         verify(kafkaMessageDeduplicator, never()).registerMessageId(any(UUID.class));
     }
@@ -174,15 +158,13 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry
+                .timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication())
+                .count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
-        assertNoCounterIncrement(
-                PROCESSING_ERROR_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
-                MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME
-        );
+        assertNoCounterIncrement(PROCESSING_ERROR_COUNTER_NAME, DUPLICATE_COUNTER_NAME, MESSAGE_ID_VALID_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME);
         verify(endpointProcessor, never()).process(any(Event.class));
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
     }
@@ -196,15 +178,13 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry
+                .timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication())
+                .count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_ERROR_COUNTER_NAME, 1);
-        assertNoCounterIncrement(
-                REJECTED_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
-                MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME
-        );
+        assertNoCounterIncrement(REJECTED_COUNTER_NAME, DUPLICATE_COUNTER_NAME, MESSAGE_ID_VALID_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME);
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
     }
@@ -220,15 +200,13 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 2);
-        assertEquals(2L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(2L, registry
+                .timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication())
+                .count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 2);
         micrometerAssertionHelper.assertCounterIncrement(DUPLICATE_COUNTER_NAME, 1);
-        assertNoCounterIncrement(
-                REJECTED_COUNTER_NAME,
-                PROCESSING_ERROR_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
-        );
+        assertNoCounterIncrement(REJECTED_COUNTER_NAME, PROCESSING_ERROR_COUNTER_NAME, MESSAGE_ID_INVALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME);
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(messageId);
     }
@@ -242,15 +220,12 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry
+                .timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication())
+                .count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
-        assertNoCounterIncrement(
-                REJECTED_COUNTER_NAME,
-                PROCESSING_ERROR_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
-                MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
-        );
+        assertNoCounterIncrement(REJECTED_COUNTER_NAME, PROCESSING_ERROR_COUNTER_NAME, DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_VALID_COUNTER_NAME, MESSAGE_ID_MISSING_COUNTER_NAME);
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
     }
@@ -264,24 +239,20 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry
+                .timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication())
+                .count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
-        assertNoCounterIncrement(
-                REJECTED_COUNTER_NAME,
-                PROCESSING_ERROR_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
-                MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
-        );
+        assertNoCounterIncrement(REJECTED_COUNTER_NAME, PROCESSING_ERROR_COUNTER_NAME, DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_VALID_COUNTER_NAME, MESSAGE_ID_MISSING_COUNTER_NAME);
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
     }
 
     private EventType mockGetEventTypeAndCreateEvent() {
         EventType eventType = new EventType();
-        when(appResources.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(
-                Uni.createFrom().item(eventType)
-        );
+        when(appResources.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE)))
+                .thenReturn(Uni.createFrom().item(eventType));
         when(eventResources.create(any(Event.class))).thenAnswer(invocation -> {
             Event event = invocation.getArgument(0);
             return Uni.createFrom().item(event);
@@ -290,15 +261,13 @@ public class EventConsumerTest {
     }
 
     private void mockGetUnknownEventType() {
-        when(appResources.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(
-                Uni.createFrom().failure(() -> new NoResultException("I am a forced exception!"))
-        );
+        when(appResources.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE)))
+                .thenReturn(Uni.createFrom().failure(() -> new NoResultException("I am a forced exception!")));
     }
 
     private void mockProcessingFailure() {
-        when(endpointProcessor.process(any(Event.class))).thenReturn(
-                Uni.createFrom().failure(() -> new RuntimeException("I am a forced exception!"))
-        );
+        when(endpointProcessor.process(any(Event.class)))
+                .thenReturn(Uni.createFrom().failure(() -> new RuntimeException("I am a forced exception!")));
     }
 
     private void verifyExactlyOneProcessing(EventType eventType, String payload, Action action) {
@@ -323,15 +292,9 @@ public class EventConsumerTest {
         action.setEventType(EVENT_TYPE);
         action.setTimestamp(LocalDateTime.now());
         action.setAccountId(DEFAULT_ACCOUNT_ID);
-        action.setEvents(
-                List.of(
-                        com.redhat.cloud.notifications.ingress.Event
-                                .newBuilder()
-                                .setMetadataBuilder(Metadata.newBuilder())
-                                .setPayload(Map.of("k", "v", "k2", "v2", "k3", "v"))
-                                .build()
-                )
-        );
+        action.setEvents(List
+                .of(com.redhat.cloud.notifications.ingress.Event.newBuilder().setMetadataBuilder(Metadata.newBuilder())
+                        .setPayload(Map.of("k", "v", "k2", "v2", "k3", "v")).build()));
 
         action.setContext(new HashMap());
         return action;
@@ -339,8 +302,7 @@ public class EventConsumerTest {
 
     private static Message buildMessageWithId(byte[] messageId, String payload) {
         OutgoingKafkaRecordMetadata metadata = OutgoingKafkaRecordMetadata.builder()
-                .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, messageId))
-                .build();
+                .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, messageId)).build();
         return Message.of(payload).addMetadata(metadata);
     }
 }

@@ -14,7 +14,8 @@ public class Rhosak implements EmailTemplate {
     private static final String INSTANCE_CREATED = "instance-created";
     private static final String INSTANCE_DELETED = "instance-deleted";
     private static final String ACTION_REQUIRED = "action-required";
-    private static final List<String> ALLOWED_EVENT_TYPES = Arrays.asList(SCHEDULED_UPGRADE, DISRUPTION, INSTANCE_DELETED, INSTANCE_CREATED, ACTION_REQUIRED);
+    private static final List<String> ALLOWED_EVENT_TYPES = Arrays.asList(SCHEDULED_UPGRADE, DISRUPTION,
+            INSTANCE_DELETED, INSTANCE_CREATED, ACTION_REQUIRED);
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
@@ -37,9 +38,7 @@ public class Rhosak implements EmailTemplate {
             return Templates.scheduledUpgradeTitle();
         }
         throw new UnsupportedOperationException(String.format(
-                "No email title template for RHOSAK event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
+                "No email title template for RHOSAK event_type: %s and EmailSubscription: %s found.", eventType, type));
     }
 
     @Override
@@ -64,9 +63,7 @@ public class Rhosak implements EmailTemplate {
         }
 
         throw new UnsupportedOperationException(String.format(
-                "No email body template for RHOSAK event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
+                "No email body template for RHOSAK event_type: %s and EmailSubscription: %s found.", eventType, type));
     }
 
     @Override

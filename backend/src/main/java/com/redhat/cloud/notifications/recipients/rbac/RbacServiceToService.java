@@ -22,38 +22,25 @@ public interface RbacServiceToService {
     @GET
     @Path("/principals/") // trailing slash is required by api
     @Produces(MediaType.APPLICATION_JSON)
-    Uni<Page<RbacUser>> getUsers(
-            @HeaderParam("x-rh-rbac-account") String accountId,
-            @QueryParam("admin_only") Boolean adminOnly,
-            @QueryParam("offset") Integer offset,
-            @QueryParam("limit") Integer limit
-    );
+    Uni<Page<RbacUser>> getUsers(@HeaderParam("x-rh-rbac-account") String accountId,
+            @QueryParam("admin_only") Boolean adminOnly, @QueryParam("offset") Integer offset,
+            @QueryParam("limit") Integer limit);
 
     @GET
     @Path("/groups/") // trailing slash is required by api
     @Produces(MediaType.APPLICATION_JSON)
-    Uni<Page<RbacGroup>> getGroups(
-            @HeaderParam("x-rh-rbac-account") String accountId,
-            @QueryParam("offset") Integer offset,
-            @QueryParam("limit") Integer limit
-    );
+    Uni<Page<RbacGroup>> getGroups(@HeaderParam("x-rh-rbac-account") String accountId,
+            @QueryParam("offset") Integer offset, @QueryParam("limit") Integer limit);
 
     @GET
     @Path("/groups/{groupId}/") // trailing slash is required by api
     @Produces(MediaType.APPLICATION_JSON)
-    Uni<RbacGroup> getGroup(
-            @HeaderParam("x-rh-rbac-account") String accountId,
-            @PathParam("groupId") UUID groupId
-    );
-
+    Uni<RbacGroup> getGroup(@HeaderParam("x-rh-rbac-account") String accountId, @PathParam("groupId") UUID groupId);
 
     @GET
     @Path("/groups/{groupId}/principals/") // trailing slash is required by api
     @Produces(MediaType.APPLICATION_JSON)
-    Uni<Page<RbacUser>> getGroupUsers(
-            @HeaderParam("x-rh-rbac-account") String accountId,
-            @PathParam("groupId") UUID groupId,
-            @QueryParam("offset") Integer offset,
-            @QueryParam("limit") Integer limit
-    );
+    Uni<Page<RbacUser>> getGroupUsers(@HeaderParam("x-rh-rbac-account") String accountId,
+            @PathParam("groupId") UUID groupId, @QueryParam("offset") Integer offset,
+            @QueryParam("limit") Integer limit);
 }

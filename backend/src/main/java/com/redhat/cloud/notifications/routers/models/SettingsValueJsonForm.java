@@ -47,8 +47,7 @@ public class SettingsValueJsonForm {
      * This function is in charge of transforming a `SettingsValue` into a data-driven-form [1] object used to render
      * used by the user-preferences UI.
      *
-     * Todo: It should be possible to simplify this with qute
-     * [1] https://data-driven-forms.org/
+     * Todo: It should be possible to simplify this with qute [1] https://data-driven-forms.org/
      */
     public static SettingsValueJsonForm fromSettingsValue(SettingsValues values) {
         SettingsValueJsonForm form = new SettingsValueJsonForm();
@@ -71,21 +70,22 @@ public class SettingsValueJsonForm {
                     // Todo: Check if the bundle/application supports instant/daily emails and remove if they dont
 
                     Field field = new Field();
-                    field.name = String.format("bundles[%s].applications[%s].notifications[%s]", bundleName, applicationName, emailSubscriptionType.toString());
+                    field.name = String.format("bundles[%s].applications[%s].notifications[%s]", bundleName,
+                            applicationName, emailSubscriptionType.toString());
                     field.initialValue = isSubscribed;
                     field.validate = List.of();
                     field.component = COMPONENT_SUBSCRIPTION;
                     switch (emailSubscriptionType) {
-                        case DAILY:
-                            field.label = "Daily digest";
-                            field.description =  "Daily summary of triggered application events in 24 hours span. See notification settings for configuration.";
-                            break;
-                        case INSTANT:
-                            field.label = "Instant notification";
-                            field.description = "Immediate email for each triggered application event. See notification settings for configuration.";
-                            break;
-                        default:
-                            return;
+                    case DAILY:
+                        field.label = "Daily digest";
+                        field.description = "Daily summary of triggered application events in 24 hours span. See notification settings for configuration.";
+                        break;
+                    case INSTANT:
+                        field.label = "Instant notification";
+                        field.description = "Immediate email for each triggered application event. See notification settings for configuration.";
+                        break;
+                    default:
+                        return;
                     }
                     fieldsField.fields.add(field);
                 });

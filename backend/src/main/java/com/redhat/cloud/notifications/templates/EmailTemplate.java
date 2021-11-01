@@ -15,7 +15,8 @@ public interface EmailTemplate {
     TemplateInstance getBody(String eventType, EmailSubscriptionType type);
 
     // This method is used to know if a specific combination of event and subscription are supported
-    // if isSupported returns true, getTitle and getBody should return a TemplateInstance for that particular combination
+    // if isSupported returns true, getTitle and getBody should return a TemplateInstance for that particular
+    // combination
     boolean isSupported(String eventType, EmailSubscriptionType type);
 
     // This is method is used to determine if we should show the subscription in the user-preferences.

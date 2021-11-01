@@ -9,13 +9,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Redirect routes with only the major version
- * to major.minor ones.
+ * Redirect routes with only the major version to major.minor ones.
  */
 @SuppressWarnings("unused")
 public class RouteRedirector {
 
-    // Prevents the injection of characters that would break the log file pattern and lead to log forging or log poisoning.
+    // Prevents the injection of characters that would break the log file pattern and lead to log forging or log
+    // poisoning.
     private static final Pattern ANTI_INJECTION_PATTERN = Pattern.compile("[\n|\r|\t]");
 
     Pattern p = Pattern.compile("/api/(integrations|notifications)/v1/(.*)");
@@ -23,12 +23,11 @@ public class RouteRedirector {
     Logger log = Logger.getLogger(this.getClass().getName());
 
     /**
-     * If the requested route is the one with major version only,
-     * we rewrite it on the fly.
-     * We need to take the URI from the underlying http request, as the
-     * normalised path does not contain query parameters.
+     * If the requested route is the one with major version only, we rewrite it on the fly. We need to take the URI from
+     * the underlying http request, as the normalised path does not contain query parameters.
      *
-     * @param rc RoutingContext from vert.x
+     * @param rc
+     *            RoutingContext from vert.x
      */
     @RouteFilter(400)
     void myRedirector(RoutingContext rc) {

@@ -22,7 +22,7 @@ class OApiFilterTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {Constants.API_NOTIFICATIONS_V_1_0, Constants.API_INTEGRATIONS_V_1_0, Constants.INTERNAL})
+    @ValueSource(strings = { Constants.API_NOTIFICATIONS_V_1_0, Constants.API_INTEGRATIONS_V_1_0, Constants.INTERNAL })
     void shouldReturnEverythingAfterConstant(String urlPath) {
         final String slash = testee.mangle(urlPath + "/someUrlAdditions");
         Assertions.assertEquals("/someUrlAdditions", slash);

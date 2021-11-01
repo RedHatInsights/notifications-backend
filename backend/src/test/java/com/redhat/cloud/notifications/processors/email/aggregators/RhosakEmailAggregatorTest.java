@@ -178,12 +178,20 @@ class RhosakEmailAggregatorTest {
         aggregator.setStartTime(LocalDateTime.now());
         emailActionMessage.setContext(aggregator.getContext());
         String title = dailyTittleTemplateInstance.data("action", emailActionMessage).render();
-        assertTrue(title.contains("Red Hat OpenShift Streams for Apache Kafka Daily Report"), "Title must contain RHOSAK related digest info");
-        String body = dailyBodyTemplateInstance.data("action", emailActionMessage).data("user", Map.of("firstName", "machi1990", "lastName", "Last Name")).render();
-        assertTrue(body.contains("The following table summarizes the OpenShift Streams instances affected by unexpected disruption of the OpenShift Streams service"), "Body must contain service disruption summary");
-        assertTrue(body.contains("The following table summarizes Kafka upgrade activity for your OpenShift Streams instances."), "Body must contain upgrades summary");
+        assertTrue(title.contains("Red Hat OpenShift Streams for Apache Kafka Daily Report"),
+                "Title must contain RHOSAK related digest info");
+        String body = dailyBodyTemplateInstance.data("action", emailActionMessage)
+                .data("user", Map.of("firstName", "machi1990", "lastName", "Last Name")).render();
+        assertTrue(body.contains(
+                "The following table summarizes the OpenShift Streams instances affected by unexpected disruption of the OpenShift Streams service"),
+                "Body must contain service disruption summary");
+        assertTrue(
+                body.contains(
+                        "The following table summarizes Kafka upgrade activity for your OpenShift Streams instances."),
+                "Body must contain upgrades summary");
         assertTrue(body.contains("Hello machi1990."), "Body must contain greeting message");
-        assertTrue(body.contains("This is the daily report for your OpenShift Streams instances"), "Body must contain greeting message");
+        assertTrue(body.contains("This is the daily report for your OpenShift Streams instances"),
+                "Body must contain greeting message");
     }
 
     private static EmailAggregation createDisruptionEmailAggregation(String kafkaName, String impactedArea) {
@@ -198,19 +206,9 @@ class RhosakEmailAggregatorTest {
         emailActionMessage.setTimestamp(LocalDateTime.now());
         emailActionMessage.setEventType(DISRUPTION);
 
-        emailActionMessage.setContext(Map.of(
-                "impacted_area", impactedArea
-        ));
-        emailActionMessage.setEvents(List.of(
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "id", kafkaName,
-                                "name", kafkaName
-                        ))
-                        .build()
-        ));
+        emailActionMessage.setContext(Map.of("impacted_area", impactedArea));
+        emailActionMessage.setEvents(List.of(Event.newBuilder().setMetadataBuilder(Metadata.newBuilder())
+                .setPayload(Map.of("id", kafkaName, "name", kafkaName)).build()));
 
         emailActionMessage.setAccountId(ACCOUNT_ID);
 
@@ -232,20 +230,10 @@ class RhosakEmailAggregatorTest {
         emailActionMessage.setTimestamp(LocalDateTime.now());
         emailActionMessage.setEventType(SCHEDULED_UPGRADE);
 
-        emailActionMessage.setContext(Map.of(
-                "kafka_version", kafkaVersion,
-                "upgrade_time", LocalDateTime.now().toString()
-        ));
-        emailActionMessage.setEvents(List.of(
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "id", kafkaName,
-                                "name", kafkaName
-                        ))
-                        .build()
-        ));
+        emailActionMessage
+                .setContext(Map.of("kafka_version", kafkaVersion, "upgrade_time", LocalDateTime.now().toString()));
+        emailActionMessage.setEvents(List.of(Event.newBuilder().setMetadataBuilder(Metadata.newBuilder())
+                .setPayload(Map.of("id", kafkaName, "name", kafkaName)).build()));
 
         emailActionMessage.setAccountId(ACCOUNT_ID);
 

@@ -59,35 +59,30 @@ public class RbacRecipientUsersProvider {
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
-        return getWithPagination(
-            page -> {
-                Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                return retryOnError(
-                        rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
-                )
-                .onItem().invoke(() -> getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId)));
-            }
-        )
-        .onItem().invoke(users -> getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size()))));
+        return getWithPagination(page -> {
+            Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
+            return retryOnError(rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage,
+                    rbacElementsPerPage)).onItem()
+                            .invoke(() -> getUsersPageTimer
+                                    .stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId)));
+        }).onItem().invoke(users -> getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId",
+                accountId, "users", String.valueOf(users.size()))));
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
     public Uni<List<User>> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
-        return retryOnError(rbacServiceToService.getGroup(accountId, groupId))
-                .onItem().transformToUni(rbacGroup -> {
-                    if (rbacGroup.isPlatformDefault()) {
-                        return getUsers(accountId, adminOnly);
-                    } else {
-                        return getWithPagination(
-                            page -> {
-                                Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
-                                return retryOnError(
-                                        rbacServiceToService.getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage)
-                                )
-                                .onItem().invoke(() -> getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "accountId", accountId)));
-                            }
-                        )
+        return retryOnError(rbacServiceToService.getGroup(accountId, groupId)).onItem().transformToUni(rbacGroup -> {
+            if (rbacGroup.isPlatformDefault()) {
+                return getUsers(accountId, adminOnly);
+            } else {
+                return getWithPagination(page -> {
+                    Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
+                    return retryOnError(rbacServiceToService.getGroupUsers(accountId, groupId,
+                            page * rbacElementsPerPage, rbacElementsPerPage)).onItem()
+                                    .invoke(() -> getGroupUsersPageTimer.stop(
+                                            meterRegistry.timer("rbac.get-group-users.page", "accountId", accountId)));
+                })
                         // getGroupUsers doesn't have an adminOnly param.
                         .onItem().transform(users -> {
                             if (adminOnly) {
@@ -96,32 +91,24 @@ public class RbacRecipientUsersProvider {
 
                             return users;
                         });
-                    }
-                })
-                .onItem().invoke(users -> getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountId, "users", String.valueOf(users.size()))));
+            }
+        }).onItem().invoke(users -> getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total",
+                "accountId", accountId, "users", String.valueOf(users.size()))));
     }
 
     private <T> Uni<T> retryOnError(Uni<T> uni) {
-        return uni
-                .onFailure(failure -> {
-                    failuresCounter.increment();
-                    return failure.getClass() == IOException.class || failure.getClass() == ConnectTimeoutException.class;
-                })
-                .retry()
-                .withBackOff(initialBackOff, maxBackOff)
-                .atMost(maxRetryAttempts)
+        return uni.onFailure(failure -> {
+            failuresCounter.increment();
+            return failure.getClass() == IOException.class || failure.getClass() == ConnectTimeoutException.class;
+        }).retry().withBackOff(initialBackOff, maxBackOff).atMost(maxRetryAttempts)
                 // All retry attempts failed, let's log a warning about the failure.
                 .onFailure().invoke(failure -> LOGGER.warnf("RBAC S2S call failed: %s", failure.getMessage()));
     }
 
     private Uni<List<User>> getWithPagination(Function<Integer, Uni<Page<RbacUser>>> fetcher) {
-        return Multi.createBy().repeating()
-                .uni(
-                    AtomicInteger::new,
-                    state -> fetcher.apply(state.getAndIncrement())
-                )
-                .whilst(page -> page.getData().size() == rbacElementsPerPage)
-                .onItem().transform(page -> page.getData().stream().map(rbacUser -> {
+        return Multi.createBy().repeating().uni(AtomicInteger::new, state -> fetcher.apply(state.getAndIncrement()))
+                .whilst(page -> page.getData().size() == rbacElementsPerPage).onItem()
+                .transform(page -> page.getData().stream().map(rbacUser -> {
                     User user = new User();
                     user.setUsername(rbacUser.getUsername());
                     user.setEmail(rbacUser.getEmail());

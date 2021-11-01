@@ -41,7 +41,7 @@ public class CloudEventEncoder implements Processor {
         // Remove the incoming Ce-headers
         Map<String, Object> headers = in.getHeaders();
         Set<String> keys = new HashSet<>(headers.keySet());
-        for (String key: keys) {
+        for (String key : keys) {
             if (key.startsWith("Ce-")) {
                 headers.remove(key);
             }

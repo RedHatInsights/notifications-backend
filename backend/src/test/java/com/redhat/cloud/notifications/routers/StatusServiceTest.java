@@ -45,8 +45,8 @@ public class StatusServiceTest extends DbIsolatedTest {
         clearCachedStatus();
 
         /*
-         * First, let's check that all APIs are available.
-         * We won't test /health because it's always DOWN and returns 503 during tests.
+         * First, let's check that all APIs are available. We won't test /health because it's always DOWN and returns
+         * 503 during tests.
          */
         getMetrics();
         getBundles();
@@ -98,53 +98,27 @@ public class StatusServiceTest extends DbIsolatedTest {
     }
 
     private void getMetrics() {
-        given()
-                .when()
-                .get("/metrics")
-                .then()
-                .statusCode(200);
+        given().when().get("/metrics").then().statusCode(200);
     }
 
     private void getBundles() {
-        given()
-                .basePath(INTERNAL)
-                .when()
-                .get("/bundles")
-                .then()
-                .statusCode(200)
-                .contentType(JSON);
+        given().basePath(INTERNAL).when().get("/bundles").then().statusCode(200).contentType(JSON);
     }
 
     private void getEndpoints(Header identityHeader, int expectedStatusCode) {
-        given()
-                .basePath(API_INTEGRATIONS_V_1_0)
-                .header(identityHeader)
-                .when()
-                .get("/endpoints")
-                .then()
+        given().basePath(API_INTEGRATIONS_V_1_0).header(identityHeader).when().get("/endpoints").then()
                 .statusCode(expectedStatusCode);
     }
 
     private void getEventTypes(Header identityHeader, int expectedStatusCode) {
-        given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
-                .when()
-                .get("/notifications/eventTypes")
-                .then()
+        given().basePath(API_NOTIFICATIONS_V_1_0).header(identityHeader).when().get("/notifications/eventTypes").then()
                 .statusCode(expectedStatusCode);
     }
 
-    private void getCurrentStatus(Header identityHeader, String expectedStatus, String expectedStartTime, String expectedEndTime) {
-        String responseBody = given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
-                .when()
-                .get("/status")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+    private void getCurrentStatus(Header identityHeader, String expectedStatus, String expectedStartTime,
+            String expectedEndTime) {
+        String responseBody = given().basePath(API_NOTIFICATIONS_V_1_0).header(identityHeader).when().get("/status")
+                .then().statusCode(200).contentType(JSON).extract().asString();
 
         JsonObject jsonCurrentStatus = new JsonObject(responseBody);
         Json.decodeValue(responseBody, CurrentStatus.class);
@@ -163,19 +137,14 @@ public class StatusServiceTest extends DbIsolatedTest {
         }
     }
 
-    private void putCurrentStatus(Status status, LocalDateTime startTime, LocalDateTime endTime, int expectedStatusCode) {
+    private void putCurrentStatus(Status status, LocalDateTime startTime, LocalDateTime endTime,
+            int expectedStatusCode) {
         CurrentStatus currentStatus = new CurrentStatus();
         currentStatus.setStatus(status);
         currentStatus.setStartTime(startTime);
         currentStatus.setEndTime(endTime);
 
-        given()
-                .basePath(INTERNAL)
-                .contentType(JSON)
-                .body(Json.encode(currentStatus))
-                .when()
-                .put("/status")
-                .then()
+        given().basePath(INTERNAL).contentType(JSON).body(Json.encode(currentStatus)).when().put("/status").then()
                 .statusCode(expectedStatusCode);
     }
 }

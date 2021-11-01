@@ -58,72 +58,69 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     }
 
     @Override
-    public Uni<SecurityIdentity> authenticate(RhIdentityAuthenticationRequest rhAuthReq, AuthenticationRequestContext authenticationRequestContext) {
+    public Uni<SecurityIdentity> authenticate(RhIdentityAuthenticationRequest rhAuthReq,
+            AuthenticationRequestContext authenticationRequestContext) {
         if (!isRbacEnabled) {
             RhIdPrincipal principal;
             String xH = rhAuthReq.getAttribute(IDENTITY_HEADER);
             if (xH != null) {
                 RhIdentity rhid = getRhIdentityFromString(xH);
-                principal = new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(), rhid.getIdentity().getAccountNumber());
+                principal = new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(),
+                        rhid.getIdentity().getAccountNumber());
             } else {
                 principal = new RhIdPrincipal("-noauth-", "-1");
             }
-            return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
-                    .setPrincipal(principal)
-                    .addRole(RBAC_READ_NOTIFICATIONS)
-                    .addRole(RBAC_WRITE_NOTIFICATIONS)
-                    .addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS)
-                    .addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-                    .build());
+            return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder().setPrincipal(principal)
+                    .addRole(RBAC_READ_NOTIFICATIONS).addRole(RBAC_WRITE_NOTIFICATIONS)
+                    .addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS).addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS).build());
         }
         // Retrieve the identity header from the authentication request
-        return Uni.createFrom().item(() -> (String) rhAuthReq.getAttribute(IDENTITY_HEADER))
-                .onItem().transformToUni(xRhIdHeader ->
-                        // Start building a QuarkusSecurityIdentity
-                        Uni.createFrom().item(QuarkusSecurityIdentity.builder())
-                                .onItem().transform(builder -> {
-                                    // Decode the header and deserialize the resulting JSON
-                                    RhIdentity rhid = getRhIdentityFromString(xRhIdHeader);
-                                    RhIdPrincipal principal = new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(), rhid.getIdentity().getAccountNumber());
-                                    return builder.setPrincipal(principal);
+        return Uni.createFrom().item(() -> (String) rhAuthReq.getAttribute(IDENTITY_HEADER)).onItem()
+                .transformToUni(xRhIdHeader ->
+                // Start building a QuarkusSecurityIdentity
+                Uni.createFrom().item(QuarkusSecurityIdentity.builder()).onItem().transform(builder -> {
+                    // Decode the header and deserialize the resulting JSON
+                    RhIdentity rhid = getRhIdentityFromString(xRhIdHeader);
+                    RhIdPrincipal principal = new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(),
+                            rhid.getIdentity().getAccountNumber());
+                    return builder.setPrincipal(principal);
+                })
+                        // A decoding or a deserialization failure will cause an authentication failure
+                        .onFailure().transform(AuthenticationFailedException::new)
+                        // Otherwise, we can call the RBAC server
+                        .onItem()
+                        .transformToUni(builder -> rbacServer.getRbacInfo("notifications,integrations", xRhIdHeader)
+                                /*
+                                 * RBAC server calls fail regularly because of RBAC instability so we need to retry.
+                                 * IOException is thrown when the connection between us and RBAC is reset during an RBAC
+                                 * call execution. ConnectTimeoutException is thrown when RBAC does not respond at all
+                                 * to our call.
+                                 */
+                                .onFailure(failure -> failure.getClass() == IOException.class
+                                        || failure.getClass() == ConnectTimeoutException.class)
+                                .retry().withBackOff(initialBackOff, maxBackOff).atMost(maxRetryAttempts)
+                                // After we're done retrying, an RBAC server call failure will cause an authentication
+                                // failure
+                                .onFailure().transform(failure -> {
+                                    log.warning("RBAC authentication call failed: " + failure.getMessage());
+                                    throw new AuthenticationFailedException(failure.getMessage());
                                 })
-                                // A decoding or a deserialization failure will cause an authentication failure
-                                .onFailure().transform(AuthenticationFailedException::new)
-                                // Otherwise, we can call the RBAC server
-                                .onItem().transformToUni(builder ->
-                                        rbacServer.getRbacInfo("notifications,integrations", xRhIdHeader)
-                                                /*
-                                                 * RBAC server calls fail regularly because of RBAC instability so we need to retry.
-                                                 * IOException is thrown when the connection between us and RBAC is reset during an RBAC call execution.
-                                                 * ConnectTimeoutException is thrown when RBAC does not respond at all to our call.
-                                                 */
-                                                .onFailure(failure -> failure.getClass() == IOException.class || failure.getClass() == ConnectTimeoutException.class)
-                                                .retry()
-                                                .withBackOff(initialBackOff, maxBackOff)
-                                                .atMost(maxRetryAttempts)
-                                                // After we're done retrying, an RBAC server call failure will cause an authentication failure
-                                                .onFailure().transform(failure -> {
-                                                    log.warning("RBAC authentication call failed: " + failure.getMessage());
-                                                    throw new AuthenticationFailedException(failure.getMessage());
-                                                })
-                                                // Otherwise, we can finish building the QuarkusSecurityIdentity and return the result
-                                                .onItem().transform(rbacRaw -> {
-                                                    if (rbacRaw.canRead("notifications", "notifications")) {
-                                                        builder.addRole(RBAC_READ_NOTIFICATIONS);
-                                                    }
-                                                    if (rbacRaw.canWrite("notifications", "notifications")) {
-                                                        builder.addRole(RBAC_WRITE_NOTIFICATIONS);
-                                                    }
-                                                    if (rbacRaw.canRead("integrations", "endpoints")) {
-                                                        builder.addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS);
-                                                    }
-                                                    if (rbacRaw.canWrite("integrations", "endpoints")) {
-                                                        builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
-                                                    }
-                                                    return builder.build();
-                                                })
-                                )
-                );
+                                // Otherwise, we can finish building the QuarkusSecurityIdentity and return the result
+                                .onItem().transform(rbacRaw -> {
+                                    if (rbacRaw.canRead("notifications", "notifications")) {
+                                        builder.addRole(RBAC_READ_NOTIFICATIONS);
+                                    }
+                                    if (rbacRaw.canWrite("notifications", "notifications")) {
+                                        builder.addRole(RBAC_WRITE_NOTIFICATIONS);
+                                    }
+                                    if (rbacRaw.canRead("integrations", "endpoints")) {
+                                        builder.addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS);
+                                    }
+                                    if (rbacRaw.canWrite("integrations", "endpoints")) {
+                                        builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
+                                    }
+                                    return builder.build();
+                                })));
     }
 
     private static RhIdentity getRhIdentityFromString(String xRhIdHeader) {

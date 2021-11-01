@@ -65,7 +65,8 @@ public class NotificationHistory extends CreationTimestamped {
     public NotificationHistory() {
     }
 
-    public NotificationHistory(UUID id, Long invocationTime, Boolean invocationResult, Endpoint endpoint, LocalDateTime created) {
+    public NotificationHistory(UUID id, Long invocationTime, Boolean invocationResult, Endpoint endpoint,
+            LocalDateTime created) {
         this.id = id;
         this.invocationTime = invocationTime;
         this.invocationResult = invocationResult;
@@ -73,7 +74,8 @@ public class NotificationHistory extends CreationTimestamped {
         setCreated(created);
     }
 
-    public NotificationHistory(UUID id, Long invocationTime, Boolean invocationResult, Endpoint endpoint, LocalDateTime created, Map<String, Object> details) {
+    public NotificationHistory(UUID id, Long invocationTime, Boolean invocationResult, Endpoint endpoint,
+            LocalDateTime created, Map<String, Object> details) {
         this(id, invocationTime, invocationResult, endpoint, created);
         this.details = details;
     }

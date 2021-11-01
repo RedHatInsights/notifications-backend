@@ -10,7 +10,6 @@ public class StuffHolder {
     private boolean adminDown;
     private boolean degraded;
 
-
     public static StuffHolder getInstance() {
         if (stuffHolder == null) {
             stuffHolder = new StuffHolder();

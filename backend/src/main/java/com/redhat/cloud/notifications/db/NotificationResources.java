@@ -25,12 +25,12 @@ public class NotificationResources {
     public Uni<NotificationHistory> createNotificationHistory(NotificationHistory history) {
         history.prePersist(); // This method must be called manually while using a StatelessSession.
         return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.insert(history)
-                    .replaceWith(history);
+            return statelessSession.insert(history).replaceWith(history);
         });
     }
 
-    public Uni<List<NotificationHistory>> getNotificationHistory(String tenant, UUID endpoint, boolean includeDetails, Query limiter) {
+    public Uni<List<NotificationHistory>> getNotificationHistory(String tenant, UUID endpoint, boolean includeDetails,
+            Query limiter) {
         return sessionFactory.withSession(session -> {
             String query = "SELECT NEW NotificationHistory(nh.id, nh.invocationTime, nh.invocationResult, nh.endpoint, nh.created";
             if (includeDetails) {
@@ -43,14 +43,14 @@ public class NotificationResources {
             }
 
             Mutiny.Query<NotificationHistory> historyQuery = session.createQuery(query, NotificationHistory.class)
-                    .setParameter("accountId", tenant)
-                    .setParameter("endpointId", endpoint)
+                    .setParameter("accountId", tenant).setParameter("endpointId", endpoint)
                     // Default limit to prevent OutOfMemoryError, it may be overridden below.
                     .setMaxResults(MAX_NOTIFICATION_HISTORY_RESULTS);
 
             if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
                 if (limiter.getLimit().getLimit() > MAX_NOTIFICATION_HISTORY_RESULTS) {
-                    LOGGER.debugf("Too many notification history entries requested (%d), the default max limit (%d) will be enforced",
+                    LOGGER.debugf(
+                            "Too many notification history entries requested (%d), the default max limit (%d) will be enforced",
                             limiter.getLimit().getLimit(), MAX_NOTIFICATION_HISTORY_RESULTS);
                 } else {
                     historyQuery = historyQuery.setMaxResults(limiter.getLimit().getLimit())
@@ -58,8 +58,7 @@ public class NotificationResources {
                 }
             }
 
-            return historyQuery
-                    .getResultList();
+            return historyQuery.getResultList();
         });
     }
 
@@ -70,24 +69,24 @@ public class NotificationResources {
                 query = limiter.getModifiedQuery(query);
             }
 
-            Mutiny.Query<Map> mutinyQuery = session.createQuery(query, Map.class)
-                    .setParameter("accountId", tenant)
-                    .setParameter("endpointId", endpoint)
-                    .setParameter("historyId", historyId);
+            Mutiny.Query<Map> mutinyQuery = session.createQuery(query, Map.class).setParameter("accountId", tenant)
+                    .setParameter("endpointId", endpoint).setParameter("historyId", historyId);
 
             if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
                 mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
                         .setFirstResult(limiter.getLimit().getOffset());
             }
 
-            return mutinyQuery.getSingleResultOrNull()
-                    .onItem().ifNotNull().transform(JsonObject::new);
+            return mutinyQuery.getSingleResultOrNull().onItem().ifNotNull().transform(JsonObject::new);
         });
     }
 
     /**
      * Update a stub history item with data we have received from the Camel sender
-     * @param jo Map containing the returned data
+     * 
+     * @param jo
+     *            Map containing the returned data
+     * 
      * @return Nothing
      *
      * @see com.redhat.cloud.notifications.events.FromCamelHistoryFiller for the source of data
@@ -110,12 +109,9 @@ public class NotificationResources {
 
         String updateQuery = "UPDATE NotificationHistory SET details = :details, invocationResult = :result, invocationTime= :invocationTime WHERE id = :id";
         return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery(updateQuery)
-                    .setParameter("details", details)
-                    .setParameter("result", result)
-                    .setParameter("id", UUID.fromString(historyId))
-                    .setParameter("invocationTime", (long) duration)
-                    .executeUpdate()
+            return statelessSession.createQuery(updateQuery).setParameter("details", details)
+                    .setParameter("result", result).setParameter("id", UUID.fromString(historyId))
+                    .setParameter("invocationTime", (long) duration).executeUpdate()
                     .replaceWith(Uni.createFrom().voidItem());
         });
     }

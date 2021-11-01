@@ -19,8 +19,7 @@ public class AdvisorOpenshift implements EmailTemplate {
 
         throw new UnsupportedOperationException(String.format(
                 "No email title template for OpenShift Advisor event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
+                eventType, type));
     }
 
     @Override
@@ -35,13 +34,13 @@ public class AdvisorOpenshift implements EmailTemplate {
 
         throw new UnsupportedOperationException(String.format(
                 "No email body template for OpenShift Advisor event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
+                eventType, type));
     }
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return (eventType.equals("new-recommendation") || eventType.equals("weekly-digest")) && type == EmailSubscriptionType.INSTANT;
+        return (eventType.equals("new-recommendation") || eventType.equals("weekly-digest"))
+                && type == EmailSubscriptionType.INSTANT;
     }
 
     @Override

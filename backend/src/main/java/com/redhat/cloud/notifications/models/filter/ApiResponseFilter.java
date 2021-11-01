@@ -20,49 +20,50 @@ public class ApiResponseFilter extends SimpleBeanPropertyFilter {
     private static final Logger LOGGER = Logger.getLogger(ApiResponseFilter.class);
 
     @Override
-    public void serializeAsField(Object pojo, JsonGenerator jgen, SerializerProvider provider, PropertyWriter writer) throws Exception {
+    public void serializeAsField(Object pojo, JsonGenerator jgen, SerializerProvider provider, PropertyWriter writer)
+            throws Exception {
         // All filtered classes must be declared here.
         if (pojo instanceof EventType) {
             EventType eventType = (EventType) pojo;
             // We want to prevent the serialization of a specific property so we have to find the corresponding writer.
             switch (writer.getName()) {
-                case "application":
-                    /*
-                     * This is how the filter behaves dynamically: we need to add a boolean attribute (never serialized
-                     * or persisted) in the class which will indicate whether or not the property should be filtered
-                     * out. That way, it is possible to filter a property from the REST response of API "A" and include
-                     * the same property into the REST response of API "B".
-                     */
-                    if (eventType.isFilterOutApplication()) {
-                        logFilterOut(EventType.class.getName(), "application");
-                        // This will prevent the serialization of the property.
-                        return;
-                    }
-                    break;
-                default:
-                    // Do nothing.
-                    break;
+            case "application":
+                /*
+                 * This is how the filter behaves dynamically: we need to add a boolean attribute (never serialized or
+                 * persisted) in the class which will indicate whether or not the property should be filtered out. That
+                 * way, it is possible to filter a property from the REST response of API "A" and include the same
+                 * property into the REST response of API "B".
+                 */
+                if (eventType.isFilterOutApplication()) {
+                    logFilterOut(EventType.class.getName(), "application");
+                    // This will prevent the serialization of the property.
+                    return;
+                }
+                break;
+            default:
+                // Do nothing.
+                break;
             }
         } else if (pojo instanceof BehaviorGroup) {
             BehaviorGroup behaviorGroup = (BehaviorGroup) pojo;
             switch (writer.getName()) {
-                case "actions":
-                    if (behaviorGroup.isFilterOutActions()) {
-                        logFilterOut(BehaviorGroup.class.getName(), "actions");
-                        // This will prevent the serialization of the property.
-                        return;
-                    }
-                    break;
-                case "bundle":
-                    if (behaviorGroup.isFilterOutBundle()) {
-                        logFilterOut(BehaviorGroup.class.getName(), "bundle");
-                        // This will prevent the serialization of the property.
-                        return;
-                    }
-                    break;
-                default:
-                    // Do nothing.
-                    break;
+            case "actions":
+                if (behaviorGroup.isFilterOutActions()) {
+                    logFilterOut(BehaviorGroup.class.getName(), "actions");
+                    // This will prevent the serialization of the property.
+                    return;
+                }
+                break;
+            case "bundle":
+                if (behaviorGroup.isFilterOutBundle()) {
+                    logFilterOut(BehaviorGroup.class.getName(), "bundle");
+                    // This will prevent the serialization of the property.
+                    return;
+                }
+                break;
+            default:
+                // Do nothing.
+                break;
             }
         }
         // The property was not filtered out, it will be serialized.

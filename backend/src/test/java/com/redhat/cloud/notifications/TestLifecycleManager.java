@@ -22,7 +22,8 @@ import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionT
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
     // Keep the version synced with pom.xml.
-    private static final DockerImageName MOCK_SERVER_DOCKER_IMAGE = DockerImageName.parse("jamesdbloom/mockserver").withTag("mockserver-5.5.4");
+    private static final DockerImageName MOCK_SERVER_DOCKER_IMAGE = DockerImageName.parse("jamesdbloom/mockserver")
+            .withTag("mockserver-5.5.4");
 
     PostgreSQLContainer<?> postgreSQLContainer;
     MockServerContainer mockEngineServer;
@@ -40,8 +41,8 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         setupMockEngine(properties);
 
         /*
-         * We'll use an in-memory Reactive Messaging connector to send payloads.
-         * See https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/2/testing/testing.html
+         * We'll use an in-memory Reactive Messaging connector to send payloads. See
+         * https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/2/testing/testing.html
          */
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(INGRESS_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(AGGREGATION_CHANNEL));
@@ -59,7 +60,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         InMemoryConnector.clear();
     }
 
-
     @Override
     public void inject(Object testInstance) {
         Class<?> c = testInstance.getClass();
@@ -67,7 +67,8 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
             for (Field f : c.getDeclaredFields()) {
                 if (f.getAnnotation(MockServerConfig.class) != null) {
                     if (!MockServerClientConfig.class.isAssignableFrom(f.getType())) {
-                        throw new RuntimeException("@MockRbacConfig can only be used on fields of type RbacConfigurator");
+                        throw new RuntimeException(
+                                "@MockRbacConfig can only be used on fields of type RbacConfigurator");
                     }
 
                     f.setAccessible(true);
@@ -112,9 +113,11 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
         // set up mock engine
         mockEngineServer.start();
-        String mockServerUrl = "http://" + mockEngineServer.getContainerIpAddress() + ":" + mockEngineServer.getServerPort();
+        String mockServerUrl = "http://" + mockEngineServer.getContainerIpAddress() + ":"
+                + mockEngineServer.getServerPort();
 
-        configurator = new MockServerClientConfig(mockEngineServer.getContainerIpAddress(), mockEngineServer.getServerPort());
+        configurator = new MockServerClientConfig(mockEngineServer.getContainerIpAddress(),
+                mockEngineServer.getServerPort());
 
         props.put("rbac-authentication/mp-rest/url", mockServerUrl);
         props.put("rbac-s2s/mp-rest/url", mockServerUrl);

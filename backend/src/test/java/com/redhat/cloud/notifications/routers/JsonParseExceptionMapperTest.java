@@ -12,14 +12,8 @@ public class JsonParseExceptionMapperTest {
 
     @Test
     public void testCreateInvalidEventType() {
-        String responseBody = given()
-                .contentType(JSON)
-                .body("I should be a valid event type JSON!")
-                .when()
-                .post("/internal/eventTypes")
-                .then()
-                .statusCode(400)
-                .extract().body().asString();
+        String responseBody = given().contentType(JSON).body("I should be a valid event type JSON!").when()
+                .post("/internal/eventTypes").then().statusCode(400).extract().body().asString();
         assertTrue(responseBody.contains("Unrecognized token 'I'"));
     }
 }

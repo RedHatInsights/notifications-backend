@@ -43,7 +43,8 @@ public class Event extends CreationTimestamped {
     @Transient
     private Action action;
 
-    public Event() { }
+    public Event() {
+    }
 
     public Event(EventType eventType, String payload, Action action) {
         this.accountId = action.getAccountId();

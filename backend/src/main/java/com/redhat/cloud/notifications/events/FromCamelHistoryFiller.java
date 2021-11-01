@@ -14,8 +14,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * We sent data via Camel. Now Camel informs us about the outcome,
- * which we need to put into the notifications history.
+ * We sent data via Camel. Now Camel informs us about the outcome, which we need to put into the notifications history.
  */
 @ApplicationScoped
 public class FromCamelHistoryFiller {
@@ -34,19 +33,14 @@ public class FromCamelHistoryFiller {
     @Incoming(FROMCAMEL_CHANNEL)
     // Can be modified to use Multi<Message<String>> input also for more concurrency
     public Uni<Void> processAsync(Message<String> input) {
-        return Uni.createFrom().item(() -> input.getPayload())
-                .onItem().invoke(payload -> log.info(() -> "Processing return from camel: " + payload))
-                .onItem().transform(this::decodeItem)
-                .onItem()
-                .transformToUni(payload -> {
+        return Uni.createFrom().item(() -> input.getPayload()).onItem()
+                .invoke(payload -> log.info(() -> "Processing return from camel: " + payload)).onItem()
+                .transform(this::decodeItem).onItem().transformToUni(payload -> {
                     return sessionFactory.withStatelessSession(statelessSession -> {
-                        return notificationResources.updateHistoryItem(payload)
-                                .onFailure().invoke(t -> log.info(() -> "|  Update Fail: " + t)
-                                );
+                        return notificationResources.updateHistoryItem(payload).onFailure()
+                                .invoke(t -> log.info(() -> "|  Update Fail: " + t));
                     });
-                })
-                .onItemOrFailure()
-                .transformToUni((unused, t) -> {
+                }).onItemOrFailure().transformToUni((unused, t) -> {
                     if (t != null) {
                         log.severe("|  Failure to update the history : " + t);
                     }

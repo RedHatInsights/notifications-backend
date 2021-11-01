@@ -22,26 +22,19 @@ public class ApplicationResources {
 
     public Uni<Application> createApp(Application app) {
         return sessionFactory.withSession(session -> {
-            return session.find(Bundle.class, app.getBundleId())
-                    .onItem().ifNull().failWith(new NotFoundException())
+            return session.find(Bundle.class, app.getBundleId()).onItem().ifNull().failWith(new NotFoundException())
                     .onItem().transform(bundle -> {
                         app.setBundle(bundle);
                         return app;
-                    })
-                    .onItem().transformToUni(session::persist)
-                    .call(session::flush)
-                    .replaceWith(app);
+                    }).onItem().transformToUni(session::persist).call(session::flush).replaceWith(app);
         });
     }
 
     public Uni<Integer> updateApplication(UUID id, Application app) {
         String query = "UPDATE Application SET name = :name, displayName = :displayName WHERE id = :id";
         return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
-                    .setParameter("name", app.getName())
-                    .setParameter("displayName", app.getDisplayName())
-                    .setParameter("id", id)
-                    .executeUpdate()
+            return session.createQuery(query).setParameter("name", app.getName())
+                    .setParameter("displayName", app.getDisplayName()).setParameter("id", id).executeUpdate()
                     .call(session::flush);
         });
     }
@@ -49,26 +42,19 @@ public class ApplicationResources {
     public Uni<Boolean> deleteApplication(UUID id) {
         String query = "DELETE FROM Application WHERE id = :id";
         return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
-                    .setParameter("id", id)
-                    .executeUpdate()
-                    .call(session::flush)
-                    .onItem().transform(rowCount -> rowCount > 0);
+            return session.createQuery(query).setParameter("id", id).executeUpdate().call(session::flush).onItem()
+                    .transform(rowCount -> rowCount > 0);
         });
     }
 
     public Uni<EventType> createEventType(EventType eventType) {
         return sessionFactory.withSession(session -> {
-            return session.find(Application.class, eventType.getApplicationId())
-                    .onItem().ifNull().failWith(new NotFoundException())
-                    .onItem().transform(app -> {
+            return session.find(Application.class, eventType.getApplicationId()).onItem().ifNull()
+                    .failWith(new NotFoundException()).onItem().transform(app -> {
                         eventType.setApplication(app);
                         return eventType;
-                    })
-                    .onItem().transformToUni(session::persist)
-                    .call(session::flush)
-                    .replaceWith(eventType)
-                    .onItem().transform(EventType::filterOutApplication);
+                    }).onItem().transformToUni(session::persist).call(session::flush).replaceWith(eventType).onItem()
+                    .transform(EventType::filterOutApplication);
         });
     }
 
@@ -98,10 +84,8 @@ public class ApplicationResources {
     public Uni<Application> getApplication(String bundleName, String applicationName) {
         String query = "FROM Application WHERE bundle.name = :bundleName AND name = :applicationName";
         return sessionFactory.withSession(session -> {
-            return session.createQuery(query, Application.class)
-                    .setParameter("bundleName", bundleName)
-                    .setParameter("applicationName", applicationName)
-                    .getSingleResultOrNull();
+            return session.createQuery(query, Application.class).setParameter("bundleName", bundleName)
+                    .setParameter("applicationName", applicationName).getSingleResultOrNull();
         });
     }
 
@@ -109,10 +93,8 @@ public class ApplicationResources {
     public Uni<EventType> getEventType(String bundleName, String applicationName, String eventTypeName) {
         final String query = "FROM EventType WHERE name = :eventTypeName AND application.name = :applicationName AND application.bundle.name = :bundleName";
         return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery(query, EventType.class)
-                    .setParameter("bundleName", bundleName)
-                    .setParameter("applicationName", applicationName)
-                    .setParameter("eventTypeName", eventTypeName)
+            return statelessSession.createQuery(query, EventType.class).setParameter("bundleName", bundleName)
+                    .setParameter("applicationName", applicationName).setParameter("eventTypeName", eventTypeName)
                     .getSingleResult();
         });
     }
@@ -120,13 +102,9 @@ public class ApplicationResources {
     public Uni<List<EventType>> getEventTypes(UUID appId) {
         String query = "FROM EventType WHERE application.id = :appId";
         return sessionFactory.withSession(session -> {
-            return session.find(Application.class, appId)
-                    .onItem().ifNull().failWith(new NotFoundException())
+            return session.find(Application.class, appId).onItem().ifNull().failWith(new NotFoundException())
                     .replaceWith(
-                            session.createQuery(query, EventType.class)
-                                    .setParameter("appId", appId)
-                                    .getResultList()
-                    )
+                            session.createQuery(query, EventType.class).setParameter("appId", appId).getResultList())
                     .onItem().invoke(eventTypes -> {
                         for (EventType eventType : eventTypes) {
                             eventType.filterOutApplication();
@@ -138,12 +116,9 @@ public class ApplicationResources {
     public Uni<Integer> updateEventType(UUID id, EventType eventType) {
         String query = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description WHERE id = :id";
         return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
-                    .setParameter("name", eventType.getName())
+            return session.createQuery(query).setParameter("name", eventType.getName())
                     .setParameter("displayName", eventType.getDisplayName())
-                    .setParameter("description", eventType.getDescription())
-                    .setParameter("id", id)
-                    .executeUpdate()
+                    .setParameter("description", eventType.getDescription()).setParameter("id", id).executeUpdate()
                     .call(session::flush);
         });
     }
@@ -151,11 +126,8 @@ public class ApplicationResources {
     public Uni<Boolean> deleteEventTypeById(UUID id) {
         String query = "DELETE FROM EventType WHERE id = :id";
         return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
-                    .setParameter("id", id)
-                    .executeUpdate()
-                    .call(session::flush)
-                    .onItem().transform(rowCount -> rowCount > 0);
+            return session.createQuery(query).setParameter("id", id).executeUpdate().call(session::flush).onItem()
+                    .transform(rowCount -> rowCount > 0);
         });
     }
 

@@ -7,7 +7,8 @@ import javax.validation.ConstraintValidatorContext;
 
 import static com.redhat.cloud.notifications.models.Status.MAINTENANCE;
 
-public class MaintenanceWithTimeIntervalValidator implements ConstraintValidator<MaintenanceWithTimeInterval, CurrentStatus> {
+public class MaintenanceWithTimeIntervalValidator
+        implements ConstraintValidator<MaintenanceWithTimeInterval, CurrentStatus> {
 
     @Override
     public boolean isValid(CurrentStatus value, ConstraintValidatorContext context) {

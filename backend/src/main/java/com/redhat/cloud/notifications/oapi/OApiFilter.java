@@ -36,8 +36,7 @@ public class OApiFilter {
 
     @PostConstruct
     void initialize() {
-        this.client = WebClient.create(vertx,
-                new WebClientOptions().setDefaultHost("localhost").setDefaultPort(port));
+        this.client = WebClient.create(vertx, new WebClientOptions().setDefaultHost("localhost").setDefaultPort(port));
     }
 
     public Uni<String> serveOpenApi(String openApiOption) {
@@ -45,13 +44,9 @@ public class OApiFilter {
             throw new WebApplicationException("No openapi file for [" + openApiOption + "] found.", 404);
         }
 
-        return client.get("/openapi.json")
-                .send()
-                .onItem()
-                .transform(response ->
-                        filterJson(response.bodyAsJsonObject(), openApiOption)
-                )
-                .onItem().transform(JsonObject::encode);
+        return client.get("/openapi.json").send().onItem()
+                .transform(response -> filterJson(response.bodyAsJsonObject(), openApiOption)).onItem()
+                .transform(JsonObject::encode);
     }
 
     private JsonObject filterJson(JsonObject oapiModelJson, String openApiOption) {
@@ -61,64 +56,61 @@ public class OApiFilter {
         oapiModelJson.stream().forEach(entry -> {
             String key = entry.getKey();
             switch (key) {
-                case "components":
-                case "openapi":
-                    // We just copy all of them even if they may only apply to one
-                    root.put(key, entry.getValue());
-                    break;
-                case "tags":
-                    JsonArray tags = (JsonArray) entry.getValue();
-                    JsonArray filteredTags = new JsonArray(tags
-                            .stream()
-                            .filter(o -> !((JsonObject) o).getString("name").equals(PRIVATE))
-                            .collect(Collectors.toList()));
-                    if (filteredTags.size() > 0) {
-                        root.put(key, filteredTags);
-                    }
-                    break;
-                case "paths":
-                    JsonObject pathObject2 = new JsonObject();
-                    JsonObject pathsObjectIn = (JsonObject) entry.getValue();
-                    pathsObjectIn.stream().forEach(pathEntry -> {
-                        String path = pathEntry.getKey();
+            case "components":
+            case "openapi":
+                // We just copy all of them even if they may only apply to one
+                root.put(key, entry.getValue());
+                break;
+            case "tags":
+                JsonArray tags = (JsonArray) entry.getValue();
+                JsonArray filteredTags = new JsonArray(tags.stream()
+                        .filter(o -> !((JsonObject) o).getString("name").equals(PRIVATE)).collect(Collectors.toList()));
+                if (filteredTags.size() > 0) {
+                    root.put(key, filteredTags);
+                }
+                break;
+            case "paths":
+                JsonObject pathObject2 = new JsonObject();
+                JsonObject pathsObjectIn = (JsonObject) entry.getValue();
+                pathsObjectIn.stream().forEach(pathEntry -> {
+                    String path = pathEntry.getKey();
 
-                        JsonObject pathValue = (JsonObject) pathEntry.getValue();
-                        if (!path.endsWith("openapi.json")) { // Skip the openapi endpoint
-                            JsonObject newPathValue = null;
-                            String mangledPath = mangle(path);
+                    JsonObject pathValue = (JsonObject) pathEntry.getValue();
+                    if (!path.endsWith("openapi.json")) { // Skip the openapi endpoint
+                        JsonObject newPathValue = null;
+                        String mangledPath = mangle(path);
 
-                            if (NOTIFICATIONS.equals(openApiOption) && path.startsWith(Constants.API_NOTIFICATIONS_V_1_0)) {
-                                newPathValue = filterPrivateOperation(pathValue, true);
-                            } else if (INTEGRATIONS.equals(openApiOption) && path.startsWith(Constants.API_INTEGRATIONS_V_1_0)) {
-                                newPathValue = filterPrivateOperation(pathValue, true);
-                            } else if (PRIVATE.equals(openApiOption)) {
-                                newPathValue = filterPrivateOperation(pathValue, false);
-                                mangledPath = path;
-                            } else if (INTERNAL.equals(openApiOption) && path.startsWith(Constants.INTERNAL)) {
-                                newPathValue = filterPrivateOperation(pathValue, true);
-                            }
-
-                            if (newPathValue != null) {
-                                pathObject2.put(mangledPath, newPathValue);
-                            }
+                        if (NOTIFICATIONS.equals(openApiOption) && path.startsWith(Constants.API_NOTIFICATIONS_V_1_0)) {
+                            newPathValue = filterPrivateOperation(pathValue, true);
+                        } else if (INTEGRATIONS.equals(openApiOption)
+                                && path.startsWith(Constants.API_INTEGRATIONS_V_1_0)) {
+                            newPathValue = filterPrivateOperation(pathValue, true);
+                        } else if (PRIVATE.equals(openApiOption)) {
+                            newPathValue = filterPrivateOperation(pathValue, false);
+                            mangledPath = path;
+                        } else if (INTERNAL.equals(openApiOption) && path.startsWith(Constants.INTERNAL)) {
+                            newPathValue = filterPrivateOperation(pathValue, true);
                         }
-                    });
-                    root.put("paths", pathObject2);
-                    break;
-                case "info":
-                case "servers":
-                    // Nothing. We handle info and servers below.
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown OpenAPI top-level element " + key);
+
+                        if (newPathValue != null) {
+                            pathObject2.put(mangledPath, newPathValue);
+                        }
+                    }
+                });
+                root.put("paths", pathObject2);
+                break;
+            case "info":
+            case "servers":
+                // Nothing. We handle info and servers below.
+                break;
+            default:
+                throw new IllegalStateException("Unknown OpenAPI top-level element " + key);
             }
         });
 
         // Add info section
-        root.put("info", new JsonObject()
-                .put("description", "The API for " + capitalize(openApiOption))
-                .put("version", "1.0")
-                .put("title", capitalize(openApiOption)));
+        root.put("info", new JsonObject().put("description", "The API for " + capitalize(openApiOption))
+                .put("version", "1.0").put("title", capitalize(openApiOption)));
 
         // Add servers section
         JsonArray serversArray = new JsonArray();
@@ -162,9 +154,8 @@ public class OApiFilter {
         JsonObject job = new JsonObject();
         job.put("url", "https://cloud.redhat.com");
         job.put("description", "Production Server");
-        job.put("variables", new JsonObject()
-                .put("basePath", new JsonObject()
-                        .put("default", "/api/" + openApiOption + "/v1.0")));
+        job.put("variables",
+                new JsonObject().put("basePath", new JsonObject().put("default", "/api/" + openApiOption + "/v1.0")));
         return job;
     }
 
@@ -173,11 +164,9 @@ public class OApiFilter {
         JsonObject job = new JsonObject();
         job.put("url", "http://localhost:{port}");
         job.put("description", "Development Server");
-        job.put("variables", new JsonObject()
-                .put("basePath", new JsonObject()
-                        .put("default", "/api/" + openApiOption + "/v1.0"))
-                .put("port", new JsonObject()
-                        .put("default", "8080")));
+        job.put("variables",
+                new JsonObject().put("basePath", new JsonObject().put("default", "/api/" + openApiOption + "/v1.0"))
+                        .put("port", new JsonObject().put("default", "8080")));
         return job;
     }
 

@@ -41,17 +41,19 @@ public class AuthRequestFilter implements ClientRequestFilter {
     AuthRequestFilter() {
         Config config = ConfigProvider.getConfig();
 
-        application = config.getOptionalValue(RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY, String.class).orElse(RBAC_SERVICE_TO_SERVICE_APPLICATION_DEFAULT);
+        application = config.getOptionalValue(RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY, String.class)
+                .orElse(RBAC_SERVICE_TO_SERVICE_APPLICATION_DEFAULT);
         Map<String, Secret> rbacServiceToServiceSecretMap;
 
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            rbacServiceToServiceSecretMap = objectMapper.readValue(
-                    config.getOptionalValue(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_KEY, String.class).orElse(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_DEFAULT),
-                    new TypeReference<>() { }
-            );
+            rbacServiceToServiceSecretMap = objectMapper
+                    .readValue(config.getOptionalValue(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_KEY, String.class)
+                            .orElse(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_DEFAULT), new TypeReference<>() {
+                            });
         } catch (JsonProcessingException jsonProcessingException) {
-            log.log(Level.ERROR, "Unable to load Rbac service to service secret map, defaulting to empty map", jsonProcessingException);
+            log.log(Level.ERROR, "Unable to load Rbac service to service secret map, defaulting to empty map",
+                    jsonProcessingException);
             rbacServiceToServiceSecretMap = Map.of();
         }
 
@@ -62,7 +64,8 @@ public class AuthRequestFilter implements ClientRequestFilter {
 
         String tmp = System.getProperty(RBAC_SERVICE_TO_SERVICE_DEV_EXCEPTIONAL_AUTH_KEY);
         if (tmp != null && !tmp.isEmpty()) {
-            authInfo = new String(Base64.getEncoder().encode(tmp.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+            authInfo = new String(Base64.getEncoder().encode(tmp.getBytes(StandardCharsets.UTF_8)),
+                    StandardCharsets.UTF_8);
         } else {
             authInfo = null;
         }

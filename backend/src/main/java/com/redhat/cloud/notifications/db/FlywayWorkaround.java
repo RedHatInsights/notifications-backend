@@ -9,8 +9,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 
 /**
- * This is a temporary workaround for a quarkus-flyway / quarkus-hibernate-reactive incompatibility.
- * See https://github.com/quarkusio/quarkus/issues/10716 for more details.
+ * This is a temporary workaround for a quarkus-flyway / quarkus-hibernate-reactive incompatibility. See
+ * https://github.com/quarkusio/quarkus/issues/10716 for more details.
  */
 @ApplicationScoped
 public class FlywayWorkaround {
@@ -29,7 +29,8 @@ public class FlywayWorkaround {
     public void runFlywayMigration(@Observes StartupEvent event) {
         LOGGER.warn("Starting Flyway workaround... remove it ASAP!");
         LOGGER.debugf("Connecting to jdbc:%s", datasourceUrl);
-        Flyway flyway = Flyway.configure().dataSource("jdbc:" + datasourceUrl, datasourceUsername, datasourcePassword).load();
+        Flyway flyway = Flyway.configure().dataSource("jdbc:" + datasourceUrl, datasourceUsername, datasourcePassword)
+                .load();
         flyway.migrate();
     }
 }

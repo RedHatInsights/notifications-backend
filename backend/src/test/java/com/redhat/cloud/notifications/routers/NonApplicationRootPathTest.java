@@ -20,28 +20,16 @@ public class NonApplicationRootPathTest {
 
     @Test
     void testHealth() {
-        given()
-                .when().get("/health")
-                .then()
-                .statusCode(200)
-                .contentType(JSON);
+        given().when().get("/health").then().statusCode(200).contentType(JSON);
     }
 
     @Test
     void testMetrics() {
-        given()
-                .when().get("/metrics")
-                .then()
-                .statusCode(200)
-                .contentType(TEXT);
+        given().when().get("/metrics").then().statusCode(200).contentType(TEXT);
     }
 
     @Test
     void testOpenApi() {
-        given()
-                .when().get("/openapi.json")
-                .then()
-                .statusCode(200)
-                .contentType(JSON);
+        given().when().get("/openapi.json").then().statusCode(200).contentType(JSON);
     }
 }

@@ -31,19 +31,11 @@ public class RecipientResolverTest {
         endpoint.setAccountId(ACCOUNT_ID);
         endpoint.setProperties(new EmailSubscriptionProperties());
 
-        recipientResolver.recipientUsers(
-                ACCOUNT_ID,
-                Set.of(endpoint),
-                Set.of("foo", "bar")
-        )
-                .subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted();
+        recipientResolver.recipientUsers(ACCOUNT_ID, Set.of(endpoint), Set.of("foo", "bar")).subscribe()
+                .withSubscriber(UniAssertSubscriber.create()).assertCompleted();
 
-        Mockito.verify(rbacRecipientUsersProvider, Mockito.times(1)).getUsers(
-                Mockito.eq(ACCOUNT_ID),
-                Mockito.eq(false)
-        );
+        Mockito.verify(rbacRecipientUsersProvider, Mockito.times(1)).getUsers(Mockito.eq(ACCOUNT_ID),
+                Mockito.eq(false));
 
         Mockito.verifyNoMoreInteractions(rbacRecipientUsersProvider);
     }

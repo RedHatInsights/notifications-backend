@@ -23,10 +23,8 @@ public class ApiResponseFilterTest {
 
     @Test
     void testActiveFilter() {
-        String responseBody = given()
-                .when().get("/internal/event-types/filtered")
-                .then().statusCode(200)
-                .extract().asString();
+        String responseBody = given().when().get("/internal/event-types/filtered").then().statusCode(200).extract()
+                .asString();
         JsonObject jsonEventType = new JsonObject(responseBody);
         jsonEventType.mapTo(EventType.class);
         assertNull(jsonEventType.getJsonObject("application"));
@@ -34,10 +32,8 @@ public class ApiResponseFilterTest {
 
     @Test
     void testInactiveFilter() {
-        String responseBody = given()
-                .when().get("/internal/event-types/unfiltered")
-                .then().statusCode(200)
-                .extract().asString();
+        String responseBody = given().when().get("/internal/event-types/unfiltered").then().statusCode(200).extract()
+                .asString();
         JsonObject jsonEventType = new JsonObject(responseBody);
         jsonEventType.mapTo(EventType.class);
         assertNotNull(jsonEventType.getJsonObject("application"));

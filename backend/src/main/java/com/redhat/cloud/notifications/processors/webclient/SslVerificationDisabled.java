@@ -14,6 +14,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Qualifier
 @Retention(RUNTIME)
-@Target({METHOD, FIELD})
+@Target({ METHOD, FIELD })
 public @interface SslVerificationDisabled {
 }

@@ -43,7 +43,8 @@ public class EmailAggregationKey {
         }
 
         EmailAggregationKey that = (EmailAggregationKey) o;
-        return Objects.equals(accountId, that.accountId) && Objects.equals(bundle, that.bundle) && Objects.equals(application, that.application);
+        return Objects.equals(accountId, that.accountId) && Objects.equals(bundle, that.bundle)
+                && Objects.equals(application, that.application);
     }
 
     @Override

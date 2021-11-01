@@ -18,23 +18,17 @@ public class EmailAggregationResources {
 
     @Transactional
     public List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
-        String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.EmailAggregationKey(ea.accountId, ea.bundleName, ea.applicationName) " +
-                "FROM EmailAggregation ea WHERE ea.created > :start AND ea.created <= :end";
-        return session.createQuery(query, EmailAggregationKey.class)
-                .setParameter("start", start)
-                .setParameter("end", end)
-                .getResultList();
+        String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.EmailAggregationKey(ea.accountId, ea.bundleName, ea.applicationName) "
+                + "FROM EmailAggregation ea WHERE ea.created > :start AND ea.created <= :end";
+        return session.createQuery(query, EmailAggregationKey.class).setParameter("start", start)
+                .setParameter("end", end).getResultList();
     }
 
     List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
         String query = "FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
-        return session.createQuery(query, EmailAggregation.class)
-                .setParameter("accountId", key.getAccountId())
-                .setParameter("bundleName", key.getBundle())
-                .setParameter("applicationName", key.getApplication())
-                .setParameter("start", start)
-                .setParameter("end", end)
-                .getResultList();
+        return session.createQuery(query, EmailAggregation.class).setParameter("accountId", key.getAccountId())
+                .setParameter("bundleName", key.getBundle()).setParameter("applicationName", key.getApplication())
+                .setParameter("start", start).setParameter("end", end).getResultList();
     }
 
     public CronJobRun getLastCronJobRun() {
@@ -45,8 +39,6 @@ public class EmailAggregationResources {
     @Transactional
     public void updateLastCronJobRun(LocalDateTime lastRun) {
         String query = "UPDATE CronJobRun SET lastRun = :lastRun";
-        session.createQuery(query)
-                .setParameter("lastRun", lastRun)
-                .executeUpdate();
+        session.createQuery(query).setParameter("lastRun", lastRun).executeUpdate();
     }
 }

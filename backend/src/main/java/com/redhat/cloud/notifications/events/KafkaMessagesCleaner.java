@@ -27,8 +27,8 @@ public class KafkaMessagesCleaner {
     Mutiny.SessionFactory sessionFactory;
 
     /**
-     * The Kafka messages identifiers are stored in the database until their retention time is reached.
-     * This scheduled job deletes from the database the expired Kafka messages identifiers.
+     * The Kafka messages identifiers are stored in the database until their retention time is reached. This scheduled
+     * job deletes from the database the expired Kafka messages identifiers.
      */
     @Scheduled(identity = "KafkaMessagesCleaner", every = "${notifications.kafka-messages-cleaner.period}", delay = 5L, delayUnit = MINUTES)
     public void clean() {
@@ -36,15 +36,15 @@ public class KafkaMessagesCleaner {
     }
 
     Uni<Integer> testableClean() {
-        Duration deleteDelay = ConfigProvider.getConfig().getOptionalValue(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY, Duration.class)
+        Duration deleteDelay = ConfigProvider.getConfig()
+                .getOptionalValue(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY, Duration.class)
                 .orElse(DEFAULT_DELETE_DELAY);
         LocalDateTime deleteBefore = now().minus(deleteDelay);
         LOGGER.infof("Kafka messages purge starting. Entries older than %s will be deleted.", deleteBefore.toString());
         return sessionFactory.withStatelessSession(statelessSession -> {
             return statelessSession.createQuery("DELETE FROM KafkaMessage WHERE created < :deleteBefore")
-                    .setParameter("deleteBefore", deleteBefore)
-                    .executeUpdate()
-                    .invoke(deleted -> LOGGER.infof("Kafka messages purge ended. %d entries were deleted from the database.", deleted));
+                    .setParameter("deleteBefore", deleteBefore).executeUpdate().invoke(deleted -> LOGGER
+                            .infof("Kafka messages purge ended. %d entries were deleted from the database.", deleted));
         });
     }
 

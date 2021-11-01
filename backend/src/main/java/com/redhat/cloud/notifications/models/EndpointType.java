@@ -16,6 +16,7 @@ public enum EndpointType {
      * This enum member is no longer used.
      * <p>
      * It <b>MUST NOT</b> be deleted because the {@link EndpointType} members ordinal is stored into the database.
+     * 
      * @deprecated Since the behavior groups migration.
      */
     @JsonProperty("default")

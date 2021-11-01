@@ -53,36 +53,24 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
     void shouldNotProcessWhenEndpointsAreNull() {
         final Multi<NotificationHistory> process = testee.process(new Event(), null);
 
-        process.subscribe()
-                .withSubscriber(AssertSubscriber.create())
-                .assertCompleted()
-                .assertHasNotReceivedAnyItem();
+        process.subscribe().withSubscriber(AssertSubscriber.create()).assertCompleted().assertHasNotReceivedAnyItem();
     }
 
     @Test
     void shouldNotProcessWhenEndpointsAreEmpty() {
         final Multi<NotificationHistory> process = testee.process(new Event(), List.of());
 
-        process.subscribe()
-                .withSubscriber(AssertSubscriber.create())
-                .assertCompleted()
-                .assertHasNotReceivedAnyItem();
+        process.subscribe().withSubscriber(AssertSubscriber.create()).assertCompleted().assertHasNotReceivedAnyItem();
     }
 
     @Test
     void shouldSuccessfullySendEmail() throws InterruptedException {
         AggregationCommand aggregationCommand1 = new AggregationCommand(
-                new EmailAggregationKey("account-1", "bundle-1", "app-1"),
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(1),
-                DAILY
-        );
+                new EmailAggregationKey("account-1", "bundle-1", "app-1"), LocalDateTime.now(),
+                LocalDateTime.now().plusDays(1), DAILY);
         AggregationCommand aggregationCommand2 = new AggregationCommand(
                 new EmailAggregationKey("account-2", "bundle-2", "app-2"),
-                LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
-                LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
-                DAILY
-        );
+                LocalDateTime.now(ZoneOffset.UTC).plusDays(1), LocalDateTime.now(ZoneOffset.UTC).plusDays(2), DAILY);
 
         Mockito.when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
 
@@ -93,25 +81,15 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
         Thread.sleep(5000L);
 
         // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-        verify(emailAggregationResources, times(1)).getEmailAggregation(
-                eq(aggregationCommand1.getAggregationKey()),
-                eq(aggregationCommand1.getStart()),
-                eq(aggregationCommand1.getEnd())
-        );
+        verify(emailAggregationResources, times(1)).getEmailAggregation(eq(aggregationCommand1.getAggregationKey()),
+                eq(aggregationCommand1.getStart()), eq(aggregationCommand1.getEnd()));
 
-        verify(emailAggregationResources, times(1)).purgeOldAggregation(
-                eq(aggregationCommand1.getAggregationKey()),
-                eq(aggregationCommand1.getEnd())
-        );
-        verify(emailAggregationResources, times(1)).getEmailAggregation(
-                eq(aggregationCommand2.getAggregationKey()),
-                eq(aggregationCommand2.getStart()),
-                eq(aggregationCommand2.getEnd())
-        );
-        verify(emailAggregationResources, times(1)).purgeOldAggregation(
-                eq(aggregationCommand2.getAggregationKey()),
-                eq(aggregationCommand2.getEnd())
-        );
+        verify(emailAggregationResources, times(1)).purgeOldAggregation(eq(aggregationCommand1.getAggregationKey()),
+                eq(aggregationCommand1.getEnd()));
+        verify(emailAggregationResources, times(1)).getEmailAggregation(eq(aggregationCommand2.getAggregationKey()),
+                eq(aggregationCommand2.getStart()), eq(aggregationCommand2.getEnd()));
+        verify(emailAggregationResources, times(1)).purgeOldAggregation(eq(aggregationCommand2.getAggregationKey()),
+                eq(aggregationCommand2.getEnd()));
         verifyNoMoreInteractions(emailAggregationResources);
     }
 
@@ -119,9 +97,7 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
     void consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload() {
         Uni<Void> consumeEmailAggregations = testee.consumeEmailAggregations("I am not valid!");
 
-        consumeEmailAggregations.subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
+        consumeEmailAggregations.subscribe().withSubscriber(UniAssertSubscriber.create()).assertCompleted()
                 .assertItem(null);
     }
 }

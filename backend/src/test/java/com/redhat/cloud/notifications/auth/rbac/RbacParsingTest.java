@@ -10,8 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Test RBAC parsing.
- * Brought over from policies-ui-backend and extended
+ * Test RBAC parsing. Brought over from policies-ui-backend and extended
  */
 class RbacParsingTest {
 

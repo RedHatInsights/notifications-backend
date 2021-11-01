@@ -63,8 +63,10 @@ public class KafkaMessageDeduplicator {
                 Header header = headers.next();
                 if (header.value() == null) {
                     invalidMessageIdCounter.increment();
-                    LOGGER.warnf("Application %s/%s sent an invalid Kafka header [%s=null]. They must change their " +
-                                    "integration and send a non-null value.", bundleName, applicationName, MESSAGE_ID_HEADER);
+                    LOGGER.warnf(
+                            "Application %s/%s sent an invalid Kafka header [%s=null]. They must change their "
+                                    + "integration and send a non-null value.",
+                            bundleName, applicationName, MESSAGE_ID_HEADER);
                 } else {
                     String headerValue = new String(header.value(), UTF_8);
                     try {
@@ -74,25 +76,29 @@ public class KafkaMessageDeduplicator {
                             throw new IllegalArgumentException("Wrong UUID version received");
                         }
                         validMessageIdCounter.increment();
-                        LOGGER.tracef("Application %s/%s sent a valid Kafka header [%s=%s]",
-                                bundleName, applicationName, MESSAGE_ID_HEADER, headerValue);
+                        LOGGER.tracef("Application %s/%s sent a valid Kafka header [%s=%s]", bundleName,
+                                applicationName, MESSAGE_ID_HEADER, headerValue);
                         return messageId;
                     } catch (IllegalArgumentException e) {
                         invalidMessageIdCounter.increment();
-                        LOGGER.warnf("Application %s/%s sent an invalid Kafka header [%s=%s]. They must change their " +
-                                "integration and send a valid UUID (version 4).", bundleName, applicationName, MESSAGE_ID_HEADER, headerValue);
+                        LOGGER.warnf(
+                                "Application %s/%s sent an invalid Kafka header [%s=%s]. They must change their "
+                                        + "integration and send a valid UUID (version 4).",
+                                bundleName, applicationName, MESSAGE_ID_HEADER, headerValue);
                     }
                 }
             }
             if (headers.hasNext()) {
-                LOGGER.warnf("Application %s/%s sent multiple Kafka headers [%s]. They must change their " +
-                                "integration and send only one value.", bundleName, applicationName, MESSAGE_ID_HEADER);
+                LOGGER.warnf(
+                        "Application %s/%s sent multiple Kafka headers [%s]. They must change their "
+                                + "integration and send only one value.",
+                        bundleName, applicationName, MESSAGE_ID_HEADER);
             }
         }
         if (!found) {
             missingMessageIdCounter.increment();
-            LOGGER.tracef("Application %s/%s did not send any Kafka header [%s]",
-                    bundleName, applicationName, MESSAGE_ID_HEADER);
+            LOGGER.tracef("Application %s/%s did not send any Kafka header [%s]", bundleName, applicationName,
+                    MESSAGE_ID_HEADER);
         }
         // This will be returned if the message ID is either invalid or not found.
         return null;
@@ -107,16 +113,15 @@ public class KafkaMessageDeduplicator {
         if (messageId == null) {
             /*
              * For now, messages without an ID are always considered new. This is necessary to give the onboarded apps
-             * time to change their integration and start sending the new header. The message ID may become mandatory later.
+             * time to change their integration and start sending the new header. The message ID may become mandatory
+             * later.
              */
             return Uni.createFrom().item(FALSE);
         } else {
             String hql = "SELECT TRUE FROM KafkaMessage WHERE id = :messageId";
             return sessionFactory.withStatelessSession(statelessSession -> {
-                return statelessSession.createQuery(hql, Boolean.class)
-                        .setParameter("messageId", messageId)
-                        .getSingleResultOrNull()
-                        .onItem().ifNull().continueWith(FALSE);
+                return statelessSession.createQuery(hql, Boolean.class).setParameter("messageId", messageId)
+                        .getSingleResultOrNull().onItem().ifNull().continueWith(FALSE);
             });
         }
     }

@@ -19,14 +19,14 @@ public class EmailTemplateFactory {
     public EmailTemplate get(String bundle, String application) {
         if (bundle.equalsIgnoreCase(RHEL)) {
             switch (application.toLowerCase()) {
-                case POLICIES:
-                    return new Policies();
-                case ADVISOR:
-                    return new Advisor();
-                case DRIFT:
-                    return new Drift();
-                default:
-                    break;
+            case POLICIES:
+                return new Policies();
+            case ADVISOR:
+                return new Advisor();
+            case DRIFT:
+                return new Drift();
+            default:
+                break;
             }
         } else if (bundle.equalsIgnoreCase(OPENSHIFT)) {
             if (application.equalsIgnoreCase(ADVISOR)) {

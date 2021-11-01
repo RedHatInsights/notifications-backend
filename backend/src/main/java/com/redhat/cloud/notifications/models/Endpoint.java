@@ -57,15 +57,10 @@ public class Endpoint extends CreationUpdateTimestamped {
     private EndpointType type;
 
     @Schema(oneOf = { WebhookProperties.class, EmailSubscriptionProperties.class, CamelProperties.class })
-    @JsonTypeInfo(
-            use = JsonTypeInfo.Id.NAME,
-            property = "type",
-            include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
-    @JsonSubTypes({
-        @JsonSubTypes.Type(value = WebhookProperties.class, name = "webhook"),
-        @JsonSubTypes.Type(value = EmailSubscriptionProperties.class, name = "email_subscription"),
-        @JsonSubTypes.Type(value = CamelProperties.class, name = "camel")
-    })
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
+    @JsonSubTypes({ @JsonSubTypes.Type(value = WebhookProperties.class, name = "webhook"),
+            @JsonSubTypes.Type(value = EmailSubscriptionProperties.class, name = "email_subscription"),
+            @JsonSubTypes.Type(value = CamelProperties.class, name = "camel") })
     @Valid
     @Transient
     private EndpointProperties properties;
@@ -132,8 +127,8 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public <T extends EndpointProperties> T getProperties(Class<T> propertiesClass) {
         if (!propertiesClass.isInstance(properties)) {
-            throw new IllegalStateException("Endpoint properties type mismatch, expected: " + propertiesClass.getName() +
-                    ", actual: " + properties.getClass().getName());
+            throw new IllegalStateException("Endpoint properties type mismatch, expected: " + propertiesClass.getName()
+                    + ", actual: " + properties.getClass().getName());
         } else {
             return propertiesClass.cast(properties);
         }
@@ -178,16 +173,8 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     @Override
     public String toString() {
-        return "Endpoint{" +
-                "id=" + id +
-                ", accountId='" + accountId + '\'' +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", enabled=" + enabled +
-                ", type=" + type +
-                ", created=" + getCreated() +
-                ", updated=" + getUpdated() +
-                ", properties=" + properties +
-                '}';
+        return "Endpoint{" + "id=" + id + ", accountId='" + accountId + '\'' + ", name='" + name + '\''
+                + ", description='" + description + '\'' + ", enabled=" + enabled + ", type=" + type + ", created="
+                + getCreated() + ", updated=" + getUpdated() + ", properties=" + properties + '}';
     }
 }

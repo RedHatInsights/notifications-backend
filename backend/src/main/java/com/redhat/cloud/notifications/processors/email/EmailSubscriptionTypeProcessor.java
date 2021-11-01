@@ -91,7 +91,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             final EmailTemplate template = emailTemplateFactory.get(action.getBundle(), action.getApplication());
             final boolean shouldSaveAggregation = Arrays.stream(EmailSubscriptionType.values())
                     .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
-                    .anyMatch(emailSubscriptionType -> template.isSupported(action.getEventType(), emailSubscriptionType));
+                    .anyMatch(emailSubscriptionType -> template.isSupported(action.getEventType(),
+                            emailSubscriptionType));
 
             Uni<Boolean> processUni;
 
@@ -101,26 +102,22 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 aggregation.setApplicationName(action.getApplication());
                 aggregation.setBundleName(action.getBundle());
 
-                processUni = baseTransformer.transform(action)
-                        .onItem().transform(transformedAction -> {
-                            aggregation.setPayload(transformedAction);
-                            return aggregation;
-                        })
-                        .onItem().transformToUni(emailAggregation -> this.emailAggregationResources.addEmailAggregation(emailAggregation));
+                processUni = baseTransformer.transform(action).onItem().transform(transformedAction -> {
+                    aggregation.setPayload(transformedAction);
+                    return aggregation;
+                }).onItem().transformToUni(
+                        emailAggregation -> this.emailAggregationResources.addEmailAggregation(emailAggregation));
             } else {
                 processUni = Uni.createFrom().item(false);
             }
 
-            return processUni.onItem().transformToMulti(_unused -> sendEmail(
-                    event,
-                    Set.copyOf(endpoints),
-                    EmailSubscriptionType.INSTANT,
-                    template
-            ));
+            return processUni.onItem().transformToMulti(
+                    _unused -> sendEmail(event, Set.copyOf(endpoints), EmailSubscriptionType.INSTANT, template));
         }
     }
 
-    private Multi<NotificationHistory> sendEmail(Event event, Set<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType, EmailTemplate emailTemplate) {
+    private Multi<NotificationHistory> sendEmail(Event event, Set<Endpoint> endpoints,
+            EmailSubscriptionType emailSubscriptionType, EmailTemplate emailTemplate) {
         processedCount.increment();
         Action action = event.getAction();
         if (!emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
@@ -135,11 +132,13 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         }
 
         return subscriptionResources
-                .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType)
-                .onItem().transform(Set::copyOf)
-                .onItem().transformToUni(subscribers -> recipientResolver.recipientUsers(action.getAccountId(), endpoints, subscribers))
-        .onItem().transformToMulti(Multi.createFrom()::iterable)
-        .onItem().transformToUniAndConcatenate(user -> emailSender.sendEmail(user, event, subject, body));
+                .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(),
+                        emailSubscriptionType)
+                .onItem().transform(Set::copyOf).onItem()
+                .transformToUni(
+                        subscribers -> recipientResolver.recipientUsers(action.getAccountId(), endpoints, subscribers))
+                .onItem().transformToMulti(Multi.createFrom()::iterable).onItem()
+                .transformToUniAndConcatenate(user -> emailSender.sendEmail(user, event, subject, body));
     }
 
     @Incoming(AGGREGATION_CHANNEL)
@@ -154,24 +153,25 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         }
 
         return sessionFactory.withStatelessSession(statelessSession -> {
-            return processAggregateEmailsByAggregationKey(
-                    aggregationCommand.getAggregationKey(),
-                    aggregationCommand.getStart(),
-                    aggregationCommand.getEnd(),
+            return processAggregateEmailsByAggregationKey(aggregationCommand.getAggregationKey(),
+                    aggregationCommand.getStart(), aggregationCommand.getEnd(),
                     aggregationCommand.getSubscriptionType(),
                     // Delete on daily
-                    aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY)
-            ).onItem().ignoreAsUni();
+                    aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY)).onItem()
+                            .ignoreAsUni();
         });
     }
 
-    private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
-        final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
+    private Multi<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(
+            EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime,
+            EmailSubscriptionType emailSubscriptionType, boolean delete) {
+        final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(),
+                aggregationKey.getApplication());
 
-        Multi<Tuple2<NotificationHistory, EmailAggregationKey>> doDelete = delete ?
-                emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
-                        .onItem().transformToMulti(unused -> Multi.createFrom().empty()) :
-                Multi.createFrom().empty();
+        Multi<Tuple2<NotificationHistory, EmailAggregationKey>> doDelete = delete
+                ? emailAggregationResources.purgeOldAggregation(aggregationKey, endTime).onItem()
+                        .transformToMulti(unused -> Multi.createFrom().empty())
+                : Multi.createFrom().empty();
 
         if (!emailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
             return doDelete;
@@ -183,10 +183,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         if (subject == null || body == null) {
             return doDelete;
         }
-        return emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime)
-                .onItem().transform(Map::entrySet)
-                .onItem().transformToMulti(Multi.createFrom()::iterable)
-                .onItem().transformToMultiAndConcatenate(entries -> {
+        return emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime).onItem()
+                .transform(Map::entrySet).onItem().transformToMulti(Multi.createFrom()::iterable).onItem()
+                .transformToMultiAndConcatenate(entries -> {
 
                     Action action = new Action();
                     action.setContext(entries.getValue());
@@ -202,10 +201,10 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     Event event = new Event();
                     event.setAction(action);
 
-                    return emailSender.sendEmail(entries.getKey(), event, subject, body)
-                            .onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
-                })
-                .onTermination().call((throwable, aBoolean) -> {
+                    return emailSender.sendEmail(entries.getKey(), event, subject, body).onItem()
+                            .transformToMulti(notificationHistory -> Multi.createFrom()
+                                    .item(Tuple2.of(notificationHistory, aggregationKey)));
+                }).onTermination().call((throwable, aBoolean) -> {
                     if (throwable != null) {
                         log.log(Level.WARNING, "Error while processing aggregation", throwable);
                     }
