@@ -21,7 +21,7 @@
                         </li>
                         {/each}
                     </ul>
-                    The listed {#if action.events.size() is 1} instance is{#else} instances are{/if} scheduled for upgrade maintenance to {action.context.kafka_version} on {action.context.upgrade_time.toUtcFormat()}.
+                    The listed {#if action.events.size() is 1} instance is{#else} instances are{/if} scheduled for upgrade maintenance to Kafka version {action.context.kafka_version} on {action.context.upgrade_time.toUtcFormat()}.
                     The maintenance window for the upgrade is variable, but should take approximately {action.context.upgrade_duration} minutes.
                     <br>
                     <br>
