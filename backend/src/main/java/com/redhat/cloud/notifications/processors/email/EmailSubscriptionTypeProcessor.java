@@ -13,6 +13,10 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.recipients.RecipientResolver;
+import com.redhat.cloud.notifications.recipients.RecipientSettings;
+import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings;
+import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
 import com.redhat.cloud.notifications.templates.EmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
@@ -37,6 +41,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @ApplicationScoped
 public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
@@ -134,10 +140,15 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             return Multi.createFrom().empty();
         }
 
+        Set<RecipientSettings> requests = Stream.concat(
+                endpoints.stream().map(EndpointRecipientSettings::new),
+                ActionRecipientSettings.fromAction(action).stream()
+        ).collect(Collectors.toSet());
+
         return subscriptionResources
                 .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType)
                 .onItem().transform(Set::copyOf)
-                .onItem().transformToUni(subscribers -> recipientResolver.recipientUsers(action.getAccountId(), endpoints, subscribers))
+                .onItem().transformToUni(subscribers -> recipientResolver.recipientUsers(action.getAccountId(), requests, subscribers))
         .onItem().transformToMulti(Multi.createFrom()::iterable)
         .onItem().transformToUniAndConcatenate(user -> emailSender.sendEmail(user, event, subject, body));
     }
