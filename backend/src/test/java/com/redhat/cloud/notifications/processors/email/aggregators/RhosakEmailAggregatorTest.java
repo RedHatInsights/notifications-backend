@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +28,7 @@ class RhosakEmailAggregatorTest {
     public static final String SCHEDULED_UPGRADE = "scheduled-upgrade";
     public static final String UPGRADES = "upgrades";
     public static final String DISRUPTIONS = "disruptions";
-    public static final LocalDateTime NOW = LocalDateTime.now();
+    public static final LocalDateTime NOW = LocalDateTime.now(ZoneOffset.UTC);
     RhosakEmailAggregator aggregator;
     JsonObject context;
     JsonObject upgrades;

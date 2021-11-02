@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -75,7 +76,7 @@ public class RhosakEmailAggregator extends AbstractEmailPayloadAggregator {
     }
 
     private void buildServiceDisruptionPayload(JsonObject aggregationPayload, JsonObject context) {
-        String timestamp = aggregationPayload.getString(TIMESTAMP, LocalDateTime.now().toString());
+        String timestamp = aggregationPayload.getString(TIMESTAMP, LocalDateTime.now(ZoneOffset.UTC).toString());
         String serviceDisruptionImpact = context.getString(SERVICE_DISRUPTION_IMPACT);
         boolean currentDisruptionImpactPerformance = serviceDisruptionImpact.contains(PERFORMANCE);
         boolean currentDisruptionImpactLatency = serviceDisruptionImpact.contains(LATENCY);
