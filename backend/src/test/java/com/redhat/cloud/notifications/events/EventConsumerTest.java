@@ -318,11 +318,13 @@ public class EventConsumerTest {
 
     private static Action buildValidAction() {
         Action action = new Action();
+        action.setVersion("v1.0.0");
         action.setBundle(BUNDLE);
         action.setApplication(APP);
         action.setEventType(EVENT_TYPE);
         action.setTimestamp(LocalDateTime.now());
         action.setAccountId(DEFAULT_ACCOUNT_ID);
+        action.setRecipients(List.of());
         action.setEvents(
                 List.of(
                         com.redhat.cloud.notifications.ingress.Event
