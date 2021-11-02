@@ -27,6 +27,7 @@ class RhosakEmailAggregatorTest {
     public static final String SCHEDULED_UPGRADE = "scheduled-upgrade";
     public static final String UPGRADES = "upgrades";
     public static final String DISRUPTIONS = "disruptions";
+    public static final LocalDateTime NOW = LocalDateTime.now();
     RhosakEmailAggregator aggregator;
     JsonObject context;
     JsonObject upgrades;
@@ -123,6 +124,7 @@ class RhosakEmailAggregatorTest {
         assertEquals(1, disruptions.size(), "aggregator should still have one disruption body");
         entry = disruptions.getJsonObject(kafkaName);
         assertEquals(perf + ", " + throughput, entry.getString(impactedArea));
+        assertNotNull(entry.getString("start_time"));
 
         // test third aggregation
         String latency = "latency";
@@ -180,7 +182,7 @@ class RhosakEmailAggregatorTest {
         String title = dailyTittleTemplateInstance.data("action", emailActionMessage).render();
         assertTrue(title.contains("Red Hat OpenShift Streams for Apache Kafka Daily Report"), "Title must contain RHOSAK related digest info");
         String body = dailyBodyTemplateInstance.data("action", emailActionMessage).data("user", Map.of("firstName", "machi1990", "lastName", "Last Name")).render();
-        assertTrue(body.contains("The following table summarizes the OpenShift Streams instances affected by unexpected disruption of the OpenShift Streams service"), "Body must contain service disruption summary");
+        assertTrue(body.contains("The following table summarizes the OpenShift Streams instances affected by unexpected disruptions of the OpenShift Streams service."), "Body must contain service disruption summary");
         assertTrue(body.contains("The following table summarizes Kafka upgrade activity for your OpenShift Streams instances."), "Body must contain upgrades summary");
         assertTrue(body.contains("Hello machi1990."), "Body must contain greeting message");
         assertTrue(body.contains("This is the daily report for your OpenShift Streams instances"), "Body must contain greeting message");
@@ -195,7 +197,7 @@ class RhosakEmailAggregatorTest {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(APPLICATION_SERVICES);
         emailActionMessage.setApplication(RHOSAK);
-        emailActionMessage.setTimestamp(LocalDateTime.now());
+        emailActionMessage.setTimestamp(NOW);
         emailActionMessage.setEventType(DISRUPTION);
 
         emailActionMessage.setContext(Map.of(
@@ -229,7 +231,7 @@ class RhosakEmailAggregatorTest {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(APPLICATION_SERVICES);
         emailActionMessage.setApplication(RHOSAK);
-        emailActionMessage.setTimestamp(LocalDateTime.now());
+        emailActionMessage.setTimestamp(NOW);
         emailActionMessage.setEventType(SCHEDULED_UPGRADE);
 
         emailActionMessage.setContext(Map.of(
