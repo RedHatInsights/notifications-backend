@@ -45,7 +45,7 @@
     <td class="rh-content__block">
         <p>
             <b>Service disruptions</b>
-            The following table summarizes the OpenShift Streams instances affected by unexpected disruption of the OpenShift Streams service. The table also shows the possible performance impacts on each instance due to this disruption.
+            The following table summarizes the OpenShift Streams instances affected by unexpected disruptions of the OpenShift Streams service. The table shows the date and time that service for each instance was disrupted. The table also shows the possible impacts for each instance due to the disruption.
         </p>
     </td>
 </tr>
@@ -55,6 +55,7 @@
             <thead>
             <tr>
                 <th>OpenShift Streams instance name</th>
+                <th>Service disruption start time</th>
                 <th>Possible impacts</th>
             </tr>
             </thead>
@@ -62,6 +63,7 @@
             {#for key in action.context.disruptions.keySet()}
             <tr>
                 <td>{action.context.disruptions.get(key).name}</td>
+                <td>{action.context.disruptions.get(key).start_time.toUtcFormat()}</td>
                 <td>{action.context.disruptions.get(key).impacted_area}</td>
             </tr>
             {/for}
