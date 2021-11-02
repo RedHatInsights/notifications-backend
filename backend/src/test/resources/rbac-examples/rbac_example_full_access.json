@@ -16,6 +16,10 @@
       "resourceDefinitions": []
     },
     {
+      "permission": "events:*:*",
+      "resourceDefinitions": []
+    },
+    {
       "permission": "integrations:*:*",
       "resourceDefinitions": []
     }
