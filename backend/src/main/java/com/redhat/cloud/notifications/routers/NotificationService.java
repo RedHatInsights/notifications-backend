@@ -216,6 +216,9 @@ public class NotificationService {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
         // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
+        if (endpointIds == null) {
+            return Uni.createFrom().failure(new BadRequestException("The endpoints identifiers list should not be null"));
+        }
         if (endpointIds.contains(null)) {
             return Uni.createFrom().failure(new BadRequestException("The endpoints identifiers list should not contain empty values"));
         }
