@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.hibernate.jpa.QueryHints;
 
 import javax.persistence.CascadeType;
@@ -65,12 +64,10 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     @NotNull
     @NotBlank
-    @Schema(name = "display_name")
     private String displayName;
 
     @NotNull
     @Transient
-    @Schema(name = "bundle_id")
     private UUID bundleId;
 
     @ManyToOne(fetch = LAZY, optional = false)
