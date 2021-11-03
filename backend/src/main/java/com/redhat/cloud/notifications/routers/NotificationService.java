@@ -215,6 +215,9 @@ public class NotificationService {
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
+        if (endpointIds == null) {
+            return Uni.createFrom().failure(new BadRequestException("The request body must contain an endpoints identifiers list"));
+        }
         // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
         if (endpointIds.contains(null)) {
             return Uni.createFrom().failure(new BadRequestException("The endpoints identifiers list should not contain empty values"));
