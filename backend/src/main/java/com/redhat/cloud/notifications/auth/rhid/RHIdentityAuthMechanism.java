@@ -29,7 +29,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {
         String xRhIdentityHeaderValue = routingContext.request().getHeader(IDENTITY_HEADER);
-        String path = routingContext.normalisedPath();
+        String path = routingContext.normalizedPath();
 
         // Those two come via Turnpike and have a different identity header.
         // Skip the header check for now
