@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
@@ -29,7 +28,6 @@ public class EventLogEntry {
     private String application;
 
     @NotNull
-    @Schema(name = "event_type")
     private String eventType;
 
     @NotNull

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.StatusConverter;
 import com.redhat.cloud.notifications.models.validation.MaintenanceWithTimeInterval;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -42,12 +41,10 @@ public class CurrentStatus {
 
     @JsonInclude(NON_NULL)
     @JsonFormat(shape = STRING)
-    @Schema(name = "start_time")
     private LocalDateTime startTime;
 
     @JsonInclude(NON_NULL)
     @JsonFormat(shape = STRING)
-    @Schema(name = "end_time")
     private LocalDateTime endTime;
 
     public Status getStatus() {
