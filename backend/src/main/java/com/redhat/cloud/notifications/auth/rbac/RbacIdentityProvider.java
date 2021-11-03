@@ -34,7 +34,6 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     public static final String RBAC_WRITE_NOTIFICATIONS = "write:notifications";
     public static final String RBAC_READ_INTEGRATIONS_ENDPOINTS = "read:integrations_ep";
     public static final String RBAC_WRITE_INTEGRATIONS_ENDPOINTS = "write:integrations_ep";
-
     private final Logger log = Logger.getLogger(this.getClass().getSimpleName());
 
     @Inject
