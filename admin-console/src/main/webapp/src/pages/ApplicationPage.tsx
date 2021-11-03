@@ -37,22 +37,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const newEvent = useCreateEventType();
     const [ id ] = React.useState<string | undefined>();
-    const [ displayName, setDisplayName ] = React.useState<string | undefined>();
-    const [ name, setName ] = React.useState<string | undefined>();
-    const [ description, setDescription ] = React.useState<string | undefined>();
+    const [ displayName, setDisplayName ] = React.useState<string | undefined>('');
+    const [ name, setName ] = React.useState<string | undefined>('');
+    const [ description, setDescription ] = React.useState<string | undefined>('');
 
-    const [ isOpen, setIsOpen ] = React.useState(false);
-    const toggle = () => setIsOpen(!isOpen);
+    const [ showModal, setShowModal ] = React.useState(false);
 
-    const [ isEdit, setIsEdit ] = React.useState(false);
-
-    const handleClick = () => {
-        setIsEdit(!isEdit);
-        toggle();
-
-    };
-
-    const handleSubmit = React.useCallback(() => {
+    const handleSubmit = React.useCallback((event: React.FormEvent) => {
+        event.preventDefault();
         const mutate = newEvent.mutate;
         mutate({
             id: id ?? '',
@@ -69,7 +61,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     }
 
     if (eventTypesQuery.payload?.status !== 200) {
-        return <span>Error while loading eventtypes: {eventTypesQuery.errorObject.toString() }</span>;
+        return <span>Error while loading eventtypes: {eventTypesQuery.errorObject.toString()}</span>;
     }
 
     if (eventTypesQuery.payload.value.length === 0) {
@@ -93,27 +85,27 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             <ToolbarContent>
                                 <ToolbarItem>
                                     <Button variant='primary' type='button'
-                                        onClick={ handleClick }> Create Event Type </Button>
+                                        onClick={ () => setShowModal(true) }> Create Event Type </Button>
                                     <Modal
                                         variant={ ModalVariant.medium }
                                         title={ `Create Event Type for ${ (applicationTypesQuery.loading ||
                                             applicationTypesQuery.payload?.status !== 200) ?
                                             <Spinner /> : applicationTypesQuery.payload.value.displayName }` }
-                                        isOpen={ isOpen }
-                                        onClose={ toggle }
+                                        isOpen={ showModal }
+                                        onClose={ () => setShowModal(false) }
                                     ><Form isHorizontal>
                                             <FormGroup label='Name' fieldId='name' isRequired
                                                 helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
                                                 <TextInput
                                                     type='text'
-                                                    defaultValue={ name }
+                                                    value={ name }
                                                     onChange={ setName }
                                                     id='name' /></FormGroup>
                                             <FormGroup label='Display name' fieldId='display-name' isRequired
                                                 helperText='This is the name you want to display on the UI'>
                                                 <TextInput
                                                     type='text'
-                                                    defaultValue={ displayName }
+                                                    value={ displayName }
                                                     onChange={ setDisplayName }
                                                     id='display-name' /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
@@ -121,16 +113,19 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 to help admin descide how to notify users.'>
                                                 <TextArea
                                                     type='text'
+                                                    value={ description }
                                                     onChange={ setDescription }
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
-                                                <Button variant='primary' type='submit' isDisabled={ !name || !displayName }
+                                                <Button variant='primary' type='submit' value='Submit' isDisabled={ !name || !displayName }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
-                                                    onSubmit={ handleSubmit } >Submit</Button>
-                                                <Button variant='link' onClick={ toggle }>Cancel</Button>
+                                                    onSubmit={ handleSubmit } onClick={ () => setShowModal(false) }>Submit</Button>
+                                                <Button variant='link' onClick={ () => setShowModal(false) }>Cancel</Button>
                                             </ActionGroup>
-                                        </Form><></>
+                                        </Form>
+                                        <>
+                                        </>
                                     </Modal>
                                 </ToolbarItem>
                             </ToolbarContent>
@@ -148,8 +143,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <Td>{ e.name }</Td>
                                 <Td>{ e.description }</Td>
                                 <Td>{ e.id }</Td>
-                                <Td><Button type='button' variant='plain'
-                                    onClick={ handleClick }> { <PencilAltIcon /> } </Button></Td>
+                                <Td>
+                                    <Button type='button' variant='plain'
+                                        onClick={ () => setShowModal(true) }> { <PencilAltIcon /> } </Button></Td>
                             </Tr>
                         ))}
                     </Tbody>
