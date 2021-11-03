@@ -48,7 +48,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.db.NotificationResources.MAX_NOTIFICATION_HISTORY_RESULTS;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -95,7 +97,7 @@ public class EndpointService {
                 schema = @Schema(type = SchemaType.INTEGER)
             )
     })
-    public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") Boolean activeOnly) {
+    public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") List<String> targetType, @QueryParam("active") Boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
         return sessionFactory.withSession(session -> {
@@ -103,7 +105,7 @@ public class EndpointService {
             Uni<Long> count;
 
             if (targetType != null) {
-                EndpointType endpointType = EndpointType.valueOf(targetType.toUpperCase());
+                Set<EndpointType> endpointType = targetType.stream().map(s -> EndpointType.valueOf(s.toUpperCase())).collect(Collectors.toSet());
                 endpoints = resources
                         .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query);
                 count = resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly);
