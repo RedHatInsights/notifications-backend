@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -41,12 +40,10 @@ public class Application extends CreationUpdateTimestamped {
     private String name;
 
     @NotNull
-    @Schema(name = "display_name")
     private String displayName;
 
     @NotNull
     @Transient
-    @Schema(name = "bundle_id")
     private UUID bundleId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

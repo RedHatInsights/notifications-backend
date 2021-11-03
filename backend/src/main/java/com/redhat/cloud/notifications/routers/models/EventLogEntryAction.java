@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers.models;
 
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.EndpointType;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -19,11 +18,9 @@ public class EventLogEntryAction {
     private UUID id;
 
     @NotNull
-    @Schema(name = "endpoint_type")
     private EndpointType endpointType;
 
     @NotNull
-    @Schema(name = "invocation_result")
     private Boolean invocationResult;
 
     @Nullable
