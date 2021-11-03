@@ -23,11 +23,6 @@ type ApplicationPageParams = {
     applicationId: string;
 }
 
-export interface ModalProps {
-    isEdit: boolean;
-    error?: string;
-}
-
 export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
@@ -43,8 +38,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const [ showModal, setShowModal ] = React.useState(false);
 
-    const handleSubmit = React.useCallback((event: React.FormEvent) => {
-        event.preventDefault();
+    const handleSubmit = React.useCallback(() => {
+        setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
             id: id ?? '',
@@ -120,8 +115,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 <Button variant='primary' type='submit' value='Submit' isDisabled={ !name || !displayName }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
-                                                    onSubmit={ handleSubmit } onClick={ () => setShowModal(false) }>Submit</Button>
-                                                <Button variant='link' onClick={ () => setShowModal(false) }>Cancel</Button>
+                                                    onSubmit={ () => handleSubmit }>Submit</Button>
+                                                <Button variant='link' type='reset' onClick={ () => setShowModal(false) }>Cancel</Button>
                                             </ActionGroup>
                                         </Form>
                                         <>
