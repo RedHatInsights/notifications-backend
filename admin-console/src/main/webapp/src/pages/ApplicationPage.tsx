@@ -81,7 +81,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             <ToolbarContent>
                                 <ToolbarItem>
                                     <Button variant='primary' type='button'
-                                        onClick={ () => setShowModal(true) }> Create Event Type </Button>
+                                        onClick={ () => [ setShowModal(true), setIsEdit(false) ] }> Create Event Type </Button>
                                     <Modal
                                         variant={ ModalVariant.medium }
                                         title={ `Create Event Type for ${ (applicationTypesQuery.loading ||
