@@ -37,6 +37,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ description, setDescription ] = React.useState<string | undefined>('');
 
     const [ showModal, setShowModal ] = React.useState(false);
+    const [ isEdit, setIsEdit ] = React.useState(false);
+
+    const handleChange = () => {
+        setIsEdit(true);
+        setDisplayName;
+        setName;
+        setDescription;
+    };
 
     const handleSubmit = React.useCallback(() => {
         setShowModal(false);
@@ -94,14 +102,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 <TextInput
                                                     type='text'
                                                     value={ name }
-                                                    onChange={ setName }
+                                                    onChange={ handleChange }
                                                     id='name' /></FormGroup>
                                             <FormGroup label='Display name' fieldId='display-name' isRequired
                                                 helperText='This is the name you want to display on the UI'>
                                                 <TextInput
                                                     type='text'
                                                     value={ displayName }
-                                                    onChange={ setDisplayName }
+                                                    onChange={ handleChange }
                                                     id='display-name' /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
                                                 helperText='Optional short description that appears in the UI
@@ -109,13 +117,13 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 <TextArea
                                                     type='text'
                                                     value={ description }
-                                                    onChange={ setDescription }
+                                                    onChange={ handleChange }
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='submit' value='Submit' isDisabled={ !name || !displayName }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
-                                                    onSubmit={ () => handleSubmit }>Submit</Button>
+                                                    onSubmit={ handleSubmit }>Submit</Button>
                                                 <Button variant='link' type='reset' onClick={ () => setShowModal(false) }>Cancel</Button>
                                             </ActionGroup>
                                         </Form>
