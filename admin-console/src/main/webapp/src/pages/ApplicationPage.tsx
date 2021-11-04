@@ -18,6 +18,7 @@ import { useCreateEventType } from '../services/CreateEventTypes';
 import { useApplicationTypes } from '../services/GetApplication';
 import { useBundles } from '../services/GetBundles';
 import { useEventTypes } from '../services/GetEventTypes';
+import { EventType } from '../types/Notifications';
 
 type ApplicationPageParams = {
     applicationId: string;
@@ -31,13 +32,31 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
     const newEvent = useCreateEventType();
-    const [ id ] = React.useState<string | undefined>();
+    const [ id, setId ] = React.useState<string | undefined>();
     const [ displayName, setDisplayName ] = React.useState<string | undefined>('');
     const [ name, setName ] = React.useState<string | undefined>('');
     const [ description, setDescription ] = React.useState<string | undefined>('');
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
+
+    const createEventType = () => {
+        setShowModal(true);
+        setIsEdit(false);
+        setId('');
+        setDisplayName('');
+        setName('');
+        setDescription('');
+    };
+
+    const editEventType = (e: EventType) => {
+        setId(e.id);
+        setDisplayName(e.displayName);
+        setName(e.name);
+        setDescription(e.description);
+        setShowModal(true);
+        setIsEdit(true);
+    };
 
     const handleSubmit = React.useCallback(() => {
         setShowModal(false);
@@ -81,7 +100,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             <ToolbarContent>
                                 <ToolbarItem>
                                     <Button variant='primary' type='button'
-                                        onClick={ () => [ setShowModal(true), setIsEdit(false) ] }> Create Event Type </Button>
+                                        onClick={ createEventType }> Create Event Type </Button>
                                     <Modal
                                         variant={ ModalVariant.medium }
                                         title={ `Create Event Type for ${ (applicationTypesQuery.loading ||
@@ -140,8 +159,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <Td>{ e.description }</Td>
                                 <Td>{ e.id }</Td>
                                 <Td>
-                                    <Button type='button' variant='plain'
-                                        onClick={ () => [ setShowModal(true), setIsEdit(true) ] }> { <PencilAltIcon /> } </Button></Td>
+                                    <Button className='edit' type='button' variant='plain'
+                                        onClick={ () => editEventType(e) }> { <PencilAltIcon /> } </Button></Td>
                             </Tr>
                         ))}
                     </Tbody>
