@@ -464,6 +464,136 @@ public class EndpointServiceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEndpointTypeQuery() {
+        String tenant = "limiter";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        // Add webhook
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setDisableSslVerification(false);
+        properties.setSecretToken("my-super-secret-token");
+        properties.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.WEBHOOK);
+        ep.setName("endpoint to find");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(properties);
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertNotNull(responsePoint.getString("id"));
+
+        // Add Camel
+        CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setDisableSslVerification(false);
+        camelProperties.setSecretToken("my-super-secret-token");
+        camelProperties.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+        camelProperties.setExtras(new HashMap<>());
+        camelProperties.setSubType("demo");
+
+        Endpoint camelEp = new Endpoint();
+        camelEp.setType(EndpointType.CAMEL);
+        camelEp.setName("endpoint to find");
+        camelEp.setDescription("needle in the haystack");
+        camelEp.setEnabled(true);
+        camelEp.setProperties(camelProperties);
+
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(camelEp))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertNotNull(responsePoint.getString("id"));
+
+        // Fetch the list
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        List<Endpoint> endpoints = endpointPage.getData();
+        assertEquals(2, endpoints.size());
+
+        // Fetch the list with only camel type
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .queryParam("type", EndpointType.CAMEL)
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        endpoints = endpointPage.getData();
+        assertEquals(1, endpoints.size());
+        assertEquals(EndpointType.CAMEL, endpoints.get(0).getType());
+
+        // Fetch the list with only webhook type
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .queryParam("type", EndpointType.WEBHOOK)
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        endpoints = endpointPage.getData();
+        assertEquals(1, endpoints.size());
+        assertEquals(EndpointType.WEBHOOK, endpoints.get(0).getType());
+
+        // Fetch the list with webhook and camel type
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .queryParam("type", List.of(EndpointType.WEBHOOK, EndpointType.CAMEL))
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        endpoints = endpointPage.getData();
+        assertEquals(2, endpoints.size());
+    }
+
+    @Test
     void testEndpointLimiter() {
         String tenant = "limiter";
         String userName = "user";
