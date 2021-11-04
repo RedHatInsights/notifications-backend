@@ -14,6 +14,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.ConnectTimeoutException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.VertxException;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.impl.HttpRequestImpl;
 import io.vertx.mutiny.core.buffer.Buffer;
@@ -37,6 +39,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
     private static final Logger LOGGER = Logger.getLogger(WebhookTypeProcessor.class);
     private static final String TOKEN_HEADER = "X-Insight-Token";
+    private static final String CONNECTION_CLOSED_MSG = "Connection was closed";
 
     @ConfigProperty(name = "processor.webhook.retry.max-attempts", defaultValue = "3")
     long maxRetryAttempts;
@@ -83,7 +86,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
 
         final HttpRequest<Buffer> req = getWebClient(properties.getDisableSslVerification())
-                .rawAbs(properties.getMethod().name(), properties.getUrl());
+                .requestAbs(HttpMethod.valueOf(properties.getMethod().name()), properties.getUrl());
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
             req.putHeader(TOKEN_HEADER, properties.getSecretToken());
@@ -137,7 +140,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                             if (!history.isInvocationResult()) {
                                 JsonObject details = new JsonObject();
                                 details.put("url", getCallUrl(reqImpl));
-                                details.put("method", reqImpl.rawMethod());
+                                details.put("method", reqImpl.method().name());
                                 details.put("code", resp.statusCode());
                                 // This isn't async body reading, lets hope vertx handles it async underneath before calling this apply method
                                 details.put("response_body", resp.bodyAsString());
@@ -201,6 +204,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     private boolean shouldRetry(Throwable throwable) {
         return throwable instanceof ServerErrorException ||
                 throwable instanceof IOException ||
-                throwable instanceof ConnectTimeoutException;
+                throwable instanceof ConnectTimeoutException ||
+                throwable instanceof VertxException && CONNECTION_CLOSED_MSG.equals(throwable.getMessage());
     }
 }

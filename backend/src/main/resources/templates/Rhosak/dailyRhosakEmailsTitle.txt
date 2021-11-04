@@ -1,1 +1,1 @@
-Red Hat OpenShift Streams for Apache Kafka Daily Digest - {action.context.system_check_in.toUtcFormat()}
+Red Hat OpenShift Streams for Apache Kafka Daily Report

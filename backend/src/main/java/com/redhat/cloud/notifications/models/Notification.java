@@ -14,11 +14,6 @@ public class Notification {
         return event;
     }
 
-    // TODO [Event log phase 2] Delete this method.
-    public String getTenant() {
-        return event.getAction().getAccountId();
-    }
-
     public Endpoint getEndpoint() {
         return endpoint;
     }

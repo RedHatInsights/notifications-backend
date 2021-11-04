@@ -9,7 +9,6 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.config.RedirectConfig.redirectConfig;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
-import static org.hamcrest.Matchers.containsString;
 
 @QuarkusTest
 public class NonApplicationRootPathTest {
@@ -24,9 +23,8 @@ public class NonApplicationRootPathTest {
         given()
                 .when().get("/health")
                 .then()
-                .statusCode(503) // Because Kafka is DOWN during tests.
-                .contentType(JSON)
-                .body("status", containsString("DOWN"));
+                .statusCode(200)
+                .contentType(JSON);
     }
 
     @Test

@@ -11,19 +11,12 @@ import org.hibernate.reactive.mutiny.Mutiny;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
-@ApplicationScoped
 @Liveness
+@ApplicationScoped
 public class LivenessService implements AsyncHealthCheck {
 
     @Inject
-    Mutiny.StatelessSession statelessSession;
-
-    Uni<Boolean> postgresConnectionHealth() {
-        return statelessSession.createNativeQuery("SELECT 1")
-                .getSingleResult()
-                .replaceWith(Boolean.TRUE)
-                .onFailure().recoverWithItem(Boolean.FALSE);
-    }
+    Mutiny.SessionFactory sessionFactory;
 
     @Override
     public Uni<HealthCheckResponse> call() {
@@ -32,11 +25,20 @@ public class LivenessService implements AsyncHealthCheck {
         HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications readiness check");
         if (adminDown) {
             return Uni.createFrom().item(() ->
-                response.down().withData("status", "admin-down").build()
+                    response.down().withData("status", "admin-down").build()
             );
         }
         return postgresConnectionHealth().onItem().transform(dbState ->
-                response.state(dbState).withData("reactive-db-check", dbState).build()
+                    response.status(dbState).withData("reactive-db-check", dbState).build()
         );
+    }
+
+    private Uni<Boolean> postgresConnectionHealth() {
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createNativeQuery("SELECT 1")
+                    .getSingleResult()
+                    .replaceWith(Boolean.TRUE)
+                    .onFailure().recoverWithItem(Boolean.FALSE);
+        });
     }
 }
