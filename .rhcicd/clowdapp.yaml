@@ -73,6 +73,8 @@ objects:
           successThreshold: 1
           failureThreshold: 3
         env:
+        - name: ENV_NAME
+          value: ${ENV_NAME}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
           value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
@@ -94,9 +96,9 @@ objects:
         - name: PROCESSOR_EMAIL_NO_REPLY
           value: ${PROCESSOR_EMAIL_NO_REPLY}
         - name: RBAC_AUTHENTICATION_MP_REST_READTIMEOUT
-          value: ${RBAC_AUTHENTICATION_MP_REST_READTIMEOUT}
+          value: ${RBAC_AUTHENTICATION_READ_TIMEOUT}
         - name: RBAC_S2S_MP_REST_READTIMEOUT
-          value: ${RBAC_S2S_MP_REST_READTIMEOUT}
+          value: ${RBAC_S2S_READ_TIMEOUT}
         - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
           value: ${RBAC_SERVICE_TO_SERVICE_APP}
         - name: RBAC_SERVICE_TO_SERVICE_SECRET_MAP
@@ -229,10 +231,10 @@ parameters:
 - name: PROCESSOR_EMAIL_NO_REPLY
   description: Email address
   value: no-reply@redhat.com
-- name: RBAC_AUTHENTICATION_MP_REST_READTIMEOUT
+- name: RBAC_AUTHENTICATION_READ_TIMEOUT
   description: Delay in milliseconds before an RBAC authentication query is interrupted
   value: "2000"
-- name: RBAC_S2S_MP_REST_READTIMEOUT
+- name: RBAC_S2S_READ_TIMEOUT
   description: Delay in milliseconds before an RBAC S2S query is interrupted
   value: "120000"
 - name : RBAC_GROUP_USERS_RETENTION_DELAY
