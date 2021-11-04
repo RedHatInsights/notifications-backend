@@ -31,6 +31,9 @@ import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -38,6 +41,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.TestThreadHelper.runOnWorkerThread;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
@@ -463,8 +468,17 @@ public class EndpointServiceTest extends DbIsolatedTest {
         assertEquals("not-so-secret-anymore", attrSingleUpdated.getString("secret_token"));
     }
 
-    @Test
-    void testEndpointTypeQuery() {
+    private static Stream<Arguments> testEndpointTypeQuery() {
+        return Stream.of(
+                Arguments.of(Set.of(EndpointType.WEBHOOK)),
+                Arguments.of(Set.of(EndpointType.CAMEL)),
+                        Arguments.of(Set.of(EndpointType.WEBHOOK, EndpointType.CAMEL))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testEndpointTypeQuery(Set<EndpointType> types) {
         String tenant = "limiter";
         String userName = "user";
         String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
@@ -531,7 +545,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         responsePoint.mapTo(Endpoint.class);
         assertNotNull(responsePoint.getString("id"));
 
-        // Fetch the list
+        // Fetch the list to ensure everything was inserted correctly.
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
@@ -545,11 +559,11 @@ public class EndpointServiceTest extends DbIsolatedTest {
         List<Endpoint> endpoints = endpointPage.getData();
         assertEquals(2, endpoints.size());
 
-        // Fetch the list with only camel type
+        // Fetch the list with types
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
-                .queryParam("type", EndpointType.CAMEL)
+                .queryParam("type", types)
                 .when().get("/endpoints")
                 .then()
                 .statusCode(200)
@@ -558,39 +572,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
 
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
         endpoints = endpointPage.getData();
-        assertEquals(1, endpoints.size());
-        assertEquals(EndpointType.CAMEL, endpoints.get(0).getType());
 
-        // Fetch the list with only webhook type
-        response = given()
-                // Set header to x-rh-identity
-                .header(identityHeader)
-                .queryParam("type", EndpointType.WEBHOOK)
-                .when().get("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        endpoints = endpointPage.getData();
-        assertEquals(1, endpoints.size());
-        assertEquals(EndpointType.WEBHOOK, endpoints.get(0).getType());
-
-        // Fetch the list with webhook and camel type
-        response = given()
-                // Set header to x-rh-identity
-                .header(identityHeader)
-                .queryParam("type", List.of(EndpointType.WEBHOOK, EndpointType.CAMEL))
-                .when().get("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
-
-        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        endpoints = endpointPage.getData();
-        assertEquals(2, endpoints.size());
+        // Ensure there is only the requested types
+        assertEquals(
+                types,
+                endpoints.stream().map(Endpoint::getType).collect(Collectors.toSet())
+        );
     }
 
     @Test
