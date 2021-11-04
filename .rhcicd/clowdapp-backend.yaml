@@ -38,14 +38,14 @@ objects:
       minReplicas: ${{MIN_REPLICAS}}
       web: true
       podSpec:
-        image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+        image: ${IMAGE}:${IMAGE_TAG}
         resources:
           requests:
-            cpu: ${BACKEND_CPU_REQUEST}
-            memory: ${BACKEND_MEMORY_REQUEST}
+            cpu: ${CPU_REQUEST}
+            memory: ${MEMORY_REQUEST}
           limits:
-            cpu: ${BACKEND_CPU_LIMIT}
-            memory: ${BACKEND_MEMORY_LIMIT}
+            cpu: ${CPU_LIMIT}
+            memory: ${MEMORY_LIMIT}
         volumes:
         - name: rds-client-ca
           emptyDir: {}
@@ -126,78 +126,7 @@ objects:
           value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
-    jobs:
-    - name: notifications-aggregator
-      schedule: ${CRONTAB_AGGREGATION_JOB}
-      suspend: ${{SUSPEND_AGGREGATION_JOB}}
-      startingDeadlineSeconds: ${{STARTING_DEADLINE}}
-      successfulJobsHistoryLimit: 7
-      failedJobsHistoryLimit: 7
-      concurrencyPolicy: Forbid
-      restartPolicy: OnFailure
-      podSpec:
-        image: ${AGGREGATOR_IMAGE}:${IMAGE_TAG}
-        resources:
-          requests:
-            cpu: ${AGGREGATOR_CPU_REQUEST}
-            memory: ${AGGREGATOR_MEMORY_REQUEST}
-          limits:
-            cpu: ${AGGREGATOR_CPU_LIMIT}
-            memory: ${AGGREGATOR_MEMORY_LIMIT}
-        volumes:
-        - name: rds-client-ca
-          emptyDir: {}
-        volumeMounts:
-        - name: rds-client-ca
-          mountPath: /tmp
-        env:
-        - name: NOTIFICATIONS_AGGREGATOR_EMAIL_SUBSCRIPTION_PERIODIC_CRON_ENABLED
-          value: ${CRONJOB_ENABLED}
-        - name: QUARKUS_HTTP_PORT
-          value: "8000"
-        - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
-          value: ${NOTIFICATIONS_LOG_LEVEL}
-        - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
-          value: ${CLOUDWATCH_ENABLED}
-        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
-          value: ${HOSTNAME}
-        - name: QUARKUS_LOG_SENTRY
-          value: ${SENTRY_ENABLED}
-        - name: QUARKUS_LOG_SENTRY_DSN
-          value: https://39032857c8214cedaf226c4a26709b5b@o271843.ingest.sentry.io/5987783?environment=${ENV_NAME}
-        - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
-          value: ${ENV_NAME}
 parameters:
-- name: AGGREGATOR_CPU_LIMIT
-  description: Aggregator CPU limit on ephemeral
-  value: 500m
-- name: AGGREGATOR_CPU_REQUEST
-  description: Aggregator CPU request on ephemeral
-  value: 500m
-- name: AGGREGATOR_IMAGE
-  description: Aggregator image URL
-  value: quay.io/cloudservices/notifications-aggregator
-- name: AGGREGATOR_MEMORY_LIMIT
-  description: Aggregator memory limit on ephemeral
-  value: 500Mi
-- name: AGGREGATOR_MEMORY_REQUEST
-  description: Aggregator memory request on ephemeral
-  value: 250Mi
-- name: BACKEND_CPU_LIMIT
-  description: Backend CPU limit on ephemeral
-  value: 500m
-- name: BACKEND_CPU_REQUEST
-  description: Backend CPU request on ephemeral
-  value: 500m
-- name: BACKEND_IMAGE
-  description: Backend image URL
-  value: quay.io/cloudservices/notifications-backend
-- name: BACKEND_MEMORY_LIMIT
-  description: Backend memory limit on ephemeral
-  value: 500Mi
-- name: BACKEND_MEMORY_REQUEST
-  description: Backend memory request on ephemeral
-  value: 250Mi
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
   value: qa
@@ -207,16 +136,26 @@ parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
   value: "false"
-- name: CRONTAB_AGGREGATION_JOB
-  value: "0 0 * * *"
-- name: CRONJOB_ENABLED
-  description: Enable the cron job
-  value: "false"
+- name: CPU_LIMIT
+  description: CPU limit on ephemeral
+  value: 500m
+- name: CPU_REQUEST
+  description: CPU request on ephemeral
+  value: 500m
 - name: ENV_NAME
   description: ClowdEnvironment name (stage, prod, ephemeral)
   required: true
+- name: IMAGE
+  description: Image URL
+  value: quay.io/cloudservices/notifications-backend
 - name: IMAGE_TAG
   value: latest
+- name: MEMORY_LIMIT
+  description: Memory limit on ephemeral
+  value: 500Mi
+- name: MEMORY_REQUEST
+  description: Memory request on ephemeral
+  value: 250Mi
 - name: MIN_REPLICAS
   value: "1"
 - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
@@ -251,9 +190,4 @@ parameters:
   value: "1000"
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
-  value: "false"
-- name: STARTING_DEADLINE
-  value: "300"
-- name: SUSPEND_AGGREGATION_JOB
-  description: Should the aggregation cron job be disabled?
   value: "false"
