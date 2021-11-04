@@ -30,7 +30,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @ApplicationScoped
 public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenticationRequest> {
 
-    public static final String RBAC_READ_EVENTS_NOTIFICATIONS = "read:events:notifications";
+    public static final String RBAC_READ_EVENTS_NOTIFICATIONS = "read:events";
     public static final String RBAC_READ_NOTIFICATIONS = "read:notifications";
     public static final String RBAC_WRITE_NOTIFICATIONS = "write:notifications";
     public static final String RBAC_READ_INTEGRATIONS_ENDPOINTS = "read:integrations_ep";
