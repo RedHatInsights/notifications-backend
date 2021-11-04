@@ -30,7 +30,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @ApplicationScoped
 public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenticationRequest> {
 
-    public static final String RBAC_READ_EVENTS = "read:events:notifications";
+    public static final String RBAC_READ_EVENTS_NOTIFICATIONS = "read:events:notifications";
     public static final String RBAC_READ_NOTIFICATIONS = "read:notifications";
     public static final String RBAC_WRITE_NOTIFICATIONS = "write:notifications";
     public static final String RBAC_READ_INTEGRATIONS_ENDPOINTS = "read:integrations_ep";
@@ -71,7 +71,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
             }
             return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
                     .setPrincipal(principal)
-                    .addRole(RBAC_READ_EVENTS)
+                    .addRole(RBAC_READ_EVENTS_NOTIFICATIONS)
                     .addRole(RBAC_READ_NOTIFICATIONS)
                     .addRole(RBAC_WRITE_NOTIFICATIONS)
                     .addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS)
@@ -111,7 +111,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                                                 // Otherwise, we can finish building the QuarkusSecurityIdentity and return the result
                                                 .onItem().transform(rbacRaw -> {
                                                     if (rbacRaw.canRead("notifications", "events")) {
-                                                        builder.addRole(RBAC_READ_EVENTS);
+                                                        builder.addRole(RBAC_READ_EVENTS_NOTIFICATIONS);
                                                     }
                                                     if (rbacRaw.canRead("notifications", "notifications")) {
                                                         builder.addRole(RBAC_READ_NOTIFICATIONS);
