@@ -104,7 +104,7 @@ public class EndpointService {
             Uni<List<Endpoint>> endpoints;
             Uni<Long> count;
 
-            if (targetType != null) {
+            if (targetType != null && targetType.size() > 0) {
                 Set<EndpointType> endpointType = targetType.stream().map(s -> EndpointType.valueOf(s.toUpperCase())).collect(Collectors.toSet());
                 endpoints = resources
                         .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query);
