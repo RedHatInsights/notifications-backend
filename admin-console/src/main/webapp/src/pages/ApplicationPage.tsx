@@ -49,15 +49,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setDescription('');
     };
 
-    const editEventType = (e: EventType) => {
-        setId(e.id);
-        setDisplayName(e.displayName);
-        setName(e.name);
-        setDescription(e.description);
-        setShowModal(true);
-        setIsEdit(true);
-    };
-
     const handleSubmit = React.useCallback(() => {
         setShowModal(false);
         const mutate = newEvent.mutate;
@@ -70,6 +61,15 @@ export const ApplicationPage: React.FunctionComponent = () => {
         });
 
     }, [ newEvent.mutate, id, applicationId, displayName, name, description ]);
+
+    const editEventType = (e: EventType) => {
+        setId(e.id);
+        setDisplayName(e.displayName);
+        setName(e.name);
+        setDescription(e.description);
+        setShowModal(true);
+        setIsEdit(true);
+    };
 
     if (eventTypesQuery.loading) {
         return <Spinner />;
@@ -108,7 +108,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                             <Spinner /> : applicationTypesQuery.payload.value.displayName }` }
                                         isOpen={ showModal }
                                         onClose={ () => setShowModal(false) }
-                                    ><Form isHorizontal>
+                                    ><Form id='submit-Form' isHorizontal>
                                             <FormGroup label='Name' fieldId='name' isRequired
                                                 helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
                                                 <TextInput
@@ -132,10 +132,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     onChange={ setDescription }
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
-                                                <Button variant='primary' type='submit' value='Submit' isDisabled={ !name || !displayName }
+                                                <Button variant='primary' type='submit'
+                                                    isDisabled={ !name || !displayName }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
-                                                    onSubmit={ () => handleSubmit }>Submit</Button>
+                                                    onSubmit={ handleSubmit }>Submit</Button>
                                                 <Button variant='link' type='reset' onClick={ () => setShowModal(false) }>Cancel</Button>
                                             </ActionGroup>
                                         </Form>
