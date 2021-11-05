@@ -85,8 +85,6 @@ parameters:
 - name: MEMORY_REQUEST
   description: Memory request on ephemeral
   value: 250Mi
-- name: MIN_REPLICAS
-  value: "1"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
