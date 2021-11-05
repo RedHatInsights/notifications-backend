@@ -479,6 +479,26 @@ public class EventServiceTest extends DbIsolatedTest {
                 .contentType(JSON);
     }
 
+    @Test
+    void shouldNotBeAllowedToGetEventLogs() {
+        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", NO_ACCESS);
+        given()
+                .header(identityHeader)
+                .when().get(PATH)
+                .then()
+                .statusCode(403);
+    }
+
+    @Test
+    void shouldBeAllowedToGetEventLogs() {
+        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", FULL_ACCESS);
+        given()
+                .header(identityHeader)
+                .when().get(PATH)
+                .then()
+                .statusCode(200);
+    }
+
     private Uni<Event> createEvent(String accountId, EventType eventType, LocalDateTime created) {
         Event event = new Event();
         event.setAccountId(accountId);
