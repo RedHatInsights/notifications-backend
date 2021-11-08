@@ -40,7 +40,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
 
-    const [ state, setState ] = React.useState({ id, displayName, name, description });
+    const [ , setState ] = React.useState({ id, displayName, name, description });
 
     const createEventType = () => {
         setShowModal(true);
