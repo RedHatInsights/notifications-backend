@@ -36,8 +36,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NO_ACCESS;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.*;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestThreadHelper.runOnWorkerThread;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -545,7 +544,8 @@ public class EventServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().body().as(new TypeRef<Page<EventLogEntry>>() { });
+                .extract().body().as(new TypeRef<Page<EventLogEntry>>() {
+                });
     }
 
     private static void assertSameEvent(EventLogEntry eventLogEntry, Event event, NotificationHistory... historyEntries) {
