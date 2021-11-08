@@ -11,9 +11,7 @@ import {
     Tbody,
     Td,  Th,   Thead,
     Tr } from '@patternfly/react-table';
-import { STATUS_CODES } from 'http';
 import * as React from 'react';
-import { useMutation } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
 import { useCreateEventType } from '../services/CreateEventTypes';
