@@ -39,7 +39,7 @@ import static org.mockserver.model.HttpResponse.response;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class WebhookTest extends DbIsolatedTest {
 
-    private static final long MAX_RETRY_ATTEMPTS = 3L;
+    private static final long MAX_RETRY_ATTEMPTS = 4L;
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;

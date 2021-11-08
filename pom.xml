@@ -13,6 +13,7 @@
         <module>checkstyle</module>
         <module>aggregator</module>
         <module>backend</module>
+        <module>camel-sender-demo</module>
     </modules>
 
     <profiles>
@@ -36,7 +37,7 @@
         <checkstyle-plugin.version>3.1.2</checkstyle-plugin.version>
         <checkstyle.version>8.44</checkstyle.version>
 
-        <testcontainers.version>1.16.0</testcontainers.version>
+        <testcontainers.version>1.16.2</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
 
@@ -44,14 +45,14 @@
         <!-- Be careful with bumps, version 5.11.2 caused tests instability so we had to rollback to 5.5.4 -->
         <mockserver-client-java.version>5.5.4</mockserver-client-java.version>
 
-        <insights-notification-schemas-java.version>0.3</insights-notification-schemas-java.version>
-        <clowder-quarkus-config-source.version>0.1.4</clowder-quarkus-config-source.version>
+        <insights-notification-schemas-java.version>0.4</insights-notification-schemas-java.version>
+        <clowder-quarkus-config-source.version>0.2.3</clowder-quarkus-config-source.version>
 
-        <cloudwatch.version>3.0.0</cloudwatch.version>
+        <cloudwatch.version>4.0.0</cloudwatch.version>
 
         <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>1.13.7.Final</quarkus.platform.version>
+        <quarkus.platform.version>2.3.1.Final</quarkus.platform.version>
     </properties>
 
     <dependencyManagement>

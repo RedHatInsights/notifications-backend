@@ -24,7 +24,10 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
+import io.smallrye.mutiny.vertx.MutinyHelper;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,6 +78,12 @@ public class EndpointServiceTest extends DbIsolatedTest {
 
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
+
+    @Inject
+    Mutiny.SessionFactory sessionFactory;
+
+    @Inject
+    Vertx vertx;
 
     @Test
     void testEndpointAdding() {
@@ -539,7 +548,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
         // Create 50 test-ones with sanely sortable name & enabled & disabled & type
-        helpers.createTestEndpoints(tenant, 50)
+        sessionFactory.withSession(session -> helpers.createTestEndpoints(tenant, 50))
                 .call(stats -> runOnWorkerThread(() -> {
                     int disableCount = stats[1];
                     int webhookCount = stats[2];
@@ -592,8 +601,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
                     assertEquals("Endpoint 1", endpoints[endpoints.length - 1].getName());
                     assertEquals("Endpoint 10", endpoints[endpoints.length - 2].getName());
                     assertEquals("Endpoint 27", endpoints[0].getName());
-                }).get())
-                .await().indefinitely();
+                }).get()
+        ).await().indefinitely();
     }
 
     @Test
@@ -822,7 +831,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
-        helpers.createTestAppAndEventTypes()
+        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
                 .chain(runOnWorkerThread(() -> {
                     // invalid bundle/application combination gives a 404
                     given()
@@ -892,6 +901,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
                             .then().statusCode(200)
                             .contentType(JSON);
                 }))
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+                .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
@@ -908,6 +919,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
                             .put("/endpoints/email/subscription/rhel/policies/instant")
                             .then().statusCode(200).contentType(JSON);
                 }))
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+                .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNotNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
@@ -924,6 +937,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
                             .put("/endpoints/email/subscription/rhel/policies/daily")
                             .then().statusCode(200).contentType(JSON);
                 }))
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+                .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNotNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
@@ -940,6 +955,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
                             .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/instant")
                             .then().statusCode(200).contentType(JSON);
                 }))
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+                .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNotNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
@@ -956,6 +973,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
                             .delete("/endpoints/email/subscription/rhel/policies/daily")
                             .then().statusCode(200).contentType(JSON);
                 }))
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+                .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNotNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
@@ -972,6 +991,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
                             .delete("/endpoints/email/subscription/rhel/policies/instant")
                             .then().statusCode(200).contentType(JSON);
                 }))
+                // The stream is currently emitting items from a worker thread. We need to switch back to the event loop thread for Hibernate Reactive.
+                .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT))
                 .invoke(Assertions::assertNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY))
@@ -980,7 +1001,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .invoke(Assertions::assertNotNull)
                 .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY))
                 .invoke(Assertions::assertNull)
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     //    @Test

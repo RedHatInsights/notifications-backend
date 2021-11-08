@@ -24,17 +24,13 @@ public class KafkaMessagesCleaner {
     private static final Duration DEFAULT_DELETE_DELAY = Duration.ofDays(1L);
 
     @Inject
-    Mutiny.StatelessSession statelessSession;
+    Mutiny.SessionFactory sessionFactory;
 
     /**
      * The Kafka messages identifiers are stored in the database until their retention time is reached.
      * This scheduled job deletes from the database the expired Kafka messages identifiers.
      */
-    /*
-     * TODO The scheduling is delayed to prevent an unwanted execution during tests. Remove the delay and set the period
-     * to `disabled` after the Quarkus 2 bump. See https://quarkus.io/guides/scheduler-reference for more details.
-     */
-    @Scheduled(identity = "KafkaMessagesCleaner", delay = 10L, delayUnit = MINUTES, every = "{notifications.kafka-messages-cleaner.period}")
+    @Scheduled(identity = "KafkaMessagesCleaner", every = "${notifications.kafka-messages-cleaner.period}", delay = 5L, delayUnit = MINUTES)
     public void clean() {
         testableClean().await().indefinitely();
     }
@@ -44,10 +40,12 @@ public class KafkaMessagesCleaner {
                 .orElse(DEFAULT_DELETE_DELAY);
         LocalDateTime deleteBefore = now().minus(deleteDelay);
         LOGGER.infof("Kafka messages purge starting. Entries older than %s will be deleted.", deleteBefore.toString());
-        return statelessSession.createQuery("DELETE FROM KafkaMessage WHERE created < :deleteBefore")
-                .setParameter("deleteBefore", deleteBefore)
-                .executeUpdate()
-                .invoke(deleted -> LOGGER.infof("Kafka messages purge ended. %d entries were deleted from the database.", deleted));
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createQuery("DELETE FROM KafkaMessage WHERE created < :deleteBefore")
+                    .setParameter("deleteBefore", deleteBefore)
+                    .executeUpdate()
+                    .invoke(deleted -> LOGGER.infof("Kafka messages purge ended. %d entries were deleted from the database.", deleted));
+        });
     }
 
     public static LocalDateTime now() {

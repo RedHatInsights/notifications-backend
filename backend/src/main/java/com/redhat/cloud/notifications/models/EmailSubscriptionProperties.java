@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -16,14 +15,11 @@ import java.util.UUID;
 public class EmailSubscriptionProperties extends EndpointProperties {
 
     @NotNull
-    @Schema(name = "only_admins")
     private boolean onlyAdmins;
 
     @NotNull
-    @Schema(name = "ignore_preferences")
     private boolean ignorePreferences;
 
-    @Schema(name = "group_id")
     private UUID groupId;
 
     public boolean isOnlyAdmins() {

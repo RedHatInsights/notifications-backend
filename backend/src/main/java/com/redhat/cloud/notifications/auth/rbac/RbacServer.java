@@ -14,7 +14,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
 @Path("/api/rbac/v1")
-@RegisterRestClient(configKey = "rbac")
+@RegisterRestClient(configKey = "rbac-authentication")
 @RegisterProvider(RbacRestClientRequestFilter.class)
 @RegisterProvider(RbacClientResponseFilter.class)
 public interface RbacServer {

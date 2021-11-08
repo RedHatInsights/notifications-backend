@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.BasicAuthenticationConverter;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -22,21 +21,17 @@ public class CamelProperties extends EndpointProperties {
     private String url;
 
     @NotNull
-    @Schema(name = "disable_ssl_verification")
     private Boolean disableSslVerification = Boolean.FALSE;
 
     @Size(max = 255)
-    @Schema(name = "secret_token")
     private String secretToken; // TODO Should be optional
 
     // TODO we should basic-auth encode this when receiving and then store in encoded form only.
     //      likewise for the webhooks case.
     @Convert(converter = BasicAuthenticationConverter.class)
-    @Schema(name = "basic_authentication")
     private BasicAuthentication basicAuthentication;
 
     // Subtype for camel
-    @Schema(name = "sub_type")
     private String subType;
 
     @Convert(converter = MapConverter.class)

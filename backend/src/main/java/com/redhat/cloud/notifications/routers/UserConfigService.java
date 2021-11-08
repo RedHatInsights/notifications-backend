@@ -20,6 +20,7 @@ import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
@@ -58,6 +59,9 @@ public class UserConfigService {
     @Inject
     EmailTemplateFactory emailTemplateFactory;
 
+    @Inject
+    Mutiny.SessionFactory sessionFactory;
+
     @POST
     @Path("/notification-preference")
     @Consumes(APPLICATION_JSON)
@@ -69,42 +73,44 @@ public class UserConfigService {
         final String account = principal.getAccount();
         final String name = principal.getName();
 
-        final List<Multi<Boolean>> subscriptionRequests = new ArrayList<>();
+        return sessionFactory.withSession(session -> {
+            final List<Multi<Boolean>> subscriptionRequests = new ArrayList<>();
 
-        values.bundles.forEach((bundleName, bundleSettingsValue) ->
-                bundleSettingsValue.applications.forEach((applicationName, applicationSettingsValue) ->
-                applicationSettingsValue.notifications.forEach((emailSubscriptionType, subscribed) -> {
-                    if (subscribed) {
-                        subscriptionRequests.add(
-                                applicationResources.getApplication(bundleName, applicationName)
-                                .onItem().ifNotNull().transformToUni(application -> {
-                                    return emailSubscriptionResources.subscribe(
-                                            account, name, bundleName, applicationName, emailSubscriptionType
+            values.bundles.forEach((bundleName, bundleSettingsValue) ->
+                    bundleSettingsValue.applications.forEach((applicationName, applicationSettingsValue) ->
+                            applicationSettingsValue.notifications.forEach((emailSubscriptionType, subscribed) -> {
+                                if (subscribed) {
+                                    subscriptionRequests.add(
+                                            applicationResources.getApplication(bundleName, applicationName)
+                                                    .onItem().ifNotNull().transformToUni(application -> {
+                                                        return emailSubscriptionResources.subscribe(
+                                                                account, name, bundleName, applicationName, emailSubscriptionType
+                                                        );
+                                                    }).toMulti()
                                     );
-                                }).toMulti()
-                        );
 
-                    } else {
-                        subscriptionRequests.add(emailSubscriptionResources.unsubscribe(
-                                account, name, bundleName, applicationName, emailSubscriptionType
-                        ).toMulti());
-                    }
-                })));
+                                } else {
+                                    subscriptionRequests.add(emailSubscriptionResources.unsubscribe(
+                                            account, name, bundleName, applicationName, emailSubscriptionType
+                                    ).toMulti());
+                                }
+                            })));
 
-        return Multi.createBy().concatenating().streams(subscriptionRequests)
-                .collect().asList()
-                .onItem().transform(subscriptionResults -> {
-                    boolean allisSuccess = subscriptionResults.stream().allMatch(Boolean.TRUE::equals);
-                    Response.ResponseBuilder builder;
-                    if (allisSuccess) {
-                        builder = Response.ok();
-                    } else {
-                        // Prevent from saving
-                        builder = Response.serverError().entity("Storing of settings Failed.");
-                        builder.type("text/plain");
-                    }
-                    return builder.build();
-                });
+            return Multi.createBy().concatenating().streams(subscriptionRequests)
+                    .collect().asList()
+                    .onItem().transform(subscriptionResults -> {
+                        boolean allisSuccess = subscriptionResults.stream().allMatch(Boolean.TRUE::equals);
+                        Response.ResponseBuilder builder;
+                        if (allisSuccess) {
+                            builder = Response.ok();
+                        } else {
+                            // Prevent from saving
+                            builder = Response.serverError().entity("Storing of settings Failed.");
+                            builder.type("text/plain");
+                        }
+                        return builder.build();
+                    });
+        });
     }
 
     @GET
@@ -119,13 +125,15 @@ public class UserConfigService {
         final String account = principal.getAccount();
         final String name = principal.getName();
 
-        final UserConfigPreferences preferences = new UserConfigPreferences();
-        // TODO Get the DAILY and INSTANT subscriptions with a single SQL query and return UserConfigPreferences directly from Hibernate.
-        return emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.DAILY)
-                .onItem().invoke(daily -> preferences.setDailyEmail(daily != null))
-                .onItem().transformToUni(_ignored -> emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.INSTANT))
-                .onItem().invoke(instant -> preferences.setInstantEmail(instant != null))
-                .replaceWith(preferences);
+        return sessionFactory.withSession(session -> {
+            final UserConfigPreferences preferences = new UserConfigPreferences();
+            // TODO Get the DAILY and INSTANT subscriptions with a single SQL query and return UserConfigPreferences directly from Hibernate.
+            return emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.DAILY)
+                    .onItem().invoke(daily -> preferences.setDailyEmail(daily != null))
+                    .onItem().transformToUni(_ignored -> emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.INSTANT))
+                    .onItem().invoke(instant -> preferences.setInstantEmail(instant != null))
+                    .replaceWith(preferences);
+        });
     }
 
     @GET
@@ -138,14 +146,16 @@ public class UserConfigService {
         final String account = principal.getAccount();
         final String name = principal.getName();
 
-        Uni<SettingsValues> settingsValuesUni = getSettingsValueForUser(account, name, bundleName);
+        return sessionFactory.withSession(session -> {
+            Uni<SettingsValues> settingsValuesUni = getSettingsValueForUser(account, name, bundleName);
 
-        return settingsValuesToJsonForm(settingsValuesUni).onItem().transform(jsonFormString -> {
-            Response.ResponseBuilder builder;
-            builder = Response.ok(jsonFormString);
-            EntityTag etag = new EntityTag(String.valueOf(jsonFormString.hashCode()));
-            builder.header("ETag", etag);
-            return builder.build();
+            return settingsValuesToJsonForm(settingsValuesUni).onItem().transform(jsonFormString -> {
+                Response.ResponseBuilder builder;
+                builder = Response.ok(jsonFormString);
+                EntityTag etag = new EntityTag(String.valueOf(jsonFormString.hashCode()));
+                builder.header("ETag", etag);
+                return builder.build();
+            });
         });
     }
 

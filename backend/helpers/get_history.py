@@ -28,6 +28,6 @@ et = helpers.find_event_type(app_id, et_name)
 if et is None:
     exit(f"No event type with name {et_name} found for {bundle_name}->{app_name}")
 
-helpers.print_history_for_event_type(et, x_rh_id)
+helpers.print_history_for_event_type(bundle_id, app_id, et['display_name'], x_rh_id)
 
 

@@ -1,6 +1,115 @@
 {#include Rhosak/rhosakEmailBody}
-{#content-title}Red Hat OpenShift Streams for Apache Kafka Daily Digest - {action.context.system_check_in.toUtcFormat()}{/content-title}
+{#content-title}Red Hat OpenShift Streams for Apache Kafka Daily Report - {action.context.start_time.toUtcFormat()}{/content-title}
 {#content-body}
-<!-- TODO put email content here -->
+<tr>
+    <td class="rh-body rh-multi-column">
+        <p>Hello {user.firstName}.<br/><br/>This is the daily report for your OpenShift Streams instances</p>
+    </td>
+</tr>
+{#if action.context.upgrades.size() > 0}
+<tr>
+    <td class="rh-content__block">
+        <p>
+            <b>Kafka version upgrades</b>
+            <br/>
+            The following table summarizes Kafka upgrade activity for your OpenShift Streams instances. The table shows the date and time that upgrade of each instance began. The table also shows the Kafka version to which each instance was upgraded.
+        </p>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table class="rh-data-table rh-m-bordered">
+            <thead>
+            <tr>
+                <th>OpenShift Streams instance name</th>
+                <th>Upgrade start time</th>
+                <th>Kafka version upgrade</th>
+            </tr>
+            </thead>
+            <tbody>
+            {#for key in action.context.upgrades.keySet()}
+            <tr>
+                <td>{action.context.upgrades.get(key).name}</td>
+                <td>{action.context.upgrades.get(key).upgrade_time.toUtcFormat()}</td>
+                <td>{action.context.upgrades.get(key).kafka_version}</td>
+            </tr>
+            {/for}
+            </tbody>
+        </table>
+    </td>
+</tr>
+{/if}
+
+{#if action.context.disruptions.size() > 0}
+<tr>
+    <td class="rh-content__block">
+        <p>
+            <b>Service disruptions</b>
+            The following table summarizes the OpenShift Streams instances affected by unexpected disruptions of the OpenShift Streams service. The table shows the date and time that service for each instance was disrupted. The table also shows the possible impacts for each instance due to the disruption.
+        </p>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table class="rh-data-table rh-m-bordered">
+            <thead>
+            <tr>
+                <th>OpenShift Streams instance name</th>
+                <th>Service disruption start time</th>
+                <th>Possible impacts</th>
+            </tr>
+            </thead>
+            <tbody>
+            {#for key in action.context.disruptions.keySet()}
+            <tr>
+                <td>{action.context.disruptions.get(key).name}</td>
+                <td>{action.context.disruptions.get(key).start_time.toUtcFormat()}</td>
+                <td>{action.context.disruptions.get(key).impacted_area}</td>
+            </tr>
+            {/for}
+            </tbody>
+        </table>
+    </td>
+</tr>
+{/if}
+<tr>
+    <td class="rh-content__block">
+        <p>
+            <br/>
+            If you have any questions, please <a href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank">contact us</a>.
+            For guidance on working with Red Hat Technical Support, see our <a href="https://access.redhat.com/support/policy/support_process" target="_blank">frequently asked questions</a>.
+            <br/>
+            <br/>
+            Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+        </p>
+    </td>
+</tr>
+
+<!-- Content block -->
+<tr>
+    <td class="rh-content__block">
+        <table
+                role="presentation"
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                align="center"
+                class="rh-button-table"
+        >
+            <tr>
+                <td class="rh-cta-link" align="center">
+                    <a
+                            target="_blank"
+                            href="https://console.redhat.com/beta/application-services/streams/kafkas"
+                    >
+                                <span>
+                                  Go to Kafka Instances page
+                                </span>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
 {/content-body}
 {/include}

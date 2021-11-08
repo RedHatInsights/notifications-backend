@@ -1,1 +1,1 @@
-Action Required {action.context.action_completion_time.toUtcFormat()} - This notification is for your {action.events.size()} OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if}
+Action Required for your {action.events.size()} OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if}

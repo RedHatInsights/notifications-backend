@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -24,6 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -48,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.db.NotificationResources.MAX_NOTIFICATION_HISTORY_RESULTS;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
@@ -72,6 +75,9 @@ public class EndpointService {
     @Inject
     ApplicationResources applicationResources;
 
+    @Inject
+    Mutiny.SessionFactory sessionFactory;
+
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
@@ -92,22 +98,24 @@ public class EndpointService {
     public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") Boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        Uni<List<Endpoint>> endpoints;
-        Uni<Long> count;
+        return sessionFactory.withSession(session -> {
+            Uni<List<Endpoint>> endpoints;
+            Uni<Long> count;
 
-        if (targetType != null) {
-            EndpointType endpointType = EndpointType.valueOf(targetType.toUpperCase());
-            endpoints = resources
-                    .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query);
-            count = resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly);
-        } else {
-            endpoints = resources.getEndpoints(principal.getAccount(), query);
-            count = resources.getEndpointsCount(principal.getAccount());
-        }
+            if (targetType != null) {
+                EndpointType endpointType = EndpointType.valueOf(targetType.toUpperCase());
+                endpoints = resources
+                        .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query);
+                count = resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly);
+            } else {
+                endpoints = resources.getEndpoints(principal.getAccount(), query);
+                count = resources.getEndpointsCount(principal.getAccount());
+            }
 
-        return endpoints
-                .onItem().transformToUni(endpointsList -> count
-                        .onItem().transform(endpointsCount -> new EndpointPage(endpointsList, new HashMap<>(), new Meta(endpointsCount))));
+            return endpoints
+                    .onItem().transformToUni(endpointsList -> count
+                            .onItem().transform(endpointsCount -> new EndpointPage(endpointsList, new HashMap<>(), new Meta(endpointsCount))));
+        });
     }
 
     @POST
@@ -124,7 +132,9 @@ public class EndpointService {
             throw new BadRequestException("Properties is required");
         }
 
-        return resources.createEndpoint(endpoint);
+        return sessionFactory.withSession(session -> {
+            return resources.createEndpoint(endpoint);
+        });
     }
 
     @POST
@@ -139,7 +149,9 @@ public class EndpointService {
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
         properties.setOnlyAdmins(requestProps.isOnlyAdmins());
 
-        return resources.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties);
+        return sessionFactory.withSession(session -> {
+            return resources.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties);
+        });
     }
 
     @GET
@@ -148,8 +160,10 @@ public class EndpointService {
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     public Uni<Endpoint> getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getEndpoint(principal.getAccount(), id)
-                .onItem().ifNull().failWith(new NotFoundException());
+        return sessionFactory.withSession(session -> {
+            return resources.getEndpoint(principal.getAccount(), id)
+                    .onItem().ifNull().failWith(new NotFoundException());
+        });
     }
 
     @DELETE
@@ -158,13 +172,15 @@ public class EndpointService {
     @APIResponse(responseCode = "204", description = "The integration has been deleted", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getEndpointTypeById(principal.getAccount(), id)
-                .onItem().transformToUni(endpointType -> {
-                    checkSystemEndpoint(endpointType);
-                    return resources.deleteEndpoint(principal.getAccount(), id);
-                })
-                // onFailure() ?
-                .onItem().transform(ignored -> Response.noContent().build());
+        return sessionFactory.withSession(session -> {
+            return resources.getEndpointTypeById(principal.getAccount(), id)
+                    .onItem().transformToUni(endpointType -> {
+                        checkSystemEndpoint(endpointType);
+                        return resources.deleteEndpoint(principal.getAccount(), id);
+                    })
+                    // onFailure() ?
+                    .onItem().transform(ignored -> Response.noContent().build());
+        });
     }
 
     @PUT
@@ -174,12 +190,14 @@ public class EndpointService {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getEndpointTypeById(principal.getAccount(), id)
-                .onItem().transformToUni(endpointType -> {
-                    checkSystemEndpoint(endpointType);
-                    return resources.enableEndpoint(principal.getAccount(), id);
-                })
-                .onItem().transform(ignored -> Response.ok().build());
+        return sessionFactory.withSession(session -> {
+            return resources.getEndpointTypeById(principal.getAccount(), id)
+                    .onItem().transformToUni(endpointType -> {
+                        checkSystemEndpoint(endpointType);
+                        return resources.enableEndpoint(principal.getAccount(), id);
+                    })
+                    .onItem().transform(ignored -> Response.ok().build());
+        });
     }
 
     @DELETE
@@ -188,12 +206,14 @@ public class EndpointService {
     @APIResponse(responseCode = "204", description = "The integration has been disabled", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return resources.getEndpointTypeById(principal.getAccount(), id)
-                .onItem().transformToUni(endpointType -> {
-                    checkSystemEndpoint(endpointType);
-                    return resources.disableEndpoint(principal.getAccount(), id);
-                })
-                .onItem().transform(ignored -> Response.noContent().build());
+        return sessionFactory.withSession(session -> {
+            return resources.getEndpointTypeById(principal.getAccount(), id)
+                    .onItem().transformToUni(endpointType -> {
+                        checkSystemEndpoint(endpointType);
+                        return resources.disableEndpoint(principal.getAccount(), id);
+                    })
+                    .onItem().transform(ignored -> Response.noContent().build());
+        });
     }
 
     @PUT
@@ -209,13 +229,15 @@ public class EndpointService {
         endpoint.setAccountId(principal.getAccount());
         endpoint.setId(id);
 
-        return resources.getEndpointTypeById(principal.getAccount(), id)
-                .onItem().transformToUni(endpointType -> {
-                    // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
-                    checkSystemEndpoint(endpointType);
-                    return resources.updateEndpoint(endpoint);
-                })
-                .onItem().transform(ignored -> Response.ok().build());
+        return sessionFactory.withSession(session -> {
+            return resources.getEndpointTypeById(principal.getAccount(), id)
+                    .onItem().transformToUni(endpointType -> {
+                        // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
+                        checkSystemEndpoint(endpointType);
+                        return resources.updateEndpoint(endpoint);
+                    })
+                    .onItem().transform(ignored -> Response.ok().build());
+        });
     }
 
     @GET
@@ -225,7 +247,7 @@ public class EndpointService {
         @Parameter(
                     name = "limit",
                     in = ParameterIn.QUERY,
-                    description = "Number of items per page, if not specified or 0 is used, returns all elements",
+                    description = "Number of items per page, if not specified or 0 is used, returns a maximum of " + MAX_NOTIFICATION_HISTORY_RESULTS + " elements.",
                     schema = @Schema(type = SchemaType.INTEGER)
             ),
         @Parameter(
@@ -246,7 +268,15 @@ public class EndpointService {
         // TODO We need globally limitations (Paging support and limits etc)
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         boolean doDetail = includeDetail != null && includeDetail;
-        return notifResources.getNotificationHistory(principal.getAccount(), id, doDetail, query);
+        return sessionFactory.withSession(session -> {
+            return notifResources.getNotificationHistory(principal.getAccount(), id, doDetail, query);
+        })
+        /*
+         * If the response List contains a huge number of items, the event loop thread will be blocked during the List
+         * serialization by Jackson. To prevent blocking the event loop, the serialization is dispatched to a worker
+         * thread from the Quarkus worker threads pool.
+         */
+        .emitOn(Infrastructure.getDefaultWorkerPool());
     }
 
     @GET
@@ -270,15 +300,17 @@ public class EndpointService {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId, @BeanParam Query query) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return notifResources.getNotificationDetails(principal.getAccount(), query, endpointId, historyId)
-                // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
-                .onItem().ifNull().failWith(new NotFoundException())
-                .onItem().transform(json -> {
-                    if (json.isEmpty()) {
-                        return Response.noContent().build();
-                    }
-                    return Response.ok(json).build();
-                });
+        return sessionFactory.withSession(session -> {
+            return notifResources.getNotificationDetails(principal.getAccount(), query, endpointId, historyId)
+                    // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
+                    .onItem().ifNull().failWith(new NotFoundException())
+                    .onItem().transform(json -> {
+                        if (json.isEmpty()) {
+                            return Response.noContent().build();
+                        }
+                        return Response.ok(json).build();
+                    });
+        });
     }
 
     @PUT
@@ -290,15 +322,17 @@ public class EndpointService {
             @PathParam("type") EmailSubscriptionType type) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        return applicationResources.getApplication(bundleName, applicationName)
-                .onItem().ifNull().failWith(new NotFoundException())
-                .onItem().transformToUni(application -> emailSubscriptionResources.subscribe(
-                        principal.getAccount(),
-                        principal.getName(),
-                        bundleName,
-                        applicationName,
-                        type
-                ));
+        return sessionFactory.withSession(session -> {
+            return applicationResources.getApplication(bundleName, applicationName)
+                    .onItem().ifNull().failWith(new NotFoundException())
+                    .onItem().transformToUni(application -> emailSubscriptionResources.subscribe(
+                            principal.getAccount(),
+                            principal.getName(),
+                            bundleName,
+                            applicationName,
+                            type
+                    ));
+        });
     }
 
     @DELETE
@@ -310,15 +344,17 @@ public class EndpointService {
             @PathParam("type") EmailSubscriptionType type) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        return applicationResources.getApplication(bundleName, applicationName)
-                .onItem().ifNull().failWith(new NotFoundException())
-                .onItem().transformToUni(application -> emailSubscriptionResources.unsubscribe(
-                        principal.getAccount(),
-                        principal.getName(),
-                        bundleName,
-                        applicationName,
-                        type
-                ));
+        return sessionFactory.withSession(session -> {
+            return applicationResources.getApplication(bundleName, applicationName)
+                    .onItem().ifNull().failWith(new NotFoundException())
+                    .onItem().transformToUni(application -> emailSubscriptionResources.unsubscribe(
+                            principal.getAccount(),
+                            principal.getName(),
+                            bundleName,
+                            applicationName,
+                            type
+                    ));
+        });
     }
 
     private static void checkSystemEndpoint(EndpointType endpointType) {

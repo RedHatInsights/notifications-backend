@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
+import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -54,6 +55,9 @@ public class ResourceHelpers {
 
     @Inject
     NotificationResources notificationResources;
+
+    @Inject
+    Mutiny.SessionFactory sessionFactory;
 
     public Uni<Bundle> createBundle() {
         return createBundle("name", "displayName");
@@ -97,7 +101,7 @@ public class ResourceHelpers {
     }
 
     public Uni<UUID> createTestAppAndEventTypes() {
-        return createBundle(TEST_BUNDLE_NAME, "...")
+        return sessionFactory.withSession(session -> createBundle(TEST_BUNDLE_NAME, "...")
                 .call(bundle -> createApplication(bundle.getId(), TEST_APP_NAME, "...")
                         .call(app -> Multi.createFrom().items(() -> IntStream.range(0, 100).boxed())
                                 .onItem().transformToUniAndConcatenate(i -> {
@@ -119,7 +123,8 @@ public class ResourceHelpers {
                                 .onItem().ignoreAsUni()
                         )
                 )
-                .onItem().transform(Bundle::getId);
+                .onItem().transform(Bundle::getId)
+        );
     }
 
     public Uni<Endpoint> createEndpoint(String accountId, EndpointType type) {
@@ -177,14 +182,14 @@ public class ResourceHelpers {
                 .replaceWith(statsValues);
     }
 
-    public Uni<NotificationHistory> createNotificationHistory(Event event, Endpoint endpoint) {
+    public Uni<NotificationHistory> createNotificationHistory(Event event, Endpoint endpoint, Boolean invocationResult) {
         NotificationHistory history = new NotificationHistory();
         history.setId(UUID.randomUUID());
-        history.setAccountId(DEFAULT_ACCOUNT_ID);
         history.setInvocationTime(1L);
-        history.setInvocationResult(TRUE);
+        history.setInvocationResult(invocationResult);
         history.setEvent(event);
         history.setEndpoint(endpoint);
+        history.setEndpointType(endpoint.getType());
         return notificationResources.createNotificationHistory(history);
     }
 

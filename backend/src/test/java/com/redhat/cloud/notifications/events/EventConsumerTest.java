@@ -15,7 +15,7 @@ import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
-import io.smallrye.reactive.messaging.kafka.OutgoingKafkaRecordMetadata;
+import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
@@ -27,7 +27,6 @@ import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -104,12 +103,12 @@ public class EventConsumerTest {
     }
 
     @Test
-    void testValidPayloadWithMessageId() throws IOException {
+    void testValidPayloadWithMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
         String payload = serializeAction(action);
         UUID messageId = UUID.randomUUID();
-        Message message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
+        Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
@@ -127,7 +126,7 @@ public class EventConsumerTest {
     }
 
     @Test
-    void testValidPayloadWithoutMessageId() throws IOException {
+    void testValidPayloadWithoutMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
         String payload = serializeAction(action);
@@ -149,7 +148,7 @@ public class EventConsumerTest {
 
     @Test
     void testInvalidPayloadWithMessageId() {
-        Message message = buildMessageWithId(UUID.randomUUID().toString().getBytes(UTF_8), "I am not a valid payload!");
+        Message<String> message = buildMessageWithId(UUID.randomUUID().toString().getBytes(UTF_8), "I am not a valid payload!");
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
@@ -167,7 +166,7 @@ public class EventConsumerTest {
     }
 
     @Test
-    void testUnknownEventTypeWithoutMessageId() throws IOException {
+    void testUnknownEventTypeWithoutMessageId() {
         mockGetUnknownEventType();
         Action action = buildValidAction();
         String payload = serializeAction(action);
@@ -188,7 +187,7 @@ public class EventConsumerTest {
     }
 
     @Test
-    void testProcessingErrorWithoutMessageId() throws IOException {
+    void testProcessingErrorWithoutMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         mockProcessingFailure();
         Action action = buildValidAction();
@@ -210,12 +209,12 @@ public class EventConsumerTest {
     }
 
     @Test
-    void testDuplicatePayload() throws IOException {
+    void testDuplicatePayload() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
         String payload = serializeAction(action);
         UUID messageId = UUID.randomUUID();
-        Message message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
+        Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
@@ -234,11 +233,11 @@ public class EventConsumerTest {
     }
 
     @Test
-    void testNullMessageId() throws IOException {
+    void testNullMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
         String payload = serializeAction(action);
-        Message message = buildMessageWithId(null, payload);
+        Message<String> message = buildMessageWithId(null, payload);
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
@@ -256,11 +255,11 @@ public class EventConsumerTest {
     }
 
     @Test
-    void testInvalidMessageId() throws IOException {
+    void testInvalidMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
         String payload = serializeAction(action);
-        Message message = buildMessageWithId("I am not a valid UUID!".getBytes(UTF_8), payload);
+        Message<String> message = buildMessageWithId("I am not a valid UUID!".getBytes(UTF_8), payload);
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
@@ -318,11 +317,13 @@ public class EventConsumerTest {
 
     private static Action buildValidAction() {
         Action action = new Action();
+        action.setVersion("v1.0.0");
         action.setBundle(BUNDLE);
         action.setApplication(APP);
         action.setEventType(EVENT_TYPE);
         action.setTimestamp(LocalDateTime.now());
         action.setAccountId(DEFAULT_ACCOUNT_ID);
+        action.setRecipients(List.of());
         action.setEvents(
                 List.of(
                         com.redhat.cloud.notifications.ingress.Event
@@ -333,11 +334,11 @@ public class EventConsumerTest {
                 )
         );
 
-        action.setContext(new HashMap());
+        action.setContext(new HashMap<>());
         return action;
     }
 
-    private static Message buildMessageWithId(byte[] messageId, String payload) {
+    private static Message<String> buildMessageWithId(byte[] messageId, String payload) {
         OutgoingKafkaRecordMetadata metadata = OutgoingKafkaRecordMetadata.builder()
                 .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, messageId))
                 .build();

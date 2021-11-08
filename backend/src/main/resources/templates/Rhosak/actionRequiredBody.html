@@ -2,55 +2,71 @@
 {#content-title}Action Required - {action.context.action_completion_time.toUtcFormat()}{/content-title}
 {#content-body}
 <tr>
-    <td class="rh-content__block">
-        <div>Hello {user.firstName} {user.lastName},</div>
-        <p>This notification is for your {action.events.size()} OpenShift Streams {#if action.events.size() is 1} instance {#else} instances{/if} below.</p>
-        <ul>
-            {#each action.events}
-            <li style="font-size: 14px;">
-                {it.payload.name}
-            </li>
-            {/each}
-        </ul>
-    </td>
-</tr>
-<tr>
-    <td class="rh-content__block">
-        <div class="rh-stack">
-            {action.context.issue_description}
-        </div>
-    </td>
-</tr>
-
-<tr>
-    <td class="rh-content__block">
-        <div class="rh-stack">
-            {action.context.action_required}
-        </div>
-    </td>
-</tr>
-
-<tr>
-    <td class="rh-content__block">
-        <div class="rh-stack">
-            If you have any questions, please <a target="_blank" href="https://access.redhat.com/support/contact/technicalSupport/">contact us</a>.
-            Review the <a target="_blank" href="https://access.redhat.com/support/policy/support_process">support process</a> for guidance on working with Red Hat support.
-        </div>
-    </td>
-</tr>
-
-<tr>
-    <td class="rh-content__block">
-        <table align="center">
+    <td class="rh-body">
+        <table
+                class="rh-content"
+                role="presentation"
+                align="center"
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                width="100%"
+        >
+            <tbody>
+            <!-- Content block -->
             <tr>
-                <td class="rh-cta-link" align="center">
-                    <a target="_blank" href="https://console.redhat.com/beta/application-services/streams/kafkas">
-                                <span>
-                                  Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
-                                </span>
-                    </a>
+                <td class="rh-content__block">
+                    <p>
+                        Hello {user.firstName}.
+                        <br/>
+                        <br/>
+                        This notification is for your OpenShift Streams instance{#if action.events.size() > 1}s{/if} listed below:
+                    <ul>
+                        {#each action.events}
+                        <li style="font-size: 14px;">
+                            {it.payload.name}
+                        </li>
+                        {/each}
+                    </ul>
+                    {action.context.issue_description}
+                    <br/>
+                    <br/>
+                    {action.context.action_required}
+                    <br/>
+                    <br/>
+                    If you have any questions, please <a href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank">contact us</a>.
+                    For guidance on working with Red Hat Technical Support, see our
+                    <a href="https://access.redhat.com/support/policy/support_process" target="_blank">frequently asked questions</a>.
+                    <br/>
+                    <br/>
+                    Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+                    </p>
                 </td>
             </tr>
+            <!-- end content block -->
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <table
+                            role="presentation"
+                            border="0"
+                            cellpadding="0"
+                            cellspacing="0"
+                            align="center"
+                            class="rh-button-table">
+                        <tr>
+                            <td class="rh-cta-link" align="center">
+                                <a target="_blank"
+                                   href="https://console.redhat.com/beta/application-services/streams/kafkas">
+                                    <span>Go to Kafka Instances page</span>
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
         </table>
     </td>
 </tr>

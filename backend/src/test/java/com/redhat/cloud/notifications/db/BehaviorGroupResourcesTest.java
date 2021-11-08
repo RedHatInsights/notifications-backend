@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.db;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
-import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -40,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
     @Inject
-    Mutiny.Session session;
+    Mutiny.SessionFactory sessionFactory;
 
     @Inject
     ResourceHelpers resourceHelpers;
@@ -54,7 +53,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     @Test
     void testCreateAndUpdateAndDeleteBehaviorGroup() {
         String newDisplayName = "newDisplayName";
-        resourceHelpers.createBundle()
+        sessionFactory.withSession(session -> resourceHelpers.createBundle()
                 .invoke(model.bundles::add)
                 // Create behavior group.
                 .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId()))
@@ -85,7 +84,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
                 .invoke(Assertions::assertTrue)
                 .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId()))
                 .invoke(behaviorGroups -> assertTrue(behaviorGroups.isEmpty()))
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
@@ -123,7 +122,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
     @Test
     void testfindByBundleIdOrdering() {
-        resourceHelpers.createBundle()
+        sessionFactory.withSession(session -> resourceHelpers.createBundle()
                 .invoke(model.bundles::add)
                 .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId()))
                 .invoke(model.behaviorGroups::add)
@@ -139,12 +138,12 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
                     assertSame(model.behaviorGroups.get(1), behaviorGroups.get(1));
                     assertSame(model.behaviorGroups.get(0), behaviorGroups.get(2));
                 })
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void testAddAndDeleteEventTypeBehavior() {
-        resourceHelpers.createBundle()
+        sessionFactory.withSession(session -> resourceHelpers.createBundle()
                 .invoke(model.bundles::add)
                 .chain(() -> resourceHelpers.createApplication(model.bundles.get(0).getId()))
                 .invoke(model.applications::add)
@@ -162,12 +161,12 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
                 .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0).getId(), true, model.behaviorGroups.get(1).getId()))
                 .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0).getId(), true, model.behaviorGroups.get(0).getId(), model.behaviorGroups.get(1).getId(), model.behaviorGroups.get(2).getId()))
                 .chain(() -> updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, model.eventTypes.get(0).getId(), true))
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void testFindEventTypesByBehaviorGroupId() {
-        resourceHelpers.createBundle()
+        sessionFactory.withSession(session -> resourceHelpers.createBundle()
                 .invoke(model.bundles::add)
                 .chain(() -> resourceHelpers.createApplication(model.bundles.get(0).getId()))
                 .invoke(model.applications::add)
@@ -181,12 +180,12 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
                     assertEquals(1, eventTypes.size());
                     assertEquals(model.eventTypes.get(0).getId(), eventTypes.get(0).getId());
                 })
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void testFindBehaviorGroupsByEventTypeId() {
-        resourceHelpers.createBundle()
+        sessionFactory.withSession(session -> resourceHelpers.createBundle()
                 .invoke(model.bundles::add)
                 .chain(() -> resourceHelpers.createApplication(model.bundles.get(0).getId()))
                 .invoke(model.applications::add)
@@ -200,12 +199,12 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
                     assertEquals(1, behaviorGroups.size());
                     assertEquals(model.behaviorGroups.get(0).getId(), behaviorGroups.get(0).getId());
                 })
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void testAddAndDeleteBehaviorGroupAction() {
-        resourceHelpers.createBundle()
+        sessionFactory.withSession(session -> resourceHelpers.createBundle()
                 .invoke(model.bundles::add)
                 .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", model.bundles.get(0).getId()))
                 .invoke(model.behaviorGroups::add)
@@ -232,12 +231,12 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
                 .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId(), model.behaviorGroups.get(0).getId(), OK))
                 // The link between endpoint1 and behaviorGroup1 was removed. Let's check it is still linked with behaviorGroup2.
                 .chain(() -> findBehaviorGroupsByEndpointId(model.endpoints.get(0).getId(), model.behaviorGroups.get(1).getId()))
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void testAddMultipleEmailSubscriptionBehaviorGroupActions() {
-        resourceHelpers.createBundle()
+        sessionFactory.withSession(session -> resourceHelpers.createBundle()
                 .invoke(model.bundles::add)
                 .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId()))
                 .invoke(model.behaviorGroups::add)
@@ -246,19 +245,19 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
                 .chain(() -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION))
                 .invoke(model.endpoints::add)
                 .chain(() -> updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId(), model.behaviorGroups.get(0).getId(), OK, model.endpoints.get(0).getId(), model.endpoints.get(1).getId()))
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     @Test
     void testUpdateBehaviorGroupActionsWithWrongAccountId() {
-        resourceHelpers.createBundle()
+        sessionFactory.withSession(session -> resourceHelpers.createBundle()
                 .invoke(model.bundles::add)
                 .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", model.bundles.get(0).getId()))
                 .invoke(model.behaviorGroups::add)
                 .chain(() -> resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK))
                 .invoke(model.endpoints::add)
                 .chain(() -> updateAndCheckBehaviorGroupActions("unknownAccountId", model.bundles.get(0).getId(), model.behaviorGroups.get(0).getId(), NOT_FOUND, model.endpoints.get(0).getId()))
-                .await().indefinitely();
+        ).await().indefinitely();
     }
 
     private Uni<EventType> createEventType(UUID appID) {
@@ -266,15 +265,18 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         eventType.setApplicationId(appID);
         eventType.setName("name");
         eventType.setDisplayName("displayName");
-        return session.persist(eventType).call(session::flush).replaceWith(eventType);
+        return sessionFactory.withSession(session -> session.persist(eventType)
+                .call(session::flush)
+                .replaceWith(eventType)
+        );
     }
 
     private void createBehaviorGroupWithIllegalDisplayName(String displayName) {
-        Bundle bundle = resourceHelpers.createBundle()
-                .await().indefinitely();
         PersistenceException e = assertThrows(PersistenceException.class, () -> {
-            resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, displayName, bundle.getId())
-                    .await().indefinitely();
+            sessionFactory.withSession(session -> resourceHelpers.createBundle()
+                    .invoke(model.bundles::add)
+                    .chain(() -> resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, displayName, model.bundles.get(0).getId()))
+            ).await().indefinitely();
         });
         assertSame(ConstraintViolationException.class, e.getCause().getCause().getClass());
         assertTrue(e.getCause().getCause().getMessage().contains("propertyPath=displayName"));
@@ -289,7 +291,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     }
 
     private Uni<Void> updateAndCheckEventTypeBehaviors(String accountId, UUID eventTypeId, boolean expectedResult, UUID... behaviorGroupIds) {
-        return behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupIds))
+        return sessionFactory.withSession(session -> behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupIds))
                 .invoke(updated -> {
                     // Is the update result the one we expected?
                     assertEquals(expectedResult, updated);
@@ -309,18 +311,20 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
                         return Uni.createFrom().voidItem();
                     }
                 })
-                .replaceWith(Uni.createFrom().voidItem());
+                .replaceWith(Uni.createFrom().voidItem())
+        );
     }
 
     private Uni<List<EventTypeBehavior>> findEventTypeBehaviorByEventTypeId(UUID eventTypeId) {
         String query = "FROM EventTypeBehavior WHERE eventType.id = :eventTypeId";
-        return session.createQuery(query, EventTypeBehavior.class)
+        return sessionFactory.withSession(session -> session.createQuery(query, EventTypeBehavior.class)
                 .setParameter("eventTypeId", eventTypeId)
-                .getResultList();
+                .getResultList()
+        );
     }
 
     private Uni<Void> updateAndCheckBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId, Status expectedResult, UUID... endpointIds) {
-        return behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, Arrays.asList(endpointIds))
+        return sessionFactory.withSession(session -> behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, Arrays.asList(endpointIds))
                 .invoke(status -> {
                     // Is the update result the one we expected?
                     assertEquals(expectedResult, status);
@@ -340,7 +344,8 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
                         return Uni.createFrom().voidItem();
                     }
                 })
-                .replaceWith(Uni.createFrom().voidItem());
+                .replaceWith(Uni.createFrom().voidItem())
+        );
     }
 
     private Uni<List<BehaviorGroupAction>> findBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId) {

@@ -2,20 +2,15 @@ package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.auth.rhid.RHIdentityAuthMechanism;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Encoder;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
-import org.apache.avro.io.DatumWriter;
-import org.apache.avro.io.EncoderFactory;
-import org.apache.avro.io.JsonEncoder;
-import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.commons.io.IOUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -33,6 +28,8 @@ public class TestHelpers {
     public static final String policyId2 = "0123-456-789-5721f";
     public static final String policyName2 = "Latest foo is installed";
     public static final String eventType = "test-email-subscription-instant";
+
+    public static final Encoder encoder = new Encoder();
 
     public static String encodeIdentityInfo(String tenant, String username) {
         JsonObject identity = new JsonObject();
@@ -103,14 +100,8 @@ public class TestHelpers {
         return aggregation;
     }
 
-    public static String serializeAction(Action action) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        JsonEncoder jsonEncoder = EncoderFactory.get().jsonEncoder(Action.getClassSchema(), baos);
-        DatumWriter<Action> writer = new SpecificDatumWriter<>(Action.class);
-        writer.write(action, jsonEncoder);
-        jsonEncoder.flush();
-
-        return baos.toString(UTF_8);
+    public static String serializeAction(Action action) {
+        return encoder.encode(action);
     }
 
     public static Action createPoliciesAction(String accountId, String bundle, String application, String hostDisplayName) {
@@ -119,6 +110,7 @@ public class TestHelpers {
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         emailActionMessage.setEventType(eventType);
+        emailActionMessage.setRecipients(List.of());
 
         emailActionMessage.setContext(Map.of(
                 "inventory_id", "host-01",

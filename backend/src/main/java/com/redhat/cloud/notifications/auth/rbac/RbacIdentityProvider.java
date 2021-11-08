@@ -103,7 +103,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                                                 .atMost(maxRetryAttempts)
                                                 // After we're done retrying, an RBAC server call failure will cause an authentication failure
                                                 .onFailure().transform(failure -> {
-                                                    log.warning("RBAC call failed: " + failure.getMessage());
+                                                    log.warning("RBAC authentication call failed: " + failure.getMessage());
                                                     throw new AuthenticationFailedException(failure.getMessage());
                                                 })
                                                 // Otherwise, we can finish building the QuarkusSecurityIdentity and return the result
