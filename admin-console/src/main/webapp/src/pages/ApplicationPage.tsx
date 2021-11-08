@@ -11,7 +11,9 @@ import {
     Tbody,
     Td,  Th,   Thead,
     Tr } from '@patternfly/react-table';
+import { STATUS_CODES } from 'http';
 import * as React from 'react';
+import { useMutation } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
 import { useCreateEventType } from '../services/CreateEventTypes';
@@ -40,13 +42,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
 
+    const [ state, setState ] = React.useState({ id, displayName, name, description });
+
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
-        setId('');
-        setDisplayName('');
-        setName('');
-        setDescription('');
+        setState({ id, displayName, name, description });
     };
 
     const handleSubmit = () => {
@@ -133,10 +134,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='submit'
-                                                    isDisabled={ !name || !displayName }
+                                                    isDisabled={ isEdit || !name || !displayName }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
                                                     onClick={ handleSubmit }>Submit</Button>
+                                                <Button variant='primary' type='submit' isDisabled={ !isEdit }
+                                                    onClick={ handleSubmit }>Update</Button>
                                                 <Button variant='link' type='reset'
                                                     onClick={ () => setShowModal(false) }>Cancel</Button>
                                             </ActionGroup>
