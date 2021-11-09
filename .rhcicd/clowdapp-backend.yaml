@@ -137,13 +137,13 @@ parameters:
   description: Enable Cloudwatch (or not)
   value: "false"
 - name: CPU_LIMIT
-  description: CPU limit on ephemeral
+  description: CPU limit
   value: 500m
 - name: CPU_REQUEST
-  description: CPU request on ephemeral
+  description: CPU request
   value: 500m
 - name: ENV_NAME
-  description: ClowdEnvironment name (stage, prod, ephemeral)
+  description: ClowdEnvironment name (ephemeral, stage, prod)
   required: true
 - name: IMAGE
   description: Image URL
@@ -151,10 +151,10 @@ parameters:
 - name: IMAGE_TAG
   value: latest
 - name: MEMORY_LIMIT
-  description: Memory limit on ephemeral
+  description: Memory limit
   value: 500Mi
 - name: MEMORY_REQUEST
-  description: Memory request on ephemeral
+  description: Memory request
   value: 250Mi
 - name: MIN_REPLICAS
   value: "1"
@@ -176,13 +176,13 @@ parameters:
 - name: RBAC_S2S_READ_TIMEOUT
   description: Delay in milliseconds before an RBAC S2S query is interrupted
   value: "120000"
-- name : RBAC_GROUP_USERS_RETENTION_DELAY
+- name: RBAC_GROUP_USERS_RETENTION_DELAY
   description: RBAC group users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT10M
 - name: RBAC_SERVICE_TO_SERVICE_APP
   description: RBAC application name to use for service-to-service communication
   value: notifications
-- name : RBAC_USERS_RETENTION_DELAY
+- name: RBAC_USERS_RETENTION_DELAY
   description: RBAC users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT10M
 - name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
