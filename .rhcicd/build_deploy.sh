@@ -26,4 +26,4 @@ function buildAndDeploy() {
 
 buildAndDeploy "notifications-aggregator"
 buildAndDeploy "notifications-backend"
-buildAndDeploy "notifications-camel-demo-log"
+#buildAndDeploy "notifications-camel-demo-log"
