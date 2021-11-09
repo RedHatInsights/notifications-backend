@@ -10,16 +10,18 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 public class MockServerClientConfig {
-    private MockServerClient mockServerClient;
+
+    private final MockServerClient mockServerClient;
 
     public enum RbacAccess {
         FULL_ACCESS(TestHelpers.getFileAsString("rbac-examples/rbac_example_full_access.json")),
+        NOTIFICATIONS_READ_ACCESS_ONLY(TestHelpers.getFileAsString("rbac-examples/rbac_example_events_notifications_read_access_only.json")),
         WRONG_ACCESS(TestHelpers.getFileAsString("rbac-examples/rbac_example_events_wrong_access.json")),
         NOTIFICATIONS_ACCESS_ONLY(TestHelpers.getFileAsString("rbac-examples/rbac_example_events_notifications_access_only.json")),
         READ_ACCESS(TestHelpers.getFileAsString("rbac-examples/rbac_example_read_access.json")),
         NO_ACCESS(TestHelpers.getFileAsString("rbac-examples/rbac_example_no_access.json"));
 
-        private String payload;
+        private final String payload;
 
         RbacAccess(String payload) {
             this.payload = payload;

@@ -38,6 +38,7 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NOTIFICATIONS_ACCESS_ONLY;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NOTIFICATIONS_READ_ACCESS_ONLY;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NO_ACCESS;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.WRONG_ACCESS;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
@@ -504,6 +505,16 @@ public class EventServiceTest extends DbIsolatedTest {
     @Test
     void shouldBeAllowedToGetEventLogs() {
         Header noAccessIdentityHeader = mockRbac("tenant", "user", FULL_ACCESS);
+        given()
+                .header(noAccessIdentityHeader)
+                .when().get(PATH)
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    void shouldBeAllowedToGetEventLogs2() {
+        Header noAccessIdentityHeader = mockRbac("tenant", "user", NOTIFICATIONS_READ_ACCESS_ONLY);
         given()
                 .header(noAccessIdentityHeader)
                 .when().get(PATH)
