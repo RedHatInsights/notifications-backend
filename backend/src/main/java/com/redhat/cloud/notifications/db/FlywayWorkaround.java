@@ -6,7 +6,9 @@ import org.flywaydb.core.Flyway;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
+import javax.inject.Inject;
 
 /**
  * This is a temporary workaround for a quarkus-flyway / quarkus-hibernate-reactive incompatibility.
@@ -26,9 +28,13 @@ public class FlywayWorkaround {
     @ConfigProperty(name = "quarkus.datasource.password")
     String datasourcePassword;
 
+    @Inject
+    Event<FlywayEndEvent> endEvent;
+
     public void runFlywayMigration(@Observes StartupEvent event) {
         LOGGER.warn("Starting Flyway workaround... remove it ASAP!");
         Flyway flyway = Flyway.configure().dataSource("jdbc:" + datasourceUrl, datasourceUsername, datasourcePassword).load();
         flyway.migrate();
+        endEvent.fire(new FlywayEndEvent());
     }
 }

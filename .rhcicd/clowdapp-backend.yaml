@@ -79,6 +79,12 @@ objects:
           value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
           value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS}
+        - name: NOTIFICATIONS_EPHEMERAL_DATA
+          valueFrom:
+            configMapKeyRef:
+              name: notifications-ephemeral-data
+              key: ephemeral_data.json
+              optional: true
         - name: PROCESSOR_EMAIL_BOP_APITOKEN
           valueFrom:
             secretKeyRef:
