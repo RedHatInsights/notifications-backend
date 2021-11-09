@@ -32,42 +32,36 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
     const newEvent = useCreateEventType();
-    const [ id, setId ] = React.useState<string | undefined>();
-    const [ displayName, setDisplayName ] = React.useState<string | undefined>('');
-    const [ name, setName ] = React.useState<string | undefined>('');
-    const [ description, setDescription ] = React.useState<string | undefined>('');
+    const [ event, setEvent ] = React.useState<Partial<EventType>>({});
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
 
-    const [ , setState ] = React.useState({ id, displayName, name, description });
-
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
-        setState({ id, displayName, name, description });
+        setEvent({});
     };
 
     const handleSubmit = () => {
         setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
-            id: id ?? '',
-            applicationId,
-            displayName: displayName ?? '',
-            name: name ?? '',
-            description: description ?? ''
-        });
+            id: event.id ?? '',
+            displayName: event.displayName ?? '',
+            name: event.name ?? '',
+            description: event.description ?? '',
+            applicationId
+
+        })
+        .then (eventTypesQuery.query);
 
     };
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
         setIsEdit(true);
-        setId(e.id);
-        setDisplayName(e.displayName);
-        setName(e.name);
-        setDescription(e.description);
+        setEvent(e);
     };
 
     if (eventTypesQuery.loading) {
@@ -112,27 +106,28 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
                                                 <TextInput
                                                     type='text'
-                                                    value={ name }
-                                                    onChange={ setName }
-                                                    id='name' /></FormGroup>
+                                                    value={ event.name }
+                                                    onChange={ () => setEvent }
+                                                    id='name'
+                                                /></FormGroup>
                                             <FormGroup label='Display name' fieldId='display-name' isRequired
                                                 helperText='This is the name you want to display on the UI'>
                                                 <TextInput
                                                     type='text'
-                                                    value={ displayName }
-                                                    onChange={ setDisplayName }
+                                                    value={ event.displayName }
+                                                    onChange={ () => setEvent }
                                                     id='display-name' /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
                                                 helperText='Optional short description that appears in the UI
                                                 to help admin descide how to notify users.'>
                                                 <TextArea
                                                     type='text'
-                                                    value={ description }
-                                                    onChange={ setDescription }
+                                                    value={ event.description }
+                                                    onChange={ () => setEvent }
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='submit'
-                                                    isDisabled={ isEdit || !name || !displayName }
+                                                    isDisabled={ isEdit }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
                                                     onClick={ handleSubmit }>Submit</Button>
