@@ -11,7 +11,8 @@ import io.restassured.http.Header;
 import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.*;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NOTIFICATIONS_ACCESS_ONLY;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.WRONG_ACCESS;
 import static com.redhat.cloud.notifications.routers.EventService.PATH;
 import static io.restassured.RestAssured.given;
 

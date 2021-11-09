@@ -36,7 +36,10 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.*;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NOTIFICATIONS_ACCESS_ONLY;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NO_ACCESS;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.WRONG_ACCESS;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestThreadHelper.runOnWorkerThread;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -74,7 +77,27 @@ public class EventServiceTest extends DbIsolatedTest {
     MockServerClientConfig mockServerConfig;
 
     // A new instance is automatically created by JUnit before each test is executed.
-    private ModelInstancesHolder model = new ModelInstancesHolder();
+    private final ModelInstancesHolder model = new ModelInstancesHolder();
+
+    @Test
+    void shouldNotBeAllowedToGetEventLogsWhenUserHasWrongAccessRights() {
+        Header noAccessIdentityHeader = mockRbac("tenant", "user", WRONG_ACCESS);
+        given()
+                .header(noAccessIdentityHeader)
+                .when().get(PATH)
+                .then()
+                .statusCode(403);
+    }
+
+    @Test
+    void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly() {
+        Header noAccessIdentityHeader = mockRbac("tenant", "user", NOTIFICATIONS_ACCESS_ONLY);
+        given()
+                .header(noAccessIdentityHeader)
+                .when().get(PATH)
+                .then()
+                .statusCode(403);
+    }
 
     @Test
     void testAllQueryParams() {
@@ -544,7 +567,7 @@ public class EventServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().body().as(new TypeRef<Page<EventLogEntry>>() {
+                .extract().body().as(new TypeRef<>() {
                 });
     }
 
