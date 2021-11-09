@@ -45,6 +45,8 @@ objects:
         - name: rds-client-ca
           mountPath: /tmp
         env:
+        - name: ENV_NAME
+          value: ${ENV_NAME}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -66,13 +68,13 @@ parameters:
 - name: CRONTAB_AGGREGATION_JOB
   value: "0 0 * * *"
 - name: CPU_LIMIT
-  description: CPU limit on ephemeral
+  description: CPU limit
   value: 500m
 - name: CPU_REQUEST
-  description: CPU request on ephemeral
+  description: CPU request
   value: 500m
 - name: ENV_NAME
-  description: ClowdEnvironment name (stage, prod, ephemeral)
+  description: ClowdEnvironment name (ephemeral, stage, prod)
   required: true
 - name: IMAGE
   description: Image URL
@@ -80,10 +82,10 @@ parameters:
 - name: IMAGE_TAG
   value: latest
 - name: MEMORY_LIMIT
-  description: Memory limit on ephemeral
+  description: Memory limit
   value: 500Mi
 - name: MEMORY_REQUEST
-  description: Memory request on ephemeral
+  description: Memory request
   value: 250Mi
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
