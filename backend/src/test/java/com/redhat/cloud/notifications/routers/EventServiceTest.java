@@ -92,9 +92,9 @@ public class EventServiceTest extends DbIsolatedTest {
 
     @Test
     void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly() {
-        Header noAccessIdentityHeader = mockRbac("tenant", "user", NOTIFICATIONS_ACCESS_ONLY);
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", NOTIFICATIONS_ACCESS_ONLY);
         given()
-                .header(noAccessIdentityHeader)
+                .header(defaultIdentityHeader)
                 .when().get(PATH)
                 .then()
                 .statusCode(403);
