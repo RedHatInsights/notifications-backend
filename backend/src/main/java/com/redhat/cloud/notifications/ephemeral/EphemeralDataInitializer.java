@@ -13,9 +13,9 @@ import org.jboss.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
 public class EphemeralDataInitializer {
@@ -46,11 +46,9 @@ public class EphemeralDataInitializer {
 
     private void loadFromFile() {
         try {
-            URL ephemeralFileUrl = getClass().getClassLoader().getResource("/ephemeral/ephemeral_data.json");
-            if (ephemeralFileUrl != null) {
-                Path ephemeralFilePath = Path.of(ephemeralFileUrl.toURI());
-                if (Files.exists(ephemeralFilePath)) {
-                    String rawData = Files.readString(ephemeralFilePath);
+            try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("/ephemeral/ephemeral_data.json")) {
+                if (inputStream != null) {
+                    String rawData = new String(inputStream.readAllBytes(), UTF_8);
                     if (!rawData.isBlank()) {
                         LOGGER.info("Loading ephemeral data from file");
                         EphemeralData data = objectMapper.readValue(rawData, EphemeralData.class);
