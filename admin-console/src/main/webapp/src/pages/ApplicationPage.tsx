@@ -16,7 +16,6 @@ import { useParams } from 'react-router';
 
 import { useCreateEventType } from '../services/CreateEventTypes';
 import { useApplicationTypes } from '../services/GetApplication';
-import { useBundles } from '../services/GetBundles';
 import { useEventTypes } from '../services/GetEventTypes';
 import { EventType } from '../types/Notifications';
 
@@ -28,11 +27,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
-    const getBundle = useBundles();
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
     const newEvent = useCreateEventType();
-    const [ eventType, setEventType ] = React.useState<Partial<EventType>>({});
+    const [ event, setEvent ] = React.useState<Partial<EventType>>({});
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
@@ -40,32 +38,28 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
-        setEventType({});
+        setEvent({});
     };
 
-    const handleSubmit = React.useCallback(() => {
+    const handleSubmit = () => {
         setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
-            id: eventType.id,
-            displayName: eventType.displayName ?? '',
-            name: eventType.name ?? '',
-            description: eventType.description ?? '',
+            id: event.id ?? '',
+            displayName: event.displayName ?? '',
+            name: event.name ?? '',
+            description: event.description ?? '',
             applicationId
 
-        }).then(eventTypesQuery.query);
+        })
+        .then (eventTypesQuery.query);
 
-    }, [ newEvent.mutate, eventType, applicationId, eventTypesQuery.query ]);
-
-    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
-        const target = event.target as HTMLInputElement;
-        setEventType(prev => ({ ...prev, [target.name]: target.value }));
     };
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
         setIsEdit(true);
-        setEventType(e);
+        setEvent(e);
     };
 
     if (eventTypesQuery.loading) {
@@ -83,12 +77,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
     return (
         <React.Fragment>
             <PageSection>
-                <Title headingLevel="h1"><Breadcrumb>
-                    <BreadcrumbItem to='#'> { getBundle.isLoading ?
-                        <Spinner /> : getBundle.bundles.map(bundle => bundle.displayName)} </BreadcrumbItem>
-                    <BreadcrumbItem to='#' isActive> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
-                        <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
-                </Breadcrumb></Title>
+                <Title headingLevel="h1">
+                    <Breadcrumb>
+                        <BreadcrumbItem target='#'> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
+                            <Spinner /> : applicationTypesQuery.payload.value.bundleId } </BreadcrumbItem>
+
+                        <BreadcrumbItem target='#'> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
+                            <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
+                    </Breadcrumb></Title>
                 <TableComposable
                     aria-label="Event types table"
                 >
@@ -110,34 +106,33 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
                                                 <TextInput
                                                     type='text'
-                                                    defaultValue={ eventType.name }
-                                                    onChange={ handleChange }
+                                                    value={ event.name }
+                                                    onChange={ () => setEvent }
                                                     id='name'
-                                                    name="name"
                                                 /></FormGroup>
                                             <FormGroup label='Display name' fieldId='display-name' isRequired
                                                 helperText='This is the name you want to display on the UI'>
                                                 <TextInput
                                                     type='text'
-                                                    defaultValue={ eventType.displayName }
-                                                    name="displayName"
-                                                    onChange={ handleChange }
+                                                    value={ event.displayName }
+                                                    onChange={ () => setEvent }
                                                     id='display-name' /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
                                                 helperText='Optional short description that appears in the UI
                                                 to help admin descide how to notify users.'>
                                                 <TextArea
                                                     type='text'
-                                                    defaultValue={ eventType.description }
-                                                    onChange={ handleChange }
-                                                    id='description'
-                                                    name="description" /></FormGroup>
+                                                    value={ event.description }
+                                                    onChange={ () => setEvent }
+                                                    id='description' /></FormGroup>
                                             <ActionGroup>
-                                                <Button variant='primary' type='button'
+                                                <Button variant='primary' type='submit'
+                                                    isDisabled={ isEdit }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
-                                                    onClick={ handleSubmit }>
-                                                    {isEdit ? 'Update' : 'Submit' }</Button>
+                                                    onClick={ handleSubmit }>Submit</Button>
+                                                <Button variant='primary' type='submit' isDisabled={ !isEdit }
+                                                    onClick={ handleSubmit }>Update</Button>
                                                 <Button variant='link' type='reset'
                                                     onClick={ () => setShowModal(false) }>Cancel</Button>
                                             </ActionGroup>

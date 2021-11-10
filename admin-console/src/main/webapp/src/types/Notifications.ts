@@ -7,6 +7,8 @@ export interface Bundle {
 export interface Application {
     id: string;
     displayName: string;
+    bundleId: string;
+
 }
 
 export interface EventType {
