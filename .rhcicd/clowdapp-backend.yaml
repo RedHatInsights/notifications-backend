@@ -16,7 +16,7 @@ objects:
     - rbac
     - ingress
     database:
-      name: notifications_backend
+      name: notifications-backend
       version: 12
     kafkaTopics:
     - topicName: platform.notifications.ingress
