@@ -9,3 +9,97 @@ which is invoked when running maven.
 
 This project uses the Clowder Config Source from https://github.com/RedHatInsights/clowder-quarkus-config-source.
 To configure this source to use a different file than `/cdappconfig/cdappconfig.json` you can use the property `clowder.file=/path/to/file.json`.
+
+## Deploying the backend with data on ephemeral
+
+If you deploy `notifications-backend` on ephemeral, the database may not contain all the data you need for your tests.
+It is possible to load data on ephemeral when the backend pod starts, but this is restricted to three kinds of database
+records: `Bundle`, `Application` and `EventType`.
+
+There are two ways of loading that data, as explained below. Both can be used at the same time as long as the `name`
+field is globally unique for each type of database record. If there is no `name` conflict, the data from both sources
+will be inserted into the database.
+
+### Loading data using a ConfigMap
+
+The `notifications-backend` ClowdApp template contains an environment variable definition that can be used to load data:
+
+```yaml
+env:
+- name: NOTIFICATIONS_EPHEMERAL_DATA
+  valueFrom:
+    configMapKeyRef:
+      name: notifications-ephemeral-data
+      key: ephemeral_data.json
+      optional: true
+```
+
+If a `ConfigMap` named `notifications-ephemeral-data` is created by any of the pods present in the ephemeral namespace,
+the backend pod will consume that `ConfigMap` as an environment variable and put the value of the `ephemeral_data.json`
+key into the `NOTIFICATIONS_EPHEMERAL_DATA` environment variable.
+
+[TIP]
+The `ConfigMap` is optional, it is not a requirement for the `notifications-backend` pod deployment.
+
+Here is an example of the `ConfigMap` you could add to your application ClowdApp template:
+
+```yaml
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: notifications-ephemeral-data
+  data:
+    ephemeral_data.json: |
+      {
+        "bundles": [
+          {
+            "name": "my-bundle",
+            "display_name": "My Bundle",
+            "applications": [
+              {
+                "name": "my-app",
+                "display_name": "My Application",
+                "event_types": [
+                  {
+                    "name": "my-event-type",
+                    "display_name": "My Event Type",
+                    "description": "This is my event type"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+```
+
+### Loading data using the persistent `ephemeral_data.json` file
+
+You can also load data on ephemeral by creating a pull request that modifies the https://github.com/RedHatInsights/notifications-backend/tree/master/backend/src/main/resources/ephemeral/ephemeral_data.json[ephemeral_data.json] file which is hosted in this repository.
+This file may contain ephemeral data from other applications so please be careful not to delete or edit data that would belong to another team.
+
+Here is an example of the data structure allowed in `ephemeral_data.json`:
+
+```json
+{
+  "bundles": [
+    {
+      "name": "my-bundle",
+      "display_name": "My Bundle",
+      "applications": [
+        {
+          "name": "my-app",
+          "display_name": "My Application",
+          "event_types": [
+            {
+              "name": "my-event-type",
+              "display_name": "My Event Type",
+              "description": "This is my event type"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
