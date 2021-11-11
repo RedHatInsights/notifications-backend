@@ -20,8 +20,7 @@ public class ValidationEndpoint {
     public Uni<Response> validate(@QueryParam("bundle") String bundleName, @QueryParam("application") String applicationName, @QueryParam("eventtype") String eventType) {
         return appResources.getEventType(bundleName, applicationName, eventType)
                 .onItem()
-                .transform(this::isValid)
-                .onFailure().recoverWithItem(throwable -> Response.status(404).entity("did not find triple of bundle: " + bundleName + ", application: " + applicationName + " and eventtype: " + eventType).build());
+                .transform(this::isValid);
     }
 
     private Response isValid(EventType e) {
