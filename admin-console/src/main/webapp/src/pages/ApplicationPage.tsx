@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, Modal, ModalVariant, PageSection, Spinner, Title, Toolbar,
+import { Breadcrumb, BreadcrumbItem, Button, Modal, ModalVariant, PageSection,     Skeleton, Spinner, Title, Toolbar,
     ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import {
     ActionGroup,
@@ -13,6 +13,7 @@ import {
     Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { useParams } from 'react-router';
+import { style } from 'typestyle';
 
 import { useCreateEventType } from '../services/CreateEventTypes';
 import { useApplicationTypes } from '../services/GetApplication';
@@ -22,6 +23,10 @@ import { EventType } from '../types/Notifications';
 type ApplicationPageParams = {
     applicationId: string;
 }
+
+const skeletonClassName = style({
+    width: 200
+});
 
 export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
@@ -79,8 +84,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
             <PageSection>
                 <Title headingLevel="h1">
                     <Breadcrumb>
-                        <BreadcrumbItem target='#'> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
-                            <Spinner /> : applicationTypesQuery.payload.value.bundleId } </BreadcrumbItem>
+                        <BreadcrumbItem target='#'> { (applicationTypesQuery.loading ||
+                        applicationTypesQuery.payload?.status !== 200) ?
+                            <Skeleton className={ skeletonClassName } />
+                            : applicationTypesQuery.payload.value.bundleId}  </BreadcrumbItem>
 
                         <BreadcrumbItem target='#'> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
                             <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
