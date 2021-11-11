@@ -3,12 +3,20 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
+import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.http.Header;
+import io.restassured.response.Response;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 class ValidationEndpointTest {
@@ -16,21 +24,58 @@ class ValidationEndpointTest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
+    @InjectMock
+    ApplicationResources appResources;
+
     @Test
     void shouldReturnNotFoundWhenTripleIsInvalid() {
+        EventType eventType = new EventType();
+        when(appResources.getEventType(eq("my-bundle"), eq("Policies"), eq("Any"))).thenReturn(
+                Uni.createFrom().item(eventType)
+        );
+
         String identityHeaderValue = TestHelpers.encodeIdentityInfo("empty", "user");
         Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        given()
+        final Response response = given()
                 .header(identityHeader)
-                .param("bundle", "1")
-                .param("application", "2")
-                .param("eventtype", "3")
                 .when()
+                .param("bundle", "blabla")
+                .param("application", "Notifications")
+                .param("eventtype", "Any")
                 .get("/validation")
                 .then()
-                .statusCode(404);
+                .statusCode(404)
+                .extract().response();
+
+        assertEquals("did not find triple of bundle", response.asPrettyString());
     }
+
+    @Test
+    void shouldReturnStatusOkWhenTripleExists() {
+        EventType eventType = new EventType();
+        when(appResources.getEventType(eq("my-bundle"), eq("Policies"), eq("Any"))).thenReturn(
+                Uni.createFrom().item(eventType)
+        );
+
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo("empty", "user");
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        final Response response = given()
+                .header(identityHeader)
+                .when()
+                .param("bundle", "my-bundle")
+                .param("application", "Policies")
+                .param("eventtype", "Any")
+                .get("/validation")
+                .then()
+                .statusCode(200).extract().response();
+
+        assertEquals("bundle found", response.asPrettyString());
+    }
+
 }

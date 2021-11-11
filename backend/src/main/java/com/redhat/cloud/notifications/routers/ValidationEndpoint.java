@@ -7,7 +7,7 @@ import io.smallrye.mutiny.Uni;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
 @Path("/validation")
@@ -17,18 +17,18 @@ public class ValidationEndpoint {
     ApplicationResources appResources;
 
     @GET
-    public Uni<Response> validate(@PathParam("bundle") String bundleName, @PathParam("application") String applicationName, @PathParam("eventtype") String eventType) {
+    public Uni<Response> validate(@QueryParam("bundle") String bundleName, @QueryParam("application") String applicationName, @QueryParam("eventtype") String eventType) {
         return appResources.getEventType(bundleName, applicationName, eventType)
                 .onItem()
                 .transform(this::isValid)
-                .onFailure().recoverWithItem(throwable -> Response.status(404).build());
+                .onFailure().recoverWithItem(throwable -> Response.status(404).entity("did not find triple of bundle: " + bundleName + ", application: " + applicationName + " and eventtype: " + eventType).build());
     }
 
     private Response isValid(EventType e) {
-        if (e == null) {
-            return Response.ok().build();
+        if (e != null) {
+            return Response.ok().entity("bundle found").build();
         } else {
-            return Response.status(404).build();
+            return Response.status(404).entity("did not find triple of bundle").build();
         }
     }
 }
