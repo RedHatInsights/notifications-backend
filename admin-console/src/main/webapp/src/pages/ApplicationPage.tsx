@@ -47,19 +47,19 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
-            id: eventType.id ?? '',
+            id: eventType.id,
             displayName: eventType.displayName ?? '',
             name: eventType.name ?? '',
             description: eventType.description ?? '',
-            applicationId: eventType.applicationId ?? ''
+            applicationId: applicationId
 
         }).then(eventTypesQuery.query);
 
-    }, [ newEvent.mutate, eventType.id, eventType.displayName, eventType.name,
-        eventType.description, eventType.applicationId, eventTypesQuery.query ]);
+    }, [ newEvent.mutate, eventType, applicationId, eventTypesQuery.query ]);
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setEventType(prev => ({ ...prev, [event.target.name]: event.target.value }));
+    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+        const target = event.target as HTMLInputElement;
+        setEventType(prev => ({ ...prev, [target.name]: target.value }));
     };
 
     const editEventType = (e: EventType) => {
@@ -112,15 +112,17 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 <TextInput
                                                     type='text'
                                                     defaultValue={ eventType.name }
-                                                    onChange={ () => handleChange }
+                                                    onChange={ handleChange }
                                                     id='name'
+                                                    name="name"
                                                 /></FormGroup>
                                             <FormGroup label='Display name' fieldId='display-name' isRequired
                                                 helperText='This is the name you want to display on the UI'>
                                                 <TextInput
                                                     type='text'
                                                     defaultValue={ eventType.displayName }
-                                                    onChange={ () => handleChange }
+                                                    name="displayName"
+                                                    onChange={ handleChange }
                                                     id='display-name' /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
                                                 helperText='Optional short description that appears in the UI
@@ -129,7 +131,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     type='text'
                                                     defaultValue={ eventType.description }
                                                     onChange={ () => handleChange }
-                                                    id='description' /></FormGroup>
+                                                    id='description'
+                                                    name="description"/></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='button'
                                                     isDisabled={ isEdit }
