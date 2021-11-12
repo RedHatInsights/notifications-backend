@@ -2,7 +2,8 @@
 
 set -exv
 
-source ./.rhcicd/pr_check_backend.sh
+# TODO Uncomment when the IQE notifications puglin is fixed
+#source ./.rhcicd/pr_check_backend.sh
 docker build . -f docker/Dockerfile.notifications-aggregator.jvm
 docker build . -f docker/Dockerfile.notifications-camel-demo-log.jvm
 
