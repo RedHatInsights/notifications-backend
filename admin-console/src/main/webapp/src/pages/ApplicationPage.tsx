@@ -43,10 +43,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventType({});
     };
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setEventType({ ...eventType, [event.target.name]: event.target.value });
-    };
-
     const handleSubmit = React.useCallback(() => {
         setShowModal(false);
         const mutate = newEvent.mutate;
@@ -61,6 +57,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     }, [ newEvent.mutate, eventType.id, eventType.displayName, eventType.name,
         eventType.description, eventType.applicationId, eventTypesQuery.query ]);
+
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setEventType(prev => ({ ...prev, [event.target.name]: event.target.value }));
+    };
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
