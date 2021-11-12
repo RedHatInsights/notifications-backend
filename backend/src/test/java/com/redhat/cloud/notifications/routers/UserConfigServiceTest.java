@@ -265,89 +265,87 @@ public class UserConfigServiceTest extends DbIsolatedTest {
         assertEquals(true, preferences.getDailyEmail());
         assertEquals(true, preferences.getInstantEmail());
 
-        sessionFactory.withSession(session -> {
-            // This is necessary to limit the scope of an eventually() call below.
-            return Uni.createFrom().nullItem()
-                    // does not fail if we have unknown apps in our bundle's settings
-                    .chain(() -> subscriptionResources.subscribe(tenant, username, bundle, "not-found-app", DAILY))
-                    .chain(runOnWorkerThread(() -> {
-                        given()
-                                .header(identityHeader)
-                                .when()
-                                .queryParam("bundleName", bundle)
-                                .get("/user-config/notification-preference")
-                                .then()
-                                .statusCode(200)
-                                .contentType(JSON);
-                    }))
-                    .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
-                    .eventually(() -> subscriptionResources.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", DAILY))
-                    .chain(runOnWorkerThread(() -> {
-                        // Fails if we don't specify the bundleName
-                        given()
-                                .header(identityHeader)
-                                .when()
-                                .get("/user-config/notification-preference")
-                                .then()
-                                .statusCode(400)
-                                .contentType(JSON);
+        // This is necessary to limit the scope of an eventually() call below.
+        Uni.createFrom().nullItem()
+                // does not fail if we have unknown apps in our bundle's settings
+                .chain(() -> subscriptionResources.subscribe(tenant, username, bundle, "not-found-app", DAILY))
+                .chain(runOnWorkerThread(() -> {
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .queryParam("bundleName", bundle)
+                            .get("/user-config/notification-preference")
+                            .then()
+                            .statusCode(200)
+                            .contentType(JSON);
+                }))
+                .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
+                .eventually(() -> subscriptionResources.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", DAILY))
+                .chain(runOnWorkerThread(() -> {
+                    // Fails if we don't specify the bundleName
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .get("/user-config/notification-preference")
+                            .then()
+                            .statusCode(400)
+                            .contentType(JSON);
 
-                        // does not add if we try to create unknown bundle/apps
-                        SettingsValues settings = createSettingsValue("not-found-bundle-2", "not-found-app-2", true, true);
-                        given()
-                                .header(identityHeader)
-                                .when()
-                                .contentType(JSON)
-                                .body(Json.encode(settings))
-                                .post("/user-config/notification-preference")
-                                .then()
-                                .statusCode(200)
-                                .contentType(TEXT);
-                    }))
-                    .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
-                    .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", DAILY))
-                    .invoke(Assertions::assertNull)
-                    .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", INSTANT))
-                    .invoke(Assertions::assertNull)
-                    .chain(runOnWorkerThread(() -> {
-                        // Does not add event type if is not supported by the templates
-                        Mockito
-                                .when(emailTemplateFactory.get(bundle, application))
-                                .thenReturn(new EmailTemplate() {
-                                    @Override
-                                    public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
-                                        return null;
-                                    }
+                    // does not add if we try to create unknown bundle/apps
+                    SettingsValues settings = createSettingsValue("not-found-bundle-2", "not-found-app-2", true, true);
+                    given()
+                            .header(identityHeader)
+                            .when()
+                            .contentType(JSON)
+                            .body(Json.encode(settings))
+                            .post("/user-config/notification-preference")
+                            .then()
+                            .statusCode(200)
+                            .contentType(TEXT);
+                }))
+                .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", DAILY))
+                .invoke(Assertions::assertNull)
+                .chain(() -> subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", INSTANT))
+                .invoke(Assertions::assertNull)
+                .chain(runOnWorkerThread(() -> {
+                    // Does not add event type if is not supported by the templates
+                    Mockito
+                            .when(emailTemplateFactory.get(bundle, application))
+                            .thenReturn(new EmailTemplate() {
+                                @Override
+                                public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
+                                    return null;
+                                }
 
-                                    @Override
-                                    public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
-                                        return null;
-                                    }
+                                @Override
+                                public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
+                                    return null;
+                                }
 
-                                    @Override
-                                    public boolean isSupported(String eventType, EmailSubscriptionType type) {
-                                        return false;
-                                    }
+                                @Override
+                                public boolean isSupported(String eventType, EmailSubscriptionType type) {
+                                    return false;
+                                }
 
-                                    @Override
-                                    public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
-                                        return type == INSTANT;
-                                    }
-                                });
+                                @Override
+                                public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
+                                    return type == INSTANT;
+                                }
+                            });
 
-                        SettingsValueJsonForm settings = given()
-                                .header(identityHeader)
-                                .when().get("/user-config/notification-preference?bundleName=rhel")
-                                .then()
-                                .statusCode(200)
-                                .contentType(JSON)
-                                .extract().body().as(SettingsValueJsonForm.class);
-                        Field rhelPolicy2 = rhelPolicyForm(settings);
-                        assertNotNull(rhelPolicy2, "RHEL policies not found");
-                        assertEquals(1, rhelPolicy2.fields.get(0).fields.size());
-                        assertEquals("bundles[rhel].applications[policies].notifications[INSTANT]", rhelPolicy2.fields.get(0).fields.get(0).name);
-                    }));
-        }).await().indefinitely();
+                    SettingsValueJsonForm settings = given()
+                            .header(identityHeader)
+                            .when().get("/user-config/notification-preference?bundleName=rhel")
+                            .then()
+                            .statusCode(200)
+                            .contentType(JSON)
+                            .extract().body().as(SettingsValueJsonForm.class);
+                    Field rhelPolicy2 = rhelPolicyForm(settings);
+                    assertNotNull(rhelPolicy2, "RHEL policies not found");
+                    assertEquals(1, rhelPolicy2.fields.get(0).fields.size());
+                    assertEquals("bundles[rhel].applications[policies].notifications[INSTANT]", rhelPolicy2.fields.get(0).fields.get(0).name);
+                })).await().indefinitely();
     }
 
 }
