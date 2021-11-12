@@ -12,7 +12,7 @@
             <!-- Content block -->
             <tr>
                 <td>
-                    <div class="container" style="position: relative;">
+                    <div class="container" style="display: table;">
                       <div class="rh-card" style="margin-right: 5px; width: 48%;">
                         <div class="rh-card__header">
                           <h2>
@@ -23,7 +23,8 @@
                           <span class="rh-metric__count">{action.context.unique_system_count}</span>
                         </div>
                       </div>
-                      <div class="rh-card" style="margin-left: 12px; width: 48%; position: absolute; height: 100%;">
+                      <div style="display: table-cell; padding-right: 12px"></div>
+                      <div class="rh-card" style="margin-left: 12px; width: 48%; height: 100%;">
                         <div class="rh-card__header">
                           <h2>
                             Baselines with drifted systems
