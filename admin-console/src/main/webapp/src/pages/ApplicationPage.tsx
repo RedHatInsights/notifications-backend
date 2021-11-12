@@ -57,7 +57,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     }, [ newEvent.mutate, eventType, applicationId, eventTypesQuery.query ]);
 
-    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
         const target = event.target as HTMLInputElement;
         setEventType(prev => ({ ...prev, [target.name]: target.value }));
     };
@@ -130,7 +130,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 <TextArea
                                                     type='text'
                                                     defaultValue={ eventType.description }
-                                                    onChange={ () => handleChange }
+                                                    onChange={ handleChange }
                                                     id='description'
                                                     name="description"/></FormGroup>
                                             <ActionGroup>
