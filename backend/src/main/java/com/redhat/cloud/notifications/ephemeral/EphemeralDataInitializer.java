@@ -79,35 +79,68 @@ public class EphemeralDataInitializer {
             sessionFactory.withStatelessTransaction((session, transaction) -> {
                 return Multi.createFrom().iterable(data.bundles)
                         .onItem().transformToUniAndConcatenate(b -> {
-                            Bundle bundle = new Bundle();
-                            bundle.setName(b.name);
-                            bundle.setDisplayName(b.displayName);
-                            bundle.prePersist();
-                            return session.insert(bundle)
-                                    .call(() -> {
+                            String selectBundleQuery = "FROM Bundle WHERE name = :bundleName";
+                            return session.createQuery(selectBundleQuery, Bundle.class)
+                                    .setParameter("bundleName", b.name)
+                                    .getSingleResultOrNull()
+                                    .onItem().ifNotNull().invoke(() ->
+                                            LOGGER.infof("Bundle with name '%s' already exists, it won't be created from the ephemeral data", b.name)
+                                    )
+                                    .onItem().ifNull().switchTo(() -> {
+                                        Bundle bundle = new Bundle();
+                                        bundle.setName(b.name);
+                                        bundle.setDisplayName(b.displayName);
+                                        bundle.prePersist();
+                                        return session.insert(bundle)
+                                                .replaceWith(bundle);
+                                    })
+                                    .call(bundle -> {
                                         if (b.applications == null) {
                                             return Uni.createFrom().voidItem();
                                         } else {
                                             return Multi.createFrom().iterable(b.applications)
                                                     .onItem().transformToUniAndConcatenate(a -> {
-                                                        Application application = new Application();
-                                                        application.setName(a.name);
-                                                        application.setDisplayName(a.displayName);
-                                                        application.setBundle(bundle);
-                                                        application.prePersist();
-                                                        return session.insert(application)
-                                                                .call(() -> {
+                                                        String selectAppQuery = "FROM Application WHERE bundle.name = :bundleName AND name = :appName";
+                                                        return session.createQuery(selectAppQuery, Application.class)
+                                                                .setParameter("bundleName", b.name)
+                                                                .setParameter("appName", a.name)
+                                                                .getSingleResultOrNull()
+                                                                .onItem().ifNotNull().invoke(() ->
+                                                                        LOGGER.infof("Application with name '%s' already exists, it won't be created from the ephemeral data", a.name)
+                                                                )
+                                                                .onItem().ifNull().switchTo(() -> {
+                                                                    Application application = new Application();
+                                                                    application.setName(a.name);
+                                                                    application.setDisplayName(a.displayName);
+                                                                    application.setBundle(bundle);
+                                                                    application.prePersist();
+                                                                    return session.insert(application)
+                                                                            .replaceWith(application);
+                                                                })
+                                                                .call(application -> {
                                                                     if (a.eventTypes == null) {
                                                                         return Uni.createFrom().voidItem();
                                                                     } else {
                                                                         return Multi.createFrom().iterable(a.eventTypes)
                                                                                 .onItem().transformToUniAndConcatenate(et -> {
-                                                                                    EventType eventType = new EventType();
-                                                                                    eventType.setName(et.name);
-                                                                                    eventType.setDisplayName(et.displayName);
-                                                                                    eventType.setDescription(et.description);
-                                                                                    eventType.setApplication(application);
-                                                                                    return session.insert(eventType);
+                                                                                    String selectEventTypeQuery = "FROM EventType WHERE application.bundle.name = :bundleName AND application.name = :appName AND name = :eventTypeName";
+                                                                                    return session.createQuery(selectEventTypeQuery, EventType.class)
+                                                                                            .setParameter("bundleName", b.name)
+                                                                                            .setParameter("appName", a.name)
+                                                                                            .setParameter("eventTypeName", et.name)
+                                                                                            .getSingleResultOrNull()
+                                                                                            .onItem().ifNotNull().invoke(() ->
+                                                                                                    LOGGER.infof("Event type with name '%s' already exists, it won't be created from the ephemeral data", et.name)
+                                                                                            )
+                                                                                            .onItem().ifNull().switchTo(() -> {
+                                                                                                EventType eventType = new EventType();
+                                                                                                eventType.setName(et.name);
+                                                                                                eventType.setDisplayName(et.displayName);
+                                                                                                eventType.setDescription(et.description);
+                                                                                                eventType.setApplication(application);
+                                                                                                return session.insert(eventType)
+                                                                                                        .replaceWith(eventType);
+                                                                                            });
                                                                                 })
                                                                                 .onItem().ignoreAsUni();
                                                                     }
