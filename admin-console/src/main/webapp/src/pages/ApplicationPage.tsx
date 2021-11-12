@@ -131,12 +131,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     onChange={ () => handleChange }
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
-                                                <Button variant='primary' type='submit'
+                                                <Button variant='primary' type='button'
                                                     isDisabled={ isEdit }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
                                                     onClick={ handleSubmit }>Submit</Button>
-                                                <Button variant='primary' type='submit' isDisabled={ !isEdit }
+                                                <Button variant='primary' type='button' isDisabled={ !isEdit }
                                                     onClick={ handleSubmit }>Update</Button>
                                                 <Button variant='link' type='reset'
                                                     onClick={ () => setShowModal(false) }>Cancel</Button>
