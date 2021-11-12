@@ -118,6 +118,8 @@ objects:
           value: ${RBAC_USERS_RETENTION_DELAY}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_GROUP_USERS_RETENTION_DELAY}
+        - name: QUARKUS_DATASOURCE_REACTIVE_HOSTNAME_VERIFICATION_ALGORITHM
+          value: ${POSTGRES_HOSTNAME_VERIFICATION_ALGORITHM}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -173,6 +175,9 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
+- name: POSTGRES_HOSTNAME_VERIFICATION_ALGORITHM
+  description: The hostname verification algorithm to use in case the server’s identity should be checked. Should be HTTPS, LDAPS or an empty string.
+  value: ""
 - name: PROCESSOR_EMAIL_NO_REPLY
   description: Email address
   value: no-reply@redhat.com
