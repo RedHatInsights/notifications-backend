@@ -43,9 +43,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventType({});
     };
 
-    const onChange = React.useCallback(() => {
-        setEventType({ ...eventType });
-    }, [ eventType ]);
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setEventType({ ...eventType, [event.target.name]: event.target.value });
+    };
 
     const handleSubmit = React.useCallback(() => {
         setShowModal(false);
@@ -112,7 +112,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 <TextInput
                                                     type='text'
                                                     defaultValue={ eventType.name }
-                                                    onChange={ onChange }
+                                                    onChange={ () => handleChange }
                                                     id='name'
                                                 /></FormGroup>
                                             <FormGroup label='Display name' fieldId='display-name' isRequired
@@ -120,7 +120,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 <TextInput
                                                     type='text'
                                                     defaultValue={ eventType.displayName }
-                                                    onChange={ onChange }
+                                                    onChange={ () => handleChange }
                                                     id='display-name' /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
                                                 helperText='Optional short description that appears in the UI
@@ -128,7 +128,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 <TextArea
                                                     type='text'
                                                     defaultValue={ eventType.description }
-                                                    onChange={ onChange }
+                                                    onChange={ () => handleChange }
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='submit'
