@@ -34,7 +34,7 @@ objects:
     testing:
       iqePlugin: notifications
     deployments:
-    - name: notifications-backend
+    - name: service
       minReplicas: ${{MIN_REPLICAS}}
       web: true
       podSpec:
