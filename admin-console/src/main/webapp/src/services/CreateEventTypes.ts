@@ -3,7 +3,7 @@ import { useMutation } from 'react-fetching-library';
 import { Operations } from '../generated/OpenapiInternal';
 
 export type CreateEventType = {
-    id: string;
+    id?: string;
     displayName: string;
     description: string;
     applicationId: string;
