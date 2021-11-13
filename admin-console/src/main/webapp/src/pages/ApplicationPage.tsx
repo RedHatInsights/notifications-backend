@@ -51,7 +51,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             displayName: eventType.displayName ?? '',
             name: eventType.name ?? '',
             description: eventType.description ?? '',
-            applicationId: applicationId
+            applicationId
 
         }).then(eventTypesQuery.query);
 
@@ -132,7 +132,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     defaultValue={ eventType.description }
                                                     onChange={ handleChange }
                                                     id='description'
-                                                    name="description"/></FormGroup>
+                                                    name="description" /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='button'
                                                     isDisabled={ isEdit }
