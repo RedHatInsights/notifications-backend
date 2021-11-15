@@ -11,7 +11,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 
-@Path("/validation")
+import static com.redhat.cloud.notifications.Constants.INTERNAL;
+
+@Path(INTERNAL + "/validation")
 public class ValidationEndpoint {
 
     @Inject

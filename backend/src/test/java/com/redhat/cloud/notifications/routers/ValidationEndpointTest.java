@@ -8,12 +8,12 @@ import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.http.Header;
-import io.restassured.response.Response;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 
 import javax.persistence.NoResultException;
 
+import static com.redhat.cloud.notifications.Constants.INTERNAL;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,9 +44,9 @@ class ValidationEndpointTest {
                 .param("bundle", "blabla")
                 .param("application", "Notifications")
                 .param("eventType", "Any")
-                .get("/validation")
+                .get(INTERNAL + "/validation")
                 .then()
-                .statusCode(404)
+                .statusCode(500)
                 .extract().asString();
 
         assertEquals("did not find triple of bundle", response);
@@ -70,7 +70,7 @@ class ValidationEndpointTest {
                 .param("bundle", "my-bundle")
                 .param("application", "Policies")
                 .param("eventType", "Any")
-                .get("/validation")
+                .get(INTERNAL + "/validation")
                 .then()
                 .statusCode(200);
     }
