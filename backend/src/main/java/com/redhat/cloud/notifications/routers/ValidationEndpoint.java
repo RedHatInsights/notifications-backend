@@ -19,21 +19,24 @@ import static com.redhat.cloud.notifications.Constants.INTERNAL;
 @Path(INTERNAL + "/validation")
 public class ValidationEndpoint {
 
+    private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for [bundleName=%s, applicationName=%s, eventTypeName=%s]";
+
     @Inject
     ApplicationResources appResources;
 
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("/baet")
     public Uni<Response> validate(@RestQuery String bundle, @RestQuery String application, @RestQuery String eventType) {
         return appResources.getEventType(bundle, application, eventType)
                 .onItem()
                 .transform(this::isValid)
-                .onFailure(NoResultException.class).recoverWithItem(this::convertToResponse);
+                .onFailure(NoResultException.class).recoverWithItem(t -> convertToResponse(t, bundle, application, eventType));
     }
 
-    private Response convertToResponse(Throwable throwable) {
-        return Response.status(404).entity("did not find triple of bundle").build();
+    private Response convertToResponse(Throwable throwable, String bundle, String application, String eventType) {
+        return Response.status(404).entity(String.format(EVENT_TYPE_NOT_FOUND_MSG, bundle, application, eventType)).build();
     }
 
     private Response isValid(EventType e) {

@@ -44,12 +44,12 @@ class ValidationEndpointTest {
                 .param("bundle", "blabla")
                 .param("application", "Notifications")
                 .param("eventType", "Any")
-                .get(INTERNAL + "/validation")
+                .get(INTERNAL + "/validation/baet")
                 .then()
                 .statusCode(404)
                 .extract().asString();
 
-        assertEquals("did not find triple of bundle", response);
+        assertEquals("No event type found for [bundleName=blabla, applicationName=Notifications, eventTypeName=Any]", response);
     }
 
     @Test
@@ -70,7 +70,7 @@ class ValidationEndpointTest {
                 .param("bundle", "my-bundle")
                 .param("application", "Policies")
                 .param("eventType", "Any")
-                .get(INTERNAL + "/validation")
+                .get(INTERNAL + "/validation/baet")
                 .then()
                 .statusCode(200);
     }
