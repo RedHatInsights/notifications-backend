@@ -12,6 +12,8 @@ import io.restassured.response.Response;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 
+import javax.persistence.NoResultException;
+
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,28 +31,25 @@ class ValidationEndpointTest {
 
     @Test
     void shouldReturnNotFoundWhenTripleIsInvalid() {
-        EventType eventType = new EventType();
-        when(appResources.getEventType(eq("my-bundle"), eq("Policies"), eq("Any"))).thenReturn(
-                Uni.createFrom().item(eventType)
-        );
+        when(appResources.getEventType(eq("blabla"), eq("Notifications"), eq("Any"))).thenThrow(NoResultException.class);
 
         String identityHeaderValue = TestHelpers.encodeIdentityInfo("empty", "user");
         Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        final Response response = given()
+        final String response = given()
                 .header(identityHeader)
                 .when()
                 .param("bundle", "blabla")
                 .param("application", "Notifications")
-                .param("eventtype", "Any")
+                .param("eventType", "Any")
                 .get("/validation")
                 .then()
                 .statusCode(404)
-                .extract().response();
+                .extract().asString();
 
-        assertEquals("did not find triple of bundle", response.asPrettyString());
+        assertEquals("did not find triple of bundle", response);
     }
 
     @Test
@@ -65,17 +64,15 @@ class ValidationEndpointTest {
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        final Response response = given()
+        given()
                 .header(identityHeader)
                 .when()
                 .param("bundle", "my-bundle")
                 .param("application", "Policies")
-                .param("eventtype", "Any")
+                .param("eventType", "Any")
                 .get("/validation")
                 .then()
-                .statusCode(200).extract().response();
-
-        assertEquals("bundle found", response.asPrettyString());
+                .statusCode(200);
     }
 
 }
