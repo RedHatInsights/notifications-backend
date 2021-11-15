@@ -31,7 +31,7 @@ class ValidationEndpointTest {
 
     @Test
     void shouldReturnNotFoundWhenTripleIsInvalid() {
-        when(appResources.getEventType(eq("blabla"), eq("Notifications"), eq("Any"))).thenThrow(NoResultException.class);
+        when(appResources.getEventType(eq("blabla"), eq("Notifications"), eq("Any"))).thenReturn(Uni.createFrom().failure(new NoResultException()));
 
         String identityHeaderValue = TestHelpers.encodeIdentityInfo("empty", "user");
         Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
@@ -46,7 +46,7 @@ class ValidationEndpointTest {
                 .param("eventType", "Any")
                 .get(INTERNAL + "/validation")
                 .then()
-                .statusCode(500)
+                .statusCode(404)
                 .extract().asString();
 
         assertEquals("did not find triple of bundle", response);
