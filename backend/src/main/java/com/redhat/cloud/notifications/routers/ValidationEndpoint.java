@@ -31,19 +31,15 @@ public class ValidationEndpoint {
     public Uni<Response> validate(@RestQuery String bundle, @RestQuery String application, @RestQuery String eventType) {
         return appResources.getEventType(bundle, application, eventType)
                 .onItem()
-                .transform(this::isValid)
-                .onFailure(NoResultException.class).recoverWithItem(t -> convertToResponse(t, bundle, application, eventType));
+                .transform(this::convertToOkayResponse)
+                .onFailure(NoResultException.class).recoverWithItem(t -> convertToNotFoundResponse(bundle, application, eventType));
     }
 
-    private Response convertToResponse(Throwable throwable, String bundle, String application, String eventType) {
+    private Response convertToNotFoundResponse(String bundle, String application, String eventType) {
         return Response.status(404).entity(String.format(EVENT_TYPE_NOT_FOUND_MSG, bundle, application, eventType)).build();
     }
 
-    private Response isValid(EventType e) {
-        if (e != null) {
-            return Response.ok().build();
-        } else {
-            return Response.status(404).entity("did not find triple of bundle").build();
-        }
+    private Response convertToOkayResponse(EventType e) {
+        return Response.ok().build();
     }
 }
