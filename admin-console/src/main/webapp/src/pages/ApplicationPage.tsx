@@ -35,6 +35,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ eventType, setEventType ] = React.useState<Partial<EventType>>({});
 
     const [ showModal, setShowModal ] = React.useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ visableButton, setVisableButton ] = React.useState(false);
 
