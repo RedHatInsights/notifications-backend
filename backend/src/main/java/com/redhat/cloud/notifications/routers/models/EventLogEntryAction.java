@@ -23,6 +23,9 @@ public class EventLogEntryAction {
     @NotNull
     private Boolean invocationResult;
 
+    @NotNull
+    private UUID endpointId;
+
     @Nullable
     private Map<String, Object> details;
 
@@ -48,6 +51,14 @@ public class EventLogEntryAction {
 
     public void setInvocationResult(Boolean invocationResult) {
         this.invocationResult = invocationResult;
+    }
+
+    public UUID getEndpointId() {
+        return endpointId;
+    }
+
+    public void setEndpointId(UUID endpointId) {
+        this.endpointId = endpointId;
     }
 
     public void setDetails(Map<String, Object> details) {
