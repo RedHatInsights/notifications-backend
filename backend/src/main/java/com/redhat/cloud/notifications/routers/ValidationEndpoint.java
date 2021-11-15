@@ -6,6 +6,7 @@ import io.smallrye.mutiny.Uni;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.inject.Inject;
+import javax.persistence.NoResultException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
@@ -20,7 +21,12 @@ public class ValidationEndpoint {
     public Uni<Response> validate(@RestQuery String bundle, @RestQuery String application, @RestQuery String eventType) {
         return appResources.getEventType(bundle, application, eventType)
                 .onItem()
-                .transform(this::isValid);
+                .transform(this::isValid)
+                .onFailure(NoResultException.class).recoverWithItem(this::convertToResponse);
+    }
+
+    private Response convertToResponse(Throwable throwable) {
+        return Response.status(404).entity("did not find triple of bundle").build();
     }
 
     private Response isValid(EventType e) {
