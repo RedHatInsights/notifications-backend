@@ -36,10 +36,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
+    const [ visableButton, setVisableButton ] = React.useState(false);
 
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
+        setVisableButton(false);
         setEventType({});
     };
 
@@ -65,6 +67,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const editEventType = (e: EventType) => {
         setShowModal(true);
         setIsEdit(true);
+        setVisableButton(true);
         setEventType(e);
     };
 
@@ -135,12 +138,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     name="description" /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='button'
-                                                    isDisabled={ isEdit }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
-                                                    onClick={ handleSubmit }>Submit</Button>
-                                                <Button variant='primary' type='button' isDisabled={ !isEdit }
-                                                    onClick={ handleSubmit }>Update</Button>
+                                                    onClick={ handleSubmit } onClickCapture={ () => setVisableButton(!visableButton) }>
+                                                    {visableButton ? 'Update' : 'Submit' }</Button>
                                                 <Button variant='link' type='reset'
                                                     onClick={ () => setShowModal(false) }>Cancel</Button>
                                             </ActionGroup>
