@@ -29,6 +29,7 @@ import io.smallrye.mutiny.tuples.Tuple2;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -39,8 +40,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,7 +48,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     public static final String AGGREGATION_CHANNEL = "aggregation";
 
-    private final Logger log = Logger.getLogger(this.getClass().getName());
+    private static final Logger LOGGER = Logger.getLogger(EmailSubscriptionTypeProcessor.class);
 
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
@@ -160,7 +159,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         try {
             aggregationCommand = objectMapper.readValue(aggregationCommandJson, AggregationCommand.class);
         } catch (JsonProcessingException e) {
-            log.log(Level.SEVERE, "Kafka aggregation payload parsing failed", e);
+            LOGGER.error("Kafka aggregation payload parsing failed", e);
             return Uni.createFrom().nullItem();
         }
 
@@ -173,6 +172,10 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     // Delete on daily
                     aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY)
             ).onItem().ignoreAsUni();
+        })
+        .onFailure().recoverWithUni(t -> {
+            LOGGER.info("Error while processing aggregation", t);
+            return Uni.createFrom().nullItem();
         });
     }
 
@@ -216,11 +219,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     return emailSender.sendEmail(entries.getKey(), event, subject, body)
                             .onItem().transformToMulti(notificationHistory -> Multi.createFrom().item(Tuple2.of(notificationHistory, aggregationKey)));
                 })
-                .onTermination().call((throwable, aBoolean) -> {
-                    if (throwable != null) {
-                        log.log(Level.WARNING, "Error while processing aggregation", throwable);
-                    }
-                    return doDelete.toUni();
-                });
+                .onTermination().call(() -> doDelete.toUni());
     }
 }
