@@ -136,7 +136,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 <Button variant='primary' type='button'
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
-                                                    onClick={ handleSubmit || setIsEdit(!isEdit) }>
+                                                    onClick={ handleSubmit }>
                                                     {isEdit ? 'Update' : 'Submit' }</Button>
                                                 <Button variant='link' type='reset'
                                                     onClick={ () => setShowModal(false) }>Cancel</Button>
