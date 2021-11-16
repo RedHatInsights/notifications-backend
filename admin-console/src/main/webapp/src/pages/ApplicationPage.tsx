@@ -88,9 +88,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
         <React.Fragment>
             <PageSection>
                 <Title headingLevel="h1"><Breadcrumb>
-                    <BreadcrumbItem to='#'>
-                        { getBundle.bundles.map(bundle => bundle.displayName) } </BreadcrumbItem>
-
+                <BreadcrumbItem to='#'> { getBundle.isLoading ?
+                        <Spinner /> : getBundle.bundles.map(bundle => bundle.displayName)} </BreadcrumbItem>
                     <BreadcrumbItem to='#' isActive> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
                         <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
                 </Breadcrumb></Title>
