@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, Modal, ModalVariant, PageSection,     Skeleton, Spinner, Title, Toolbar,
+import { Breadcrumb, BreadcrumbItem, Button, Modal, ModalVariant, PageSection, Spinner, Title, Toolbar,
     ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import {
     ActionGroup,
@@ -12,8 +12,8 @@ import {
     Td,  Th,   Thead,
     Tr } from '@patternfly/react-table';
 import * as React from 'react';
+import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
-import { style } from 'typestyle';
 
 import { useCreateEventType } from '../services/CreateEventTypes';
 import { useApplicationTypes } from '../services/GetApplication';
@@ -24,15 +24,21 @@ type ApplicationPageParams = {
     applicationId: string;
 }
 
-const skeletonClassName = style({
-    width: 200
-});
-
 export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
+
+    const bundleId = React.useMemo(() => {
+        applicationTypesQuery.payload?.value;
+    }, [ applicationTypesQuery.payload ]);
+
+    const bundleNameQuery = useParameterizedQuery();
+    React.useEffect(() => {
+        const query = bundleNameQuery.query;
+        query(bundleId);
+    }, [ bundleId, bundleNameQuery.query ]);
 
     const newEvent = useCreateEventType();
     const [ event, setEvent ] = React.useState<Partial<EventType>>({});
@@ -84,10 +90,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
             <PageSection>
                 <Title headingLevel="h1">
                     <Breadcrumb>
-                        <BreadcrumbItem target='#'> { (applicationTypesQuery.loading ||
-                        applicationTypesQuery.payload?.status !== 200) ?
-                            <Skeleton className={ skeletonClassName } />
-                            : applicationTypesQuery.payload.value.bundleId}  </BreadcrumbItem>
+                        <BreadcrumbItem target='#'> { bundleNameQuery.loading ? <Spinner /> : bundleNameQuery.payload?.value.displayName }
+                        </BreadcrumbItem>
 
                         <BreadcrumbItem target='#'> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
                             <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
@@ -175,3 +179,4 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     );
 };
+
