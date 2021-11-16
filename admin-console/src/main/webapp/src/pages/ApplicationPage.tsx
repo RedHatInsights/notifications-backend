@@ -35,14 +35,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ eventType, setEventType ] = React.useState<Partial<EventType>>({});
 
     const [ showModal, setShowModal ] = React.useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [ isEdit, setIsEdit ] = React.useState(false);
-    const [ visableButton, setVisableButton ] = React.useState(false);
 
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
-        setVisableButton(false);
         setEventType({});
     };
 
@@ -68,7 +65,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const editEventType = (e: EventType) => {
         setShowModal(true);
         setIsEdit(true);
-        setVisableButton(true);
         setEventType(e);
     };
 
@@ -88,7 +84,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
         <React.Fragment>
             <PageSection>
                 <Title headingLevel="h1"><Breadcrumb>
-                <BreadcrumbItem to='#'> { getBundle.isLoading ?
+                    <BreadcrumbItem to='#'> { getBundle.isLoading ?
                         <Spinner /> : getBundle.bundles.map(bundle => bundle.displayName)} </BreadcrumbItem>
                     <BreadcrumbItem to='#' isActive> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
                         <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
@@ -140,8 +136,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 <Button variant='primary' type='button'
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
-                                                    onClick={ handleSubmit } onClickCapture={ () => setVisableButton(!visableButton) }>
-                                                    {visableButton ? 'Update' : 'Submit' }</Button>
+                                                    onClick={ handleSubmit } { ...() => setIsEdit(!isEdit) }>
+                                                    {isEdit ? 'Update' : 'Submit' }</Button>
                                                 <Button variant='link' type='reset'
                                                     onClick={ () => setShowModal(false) }>Cancel</Button>
                                             </ActionGroup>
