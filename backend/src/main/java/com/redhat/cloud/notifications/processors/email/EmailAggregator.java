@@ -68,7 +68,7 @@ public class EmailAggregator {
                                     subscribers.onItem().transformToUni(users ->
                                             /*
                                              * The actual recipients list may differ from the candidates depending on the endpoint properties and the action settings.
-                                             * The target endpoints properties and the action settings will determine whether or not each candidate will actually receive an email.
+                                             * The target endpoints properties will determine whether or not each candidate will actually receive an email.
                                              */
                                             recipientResolver.recipientUsers(
                                                     aggregationKey.getAccountId(),
