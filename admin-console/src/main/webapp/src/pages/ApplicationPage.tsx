@@ -100,7 +100,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         onClick={ createEventType }> Create Event Type </Button>
                                     <Modal
                                         variant={ ModalVariant.medium }
-                                        title={ `Create Event Type for ${ (applicationTypesQuery.loading ||
+                                        title={ `${ isEdit ? 'Update' : 'Create'} Event Type for ${ (applicationTypesQuery.loading ||
                                             applicationTypesQuery.payload?.status !== 200) ?
                                             <Spinner /> : applicationTypesQuery.payload.value.displayName }` }
                                         isOpen={ showModal }
