@@ -7,7 +7,6 @@ import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
