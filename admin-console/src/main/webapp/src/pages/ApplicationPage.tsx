@@ -17,6 +17,7 @@ import { useParams } from 'react-router';
 
 import { useCreateEventType } from '../services/CreateEventTypes';
 import { useApplicationTypes } from '../services/GetApplication';
+import { getBundleAction  } from '../services/GetBundleAction';
 import { useEventTypes } from '../services/GetEventTypes';
 import { EventType } from '../types/Notifications';
 
@@ -30,15 +31,15 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
-    const bundleId = React.useMemo(() => {
+    const getBundleId = React.useMemo(() => {
         applicationTypesQuery.payload?.value;
     }, [ applicationTypesQuery.payload ]);
 
-    const bundleNameQuery = useParameterizedQuery();
+    const bundleNameQuery = useParameterizedQuery(getBundleAction);
     React.useEffect(() => {
         const query = bundleNameQuery.query;
-        query(bundleId);
-    }, [ bundleId, bundleNameQuery.query ]);
+        query(getBundleId);
+    }, [ getBundleId, bundleNameQuery.query ]);
 
     const newEvent = useCreateEventType();
     const [ event, setEvent ] = React.useState<Partial<EventType>>({});
