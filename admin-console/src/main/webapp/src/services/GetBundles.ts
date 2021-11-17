@@ -41,11 +41,12 @@ export const useBundles = () => {
 
             const reducedBundles = applicationResponses.map(r => r.payload).reduce((bundles, applications) => produce(bundles, draftBundles => {
                 if (applications?.status === 200) {
-                    const draftBundle = draftBundles.find(b => b.id === applications.value[0].bundle_id);
+                    const draftBundle = draftBundles.find(b => applications.value.length > 0 && b.id === applications.value[0].bundle_id);
                     if (draftBundle) {
                         draftBundle.applications = applications.value.map(a => ({
                             id: a.id ?? '',
-                            displayName: a.display_name
+                            displayName: a.display_name,
+                            bundleId: a.bundle_id
                         }));
                     }
                 }
