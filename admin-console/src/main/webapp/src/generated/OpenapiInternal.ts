@@ -22,17 +22,6 @@ export namespace Schemas {
     updated?: string | undefined | null;
   };
 
-  export const AtomicLong = zodSchemaAtomicLong();
-  export type AtomicLong = {
-    acquire?: number | undefined | null;
-    andDecrement?: number | undefined | null;
-    andIncrement?: number | undefined | null;
-    opaque?: number | undefined | null;
-    plain?: number | undefined | null;
-    release?: number | undefined | null;
-    value?: number | undefined | null;
-  };
-
   export const BasicAuthentication = zodSchemaBasicAuthentication();
   export type BasicAuthentication = {
     password?: string | undefined | null;
@@ -139,10 +128,27 @@ export namespace Schemas {
     | 'default'
     | 'camel';
 
-  export const EntityTag = zodSchemaEntityTag();
-  export type EntityTag = {
-    value?: string | undefined | null;
-    weak?: boolean | undefined | null;
+  export const EventLogEntry = zodSchemaEventLogEntry();
+  export type EventLogEntry = {
+    actions: Array<EventLogEntryAction>;
+    application: string;
+    bundle: string;
+    created: string;
+    event_type: string;
+    id: UUID;
+  };
+
+  export const EventLogEntryAction = zodSchemaEventLogEntryAction();
+  export type EventLogEntryAction = {
+    details?:
+      | {
+          [x: string]: unknown;
+        }
+      | undefined
+      | null;
+    endpoint_type: EndpointType;
+    id: UUID;
+    invocation_result: boolean;
   };
 
   export const EventType = zodSchemaEventType();
@@ -162,103 +168,12 @@ export namespace Schemas {
     name: string;
   };
 
-  export const Family = zodSchemaFamily();
-  export type Family =
-    | 'CLIENT_ERROR'
-    | 'INFORMATIONAL'
-    | 'OTHER'
-    | 'REDIRECTION'
-    | 'SERVER_ERROR'
-    | 'SUCCESSFUL';
-
   export const HttpType = zodSchemaHttpType();
   export type HttpType = 'GET' | 'POST' | 'PUT';
-
-  export const Link = zodSchemaLink();
-  export type Link = {
-    params?:
-      | {
-          [x: string]: string;
-        }
-      | undefined
-      | null;
-    rel?: string | undefined | null;
-    rels?: Array<string> | undefined | null;
-    title?: string | undefined | null;
-    type?: string | undefined | null;
-    uri?: string | undefined | null;
-    uriBuilder?: UriBuilder | undefined | null;
-  };
-
-  export const Locale = zodSchemaLocale();
-  export type Locale = {
-    country?: string | undefined | null;
-    displayCountry?: string | undefined | null;
-    displayLanguage?: string | undefined | null;
-    displayName?: string | undefined | null;
-    displayScript?: string | undefined | null;
-    displayVariant?: string | undefined | null;
-    extensionKeys?: Array<string> | undefined | null;
-    iSO3Country?: string | undefined | null;
-    iSO3Language?: string | undefined | null;
-    language?: string | undefined | null;
-    script?: string | undefined | null;
-    unicodeLocaleAttributes?: Array<string> | undefined | null;
-    unicodeLocaleKeys?: Array<string> | undefined | null;
-    variant?: string | undefined | null;
-  };
-
-  export const MediaType = zodSchemaMediaType();
-  export type MediaType = {
-    parameters?:
-      | {
-          [x: string]: string;
-        }
-      | undefined
-      | null;
-    subtype?: string | undefined | null;
-    type?: string | undefined | null;
-    wildcardSubtype?: boolean | undefined | null;
-    wildcardType?: boolean | undefined | null;
-  };
 
   export const Meta = zodSchemaMeta();
   export type Meta = {
     count: number;
-  };
-
-  export const MigrationReport = zodSchemaMigrationReport();
-  export type MigrationReport = {
-    deletedEndpoints?: AtomicLong | undefined | null;
-    durationInMs?: AtomicLong | undefined | null;
-    updatedAccounts?: AtomicLong | undefined | null;
-    updatedBehaviorGroupActions?: AtomicLong | undefined | null;
-  };
-
-  export const MultivaluedMapStringObject =
-    zodSchemaMultivaluedMapStringObject();
-  export type MultivaluedMapStringObject = {
-    [x: string]: Array<unknown>;
-  };
-
-  export const MultivaluedMapStringString =
-    zodSchemaMultivaluedMapStringString();
-  export type MultivaluedMapStringString = {
-    [x: string]: Array<string>;
-  };
-
-  export const NewCookie = zodSchemaNewCookie();
-  export type NewCookie = {
-    comment?: string | undefined | null;
-    domain?: string | undefined | null;
-    expiry?: string | undefined | null;
-    httpOnly?: boolean | undefined | null;
-    maxAge?: number | undefined | null;
-    name?: string | undefined | null;
-    path?: string | undefined | null;
-    secure?: boolean | undefined | null;
-    value?: string | undefined | null;
-    version?: number | undefined | null;
   };
 
   export const NotificationHistory = zodSchemaNotificationHistory();
@@ -271,75 +186,18 @@ export namespace Schemas {
       | undefined
       | null;
     endpointId?: UUID | undefined | null;
-    eventId?: string | undefined | null;
     id?: UUID | undefined | null;
     invocationResult: boolean;
     invocationTime: number;
   };
 
-  export const PageRbacGroup = zodSchemaPageRbacGroup();
-  export type PageRbacGroup = {
-    data: Array<RbacGroup>;
+  export const PageEventLogEntry = zodSchemaPageEventLogEntry();
+  export type PageEventLogEntry = {
+    data: Array<EventLogEntry>;
     links: {
       [x: string]: string;
     };
     meta: Meta;
-  };
-
-  export const PageRbacUser = zodSchemaPageRbacUser();
-  export type PageRbacUser = {
-    data: Array<RbacUser>;
-    links: {
-      [x: string]: string;
-    };
-    meta: Meta;
-  };
-
-  export const RbacGroup = zodSchemaRbacGroup();
-  export type RbacGroup = {
-    created?: string | undefined | null;
-    description?: string | undefined | null;
-    modified?: string | undefined | null;
-    name?: string | undefined | null;
-    platform_default?: boolean | undefined | null;
-    principalCount?: number | undefined | null;
-    roleCount?: number | undefined | null;
-    system?: boolean | undefined | null;
-    uuid?: UUID | undefined | null;
-  };
-
-  export const RbacRaw = zodSchemaRbacRaw();
-  export type RbacRaw = {
-    data?:
-      | Array<{
-          [x: string]: unknown;
-        }>
-      | undefined
-      | null;
-    links?:
-      | {
-          [x: string]: string;
-        }
-      | undefined
-      | null;
-    meta?:
-      | {
-          [x: string]: number;
-        }
-      | undefined
-      | null;
-  };
-
-  export const RbacUser = zodSchemaRbacUser();
-  export type RbacUser = {
-    active?: boolean | undefined | null;
-    email?: string | undefined | null;
-    firstName?: string | undefined | null;
-    isActive?: boolean | undefined | null;
-    isOrgAdmin?: boolean | undefined | null;
-    lastName?: string | undefined | null;
-    orgAdmin?: boolean | undefined | null;
-    username?: string | undefined | null;
   };
 
   export const RenderEmailTemplateRequest =
@@ -353,49 +211,14 @@ export namespace Schemas {
   export const RequestEmailSubscriptionProperties =
     zodSchemaRequestEmailSubscriptionProperties();
   export type RequestEmailSubscriptionProperties = {
-    onlyAdmins: boolean;
-  };
-
-  export const Response = zodSchemaResponse();
-  export type Response = {
-    allowedMethods?: Array<string> | undefined | null;
-    cookies?:
-      | {
-          [x: string]: NewCookie;
-        }
-      | undefined
-      | null;
-    date?: string | undefined | null;
-    entity?: unknown | undefined | null;
-    entityTag?: EntityTag | undefined | null;
-    headers?: MultivaluedMapStringObject | undefined | null;
-    language?: Locale | undefined | null;
-    lastModified?: string | undefined | null;
-    length?: number | undefined | null;
-    links?: Array<Link> | undefined | null;
-    location?: string | undefined | null;
-    mediaType?: MediaType | undefined | null;
-    metadata?: MultivaluedMapStringObject | undefined | null;
-    status?: number | undefined | null;
-    statusInfo?: StatusType | undefined | null;
-    stringHeaders?: MultivaluedMapStringString | undefined | null;
+    only_admins: boolean;
   };
 
   export const Status = zodSchemaStatus();
   export type Status = 'MAINTENANCE' | 'UP';
 
-  export const StatusType = zodSchemaStatusType();
-  export type StatusType = {
-    family?: Family | undefined | null;
-    reasonPhrase?: string | undefined | null;
-    statusCode?: number | undefined | null;
-  };
-
   export const UUID = zodSchemaUUID();
   export type UUID = string;
-
-  export const UriBuilder = zodSchemaUriBuilder();
-  export type UriBuilder = unknown;
 
   export const WebhookProperties = zodSchemaWebhookProperties();
   export type WebhookProperties = {
@@ -418,20 +241,6 @@ export namespace Schemas {
           id: zodSchemaUUID().optional().nullable(),
           name: z.string(),
           updated: z.string().optional().nullable()
-      })
-      .nonstrict();
-  }
-
-  function zodSchemaAtomicLong() {
-      return z
-      .object({
-          acquire: z.number().int().optional().nullable(),
-          andDecrement: z.number().int().optional().nullable(),
-          andIncrement: z.number().int().optional().nullable(),
-          opaque: z.number().int().optional().nullable(),
-          plain: z.number().int().optional().nullable(),
-          release: z.number().int().optional().nullable(),
-          value: z.number().int().optional().nullable()
       })
       .nonstrict();
   }
@@ -569,11 +378,26 @@ export namespace Schemas {
       return z.enum([ 'webhook', 'email_subscription', 'default', 'camel' ]);
   }
 
-  function zodSchemaEntityTag() {
+  function zodSchemaEventLogEntry() {
       return z
       .object({
-          value: z.string().optional().nullable(),
-          weak: z.boolean().optional().nullable()
+          actions: z.array(zodSchemaEventLogEntryAction()),
+          application: z.string(),
+          bundle: z.string(),
+          created: z.string(),
+          event_type: z.string(),
+          id: zodSchemaUUID()
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaEventLogEntryAction() {
+      return z
+      .object({
+          details: z.record(z.unknown()).optional().nullable(),
+          endpoint_type: zodSchemaEndpointType(),
+          id: zodSchemaUUID(),
+          invocation_result: z.boolean()
       })
       .nonstrict();
   }
@@ -601,66 +425,8 @@ export namespace Schemas {
       .nonstrict();
   }
 
-  function zodSchemaFamily() {
-      return z.enum([
-          'CLIENT_ERROR',
-          'INFORMATIONAL',
-          'OTHER',
-          'REDIRECTION',
-          'SERVER_ERROR',
-          'SUCCESSFUL'
-      ]);
-  }
-
   function zodSchemaHttpType() {
       return z.enum([ 'GET', 'POST', 'PUT' ]);
-  }
-
-  function zodSchemaLink() {
-      return z
-      .object({
-          params: z.record(z.string()).optional().nullable(),
-          rel: z.string().optional().nullable(),
-          rels: z.array(z.string()).optional().nullable(),
-          title: z.string().optional().nullable(),
-          type: z.string().optional().nullable(),
-          uri: z.string().optional().nullable(),
-          uriBuilder: zodSchemaUriBuilder().optional().nullable()
-      })
-      .nonstrict();
-  }
-
-  function zodSchemaLocale() {
-      return z
-      .object({
-          country: z.string().optional().nullable(),
-          displayCountry: z.string().optional().nullable(),
-          displayLanguage: z.string().optional().nullable(),
-          displayName: z.string().optional().nullable(),
-          displayScript: z.string().optional().nullable(),
-          displayVariant: z.string().optional().nullable(),
-          extensionKeys: z.array(z.string()).optional().nullable(),
-          iSO3Country: z.string().optional().nullable(),
-          iSO3Language: z.string().optional().nullable(),
-          language: z.string().optional().nullable(),
-          script: z.string().optional().nullable(),
-          unicodeLocaleAttributes: z.array(z.string()).optional().nullable(),
-          unicodeLocaleKeys: z.array(z.string()).optional().nullable(),
-          variant: z.string().optional().nullable()
-      })
-      .nonstrict();
-  }
-
-  function zodSchemaMediaType() {
-      return z
-      .object({
-          parameters: z.record(z.string()).optional().nullable(),
-          subtype: z.string().optional().nullable(),
-          type: z.string().optional().nullable(),
-          wildcardSubtype: z.boolean().optional().nullable(),
-          wildcardType: z.boolean().optional().nullable()
-      })
-      .nonstrict();
   }
 
   function zodSchemaMeta() {
@@ -671,51 +437,12 @@ export namespace Schemas {
       .nonstrict();
   }
 
-  function zodSchemaMigrationReport() {
-      return z
-      .object({
-          deletedEndpoints: zodSchemaAtomicLong().optional().nullable(),
-          durationInMs: zodSchemaAtomicLong().optional().nullable(),
-          updatedAccounts: zodSchemaAtomicLong().optional().nullable(),
-          updatedBehaviorGroupActions: zodSchemaAtomicLong()
-          .optional()
-          .nullable()
-      })
-      .nonstrict();
-  }
-
-  function zodSchemaMultivaluedMapStringObject() {
-      return z.record(z.array(z.unknown()));
-  }
-
-  function zodSchemaMultivaluedMapStringString() {
-      return z.record(z.array(z.string()));
-  }
-
-  function zodSchemaNewCookie() {
-      return z
-      .object({
-          comment: z.string().optional().nullable(),
-          domain: z.string().optional().nullable(),
-          expiry: z.string().optional().nullable(),
-          httpOnly: z.boolean().optional().nullable(),
-          maxAge: z.number().int().optional().nullable(),
-          name: z.string().optional().nullable(),
-          path: z.string().optional().nullable(),
-          secure: z.boolean().optional().nullable(),
-          value: z.string().optional().nullable(),
-          version: z.number().int().optional().nullable()
-      })
-      .nonstrict();
-  }
-
   function zodSchemaNotificationHistory() {
       return z
       .object({
           created: z.string().optional().nullable(),
           details: z.record(z.unknown()).optional().nullable(),
           endpointId: zodSchemaUUID().optional().nullable(),
-          eventId: z.string().optional().nullable(),
           id: zodSchemaUUID().optional().nullable(),
           invocationResult: z.boolean(),
           invocationTime: z.number().int()
@@ -723,63 +450,12 @@ export namespace Schemas {
       .nonstrict();
   }
 
-  function zodSchemaPageRbacGroup() {
+  function zodSchemaPageEventLogEntry() {
       return z
       .object({
-          data: z.array(zodSchemaRbacGroup()),
+          data: z.array(zodSchemaEventLogEntry()),
           links: z.record(z.string()),
           meta: zodSchemaMeta()
-      })
-      .nonstrict();
-  }
-
-  function zodSchemaPageRbacUser() {
-      return z
-      .object({
-          data: z.array(zodSchemaRbacUser()),
-          links: z.record(z.string()),
-          meta: zodSchemaMeta()
-      })
-      .nonstrict();
-  }
-
-  function zodSchemaRbacGroup() {
-      return z
-      .object({
-          created: z.string().optional().nullable(),
-          description: z.string().optional().nullable(),
-          modified: z.string().optional().nullable(),
-          name: z.string().optional().nullable(),
-          platform_default: z.boolean().optional().nullable(),
-          principalCount: z.number().int().optional().nullable(),
-          roleCount: z.number().int().optional().nullable(),
-          system: z.boolean().optional().nullable(),
-          uuid: zodSchemaUUID().optional().nullable()
-      })
-      .nonstrict();
-  }
-
-  function zodSchemaRbacRaw() {
-      return z
-      .object({
-          data: z.array(z.record(z.unknown())).optional().nullable(),
-          links: z.record(z.string()).optional().nullable(),
-          meta: z.record(z.number().int()).optional().nullable()
-      })
-      .nonstrict();
-  }
-
-  function zodSchemaRbacUser() {
-      return z
-      .object({
-          active: z.boolean().optional().nullable(),
-          email: z.string().optional().nullable(),
-          firstName: z.string().optional().nullable(),
-          isActive: z.boolean().optional().nullable(),
-          isOrgAdmin: z.boolean().optional().nullable(),
-          lastName: z.string().optional().nullable(),
-          orgAdmin: z.boolean().optional().nullable(),
-          username: z.string().optional().nullable()
       })
       .nonstrict();
   }
@@ -797,32 +473,7 @@ export namespace Schemas {
   function zodSchemaRequestEmailSubscriptionProperties() {
       return z
       .object({
-          onlyAdmins: z.boolean()
-      })
-      .nonstrict();
-  }
-
-  function zodSchemaResponse() {
-      return z
-      .object({
-          allowedMethods: z.array(z.string()).optional().nullable(),
-          cookies: z.record(zodSchemaNewCookie()).optional().nullable(),
-          date: z.string().optional().nullable(),
-          entity: z.unknown().optional().nullable(),
-          entityTag: zodSchemaEntityTag().optional().nullable(),
-          headers: zodSchemaMultivaluedMapStringObject().optional().nullable(),
-          language: zodSchemaLocale().optional().nullable(),
-          lastModified: z.string().optional().nullable(),
-          length: z.number().int().optional().nullable(),
-          links: z.array(zodSchemaLink()).optional().nullable(),
-          location: z.string().optional().nullable(),
-          mediaType: zodSchemaMediaType().optional().nullable(),
-          metadata: zodSchemaMultivaluedMapStringObject().optional().nullable(),
-          status: z.number().int().optional().nullable(),
-          statusInfo: zodSchemaStatusType().optional().nullable(),
-          stringHeaders: zodSchemaMultivaluedMapStringString()
-          .optional()
-          .nullable()
+          only_admins: z.boolean()
       })
       .nonstrict();
   }
@@ -831,22 +482,8 @@ export namespace Schemas {
       return z.enum([ 'MAINTENANCE', 'UP' ]);
   }
 
-  function zodSchemaStatusType() {
-      return z
-      .object({
-          family: zodSchemaFamily().optional().nullable(),
-          reasonPhrase: z.string().optional().nullable(),
-          statusCode: z.number().int().optional().nullable()
-      })
-      .nonstrict();
-  }
-
   function zodSchemaUUID() {
       return z.string();
-  }
-
-  function zodSchemaUriBuilder() {
-      return z.unknown();
   }
 
   function zodSchemaWebhookProperties() {
@@ -895,7 +532,7 @@ export namespace Operations {
     }
 
     export type Payload =
-      | ValidatedResponse<'Response', 200, Schemas.Response>
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -908,7 +545,7 @@ export namespace Operations {
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Schemas.Response, 'Response', 200) ]
+            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
         })
         .build();
     };
@@ -994,7 +631,7 @@ export namespace Operations {
     }
 
     export type Payload =
-      | ValidatedResponse<'Response', 200, Schemas.Response>
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -1007,7 +644,7 @@ export namespace Operations {
         .queryParams(query)
         .data(params.body)
         .config({
-            rules: [ new ValidateRule(Schemas.Response, 'Response', 200) ]
+            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
         })
         .build();
     };
@@ -1137,7 +774,7 @@ export namespace Operations {
     }
 
     export type Payload =
-      | ValidatedResponse<'Response', 200, Schemas.Response>
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -1150,7 +787,7 @@ export namespace Operations {
         .queryParams(query)
         .data(params.body)
         .config({
-            rules: [ new ValidateRule(Schemas.Response, 'Response', 200) ]
+            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
         })
         .build();
     };
@@ -1207,35 +844,6 @@ export namespace Operations {
         .build();
     };
   }
-  // GET /email_endpoint/migrate
-  export namespace EmailEndpointMigrationServiceMigrateEmailEndpoint {
-    const ConfirmationToken = z.string();
-    type ConfirmationToken = string;
-    export interface Params {
-      confirmationToken?: ConfirmationToken;
-    }
-
-    export type Payload =
-      | ValidatedResponse<'MigrationReport', 200, Schemas.MigrationReport>
-      | ValidatedResponse<'unknown', undefined, unknown>;
-    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
-    export const actionCreator = (params: Params): ActionCreator => {
-        const path = './email_endpoint/migrate';
-        const query = {} as Record<string, any>;
-        if (params.confirmationToken !== undefined) {
-            query['confirmation-token'] = params.confirmationToken;
-        }
-
-        return actionBuilder('GET', path)
-        .queryParams(query)
-        .config({
-            rules: [
-                new ValidateRule(Schemas.MigrationReport, 'MigrationReport', 200)
-            ]
-        })
-        .build();
-    };
-  }
   // POST /eventTypes
   export namespace InternalServiceCreateEventType {
     export interface Params {
@@ -1254,6 +862,32 @@ export namespace Operations {
         .data(params.body)
         .config({
             rules: [ new ValidateRule(Schemas.EventType, 'EventType', 200) ]
+        })
+        .build();
+    };
+  }
+  // PUT /eventTypes/{eventTypeId}
+  export namespace InternalServiceUpdateEventType {
+    export interface Params {
+      eventTypeId: Schemas.UUID;
+      body: Schemas.EventType;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './eventTypes/{eventTypeId}'.replace(
+            '{eventTypeId}',
+            params.eventTypeId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('PUT', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
         })
         .build();
     };
@@ -1286,14 +920,12 @@ export namespace Operations {
   }
   // PUT /status
   export namespace InternalServiceSetCurrentStatus {
-    const Response200 = z.unknown();
-    type Response200 = unknown;
     export interface Params {
       body: Schemas.CurrentStatus;
     }
 
     export type Payload =
-      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 204, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -1303,7 +935,7 @@ export namespace Operations {
         .queryParams(query)
         .data(params.body)
         .config({
-            rules: [ new ValidateRule(Response200, 'unknown', 200) ]
+            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 204) ]
         })
         .build();
     };
