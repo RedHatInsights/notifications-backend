@@ -49,7 +49,7 @@ class ValidationEndpointTest {
                 .statusCode(404)
                 .extract().asString();
 
-        assertEquals("No event type found for [bundleName=blabla, applicationName=Notifications, eventTypeName=Any]", response);
+        assertEquals("No event type found for [bundle=blabla, application=Notifications, eventType=Any]", response);
     }
 
     @Test
