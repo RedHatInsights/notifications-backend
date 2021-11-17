@@ -19,7 +19,7 @@ import static com.redhat.cloud.notifications.Constants.INTERNAL;
 @Path(INTERNAL + "/validation")
 public class ValidationEndpoint {
 
-    private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for [bundleName=%s, applicationName=%s, eventTypeName=%s]";
+    private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for [bundle=%s, application=%s, eventType=%s]";
 
     @Inject
     ApplicationResources appResources;
