@@ -12,6 +12,7 @@ import {
     Td,  Th,   Thead,
     Tr } from '@patternfly/react-table';
 import * as React from 'react';
+import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
@@ -31,21 +32,36 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
-    const getBundleId = React.useMemo(() => {
-        applicationTypesQuery.payload?.value;
-    }, [ applicationTypesQuery.payload ]);
-
-    const bundleNameQuery = useParameterizedQuery(getBundleAction);
-    React.useEffect(() => {
-        const query = bundleNameQuery.query;
-        query(getBundleId);
-    }, [ getBundleId, bundleNameQuery.query ]);
-
     const newEvent = useCreateEventType();
     const [ event, setEvent ] = React.useState<Partial<EventType>>({});
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
+
+    const getBundleId = React.useMemo(() => {
+        if (applicationTypesQuery.payload?.type === 'Application') {
+            return applicationTypesQuery.payload.value.bundleId;
+        }
+
+        return undefined;
+    }, [ applicationTypesQuery.payload ]);
+
+    const bundleNameQuery = useParameterizedQuery(getBundleAction);
+
+    React.useEffect(() => {
+        const query = bundleNameQuery.query;
+        if (getBundleId) {
+            query(getBundleId);
+        }
+    }, [ getBundleId, bundleNameQuery.query ]);
+
+    const bundle = useMemo(() => {
+        if (bundleNameQuery.payload?.status === 200) {
+            return bundleNameQuery.payload.value;
+        }
+
+        return undefined;
+    }, [ bundleNameQuery.payload?.status, bundleNameQuery.payload?.value ]);
 
     const createEventType = () => {
         setShowModal(true);
@@ -91,7 +107,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             <PageSection>
                 <Title headingLevel="h1">
                     <Breadcrumb>
-                        <BreadcrumbItem target='#'> { bundleNameQuery.loading ? <Spinner /> : bundleNameQuery.payload?.value.displayName }
+                        <BreadcrumbItem target='#'>{ bundle ? bundle.display_name : <Spinner /> }
                         </BreadcrumbItem>
 
                         <BreadcrumbItem target='#'> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
