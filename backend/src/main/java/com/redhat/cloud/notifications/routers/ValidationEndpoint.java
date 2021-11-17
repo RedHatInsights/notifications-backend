@@ -25,7 +25,6 @@ public class ValidationEndpoint {
     ApplicationResources appResources;
 
     @GET
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/baet")
     public Uni<Response> validate(@RestQuery String bundle, @RestQuery String application, @RestQuery String eventType) {
