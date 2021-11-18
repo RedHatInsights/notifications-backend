@@ -72,7 +72,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/integrations.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/integrations.*\"}[5m])) by (uri)",
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/integrations.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/integrations.*\"}[5m])) by (uri)",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -166,7 +166,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/user-config.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/user-config.*\"}[5m])) by (uri)",
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/user-config.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/user-config.*\"}[5m])) by (uri)",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -260,7 +260,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/facets.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/facets.*\"}[5m])) by (uri)",
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/facets.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/facets.*\"}[5m])) by (uri)",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -269,7 +269,7 @@ data:
             },
             {
               "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/events.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/events.*\"}[5m])) by (uri)",
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/events.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/events.*\"}[5m])) by (uri)",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -363,7 +363,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri)",
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri)",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -372,7 +372,7 @@ data:
             },
             {
               "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri)",
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri)",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -380,7 +380,7 @@ data:
               "refId": "B"
             },
             {
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) * 60",
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) * 60",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -473,7 +473,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(http_server_requests_seconds_count{container=\"notifications-backend\"}[5m]) * 60) by (status)",
+              "expr": "sum(rate(http_server_requests_seconds_count{container=\"notifications-backend-service\"}[5m]) * 60) by (status)",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -481,7 +481,7 @@ data:
               "refId": "A"
             },
             {
-              "expr": "sum(increase(http_server_requests_seconds_count{service=\"notifications-backend\"}[1m])) by (status)",
+              "expr": "sum(increase(http_server_requests_seconds_count{service=\"notifications-backend-service\"}[1m])) by (status)",
               "hide": true,
               "instant": false,
               "interval": "",
@@ -759,7 +759,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(input_consumed_seconds_count{service=\"notifications-backend\"}[5m])) by (application)",
+              "expr": "sum(rate(input_consumed_seconds_count{service=\"notifications-backend-service\"}[5m])) by (application)",
               "interval": "",
               "legendFormat": "{{application}}",
               "refId": "A"
@@ -855,7 +855,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(increase(processor_input_processed_total{service=\"notifications-backend\"}[5m]))",
+              "expr": "sum(increase(processor_input_processed_total{service=\"notifications-backend-service\"}[5m]))",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -864,7 +864,7 @@ data:
               "refId": "A"
             },
             {
-              "expr": "sum(increase(input_rejected_total{service=\"notifications-backend\"}[5m]))",
+              "expr": "sum(increase(input_rejected_total{service=\"notifications-backend-service\"}[5m]))",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -958,14 +958,14 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(increase(rbac_get_users_total_seconds_max{service=\"notifications-backend\"}[5m]))",
+              "expr": "sum(increase(rbac_get_users_total_seconds_max{service=\"notifications-backend-service\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "total",
               "refId": "A"
             },
             {
-              "expr": "sum(increase(rbac_get_users_page_seconds_count{service=\"notifications-backend\"}[5m]))",
+              "expr": "sum(increase(rbac_get_users_page_seconds_count{service=\"notifications-backend-service\"}[5m]))",
               "interval": "",
               "legendFormat": "page",
               "refId": "B"
@@ -1152,7 +1152,7 @@ data:
           "pluginVersion": "8.2.1",
           "targets": [
             {
-              "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-backend\"})",
+              "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-backend-service\"})",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
@@ -1205,7 +1205,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(container_memory_working_set_bytes{container=\"notifications-backend\"}) BY (pod, namespace)",
+              "expr": "sum(container_memory_working_set_bytes{container=\"notifications-backend-service\"}) BY (pod, namespace)",
               "interval": "",
               "legendFormat": "{{pod}}",
               "refId": "A"
@@ -1298,7 +1298,7 @@ data:
           "pluginVersion": "8.2.1",
           "targets": [
             {
-              "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-gw\"})",
+              "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-gw-service\"})",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
@@ -1351,7 +1351,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(container_memory_working_set_bytes{container=\"notifications-gw\"}) BY (pod, namespace)",
+              "expr": "sum(container_memory_working_set_bytes{container=\"notifications-gw-service\"}) BY (pod, namespace)",
               "interval": "",
               "legendFormat": "{{pod}}",
               "refId": "A"
@@ -1865,7 +1865,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 21
+      "version": 22
     }
 kind: ConfigMap
 metadata:
