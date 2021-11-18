@@ -155,12 +155,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='submit'
-                                                    isDisabled={ isEdit }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
-                                                    onClick={ handleSubmit }>Submit</Button>
-                                                <Button variant='primary' type='submit' isDisabled={ !isEdit }
-                                                    onClick={ handleSubmit }>Update</Button>
+                                                    onClick={ handleSubmit }>{isEdit ? 'Update' : 'Submit' }</Button>
                                                 <Button variant='link' type='reset'
                                                     onClick={ () => setShowModal(false) }>Cancel</Button>
                                             </ActionGroup>
