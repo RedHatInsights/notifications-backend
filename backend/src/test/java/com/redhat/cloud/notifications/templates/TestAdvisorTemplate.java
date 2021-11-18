@@ -52,14 +52,14 @@ public class TestAdvisorTemplate {
                 .data("action", action)
                 .render();
 
-        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 4 resolved recommendations", result, "Title contains the number of reports created");
+        assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 4 resolved recommendations\n", result, "Title contains the number of reports created");
 
         // Action with only 1 event
         action.setEvents(List.of(action.getEvents().get(0)));
         result = Advisor.Templates.resolvedRecommendationInstantEmailTitle()
                 .data("action", action)
                 .render();
-        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 1 resolved recommendation", result, "Title contains the number of reports created");
+        assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 1 resolved recommendation\n", result, "Title contains the number of reports created");
     }
 
     @Test
@@ -79,14 +79,14 @@ public class TestAdvisorTemplate {
                 .data("action", action)
                 .render();
 
-        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 4 new recommendations", result, "Title contains the number of reports created");
+        assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 4 new recommendations\n", result, "Title contains the number of reports created");
 
         // Action with only 1 event
         action.setEvents(List.of(action.getEvents().get(0)));
         result = Advisor.Templates.newRecommendationInstantEmailTitle()
                 .data("action", action)
                 .render();
-        assertEquals("Advisor instant notification - 03 Oct 2020 15:22 UTC - 1 new recommendation", result, "Title contains the number of reports created");
+        assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 1 new recommendation\n", result, "Title contains the number of reports created");
     }
 
     @Test
