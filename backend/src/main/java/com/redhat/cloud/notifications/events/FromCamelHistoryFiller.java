@@ -7,11 +7,11 @@ import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * We sent data via Camel. Now Camel informs us about the outcome,
@@ -22,7 +22,7 @@ public class FromCamelHistoryFiller {
 
     public static final String FROMCAMEL_CHANNEL = "fromCamel";
 
-    private static final Logger log = Logger.getLogger(FromCamelHistoryFiller.class.getName());
+    private static final Logger log = Logger.getLogger(FromCamelHistoryFiller.class);
 
     @Inject
     NotificationResources notificationResources;
@@ -35,20 +35,20 @@ public class FromCamelHistoryFiller {
     // Can be modified to use Multi<Message<String>> input also for more concurrency
     public Uni<Void> processAsync(Message<String> input) {
         return Uni.createFrom().item(() -> input.getPayload())
-                .onItem().invoke(payload -> log.info(() -> "Processing return from camel: " + payload))
+                .onItem().invoke(payload -> log.infof("Processing return from camel: %s", payload))
                 .onItem().transform(this::decodeItem)
                 .onItem()
                 .transformToUni(payload -> {
                     return sessionFactory.withStatelessSession(statelessSession -> {
                         return notificationResources.updateHistoryItem(payload)
-                                .onFailure().invoke(t -> log.info(() -> "|  Update Fail: " + t)
+                                .onFailure().invoke(t -> log.info("|  Update Fail", t)
                                 );
                     });
                 })
                 .onItemOrFailure()
                 .transformToUni((unused, t) -> {
                     if (t != null) {
-                        log.severe("|  Failure to update the history : " + t);
+                        log.error("|  Failure to update the history", t);
                     }
                     return Uni.createFrom().voidItem();
                 });
