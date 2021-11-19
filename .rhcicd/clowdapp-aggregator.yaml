@@ -21,7 +21,7 @@ objects:
       partitions: 2
       replicas: 3
     jobs:
-    - name: notifications-aggregator
+    - name: cronjob
       schedule: ${CRONTAB_AGGREGATION_JOB}
       suspend: ${{SUSPEND_AGGREGATION_JOB}}
       startingDeadlineSeconds: ${{STARTING_DEADLINE}}
