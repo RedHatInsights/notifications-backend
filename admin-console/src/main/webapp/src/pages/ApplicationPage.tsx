@@ -5,7 +5,7 @@ import {
     Form,
     FormGroup, TextArea,
     TextInput  } from '@patternfly/react-core';
-import { PencilAltIcon } from '@patternfly/react-icons';
+import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
     TableComposable,
     Tbody,
@@ -17,6 +17,7 @@ import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
 import { useCreateEventType } from '../services/CreateEventTypes';
+import { useDeleteEventType } from '../services/DeleteEventType';
 import { useApplicationTypes } from '../services/GetApplication';
 import { getBundleAction  } from '../services/GetBundleAction';
 import { useEventTypes } from '../services/GetEventTypes';
@@ -30,6 +31,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
+    const deleteEventTypeMutation = useDeleteEventType();
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
     const newEvent = useCreateEventType();
@@ -37,6 +39,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
+
+    const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
     const getBundleId = React.useMemo(() => {
         if (applicationTypesQuery.payload?.type === 'Application') {
@@ -87,6 +91,30 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const editEventType = (e: EventType) => {
         setShowModal(true);
         setIsEdit(true);
+        setEvent(e);
+    };
+
+    const getEventType = useMemo(() => {
+        if (eventTypesQuery.payload?.status === 200) {
+            return eventTypesQuery.payload.value.map(e => e.displayName);
+        }
+    }, [ eventTypesQuery.payload?.status, eventTypesQuery.payload?.value ]);
+
+    const handleDelete = React.useCallback(() => {
+        const deleteEventType = deleteEventTypeMutation.mutate;
+        deleteEventType({
+            id: event.id ?? '',
+            displayName: event.displayName ?? '',
+            name: event.name ?? '',
+            description: event.description ?? '',
+            applicationId
+
+        });
+
+    }, [ applicationId, deleteEventTypeMutation.mutate, event.description, event.displayName, event.id, event.name ]);
+
+    const deleteEventTypeModal = (e: EventType) => {
+        setShowDeleteModal(true);
         setEvent(e);
     };
 
@@ -168,6 +196,20 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         <>
                                         </>
                                     </Modal>
+                                    <React.Fragment>
+                                        <Modal variant={ ModalVariant.small } isOpen={ showDeleteModal } onClose={ () => setShowDeleteModal(false) }
+                                            title={ ` Permanetly delete ${ getEventType }` }><strong>
+                                                { getEventType }</strong>
+                                                  and its data will be lost forever.
+                                            <br></br>
+                                            Type { getEventType } to confirm:
+                                            <TextInput isRequired type='text' />
+                                            <ActionGroup>
+                                                <Button variant='danger' type='button' onClick={ handleDelete }>Delete</Button>
+                                                <Button variant='link' type='button' onClick={ () => setShowDeleteModal(false) }>Cancel</Button>
+                                            </ActionGroup>
+                                        </Modal>
+                                    </React.Fragment>
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
@@ -187,6 +229,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
                                         onClick={ () => editEventType(e) }> { <PencilAltIcon /> } </Button></Td>
+                                <Td>
+                                    <Button className='delete' type='button' variant='plain'
+                                        onClick={ () => deleteEventTypeModal(e) }>{ <TrashIcon /> } </Button></Td>
                             </Tr>
                         ))}
                     </Tbody>
