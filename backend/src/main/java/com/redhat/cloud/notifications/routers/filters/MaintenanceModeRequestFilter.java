@@ -21,7 +21,7 @@ import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 @ApplicationScoped
 public class MaintenanceModeRequestFilter {
 
-    private static final Logger LOGGER = Logger.getLogger(MaintenanceModeRequestFilter.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(MaintenanceModeRequestFilter.class);
 
     // This list contains all request paths that should never be affected by the maintenance mode.
     private static final List<String> NO_MAINTENANCE_REQUEST_PATHS = List.of(

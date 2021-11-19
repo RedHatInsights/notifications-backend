@@ -30,7 +30,7 @@ public class DailyEmailAggregationJob {
 
     public static final String AGGREGATION_CHANNEL = "aggregation";
 
-    private static final Logger LOG = Logger.getLogger(DailyEmailAggregationJob.class.getName());
+    private static final Logger LOG = Logger.getLogger(DailyEmailAggregationJob.class);
 
     private final EmailAggregationResources emailAggregationResources;
     private final ObjectMapper objectMapper;
