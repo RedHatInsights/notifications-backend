@@ -25,7 +25,8 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1634628939999,
+      "id": 75,
+      "iteration": 1637306392202,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -380,7 +381,7 @@ data:
               "refId": "B"
             },
             {
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) * 60",
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) * 60",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -473,6 +474,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "exemplar": true,
               "expr": "sum(rate(http_server_requests_seconds_count{container=\"notifications-backend-service\"}[5m]) * 60) by (status)",
               "hide": false,
               "interval": "",
@@ -481,6 +483,7 @@ data:
               "refId": "A"
             },
             {
+              "exemplar": true,
               "expr": "sum(increase(http_server_requests_seconds_count{service=\"notifications-backend-service\"}[1m])) by (status)",
               "hide": true,
               "instant": false,
@@ -759,6 +762,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "exemplar": true,
               "expr": "sum(rate(input_consumed_seconds_count{service=\"notifications-backend-service\"}[5m])) by (application)",
               "interval": "",
               "legendFormat": "{{application}}",
@@ -855,6 +859,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "exemplar": true,
               "expr": "sum(increase(processor_input_processed_total{service=\"notifications-backend-service\"}[5m]))",
               "format": "time_series",
               "hide": false,
@@ -864,6 +869,7 @@ data:
               "refId": "A"
             },
             {
+              "exemplar": true,
               "expr": "sum(increase(input_rejected_total{service=\"notifications-backend-service\"}[5m]))",
               "format": "time_series",
               "hide": false,
@@ -958,6 +964,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "exemplar": true,
               "expr": "sum(increase(rbac_get_users_total_seconds_max{service=\"notifications-backend-service\"}[5m]))",
               "hide": false,
               "interval": "",
@@ -965,6 +972,7 @@ data:
               "refId": "A"
             },
             {
+              "exemplar": true,
               "expr": "sum(increase(rbac_get_users_page_seconds_count{service=\"notifications-backend-service\"}[5m]))",
               "interval": "",
               "legendFormat": "page",
@@ -1152,6 +1160,7 @@ data:
           "pluginVersion": "8.2.1",
           "targets": [
             {
+              "exemplar": true,
               "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-backend-service\"})",
               "interval": "",
               "legendFormat": "",
@@ -1205,6 +1214,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "exemplar": true,
               "expr": "sum(container_memory_working_set_bytes{container=\"notifications-backend-service\"}) BY (pod, namespace)",
               "interval": "",
               "legendFormat": "{{pod}}",
@@ -1298,6 +1308,7 @@ data:
           "pluginVersion": "8.2.1",
           "targets": [
             {
+              "exemplar": true,
               "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-gw-service\"})",
               "interval": "",
               "legendFormat": "",
@@ -1351,6 +1362,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "exemplar": true,
               "expr": "sum(container_memory_working_set_bytes{container=\"notifications-gw-service\"}) BY (pod, namespace)",
               "interval": "",
               "legendFormat": "{{pod}}",
@@ -1401,10 +1413,6 @@ data:
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -1803,9 +1811,9 @@ data:
           {
             "allValue": null,
             "current": {
-              "selected": true,
-              "text": "prod",
-              "value": "crcp01ue1-prometheus"
+              "selected": false,
+              "text": "stage",
+              "value": "crcs02ue1-prometheus"
             },
             "description": null,
             "error": null,
@@ -1816,12 +1824,12 @@ data:
             "name": "datasource",
             "options": [
               {
-                "selected": false,
+                "selected": true,
                 "text": "stage",
                 "value": "crcs02ue1-prometheus"
               },
               {
-                "selected": true,
+                "selected": false,
                 "text": "prod",
                 "value": "crcp01ue1-prometheus"
               }
@@ -1834,7 +1842,7 @@ data:
         ]
       },
       "time": {
-        "from": "now-7d",
+        "from": "now-24h",
         "to": "now"
       },
       "timepicker": {
@@ -1865,7 +1873,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 22
+      "version": 23
     }
 kind: ConfigMap
 metadata:
