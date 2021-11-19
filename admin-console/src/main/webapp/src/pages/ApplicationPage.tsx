@@ -94,12 +94,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEvent(e);
     };
 
-    const getEventType = useMemo(() => {
-        if (eventTypesQuery.payload?.status === 200) {
-            return eventTypesQuery.payload.value.map(e => e.displayName);
-        }
-    }, [ eventTypesQuery.payload?.status, eventTypesQuery.payload?.value ]);
-
     const handleDelete = React.useCallback(() => {
         const deleteEventType = deleteEventTypeMutation.mutate;
         deleteEventType({
@@ -197,13 +191,18 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         </>
                                     </Modal>
                                     <React.Fragment>
-                                        <Modal variant={ ModalVariant.small } isOpen={ showDeleteModal } onClose={ () => setShowDeleteModal(false) }
-                                            title={ ` Permanetly delete ${ getEventType }` }><strong>
-                                                { getEventType }</strong>
-                                                  and its data will be lost forever.
-                                            <br></br>
-                                            Type { getEventType } to confirm:
+                                        <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ showDeleteModal }
+                                            onClose={ () => setShowDeleteModal(false) }
+                                            title={ ` Permanetly delete ${ event.displayName }` }>
+                                            <strong>
+                                                { event.displayName }</strong> and its data will be lost forever.
+                                            <br />
+                                            <br />
+                                            Type { event.displayName } to confirm:
+                                            <br />
                                             <TextInput isRequired type='text' />
+                                            <br />
+                                            <br />
                                             <ActionGroup>
                                                 <Button variant='danger' type='button' onClick={ handleDelete }>Delete</Button>
                                                 <Button variant='link' type='button' onClick={ () => setShowDeleteModal(false) }>Cancel</Button>
