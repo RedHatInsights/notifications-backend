@@ -100,12 +100,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
             id: event.id ?? '',
             displayName: event.displayName ?? '',
             name: event.name ?? '',
-            description: event.description ?? '',
-            applicationId
+            description: event.description ?? ''
 
         });
 
-    }, [ applicationId, deleteEventTypeMutation.mutate, event.description, event.displayName, event.id, event.name ]);
+    }, [ deleteEventTypeMutation.mutate, event.description, event.displayName, event.id, event.name ]);
 
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
@@ -193,14 +192,16 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                     <React.Fragment>
                                         <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ showDeleteModal }
                                             onClose={ () => setShowDeleteModal(false) }
-                                            title={ ` Permanetly delete ${ event.displayName }` }>
-                                            <strong>
-                                                { event.displayName }</strong> and its data will be lost forever.
+                                            title={ `Permanetly delete ${ event.name }` }>
+                                            { `${ event.name } from ${ bundle ? bundle.display_name : <Spinner /> }/${ (applicationTypesQuery.loading
+                                             || applicationTypesQuery.payload?.status !== 200) ?
+                                                <Spinner /> : applicationTypesQuery.payload.value.displayName } will be deleted.`}
+
                                             <br />
                                             <br />
-                                            Type { event.displayName } to confirm:
+                                            Type { event.name } to confirm:
                                             <br />
-                                            <TextInput isRequired type='text' />
+                                            <TextInput isRequired type='text' id='display-name' />
                                             <br />
                                             <br />
                                             <ActionGroup>
