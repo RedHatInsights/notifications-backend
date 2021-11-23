@@ -198,7 +198,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                             <br />
                                             Type <b>{ event.name }</b> to confirm:
                                             <br />
-                                            <TextInput type='text' id='name' isRequired />
+                                            <TextInput type='text' value={ event.name } name='name' id='name' isRequired />
                                             <br />
                                             <br />
                                             <ActionGroup>
