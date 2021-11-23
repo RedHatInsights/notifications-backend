@@ -25,6 +25,7 @@ import { EventType } from '../types/Notifications';
 
 type ApplicationPageParams = {
     applicationId: string;
+    eventTypeId: string;
 }
 
 export const ApplicationPage: React.FunctionComponent = () => {
@@ -95,16 +96,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
     };
 
     const handleDelete = React.useCallback(() => {
+        setShowDeleteModal(false);
         const deleteEventType = deleteEventTypeMutation.mutate;
-        deleteEventType({
-            id: event.id ?? '',
-            displayName: event.displayName ?? '',
-            name: event.name ?? '',
-            description: event.description ?? ''
+        deleteEventType(event.id).then (eventTypesQuery.query);
 
-        });
-
-    }, [ deleteEventTypeMutation.mutate, event.description, event.displayName, event.id, event.name ]);
+    }, [ deleteEventTypeMutation.mutate, event.id, eventTypesQuery.query ]);
 
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
@@ -193,15 +189,16 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ showDeleteModal }
                                             onClose={ () => setShowDeleteModal(false) }
                                             title={ `Permanetly delete ${ event.name }` }>
-                                            { `${ event.name } from ${ bundle ? bundle.display_name : <Spinner /> }/${ (applicationTypesQuery.loading
+                                            { <b>{ event.name }</b> } {`from  ${ bundle ? bundle.display_name :
+                                                <Spinner /> }/${ (applicationTypesQuery.loading
                                              || applicationTypesQuery.payload?.status !== 200) ?
-                                                <Spinner /> : applicationTypesQuery.payload.value.displayName } will be deleted.`}
-
+                                                <Spinner /> : applicationTypesQuery.payload.value.displayName } will be deleted. 
+                                                If an application is currently sending this event, it will no longer be processed.`}
                                             <br />
                                             <br />
                                             Type { event.name } to confirm:
                                             <br />
-                                            <TextInput isRequired type='text' id='display-name' />
+                                            <TextInput isRequired type='text' id='name' />
                                             <br />
                                             <br />
                                             <ActionGroup>
