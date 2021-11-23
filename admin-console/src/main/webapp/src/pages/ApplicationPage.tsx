@@ -151,7 +151,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
                                                 <TextInput
                                                     type='text'
-                                                    value={ event.name }
+                                                    defaultValue={ event.name }
                                                     onChange={ () => setEvent }
                                                     id='name'
                                                 /></FormGroup>
@@ -159,7 +159,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 helperText='This is the name you want to display on the UI'>
                                                 <TextInput
                                                     type='text'
-                                                    value={ event.displayName }
+                                                    defaultValue={ event.displayName }
                                                     onChange={ () => setEvent }
                                                     id='display-name' /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
@@ -167,7 +167,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 to help admin descide how to notify users.'>
                                                 <TextArea
                                                     type='text'
-                                                    value={ event.description }
+                                                    defaultValue={ event.description }
                                                     onChange={ () => setEvent }
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
@@ -198,7 +198,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                             <br />
                                             Type <b>{ event.name }</b> to confirm:
                                             <br />
-                                            <TextInput type='text' value={ event.name } name='name' id='name' isRequired />
+                                            <TextInput type='text' defaultValue={ event.name } name="name" id='name' isRequired />
                                             <br />
                                             <br />
                                             <ActionGroup>
