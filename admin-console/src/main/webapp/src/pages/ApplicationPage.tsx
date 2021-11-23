@@ -33,7 +33,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
     const newEvent = useCreateEventType();
-    const [ event, setEvent ] = React.useState<Partial<EventType>>({});
+    const [ eventType, setEventType ] = React.useState<Partial<EventType>>({});
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
@@ -66,28 +66,33 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
-        setEvent({});
+        setEventType({});
     };
 
-    const handleSubmit = () => {
+    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
+        const target = event.target as HTMLInputElement;
+        setEventType(prev => ({ ...prev, [target.name]: target.value }));
+    };
+
+    const handleSubmit = React.useCallback(() => {
         setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
-            id: event.id ?? '',
-            displayName: event.displayName ?? '',
-            name: event.name ?? '',
-            description: event.description ?? '',
+            id: eventType.id,
+            displayName: eventType.displayName ?? '',
+            name: eventType.name ?? '',
+            description: eventType.description ?? '',
             applicationId
 
         })
         .then (eventTypesQuery.query);
 
-    };
+    }, [ applicationId, eventType, eventTypesQuery.query, newEvent.mutate ]);
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
         setIsEdit(true);
-        setEvent(e);
+        setEventType(e);
     };
 
     if (eventTypesQuery.loading) {
@@ -134,25 +139,28 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
                                                 <TextInput
                                                     type='text'
-                                                    value={ event.name }
-                                                    onChange={ () => setEvent }
+                                                    value={ eventType.name }
+                                                    onChange={ handleChange }
                                                     id='name'
+                                                    name="name"
                                                 /></FormGroup>
                                             <FormGroup label='Display name' fieldId='display-name' isRequired
                                                 helperText='This is the name you want to display on the UI'>
                                                 <TextInput
                                                     type='text'
-                                                    value={ event.displayName }
-                                                    onChange={ () => setEvent }
-                                                    id='display-name' /></FormGroup>
+                                                    value={ eventType.displayName }
+                                                    onChange={ handleChange }
+                                                    id='display-name'
+                                                    name="displayName" /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
                                                 helperText='Optional short description that appears in the UI
                                                 to help admin descide how to notify users.'>
                                                 <TextArea
                                                     type='text'
-                                                    value={ event.description }
-                                                    onChange={ () => setEvent }
-                                                    id='description' /></FormGroup>
+                                                    value={ eventType.description }
+                                                    onChange={ handleChange }
+                                                    id='description'
+                                                    name="description" /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='submit'
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
