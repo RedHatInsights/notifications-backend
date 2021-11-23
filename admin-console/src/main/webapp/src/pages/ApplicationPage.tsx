@@ -196,9 +196,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 If an application is currently sending this event, it will no longer be processed.`}
                                             <br />
                                             <br />
-                                            Type { event.name } to confirm:
+                                            Type <b>{ event.name }</b> to confirm:
                                             <br />
-                                            <TextInput isRequired type='text' id='name' />
+                                            <TextInput type='text' id='name' isRequired />
                                             <br />
                                             <br />
                                             <ActionGroup>
