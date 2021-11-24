@@ -40,7 +40,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
-    const [ errors, setErrors ] = React.useState(false);
+    const [ errors, setErrors ] = React.useState(true);
 
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
@@ -85,7 +85,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
         if (target.value !== eventType.name) {
             return setErrors(true);
         } else if (target.value === eventType.name) {
-            return;
+            return setErrors(false);
         }
 
     };
@@ -214,12 +214,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                             <br />
                                             Type <b>{ eventType.name }</b> to confirm:
                                             <br />
-                                            <TextInput type='text' onChange={ handleDeleteChange } { ... errors }
-                                                defaultValue={ eventType.name || '' } name="name" id='name' isRequired />
+                                            <TextInput type='text' onChange={ handleDeleteChange }
+                                                defaultValue={ eventType.name } name="name" id='name' isRequired />
                                             <br />
                                             <br />
                                             <ActionGroup>
-                                                <Button variant='danger' type='button' isDisabled = { !errors }
+                                                <Button variant='danger' type='button' isDisabled = { errors }
                                                     onClick={ handleDelete }>Delete</Button>
                                                 <Button variant='link' type='button' onClick={ () => setShowDeleteModal(false) }>Cancel</Button>
                                             </ActionGroup>
