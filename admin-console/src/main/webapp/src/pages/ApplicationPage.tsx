@@ -80,16 +80,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventType(prev => ({ ...prev, [target.name]: target.value }));
     };
 
-    const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
-        const target = event.target as HTMLInputElement;
-        if (target.value !== eventType.name) {
-            return setErrors(true);
-        } else if (target.value === eventType.name) {
-            return setErrors(false);
-        }
-
-    };
-
     const handleSubmit = () => {
         setShowModal(false);
         const mutate = newEvent.mutate;
@@ -121,6 +111,16 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
         setEventType(e);
+    };
+
+    const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+        const target = event.target as HTMLInputElement;
+        if (target.value !== eventType.name) {
+            return setErrors(true);
+        } else if (target.value === eventType.name) {
+            return setErrors(false);
+        }
+
     };
 
     if (eventTypesQuery.loading) {
