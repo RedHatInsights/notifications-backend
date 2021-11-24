@@ -24,6 +24,7 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.vertx.MutinyHelper;
 import io.vertx.core.Vertx;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -79,6 +80,11 @@ public class EventServiceTest extends DbIsolatedTest {
 
     // A new instance is automatically created by JUnit before each test is executed.
     private final ModelInstancesHolder model = new ModelInstancesHolder();
+
+    @BeforeEach
+    void setUp() {
+        mockServerConfig.clearRbac();
+    }
 
     @Test
     void shouldNotBeAllowedToGetEventLogsWhenUserHasWrongAccessRights() {
