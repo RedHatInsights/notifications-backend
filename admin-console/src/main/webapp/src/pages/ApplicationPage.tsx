@@ -80,11 +80,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventType(prev => ({ ...prev, [target.name]: target.value }));
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = React.useCallback(() => {
         setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
-            id: eventType.id ?? '',
+            id: eventType.id,
             displayName: eventType.displayName ?? '',
             name: eventType.name ?? '',
             description: eventType.description ?? '',
@@ -93,7 +93,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
         })
         .then (eventTypesQuery.query);
 
-    };
+    }, [ applicationId, eventType, eventTypesQuery.query, newEvent.mutate ]);
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
@@ -120,7 +120,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
         } else if (target.value === eventType.name) {
             return setErrors(false);
         }
-
     };
 
     if (eventTypesQuery.loading) {
@@ -170,6 +169,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     defaultValue={ eventType.name }
                                                     onChange={ handleChange }
                                                     id='name'
+                                                    name="name"
                                                 /></FormGroup>
                                             <FormGroup label='Display name' fieldId='display-name' isRequired
                                                 helperText='This is the name you want to display on the UI'>
@@ -178,22 +178,27 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     defaultValue={ eventType.displayName }
                                                     onChange={ handleChange }
                                                     id='display-name' /></FormGroup>
+                                                    onChange={ handleChange }
+                                                    id='display-name'
+                                                    name="displayName" /></FormGroup>
+
                                             <FormGroup label='Description' fieldId='description'
                                                 helperText='Optional short description that appears in the UI
                                                 to help admin descide how to notify users.'>
                                                 <TextArea
                                                     type='text'
+
                                                     defaultValue={ eventType.description }
                                                     onChange={ handleChange }
                                                     id='description' /></FormGroup>
+                                                    onChange={ handleChange }
+                                                    id='description'
+                                                    name="description" /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='submit'
-                                                    isDisabled={ isEdit }
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
                                                         <Spinner /> : eventTypesQuery.payload.value }
-                                                    onClick={ handleSubmit }>Submit</Button>
-                                                <Button variant='primary' type='submit' isDisabled={ !isEdit }
-                                                    onClick={ handleSubmit }>Update</Button>
+                                                    onClick={ handleSubmit }>{isEdit ? 'Update' : 'Submit' }</Button>
                                                 <Button variant='link' type='reset'
                                                     onClick={ () => setShowModal(false) }>Cancel</Button>
                                             </ActionGroup>

@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -20,13 +21,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EndpointResources {
 
-    private static final Logger LOGGER = Logger.getLogger(EndpointResources.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(EndpointResources.class);
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
@@ -378,7 +378,7 @@ public class EndpointResources {
 
     public Uni<Endpoint> loadProperties(Endpoint endpoint) {
         if (endpoint == null) {
-            LOGGER.warning("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
+            LOGGER.warn("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
             return Uni.createFrom().nullItem();
         }
         return this.loadProperties(Collections.singletonList(endpoint))
