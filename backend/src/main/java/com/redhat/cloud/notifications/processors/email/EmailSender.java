@@ -34,7 +34,7 @@ import java.util.Set;
 @ApplicationScoped
 public class EmailSender {
 
-    private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private static final Logger logger = Logger.getLogger(EmailSender.class);
 
     static final String BOP_APITOKEN_HEADER = "x-rh-apitoken";
     static final String BOP_CLIENT_ID_HEADER = "x-rh-clientid";

@@ -48,7 +48,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.db.NotificationResources.MAX_NOTIFICATION_HISTORY_RESULTS;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -95,15 +97,15 @@ public class EndpointService {
                 schema = @Schema(type = SchemaType.INTEGER)
             )
     })
-    public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") String targetType, @QueryParam("active") Boolean activeOnly) {
+    public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") List<String> targetType, @QueryParam("active") Boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
         return sessionFactory.withSession(session -> {
             Uni<List<Endpoint>> endpoints;
             Uni<Long> count;
 
-            if (targetType != null) {
-                EndpointType endpointType = EndpointType.valueOf(targetType.toUpperCase());
+            if (targetType != null && targetType.size() > 0) {
+                Set<EndpointType> endpointType = targetType.stream().map(s -> EndpointType.valueOf(s.toUpperCase())).collect(Collectors.toSet());
                 endpoints = resources
                         .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query);
                 count = resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly);
@@ -283,25 +285,11 @@ public class EndpointService {
     @Path("/{id}/history/{history_id}/details")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    @Parameters({
-        @Parameter(
-                    name = "limit",
-                    in = ParameterIn.QUERY,
-                    description = "Number of items per page, if not specified or 0 is used, returns all elements",
-                    schema = @Schema(type = SchemaType.INTEGER)
-            ),
-        @Parameter(
-                    name = "pageNumber",
-                    in = ParameterIn.QUERY,
-                    description = "Page number. Starts at first page (0), if not specified starts at first page.",
-                    schema = @Schema(type = SchemaType.INTEGER)
-            )
-    })
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId, @BeanParam Query query) {
+    public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         return sessionFactory.withSession(session -> {
-            return notifResources.getNotificationDetails(principal.getAccount(), query, endpointId, historyId)
+            return notifResources.getNotificationDetails(principal.getAccount(), endpointId, historyId)
                     // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
                     .onItem().ifNull().failWith(new NotFoundException())
                     .onItem().transform(json -> {

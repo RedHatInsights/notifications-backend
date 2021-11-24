@@ -230,7 +230,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
     void testGetEventTypesAffectedByEndpoint() {
         String tenant = "testGetEventTypesAffectedByEndpoint";
         Header identityHeader = initRbacMock(tenant, "user", FULL_ACCESS);
-        sessionFactory.withSession(session -> helpers.createTestAppAndEventTypes()
+        helpers.createTestAppAndEventTypes()
                 .invoke(model.bundleIds::add)
                 .chain(() -> helpers.createBehaviorGroup(tenant, "behavior-group-1", model.bundleIds.get(0)))
                 .onItem().transform(BehaviorGroup::getId)
@@ -318,8 +318,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
                     assertEquals(1, behaviorGroups.size());
                     behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
                     assertEquals(model.behaviorGroupIds.get(1).toString(), behaviorGroups.getJsonObject(0).getString("id"));
-                }))
-        ).await().indefinitely();
+                })).await().indefinitely();
     }
 
     @Test

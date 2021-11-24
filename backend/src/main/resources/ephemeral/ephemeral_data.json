@@ -1,0 +1,95 @@
+{
+  "bundles": [
+    {
+      "name": "application-services",
+      "display_name": "Application Services",
+      "applications": [
+        {
+          "name": "rhosak",
+          "display_name": "Streams for Apache Kafka",
+          "event_types": [
+            {
+              "name": "action-required",
+              "display_name": "Action required"
+            },
+            {
+              "name": "disruption",
+              "display_name": "Service Disruption"
+            },
+            {
+              "name": "instance-created",
+              "display_name": "Instance created"
+            },
+            {
+              "name": "instance-deleted",
+              "display_name": "Instance deleted"
+            },
+            {
+              "name": "scheduled-upgrade",
+              "display_name": "Scheduled Upgrade"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "openshift",
+      "display_name": "OpenShift",
+      "applications": [
+        {
+          "name": "advisor",
+          "display_name": "Advisor",
+          "event_types": [
+            {
+              "name": "new-recommendation",
+              "display_name": "New recommendation",
+              "description": "Notifications when there is a new recommendation"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rhel",
+      "display_name": "Red Hat Enterprise Linux",
+      "applications": [
+        {
+          "name": "advisor",
+          "display_name": "Advisor",
+          "event_types": [
+            {
+              "name": "new-recommendation",
+              "display_name": "New recommendation",
+              "description": "Notifications when there is a new recommendation"
+            },
+            {
+              "name": "resolved-recommendation",
+              "display_name": "Resolved recommendation",
+              "description": "Notifications when there is a resolved recommendation"
+            }
+          ]
+        },
+        {
+          "name": "drift",
+          "display_name": "Drift",
+          "event_types": [
+            {
+              "name": "drift-baseline-detected",
+              "display_name": "Drift from baseline detected"
+            }
+          ]
+        },
+        {
+          "name": "policies",
+          "display_name": "Policies",
+          "event_types": [
+            {
+              "name": "policy-triggered",
+              "display_name": "Policy triggered"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

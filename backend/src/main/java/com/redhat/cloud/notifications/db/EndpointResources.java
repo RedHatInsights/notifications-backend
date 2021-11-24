@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -20,13 +21,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EndpointResources {
 
-    private static final Logger LOGGER = Logger.getLogger(EndpointResources.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(EndpointResources.class);
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
@@ -65,11 +65,11 @@ public class EndpointResources {
         });
     }
 
-    public Uni<List<Endpoint>> getEndpointsPerType(String tenant, EndpointType type, Boolean activeOnly, Query limiter) {
+    public Uni<List<Endpoint>> getEndpointsPerType(String tenant, Set<EndpointType> type, Boolean activeOnly, Query limiter) {
         return sessionFactory.withSession(session -> {
             // TODO Modify the parameter to take a vararg of Functions that modify the query
             // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
-            String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.type = :endpointType";
+            String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.type IN (:endpointType)";
             if (activeOnly != null) {
                 query += " AND enabled = :enabled";
             }
@@ -108,7 +108,7 @@ public class EndpointResources {
 
     public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties) {
         return sessionFactory.withSession(session -> {
-            return getEndpointsPerType(accountId, EndpointType.EMAIL_SUBSCRIPTION, null, null)
+            return getEndpointsPerType(accountId, Set.of(EndpointType.EMAIL_SUBSCRIPTION), null, null)
                     .onItem().call(this::loadProperties)
                     .onItem().transformToUni(emailEndpoints -> {
                         Optional<Endpoint> endpointOptional = emailEndpoints
@@ -132,9 +132,9 @@ public class EndpointResources {
         });
     }
 
-    public Uni<Long> getEndpointsCountPerType(String tenant, EndpointType type, Boolean activeOnly) {
+    public Uni<Long> getEndpointsCountPerType(String tenant, Set<EndpointType> type, Boolean activeOnly) {
         return sessionFactory.withSession(session -> {
-            String query = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId AND type = :endpointType";
+            String query = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId AND type IN (:endpointType)";
             if (activeOnly != null) {
                 query += " AND enabled = :enabled";
             }
@@ -269,7 +269,8 @@ public class EndpointResources {
                 "WHERE accountId = :accountId AND id = :id";
         String webhookQuery = "UPDATE WebhookProperties SET url = :url, method = :method, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
-        String camelQuery = "UPDATE CamelProperties SET url = :url, subType = :subType, " +
+        String camelQuery = "UPDATE CamelProperties SET url = :url, subType = :subType, extras = :extras, " +
+                "basicAuthentication = :basicAuthentication, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
 
         if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
@@ -310,7 +311,9 @@ public class EndpointResources {
                                             .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
                                             .setParameter("secretToken", cAttr.getSecretToken())
                                             .setParameter("endpointId", endpoint.getId())
-                                            .setParameter("subType", endpoint.getType())
+                                            .setParameter("subType", cAttr.getSubType())
+                                            .setParameter("extras", cAttr.getExtras())
+                                            .setParameter("basicAuthentication", cAttr.getBasicAuthentication())
                                             .executeUpdate()
                                             .call(session::flush)
                                             .onItem().transform(rowCount -> rowCount > 0);
@@ -375,7 +378,7 @@ public class EndpointResources {
 
     public Uni<Endpoint> loadProperties(Endpoint endpoint) {
         if (endpoint == null) {
-            LOGGER.warning("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
+            LOGGER.warn("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
             return Uni.createFrom().nullItem();
         }
         return this.loadProperties(Collections.singletonList(endpoint))

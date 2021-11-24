@@ -14,6 +14,7 @@ public class ActionParser {
     private final Decoder decoder = new Decoder(registry);
 
     public Uni<Action> fromJsonString(String actionJson) {
-        return Uni.createFrom().item(() -> decoder.decode(actionJson));
+        return Uni.createFrom().item(() -> decoder.decode(actionJson))
+                .onFailure().transform(t -> new RuntimeException("Action parsing failed for payload: " + actionJson, t));
     }
 }

@@ -63,24 +63,14 @@ public class NotificationResources {
         });
     }
 
-    public Uni<JsonObject> getNotificationDetails(String tenant, Query limiter, UUID endpoint, UUID historyId) {
+    public Uni<JsonObject> getNotificationDetails(String tenant, UUID endpoint, UUID historyId) {
+        String query = "SELECT details FROM NotificationHistory WHERE event.accountId = :accountId AND endpoint.id = :endpointId AND id = :historyId";
         return sessionFactory.withSession(session -> {
-            String query = "SELECT details FROM NotificationHistory WHERE event.accountId = :accountId AND endpoint.id = :endpointId AND id = :historyId";
-            if (limiter != null) {
-                query = limiter.getModifiedQuery(query);
-            }
-
-            Mutiny.Query<Map> mutinyQuery = session.createQuery(query, Map.class)
+            return session.createQuery(query, Map.class)
                     .setParameter("accountId", tenant)
                     .setParameter("endpointId", endpoint)
-                    .setParameter("historyId", historyId);
-
-            if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-                mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
-                        .setFirstResult(limiter.getLimit().getOffset());
-            }
-
-            return mutinyQuery.getSingleResultOrNull()
+                    .setParameter("historyId", historyId)
+                    .getSingleResultOrNull()
                     .onItem().ifNotNull().transform(JsonObject::new);
         });
     }

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.jboss.logmanager.Level;
+import org.jboss.logging.Logger;
 
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class AuthRequestFilter implements ClientRequestFilter {
 
@@ -36,7 +35,7 @@ public class AuthRequestFilter implements ClientRequestFilter {
     private final String secret;
     private final String application;
 
-    private final Logger log = Logger.getLogger(this.getClass().getName());
+    private static final Logger log = Logger.getLogger(AuthRequestFilter.class);
 
     AuthRequestFilter() {
         Config config = ConfigProvider.getConfig();
@@ -51,13 +50,13 @@ public class AuthRequestFilter implements ClientRequestFilter {
                     new TypeReference<>() { }
             );
         } catch (JsonProcessingException jsonProcessingException) {
-            log.log(Level.ERROR, "Unable to load Rbac service to service secret map, defaulting to empty map", jsonProcessingException);
+            log.error("Unable to load Rbac service to service secret map, defaulting to empty map", jsonProcessingException);
             rbacServiceToServiceSecretMap = Map.of();
         }
 
         secret = rbacServiceToServiceSecretMap.getOrDefault(application, new Secret()).secret;
         if (secret == null) {
-            log.log(Level.ERROR, "Unable to load Rbac service to service secret key");
+            log.error("Unable to load Rbac service to service secret key");
         }
 
         String tmp = System.getProperty(RBAC_SERVICE_TO_SERVICE_DEV_EXCEPTIONAL_AUTH_KEY);

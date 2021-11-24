@@ -122,50 +122,49 @@ public class EventConsumer {
                                     } else {
                                         /*
                                          * Step 4
-                                         * The message ID is new. We need to retrieve an EventType from the DB using the
-                                         * bundle/app/eventType triplet from the parsed Action.
+                                         * The message ID is new. Let's persist it. The current message will never
+                                         * be processed again as long as its ID stays in the DB.
                                          */
-                                        return appResources.getEventType(bundleName[0], appName[0], eventTypeName)
-                                                .onFailure(NoResultException.class).transform(e ->
-                                                        new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, bundleName[0], appName[0], eventTypeName))
-                                                )
-                                                .onFailure().invoke(() -> {
-                                                    /*
-                                                     * A NoResultException was thrown because no EventType was found. The
-                                                     * message is therefore considered rejected.
-                                                     */
-                                                    rejectedCounter.increment();
-                                                })
-                                                .onItem().transformToUni(eventType -> {
+                                        return kafkaMessageDeduplicator.registerMessageId(messageId)
+                                                .call(() -> {
                                                     /*
                                                      * Step 5
-                                                     * The EventType was found. It's time to create an Event from the current
-                                                     * message and persist it.
+                                                     * We need to retrieve an EventType from the DB using the
+                                                     * bundle/app/eventType triplet from the parsed Action.
                                                      */
-                                                    Event event = new Event(eventType, payload, action);
-                                                    return eventResources.create(event);
-                                                })
-                                                /*
-                                                 * Step 6
-                                                 * The Event and the Action it contains are processed by all relevant endpoint
-                                                 * processors.
-                                                 */
-                                                .onItem().transformToUni(event -> endpointProcessor.process(event)
-                                                        .onFailure().invoke(() -> {
+                                                    return appResources.getEventType(bundleName[0], appName[0], eventTypeName)
+                                                            .onFailure(NoResultException.class).transform(e ->
+                                                                    new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, bundleName[0], appName[0], eventTypeName))
+                                                            )
+                                                            .onFailure().invoke(() -> {
+                                                                /*
+                                                                 * A NoResultException was thrown because no EventType was found. The
+                                                                 * message is therefore considered rejected.
+                                                                 */
+                                                                rejectedCounter.increment();
+                                                            })
+                                                            .onItem().transformToUni(eventType -> {
+                                                                /*
+                                                                 * Step 6
+                                                                 * The EventType was found. It's time to create an Event from the current
+                                                                 * message and persist it.
+                                                                 */
+                                                                Event event = new Event(eventType, payload, action);
+                                                                return eventResources.create(event);
+                                                            })
                                                             /*
-                                                             * The Event processing failed.
+                                                             * Step 7
+                                                             * The Event and the Action it contains are processed by all relevant endpoint
+                                                             * processors.
                                                              */
-                                                            processingErrorCounter.increment();
-                                                        })
-                                                )
-                                                .eventually(() -> {
-                                                    /*
-                                                     * Step 7
-                                                     * The Kafka message processing is done and its ID is persisted no matter
-                                                     * what the processing outcome is (success or failure). That message ID
-                                                     * will never be processed again as long as it stays in the DB.
-                                                     */
-                                                    return kafkaMessageDeduplicator.registerMessageId(messageId);
+                                                            .onItem().transformToUni(event -> endpointProcessor.process(event)
+                                                                    .onFailure().invoke(() -> {
+                                                                        /*
+                                                                         * The Event processing failed.
+                                                                         */
+                                                                        processingErrorCounter.increment();
+                                                                    })
+                                                            );
                                                 });
                                     }
                                 });

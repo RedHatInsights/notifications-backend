@@ -13,13 +13,13 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.Json;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.logging.Logger;
 
 import static com.redhat.cloud.notifications.auth.rhid.RHIdentityAuthMechanism.IDENTITY_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -36,7 +36,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     public static final String RBAC_READ_INTEGRATIONS_ENDPOINTS = "read:integrations_ep";
     public static final String RBAC_WRITE_INTEGRATIONS_ENDPOINTS = "write:integrations_ep";
 
-    private final Logger log = Logger.getLogger(this.getClass().getSimpleName());
+    private static final Logger log = Logger.getLogger(RbacIdentityProvider.class);
 
     @Inject
     @RestClient
@@ -106,7 +106,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                                                 .atMost(maxRetryAttempts)
                                                 // After we're done retrying, an RBAC server call failure will cause an authentication failure
                                                 .onFailure().transform(failure -> {
-                                                    log.warning("RBAC authentication call failed: " + failure.getMessage());
+                                                    log.warnf("RBAC authentication call failed: %s", failure.getMessage());
                                                     throw new AuthenticationFailedException(failure.getMessage());
                                                 })
                                                 // Otherwise, we can finish building the QuarkusSecurityIdentity and return the result

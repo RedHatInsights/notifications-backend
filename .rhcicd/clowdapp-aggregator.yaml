@@ -1,0 +1,100 @@
+---
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: notifications-aggregator
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdApp
+  metadata:
+    name: notifications-aggregator
+    labels:
+      app: notifications-aggregator
+  spec:
+    envName: ${ENV_NAME}
+    dependencies:
+    - notifications-backend
+    database:
+      sharedDbAppName: notifications-backend
+    kafkaTopics:
+    - topicName: platform.notifications.aggregation
+      partitions: 2
+      replicas: 3
+    jobs:
+    - name: cronjob
+      schedule: ${CRONTAB_AGGREGATION_JOB}
+      suspend: ${{SUSPEND_AGGREGATION_JOB}}
+      startingDeadlineSeconds: ${{STARTING_DEADLINE}}
+      successfulJobsHistoryLimit: 7
+      failedJobsHistoryLimit: 7
+      concurrencyPolicy: Forbid
+      restartPolicy: OnFailure
+      podSpec:
+        image: ${IMAGE}:${IMAGE_TAG}
+        resources:
+          requests:
+            cpu: ${CPU_REQUEST}
+            memory: ${MEMORY_REQUEST}
+          limits:
+            cpu: ${CPU_LIMIT}
+            memory: ${MEMORY_LIMIT}
+        volumes:
+        - name: rds-client-ca
+          emptyDir: {}
+        volumeMounts:
+        - name: rds-client-ca
+          mountPath: /tmp
+        env:
+        - name: ENV_NAME
+          value: ${ENV_NAME}
+        - name: QUARKUS_HTTP_PORT
+          value: "8000"
+        - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
+          value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+          value: ${CLOUDWATCH_ENABLED}
+        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
+          value: ${HOSTNAME}
+        - name: QUARKUS_LOG_SENTRY
+          value: ${SENTRY_ENABLED}
+        - name: QUARKUS_LOG_SENTRY_DSN
+          value: https://39032857c8214cedaf226c4a26709b5b@o271843.ingest.sentry.io/5987783?environment=${ENV_NAME}
+        - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
+          value: ${ENV_NAME}
+parameters:
+- name: CLOUDWATCH_ENABLED
+  description: Enable Cloudwatch (or not)
+  value: "false"
+- name: CRONTAB_AGGREGATION_JOB
+  value: "0 0 * * *"
+- name: CPU_LIMIT
+  description: CPU limit
+  value: 500m
+- name: CPU_REQUEST
+  description: CPU request
+  value: 500m
+- name: ENV_NAME
+  description: ClowdEnvironment name (ephemeral, stage, prod)
+  required: true
+- name: IMAGE
+  description: Image URL
+  value: quay.io/cloudservices/notifications-aggregator
+- name: IMAGE_TAG
+  value: latest
+- name: MEMORY_LIMIT
+  description: Memory limit
+  value: 500Mi
+- name: MEMORY_REQUEST
+  description: Memory request
+  value: 250Mi
+- name: NOTIFICATIONS_LOG_LEVEL
+  description: Log level for com.redhat.cloud.notifications
+  value: INFO
+- name: SENTRY_ENABLED
+  description: Enable Sentry (or not)
+  value: "false"
+- name: STARTING_DEADLINE
+  value: "300"
+- name: SUSPEND_AGGREGATION_JOB
+  description: Should the aggregation cron job be disabled?
+  value: "false"
