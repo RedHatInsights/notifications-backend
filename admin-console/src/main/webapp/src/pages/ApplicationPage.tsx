@@ -36,10 +36,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
     const newEvent = useCreateEventType();
-    const [ event, setEvent ] = React.useState<Partial<EventType>>({});
+    const [ eventType, setEventType ] = React.useState<Partial<EventType>>({});
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
+    const [ errors, setErrors ] = React.useState(false);
 
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
@@ -71,17 +72,32 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
-        setEvent({});
+        setEventType({});
+    };
+
+    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
+        const target = event.target as HTMLInputElement;
+        setEventType(prev => ({ ...prev, [target.name]: target.value }));
+    };
+
+    const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+        const target = event.target as HTMLInputElement;
+        if (target.value !== eventType.name) {
+            return setErrors(true);
+        } else if (target.value === eventType.name) {
+            return;
+        }
+
     };
 
     const handleSubmit = () => {
         setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
-            id: event.id ?? '',
-            displayName: event.displayName ?? '',
-            name: event.name ?? '',
-            description: event.description ?? '',
+            id: eventType.id ?? '',
+            displayName: eventType.displayName ?? '',
+            name: eventType.name ?? '',
+            description: eventType.description ?? '',
             applicationId
 
         })
@@ -92,19 +108,19 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const editEventType = (e: EventType) => {
         setShowModal(true);
         setIsEdit(true);
-        setEvent(e);
+        setEventType(e);
     };
 
     const handleDelete = React.useCallback(() => {
         setShowDeleteModal(false);
         const deleteEventType = deleteEventTypeMutation.mutate;
-        deleteEventType(event.id).then (eventTypesQuery.query);
+        deleteEventType(eventType.id).then (eventTypesQuery.query);
 
-    }, [ deleteEventTypeMutation.mutate, event.id, eventTypesQuery.query ]);
+    }, [ deleteEventTypeMutation.mutate, eventType.id, eventTypesQuery.query ]);
 
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
-        setEvent(e);
+        setEventType(e);
     };
 
     if (eventTypesQuery.loading) {
@@ -151,24 +167,24 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                 helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
                                                 <TextInput
                                                     type='text'
-                                                    defaultValue={ event.name }
-                                                    onChange={ () => setEvent }
+                                                    defaultValue={ eventType.name }
+                                                    onChange={ handleChange }
                                                     id='name'
                                                 /></FormGroup>
                                             <FormGroup label='Display name' fieldId='display-name' isRequired
                                                 helperText='This is the name you want to display on the UI'>
                                                 <TextInput
                                                     type='text'
-                                                    defaultValue={ event.displayName }
-                                                    onChange={ () => setEvent }
+                                                    defaultValue={ eventType.displayName }
+                                                    onChange={ handleChange }
                                                     id='display-name' /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
                                                 helperText='Optional short description that appears in the UI
                                                 to help admin descide how to notify users.'>
                                                 <TextArea
                                                     type='text'
-                                                    defaultValue={ event.description }
-                                                    onChange={ () => setEvent }
+                                                    defaultValue={ eventType.description }
+                                                    onChange={ handleChange }
                                                     id='description' /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='submit'
@@ -188,17 +204,18 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                     <React.Fragment>
                                         <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ showDeleteModal }
                                             onClose={ () => setShowDeleteModal(false) }
-                                            title={ `Permanetly delete ${ event.name }` }>
-                                            { <b>{ event.name }</b> } {`from  ${ bundle ? bundle.display_name :
+                                            title={ `Permanetly delete ${ eventType.name }` }>
+                                            { <b>{ eventType.name }</b> } {`from  ${ bundle ? bundle.display_name :
                                                 <Spinner /> }/${ (applicationTypesQuery.loading
                                              || applicationTypesQuery.payload?.status !== 200) ?
                                                 <Spinner /> : applicationTypesQuery.payload.value.displayName } will be deleted. 
                                                 If an application is currently sending this event, it will no longer be processed.`}
                                             <br />
                                             <br />
-                                            Type <b>{ event.name }</b> to confirm:
+                                            Type <b>{ eventType.name }</b> to confirm:
                                             <br />
-                                            <TextInput type='text' defaultValue={ event.name } name="name" id='name' isRequired />
+                                            <TextInput type='text' onChange={ handleDeleteChange } { ... errors }
+                                                defaultValue={ eventType.name || '' } name="name" id='name' isRequired />
                                             <br />
                                             <br />
                                             <ActionGroup>
