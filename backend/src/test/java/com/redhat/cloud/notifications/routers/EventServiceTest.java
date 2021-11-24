@@ -24,7 +24,6 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.vertx.MutinyHelper;
 import io.vertx.core.Vertx;
 import org.hibernate.reactive.mutiny.Mutiny;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -81,14 +80,9 @@ public class EventServiceTest extends DbIsolatedTest {
     // A new instance is automatically created by JUnit before each test is executed.
     private final ModelInstancesHolder model = new ModelInstancesHolder();
 
-    @BeforeEach
-    void setUp() {
-        mockServerConfig.clearRbac();
-    }
-
     @Test
     void shouldNotBeAllowedToGetEventLogsWhenUserHasWrongAccessRights() {
-        Header noAccessIdentityHeader = mockRbac("tenant", "user", WRONG_ACCESS);
+        Header noAccessIdentityHeader = mockRbac("tenant", "user2", WRONG_ACCESS);
         given()
                 .header(noAccessIdentityHeader)
                 .when().get(PATH)
@@ -98,7 +92,7 @@ public class EventServiceTest extends DbIsolatedTest {
 
     @Test
     void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly() {
-        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", NOTIFICATIONS_ACCESS_ONLY);
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user2", NOTIFICATIONS_ACCESS_ONLY);
         given()
                 .header(defaultIdentityHeader)
                 .when().get(PATH)
