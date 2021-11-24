@@ -219,7 +219,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                             <br />
                                             <br />
                                             <ActionGroup>
-                                                <Button variant='danger' type='button' onClick={ handleDelete }>Delete</Button>
+                                                <Button variant='danger' type='button' isDisabled = { !errors }
+                                                    onClick={ handleDelete }>Delete</Button>
                                                 <Button variant='link' type='button' onClick={ () => setShowDeleteModal(false) }>Cancel</Button>
                                             </ActionGroup>
                                         </Modal>
