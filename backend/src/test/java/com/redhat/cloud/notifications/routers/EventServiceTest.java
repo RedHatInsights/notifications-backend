@@ -40,7 +40,6 @@ import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.F
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NOTIFICATIONS_ACCESS_ONLY;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NOTIFICATIONS_READ_ACCESS_ONLY;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NO_ACCESS;
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.WRONG_ACCESS;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestThreadHelper.runOnWorkerThread;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -79,16 +78,6 @@ public class EventServiceTest extends DbIsolatedTest {
 
     // A new instance is automatically created by JUnit before each test is executed.
     private final ModelInstancesHolder model = new ModelInstancesHolder();
-
-    @Test
-    void shouldNotBeAllowedToGetEventLogsWhenUserHasWrongAccessRights() {
-        Header noAccessIdentityHeader = mockRbac("tenant", "user2", WRONG_ACCESS);
-        given()
-                .header(noAccessIdentityHeader)
-                .when().get(PATH)
-                .then()
-                .statusCode(403);
-    }
 
     @Test
     void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly() {
