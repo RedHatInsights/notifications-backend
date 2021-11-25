@@ -504,16 +504,6 @@ public class EventServiceTest extends DbIsolatedTest {
 
     @Test
     void shouldBeAllowedToGetEventLogs() {
-        Header noAccessIdentityHeader = mockRbac("tenant", "user", FULL_ACCESS);
-        given()
-                .header(noAccessIdentityHeader)
-                .when().get(PATH)
-                .then()
-                .statusCode(200);
-    }
-
-    @Test
-    void shouldBeAllowedToGetEventLogs2() {
         Header noAccessIdentityHeader = mockRbac("tenant", "user", NOTIFICATIONS_READ_ACCESS_ONLY);
         given()
                 .header(noAccessIdentityHeader)
