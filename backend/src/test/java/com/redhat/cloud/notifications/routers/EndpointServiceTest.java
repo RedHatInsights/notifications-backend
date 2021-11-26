@@ -1121,6 +1121,30 @@ public class EndpointServiceTest extends DbIsolatedTest {
         ).await().indefinitely();
     }
 
+    @Test
+    void testUnknownEndpointTypes() {
+        String identityHeaderValue = TestHelpers.encodeIdentityInfo("test-tenant", "test-user");
+        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        given()
+                .header(identityHeader)
+                .queryParam("type", "foo")
+                .when().get("/endpoints")
+                .then()
+                .statusCode(400)
+                .body(is("Unknown endpoint type(s)"));
+
+        given()
+                .header(identityHeader)
+                .queryParam("type", EndpointType.WEBHOOK.toString())
+                .queryParam("type", "bar")
+                .when().get("/endpoints")
+                .then()
+                .statusCode(400)
+                .body(is("Unknown endpoint type(s)"));
+    }
+
     //    @Test
     void testConnectionCount() {
         String tenant = "count";
