@@ -12,7 +12,7 @@
   },
   "data": [
     {
-      "permission": "notifications:*:read:",
+      "permission": "notifications:*:read",
       "resourceDefinitions": []
     },
     {
