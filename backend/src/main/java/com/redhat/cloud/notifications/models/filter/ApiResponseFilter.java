@@ -60,6 +60,9 @@ public class ApiResponseFilter extends SimpleBeanPropertyFilter {
                         return;
                     }
                     break;
+                case "default_behavior":
+                    behaviorGroup.setDefaultBehavior(behaviorGroup.getAccountId() == null);
+
                 default:
                     // Do nothing.
                     break;

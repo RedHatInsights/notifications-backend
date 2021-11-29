@@ -222,7 +222,7 @@ public class ResourceHelpers {
     }
 
     public Uni<Boolean> deleteBehaviorGroup(UUID behaviorGroupId) {
-        return behaviorGroupResources.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
+        return behaviorGroupResources.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId, false);
     }
 
     public Uni<Boolean> addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {

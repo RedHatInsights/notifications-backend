@@ -203,7 +203,7 @@ public class NotificationService {
     public Uni<Boolean> deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
         return sessionFactory.withSession(session -> {
             return getAccountId(sec)
-                    .onItem().transformToUni(accountId -> behaviorGroupResources.delete(accountId, behaviorGroupId));
+                    .onItem().transformToUni(accountId -> behaviorGroupResources.delete(accountId, behaviorGroupId, false));
         });
     }
 

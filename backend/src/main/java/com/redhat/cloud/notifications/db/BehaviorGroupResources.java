@@ -6,10 +6,12 @@ import com.redhat.cloud.notifications.models.EventType;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.mutiny.Mutiny.Session;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response.Status;
 import java.time.LocalDateTime;
@@ -31,12 +33,23 @@ public class BehaviorGroupResources {
     Mutiny.SessionFactory sessionFactory;
 
     public Uni<BehaviorGroup> create(String accountId, BehaviorGroup behaviorGroup) {
+        return this.create(accountId, behaviorGroup, false);
+    }
+
+    public Uni<BehaviorGroup> createDefault(BehaviorGroup behaviorGroup) {
+        return this.create(null, behaviorGroup, true);
+    }
+
+    private Uni<BehaviorGroup> create(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
         return sessionFactory.withSession(session -> {
             return session.find(Bundle.class, behaviorGroup.getBundleId())
                     .onItem().ifNull().failWith(new NotFoundException("bundle_id not found"))
                     .onItem().invoke(bundle -> {
                         behaviorGroup.setBundle(bundle);
                         behaviorGroup.setAccountId(accountId);
+                        if (isDefaultBehaviorGroup != (accountId == null)) {
+                            throw new BadRequestException("account id is only null for default behavior groups");
+                        }
                     })
                     .replaceWith(session.persist(behaviorGroup))
                     .call(session::flush)
@@ -55,30 +68,50 @@ public class BehaviorGroupResources {
         });
     }
 
-    // TODO Should this be forbidden for default behavior groups?
     public Uni<Boolean> update(String accountId, BehaviorGroup behaviorGroup) {
+        return this.update(accountId, behaviorGroup, false);
+    }
+
+    public Uni<Boolean> updateDefault(BehaviorGroup behaviorGroup) {
+        return this.update(null, behaviorGroup, true);
+    }
+
+    private Uni<Boolean> update(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehavior) {
         String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE accountId = :accountId AND id = :id";
         return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
-                    .setParameter("displayName", behaviorGroup.getDisplayName())
-                    .setParameter("accountId", accountId)
-                    .setParameter("id", behaviorGroup.getId())
-                    .executeUpdate()
-                    .call(session::flush)
-                    .onItem().transform(rowCount -> rowCount > 0);
+            return this.getBehaviorGroup(session, behaviorGroup.getId(), isDefaultBehavior)
+                    .replaceWith(
+                            session.createQuery(query)
+                            .setParameter("displayName", behaviorGroup.getDisplayName())
+                            .setParameter("accountId", accountId)
+                            .setParameter("id", behaviorGroup.getId())
+                            .executeUpdate()
+                            .call(session::flush)
+                            .onItem().transform(rowCount -> rowCount > 0)
+                    );
         });
     }
 
-    // TODO Should this be forbidden for default behavior groups?
     public Uni<Boolean> delete(String accountId, UUID behaviorGroupId) {
+        return this.delete(accountId, behaviorGroupId, false);
+    }
+
+    public Uni<Boolean> deleteDefault(UUID behaviorGroupId) {
+        return this.delete(null, behaviorGroupId, true);
+    }
+
+    public Uni<Boolean> delete(String accountId, UUID behaviorGroupId, boolean isDefaultBehavior) {
         String query = "DELETE FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
         return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
-                    .setParameter("accountId", accountId)
-                    .setParameter("id", behaviorGroupId)
-                    .executeUpdate()
-                    .call(session::flush)
-                    .onItem().transform(rowCount -> rowCount > 0);
+            return this.getBehaviorGroup(session, behaviorGroupId, isDefaultBehavior)
+                    .replaceWith(
+                        session.createQuery(query)
+                                .setParameter("accountId", accountId)
+                                .setParameter("id", behaviorGroupId)
+                                .executeUpdate()
+                                .call(session::flush)
+                                .onItem().transform(rowCount -> rowCount > 0)
+                    );
         });
     }
 
@@ -142,7 +175,7 @@ public class BehaviorGroupResources {
 
     public Uni<List<EventType>> findEventTypesByBehaviorGroupId(String accountId, UUID behaviorGroupId) {
         String query = "SELECT e FROM EventType e LEFT JOIN FETCH e.application JOIN e.behaviors b " +
-                "WHERE b.behaviorGroup.accountId = :accountId AND b.behaviorGroup.id = :behaviorGroupId";
+                "WHERE (b.behaviorGroup.accountId = :accountId OR b.behaviorGroup.accountId IS NULL) AND b.behaviorGroup.id = :behaviorGroupId";
         return sessionFactory.withSession(session -> {
             return session.createQuery(query, EventType.class)
                     .setParameter("accountId", accountId)
@@ -153,7 +186,7 @@ public class BehaviorGroupResources {
 
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByEventTypeId(String accountId, UUID eventTypeId, Query limiter) {
         return sessionFactory.withSession(session -> {
-            String query = "SELECT bg FROM BehaviorGroup bg JOIN bg.behaviors b WHERE bg.accountId = :accountId AND b.eventType.id = :eventTypeId";
+            String query = "SELECT bg FROM BehaviorGroup bg JOIN bg.behaviors b WHERE (bg.accountId = :accountId OR bg.accountId IS NULL) AND b.eventType.id = :eventTypeId";
 
             if (limiter != null) {
                 query = limiter.getModifiedQuery(query);
@@ -245,5 +278,20 @@ public class BehaviorGroupResources {
                     .getResultList()
                     .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutActions));
         });
+    }
+
+    private Uni<BehaviorGroup> getBehaviorGroup(Session session, UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
+        return session.find(BehaviorGroup.class, behaviorGroupId)
+                .onItem().invoke(behaviorGroup -> {
+                    if (isDefaultBehaviorGroup) {
+                        if (behaviorGroup.getAccountId() != null) {
+                            throw new BadRequestException("Default behavior groups must have a null accountId");
+                        }
+                    } else {
+                        if (behaviorGroup.getAccountId() == null) {
+                            throw new BadRequestException("Only default behavior groups have a null accountId");
+                        }
+                    }
+                });
     }
 }
