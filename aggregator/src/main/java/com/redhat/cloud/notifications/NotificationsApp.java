@@ -48,11 +48,10 @@ public class NotificationsApp implements QuarkusApplication {
 
     private String readGitProperties() {
         ClassLoader classLoader = getClass().getClassLoader();
-        InputStream inputStream = classLoader.getResourceAsStream("git.properties");
-        try {
+        try (InputStream inputStream = classLoader.getResourceAsStream("git.properties")) {
             return readFromInputStream(inputStream);
         } catch (IOException e) {
-            LOG.log(Logger.Level.ERROR, "Could not read git.properties.", e);
+            LOG.error("Could not read git.properties.", e);
             return "Version information could not be retrieved";
         }
     }
