@@ -154,7 +154,7 @@ public class EndpointResources {
     // Note: This method uses a stateless session
     public Uni<List<Endpoint>> getTargetEndpoints(String tenant, EventType eventType) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled = TRUE AND b.eventType = :eventType AND bga.behaviorGroup.accountId = :accountId";
+                "WHERE e.enabled = TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL)";
 
         return sessionFactory.withStatelessSession(statelessSession -> {
             return statelessSession.createQuery(query, Endpoint.class)
@@ -168,7 +168,7 @@ public class EndpointResources {
     // Note: This method uses a stateless session
     public Uni<List<Endpoint>> getTargetEndpointsFromType(String tenant, String bundleName, String applicationName, String eventTypeName, EndpointType endpointType) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
+                "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL) " +
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
                 "AND e.type = :endpointType";
 
