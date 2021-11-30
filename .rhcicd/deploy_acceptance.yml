@@ -33,14 +33,6 @@ objects:
                 value: notifications
               - name: IQE_TESTS_LOCAL_CONF_PATH
                 value: '/iqe-job-config'
-            volumeMounts:
-            - name: iqe-job-config-vol
-              mountPath: /iqe-job-config
-              readOnly: true
-        volumes:
-          - name: iqe-job-config-vol
-            secret:
-              secretName: iqe-testing-config
 
 parameters:
 - name: IMAGE_TAG
