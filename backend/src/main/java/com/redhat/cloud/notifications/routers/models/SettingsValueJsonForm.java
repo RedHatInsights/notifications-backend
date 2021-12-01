@@ -29,6 +29,8 @@ public class SettingsValueJsonForm {
         public List<Object> validate;
         @JsonInclude(Include.NON_NULL)
         public List<Field> fields;
+        @JsonInclude(Include.NON_NULL)
+        public String checkedWarning;
     }
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
@@ -83,6 +85,7 @@ public class SettingsValueJsonForm {
                         case INSTANT:
                             field.label = "Instant notification";
                             field.description = "Immediate email for each triggered application event. See notification settings for configuration.";
+                            field.checkedWarning = "Opting into this notification may result in a large number of emails";
                             break;
                         default:
                             return;
