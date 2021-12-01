@@ -201,7 +201,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                     <React.Fragment>
                                         <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ showDeleteModal }
                                             onClose={ () => setShowDeleteModal(false) }
-                                            title={ `Permanetly delete ${ eventType.name }` }>
+                                            title={ `Permanently delete ${ eventType.name }` }>
                                             { <b>{ eventType.name }</b> } {`from  ${ bundle ? bundle.display_name :
                                                 <Spinner /> }/${ (applicationTypesQuery.loading
                                              || applicationTypesQuery.payload?.status !== 200) ?
