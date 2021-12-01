@@ -65,6 +65,20 @@ public class EventLogCleanerTest extends DbIsolatedTest {
         ).await().indefinitely();
     }
 
+    @Test
+    void testPostgresStoredProcedure() {
+        sessionFactory.withStatelessSession(statelessSession -> deleteAllEvents()
+                .chain(() -> createEventType())
+                .call(eventType -> createEvent(eventType, now().minus(Duration.ofHours(1L))))
+                .call(eventType -> createEvent(eventType, now().minus(Duration.ofDays(62L))))
+                .chain(() -> count())
+                .invoke(count -> assertEquals(2L, count))
+                .chain(() -> statelessSession.createNativeQuery("CALL cleanEventLog()").executeUpdate())
+                .chain(() -> count())
+                .invoke(count -> assertEquals(1L, count))
+        ).await().indefinitely();
+    }
+
     private Uni<Integer> deleteAllEvents() {
         return sessionFactory.withStatelessSession(statelessSession ->
                 statelessSession.createQuery("DELETE FROM Event")
