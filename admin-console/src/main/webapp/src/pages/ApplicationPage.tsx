@@ -114,7 +114,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
         const target = event.target as HTMLInputElement;
-        if (target.value !== eventType.name) {
+        if (target.value !== eventType.name || eventType.name.length === 0) {
             return setErrors(true);
         } else if (target.value === eventType.name) {
             return setErrors(false);
