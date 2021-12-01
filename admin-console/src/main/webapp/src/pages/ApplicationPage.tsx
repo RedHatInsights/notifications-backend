@@ -177,7 +177,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     type='text'
                                                     value={ eventType.displayName }
                                                     onChange={ handleChange }
-                                                    id='display-name' /></FormGroup>
+                                                    id='display-name'
+                                                    name="displayName"
+                                                /></FormGroup>
                                             <FormGroup label='Description' fieldId='description'
                                                 helperText='Optional short description that appears in the UI
                                                 to help admin descide how to notify users.'>
@@ -185,7 +187,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     type='text'
                                                     value={ eventType.description }
                                                     onChange={ handleChange }
-                                                    id='description' /></FormGroup>
+                                                    id='description'
+                                                    name="description"
+                                                /></FormGroup>
                                             <ActionGroup>
                                                 <Button variant='primary' type='submit'
                                                     { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
