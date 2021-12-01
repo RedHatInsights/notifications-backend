@@ -116,7 +116,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button { ...eventTypesQuery.payload.value.length === 0 } variant='primary' type='button'
+                                    <Button variant='primary' type='button'
                                         onClick={ createEventType }> Create Event Type </Button>
                                     <Modal
                                         variant={ ModalVariant.medium }
@@ -170,6 +170,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             ))}
                         </Tr>
                     </Thead>
+                    <Tbody>{ eventTypesQuery.payload.value.length === 0 }</Tbody>
                     <Tbody>
                         { eventTypesQuery.payload.value.map(e => (
                             <Tr key={ e.id }>
