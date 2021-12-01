@@ -11,10 +11,9 @@ import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.events.KafkaMessagesCleaner.KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY;
-import static com.redhat.cloud.notifications.events.KafkaMessagesCleaner.now;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
@@ -29,37 +28,6 @@ public class KafkaMessagesCleanerTest {
      */
     @Inject
     Mutiny.SessionFactory sessionFactory;
-
-    @Inject
-    KafkaMessagesCleaner kafkaMessagesCleaner;
-
-    @Test
-    void testWithDefaultConfiguration() {
-        sessionFactory.withStatelessSession(statelessSession -> deleteAllKafkaMessages()
-                .chain(() -> createKafkaMessage(now().minus(Duration.ofHours(13L))))
-                .chain(() -> createKafkaMessage(now().minus(Duration.ofDays(2L))))
-                .chain(() -> count())
-                .invoke(count -> assertEquals(2L, count))
-                .chain(() -> kafkaMessagesCleaner.testableClean())
-                .chain(() -> count())
-                .invoke(count -> assertEquals(1L, count))
-        ).await().indefinitely();
-    }
-
-    @Test
-    void testWithCustomConfiguration() {
-        sessionFactory.withStatelessSession(statelessSession -> deleteAllKafkaMessages()
-                .invoke(() -> System.setProperty(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY, "12h"))
-                .chain(() -> createKafkaMessage(now().minus(Duration.ofHours(13L))))
-                .chain(() -> createKafkaMessage(now().minus(Duration.ofDays(2L))))
-                .chain(() -> count())
-                .invoke(count -> assertEquals(2L, count))
-                .chain(() -> kafkaMessagesCleaner.testableClean())
-                .chain(() -> count())
-                .invoke(count -> assertEquals(0L, count))
-                .invoke(() -> System.clearProperty(KAFKA_MESSAGES_CLEANER_DELETE_AFTER_CONF_KEY))
-        ).await().indefinitely();
-    }
 
     @Test
     void testPostgresStoredProcedure() {
@@ -92,5 +60,9 @@ public class KafkaMessagesCleanerTest {
                 statelessSession.createQuery("SELECT COUNT(*) FROM KafkaMessage", Long.class)
                         .getSingleResult()
         );
+    }
+
+    private static LocalDateTime now() {
+        return LocalDateTime.now(ZoneOffset.UTC);
     }
 }
