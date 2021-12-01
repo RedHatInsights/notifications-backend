@@ -25,7 +25,6 @@ import { EventType } from '../types/Notifications';
 
 type ApplicationPageParams = {
     applicationId: string;
-    eventTypeId: string;
 }
 
 export const ApplicationPage: React.FunctionComponent = () => {
@@ -215,8 +214,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                             <br />
                                             Type <b>{ eventType.name }</b> to confirm:
                                             <br />
-                                            <TextInput type='text' onChange={ handleDeleteChange }
-                                                value={ eventType.name } name="name" id='name' isRequired />
+                                            <TextInput type='text' onChange={ handleDeleteChange } id='name' name="name" isRequired />
                                             <br />
                                             <br />
                                             <ActionGroup>
