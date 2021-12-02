@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import io.quarkus.runtime.StartupEvent;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import javax.enterprise.event.Observes;
@@ -27,6 +28,9 @@ public class NotificationsApp {
         initAccessLogFilter();
 
         LOG.info(readGitProperties());
+
+        logExternalServiceUrl("quarkus.rest-client.rbac-authentication.url");
+        logExternalServiceUrl("quarkus.rest-client.rbac-s2s.url");
     }
 
     private void initAccessLogFilter() {
@@ -44,7 +48,7 @@ public class NotificationsApp {
         try {
             return readFromInputStream(inputStream);
         } catch (IOException e) {
-            LOG.log(Logger.Level.ERROR, "Could not read git.properties.", e);
+            LOG.error("Could not read git.properties.", e);
             return "Version information could not be retrieved";
         }
     }
@@ -63,5 +67,9 @@ public class NotificationsApp {
             }
         }
         return resultStringBuilder.toString();
+    }
+
+    private void logExternalServiceUrl(String configKey) {
+        LOG.infof(configKey + "=%s", ConfigProvider.getConfig().getValue(configKey, String.class));
     }
 }

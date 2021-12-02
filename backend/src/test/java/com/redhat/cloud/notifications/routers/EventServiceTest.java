@@ -37,6 +37,8 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NOTIFICATIONS_ACCESS_ONLY;
+import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NOTIFICATIONS_READ_ACCESS_ONLY;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NO_ACCESS;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestThreadHelper.runOnWorkerThread;
@@ -75,7 +77,17 @@ public class EventServiceTest extends DbIsolatedTest {
     MockServerClientConfig mockServerConfig;
 
     // A new instance is automatically created by JUnit before each test is executed.
-    private ModelInstancesHolder model = new ModelInstancesHolder();
+    private final ModelInstancesHolder model = new ModelInstancesHolder();
+
+    @Test
+    void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly() {
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user2", NOTIFICATIONS_ACCESS_ONLY);
+        given()
+                .header(defaultIdentityHeader)
+                .when().get(PATH)
+                .then()
+                .statusCode(403);
+    }
 
     @Test
     void testAllQueryParams() {
@@ -479,6 +491,16 @@ public class EventServiceTest extends DbIsolatedTest {
                 .contentType(JSON);
     }
 
+    @Test
+    void shouldBeAllowedToGetEventLogs() {
+        Header noAccessIdentityHeader = mockRbac("tenant", "user-read-access", NOTIFICATIONS_READ_ACCESS_ONLY);
+        given()
+                .header(noAccessIdentityHeader)
+                .when().get(PATH)
+                .then()
+                .statusCode(200);
+    }
+
     private Uni<Event> createEvent(String accountId, EventType eventType, LocalDateTime created) {
         Event event = new Event();
         event.setAccountId(accountId);
@@ -535,7 +557,8 @@ public class EventServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().body().as(new TypeRef<Page<EventLogEntry>>() { });
+                .extract().body().as(new TypeRef<>() {
+                });
     }
 
     private static void assertSameEvent(EventLogEntry eventLogEntry, Event event, NotificationHistory... historyEntries) {

@@ -30,10 +30,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @ApplicationScoped
 public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenticationRequest> {
 
+    public static final String RBAC_READ_NOTIFICATIONS_EVENTS = "read:events";
     public static final String RBAC_READ_NOTIFICATIONS = "read:notifications";
     public static final String RBAC_WRITE_NOTIFICATIONS = "write:notifications";
     public static final String RBAC_READ_INTEGRATIONS_ENDPOINTS = "read:integrations_ep";
     public static final String RBAC_WRITE_INTEGRATIONS_ENDPOINTS = "write:integrations_ep";
+
     private static final Logger log = Logger.getLogger(RbacIdentityProvider.class);
 
     @Inject
@@ -70,6 +72,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
             }
             return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
                     .setPrincipal(principal)
+                    .addRole(RBAC_READ_NOTIFICATIONS_EVENTS)
                     .addRole(RBAC_READ_NOTIFICATIONS)
                     .addRole(RBAC_WRITE_NOTIFICATIONS)
                     .addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS)
@@ -108,6 +111,9 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                                                 })
                                                 // Otherwise, we can finish building the QuarkusSecurityIdentity and return the result
                                                 .onItem().transform(rbacRaw -> {
+                                                    if (rbacRaw.canRead("notifications", "events")) {
+                                                        builder.addRole(RBAC_READ_NOTIFICATIONS_EVENTS);
+                                                    }
                                                     if (rbacRaw.canRead("notifications", "notifications")) {
                                                         builder.addRole(RBAC_READ_NOTIFICATIONS);
                                                     }

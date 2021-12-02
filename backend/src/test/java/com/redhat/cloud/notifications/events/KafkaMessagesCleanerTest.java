@@ -61,6 +61,19 @@ public class KafkaMessagesCleanerTest {
         ).await().indefinitely();
     }
 
+    @Test
+    void testPostgresStoredProcedure() {
+        sessionFactory.withStatelessSession(statelessSession -> deleteAllKafkaMessages()
+                .chain(() -> createKafkaMessage(now().minus(Duration.ofHours(13L))))
+                .chain(() -> createKafkaMessage(now().minus(Duration.ofDays(2L))))
+                .chain(() -> count())
+                .invoke(count -> assertEquals(2L, count))
+                .chain(() -> statelessSession.createNativeQuery("CALL cleanKafkaMessagesIds()").executeUpdate())
+                .chain(() -> count())
+                .invoke(count -> assertEquals(1L, count))
+        ).await().indefinitely();
+    }
+
     private Uni<Integer> deleteAllKafkaMessages() {
         return sessionFactory.withStatelessSession(statelessSession ->
                 statelessSession.createQuery("DELETE FROM KafkaMessage")

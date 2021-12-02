@@ -46,13 +46,13 @@
         <mockserver-client-java.version>5.5.4</mockserver-client-java.version>
 
         <insights-notification-schemas-java.version>0.4</insights-notification-schemas-java.version>
-        <clowder-quarkus-config-source.version>0.3.1</clowder-quarkus-config-source.version>
+        <clowder-quarkus-config-source.version>0.3.3</clowder-quarkus-config-source.version>
 
         <cloudwatch.version>4.0.0</cloudwatch.version>
 
         <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>2.3.1.Final</quarkus.platform.version>
+        <quarkus.platform.version>2.5.1.Final</quarkus.platform.version>
     </properties>
 
     <dependencyManagement>

@@ -105,7 +105,12 @@ public class EndpointService {
             Uni<Long> count;
 
             if (targetType != null && targetType.size() > 0) {
-                Set<EndpointType> endpointType = targetType.stream().map(s -> EndpointType.valueOf(s.toUpperCase())).collect(Collectors.toSet());
+                Set<EndpointType> endpointType;
+                try {
+                    endpointType = targetType.stream().map(s -> EndpointType.valueOf(s.toUpperCase())).collect(Collectors.toSet());
+                } catch (IllegalArgumentException e) {
+                    return Uni.createFrom().failure(() -> new BadRequestException("Unknown endpoint type(s)"));
+                }
                 endpoints = resources
                         .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query);
                 count = resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly);

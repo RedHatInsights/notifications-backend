@@ -101,9 +101,9 @@ objects:
           value: https://${BACKOFFICE_HOST}/v1/sendEmails
         - name: PROCESSOR_EMAIL_NO_REPLY
           value: ${PROCESSOR_EMAIL_NO_REPLY}
-        - name: RBAC_AUTHENTICATION_MP_REST_READTIMEOUT
+        - name: QUARKUS_REST_CLIENT_RBAC_AUTHENTICATION_READ_TIMEOUT
           value: ${RBAC_AUTHENTICATION_READ_TIMEOUT}
-        - name: RBAC_S2S_MP_REST_READTIMEOUT
+        - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
           value: ${RBAC_S2S_READ_TIMEOUT}
         - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
           value: ${RBAC_SERVICE_TO_SERVICE_APP}
@@ -132,6 +132,66 @@ objects:
           value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: notifications-db-cleaner-config
+  data:
+    clean.sh: |
+      cat /notifications-db-cleaner/clean.sql | psql > /dev/null
+    clean.sql: |
+      CALL cleanEventLog();
+      CALL cleanKafkaMessagesIds();
+- apiVersion: batch/v1beta1
+  kind: CronJob
+  metadata:
+    name: notifications-db-cleaner-cronjob
+  spec:
+    schedule: ${DB_CLEANER_SCHEDULE}
+    suspend: ${{DISABLE_DB_CLEANER}}
+    concurrencyPolicy: Forbid
+    jobTemplate:
+      spec:
+        template:
+          spec:
+            restartPolicy: Never
+            volumes:
+            - name: notifications-db-cleaner-volume
+              configMap:
+                name: notifications-db-cleaner-config
+            containers:
+            - name: notifications-db-cleaner
+              image: quay.io/cloudservices/postgresql-rds:12-1
+              restartPolicy: Never
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 100Mi
+                limits:
+                  cpu: 200m
+                  memory: 200Mi
+              volumeMounts:
+              - name: notifications-db-cleaner-volume
+                mountPath: /notifications-db-cleaner
+              command: ['sh', '/notifications-db-cleaner/clean.sh']
+              env:
+              - name: PGHOST
+                valueFrom:
+                  secretKeyRef:
+                    name: notifications-backend-db
+                    key: ${DB_SECRET_HOSTNAME_KEY}
+              - name: PGDATABASE
+                value: ${DB_NAME}
+              - name: PGUSER
+                valueFrom:
+                  secretKeyRef:
+                    name: notifications-backend-db
+                    key: ${DB_SECRET_USERNAME_KEY}
+              - name: PGPASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: notifications-backend-db
+                    key: ${DB_SECRET_PASSWORD_KEY}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -148,6 +208,24 @@ parameters:
 - name: CPU_REQUEST
   description: CPU request
   value: 500m
+- name: DB_CLEANER_SCHEDULE
+  description: Execution time specified in cron format
+  value: "*/10 * * * *"
+- name: DB_NAME
+  description: Database name used by the notifications-db-cleaner CronJob
+  value: notifications_backend
+- name: DB_SECRET_HOSTNAME_KEY
+  description: Key of the hostname field in the notifications-backend-db secret
+  value: db.host
+- name: DB_SECRET_PASSWORD_KEY
+  description: Key of the password field in the notifications-backend-db secret
+  value: db.password
+- name: DB_SECRET_USERNAME_KEY
+  description: Key of the username field in the notifications-backend-db secret
+  value: db.user
+- name: DISABLE_DB_CLEANER
+  description: Should the DB cleaner CronJob be disabled?
+  value: "false"
 - name: ENV_NAME
   description: ClowdEnvironment name (ephemeral, stage, prod)
   required: true
