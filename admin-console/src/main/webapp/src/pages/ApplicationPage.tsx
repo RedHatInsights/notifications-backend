@@ -170,7 +170,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             ))}
                         </Tr>
                     </Thead>
-                    <Tbody>{ eventTypesQuery.payload.value.length === 0 }</Tbody>
+                    <Tbody>{ (eventTypesQuery.payload.value.length === 0 ?
+                        'There are no event types found for this application' : '') }</Tbody>
                     <Tbody>
                         { eventTypesQuery.payload.value.map(e => (
                             <Tr key={ e.id }>
