@@ -179,22 +179,19 @@ objects:
                 valueFrom:
                   secretKeyRef:
                     name: notifications-backend-db
-                    key: hostname
+                    key: ${DB_SECRET_HOSTNAME_KEY}
               - name: PGDATABASE
-                valueFrom:
-                  secretKeyRef:
-                    name: notifications-backend-db
-                    key: name
+                value: ${DB_NAME}
               - name: PGUSER
                 valueFrom:
                   secretKeyRef:
                     name: notifications-backend-db
-                    key: username
+                    key: ${DB_SECRET_USERNAME_KEY}
               - name: PGPASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: notifications-backend-db
-                    key: password
+                    key: ${DB_SECRET_PASSWORD_KEY}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -214,6 +211,18 @@ parameters:
 - name: DB_CLEANER_SCHEDULE
   description: Execution time specified in cron format
   value: "*/10 * * * *"
+- name: DB_NAME
+  description: Database name used by the notifications-db-cleaner CronJob
+  value: notifications_backend
+- name: DB_SECRET_HOSTNAME_KEY
+  description: Key of the hostname field in the notifications-backend-db secret
+  value: db.host
+- name: DB_SECRET_PASSWORD_KEY
+  description: Key of the password field in the notifications-backend-db secret
+  value: db.password
+- name: DB_SECRET_USERNAME_KEY
+  description: Key of the username field in the notifications-backend-db secret
+  value: db.user
 - name: DISABLE_DB_CLEANER
   description: Should the DB cleaner CronJob be disabled?
   value: "false"
