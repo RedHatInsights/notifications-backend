@@ -129,10 +129,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
         return <span>Error while loading eventtypes: {eventTypesQuery.errorObject.toString()}</span>;
     }
 
-    if (eventTypesQuery.payload.value.length === 0) {
-        return <span>No event types found for this application</span>;
-    }
-
     return (
         <React.Fragment>
             <PageSection>
@@ -233,6 +229,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             ))}
                         </Tr>
                     </Thead>
+                    <Tbody>{ (eventTypesQuery.payload.value.length === 0 ?
+                        'There are no event types found for this application' : '') }</Tbody>
                     <Tbody>
                         { eventTypesQuery.payload.value.map(e => (
                             <Tr key={ e.id }>
