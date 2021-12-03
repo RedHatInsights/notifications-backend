@@ -269,6 +269,10 @@ public class BehaviorGroupResources {
         });
     }
 
+    public Uni<Status> updateDefaultBehaviorGroupActions(UUID behaviorGroupId, List<UUID> endpointIds) {
+        return updateBehaviorGroupActions(null, behaviorGroupId, endpointIds);
+    }
+
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByEndpointId(String accountId, UUID endpointId) {
         String query = "SELECT bg FROM BehaviorGroup bg LEFT JOIN FETCH bg.bundle JOIN bg.actions a WHERE bg.accountId = :accountId AND a.endpoint.id = :endpointId";
         return sessionFactory.withSession(session -> {

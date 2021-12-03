@@ -1,11 +1,17 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider;
 import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.BundleResources;
+import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.StatusResources;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CurrentStatus;
+import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.recipients.User;
@@ -13,16 +19,21 @@ import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.templates.EmailTemplateService;
 import com.redhat.cloud.notifications.utils.ActionParser;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.hibernate.reactive.mutiny.Mutiny;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -33,11 +44,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.RedirectionException;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.INTERNAL;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -51,6 +65,12 @@ public class InternalService {
 
     @Inject
     ApplicationResources appResources;
+
+    @Inject
+    BehaviorGroupResources behaviorGroupResources;
+
+    @Inject
+    EndpointResources endpointResources;
 
     @Inject
     StatusResources statusResources;
@@ -280,6 +300,48 @@ public class InternalService {
                 ).asTuple()
         ).onItem().transform(titleAndBody -> Response.ok(new RenderEmailTemplateResponse.Success(titleAndBody.getItem1(), titleAndBody.getItem2())).build())
         .onFailure().recoverWithItem(throwable -> Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(throwable.getMessage())).build());
+    }
+
+    @POST
+    @Path("/defaultBehaviorGroups")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    public Uni<BehaviorGroup> createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
+        return sessionFactory.withSession(sesion -> {
+            return behaviorGroupResources.createDefault(behaviorGroup);
+        });
+    }
+
+    @PUT
+    @Path("/defaultBehaviorGroups/{behaviorGroupId}/actions")
+    @Consumes(APPLICATION_JSON)
+    @Produces(TEXT_PLAIN)
+    @Operation(summary = "Update the list of actions of a default behavior group.")
+    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    public Uni<Response> updateDefaultBehaviorGroupActions(@PathParam("behaviorGroupId") UUID behaviorGroupId, List<EmailSubscriptionProperties> propertiesList) {
+        if (propertiesList == null) {
+            return Uni.createFrom().failure(new BadRequestException("The request body must contain a list of EmailSubscriptionProperties"));
+        }
+        // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
+        if (propertiesList.contains(null)) {
+            return Uni.createFrom().failure(new BadRequestException("The list of EmailSubscriptionProperties should not contain empty values"));
+        }
+        if (propertiesList.size() != propertiesList.stream().distinct().count()) {
+            return Uni.createFrom().failure(new BadRequestException("The list of EmailSubscriptionProperties should not contain duplicates"));
+        }
+
+        return sessionFactory.withSession(session -> {
+            return Multi.createFrom().iterable(propertiesList)
+                .onItem().transformToUniAndConcatenate( // order matters
+                    properties -> endpointResources.getOrCreateEmailSubscriptionEndpoint(null, properties, false)
+                ).collect().asList()
+                .onItem().transformToUni(endpoints -> behaviorGroupResources.updateDefaultBehaviorGroupActions(
+                        behaviorGroupId,
+                        endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
+                    ))
+                    .onItem().transform(status -> Response.status(status).build());
+        });
     }
 
     private User createInternalUser() {

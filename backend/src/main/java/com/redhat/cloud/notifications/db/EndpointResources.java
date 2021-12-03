@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.db.session.CommonStateSessionFactory;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -7,6 +8,7 @@ import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.logging.Logger;
@@ -31,8 +33,11 @@ public class EndpointResources {
     @Inject
     Mutiny.SessionFactory sessionFactory;
 
-    public Uni<Endpoint> createEndpoint(Endpoint endpoint) {
-        return sessionFactory.withSession(session -> {
+    @Inject
+    CommonStateSessionFactory commonStateSessionFactory;
+
+    public Uni<Endpoint> createEndpoint(Endpoint endpoint, boolean useStatelessSession) {
+        return commonStateSessionFactory.withSession(useStatelessSession, session -> {
             return session.persist(endpoint)
                     .onItem().call(session::flush)
                     .onItem().call(() -> {
@@ -65,8 +70,8 @@ public class EndpointResources {
         });
     }
 
-    public Uni<List<Endpoint>> getEndpointsPerType(String tenant, Set<EndpointType> type, Boolean activeOnly, Query limiter) {
-        return sessionFactory.withSession(session -> {
+    public Uni<List<Endpoint>> getEndpointsPerType(String tenant, Set<EndpointType> type, Boolean activeOnly, Query limiter, boolean useStatelessSession) {
+        return commonStateSessionFactory.withSession(useStatelessSession, session -> {
             // TODO Modify the parameter to take a vararg of Functions that modify the query
             // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
             String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.type IN (:endpointType)";
@@ -92,7 +97,7 @@ public class EndpointResources {
             }
 
             return mutinyQuery.getResultList()
-                    .onItem().call(this::loadProperties);
+                    .onItem().call(endpoints -> loadProperties(endpoints, useStatelessSession));
         });
     }
 
@@ -106,10 +111,10 @@ public class EndpointResources {
         });
     }
 
-    public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties) {
-        return sessionFactory.withSession(session -> {
-            return getEndpointsPerType(accountId, Set.of(EndpointType.EMAIL_SUBSCRIPTION), null, null)
-                    .onItem().call(this::loadProperties)
+    public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties, boolean useStatelessSession) {
+        return commonStateSessionFactory.withSession(useStatelessSession, session -> {
+            return getEndpointsPerType(accountId, Set.of(EndpointType.EMAIL_SUBSCRIPTION), null, null, useStatelessSession)
+                    .onItem().call(endpoints -> loadProperties(endpoints, useStatelessSession))
                     .onItem().transformToUni(emailEndpoints -> {
                         Optional<Endpoint> endpointOptional = emailEndpoints
                                 .stream()
@@ -127,7 +132,7 @@ public class EndpointResources {
                         endpoint.setName("Email endpoint");
                         endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
-                        return createEndpoint(endpoint);
+                        return createEndpoint(endpoint, useStatelessSession);
                     });
         });
     }
@@ -161,7 +166,19 @@ public class EndpointResources {
                     .setParameter("eventType", eventType)
                     .setParameter("accountId", tenant)
                     .getResultList()
-                    .onItem().call(endpoints -> loadProperties(endpoints, true));
+                    .onItem().call(endpoints -> loadProperties(endpoints, true))
+                    .onItem().transformToMulti(endpoints -> Multi.createFrom().iterable(endpoints))
+                    .onItem().transformToUniAndMerge(endpoint -> {
+                        if (endpoint.getAccountId() == null) {
+                            if (endpoint.getType().equals(EndpointType.EMAIL_SUBSCRIPTION)) {
+                                return this.getOrCreateEmailSubscriptionEndpoint(tenant, endpoint.getProperties(EmailSubscriptionProperties.class), true);
+                            } else {
+                                LOGGER.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
+                            }
+                        }
+
+                        return Uni.createFrom().item(endpoint);
+                    }).collect().asList();
         });
     }
 
@@ -349,31 +366,18 @@ public class EndpointResources {
                 .collect(Collectors.toMap(Endpoint::getId, Function.identity()));
 
         if (endpointsMap.size() > 0) {
-            return find(typedEndpointClass, endpointsMap.keySet(), useStatelessSession)
-                    .onItem().invoke(propList -> propList.forEach(props -> {
-                        if (props != null) {
-                            Endpoint endpoint = endpointsMap.get(props.getId());
-                            endpoint.setProperties(props);
-                        }
-                    })).replaceWith(Uni.createFrom().voidItem());
+            return commonStateSessionFactory.withSession(
+                    useStatelessSession,
+                    commonStateSession -> commonStateSession.find(typedEndpointClass, endpointsMap.keySet())
+            ).onItem().invoke(propList -> propList.forEach(props -> {
+                if (props != null) {
+                    Endpoint endpoint = endpointsMap.get(props.getId());
+                    endpoint.setProperties(props);
+                }
+            })).replaceWith(Uni.createFrom().voidItem());
         }
 
         return Uni.createFrom().voidItem();
-    }
-
-    private <T extends EndpointProperties> Uni<List<T>> find(Class<T> typedEndpointClass, Set<UUID> endpointIds, boolean useStatelessSession) {
-        if (useStatelessSession) {
-            String query = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:endpointIds)";
-            return sessionFactory.withStatelessSession(statelessSession -> {
-                return statelessSession.createQuery(query, typedEndpointClass)
-                        .setParameter("endpointIds", endpointIds)
-                        .getResultList();
-            });
-        } else {
-            return sessionFactory.withSession(session -> {
-                return session.find(typedEndpointClass, endpointIds.toArray());
-            });
-        }
     }
 
     public Uni<Endpoint> loadProperties(Endpoint endpoint) {

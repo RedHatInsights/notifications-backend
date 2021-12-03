@@ -112,7 +112,7 @@ public class EndpointService {
                     return Uni.createFrom().failure(() -> new BadRequestException("Unknown endpoint type(s)"));
                 }
                 endpoints = resources
-                        .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query);
+                        .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query, false);
                 count = resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly);
             } else {
                 endpoints = resources.getEndpoints(principal.getAccount(), query);
@@ -140,7 +140,7 @@ public class EndpointService {
         }
 
         return sessionFactory.withSession(session -> {
-            return resources.createEndpoint(endpoint);
+            return resources.createEndpoint(endpoint, false);
         });
     }
 
@@ -157,7 +157,7 @@ public class EndpointService {
         properties.setOnlyAdmins(requestProps.isOnlyAdmins());
 
         return sessionFactory.withSession(session -> {
-            return resources.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties);
+            return resources.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties, false);
         });
     }
 
