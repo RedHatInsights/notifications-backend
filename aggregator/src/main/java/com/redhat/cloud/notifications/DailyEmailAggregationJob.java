@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static com.redhat.cloud.notifications.EmailSubscriptionType.*;
+import static com.redhat.cloud.notifications.EmailSubscriptionType.DAILY;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.*;
 
