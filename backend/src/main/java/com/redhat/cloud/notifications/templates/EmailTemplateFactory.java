@@ -15,6 +15,7 @@ public class EmailTemplateFactory {
     private static final String ADVISOR = "advisor";
     private static final String DRIFT = "drift";
     private static final String OPENSHIFT = "openshift";
+    private static final String ANSIBLE = "ansible";
 
     public EmailTemplate get(String bundle, String application) {
         if (bundle.equalsIgnoreCase(RHEL)) {
@@ -23,6 +24,8 @@ public class EmailTemplateFactory {
                     return new Policies();
                 case ADVISOR:
                     return new Advisor();
+                case ANSIBLE:
+                    return new Ansible();
                 case DRIFT:
                     return new Drift();
                 default:
