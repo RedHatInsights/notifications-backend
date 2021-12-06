@@ -1,0 +1,17 @@
+{#include Ansible/insightsEmailBody}
+{#content-title}Ansible report - {action.context.system_check_in.toUtcFormat()}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-content__block">
+        <p>Ansible report available for download at {action.context.system_check_in.toUtcFormat()}</p>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <div class="rh-stack">
+            <a class="rh-url" href="https://console.redhat.com/insights/inventory/{action.context.report_id}"><b>Download now</b></a>
+        </div>
+    </td>
+</tr>
+{/content-body}
+{/include}
