@@ -43,6 +43,7 @@ import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
+import static com.redhat.cloud.notifications.TestConstants.API_INTERNAL;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_ENDPOINTS_COUNTER_NAME;
@@ -108,6 +109,7 @@ public class LifecycleITest extends DbIsolatedTest {
         // We also need behavior groups.
         String behaviorGroupId1 = createBehaviorGroup(identityHeader, bundleId);
         String behaviorGroupId2 = createBehaviorGroup(identityHeader, bundleId);
+        String defaultBehaviorGroupId = createDefaultBehaviorGroup(bundleId);
 
         // We need actions for our behavior groups.
         String endpointId1 = createWebhookEndpoint(identityHeader, SECRET_TOKEN);
@@ -116,8 +118,11 @@ public class LifecycleITest extends DbIsolatedTest {
         checkEndpoints(identityHeader, endpointId1, endpointId2, endpointId3);
 
         // We'll start with a first behavior group actions configuration. This will slightly change later in the test.
-        addBehaviorGroupActions(identityHeader, behaviorGroupId1, endpointId1, endpointId2);
-        addBehaviorGroupActions(identityHeader, behaviorGroupId2, endpointId3);
+        addBehaviorGroupActions(identityHeader, behaviorGroupId1, 200, endpointId1, endpointId2);
+        addBehaviorGroupActions(identityHeader, behaviorGroupId2, 200, endpointId3);
+
+        // Can't add actions to default behavior group using public API
+        addBehaviorGroupActions(identityHeader, defaultBehaviorGroupId, 401, endpointId1, endpointId2, endpointId3);
 
         // Let's push a first message! It should not trigger any webhook call since we didn't link the event type with any behavior group.
         pushMessage(0);
@@ -149,7 +154,7 @@ public class LifecycleITest extends DbIsolatedTest {
          * Let's change the behavior group actions configuration by adding an action to the second behavior group.
          * Endpoint 2 is now an action for both behavior groups, but it should not be notified twice on each message because we don't want duplicate notifications.
          */
-        addBehaviorGroupActions(identityHeader, behaviorGroupId2, endpointId3, endpointId2);
+        addBehaviorGroupActions(identityHeader, behaviorGroupId2, 200, endpointId3, endpointId2);
 
         // Pushing a new message should trigger three webhook calls.
         pushMessage(3);
@@ -274,18 +279,21 @@ public class LifecycleITest extends DbIsolatedTest {
         assertEquals(2, jsonEventTypes.size()); // One from the current test, one from the default DB records.
     }
 
-    private String createBehaviorGroup(Header identityHeader, String bundleId) {
+    private String createBehaviorGroupInternal(String path, Header identityHeader, String bundleId) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName("Behavior group");
         behaviorGroup.setBundleId(UUID.fromString(bundleId));
 
-        String responseBody = given()
-                .basePath(API_NOTIFICATIONS_V_1_0)
-                .header(identityHeader)
+        var request = given();
+        if (identityHeader != null) {
+            request.header(identityHeader);
+        }
+
+        String responseBody = request
                 .contentType(JSON)
                 .body(Json.encode(behaviorGroup))
                 .when()
-                .post("/notifications/behaviorGroups")
+                .post(path)
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
@@ -300,6 +308,14 @@ public class LifecycleITest extends DbIsolatedTest {
         assertNotNull(jsonBehaviorGroup.getString("created"));
 
         return jsonBehaviorGroup.getString("id");
+    }
+
+    private String createBehaviorGroup(Header identityHeader, String bundleId) {
+        return createBehaviorGroupInternal(API_NOTIFICATIONS_V_1_0 + "/notifications/behaviorGroups", identityHeader, bundleId);
+    }
+
+    private String createDefaultBehaviorGroup(String bundleId) {
+        return createBehaviorGroupInternal(API_INTERNAL + "/defaultBehaviorGroups", null, bundleId);
     }
 
     private String createWebhookEndpoint(Header identityHeader, String secretToken) {
@@ -372,7 +388,7 @@ public class LifecycleITest extends DbIsolatedTest {
         }
     }
 
-    private void addBehaviorGroupActions(Header identityHeader, String behaviorGroupId, String... endpointIds) {
+    private void addBehaviorGroupActions(Header identityHeader, String behaviorGroupId, int expectedHttpStatusCode, String... endpointIds) {
         given()
                 .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
@@ -382,7 +398,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when()
                 .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
                 .then()
-                .statusCode(200)
+                .statusCode(expectedHttpStatusCode)
                 .contentType(TEXT);
     }
 
