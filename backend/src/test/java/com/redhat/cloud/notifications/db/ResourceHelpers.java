@@ -148,7 +148,7 @@ public class ResourceHelpers {
         endpoint.setDescription(description);
         endpoint.setProperties(properties);
         endpoint.setEnabled(enabled);
-        return endpointResources.createEndpoint(endpoint);
+        return endpointResources.createEndpoint(endpoint, false);
     }
 
     public Uni<int[]> createTestEndpoints(String tenant, int count) {
@@ -176,7 +176,7 @@ public class ResourceHelpers {
                     }
 
                     ep.setAccountId(tenant);
-                    return endpointResources.createEndpoint(ep);
+                    return endpointResources.createEndpoint(ep, false);
                 })
                 .onItem().ignoreAsUni()
                 .replaceWith(statsValues);
@@ -194,7 +194,7 @@ public class ResourceHelpers {
     }
 
     public Uni<UUID> emailSubscriptionEndpointId(String accountId, EmailSubscriptionProperties properties) {
-        return endpointResources.getOrCreateEmailSubscriptionEndpoint(accountId, properties)
+        return endpointResources.getOrCreateEmailSubscriptionEndpoint(accountId, properties, false)
                 .onItem().transform(Endpoint::getId);
     }
 
