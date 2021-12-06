@@ -9,6 +9,8 @@ import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static java.util.stream.Collectors.toList;
+
 @ApplicationScoped
 public class EmailAggregationResources {
 
@@ -16,12 +18,14 @@ public class EmailAggregationResources {
     Session session;
 
     public List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
-        String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.EmailAggregationKey(ea.accountId, ea.bundleName, ea.applicationName) " +
-                "FROM EmailAggregation ea WHERE ea.created > :start AND ea.created <= :end";
-        return session.createQuery(query, EmailAggregationKey.class)
+        String query = "SELECT DISTINCT account_id, bundle, application FROM email_aggregation WHERE created > :start AND created <= :end";
+        List<Object[]> records = session.createNativeQuery(query)
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getResultList();
+        return records.stream()
+                .map(record -> new EmailAggregationKey((String) record[0], (String) record[1], (String) record[2]))
+                .collect(toList());
     }
 
     public CronJobRun getLastCronJobRun() {
