@@ -10,10 +10,8 @@ public class Ansible implements EmailTemplate {
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals("new-recommendation")) {
-                return Templates.newRecommendationInstantEmailTitle();
-            } else if (eventType.equals("resolved-recommendation")) {
-                return Templates.resolvedRecommendationInstantEmailTitle();
+            if (eventType.equals("report-available")) {
+                return Templates.instantEmailTitle();
             }
         }
 
@@ -26,10 +24,8 @@ public class Ansible implements EmailTemplate {
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals("new-recommendation")) {
-                return Templates.newRecommendationInstantEmailBody();
-            } else if (eventType.equals("resolved-recommendation")) {
-                return Templates.resolvedRecommendationInstantEmailBody();
+            if (eventType.equals("report-available")) {
+                return Templates.instantEmailBody();
             }
         }
 
@@ -41,7 +37,7 @@ public class Ansible implements EmailTemplate {
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return (eventType.equals("new-recommendation") || eventType.equals("resolved-recommendation")) && type == EmailSubscriptionType.INSTANT;
+        return eventType.equals("report-available") && type == EmailSubscriptionType.INSTANT;
     }
 
     @Override
@@ -52,13 +48,10 @@ public class Ansible implements EmailTemplate {
     @CheckedTemplate(requireTypeSafeExpressions = false)
     public static class Templates {
 
-        public static native TemplateInstance newRecommendationInstantEmailTitle();
+        public static native TemplateInstance instantEmailTitle();
 
-        public static native TemplateInstance newRecommendationInstantEmailBody();
+        public static native TemplateInstance instantEmailBody();
 
-        public static native TemplateInstance resolvedRecommendationInstantEmailTitle();
-
-        public static native TemplateInstance resolvedRecommendationInstantEmailBody();
     }
 
 }
