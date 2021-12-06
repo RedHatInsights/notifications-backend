@@ -158,7 +158,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         onClose={ () => setShowModal(false) }
                                     ><Form isHorizontal>
                                             <FormGroup label='Name' fieldId='name' isRequired
-                                                helperText={ isEdit ? <HelperText><HelperTextItem variant="warning"  hasIcon>
+                                                helperText={ isEdit ? <HelperText><HelperTextItem variant="warning" hasIcon>
                                                     If this field is modified it may affect exisiting behavior.
                                                 </HelperTextItem></HelperText> : 'This is a short name, only composed of a-z 0-9 and - characters.' }>
                                                 <TextInput
