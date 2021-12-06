@@ -75,10 +75,18 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: MP_MESSAGING_INCOMING_AGGREGATION_ENABLED
+          value: ${KAFKA_AGGREGATION_ENABLED}
+        - name: MP_MESSAGING_INCOMING_FROMCAMEL_ENABLED
+          value: ${KAFKA_FROMCAMEL_ENABLED}
+        - name: MP_MESSAGING_INCOMING_INGRESS_ENABLED
+          value: ${KAFKA_INGRESS_ENABLED}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
           value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
           value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS}
+        - name: MP_MESSAGING_OUTGOING_TOCAMEL_ENABLED
+          value: ${KAFKA_TOCAMEL_ENABLED}
         - name: NOTIFICATIONS_EPHEMERAL_DATA
           valueFrom:
             configMapKeyRef:
@@ -101,6 +109,8 @@ objects:
           value: https://${BACKOFFICE_HOST}/v1/sendEmails
         - name: PROCESSOR_EMAIL_NO_REPLY
           value: ${PROCESSOR_EMAIL_NO_REPLY}
+        - name: QUARKUS_HEALTH_EXTENSIONS_ENABLED
+          value: ${HEALTH_ENABLED}
         - name: QUARKUS_REST_CLIENT_RBAC_AUTHENTICATION_READ_TIMEOUT
           value: ${RBAC_AUTHENTICATION_READ_TIMEOUT}
         - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
@@ -229,11 +239,21 @@ parameters:
 - name: ENV_NAME
   description: ClowdEnvironment name (ephemeral, stage, prod)
   required: true
+- name: HEALTH_ENABLED
+  value: "true"
 - name: IMAGE
   description: Image URL
   value: quay.io/cloudservices/notifications-backend
 - name: IMAGE_TAG
   value: latest
+- name: KAFKA_AGGREGATION_ENABLED
+  value: "true"
+- name: KAFKA_FROMCAMEL_ENABLED
+  value: "true"
+- name: KAFKA_INGRESS_ENABLED
+  value: "true"
+- name: KAFKA_TOCAMEL_ENABLED
+  value: "true"
 - name: MEMORY_LIMIT
   description: Memory limit
   value: 500Mi
