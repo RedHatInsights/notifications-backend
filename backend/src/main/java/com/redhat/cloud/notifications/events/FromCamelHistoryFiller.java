@@ -7,11 +7,13 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.Json;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.io.JsonEncoder;
 import org.apache.avro.specific.SpecificDatumWriter;
+import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -27,10 +29,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
+import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -72,10 +75,10 @@ public class FromCamelHistoryFiller {
     @Incoming(FROMCAMEL_CHANNEL)
     // Can be modified to use Multi<Message<String>> input also for more concurrency
     public Uni<Void> processAsync(Message<String> input) {
-        return Uni.createFrom().item(() -> input.getPayload())
+        return Uni.createFrom().item(input::getPayload)
                 .onItem().invoke(payload -> log.infof("Processing return from camel: %s", payload))
                 .onItem().transform(this::decodeItem)
-                .onItem().invoke(payload -> reinjectIfNeeded(payload))
+                .onItem().invoke(this::reinjectIfNeeded)
                 .onItem()
                 .transformToUni(payload -> {
                     return sessionFactory.withStatelessSession(statelessSession -> {
@@ -105,20 +108,27 @@ public class FromCamelHistoryFiller {
                 // TODO augment with details from Endpoint and original event
                 event.setPayload(payload);
 
+                // Save the original id, as we may need it in the future.
+                Map<String,String> context = new HashMap<>();
+                context.put("original-id", historyId);
+                context.put("failed-integration", ep.getName());
+
                 Action action = new Action(
                         "platform",
                         "notifications",
                         "integration_failed",
                         LocalDateTime.now(),
                         ep.getAccountId(),
-                        new HashMap(), // context
+                        context, // context
                         Collections.singletonList(event),
                         "v1.0.0",
                         Collections.emptyList()
                     );
                 try {
                     String ser = serializeAction(action);
-                    emitter.send(ser);
+                    // Add the message id in Kafka header for the de-duplicator
+                    Message<String> message = buildMessageWithId(ser);
+                    emitter.send(message);
                     return Uni.createFrom().voidItem();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -133,8 +143,8 @@ public class FromCamelHistoryFiller {
         }
     }
 
-    // Blindly copied from -gw . Perhaps this already exists here?
-    public static String serializeAction(Action action) throws IOException {
+    // Blindly copied from -gw . Perhaps put this into Schema project?
+    private static String serializeAction(Action action) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         JsonEncoder jsonEncoder = EncoderFactory.get().jsonEncoder(Action.getClassSchema(), baos);
         DatumWriter<Action> writer = new SpecificDatumWriter<>(Action.class);
@@ -143,6 +153,16 @@ public class FromCamelHistoryFiller {
 
         return baos.toString(UTF_8);
     }
+
+    // Blindly copied from -gw.  Perhaps put this into Schema project
+    private static Message buildMessageWithId(String payload) {
+        byte[] messageId = UUID.randomUUID().toString().getBytes(UTF_8);
+        OutgoingKafkaRecordMetadata metadata = OutgoingKafkaRecordMetadata.builder()
+                .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, messageId))
+                .build();
+        return Message.of(payload).addMetadata(metadata);
+    }
+
 
 
     private Map<String, Object> decodeItem(String s) {
