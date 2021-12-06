@@ -14,6 +14,7 @@ import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.io.JsonEncoder;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -71,6 +72,9 @@ public class FromCamelHistoryFiller {
     @Channel(EGRESS_CHANNEL)
     Emitter<String> emitter;
 
+    @ConfigProperty(name="reinject.enabled", defaultValue = "true")
+    boolean enableReInject;
+
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
     @Incoming(FROMCAMEL_CHANNEL)
     // Can be modified to use Multi<Message<String>> input also for more concurrency
@@ -96,6 +100,9 @@ public class FromCamelHistoryFiller {
     }
 
     private void reinjectIfNeeded(Map<String, Object> payload) {
+        if (!enableReInject) {
+            return;
+        }
         if (!payload.containsKey("successful") || !((Boolean)payload.get("successful"))) {
             String historyId = (String) payload.get("historyId");
             log.infof("Event with id %s was not successful, resubmitting for further processing", historyId);
