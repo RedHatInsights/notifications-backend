@@ -3,7 +3,7 @@ import { Breadcrumb, BreadcrumbItem, Button, Modal, ModalVariant, PageSection, S
 import {
     ActionGroup,
     Form,
-    FormGroup, TextArea,
+    FormGroup, HelperText, HelperTextItem, TextArea,
     TextInput  } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
@@ -158,7 +158,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         onClose={ () => setShowModal(false) }
                                     ><Form isHorizontal>
                                             <FormGroup label='Name' fieldId='name' isRequired
-                                                helperText='This is a short name, only composed of a-z 0-9 and - characters.'>
+                                                helperText={ isEdit ? <HelperText><HelperTextItem variant="warning"  hasIcon>
+                                                    If this field is modified it may affect exisiting behavior.
+                                                </HelperTextItem></HelperText> : 'This is a short name, only composed of a-z 0-9 and - characters.' }>
                                                 <TextInput
                                                     type='text'
                                                     value={ eventType.name }
