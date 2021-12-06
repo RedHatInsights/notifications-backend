@@ -9,6 +9,7 @@ public class EmailPayloadAggregatorFactory {
     private static final String POLICIES = "policies";
     private static final String DRIFT = "drift";
     private static final String RHOSAK = "rhosak";
+    private static final String ANSIBLE = "ansible";
 
     private EmailPayloadAggregatorFactory() {
 
@@ -26,6 +27,10 @@ public class EmailPayloadAggregatorFactory {
         }
         if (bundle.equals(APPLICATION_SERVICES) && application.equalsIgnoreCase(RHOSAK)) {
             return new RhosakEmailAggregator();
+        }
+
+        if (bundle.equals(APPLICATION_SERVICES) && application.equalsIgnoreCase(ANSIBLE)) {
+            return new AnsibleEmailAggregator();
         }
 
         return null;
