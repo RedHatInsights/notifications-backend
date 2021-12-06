@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.helpers;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import org.hibernate.Session;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -14,8 +13,6 @@ import java.time.LocalDateTime;
 @ApplicationScoped
 public class ResourceHelpers {
 
-    private static final Logger LOGGER = Logger.getLogger(ResourceHelpers.class);
-
     @Inject
     Session session;
 
@@ -25,33 +22,23 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public Boolean addEmailAggregation(EmailAggregation aggregation) {
-        try {
-            session.persist(aggregation);
-            session.flush();
-            return Boolean.TRUE;
-        } catch (Exception e) {
-            LOGGER.warn("Couldn't persist aggregation!", e);
-            return Boolean.FALSE;
-        }
+    public void addEmailAggregation(EmailAggregation aggregation) {
+        session.persist(aggregation);
     }
 
     @Transactional
     public void purgeEmailAggregations() {
         session.createQuery("DELETE FROM EmailAggregation").executeUpdate();
-        session.flush();
     }
 
     @Transactional
     public Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
         String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
-        final int result = session.createQuery(query)
+        return session.createQuery(query)
                 .setParameter("accountId", key.getAccountId())
                 .setParameter("bundleName", key.getBundle())
                 .setParameter("applicationName", key.getApplication())
                 .setParameter("created", lastUsedTime)
                 .executeUpdate();
-        session.flush();
-        return result;
     }
 }
