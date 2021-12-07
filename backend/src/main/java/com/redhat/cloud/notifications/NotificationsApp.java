@@ -29,8 +29,8 @@ public class NotificationsApp {
 
         LOG.info(readGitProperties());
 
-        logExternalServiceUrl("quarkus.rest-client.rbac-authentication.url");
-        logExternalServiceUrl("quarkus.rest-client.rbac-s2s.url");
+        logExternalServiceUrl("rbac-authentication/mp-rest/url");
+        logExternalServiceUrl("rbac-s2s/mp-rest/url");
     }
 
     private void initAccessLogFilter() {
