@@ -14,9 +14,8 @@ import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
-import static com.redhat.cloud.notifications.db.EventLogCleaner.EVENT_LOG_CLEANER_DELETE_AFTER_CONF_KEY;
-import static com.redhat.cloud.notifications.db.EventLogCleaner.now;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
@@ -31,39 +30,6 @@ public class EventLogCleanerTest extends DbIsolatedTest {
      */
     @Inject
     Mutiny.SessionFactory sessionFactory;
-
-    @Inject
-    EventLogCleaner eventLogCleaner;
-
-    @Test
-    void testWithDefaultConfiguration() {
-        sessionFactory.withStatelessSession(statelessSession -> deleteAllEvents()
-                .chain(() -> createEventType())
-                .call(eventType -> createEvent(eventType, now().minus(Duration.ofHours(1L))))
-                .call(eventType -> createEvent(eventType, now().minus(Duration.ofDays(62L))))
-                .chain(() -> count())
-                .invoke(count -> assertEquals(2L, count))
-                .chain(() -> eventLogCleaner.testableClean())
-                .chain(() -> count())
-                .invoke(count -> assertEquals(1L, count))
-        ).await().indefinitely();
-    }
-
-    @Test
-    void testWithCustomConfiguration() {
-        sessionFactory.withStatelessSession(statelessSession -> deleteAllEvents()
-                .invoke(() -> System.setProperty(EVENT_LOG_CLEANER_DELETE_AFTER_CONF_KEY, "30m"))
-                .chain(() -> createEventType())
-                .call(eventType -> createEvent(eventType, now().minus(Duration.ofHours(1L))))
-                .call(eventType -> createEvent(eventType, now().minus(Duration.ofDays(62L))))
-                .chain(() -> count())
-                .invoke(count -> assertEquals(2L, count))
-                .chain(() -> eventLogCleaner.testableClean())
-                .chain(() -> count())
-                .invoke(count -> assertEquals(0L, count))
-                .invoke(() -> System.clearProperty(EVENT_LOG_CLEANER_DELETE_AFTER_CONF_KEY))
-        ).await().indefinitely();
-    }
 
     @Test
     void testPostgresStoredProcedure() {
@@ -124,5 +90,9 @@ public class EventLogCleanerTest extends DbIsolatedTest {
                 statelessSession.createQuery("SELECT COUNT(*) FROM Event", Long.class)
                         .getSingleResult()
         );
+    }
+
+    private static LocalDateTime now() {
+        return LocalDateTime.now(ZoneOffset.UTC);
     }
 }
