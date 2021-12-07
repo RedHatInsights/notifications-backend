@@ -4,15 +4,12 @@ import com.redhat.cloud.notifications.db.repositories.NotificationHistoryReposit
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Encoder;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.Json;
-import org.apache.avro.io.DatumWriter;
-import org.apache.avro.io.EncoderFactory;
-import org.apache.avro.io.JsonEncoder;
-import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -26,8 +23,6 @@ import org.jboss.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
@@ -120,29 +115,25 @@ public class FromCamelHistoryFiller {
                 context.put("original-id", historyId);
                 context.put("failed-integration", ep.getName());
 
-                Action action = new Action(
-                        "platform",
-                        "notifications",
-                        "integration_failed",
-                        LocalDateTime.now(),
-                        ep.getAccountId(),
-                        context, // context
-                        Collections.singletonList(event),
-                        "v1.0.0",
-                        Collections.emptyList()
-                    );
-                try {
-                    String ser = serializeAction(action);
-                    // Add the message id in Kafka header for the de-duplicator
-                    Message<String> message = buildMessageWithId(ser);
-                    emitter.send(message);
-                    return Uni.createFrom().voidItem();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return Uni.createFrom().failure(e);
-                }
+                Action action = Action.newBuilder()
+                        .setBundle("platform")
+                        .setApplication("notifications")
+                        .setEventType("integration_failed")
+                        .setAccountId(ep.getAccountId())
+                        .setContext(context)
+                        .setTimestamp(LocalDateTime.now())
+                        .setEvents(Collections.singletonList(event))
+                        .setVersion("v1.0.0")
+                        .build();
 
-            })
+
+                String ser = new Encoder().encode(action);
+                // Add the message id in Kafka header for the de-duplicator
+                Message<String> message = buildMessageWithId(ser);
+                emitter.send(message);
+                return Uni.createFrom().voidItem();
+
+                })
             .subscribe()
                     .with(x -> x.onItem().invoke(item -> System.out.println(item))); // This triggers the actual work
 
@@ -150,16 +141,6 @@ public class FromCamelHistoryFiller {
         }
     }
 
-    // Blindly copied from -gw . Perhaps put this into Schema project?
-    private static String serializeAction(Action action) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        JsonEncoder jsonEncoder = EncoderFactory.get().jsonEncoder(Action.getClassSchema(), baos);
-        DatumWriter<Action> writer = new SpecificDatumWriter<>(Action.class);
-        writer.write(action, jsonEncoder);
-        jsonEncoder.flush();
-
-        return baos.toString(UTF_8);
-    }
 
     // Blindly copied from -gw.  Perhaps put this into Schema project
     private static Message buildMessageWithId(String payload) {
