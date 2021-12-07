@@ -41,8 +41,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class CamelTypeProcessor implements EndpointTypeProcessor {
 
     public static final String TOCAMEL_CHANNEL = "toCamel";
-
-    private static final String TOKEN_HEADER = "X-Insight-Token";
+    public static final String PROCESSED_COUNTER_NAME = "processor.camel.processed";
+    public static final String TOKEN_HEADER = "X-Insight-Token";
+    public static final String NOTIF_METADATA_KEY = "notif-metadata";
+    public static final String CLOUD_EVENT_EXTENSION_KEY = "rh-account";
+    public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
+    public static final String CAMEL_SUBTYPE_HEADER = "CAMEL_SUBTYPE";
 
     @Inject
     BaseTransformer transformer;
@@ -60,7 +64,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
     @PostConstruct
     public void init() {
-        processedCount = registry.counter("processor.camel.processed");
+        processedCount = registry.counter(PROCESSED_COUNTER_NAME);
     }
 
     @Override
@@ -104,7 +108,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         payload = payload.onItem().transform(json -> {
             JsonObject metadataAsJson = new JsonObject();
-            json.put("notif-metadata", metadataAsJson);
+            json.put(NOTIF_METADATA_KEY, metadataAsJson);
             metaData.forEach(metadataAsJson::put);
             return json;
         });
@@ -137,13 +141,13 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         Message<String> msg = Message.of(body.encode());
         msg = msg.addMetadata(OutgoingCloudEventMetadata.builder()
                 .withId(historyId.toString())
-                .withExtension("rh-account", accountId)
-                .withType("com.redhat.console.notification.toCamel." + subType)
+                .withExtension(CLOUD_EVENT_EXTENSION_KEY, accountId)
+                .withType(CLOUD_EVENT_TYPE_PREFIX + subType)
                 .build()
         );
         msg = msg.addMetadata(OutgoingKafkaRecordMetadata.builder()
             .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, historyId.toString().getBytes(UTF_8))
-                    .add("CAMEL_SUBTYPE", subType.getBytes(UTF_8)))
+                    .add(CAMEL_SUBTYPE_HEADER, subType.getBytes(UTF_8)))
                 .build()
         );
         msg = msg.addMetadata(tracingMetadata);
