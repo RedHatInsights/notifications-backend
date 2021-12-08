@@ -16,6 +16,7 @@ import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
+import { DeleteModal } from '../components/DeleteModal';
 import { useCreateEventType } from '../services/CreateEventTypes';
 import { useDeleteEventType } from '../services/DeleteEventType';
 import { useApplicationTypes } from '../services/GetApplication';
@@ -100,26 +101,26 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventType(e);
     };
 
-    const handleDelete = React.useCallback(() => {
-        setShowDeleteModal(false);
-        const deleteEventType = deleteEventTypeMutation.mutate;
-        deleteEventType(eventType.id).then (eventTypesQuery.query);
+    // const handleDelete = React.useCallback(() => {
+    //     setShowDeleteModal(false);
+    //     const deleteEventType = deleteEventTypeMutation.mutate;
+    //     deleteEventType(eventType.id).then (eventTypesQuery.query);
 
-    }, [ deleteEventTypeMutation.mutate, eventType.id, eventTypesQuery.query ]);
+    // }, [ deleteEventTypeMutation.mutate, eventType.id, eventTypesQuery.query ]);
 
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
         setEventType(e);
     };
 
-    const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
-        const target = event.target as HTMLInputElement;
-        if (target.value !== eventType.name) {
-            return setErrors(true);
-        } else if (target.value === eventType.name) {
-            return setErrors(false);
-        }
-    };
+    // const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+    //     const target = event.target as HTMLInputElement;
+    //     if (target.value !== eventType.name) {
+    //         return setErrors(true);
+    //     } else if (target.value === eventType.name) {
+    //         return setErrors(false);
+    //     }
+    // };
 
     if (eventTypesQuery.loading) {
         return <Spinner />;
@@ -200,27 +201,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         </>
                                     </Modal>
                                     <React.Fragment>
-                                        <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ showDeleteModal }
-                                            onClose={ () => setShowDeleteModal(false) }
-                                            title={ `Permanently delete ${ eventType.name }` }>
-                                            { <b>{ eventType.name }</b> } {`from  ${ bundle ? bundle.display_name :
-                                                <Spinner /> }/${ (applicationTypesQuery.loading
-                                             || applicationTypesQuery.payload?.status !== 200) ?
-                                                <Spinner /> : applicationTypesQuery.payload.value.displayName } will be deleted. 
-                                                If an application is currently sending this event, it will no longer be processed.`}
-                                            <br />
-                                            <br />
-                                            Type <b>{ eventType.name }</b> to confirm:
-                                            <br />
-                                            <TextInput type='text' onChange={ handleDeleteChange } id='name' name="name" isRequired />
-                                            <br />
-                                            <br />
-                                            <ActionGroup>
-                                                <Button variant='danger' type='button' isDisabled = { errors }
-                                                    onClick={ handleDelete }>Delete</Button>
-                                                <Button variant='link' type='button' onClick={ () => setShowDeleteModal(false) }>Cancel</Button>
-                                            </ActionGroup>
-                                        </Modal>
+                                        <DeleteModal />
                                     </React.Fragment>
                                 </ToolbarItem>
                             </ToolbarContent>
