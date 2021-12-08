@@ -13,11 +13,27 @@ public class CommonStateSessionFactory {
     @Inject
     Mutiny.SessionFactory sessionFactory;
 
-    public <T> Uni<T> withSession(boolean useStatelessSession, Function<CommonStateSession, Uni<T>> function) {
-        if (useStatelessSession) {
-            return sessionFactory.withStatelessSession(statelessSession -> function.apply(CommonStateSession.withStatelessSession(statelessSession)));
+    /**
+     * Creates a stateless or stateful session depending the provided params.
+     *
+     * It is useful in the cases when we need to support both session types in our code to avoid repeating the functions
+     * or adding extra logic to handle each case by separate.
+     *
+     * <pre>
+     * {@code
+     * commonStateSessionFactory.withSession(stateless, session -> session.find(MyClass.class, "1"));
+     * }
+     * </pre>
+     *
+     * @param stateless If we want the session to be stateless
+     * @param function function to execute the session on
+     * @return a Uni<T> with the result of the executed function
+     */
+    public <T> Uni<T> withSession(boolean stateless, Function<CommonStateSession, Uni<T>> function) {
+        if (stateless) {
+            return sessionFactory.withStatelessSession(statelessSession -> function.apply(new StatelessSessionAdapter(statelessSession)));
         } else {
-            return sessionFactory.withSession(session -> function.apply(CommonStateSession.withSession(session)));
+            return sessionFactory.withSession(session -> function.apply(new SessionAdapter(session)));
         }
     }
 

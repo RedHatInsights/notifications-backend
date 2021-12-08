@@ -4,20 +4,9 @@ import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.logging.Logger;
 
-import javax.persistence.PrePersist;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 
 public interface CommonStateSession {
-
-    public static CommonStateSession withSession(Mutiny.Session session) {
-        return new SessionAdapter(session);
-    }
-
-    public static CommonStateSession withStatelessSession(Mutiny.StatelessSession statelessSession) {
-        return new StatelessSessionAdapter(statelessSession);
-    }
 
     <T> Uni<List<T>> find(Class<T> aClass, Object... ids);
     <T> Mutiny.Query<T> createQuery(String query, Class<T> aClass);
@@ -28,7 +17,7 @@ public interface CommonStateSession {
 class SessionAdapter implements CommonStateSession {
     Mutiny.Session session;
 
-    public SessionAdapter(Mutiny.Session session) {
+    SessionAdapter(Mutiny.Session session) {
         this.session = session;
     }
 
@@ -54,10 +43,10 @@ class SessionAdapter implements CommonStateSession {
 }
 
 class StatelessSessionAdapter implements CommonStateSession {
-    private static final Logger LOGGER = Logger.getLogger(StatelessSessionAdapter.class);
     private final Mutiny.StatelessSession statelessSession;
+    private final Invoker invoker = new Invoker();
 
-    public StatelessSessionAdapter(Mutiny.StatelessSession statelessSession) {
+    StatelessSessionAdapter(Mutiny.StatelessSession statelessSession) {
         this.statelessSession = statelessSession;
     }
 
@@ -76,16 +65,7 @@ class StatelessSessionAdapter implements CommonStateSession {
 
     @Override
     public Uni<Void> persist(Object object) {
-        for (Method method: object.getClass().getDeclaredMethods()) {
-            PrePersist prePersist = method.getAnnotation(PrePersist.class);
-            if (prePersist != null) {
-                try {
-                    method.invoke(object);
-                } catch (InvocationTargetException | IllegalAccessException exception) {
-                    LOGGER.warnf(exception, "Unable to call PrePersist method [%s] found in class [%s]", method.getName(), object.getClass().getName());
-                }
-            }
-        }
+        invoker.prePersist(object);
 
         // Todo: Check if we need to retrieve the generated ID manually
         return statelessSession.insert(object);
