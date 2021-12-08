@@ -24,6 +24,7 @@ class Invoker {
                 PrePersist prePersist = method.getAnnotation(PrePersist.class);
                 if (prePersist != null) {
                     cache.prePersist = method;
+                    break;
                 }
             }
 
@@ -33,10 +34,12 @@ class Invoker {
 
     public <T> void prePersist(T instance) {
         InvokerCache cache = get(instance.getClass());
-        try {
-            cache.prePersist.invoke(instance);
-        } catch (InvocationTargetException | IllegalAccessException exception) {
-            LOGGER.warnf(exception, "Unable to call PrePersist method [%s] found in class [%s]", cache.prePersist.getName(), instance.getClass().getName());
+        if (cache.prePersist != null) {
+            try {
+                cache.prePersist.invoke(instance);
+            } catch (InvocationTargetException | IllegalAccessException exception) {
+                LOGGER.warnf(exception, "Unable to call PrePersist method [%s] found in class [%s]", cache.prePersist.getName(), instance.getClass().getName());
+            }
         }
     }
 }
