@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Assertions;
@@ -14,6 +15,7 @@ import javax.inject.Inject;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,7 +61,7 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
                     assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
                     assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
                 })
-                .chain(() -> aggregationResources.getApplicationsWithPendingAggregation(start, end))
+                .chain(() -> getApplicationsWithPendingAggregation(start, end))
                 .invoke(keys -> {
                     assertEquals(4, keys.size());
                     assertEquals(ACCOUNT_ID, keys.get(0).getAccountId());
@@ -70,7 +72,7 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
                 .invoke(purged -> assertEquals(2, purged))
                 .chain(() -> aggregationResources.getEmailAggregation(key, start, end))
                 .invoke(aggregations -> assertEquals(0, aggregations.size()))
-                .chain(aggregations -> aggregationResources.getApplicationsWithPendingAggregation(start, end))
+                .chain(aggregations -> getApplicationsWithPendingAggregation(start, end))
                 .invoke(keys -> assertEquals(3, keys.size()))
         ).await().indefinitely();
     }
@@ -86,5 +88,16 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
                 .chain(() -> resourceHelpers.addEmailAggregation(null, BUNDLE_NAME, APP_NAME, PAYLOAD1))
                 .invoke(Assertions::assertFalse)
         ).await().indefinitely();
+    }
+
+    private Uni<List<EmailAggregationKey>> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
+        String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.EmailAggregationKey(ea.accountId, ea.bundleName, ea.applicationName) " +
+                "FROM EmailAggregation ea WHERE ea.created > :start AND ea.created <= :end";
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createQuery(query, EmailAggregationKey.class)
+                    .setParameter("start", start)
+                    .setParameter("end", end)
+                    .getResultList();
+        });
     }
 }
