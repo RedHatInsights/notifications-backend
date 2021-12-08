@@ -1,7 +1,15 @@
 import { ActionGroup, Button, Modal, ModalVariant, Spinner, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
-export const DeleteModal = () => {
+import { useDeleteEventType } from '../services/DeleteEventType';
+import { EventType } from '../types/Notifications';
+
+interface DeleteModalProps {
+
+}
+export const DeleteModal: React.FunctionComponent<DeleteModalProps> = props => {
+    const deleteEventTypeMutation = useDeleteEventType();
+    const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
     const [ errors, setErrors ] = React.useState(true);
 
     const handleDelete = React.useCallback(() => {
@@ -9,7 +17,7 @@ export const DeleteModal = () => {
         const deleteEventType = deleteEventTypeMutation.mutate;
         deleteEventType(eventType.id).then (eventTypesQuery.query);
 
-    }, [ deleteEventTypeMutation.mutate, eventType.id, eventTypesQuery.query ]);
+    }, [ deleteEventTypeMutation.mutate ]);
 
     const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
         const target = event.target as HTMLInputElement;

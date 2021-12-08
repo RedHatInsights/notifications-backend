@@ -18,7 +18,6 @@ import { useParams } from 'react-router';
 
 import { DeleteModal } from '../components/DeleteModal';
 import { useCreateEventType } from '../services/CreateEventTypes';
-import { useDeleteEventType } from '../services/DeleteEventType';
 import { useApplicationTypes } from '../services/GetApplication';
 import { getBundleAction  } from '../services/GetBundleAction';
 import { useEventTypes } from '../services/GetEventTypes';
@@ -32,7 +31,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
-    const deleteEventTypeMutation = useDeleteEventType();
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
     const newEvent = useCreateEventType();
@@ -40,7 +38,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
-    const [ errors, setErrors ] = React.useState(true);
 
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
@@ -101,26 +98,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventType(e);
     };
 
-    // const handleDelete = React.useCallback(() => {
-    //     setShowDeleteModal(false);
-    //     const deleteEventType = deleteEventTypeMutation.mutate;
-    //     deleteEventType(eventType.id).then (eventTypesQuery.query);
-
-    // }, [ deleteEventTypeMutation.mutate, eventType.id, eventTypesQuery.query ]);
-
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
         setEventType(e);
     };
-
-    // const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
-    //     const target = event.target as HTMLInputElement;
-    //     if (target.value !== eventType.name) {
-    //         return setErrors(true);
-    //     } else if (target.value === eventType.name) {
-    //         return setErrors(false);
-    //     }
-    // };
 
     if (eventTypesQuery.loading) {
         return <Spinner />;
@@ -201,7 +182,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         </>
                                     </Modal>
                                     <React.Fragment>
-                                        <DeleteModal />
+                                        <DeleteModal
+                                            eventTypesQuery />
                                     </React.Fragment>
                                 </ToolbarItem>
                             </ToolbarContent>
