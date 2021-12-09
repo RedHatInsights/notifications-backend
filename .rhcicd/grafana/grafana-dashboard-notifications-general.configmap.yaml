@@ -2471,7 +2471,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 24
+      "version": 25
     }
 kind: ConfigMap
 metadata:
