@@ -25,7 +25,7 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1639054092570,
+      "iteration": 1639055159945,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -175,7 +175,7 @@ data:
         },
         {
           "datasource": "$datasource",
-          "description": "",
+          "description": "Number of pods currently UP",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -244,11 +244,12 @@ data:
               "refId": "A"
             }
           ],
-          "title": "Notifications Backend UP",
+          "title": "Notifications Backend - UPs",
           "type": "stat"
         },
         {
           "datasource": "$datasource",
+          "description": "",
           "fieldConfig": {
             "defaults": {
               "mappings": [],
@@ -303,12 +304,12 @@ data:
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "notifications backend - restarts",
+          "title": "Notifications Backend - Restarts",
           "type": "stat"
         },
         {
           "datasource": "$datasource",
-          "description": "",
+          "description": "Number of current restarts (since pod deployment)",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -377,7 +378,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "Notifications GW Pods UP",
+          "title": "Notifications GW - UPs",
           "type": "stat"
         },
         {
@@ -436,7 +437,7 @@ data:
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "notifications gw - restarts",
+          "title": "Notifications GW - Restarts",
           "type": "stat"
         },
         {
@@ -514,7 +515,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "rbac - maximum time spent by account",
+          "title": "RBAC - Maximum time spent by account",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -606,7 +607,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "rbac - failures",
+          "title": "RBAC - Failures",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -2539,9 +2540,9 @@ data:
           {
             "allValue": null,
             "current": {
-              "selected": false,
-              "text": "prod",
-              "value": "$datasource"
+              "selected": true,
+              "text": "crcs02ue1-prometheus",
+              "value": "crcs02ue1-prometheus"
             },
             "description": null,
             "error": null,
@@ -2552,17 +2553,17 @@ data:
             "name": "datasource",
             "options": [
               {
-                "selected": false,
-                "text": "stage",
+                "selected": true,
+                "text": "crcs02ue1-prometheus",
                 "value": "crcs02ue1-prometheus"
               },
               {
-                "selected": true,
-                "text": "prod",
-                "value": "$datasource"
+                "selected": false,
+                "text": "crcp01ue1-prometheus",
+                "value": "crcp01ue1-prometheus"
               }
             ],
-            "query": "crcs02ue1-prometheus, $datasource",
+            "query": "crcs02ue1-prometheus, crcp01ue1-prometheus",
             "queryValue": "",
             "skipUrlSync": false,
             "type": "custom"
@@ -2601,7 +2602,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 26
+      "version": 27
     }
 kind: ConfigMap
 metadata:
