@@ -50,4 +50,13 @@ public class EmailAggregationKey {
     public int hashCode() {
         return Objects.hash(accountId, bundle, application);
     }
+
+    @Override
+    public String toString() {
+        return "EmailAggregationKey{" +
+                "accountId='" + accountId + '\'' +
+                ", bundle='" + bundle + '\'' +
+                ", application='" + application + '\'' +
+                '}';
+    }
 }

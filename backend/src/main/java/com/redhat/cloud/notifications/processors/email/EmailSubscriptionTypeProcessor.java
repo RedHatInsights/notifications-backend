@@ -47,6 +47,9 @@ import java.util.stream.Stream;
 public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     public static final String AGGREGATION_CHANNEL = "aggregation";
+    public static final String AGGREGATION_COMMAND_REJECTED_COUNTER_NAME = "aggregation.command.rejected";
+    public static final String AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME = "aggregation.command.processed";
+    public static final String AGGREGATION_COMMAND_ERROR_COUNTER_NAME = "aggregation.command.error";
 
     private static final Logger LOGGER = Logger.getLogger(EmailSubscriptionTypeProcessor.class);
 
@@ -80,11 +83,17 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     @Inject
     MeterRegistry registry;
 
-    private Counter processedCount;
+    private Counter processedEmailCount;
+    private Counter rejectedAggregationCommandCount;
+    private Counter processedAggregationCommandCount;
+    private Counter failedAggregationCommandCount;
 
     @PostConstruct
     void postConstruct() {
-        processedCount = registry.counter("processor.email.processed");
+        processedEmailCount = registry.counter("processor.email.processed");
+        rejectedAggregationCommandCount = registry.counter(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME);
+        processedAggregationCommandCount = registry.counter(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME);
+        failedAggregationCommandCount = registry.counter(AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
     }
 
     @Override
@@ -126,7 +135,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     private Multi<NotificationHistory> sendEmail(Event event, Set<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType, EmailTemplate emailTemplate) {
-        processedCount.increment();
+        processedEmailCount.increment();
         Action action = event.getAction();
         if (!emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
             return Multi.createFrom().empty();
@@ -160,8 +169,12 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             aggregationCommand = objectMapper.readValue(aggregationCommandJson, AggregationCommand.class);
         } catch (JsonProcessingException e) {
             LOGGER.error("Kafka aggregation payload parsing failed", e);
+            rejectedAggregationCommandCount.increment();
             return Uni.createFrom().nullItem();
         }
+
+        LOGGER.infof("Processing received aggregation command: %s", aggregationCommand);
+        processedAggregationCommandCount.increment();
 
         return sessionFactory.withStatelessSession(statelessSession -> {
             return processAggregateEmailsByAggregationKey(
@@ -175,6 +188,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         })
         .onFailure().recoverWithUni(t -> {
             LOGGER.info("Error while processing aggregation", t);
+            failedAggregationCommandCount.increment();
             return Uni.createFrom().nullItem();
         });
     }

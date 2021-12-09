@@ -39,4 +39,14 @@ public class AggregationCommand {
     public EmailSubscriptionType getSubscriptionType() {
         return subscriptionType;
     }
+
+    @Override
+    public String toString() {
+        return "AggregationCommand{" +
+                "aggregationKey=" + aggregationKey +
+                ", start=" + start +
+                ", end=" + end +
+                ", subscriptionType=" + subscriptionType +
+                '}';
+    }
 }
