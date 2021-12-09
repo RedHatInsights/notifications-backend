@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.Json;
+import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
@@ -12,12 +13,9 @@ import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.AssertSubscriber;
-import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
@@ -27,11 +25,15 @@ import java.util.List;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
+import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_ERROR_COUNTER_NAME;
+import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME;
+import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_REJECTED_COUNTER_NAME;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
@@ -48,6 +50,9 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
 
     @InjectMock
     EmailAggregationResources emailAggregationResources;
+
+    @Inject
+    MicrometerAssertionHelper micrometerAssertionHelper;
 
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
@@ -70,7 +75,9 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
     }
 
     @Test
-    void shouldSuccessfullySendEmail() throws InterruptedException {
+    void shouldSuccessfullySendEmail() {
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
+
         AggregationCommand aggregationCommand1 = new AggregationCommand(
                 new EmailAggregationKey("account-1", "bundle-1", "app-1"),
                 LocalDateTime.now(),
@@ -84,13 +91,14 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
                 DAILY
         );
 
-        Mockito.when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
+        when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
 
         inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
         inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
 
-        // TODO Replace fixed delay with a dynamic one (wait until the message has been processed).
-        Thread.sleep(5000L);
+        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
+        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
+        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
 
         // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
         verify(emailAggregationResources, times(1)).getEmailAggregation(
@@ -113,15 +121,19 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
                 eq(aggregationCommand2.getEnd())
         );
         verifyNoMoreInteractions(emailAggregationResources);
+
+        micrometerAssertionHelper.clearSavedValues();
     }
 
     @Test
     void consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload() {
-        Uni<Void> consumeEmailAggregations = testee.consumeEmailAggregations("I am not valid!");
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
 
-        consumeEmailAggregations.subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
-                .assertItem(null);
+        inMemoryConnector.source(AGGREGATION_CHANNEL).send("I am not valid!");
+        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 0);
+        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
+
+        micrometerAssertionHelper.clearSavedValues();
     }
 }
