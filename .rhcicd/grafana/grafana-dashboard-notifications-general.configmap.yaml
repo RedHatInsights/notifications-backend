@@ -25,7 +25,7 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1639048844638,
+      "iteration": 1639054092570,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -44,7 +44,137 @@ data:
           "type": "row"
         },
         {
-          "datasource": "crcp01ue1-prometheus",
+          "datasource": "$datasource",
+          "description": "Visualization of SLO movement",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "links": [],
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 0.8
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 3,
+            "x": 0,
+            "y": 1
+          },
+          "id": 196,
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "text": {}
+          },
+          "pluginVersion": "8.2.7",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "avg_over_time(service:sli:status_5xx:pctl5rate5m{exported_service=\"notifications\"}[30d])",
+              "hide": false,
+              "instant": true,
+              "interval": "",
+              "legendFormat": "SLO at time [30d]",
+              "refId": "E"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "SLO for Error [30d]",
+          "type": "gauge"
+        },
+        {
+          "datasource": "$datasource",
+          "description": "Visualization of SLO movement",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "links": [],
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 0.8
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 3,
+            "x": 3,
+            "y": 1
+          },
+          "id": 198,
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "text": {}
+          },
+          "pluginVersion": "8.2.7",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "avg_over_time(service:sli:latency_gt_2000:pctl10rate5m{exported_service=\"notifications\"}[30d])",
+              "interval": "",
+              "legendFormat": "SLO at time [30d]",
+              "refId": "E"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "SLO for latency [30d]",
+          "type": "gauge"
+        },
+        {
+          "datasource": "$datasource",
           "description": "",
           "fieldConfig": {
             "defaults": {
@@ -82,9 +212,9 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 5,
-            "w": 7,
-            "x": 0,
+            "h": 4,
+            "w": 3,
+            "x": 7,
             "y": 1
           },
           "id": 181,
@@ -139,9 +269,9 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 5,
+            "h": 4,
             "w": 3,
-            "x": 7,
+            "x": 10,
             "y": 1
           },
           "id": 163,
@@ -177,7 +307,7 @@ data:
           "type": "stat"
         },
         {
-          "datasource": "crcp01ue1-prometheus",
+          "datasource": "$datasource",
           "description": "",
           "fieldConfig": {
             "defaults": {
@@ -215,8 +345,8 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 5,
-            "w": 7,
+            "h": 4,
+            "w": 3,
             "x": 14,
             "y": 1
           },
@@ -272,9 +402,9 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 5,
+            "h": 4,
             "w": 3,
-            "x": 21,
+            "x": 17,
             "y": 1
           },
           "id": 164,
@@ -316,7 +446,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 6
+            "y": 5
           },
           "id": 188,
           "panels": [],
@@ -335,7 +465,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 7
+            "y": 6
           },
           "hiddenSeries": false,
           "id": 153,
@@ -435,7 +565,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 7
+            "y": 6
           },
           "hiddenSeries": false,
           "id": 161,
@@ -522,7 +652,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 15
+            "y": 14
           },
           "id": 191,
           "panels": [],
@@ -541,7 +671,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 16
+            "y": 15
           },
           "hiddenSeries": false,
           "id": 172,
@@ -637,7 +767,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 16
+            "y": 15
           },
           "hiddenSeries": false,
           "id": 50,
@@ -743,7 +873,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 16
+            "y": 15
           },
           "hiddenSeries": false,
           "id": 144,
@@ -835,7 +965,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 16
+            "y": 15
           },
           "hiddenSeries": false,
           "id": 136,
@@ -922,7 +1052,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 24
+            "y": 23
           },
           "id": 179,
           "panels": [],
@@ -941,7 +1071,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 25
+            "y": 24
           },
           "hiddenSeries": false,
           "id": 174,
@@ -1045,7 +1175,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 25
+            "y": 24
           },
           "hiddenSeries": false,
           "id": 189,
@@ -1149,7 +1279,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 33
+            "y": 32
           },
           "hiddenSeries": false,
           "id": 113,
@@ -1243,7 +1373,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 33
+            "y": 32
           },
           "hiddenSeries": false,
           "id": 175,
@@ -1337,7 +1467,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 33
+            "y": 32
           },
           "hiddenSeries": false,
           "id": 176,
@@ -1440,7 +1570,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 33
+            "y": 32
           },
           "hiddenSeries": false,
           "id": 177,
@@ -1552,7 +1682,7 @@ data:
             "h": 7,
             "w": 12,
             "x": 0,
-            "y": 41
+            "y": 40
           },
           "hiddenSeries": false,
           "id": 166,
@@ -1642,7 +1772,7 @@ data:
             "h": 7,
             "w": 12,
             "x": 12,
-            "y": 41
+            "y": 40
           },
           "hiddenSeries": false,
           "id": 167,
@@ -1721,7 +1851,7 @@ data:
           }
         },
         {
-          "datasource": "crcp01ue1-prometheus",
+          "datasource": "$datasource",
           "description": "",
           "fieldConfig": {
             "defaults": {
@@ -1778,7 +1908,7 @@ data:
             "h": 5,
             "w": 6,
             "x": 0,
-            "y": 48
+            "y": 47
           },
           "id": 186,
           "options": {
@@ -1830,7 +1960,7 @@ data:
             "h": 5,
             "w": 6,
             "x": 6,
-            "y": 48
+            "y": 47
           },
           "id": 193,
           "options": {
@@ -1865,7 +1995,7 @@ data:
           "type": "stat"
         },
         {
-          "datasource": "crcp01ue1-prometheus",
+          "datasource": "$datasource",
           "description": "",
           "fieldConfig": {
             "defaults": {
@@ -1922,7 +2052,7 @@ data:
             "h": 5,
             "w": 6,
             "x": 12,
-            "y": 48
+            "y": 47
           },
           "id": 184,
           "options": {
@@ -1974,7 +2104,7 @@ data:
             "h": 5,
             "w": 6,
             "x": 18,
-            "y": 48
+            "y": 47
           },
           "id": 194,
           "options": {
@@ -2015,7 +2145,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 53
+            "y": 52
           },
           "id": 24,
           "panels": [],
@@ -2041,7 +2171,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 54
+            "y": 53
           },
           "hiddenSeries": false,
           "id": 22,
@@ -2172,7 +2302,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 54
+            "y": 53
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -2267,7 +2397,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 63
+            "y": 62
           },
           "hiddenSeries": false,
           "id": 85,
@@ -2411,7 +2541,7 @@ data:
             "current": {
               "selected": false,
               "text": "prod",
-              "value": "crcp01ue1-prometheus"
+              "value": "$datasource"
             },
             "description": null,
             "error": null,
@@ -2429,10 +2559,10 @@ data:
               {
                 "selected": true,
                 "text": "prod",
-                "value": "crcp01ue1-prometheus"
+                "value": "$datasource"
               }
             ],
-            "query": "crcs02ue1-prometheus, crcp01ue1-prometheus",
+            "query": "crcs02ue1-prometheus, $datasource",
             "queryValue": "",
             "skipUrlSync": false,
             "type": "custom"
@@ -2471,7 +2601,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 25
+      "version": 26
     }
 kind: ConfigMap
 metadata:
