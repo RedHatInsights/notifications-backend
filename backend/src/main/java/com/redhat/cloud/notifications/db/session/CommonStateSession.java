@@ -2,15 +2,17 @@ package com.redhat.cloud.notifications.db.session;
 
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
-import org.jboss.logging.Logger;
 
 import java.util.List;
 
 public interface CommonStateSession {
 
     <T> Uni<List<T>> find(Class<T> aClass, Object... ids);
+
     <T> Mutiny.Query<T> createQuery(String query, Class<T> aClass);
+
     Uni<Void> persist(Object object);
+
     Uni<Void> flush();
 }
 
@@ -54,7 +56,7 @@ class StatelessSessionAdapter implements CommonStateSession {
     public <T> Uni<List<T>> find(Class<T> aClass, Object... ids) {
         String query = "FROM " + aClass.getSimpleName() + " WHERE id IN (:ids)";
         return statelessSession.createQuery(query, aClass)
-                .setParameter("ids", ids)
+                .setParameter("ids", List.of(ids))
                 .getResultList();
     }
 

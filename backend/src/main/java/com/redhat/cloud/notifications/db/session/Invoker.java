@@ -8,6 +8,14 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This class deals with calls that the stateful session do but the stateless session does not.
+ *
+ * For example, the `@PrePersist` annotation.
+ *
+ * It heavily relies on introspection to find what methods have the required annotation.
+ * To lessen this burden, a cache is created per class once, so the methods are not inspected all the time.
+ */
 class Invoker {
 
     private static final Logger LOGGER = Logger.getLogger(Invoker.class);
@@ -20,7 +28,7 @@ class Invoker {
     private <T> InvokerCache get(Class<T> aClass) {
         return cacheMap.computeIfAbsent(aClass, _aClass -> {
             InvokerCache cache = new InvokerCache();
-            for (Method method: aClass.getDeclaredMethods()) {
+            for (Method method: aClass.getMethods()) {
                 PrePersist prePersist = method.getAnnotation(PrePersist.class);
                 if (prePersist != null) {
                     cache.prePersist = method;

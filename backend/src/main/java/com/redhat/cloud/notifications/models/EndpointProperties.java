@@ -11,6 +11,7 @@ import javax.persistence.OneToOne;
 import java.util.Objects;
 import java.util.UUID;
 
+import static javax.persistence.FetchType.EAGER;
 import static javax.persistence.FetchType.LAZY;
 
 @MappedSuperclass
@@ -25,7 +26,7 @@ public abstract class EndpointProperties {
     private UUID id;
 
     @MapsId
-    @OneToOne(fetch = LAZY)
+    @OneToOne(fetch = EAGER) // Todo: This was causing issues on the stateless session createEndpoint - Revisit
     @JoinColumn(name = "id")
     @JsonIgnore
     private Endpoint endpoint;
