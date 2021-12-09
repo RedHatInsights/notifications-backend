@@ -2,12 +2,12 @@ import { ActionGroup, Button, Modal, ModalVariant, Spinner, TextInput } from '@p
 import React from 'react';
 
 import { useDeleteEventType } from '../services/DeleteEventType';
-import { EventType } from '../types/Notifications';
 
 interface DeleteModalProps {
+    delete(id:string): Promise<boolean>
 
 }
-export const DeleteModal: React.FunctionComponent<DeleteModalProps> = props => {
+export const DeleteModal: React.FunctionComponent<DeleteModalProps> = () => {
     const deleteEventTypeMutation = useDeleteEventType();
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
     const [ errors, setErrors ] = React.useState(true);
