@@ -5,19 +5,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.CronJobRun;
-import io.micrometer.core.instrument.MeterRegistry;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.Gauge;
+import io.prometheus.client.exporter.PushGateway;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.jboss.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.EmailSubscriptionType.DAILY;
@@ -34,48 +37,69 @@ public class DailyEmailAggregationJob {
     private final EmailAggregationResources emailAggregationResources;
     private final ObjectMapper objectMapper;
 
-    MeterRegistry registry;
-
-    private final AtomicInteger processedGauge;
+    @ConfigProperty(name = "prometheus.pushgateway.url")
+    String prometheusPushGatewayUrl;
 
     @Inject
     @Channel(AGGREGATION_CHANNEL)
     Emitter<String> emitter;
 
-    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper, MeterRegistry registry) {
+    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper) {
         this.emailAggregationResources = emailAggregationResources;
         this.objectMapper = objectMapper;
-        this.registry = registry;
-
-        processedGauge = registry.gauge("daily.email.aggregation.job.processed", new AtomicInteger(0));
     }
 
     @ActivateRequestContext
     public void processDailyEmail() {
-        LocalDateTime now = LocalDateTime.now(UTC);
-        List<AggregationCommand> aggregationCommands = processAggregateEmails(now);
+        CollectorRegistry registry = new CollectorRegistry();
+        Gauge duration = Gauge
+                .build()
+                .name("aggregator_job_duration_seconds")
+                .help("Duration of the aggregator job in seconds.")
+                .register(registry);
+        Gauge.Timer durationTimer = duration.startTimer();
 
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-        for (AggregationCommand aggregationCommand : aggregationCommands) {
-            try {
-                final String payload = objectMapper.writeValueAsString(aggregationCommand);
-                futures.add(emitter.send(payload).toCompletableFuture());
-            } catch (JsonProcessingException e) {
-                LOG.warn("Could not transform AggregationCommand to JSON object.", e);
+        try {
+            LocalDateTime now = LocalDateTime.now(UTC);
+
+            List<AggregationCommand> aggregationCommands = processAggregateEmails(now, registry);
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
+            for (AggregationCommand aggregationCommand : aggregationCommands) {
+                try {
+                    final String payload = objectMapper.writeValueAsString(aggregationCommand);
+                    futures.add(emitter.send(payload).toCompletableFuture());
+                } catch (JsonProcessingException e) {
+                    LOG.warn("Could not transform AggregationCommand to JSON object.", e);
+                }
+
+                // resolve completable futures so the Quarkus main thread doesn't stop before everything has been sent
+                try {
+                    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get();
+                } catch (InterruptedException | ExecutionException ie) {
+                    LOG.error("Writing AggregationCommands failed", ie);
+                }
             }
 
-            // resolve completable futures so the Quarkus main thread doesn't stop before everything has been sent
+            emailAggregationResources.updateLastCronJobRun(now);
+
+            Gauge lastSuccess = Gauge
+                    .build()
+                    .name("aggregator_job_last_success")
+                    .help("Last time the aggregator job succeeded.")
+                    .register(registry);
+            lastSuccess.setToCurrentTime();
+        } finally {
+            durationTimer.setDuration();
+            PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
             try {
-                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get();
-            } catch (InterruptedException | ExecutionException ie) {
-                LOG.error("Writing AggregationCommands failed", ie);
+                pg.pushAdd(registry, "aggregator_job");
+            } catch (IOException e) {
+                LOG.warn("Could not push metrics to Prometheus Pushgateway.");
             }
         }
-
-        emailAggregationResources.updateLastCronJobRun(now);
     }
 
-    List<AggregationCommand> processAggregateEmails(LocalDateTime endTime) {
+    List<AggregationCommand> processAggregateEmails(LocalDateTime endTime, CollectorRegistry registry) {
         final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
         LocalDateTime startTime = lastCronJobRun.getLastRun();
 
@@ -96,7 +120,12 @@ public class DailyEmailAggregationJob {
                 pendingAggregationCommands.size()
         );
 
-        processedGauge.set(pendingAggregationCommands.size());
+        Gauge pairsProcessed = Gauge
+                .build()
+                .name("aggregator_job_accountid_application_pairs_processed")
+                .help("Number of accountId and application pairs processed.")
+                .register(registry);
+        pairsProcessed.set(pendingAggregationCommands.size());
 
         return pendingAggregationCommands;
     }

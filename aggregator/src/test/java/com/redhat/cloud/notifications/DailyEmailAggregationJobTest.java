@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.prometheus.client.CollectorRegistry;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -38,7 +38,6 @@ class DailyEmailAggregationJobTest {
     @BeforeEach
     void setUp() {
         helpers.purgeEmailAggregations();
-        testee.registry = new SimpleMeterRegistry();
     }
 
     @AfterEach
@@ -79,7 +78,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("tenant", "unknown-bundle", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("tenant", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
 
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(4, emailAggregations.size());
     }
@@ -90,7 +89,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
 
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
 
@@ -107,7 +106,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId1", "someHostId");
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId2", "someHostId");
 
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
     }
@@ -118,7 +117,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId1");
         helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId2");
 
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
     }
@@ -126,7 +125,7 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldProcessZeroAggregations() {
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC));
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(0, emailAggregations.size());
     }
