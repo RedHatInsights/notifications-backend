@@ -78,6 +78,9 @@ parameters:
 - name: ENV_NAME
   description: ClowdEnvironment name (ephemeral, stage, prod)
   required: true
+- name: PROMETHEUS_PUSHGATEWAY
+  description: Prometheus Pushgateway URL
+  required: true
 - name: IMAGE
   description: Image URL
   value: quay.io/cloudservices/notifications-aggregator
