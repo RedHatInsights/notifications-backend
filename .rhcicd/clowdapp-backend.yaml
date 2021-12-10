@@ -75,10 +75,6 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
-        - name: MP_MESSAGING_INCOMING_AGGREGATION_ENABLED
-          value: ${KAFKA_AGGREGATION_ENABLED}
-        - name: MP_MESSAGING_INCOMING_INGRESS_ENABLED
-          value: ${KAFKA_INGRESS_ENABLED}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
           value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
@@ -244,10 +240,6 @@ parameters:
   value: quay.io/cloudservices/notifications-backend
 - name: IMAGE_TAG
   value: latest
-- name: KAFKA_AGGREGATION_ENABLED
-  value: "true"
-- name: KAFKA_INGRESS_ENABLED
-  value: "true"
 - name: MEMORY_LIMIT
   description: Memory limit
   value: 500Mi
