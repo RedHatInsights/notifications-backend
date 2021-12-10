@@ -23,7 +23,6 @@ public class EventLogEntryAction {
     @NotNull
     private Boolean invocationResult;
 
-    @NotNull
     private UUID endpointId;
 
     @Nullable
