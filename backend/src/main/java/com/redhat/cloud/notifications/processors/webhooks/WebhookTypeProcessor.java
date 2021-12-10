@@ -117,25 +117,25 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                         .onItem().transform(resp -> {
                             NotificationHistory history = buildNotificationHistory(item, startTime);
 
+                            HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
+
                             boolean serverError = false;
                             if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
                                 // Accepted
-                                LOGGER.debugf("Target endpoint successful: %d", resp.statusCode());
+                                LOGGER.debugf("Webhook request to %s was successful: %d", reqImpl.host(), resp.statusCode());
                                 history.setInvocationResult(true);
                             } else if (resp.statusCode() >= 500) {
                                 // Temporary error, allow retry
                                 serverError = true;
-                                LOGGER.debugf("Target endpoint server error: %d %s", resp.statusCode(), resp.statusMessage());
+                                LOGGER.debugf("Webhook request to %s failed: %d %s", reqImpl.host(), resp.statusCode(), resp.statusMessage());
                                 history.setInvocationResult(false);
                             } else {
                                 // Disable the target endpoint, it's not working correctly for us (such as 400)
                                 // must be manually re-enabled
                                 // Redirects etc should have been followed by the vertx (test this)
-                                LOGGER.debugf("Target endpoint error: %d %s %s", resp.statusCode(), resp.statusMessage(), json);
+                                LOGGER.debugf("Webhook request to %s failed: %d %s %s", reqImpl.host(), resp.statusCode(), resp.statusMessage(), json);
                                 history.setInvocationResult(false);
                             }
-
-                            HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
 
                             if (!history.isInvocationResult()) {
                                 JsonObject details = new JsonObject();
