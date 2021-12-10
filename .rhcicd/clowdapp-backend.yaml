@@ -204,7 +204,7 @@ parameters:
   value: qa
 - name: BACKOFFICE_HOST
   description: backoffice URL
-  value: backoffice-proxy-insights-services.ext.us-east.aws.preprod.paas.redhat.com
+  value: backoffice-proxy.apps.ext.spoke.preprod.us-west-2.aws.paas.redhat.com
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
   value: "false"
