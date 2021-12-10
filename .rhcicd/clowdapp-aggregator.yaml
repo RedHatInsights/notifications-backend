@@ -61,6 +61,8 @@ objects:
           value: https://39032857c8214cedaf226c4a26709b5b@o271843.ingest.sentry.io/5987783?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: PROMETHEUS_PUSH_GATEWAY
+        - value: ${PROMETHEUS_PUSHGATEWAY}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
