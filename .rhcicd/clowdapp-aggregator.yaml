@@ -62,7 +62,7 @@ objects:
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
         - name: PROMETHEUS_PUSH_GATEWAY
-        - value: ${PROMETHEUS_PUSHGATEWAY}
+          value: ${PROMETHEUS_PUSHGATEWAY}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
