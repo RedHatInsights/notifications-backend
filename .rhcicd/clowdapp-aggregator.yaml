@@ -62,7 +62,7 @@ objects:
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
         - name: PROMETHEUS_PUSHGATEWAY_URL
-          value: ${PROMETHEUS_PUSHGATEWAY_URL}
+          value: ${PROMETHEUS_PUSHGATEWAY}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -78,7 +78,7 @@ parameters:
 - name: ENV_NAME
   description: ClowdEnvironment name (ephemeral, stage, prod)
   required: true
-- name: PROMETHEUS_PUSHGATEWAY_URL
+- name: PROMETHEUS_PUSHGATEWAY
   description: Prometheus Pushgateway URL
   required: true
 - name: IMAGE
