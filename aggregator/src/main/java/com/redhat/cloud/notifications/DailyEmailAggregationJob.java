@@ -94,7 +94,7 @@ public class DailyEmailAggregationJob {
             try {
                 pg.pushAdd(registry, "aggregator_job");
             } catch (IOException e) {
-                LOG.warn("Could not push metrics to Prometheus Pushgateway.");
+                LOG.warn("Could not push metrics to Prometheus Pushgateway.", e);
             }
         }
     }
