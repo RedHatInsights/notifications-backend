@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.Gauge;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -68,6 +69,20 @@ class DailyEmailAggregationJobTest {
         assertTrue(secondAggregation.contains("bundle\":\"rhel"));
         assertTrue(secondAggregation.contains("application\":\"unknown-application"));
         assertTrue(secondAggregation.contains("subscriptionType\":\"DAILY"));
+    }
+
+    @Test
+    @TestTransaction
+    void shouldProcessFourPairs() {
+        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "unknown-bundle", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
+
+        testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
+        final Gauge pairsProcessed = testee.getPairsProcessed();
+
+        assertEquals(4.0, pairsProcessed.get());
     }
 
     @Test

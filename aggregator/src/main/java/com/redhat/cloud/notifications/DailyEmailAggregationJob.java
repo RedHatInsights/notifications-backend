@@ -44,6 +44,8 @@ public class DailyEmailAggregationJob {
     @Channel(AGGREGATION_CHANNEL)
     Emitter<String> emitter;
 
+    private Gauge pairsProcessed;
+
     public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper) {
         this.emailAggregationResources = emailAggregationResources;
         this.objectMapper = objectMapper;
@@ -120,7 +122,7 @@ public class DailyEmailAggregationJob {
                 pendingAggregationCommands.size()
         );
 
-        Gauge pairsProcessed = Gauge
+        pairsProcessed = Gauge
                 .build()
                 .name("aggregator_job_accountid_application_pairs_processed")
                 .help("Number of accountId and application pairs processed.")
@@ -128,5 +130,9 @@ public class DailyEmailAggregationJob {
         pairsProcessed.set(pendingAggregationCommands.size());
 
         return pendingAggregationCommands;
+    }
+
+    Gauge getPairsProcessed() {
+        return pairsProcessed;
     }
 }
