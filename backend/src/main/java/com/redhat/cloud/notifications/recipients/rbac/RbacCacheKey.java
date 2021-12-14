@@ -14,8 +14,12 @@ public class RbacCacheKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         RbacCacheKey that = (RbacCacheKey) o;
         return adminsOnly == that.adminsOnly && Objects.equals(accountId, that.accountId);
     }
