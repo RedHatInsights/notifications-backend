@@ -1,10 +1,13 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics;
 import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Multi;
@@ -46,20 +49,33 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
     Duration maxBackOff;
 
-    @Inject
     MeterRegistry meterRegistry;
 
+    private Cache rbacCache;
+
     private Counter failuresCounter;
+
+    public RbacRecipientUsersProvider(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+
+        this.rbacCache = Caffeine.newBuilder().recordStats().build();
+        CaffeineCacheMetrics.monitor(meterRegistry, rbacCache, "rbac-recipient-users-provider-get-users");
+    }
 
     @PostConstruct
     public void initCounters() {
         failuresCounter = meterRegistry.counter("rbac.failures");
     }
 
-    @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
+        List<User> cachedValue = (List<User>) rbacCache.getIfPresent(new RbacCacheKey(accountId, adminsOnly));
+
+        if (cachedValue != null && !cachedValue.isEmpty()) {
+            return Uni.createFrom().item(cachedValue);
+        }
+
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
-        return getWithPagination(
+        final Uni<List<User>> rbacCachedUsers = getWithPagination(
             page -> {
                 Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
                 return retryOnError(
@@ -69,6 +85,10 @@ public class RbacRecipientUsersProvider {
             }
         )
         .onItem().invoke(users -> getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size()))));
+
+        rbacCache.put(new RbacCacheKey(accountId, adminsOnly), rbacCachedUsers.await().indefinitely());
+
+        return rbacCachedUsers;
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
