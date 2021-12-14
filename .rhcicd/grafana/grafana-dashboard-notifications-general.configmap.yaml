@@ -25,7 +25,7 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1639055159945,
+      "iteration": 1639487061866,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -249,7 +249,7 @@ data:
         },
         {
           "datasource": "$datasource",
-          "description": "",
+          "description": "Number of current restarts (since pod deployment)",
           "fieldConfig": {
             "defaults": {
               "mappings": [],
@@ -309,7 +309,7 @@ data:
         },
         {
           "datasource": "$datasource",
-          "description": "Number of current restarts (since pod deployment)",
+          "description": "Number of pods currently UP",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -383,6 +383,7 @@ data:
         },
         {
           "datasource": "$datasource",
+          "description": "Number of current restarts (since pod deployment)",
           "fieldConfig": {
             "defaults": {
               "mappings": [],
@@ -666,6 +667,7 @@ data:
           "dashLength": 10,
           "dashes": false,
           "datasource": "$datasource",
+          "description": "In events per min",
           "fill": 1,
           "fillGradient": 0,
           "gridPos": {
@@ -698,14 +700,14 @@ data:
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
-          "stack": false,
+          "stack": true,
           "steppedLine": false,
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(input_consumed_seconds_count{service=\"notifications-backend-service\"}[5m])) by (application)",
+              "expr": "sum(rate(input_consumed_seconds_count{service=\"notifications-backend-service\"}[5m])) by (application,bundle)",
               "interval": "",
-              "legendFormat": "{{application}}",
+              "legendFormat": "{{bundle}}/{{application}}",
               "refId": "A"
             }
           ],
@@ -713,7 +715,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "event consumptions per application",
+          "title": "Events consumption per application",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -756,6 +758,7 @@ data:
           "dashLength": 10,
           "dashes": false,
           "datasource": "$datasource",
+          "description": "",
           "fieldConfig": {
             "defaults": {
               "links": []
@@ -795,7 +798,7 @@ data:
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
-          "stack": false,
+          "stack": true,
           "steppedLine": false,
           "targets": [
             {
@@ -823,7 +826,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "payload processed",
+          "title": "Payload processed",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -915,7 +918,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "processed email notifications",
+          "title": "Processed email notifications",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1007,7 +1010,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "processed webhook notifications",
+          "title": "Processed webhook notifications",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1098,7 +1101,7 @@ data:
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
-          "stack": false,
+          "stack": true,
           "steppedLine": false,
           "targets": [
             {
@@ -1125,7 +1128,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "http requests per minute (Backend)",
+          "title": "HTTP requests per minute (Backend)",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1202,7 +1205,7 @@ data:
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
-          "stack": false,
+          "stack": true,
           "steppedLine": false,
           "targets": [
             {
@@ -1229,7 +1232,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "http requests per minute (GW)",
+          "title": "HTTP requests per minute (GW)",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1971,7 +1974,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                "sum"
+                "delta"
               ],
               "fields": "",
               "values": false
@@ -2115,7 +2118,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                "sum"
+                "delta"
               ],
               "fields": "",
               "values": false
@@ -2540,9 +2543,9 @@ data:
           {
             "allValue": null,
             "current": {
-              "selected": true,
-              "text": "stage",
-              "value": "crcs02ue1-prometheus"
+              "selected": false,
+              "text": "prod",
+              "value": "crcp01ue1-prometheus"
             },
             "description": null,
             "error": null,
@@ -2553,12 +2556,12 @@ data:
             "name": "datasource",
             "options": [
               {
-                "selected": true,
+                "selected": false,
                 "text": "stage",
                 "value": "crcs02ue1-prometheus"
               },
               {
-                "selected": false,
+                "selected": true,
                 "text": "prod",
                 "value": "crcp01ue1-prometheus"
               }
@@ -2571,7 +2574,7 @@ data:
         ]
       },
       "time": {
-        "from": "now-7d",
+        "from": "now-24h",
         "to": "now"
       },
       "timepicker": {
@@ -2602,7 +2605,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 28
+      "version": 29
     }
 kind: ConfigMap
 metadata:
