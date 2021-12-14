@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: notifications-post-deployment-tests
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdJobInvocation
+  metadata:
+    name: notifications-post-deployment-tests-${IMAGE_TAG}-${UID}
+  spec:
+    appName: notifications-backend
+    testing:
+      iqe:
+        debug: false
+        dynaconfEnvName: stage_proxy
+        filter: ''
+        marker: 'core'
+parameters:
+- name: IMAGE_TAG
+  value: ''
+  required: true
+- name: UID
+  description: "Unique CJI name suffix"
+  generate: expression
+  from: "[a-z0-9]{6}"
