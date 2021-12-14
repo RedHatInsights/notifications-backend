@@ -44,7 +44,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     public static final String PROCESSED_COUNTER_NAME = "processor.camel.processed";
     public static final String TOKEN_HEADER = "X-Insight-Token";
     public static final String NOTIF_METADATA_KEY = "notif-metadata";
-    public static final String CLOUD_EVENT_EXTENSION_KEY = "rh-account";
+    public static final String CLOUD_EVENT_ACCOUNT_EXTENSION_KEY = "rh-account";
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     public static final String CAMEL_SUBTYPE_HEADER = "CAMEL_SUBTYPE";
 
@@ -141,7 +141,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         Message<String> msg = Message.of(body.encode());
         msg = msg.addMetadata(OutgoingCloudEventMetadata.builder()
                 .withId(historyId.toString())
-                .withExtension(CLOUD_EVENT_EXTENSION_KEY, accountId)
+                .withExtension(CLOUD_EVENT_ACCOUNT_EXTENSION_KEY, accountId)
                 .withType(CLOUD_EVENT_TYPE_PREFIX + subType)
                 .build()
         );

@@ -36,7 +36,7 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CAMEL_SUBTYPE_HEADER;
-import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CLOUD_EVENT_EXTENSION_KEY;
+import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CLOUD_EVENT_ACCOUNT_EXTENSION_KEY;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CLOUD_EVENT_TYPE_PREFIX;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.NOTIF_METADATA_KEY;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.PROCESSED_COUNTER_NAME;
@@ -190,7 +190,7 @@ public class CamelTypeProcessorTest {
     private static void checkCloudEventMetadata(Message<String> message, UUID expectedId, String expectedAccountId, String expectedSubType) {
         CloudEventMetadata metadata = message.getMetadata(CloudEventMetadata.class).get();
         assertEquals(expectedId.toString(), metadata.getId());
-        assertEquals(expectedAccountId, metadata.getExtension(CLOUD_EVENT_EXTENSION_KEY).get());
+        assertEquals(expectedAccountId, metadata.getExtension(CLOUD_EVENT_ACCOUNT_EXTENSION_KEY).get());
         assertEquals(CLOUD_EVENT_TYPE_PREFIX + expectedSubType, metadata.getType());
     }
 
