@@ -61,6 +61,8 @@ objects:
           value: https://39032857c8214cedaf226c4a26709b5b@o271843.ingest.sentry.io/5987783?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: PROMETHEUS_PUSHGATEWAY_URL
+          value: ${PROMETHEUS_PUSHGATEWAY}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -75,6 +77,9 @@ parameters:
   value: 500m
 - name: ENV_NAME
   description: ClowdEnvironment name (ephemeral, stage, prod)
+  required: true
+- name: PROMETHEUS_PUSHGATEWAY
+  description: Prometheus Pushgateway URL
   required: true
 - name: IMAGE
   description: Image URL
