@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.db.NotificationResources;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.Json;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -9,6 +11,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.logging.Logger;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.Map;
@@ -21,6 +24,8 @@ import java.util.Map;
 public class FromCamelHistoryFiller {
 
     public static final String FROMCAMEL_CHANNEL = "fromCamel";
+    public static final String MESSAGES_ERROR_COUNTER_NAME = "camel.messages.error";
+    public static final String MESSAGES_PROCESSED_COUNTER_NAME = "camel.messages.processed";
 
     private static final Logger log = Logger.getLogger(FromCamelHistoryFiller.class);
 
@@ -29,6 +34,18 @@ public class FromCamelHistoryFiller {
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
+
+    @Inject
+    MeterRegistry meterRegistry;
+
+    private Counter messagesProcessedCounter;
+    private Counter messagesErrorCounter;
+
+    @PostConstruct
+    void init() {
+        messagesProcessedCounter = meterRegistry.counter(MESSAGES_PROCESSED_COUNTER_NAME);
+        messagesErrorCounter = meterRegistry.counter(MESSAGES_ERROR_COUNTER_NAME);
+    }
 
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
     @Incoming(FROMCAMEL_CHANNEL)
@@ -45,13 +62,12 @@ public class FromCamelHistoryFiller {
                                 );
                     });
                 })
-                .onItemOrFailure()
-                .transformToUni((unused, t) -> {
-                    if (t != null) {
-                        log.error("|  Failure to update the history", t);
-                    }
+                .onFailure().recoverWithUni(t -> {
+                    messagesErrorCounter.increment();
+                    log.error("|  Failure to update the history", t);
                     return Uni.createFrom().voidItem();
-                });
+                })
+                .eventually(() -> messagesProcessedCounter.increment());
     }
 
     private Map<String, Object> decodeItem(String s) {
