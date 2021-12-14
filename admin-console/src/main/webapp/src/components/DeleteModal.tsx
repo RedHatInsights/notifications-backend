@@ -1,29 +1,35 @@
 import { ActionGroup, Button, Modal, ModalVariant, Spinner, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
-import { useDeleteEventType } from '../services/DeleteEventType';
+import { Application, Bundle, EventType } from '../types/Notifications';
 
 interface DeleteModalProps {
-    delete(id:string): Promise<boolean>
+    eventType?: EventType;
+    onDelete: (eventType: EventType) => Promise<boolean>;
+    bundle: Bundle;
+    application: Application;
 
 }
-export const DeleteModal: React.FunctionComponent<DeleteModalProps> = () => {
-    const deleteEventTypeMutation = useDeleteEventType();
+export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) => {
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
     const [ errors, setErrors ] = React.useState(true);
 
-    const handleDelete = React.useCallback(() => {
-        setShowDeleteModal(false);
-        const deleteEventType = deleteEventTypeMutation.mutate;
-        deleteEventType(eventType.id).then (eventTypesQuery.query);
+    const onDelete = React.useCallback(() => {
+        const eventType = props.eventType;
+        const onDelete = props.onDelete;
+        if (eventType) {
+            return onDelete(eventType);
+        }
 
-    }, [ deleteEventTypeMutation.mutate ]);
+        return false;
+
+    }, [ props.eventType, props.onDelete ]);
 
     const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
         const target = event.target as HTMLInputElement;
-        if (target.value !== eventType.name) {
+        if (target.value !== props.eventType?.name) {
             return setErrors(true);
-        } else if (target.value === eventType.name) {
+        } else if (target.value === props.eventType?.name) {
             return setErrors(false);
         }
     };
@@ -33,22 +39,20 @@ export const DeleteModal: React.FunctionComponent<DeleteModalProps> = () => {
             <React.Fragment>
                 <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ showDeleteModal }
                     onClose={ () => setShowDeleteModal(false) }
-                    title={ `Permanently delete ${ eventType.name }` }>
-                    { <b>{ eventType.name }</b> } {`from  ${ bundle ? bundle.display_name :
-                        <Spinner /> }/${ (applicationTypesQuery.loading
-                                             || applicationTypesQuery.payload?.status !== 200) ?
-                        <Spinner /> : applicationTypesQuery.payload.value.displayName } will be deleted. 
-                                                If an application is currently sending this event, it will no longer be processed.`}
+                    title={ `Permanently delete ${ props.eventType?.name }` }>
+                    { <b>{ props.eventType?.name }</b> } {`from  ${ props.bundle ? props.bundle.displayName :
+                        <Spinner /> }/${ props.application.displayName } will be deleted. 
+                        If an application is currently sending this event, it will no longer be processed.`}
                     <br />
                     <br />
-                        Type <b>{ eventType.name }</b> to confirm:
+                        Type <b>{ props.eventType?.name }</b> to confirm:
                     <br />
                     <TextInput type='text' onChange={ handleDeleteChange } id='name' name="name" isRequired />
                     <br />
                     <br />
                     <ActionGroup>
                         <Button variant='danger' type='button' isDisabled = { errors }
-                            onClick={ handleDelete }>Delete</Button>
+                            onClick={ onDelete }>Delete</Button>
                         <Button variant='link' type='button' onClick={ () => setShowDeleteModal(false) }>Cancel</Button>
                     </ActionGroup>
                 </Modal>

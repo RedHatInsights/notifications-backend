@@ -18,6 +18,7 @@ import { useParams } from 'react-router';
 
 import { DeleteModal } from '../components/DeleteModal';
 import { useCreateEventType } from '../services/CreateEventTypes';
+import { useDeleteEventType } from '../services/DeleteEventType';
 import { useApplicationTypes } from '../services/GetApplication';
 import { getBundleAction  } from '../services/GetBundleAction';
 import { useEventTypes } from '../services/GetEventTypes';
@@ -31,6 +32,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
+    const deleteEventTypeMutation = useDeleteEventType();
+
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
     const newEvent = useCreateEventType();
@@ -97,6 +100,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setIsEdit(true);
         setEventType(e);
     };
+
+    const onDelete = React.useCallback(() => {
+        setShowDeleteModal(false);
+        const deleteEventType = deleteEventTypeMutation.mutate;
+        deleteEventType(eventType.id)
+        .then (eventTypesQuery.query);
+
+    }, [ deleteEventTypeMutation.mutate, eventType.id, eventTypesQuery.query ]);
 
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
@@ -182,8 +193,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         </>
                                     </Modal>
                                     <React.Fragment>
-                                        <DeleteModal
-                                            eventTypesQuery />
+                                        <DeleteModal />
                                     </React.Fragment>
                                 </ToolbarItem>
                             </ToolbarContent>
