@@ -84,9 +84,10 @@ public class RbacRecipientUsersProvider {
                 .onItem().invoke(() -> getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId)));
             }
         )
-            .onItem().invoke(users -> getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size()))));
-
-        rbacCache.put(new RbacCacheKey(accountId, adminsOnly), rbacCachedUsers.await().indefinitely());
+            .onItem().invoke(users -> {
+                rbacCache.put(new RbacCacheKey(accountId, adminsOnly), users);
+                getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
+            });
 
         return rbacCachedUsers;
     }
