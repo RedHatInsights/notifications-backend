@@ -16,7 +16,7 @@ objects:
         imagePullSecrets:
           - name: quay-cloudservices-pull
         containers:
-          - image: quay.io/cloudservices/iqe-tests:latest
+          - image: quay.io/cloudservices/iqe-tests:notifications
             imagePullPolicy: Always
             name: notifications-acceptance-iqe
             command:
@@ -25,10 +25,10 @@ objects:
               - plugin
               - notifications
               - "-m"
-              - stage_health
+              - smoke
             env:
               - name: ENV_FOR_DYNACONF
-                value: stage_gating
+                value: stage
               - name: IQE_PLUGINS
                 value: notifications
               - name: IQE_TESTS_LOCAL_CONF_PATH
