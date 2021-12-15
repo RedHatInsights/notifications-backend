@@ -92,7 +92,6 @@ public class DailyEmailAggregationJob {
             lastSuccess.setToCurrentTime();
         } finally {
             durationTimer.setDuration();
-            LOG.infof("Creating Prometheus Push Gateway connection to: %s", prometheusPushGatewayUrl);
             PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
             try {
                 pg.pushAdd(registry, "aggregator_job");
