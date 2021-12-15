@@ -14,10 +14,12 @@ public class CommonStateSessionFactory {
     Mutiny.SessionFactory sessionFactory;
 
     /**
-     * Creates a stateless or stateful session depending the provided params.
+     * Creates a stateless or stateful session depending on the provided params.
      *
      * It is useful in the cases when we need to support both session types in our code to avoid repeating the functions
      * or adding extra logic to handle each case by separate.
+     *
+     * As a rule of thumb, we would use a stateful session on rest calls and stateless on kafka messages
      *
      * <pre>
      * {@code
