@@ -69,6 +69,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
         return undefined;
     }, [ bundleNameQuery.payload?.status, bundleNameQuery.payload?.value ]);
 
+    const application = useMemo(() => {
+        if (applicationTypesQuery.payload?.status === 200) {
+            return applicationTypesQuery.payload.value;
+        }
+
+        return undefined;
+    }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
+
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
@@ -105,17 +113,21 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setShowDeleteModal(false);
         const deleteEventType = deleteEventTypeMutation.mutate;
         const response = await deleteEventType(eventType.id);
-        eventTypesQuery.query();
         if (response.error) {
             return false;
         }
 
         return true;
-    }, [ deleteEventTypeMutation.mutate, eventType.id, eventTypesQuery ]);
+    }, [ deleteEventTypeMutation.mutate, eventType.id ]);
 
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
         setEventType(e);
+    };
+
+    const onClose = () => {
+        setShowDeleteModal(false);
+        eventTypesQuery.query();
     };
 
     if (eventTypesQuery.loading) {
@@ -198,7 +210,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         <DeleteModal
                                             onDelete={ handleDelete }
                                             isOpen={ showDeleteModal }
-                                            onClose={ () => setShowDeleteModal(false) } />
+                                            onClose={ onClose }
+                                            eventTypeName={ eventType.name }
+                                            applicationName={ application?.displayName }
+                                            bundleName={ bundle?.display_name }
+
+                                        />
                                     </React.Fragment>
                                 </ToolbarItem>
                             </ToolbarContent>

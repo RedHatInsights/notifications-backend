@@ -1,63 +1,61 @@
 import { ActionGroup, Button, Modal, ModalVariant, Spinner, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
-import { Application, Bundle, EventType } from '../types/Notifications';
+import { EventType } from '../types/Notifications';
 
 interface DeleteModalProps {
-    eventType?: EventType;
+    eventTypeName?: string;
     onDelete: (eventType: EventType) => Promise<boolean>;
-    bundle?: Bundle;
-    application?: Application;
+    bundleName?: string;
+    applicationName?: string;
     isOpen: boolean;
-    onClose: (deleted: boolean) => void;
+    onClose: () => void;
 
 }
 export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) => {
     const [ errors, setErrors ] = React.useState(true);
 
     const onDelete = React.useCallback(() => {
-        const eventType = props.eventType;
+        const eventType = props.eventTypeName;
         const onDelete = props.onDelete;
         if (eventType) {
-            return onDelete(eventType);
+            return onDelete;
         }
 
         return false;
 
-    }, [ props.eventType, props.onDelete ]);
+    }, [ props.eventTypeName, props.onDelete ]);
 
     const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
         const target = event.target as HTMLInputElement;
-        if (target.value !== props.eventType?.name) {
+        if (target.value !== props.eventTypeName) {
             return setErrors(true);
-        } else if (target.value === props.eventType?.name) {
+        } else if (target.value === props.eventTypeName) {
             return setErrors(false);
         }
     };
 
     return (
-        <Modal>
-            <React.Fragment>
-                <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ props.isOpen }
-                    onClose={ () => props.onClose }
-                    title={ `Permanently delete ${ props.eventType?.name }` }>
-                    { <b>{ props.eventType?.name }</b> } {`from  ${ props.bundle ? props.bundle.displayName :
-                        <Spinner /> }/${ props.application?.displayName } will be deleted. 
+        <React.Fragment>
+            <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ props.isOpen }
+                onClose={ props.onClose }
+                title={ `Permanently delete ${ props.eventTypeName }` }>
+                { <b>{ props.eventTypeName }</b> } {`from  ${ props.bundleName ? props.bundleName :
+                    <Spinner /> }/${ props.applicationName } will be deleted. 
                         If an application is currently sending this event, it will no longer be processed.`}
-                    <br />
-                    <br />
-                        Type <b>{ props.eventType?.name }</b> to confirm:
-                    <br />
-                    <TextInput type='text' onChange={ handleDeleteChange } id='name' name="name" isRequired />
-                    <br />
-                    <br />
-                    <ActionGroup>
-                        <Button variant='danger' type='button' isDisabled = { errors }
-                            onClick={ onDelete }>Delete</Button>
-                        <Button variant='link' type='button' onClick={ () => props.isOpen }>Cancel</Button>
-                    </ActionGroup>
-                </Modal>
-            </React.Fragment>
-        </Modal>
+                <br />
+                <br />
+                        Type <b>{ props.eventTypeName }</b> to confirm:
+                <br />
+                <TextInput type='text' onChange={ handleDeleteChange } id='name' name="name" isRequired />
+                <br />
+                <br />
+                <ActionGroup>
+                    <Button variant='danger' type='button' isDisabled = { errors }
+                        onClick={ onDelete }>Delete</Button>
+                    <Button variant='link' type='button' onClick={ props.onClose }>Cancel</Button>
+                </ActionGroup>
+            </Modal>
+        </React.Fragment>
     );
 };
