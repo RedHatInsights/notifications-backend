@@ -367,8 +367,8 @@ public class EndpointResources {
 
         if (endpointsMap.size() > 0) {
             return commonStateSessionFactory.withSession(
-                    useStatelessSession,
-                    commonStateSession -> commonStateSession.find(typedEndpointClass, endpointsMap.keySet().toArray())
+                useStatelessSession,
+                commonStateSession -> commonStateSession.find(typedEndpointClass, endpointsMap.keySet().toArray())
             ).onItem().invoke(propList -> propList.forEach(props -> {
                 if (props != null) {
                     Endpoint endpoint = endpointsMap.get(props.getId());

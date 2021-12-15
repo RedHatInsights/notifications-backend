@@ -12,7 +12,6 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static javax.persistence.FetchType.EAGER;
-import static javax.persistence.FetchType.LAZY;
 
 @MappedSuperclass
 public abstract class EndpointProperties {

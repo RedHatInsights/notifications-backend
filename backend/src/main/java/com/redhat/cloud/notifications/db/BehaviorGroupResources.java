@@ -115,6 +115,39 @@ public class BehaviorGroupResources {
         });
     }
 
+    public Uni<Boolean> linkEventTypeDefaultBehavior(UUID eventTypeId, UUID behaviorGroupId) {
+        return sessionFactory.withSession(session -> {
+            return getBehaviorGroup(session, behaviorGroupId, true)
+                    .onItem().transformToUni((_ignored) -> {
+                        String insertQuery = "INSERT INTO event_type_behavior (event_type_id, behavior_group_id, created) " +
+                                "VALUES (:eventTypeId, :behaviorGroupId, :created) " +
+                                "ON CONFLICT (event_type_id, behavior_group_id) DO NOTHING";
+                        return session.createNativeQuery(insertQuery)
+                                .setParameter("eventTypeId", eventTypeId)
+                                .setParameter("behaviorGroupId", behaviorGroupId)
+                                .setParameter("created", LocalDateTime.now(UTC))
+                                .executeUpdate();
+                    }).replaceWith(true)
+            .onFailure(BadRequestException.class).recoverWithItem(false);
+        });
+    }
+
+    public Uni<Boolean> unlinkEventTypeDefaultBehavior(UUID eventTypeId, UUID behaviorGroupId) {
+        return sessionFactory.withSession(session -> {
+            return getBehaviorGroup(session, behaviorGroupId, true)
+                    .onItem().transformToUni(_ignored -> {
+                        String deleteQuery = "DELETE FROM EventTypeBehavior b " +
+                                "WHERE eventType.id = :eventTypeId " +
+                                "AND EXISTS (SELECT 1 FROM BehaviorGroup WHERE accountId IS NULL AND id = :behaviorGroupId)";
+                        return session.createQuery(deleteQuery)
+                                .setParameter("eventTypeId", eventTypeId)
+                                .setParameter("behaviorGroupId", behaviorGroupId)
+                                .executeUpdate()
+                                .replaceWith(true);
+                    });
+        });
+    }
+
     /*
      * Returns Boolean.TRUE if the event type was found and successfully updated.
      * Returns Boolean.FALSE if the event type was not found.
@@ -218,10 +251,21 @@ public class BehaviorGroupResources {
         return sessionFactory.withTransaction((session, tx) -> {
 
             // First, let's make sure the behavior group exists and is owned by the current account.
-            String checkBehaviorGroupQuery = "SELECT 1 FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
-            return session.createQuery(checkBehaviorGroupQuery)
-                    .setParameter("accountId", accountId)
-                    .setParameter("id", behaviorGroupId)
+            String checkBehaviorGroupQuery = "SELECT 1 FROM BehaviorGroup WHERE id = :id AND accountId ";
+            if (accountId == null) {
+                checkBehaviorGroupQuery += "IS NULL";
+            } else {
+                checkBehaviorGroupQuery += "= :accountId";
+            }
+
+            var query = session.createQuery(checkBehaviorGroupQuery)
+                    .setParameter("id", behaviorGroupId);
+
+            if (accountId != null) {
+                query = query.setParameter("accountId", accountId);
+            }
+
+            return query
                     .getSingleResult()
                     .onItem().call(() -> {
 
@@ -249,16 +293,22 @@ public class BehaviorGroupResources {
                          */
                         String upsertQuery = "INSERT INTO behavior_group_action (behavior_group_id, endpoint_id, position, created) " +
                                 "SELECT :behaviorGroupId, :endpointId, :position, :created " +
-                                "WHERE EXISTS (SELECT 1 FROM endpoints WHERE account_id = :accountId AND id = :endpointId) " +
+                                "WHERE EXISTS (SELECT 1 FROM endpoints WHERE account_id " +
+                                ( accountId == null ? "IS NULL" : "= :accountId" ) +
+                                " AND id = :endpointId) " +
                                 "ON CONFLICT (behavior_group_id, endpoint_id) DO UPDATE SET position = :position";
-                        return session.createNativeQuery(upsertQuery)
+
+                        var sessionQuery = session.createNativeQuery(upsertQuery)
                                 .setParameter("behaviorGroupId", behaviorGroupId)
                                 .setParameter("endpointId", endpointId)
                                 .setParameter("position", endpointIds.indexOf(endpointId))
-                                .setParameter("created", LocalDateTime.now(UTC))
-                                .setParameter("accountId", accountId)
-                                .executeUpdate();
+                                .setParameter("created", LocalDateTime.now(UTC));
 
+                        if (accountId != null) {
+                            sessionQuery = sessionQuery.setParameter("accountId", accountId);
+                        }
+
+                        return sessionQuery.executeUpdate();
                     })
                     .collect().asList()
                     .replaceWith(OK)
