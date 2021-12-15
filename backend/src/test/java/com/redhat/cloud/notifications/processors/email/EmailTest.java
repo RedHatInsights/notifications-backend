@@ -21,6 +21,7 @@ import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
@@ -71,6 +72,10 @@ public class EmailTest extends DbIsolatedTest {
     @RestClient
     RbacServiceToService rbacServiceToService;
 
+    // InjectSpy allows us to update the fields via reflection (Inject does not)
+    @InjectSpy
+    EmailSender emailSender;
+
     static final String BOP_TOKEN = "test-token";
     static final String BOP_ENV = "unitTest";
     static final String BOP_CLIENT_ID = "test-client-id";
@@ -78,10 +83,11 @@ public class EmailTest extends DbIsolatedTest {
     @BeforeAll
     void init() {
         String url = String.format("http://%s/v1/sendEmails", mockServerConfig.getRunningAddress());
-        System.setProperty("processor.email.bop_url", url);
-        System.setProperty("processor.email.bop_apitoken", BOP_TOKEN);
-        System.setProperty("processor.email.bop_env", BOP_ENV);
-        System.setProperty("processor.email.bop_client_id", BOP_CLIENT_ID);
+
+        TestHelpers.updateField(emailSender, "bopUrl", url, EmailSender.class);
+        TestHelpers.updateField(emailSender, "bopApiToken", BOP_TOKEN, EmailSender.class);
+        TestHelpers.updateField(emailSender, "bopEnv", BOP_ENV, EmailSender.class);
+        TestHelpers.updateField(emailSender, "bopClientId", BOP_CLIENT_ID, EmailSender.class);
     }
 
     private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {

@@ -44,7 +44,6 @@ import org.mockserver.model.HttpRequest;
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -61,6 +60,7 @@ import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_
 import static com.redhat.cloud.notifications.TestConstants.API_INTERNAL;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
+import static com.redhat.cloud.notifications.TestHelpers.updateField;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_ENDPOINTS_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_MESSAGES_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
@@ -594,13 +594,12 @@ public class LifecycleITest extends DbIsolatedTest {
                 eq(true)
         )).thenReturn(Uni.createFrom().item(List.of(user)));
 
-        try {
-            Field bopUrlField = EmailSender.class.getDeclaredField("bopUrl");
-            bopUrlField.setAccessible(true);
-            bopUrlField.set(emailSender, "http://" + mockServerConfig.getRunningAddress() + EMAIL_SENDER_MOCK_PATH);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException("Error while updating bopUrl", e);
-        }
+        updateField(
+                emailSender,
+                "bopUrl",
+                "http://" + mockServerConfig.getRunningAddress() + EMAIL_SENDER_MOCK_PATH,
+                EmailSender.class
+        );
     }
 
     private HttpRequest setupEmailMockServer(CountDownLatch requestsCounter) {
