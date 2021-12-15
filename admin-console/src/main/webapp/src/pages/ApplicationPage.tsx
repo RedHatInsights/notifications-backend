@@ -101,13 +101,17 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventType(e);
     };
 
-    const onDelete = React.useCallback(() => {
+    const onDelete = React.useCallback(async () => {
         setShowDeleteModal(false);
         const deleteEventType = deleteEventTypeMutation.mutate;
-        deleteEventType(eventType.id)
-        .then (eventTypesQuery.query);
+        const response = await deleteEventType(eventType.id);
+        eventTypesQuery.query();
+        if (response.error) {
+            return false;
+        }
 
-    }, [ deleteEventTypeMutation.mutate, eventType.id, eventTypesQuery.query ]);
+        return true;
+    }, [ deleteEventTypeMutation.mutate, eventType.id, eventTypesQuery ]);
 
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
@@ -189,11 +193,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                                     onClick={ () => setShowModal(false) }>Cancel</Button>
                                             </ActionGroup>
                                         </Form>
-                                        <>
-                                        </>
                                     </Modal>
                                     <React.Fragment>
-                                        <DeleteModal />
+                                        <DeleteModal onDelete={ onDelete } />
                                     </React.Fragment>
                                 </ToolbarItem>
                             </ToolbarContent>
@@ -204,8 +206,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             ))}
                         </Tr>
                     </Thead>
-                    <Tbody>{ (eventTypesQuery.payload.value.length === 0 ?
-                        'There are no event types found for this application' : '') }</Tbody>
+                    <Tbody>{ (eventTypesQuery.payload.value.length === 0 ? 'There are no event types found for this application' : '') }</Tbody>
                     <Tbody>
                         { eventTypesQuery.payload.value.map(e => (
                             <Tr key={ e.id }>

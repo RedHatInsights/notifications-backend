@@ -6,8 +6,8 @@ import { Application, Bundle, EventType } from '../types/Notifications';
 interface DeleteModalProps {
     eventType?: EventType;
     onDelete: (eventType: EventType) => Promise<boolean>;
-    bundle: Bundle;
-    application: Application;
+    bundle?: Bundle;
+    application?: Application;
 
 }
 export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) => {
@@ -41,7 +41,7 @@ export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) =>
                     onClose={ () => setShowDeleteModal(false) }
                     title={ `Permanently delete ${ props.eventType?.name }` }>
                     { <b>{ props.eventType?.name }</b> } {`from  ${ props.bundle ? props.bundle.displayName :
-                        <Spinner /> }/${ props.application.displayName } will be deleted. 
+                        <Spinner /> }/${ props.application?.displayName } will be deleted. 
                         If an application is currently sending this event, it will no longer be processed.`}
                     <br />
                     <br />
