@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.BundleResources;

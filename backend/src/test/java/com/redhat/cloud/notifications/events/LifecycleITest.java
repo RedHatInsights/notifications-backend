@@ -594,7 +594,6 @@ public class LifecycleITest extends DbIsolatedTest {
                 eq(true)
         )).thenReturn(Uni.createFrom().item(List.of(user)));
 
-
         try {
             Field bopUrlField = EmailSender.class.getDeclaredField("bopUrl");
             bopUrlField.setAccessible(true);

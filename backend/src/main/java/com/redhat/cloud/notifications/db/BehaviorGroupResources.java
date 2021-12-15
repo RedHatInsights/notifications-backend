@@ -294,7 +294,7 @@ public class BehaviorGroupResources {
                         String upsertQuery = "INSERT INTO behavior_group_action (behavior_group_id, endpoint_id, position, created) " +
                                 "SELECT :behaviorGroupId, :endpointId, :position, :created " +
                                 "WHERE EXISTS (SELECT 1 FROM endpoints WHERE account_id " +
-                                ( accountId == null ? "IS NULL" : "= :accountId" ) +
+                                (accountId == null ? "IS NULL" : "= :accountId") +
                                 " AND id = :endpointId) " +
                                 "ON CONFLICT (behavior_group_id, endpoint_id) DO UPDATE SET position = :position";
 
