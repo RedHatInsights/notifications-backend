@@ -16,7 +16,7 @@
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <pushgateway.version>0.12.0</pushgateway.version>
+        <pushgateway.version>0.13.0</pushgateway.version>
     </properties>
 
     <dependencies>
