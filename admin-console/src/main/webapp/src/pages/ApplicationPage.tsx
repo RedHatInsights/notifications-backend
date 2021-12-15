@@ -101,7 +101,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventType(e);
     };
 
-    const onDelete = React.useCallback(async () => {
+    const handleDelete = React.useCallback(async () => {
         setShowDeleteModal(false);
         const deleteEventType = deleteEventTypeMutation.mutate;
         const response = await deleteEventType(eventType.id);
@@ -195,7 +195,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         </Form>
                                     </Modal>
                                     <React.Fragment>
-                                        <DeleteModal onDelete={ onDelete } />
+                                        <DeleteModal
+                                            onDelete={ handleDelete }
+                                            isOpen={ showDeleteModal }
+                                            onClose={ () => setShowDeleteModal(false) } />
                                     </React.Fragment>
                                 </ToolbarItem>
                             </ToolbarContent>

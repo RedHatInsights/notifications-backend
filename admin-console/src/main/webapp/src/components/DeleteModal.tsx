@@ -8,10 +8,11 @@ interface DeleteModalProps {
     onDelete: (eventType: EventType) => Promise<boolean>;
     bundle?: Bundle;
     application?: Application;
+    isOpen: boolean;
+    onClose: (deleted: boolean) => void;
 
 }
 export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) => {
-    const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
     const [ errors, setErrors ] = React.useState(true);
 
     const onDelete = React.useCallback(() => {
@@ -37,8 +38,8 @@ export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) =>
     return (
         <Modal>
             <React.Fragment>
-                <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ showDeleteModal }
-                    onClose={ () => setShowDeleteModal(false) }
+                <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ props.isOpen }
+                    onClose={ () => props.onClose }
                     title={ `Permanently delete ${ props.eventType?.name }` }>
                     { <b>{ props.eventType?.name }</b> } {`from  ${ props.bundle ? props.bundle.displayName :
                         <Spinner /> }/${ props.application?.displayName } will be deleted. 
@@ -53,7 +54,7 @@ export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) =>
                     <ActionGroup>
                         <Button variant='danger' type='button' isDisabled = { errors }
                             onClick={ onDelete }>Delete</Button>
-                        <Button variant='link' type='button' onClick={ () => setShowDeleteModal(false) }>Cancel</Button>
+                        <Button variant='link' type='button' onClick={ () => props.isOpen }>Cancel</Button>
                     </ActionGroup>
                 </Modal>
             </React.Fragment>
