@@ -23,6 +23,12 @@ public class NotificationsApp implements QuarkusApplication {
     @ConfigProperty(name = "quarkus.http.access-log.category")
     String loggerName;
 
+    @ConfigProperty(name = "prometheus.pushgateway.url")
+    String prometheusPushGatewayUrl;
+
+    @ConfigProperty(name = "backoffice.host")
+    String backofficeHost;
+
     @Inject
     DailyEmailAggregationJob dailyEmailAggregationJob;
 
@@ -31,6 +37,9 @@ public class NotificationsApp implements QuarkusApplication {
         initAccessLogFilter();
 
         LOG.info(readGitProperties());
+
+        LOG.infof("Prometheus PushGateway url: %s", prometheusPushGatewayUrl);
+        LOG.infof("Backoffice Host: %s", backofficeHost);
 
         dailyEmailAggregationJob.processDailyEmail();
 
