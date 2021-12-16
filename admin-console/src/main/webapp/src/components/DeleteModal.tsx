@@ -39,8 +39,8 @@ export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) =>
             <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ props.isOpen }
                 onClose={ props.onClose }
                 title={ `Permanently delete ${ props.eventTypeName }` }>
-                { <b>{ props.eventTypeName }</b> } {`from  ${ props.bundleName ? props.bundleName :
-                    <Spinner /> }/${ props.applicationName } will be deleted. 
+                { <b>{ props.eventTypeName }</b> } {`from  ${ props.applicationName }/${ props.bundleName ? props.bundleName :
+                    <Spinner /> } will be deleted. 
                         If an application is currently sending this event, it will no longer be processed.`}
                 <br />
                 <br />
