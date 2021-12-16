@@ -56,7 +56,7 @@ public class EventService {
                                               @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
                                               @RestQuery Set<EndpointType> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                               @RestQuery @DefaultValue("10") int limit, @RestQuery @DefaultValue("0") int offset, @RestQuery String sortBy,
-                                              @RestQuery boolean includeDetails) {
+                                              @RestQuery boolean includeDetails, @RestQuery boolean includePayload) {
         if (limit < 1 || limit > 200) {
             throw new BadRequestException("Invalid 'limit' query parameter, its value must be between 1 and 200");
         }
@@ -88,6 +88,9 @@ public class EventService {
                                                 entry.setApplication(event.getEventType().getApplication().getDisplayName());
                                                 entry.setEventType(event.getEventType().getDisplayName());
                                                 entry.setActions(actions);
+                                                if (includePayload) {
+                                                    entry.setPayload(event.getPayload());
+                                                }
                                                 return entry;
                                             }).collect(Collectors.toList())
                                     )

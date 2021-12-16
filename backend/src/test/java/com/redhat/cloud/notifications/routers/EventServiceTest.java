@@ -52,6 +52,7 @@ import static java.lang.Boolean.TRUE;
 import static java.time.ZoneOffset.UTC;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -60,6 +61,7 @@ public class EventServiceTest extends DbIsolatedTest {
 
     private static final String OTHER_ACCOUNT_ID = "other-account-id";
     private static final LocalDateTime NOW = LocalDateTime.now(UTC);
+    private static final String PAYLOAD = "payload";
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
@@ -141,7 +143,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Request: No filter
                      * Expected response: All event log entries from DEFAULT_ACCOUNT_ID should be returned
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -150,6 +152,7 @@ public class EventServiceTest extends DbIsolatedTest {
                     assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
                     assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
                     assertSameEvent(page.getData().get(2), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -159,13 +162,14 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Request: No filter
                      * Expected response: All event log entries from OTHER_ACCOUNT_ID should be returned
                      */
-                    return getEventLogPage(otherIdentityHeader, null, null, null, null, null, null, null, null, null, null);
+                    return getEventLogPage(otherIdentityHeader, null, null, null, null, null, null, null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
                     assertEquals(1, page.getMeta().getCount());
                     assertEquals(1, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(3));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -174,7 +178,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: Unknown bundle
                      */
-                    return getEventLogPage(defaultIdentityHeader, Set.of(randomUUID()), null, null, null, null, null, null, null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, Set.of(randomUUID()), null, null, null, null, null, null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -188,13 +192,14 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: One existing bundle
                      */
-                    return getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(0).getId()), null, null, null, null, null, null, null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(0).getId()), null, null, null, null, null, null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
                     assertEquals(1, page.getMeta().getCount());
                     assertEquals(1, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -203,7 +208,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: Multiple existing bundles, sort by ascending bundle names
                      */
-                    return getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(0).getId(), model.bundles.get(1).getId()), null, null, null, null, null, null, null, null, "bundle:asc");
+                    return getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(0).getId(), model.bundles.get(1).getId()), null, null, null, null, null, null, null, null, "bundle:asc", false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -212,6 +217,7 @@ public class EventServiceTest extends DbIsolatedTest {
                     assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
                     assertSameEvent(page.getData().get(1), model.events.get(1), model.notificationHistories.get(2));
                     assertSameEvent(page.getData().get(2), model.events.get(2), model.notificationHistories.get(3));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -220,7 +226,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: Unknown application
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, Set.of(randomUUID()), null, null, null, null, null, null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, Set.of(randomUUID()), null, null, null, null, null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -234,7 +240,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: One existing application
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, Set.of(model.applications.get(1).getId()), null, null, null, null, null, null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, Set.of(model.applications.get(1).getId()), null, null, null, null, null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -242,6 +248,7 @@ public class EventServiceTest extends DbIsolatedTest {
                     assertEquals(2, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
                     assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -250,7 +257,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: Multiple existing applications, sort by ascending application names
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, Set.of(model.applications.get(0).getId(), model.applications.get(1).getId()), null, null, null, null, null, null, null, "application:asc");
+                    return getEventLogPage(defaultIdentityHeader, null, Set.of(model.applications.get(0).getId(), model.applications.get(1).getId()), null, null, null, null, null, null, null, "application:asc", false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -259,6 +266,7 @@ public class EventServiceTest extends DbIsolatedTest {
                     assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
                     assertSameEvent(page.getData().get(1), model.events.get(1), model.notificationHistories.get(2));
                     assertSameEvent(page.getData().get(2), model.events.get(2), model.notificationHistories.get(3));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -267,7 +275,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: Unknown event type
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, "unknown", null, null, null, null, null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, null, "unknown", null, null, null, null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -281,13 +289,14 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: Existing event type
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, model.eventTypes.get(0).getDisplayName().substring(2).toUpperCase(), null, null, null, null, null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, null, model.eventTypes.get(0).getDisplayName().substring(2).toUpperCase(), null, null, null, null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
                     assertEquals(1, page.getMeta().getCount());
                     assertEquals(1, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -296,7 +305,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: Start date three days in the past
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), null, null, null, null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), null, null, null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -304,6 +313,7 @@ public class EventServiceTest extends DbIsolatedTest {
                     assertEquals(2, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
                     assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -312,13 +322,14 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: End date three days in the past
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, NOW.minusDays(3L), null, null, null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, NOW.minusDays(3L), null, null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
                     assertEquals(1, page.getMeta().getCount());
                     assertEquals(1, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -327,13 +338,14 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: Both start and end date are set
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), NOW.minusDays(1L), null, null, null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), NOW.minusDays(1L), null, null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
                     assertEquals(1, page.getMeta().getCount());
                     assertEquals(1, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(2), model.notificationHistories.get(3));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -342,13 +354,14 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: Let's try all request params at once!
                      */
-                    return getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(1).getId()), Set.of(model.applications.get(1).getId()), model.eventTypes.get(1).getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), Set.of(EMAIL_SUBSCRIPTION), Set.of(TRUE), 10, 0, "created:desc");
+                    return getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(1).getId()), Set.of(model.applications.get(1).getId()), model.eventTypes.get(1).getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), Set.of(EMAIL_SUBSCRIPTION), Set.of(TRUE), 10, 0, "created:desc", true);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
                     assertEquals(1, page.getMeta().getCount());
                     assertEquals(1, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(2), model.notificationHistories.get(3));
+                    assertEquals(PAYLOAD, page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -357,7 +370,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: No filter, limit without offset
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, 2, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, 2, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -365,6 +378,7 @@ public class EventServiceTest extends DbIsolatedTest {
                     assertEquals(2, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
                     assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last", "next");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -373,13 +387,14 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: No filter, limit with offset
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, 1, 2, null);
+                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, 1, 2, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
                     assertEquals(3, page.getMeta().getCount());
                     assertEquals(1, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last", "prev");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -388,7 +403,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: No filter, sort by ascending event names
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, "event:asc");
+                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, "event:asc", false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -397,6 +412,7 @@ public class EventServiceTest extends DbIsolatedTest {
                     assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
                     assertSameEvent(page.getData().get(1), model.events.get(1), model.notificationHistories.get(2));
                     assertSameEvent(page.getData().get(2), model.events.get(2), model.notificationHistories.get(3));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -405,7 +421,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: WEBHOOK endpoints
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(WEBHOOK), null, null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(WEBHOOK), null, null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -413,6 +429,7 @@ public class EventServiceTest extends DbIsolatedTest {
                     assertEquals(2, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
                     assertSameEvent(page.getData().get(1), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -421,7 +438,7 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: Invocation succeeded
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, Set.of(TRUE), null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, Set.of(TRUE), null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
@@ -430,6 +447,7 @@ public class EventServiceTest extends DbIsolatedTest {
                     assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
                     assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
                     assertSameEvent(page.getData().get(2), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
                 .chain(runOnWorkerThread(() -> {
@@ -438,13 +456,14 @@ public class EventServiceTest extends DbIsolatedTest {
                      * Account: DEFAULT_ACCOUNT_ID
                      * Request: EMAIL_SUBSCRIPTION endpoints and invocation failed
                      */
-                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(EMAIL_SUBSCRIPTION), Set.of(FALSE), null, null, null);
+                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(EMAIL_SUBSCRIPTION), Set.of(FALSE), null, null, null, false);
                 }))
                 .emitOn(MutinyHelper.executor(vertx.getOrCreateContext()))
                 .invoke(page -> {
                     assertEquals(1, page.getMeta().getCount());
                     assertEquals(1, page.getData().size());
                     assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+                    assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
         ).await().indefinitely();
@@ -493,12 +512,13 @@ public class EventServiceTest extends DbIsolatedTest {
 
     @Test
     void shouldBeAllowedToGetEventLogs() {
-        Header noAccessIdentityHeader = mockRbac("tenant", "user-read-access", NOTIFICATIONS_READ_ACCESS_ONLY);
+        Header readAccessIdentityHeader = mockRbac("tenant", "user-read-access", NOTIFICATIONS_READ_ACCESS_ONLY);
         given()
-                .header(noAccessIdentityHeader)
+                .header(readAccessIdentityHeader)
                 .when().get(PATH)
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(JSON);
     }
 
     private Uni<Event> createEvent(String accountId, EventType eventType, LocalDateTime created) {
@@ -506,6 +526,7 @@ public class EventServiceTest extends DbIsolatedTest {
         event.setAccountId(accountId);
         event.setEventType(eventType);
         event.setCreated(created);
+        event.setPayload(PAYLOAD);
         return sessionFactory.withStatelessSession(statelessSession -> statelessSession.insert(event)
                 .replaceWith(event)
         );
@@ -519,7 +540,7 @@ public class EventServiceTest extends DbIsolatedTest {
 
     private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                                        LocalDateTime startDate, LocalDateTime endDate, Set<EndpointType> endpointTypes,
-                                                       Set<Boolean> invocationResults, Integer limit, Integer offset, String sortBy) {
+                                                       Set<Boolean> invocationResults, Integer limit, Integer offset, String sortBy, boolean includePayload) {
         RequestSpecification request = given()
                 .header(identityHeader);
         if (bundleIds != null) {
@@ -551,6 +572,9 @@ public class EventServiceTest extends DbIsolatedTest {
         }
         if (sortBy != null) {
             request.param("sortBy", sortBy);
+        }
+        if (includePayload) {
+            request.param("includePayload", true);
         }
         return request
                 .when().get(PATH)

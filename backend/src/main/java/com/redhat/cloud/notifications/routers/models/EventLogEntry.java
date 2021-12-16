@@ -30,6 +30,8 @@ public class EventLogEntry {
     @NotNull
     private String eventType;
 
+    private String payload;
+
     @NotNull
     private List<EventLogEntryAction> actions;
 
@@ -71,6 +73,14 @@ public class EventLogEntry {
 
     public void setEventType(String eventType) {
         this.eventType = eventType;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public void setPayload(String payload) {
+        this.payload = payload;
     }
 
     public List<EventLogEntryAction> getActions() {
