@@ -12,8 +12,6 @@ public class AdvisorOpenshift implements EmailTemplate {
         if (type == EmailSubscriptionType.INSTANT) {
             if (eventType.equals("new-recommendation")) {
                 return Templates.newRecommendationInstantEmailTitle();
-            } else if (eventType.equals("weekly-digest")) {
-                return Templates.weeklyDigestEmailTitle();
             }
         }
 
@@ -28,8 +26,6 @@ public class AdvisorOpenshift implements EmailTemplate {
         if (type == EmailSubscriptionType.INSTANT) {
             if (eventType.equals("new-recommendation")) {
                 return Templates.newRecommendationInstantEmailBody();
-            } else if (eventType.equals("weekly-digest")) {
-                return Templates.weeklyDigestEmailBody();
             }
         }
 
@@ -41,7 +37,7 @@ public class AdvisorOpenshift implements EmailTemplate {
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return (eventType.equals("new-recommendation") || eventType.equals("weekly-digest")) && type == EmailSubscriptionType.INSTANT;
+        return (eventType.equals("new-recommendation")) && type == EmailSubscriptionType.INSTANT;
     }
 
     @Override
@@ -55,10 +51,6 @@ public class AdvisorOpenshift implements EmailTemplate {
         public static native TemplateInstance newRecommendationInstantEmailTitle();
 
         public static native TemplateInstance newRecommendationInstantEmailBody();
-
-        public static native TemplateInstance weeklyDigestEmailTitle();
-
-        public static native TemplateInstance weeklyDigestEmailBody();
 
     }
 
