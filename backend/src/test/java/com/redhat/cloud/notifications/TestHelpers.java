@@ -271,23 +271,6 @@ public class TestHelpers {
                         ))
                         .build()
             ));
-        } else if (eventType == "weekly-digest") {
-            emailActionMessage.setContext(Map.of(
-                    "advisor-url", "some-ocm-url-to-the-cluster"
-            ));
-            emailActionMessage.setEvents(List.of(
-                Event
-                    .newBuilder()
-                    .setMetadataBuilder(Metadata.newBuilder())
-                    .setPayload(Map.of(
-                            "total_clusters", "20",
-                            "total_recommendations", "40",
-                            "total_incidents", "0",
-                            "total_critical", "5",
-                            "total_important", "4"
-                    ))
-                    .build()
-            ));
         }
         return emailActionMessage;
     }
