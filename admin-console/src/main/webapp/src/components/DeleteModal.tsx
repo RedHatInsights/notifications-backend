@@ -1,12 +1,11 @@
 import { ActionGroup, Button, Modal, ModalVariant, Spinner, TextInput } from '@patternfly/react-core';
 import React from 'react';
-import { idText } from 'typescript';
 
 import { EventType } from '../types/Notifications';
 
 interface DeleteModalProps {
     eventTypeName?: string;
-    onDelete: (eventType: EventType) => Promise<boolean>;
+    onDelete: (eventType?: EventType) => Promise<boolean>;
     bundleName?: string;
     applicationName?: string;
     isOpen: boolean;
@@ -17,16 +16,14 @@ export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) =>
     const [ errors, setErrors ] = React.useState(true);
 
     const onDelete = React.useCallback(async () => {
-        const response = await onDelete();
-        console.log(response);
-        if (response !== null) {
-            props.onClose;
+        const onDeleteImpl = props.onDelete;
+        const response = await onDeleteImpl();
+        if (response) {
+            props.onClose();
         } else {
             alert('Could not delete event type, please try again.');
         }
-
-        return;
-    }, [ props.onClose ]);
+    }, [ props ]);
 
     const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
         const target = event.target as HTMLInputElement;
