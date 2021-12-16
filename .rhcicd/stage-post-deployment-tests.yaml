@@ -13,7 +13,7 @@ objects:
     testing:
       iqe:
         debug: false
-        dynaconfEnvName: stage_proxy
+        dynaconfEnvName: clowder_smoke
         filter: ''
         marker: 'core'
 parameters:
