@@ -74,7 +74,12 @@ public class EndpointResources {
         return commonStateSessionFactory.withSession(useStatelessSession, session -> {
             // TODO Modify the parameter to take a vararg of Functions that modify the query
             // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
-            String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.type IN (:endpointType)";
+            String query = "SELECT e FROM Endpoint e WHERE e.type IN (:endpointType)";
+            if (tenant == null) {
+                query += " AND e.accountId IS NULL";
+            } else {
+                query += " AND e.accountId = :accountId";
+            }
             if (activeOnly != null) {
                 query += " AND enabled = :enabled";
             }
@@ -84,9 +89,11 @@ public class EndpointResources {
             }
 
             Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
-                    .setParameter("accountId", tenant)
                     .setParameter("endpointType", type);
 
+            if (tenant != null) {
+                mutinyQuery = mutinyQuery.setParameter("accountId", tenant);
+            }
             if (activeOnly != null) {
                 mutinyQuery = mutinyQuery.setParameter("enabled", activeOnly);
             }
@@ -125,7 +132,7 @@ public class EndpointResources {
                         }
 
                         Endpoint endpoint = new Endpoint();
-                        endpoint.setProperties(properties);
+                        endpoint.setProperties(new EmailSubscriptionProperties(properties));
                         endpoint.setAccountId(accountId);
                         endpoint.setEnabled(true);
                         endpoint.setDescription("System email endpoint");

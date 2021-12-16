@@ -22,6 +22,16 @@ public class EmailSubscriptionProperties extends EndpointProperties {
 
     private UUID groupId;
 
+    public EmailSubscriptionProperties() {
+
+    }
+
+    public EmailSubscriptionProperties(EmailSubscriptionProperties properties) {
+        this.onlyAdmins = properties.onlyAdmins;
+        this.ignorePreferences = properties.ignorePreferences;
+        this.groupId = properties.groupId;
+    }
+
     public boolean isOnlyAdmins() {
         return onlyAdmins;
     }
