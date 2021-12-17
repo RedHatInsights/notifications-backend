@@ -15,7 +15,7 @@ objects:
         debug: false
         dynaconfEnvName: clowder_smoke
         filter: ''
-        marker: 'core'
+        marker: 'smoke'
 parameters:
 - name: IMAGE_TAG
   value: ''
