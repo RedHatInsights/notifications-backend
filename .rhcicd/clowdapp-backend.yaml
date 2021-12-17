@@ -77,6 +77,10 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: KAFKA_CONSUMED_RATE_CHECKER_ENABLED
+          value: ${KAFKA_CONSUMED_RATE_CHECKER_ENABLED}
+        - name: KAFKA_CONSUMED_RATE_CHECKER_MAX_FAILURES
+          value: ${KAFKA_CONSUMED_RATE_CHECKER_MAX_FAILURES}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
           value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
@@ -242,6 +246,12 @@ parameters:
   value: quay.io/cloudservices/notifications-backend
 - name: IMAGE_TAG
   value: latest
+- name: KAFKA_CONSUMED_RATE_CHECKER_ENABLED
+  description: Is the Kafka records consumed rate included in the global health check?
+  value: "false"
+- name: KAFKA_CONSUMED_RATE_CHECKER_MAX_FAILURES
+  description: Kafka records consumed rate failures required before the app is marked as DOWN in the global health check
+  value: "5"
 - name: MEMORY_LIMIT
   description: Memory limit
   value: 500Mi
