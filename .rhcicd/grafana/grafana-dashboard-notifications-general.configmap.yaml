@@ -25,91 +25,10 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1640005399239,
+      "iteration": 1640014925767,
       "links": [],
       "liveNow": false,
       "panels": [
-        {
-          "datasource": "app-sre-prod-03-cluster-prometheus",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 0
-          },
-          "id": 200,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "sum(increase(aggregator_job_duration_seconds[5m]))",
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
-            }
-          ],
-          "title": "Panel Title",
-          "type": "timeseries"
-        },
         {
           "collapsed": false,
           "datasource": null,
@@ -117,7 +36,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 8
+            "y": 0
           },
           "id": 183,
           "panels": [],
@@ -157,7 +76,7 @@ data:
             "h": 4,
             "w": 3,
             "x": 0,
-            "y": 9
+            "y": 1
           },
           "id": 196,
           "options": {
@@ -223,7 +142,7 @@ data:
             "h": 4,
             "w": 3,
             "x": 3,
-            "y": 9
+            "y": 1
           },
           "id": 198,
           "options": {
@@ -296,7 +215,7 @@ data:
             "h": 4,
             "w": 3,
             "x": 7,
-            "y": 9
+            "y": 1
           },
           "id": 181,
           "options": {
@@ -354,7 +273,7 @@ data:
             "h": 4,
             "w": 3,
             "x": 10,
-            "y": 9
+            "y": 1
           },
           "id": 163,
           "options": {
@@ -430,7 +349,7 @@ data:
             "h": 4,
             "w": 3,
             "x": 14,
-            "y": 9
+            "y": 1
           },
           "id": 185,
           "options": {
@@ -488,7 +407,7 @@ data:
             "h": 4,
             "w": 3,
             "x": 17,
-            "y": 9
+            "y": 1
           },
           "id": 164,
           "options": {
@@ -529,7 +448,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 13
+            "y": 5
           },
           "id": 188,
           "panels": [],
@@ -548,7 +467,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 14
+            "y": 6
           },
           "hiddenSeries": false,
           "id": 153,
@@ -648,7 +567,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 14
+            "y": 6
           },
           "hiddenSeries": false,
           "id": 161,
@@ -735,7 +654,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 22
+            "y": 14
           },
           "id": 191,
           "panels": [],
@@ -755,7 +674,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 23
+            "y": 15
           },
           "hiddenSeries": false,
           "id": 172,
@@ -852,7 +771,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 23
+            "y": 15
           },
           "hiddenSeries": false,
           "id": 50,
@@ -958,7 +877,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 23
+            "y": 15
           },
           "hiddenSeries": false,
           "id": 144,
@@ -1050,7 +969,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 23
+            "y": 15
           },
           "hiddenSeries": false,
           "id": 136,
@@ -1142,7 +1061,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 31
+            "y": 23
           },
           "hiddenSeries": false,
           "id": 201,
@@ -1224,13 +1143,70 @@ data:
           }
         },
         {
+          "datasource": "crcs02ue1-prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "text",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "dateTimeAsIso"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 6,
+            "y": 23
+          },
+          "id": 205,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                  "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "8.2.7",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "aggregator_job_last_success * 1000",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "Aggregator cronjob - last successful run",
+          "type": "stat"
+        },
+        {
           "collapsed": false,
           "datasource": null,
           "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 39
+            "y": 31
           },
           "id": 179,
           "panels": [],
@@ -1249,7 +1225,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 40
+            "y": 32
           },
           "hiddenSeries": false,
           "id": 174,
@@ -1353,7 +1329,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 40
+            "y": 32
           },
           "hiddenSeries": false,
           "id": 189,
@@ -1457,7 +1433,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 48
+            "y": 40
           },
           "hiddenSeries": false,
           "id": 113,
@@ -1551,7 +1527,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 48
+            "y": 40
           },
           "hiddenSeries": false,
           "id": 175,
@@ -1645,7 +1621,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 48
+            "y": 40
           },
           "hiddenSeries": false,
           "id": 176,
@@ -1748,7 +1724,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 48
+            "y": 40
           },
           "hiddenSeries": false,
           "id": 177,
@@ -1860,7 +1836,7 @@ data:
             "h": 7,
             "w": 12,
             "x": 0,
-            "y": 56
+            "y": 48
           },
           "hiddenSeries": false,
           "id": 166,
@@ -1950,7 +1926,7 @@ data:
             "h": 7,
             "w": 12,
             "x": 12,
-            "y": 56
+            "y": 48
           },
           "hiddenSeries": false,
           "id": 167,
@@ -2086,7 +2062,7 @@ data:
             "h": 5,
             "w": 6,
             "x": 0,
-            "y": 63
+            "y": 55
           },
           "id": 186,
           "options": {
@@ -2138,7 +2114,7 @@ data:
             "h": 5,
             "w": 6,
             "x": 6,
-            "y": 63
+            "y": 55
           },
           "id": 193,
           "options": {
@@ -2230,7 +2206,7 @@ data:
             "h": 5,
             "w": 6,
             "x": 12,
-            "y": 63
+            "y": 55
           },
           "id": 184,
           "options": {
@@ -2282,7 +2258,7 @@ data:
             "h": 5,
             "w": 6,
             "x": 18,
-            "y": 63
+            "y": 55
           },
           "id": 194,
           "options": {
@@ -2323,7 +2299,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 68
+            "y": 60
           },
           "id": 24,
           "panels": [],
@@ -2349,7 +2325,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 69
+            "y": 61
           },
           "hiddenSeries": false,
           "id": 22,
@@ -2480,7 +2456,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 69
+            "y": 61
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -2575,7 +2551,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 78
+            "y": 70
           },
           "hiddenSeries": false,
           "id": 85,
@@ -2779,7 +2755,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 30
+      "version": 31
     }
 kind: ConfigMap
 metadata:
