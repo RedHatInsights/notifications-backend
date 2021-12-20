@@ -1095,7 +1095,7 @@ data:
               "expr": "increase(aggregator_job_duration_seconds[5m])",
               "hide": false,
               "interval": "",
-              "legendFormat": "webhooks",
+              "legendFormat": "aggregator cron job",
               "refId": "A"
             }
           ],
@@ -2755,7 +2755,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 31
+      "version": 32
     }
 kind: ConfigMap
 metadata:
