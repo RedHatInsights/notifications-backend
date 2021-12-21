@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
+import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.EGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.FROMCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
@@ -47,6 +48,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(AGGREGATION_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(TOCAMEL_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(FROMCAMEL_CHANNEL));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(EGRESS_CHANNEL));
 
         System.out.println(" -- Running with properties: " + properties);
         return properties;
