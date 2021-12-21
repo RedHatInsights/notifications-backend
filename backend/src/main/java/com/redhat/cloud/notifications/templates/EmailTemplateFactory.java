@@ -15,6 +15,8 @@ public class EmailTemplateFactory {
     private static final String ADVISOR = "advisor";
     private static final String DRIFT = "drift";
     private static final String OPENSHIFT = "openshift";
+    private static final String PLATFORM = "platform";
+    private static final String NOTIFICATIONS = "notifications";
 
     private static final String BUNDLE_ANSIBLE = "ansible";
     private static final String APP_ANSIBLE_REPORTS = "reports";
@@ -42,6 +44,10 @@ public class EmailTemplateFactory {
         } else if (bundle.equalsIgnoreCase(BUNDLE_ANSIBLE)) {
             if (application.equalsIgnoreCase(APP_ANSIBLE_REPORTS)) {
                 return new Ansible();
+            }
+        } else if (bundle.equalsIgnoreCase(PLATFORM)) {
+            if (application.equalsIgnoreCase(NOTIFICATIONS)) {
+                return new PlatformNotifications();
             }
         }
         return new EmailTemplateNotSupported();
