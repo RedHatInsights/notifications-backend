@@ -97,6 +97,7 @@ public class FromCamelHistoryFillerTest {
 
         ArgumentCaptor<Map<String, Object>> decodedPayload = ArgumentCaptor.forClass(Map.class);
         verify(notificationResources, times(1)).updateHistoryItem(decodedPayload.capture());
+        verify(notificationResources, times(1)).getEndpointForHistoryId((String) decodedPayload.getValue().get("historyId"));
         verifyNoMoreInteractions(notificationResources);
 
         assertEquals(expectedHistoryId, decodedPayload.getValue().get("historyId"));

@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Encoder;
 import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -113,17 +114,24 @@ public class FromCamelHistoryFiller {
                 // Save the original id, as we may need it in the future.
                 Map<String, String> context = new HashMap<>();
                 context.put("original-id", historyId);
-                context.put("failed-integration", ep.getName());
+                if (ep != null) { // TODO For the current tests. EP should not be null in real life
+                    context.put("failed-integration", ep.getName());
+                }
 
                 Action action = Action.newBuilder()
                         .setBundle("platform")
                         .setApplication("notifications")
                         .setEventType("integration_failed")
-                        .setAccountId(ep.getAccountId())
+                        .setAccountId(ep != null ? ep.getAccountId() : "")
                         .setContext(context)
                         .setTimestamp(LocalDateTime.now())
                         .setEvents(Collections.singletonList(event))
-                        .setVersion("v1.0.0")
+                        .setVersion("v1.1.0")
+                        .setRecipients(Collections.singletonList(
+                                Recipient.newBuilder()
+                                        .setOnlyAdmins(true)
+                                        .setIgnoreUserPreferences(true)
+                                        .build()))
                         .build();
 
                 String ser = new Encoder().encode(action);
