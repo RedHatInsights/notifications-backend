@@ -1,12 +1,12 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Encoder;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.models.Endpoint;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.Json;
@@ -67,7 +67,7 @@ public class FromCamelHistoryFiller {
     @Channel(EGRESS_CHANNEL)
     Emitter<String> emitter;
 
-    @ConfigProperty(name="reinject.enabled", defaultValue = "true")
+    @ConfigProperty(name = "reinject.enabled", defaultValue = "true")
     boolean enableReInject;
 
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
@@ -98,7 +98,7 @@ public class FromCamelHistoryFiller {
         if (!enableReInject) {
             return;
         }
-        if (!payload.containsKey("successful") || !((Boolean)payload.get("successful"))) {
+        if (!payload.containsKey("successful") || !((Boolean) payload.get("successful"))) {
             String historyId = (String) payload.get("historyId");
             log.infof("Event with id %s was not successful, resubmitting for further processing", historyId);
 
@@ -111,7 +111,7 @@ public class FromCamelHistoryFiller {
                 event.setPayload(payload);
 
                 // Save the original id, as we may need it in the future.
-                Map<String,String> context = new HashMap<>();
+                Map<String, String> context = new HashMap<>();
                 context.put("original-id", historyId);
                 context.put("failed-integration", ep.getName());
 
@@ -126,17 +126,15 @@ public class FromCamelHistoryFiller {
                         .setVersion("v1.0.0")
                         .build();
 
-
                 String ser = new Encoder().encode(action);
                 // Add the message id in Kafka header for the de-duplicator
                 Message<String> message = buildMessageWithId(ser);
                 emitter.send(message);
                 return Uni.createFrom().voidItem();
 
-                })
+            })
             .subscribe()
                     .with(x -> x.onItem().invoke(item -> System.out.println(item))); // This triggers the actual work
-
 
         }
     }
