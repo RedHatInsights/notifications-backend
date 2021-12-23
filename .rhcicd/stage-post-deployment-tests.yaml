@@ -9,11 +9,11 @@ objects:
   metadata:
     name: notifications-post-deployment-tests-${IMAGE_TAG}-${UID}
   spec:
-    appName: notifications-backend
+    appName: notifications
     testing:
       iqe:
         debug: false
-        dynaconfEnvName: default
+        dynaconfEnvName: stage_proxy
         filter: ''
         marker: 'smoke'
 parameters:
