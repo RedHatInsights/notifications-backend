@@ -13,9 +13,9 @@ objects:
     testing:
       iqe:
         debug: false
-        dynaconfEnvName: stage_proxy
+        dynaconfEnvName: clowder_smoke
         filter: ''
-        marker: 'smoke'
+        marker: 'notification_smoke'
 parameters:
 - name: IMAGE_TAG
   value: ''
