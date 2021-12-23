@@ -1,6 +1,22 @@
 {
   "bundles": [
     {
+      "name": "ansible",
+      "display_name": "Ansible",
+      "applications": [
+        {
+          "name": "reports",
+          "display_name": "Reports",
+          "event_types": [
+            {
+              "name": "report-available",
+              "display_name": "Report available for download"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "application-services",
       "display_name": "Application Services",
       "applications": [
