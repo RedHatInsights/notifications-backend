@@ -74,6 +74,7 @@ public class EventService {
                                                     action.setId(historyEntry.getId());
                                                     action.setEndpointId(historyEntry.getEndpointId());
                                                     action.setEndpointType(historyEntry.getEndpointType());
+                                                    action.setEndpointSubType(historyEntry.getEndpointSubType());
                                                     action.setInvocationResult(historyEntry.isInvocationResult());
                                                     if (includeDetails) {
                                                         action.setDetails(historyEntry.getDetails());

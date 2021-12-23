@@ -308,7 +308,6 @@ public class EndpointServiceTest extends DbIsolatedTest {
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
-        cAttr.setSubType("ansible");
         cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
@@ -316,6 +315,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.CAMEL);
+        ep.setSubType("ansible");
         ep.setName("Push the camel through the needle's ear");
         ep.setDescription("How many humps has a camel?");
         ep.setEnabled(true);
@@ -342,6 +342,8 @@ public class EndpointServiceTest extends DbIsolatedTest {
             JsonObject properties = responsePoint.getJsonObject("properties");
             assertNotNull(properties);
             assertTrue(endpoint.getBoolean("enabled"));
+            assertEquals("ansible", endpoint.getString("sub_type"));
+            // Todo: NOTIF-429 backward compatibility change - Remove soon.
             assertEquals("ansible", properties.getString("sub_type"));
             JsonObject extrasObject = properties.getJsonObject("extras");
             assertNotNull(extrasObject);
@@ -521,10 +523,10 @@ public class EndpointServiceTest extends DbIsolatedTest {
         camelProperties.setSecretToken("my-super-secret-token");
         camelProperties.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
         camelProperties.setExtras(new HashMap<>());
-        camelProperties.setSubType("demo");
 
         Endpoint camelEp = new Endpoint();
         camelEp.setType(EndpointType.CAMEL);
+        camelEp.setSubType("demo");
         camelEp.setName("endpoint to find");
         camelEp.setDescription("needle in the haystack");
         camelEp.setEnabled(true);

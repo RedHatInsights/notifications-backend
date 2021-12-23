@@ -86,14 +86,14 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         metaData.put("trustAll", String.valueOf(properties.getDisableSslVerification()));
 
         metaData.put("url", properties.getUrl());
-        metaData.put("type", properties.getSubType());
+        metaData.put("type", endpoint.getSubType());
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
             metaData.put(TOKEN_HEADER, properties.getSecretToken());
         }
 
         BasicAuthentication basicAuthentication = properties.getBasicAuthentication();
-        if (basicAuthentication != null) {
+        if (basicAuthentication != null && basicAuthentication.getUsername() != null && basicAuthentication.getPassword() != null) {
             StringBuilder sb = new StringBuilder(basicAuthentication.getUsername());
             sb.append(":");
             sb.append(basicAuthentication.getPassword());
@@ -121,7 +121,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         String accountId = item.getEndpoint().getAccountId();
         // the next could give a CCE, but we only come here when it is a camel endpoint anyway
-        String subType = item.getEndpoint().getProperties(CamelProperties.class).getSubType();
+        String subType = item.getEndpoint().getSubType();
 
         return payload.onItem()
 

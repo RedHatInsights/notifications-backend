@@ -4,10 +4,12 @@ import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.db.builder.WhereBuilder;
 import com.redhat.cloud.notifications.db.session.CommonStateSessionFactory;
 import com.redhat.cloud.notifications.models.CamelProperties;
+import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -15,6 +17,7 @@ import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.BadRequestException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +41,24 @@ public class EndpointResources {
 
     public Uni<Endpoint> createEndpoint(Endpoint endpoint, boolean useStatelessSession) {
         return commonStateSessionFactory.withSession(useStatelessSession, session -> {
+            // Todo: NOTIF-429 backward compatibility change - Remove soon.
+            if (endpoint.getType() == EndpointType.CAMEL) {
+                CamelProperties properties = endpoint.getProperties(CamelProperties.class);
+
+                if (endpoint.getSubType() == null && properties.getSubType() == null) {
+                    throw new BadRequestException("endpoint.subtype must have a value");
+                }
+
+                if (endpoint.getSubType() != null && properties.getSubType() != null && !properties.getSubType().equals(endpoint.getSubType())) {
+                    throw new BadRequestException("endpoint.subtype must be equal to endpoint.properties.subtype. Consider removing endpoint.properties.subtype as it is deprecated");
+                }
+
+                if (endpoint.getSubType() == null) {
+                    endpoint.setSubType(properties.getSubType());
+                } else if (properties.getSubType() == null) {
+                    properties.setSubType(endpoint.getSubType());
+                }
+            }
             return session.persist(endpoint)
                     .onItem().call(session::flush)
                     .onItem().call(() -> {
@@ -70,24 +91,29 @@ public class EndpointResources {
         });
     }
 
-    public Uni<List<Endpoint>> getEndpointsPerType(String accountId, Set<EndpointType> type, Boolean activeOnly, Query limiter, boolean useStatelessSession) {
-        return commonStateSessionFactory.withSession(useStatelessSession, session -> {
-            // TODO Modify the parameter to take a vararg of Functions that modify the query
-            // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
-            Query.Limit limit = limiter == null ? null : limiter.getLimit();
-            Query.Sort sort = limiter == null ? null : limiter.getSort();
+    public Uni<List<Endpoint>> getEndpointsPerCompositeType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter, boolean useStatelessSession) {
+        Query.Limit limit = limiter == null ? null : limiter.getLimit();
+        Query.Sort sort = limiter == null ? null : limiter.getSort();
+        return commonStateSessionFactory.withSession(useStatelessSession, session -> queryBuilderEndpointsPerType(accountId, type, activeOnly)
+                .limit(limit)
+                .sort(sort)
+                .build(session::createQuery)
+                .getResultList()
+                .onItem().call(endpoints -> loadProperties(endpoints, useStatelessSession)));
+    }
 
-            return queryBuilderEndpointsPerType(accountId, type, activeOnly)
-                    .limit(limit)
-                    .sort(sort)
-                    .build(session::createQuery)
-                    .getResultList()
-                    .onItem().call(this::loadProperties);
-        });
+    public Uni<List<Endpoint>> getEndpointsPerType(String accountId, Set<EndpointType> type, Boolean activeOnly, Query limiter, boolean useStatelessSession) {
+        return getEndpointsPerCompositeType(
+                accountId,
+                type.stream().map(CompositeEndpointType::new).collect(Collectors.toSet()),
+                activeOnly,
+                limiter,
+                useStatelessSession
+        );
     }
 
     public Uni<EndpointType> getEndpointTypeById(String accountId, UUID endpointId) {
-        String query = "Select e.type from Endpoint e WHERE e.accountId = :accountId AND e.id = :endpointId";
+        String query = "Select e.compositeType.type from Endpoint e WHERE e.accountId = :accountId AND e.id = :endpointId";
         return sessionFactory.withSession(session -> {
             return session.createQuery(query, EndpointType.class)
                     .setParameter("accountId", accountId)
@@ -122,33 +148,71 @@ public class EndpointResources {
         });
     }
 
-    public Uni<Long> getEndpointsCountPerType(String accountId, Set<EndpointType> type, Boolean activeOnly) {
-        return sessionFactory.withSession(session -> {
-            return queryBuilderEndpointsPerType(accountId, type, activeOnly)
-                    .buildCount(session::createQuery)
-                    .getSingleResult();
+    public Uni<Long> getEndpointsCountPerCompositeType(String tenant, Set<CompositeEndpointType> type, Boolean activeOnly, boolean useStatelessSession) {
+        return commonStateSessionFactory.withSession(useStatelessSession, session -> queryBuilderEndpointsPerType(tenant, type, activeOnly)
+                .buildCount(session::createQuery)
+                .getSingleResult());
+    }
+
+    public Uni<Long> getEndpointsCountPerType(String tenant, Set<EndpointType> type, Boolean activeOnly, boolean useStatelessSession) {
+        return getEndpointsCountPerCompositeType(
+                tenant,
+                type.stream().map(CompositeEndpointType::new).collect(Collectors.toSet()),
+                activeOnly,
+                useStatelessSession
+        );
+    }
+
+    // Note: This method uses a stateless session
+    public Uni<List<Endpoint>> getTargetEndpoints(String tenant, EventType eventType) {
+        String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
+                "WHERE e.enabled = TRUE AND b.eventType = :eventType AND bga.behaviorGroup.accountId = :accountId";
+
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createQuery(query, Endpoint.class)
+                    .setParameter("eventType", eventType)
+                    .setParameter("accountId", tenant)
+                    .getResultList()
+                    .onItem().call(endpoints -> loadProperties(endpoints, true));
+        });
+    }
+
+    // Note: This method uses a stateless session
+    public Uni<List<Endpoint>> getTargetEndpointsFromType(String tenant, String bundleName, String applicationName, String eventTypeName, EndpointType endpointType) {
+        String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
+                "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
+                "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
+                "AND e.compositeType.type = :endpointType";
+
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createQuery(query, Endpoint.class)
+                    .setParameter("applicationName", applicationName)
+                    .setParameter("eventTypeName", eventTypeName)
+                    .setParameter("accountId", tenant)
+                    .setParameter("bundleName", bundleName)
+                    .setParameter("endpointType", endpointType)
+                    .getResultList()
+                    .onItem().call(endpoints -> loadProperties(endpoints, true));
         });
     }
 
     public Uni<List<Endpoint>> getEndpoints(String tenant, Query limiter) {
+        Query.Limit limit = limiter == null ? null : limiter.getLimit();
+        Query.Sort sort = limiter == null ? null : limiter.getSort();
+
         return sessionFactory.withSession(session -> {
             // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
             //      or should I just create a new method for it?
-            String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId";
-
-            if (limiter != null) {
-                query = limiter.getModifiedQuery(query);
-            }
-
-            Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
-                    .setParameter("accountId", tenant);
-
-            if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-                mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
-                        .setFirstResult(limiter.getLimit().getOffset());
-            }
-
-            return mutinyQuery.getResultList()
+            return QueryBuilder.builder(Endpoint.class)
+                    .alias("e")
+                    .where(
+                            WhereBuilder.builder()
+                                    .and("e.accountId = :accountId", "accountId", tenant)
+                    )
+                    .limit(limit)
+                    .sort(sort)
+                    .build(session::createQuery)
+                    .getResultList()
                     .onItem().call(this::loadProperties);
         });
     }
@@ -215,7 +279,7 @@ public class EndpointResources {
                 "WHERE accountId = :accountId AND id = :id";
         String webhookQuery = "UPDATE WebhookProperties SET url = :url, method = :method, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
-        String camelQuery = "UPDATE CamelProperties SET url = :url, subType = :subType, extras = :extras, " +
+        String camelQuery = "UPDATE CamelProperties SET url = :url, extras = :extras, " +
                 "basicAuthentication = :basicAuthentication, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
 
@@ -257,7 +321,6 @@ public class EndpointResources {
                                             .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
                                             .setParameter("secretToken", cAttr.getSecretToken())
                                             .setParameter("endpointId", endpoint.getId())
-                                            .setParameter("subType", cAttr.getSubType())
                                             .setParameter("extras", cAttr.getExtras())
                                             .setParameter("basicAuthentication", cAttr.getBasicAuthentication())
                                             .executeUpdate()
@@ -302,11 +365,52 @@ public class EndpointResources {
                 if (props != null) {
                     Endpoint endpoint = endpointsMap.get(props.getId());
                     endpoint.setProperties(props);
+                    // Todo: NOTIF-429 backward compatibility change - Remove soon.
+                    if (typedEndpointClass.equals(CamelProperties.class)) {
+                        endpoint.getProperties(CamelProperties.class).setSubType(endpoint.getSubType());
+                    }
                 }
             })).replaceWith(Uni.createFrom().voidItem());
         }
 
         return Uni.createFrom().voidItem();
+    }
+
+    private <T extends EndpointProperties> Uni<List<T>> find(Class<T> typedEndpointClass, Set<UUID> endpointIds, boolean useStatelessSession) {
+        if (useStatelessSession) {
+            String query = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:endpointIds)";
+            return sessionFactory.withStatelessSession(statelessSession -> {
+                return statelessSession.createQuery(query, typedEndpointClass)
+                        .setParameter("endpointIds", endpointIds)
+                        .getResultList();
+            });
+        } else {
+            return sessionFactory.withSession(session -> {
+                return session.find(typedEndpointClass, endpointIds.toArray());
+            });
+        }
+    }
+
+    private QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly) {
+        Set<EndpointType> basicTypes = type.stream().filter(c -> c.getSubType() == null).map(CompositeEndpointType::getType).collect(Collectors.toSet());
+        Set<CompositeEndpointType> compositeTypes = type.stream().filter(c -> c.getSubType() != null).collect(Collectors.toSet());
+        return QueryBuilder
+                .builder(Endpoint.class)
+                .alias("e")
+                .where(
+                        WhereBuilder.builder()
+                            .ifElse(
+                                    accountId == null,
+                                    WhereBuilder.builder().and("e.accountId IS NULL"),
+                                    WhereBuilder.builder().and("e.accountId = :accountId", "accountId", accountId)
+                            )
+                            .and(
+                                    WhereBuilder.builder()
+                                            .ifOr(basicTypes.size() > 0, "e.compositeType.type IN (:endpointType)", "endpointType", basicTypes)
+                                            .ifOr(compositeTypes.size() > 0, "e.compositeType IN (:compositeTypes)", "compositeTypes", compositeTypes)
+                            )
+                            .ifAnd(activeOnly != null, "e.enabled = :enabled", "enabled", activeOnly)
+                );
     }
 
     public Uni<Endpoint> loadProperties(Endpoint endpoint) {
@@ -316,20 +420,5 @@ public class EndpointResources {
         }
         return this.loadProperties(Collections.singletonList(endpoint))
                 .replaceWith(endpoint);
-    }
-
-    private QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String accountId, Set<EndpointType> type, Boolean activeOnly) {
-        return QueryBuilder.builder(Endpoint.class)
-                .alias("e")
-                .where(
-                    WhereBuilder.builder()
-                    .ifElse(
-                            accountId == null,
-                            WhereBuilder.builder().and("e.accountId IS NULL"),
-                            WhereBuilder.builder().and("e.accountId = :accountId", "accountId", accountId)
-                    )
-                    .and("e.type IN (:endpointType)", "endpointType", type)
-                    .ifAnd(activeOnly != null, "enabled = :enabled", "enabled", activeOnly)
-                );
     }
 }

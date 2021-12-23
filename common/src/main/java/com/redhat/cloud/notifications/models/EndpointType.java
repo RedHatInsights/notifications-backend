@@ -9,9 +9,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(enumeration = { "webhook", "email_subscription", "default", "camel" })
 public enum EndpointType {
     @JsonProperty("webhook")
-    WEBHOOK, // 0
+    WEBHOOK(false), // 0
     @JsonProperty("email_subscription")
-    EMAIL_SUBSCRIPTION, // 1
+    EMAIL_SUBSCRIPTION(false), // 1
     /**
      * This enum member is no longer used.
      * <p>
@@ -20,7 +20,14 @@ public enum EndpointType {
      */
     @JsonProperty("default")
     @Deprecated
-    DEFAULT, // 2
+    DEFAULT(false), // 2
     @JsonProperty("camel")
-    CAMEL // 3
+    CAMEL(true); // 3
+
+    final boolean requiresSubType;
+
+    EndpointType(boolean requiresSubType) {
+        this.requiresSubType = requiresSubType;
+    }
+
 }

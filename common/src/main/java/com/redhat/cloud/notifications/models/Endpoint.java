@@ -5,12 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.db.converters.EndpointTypeConverter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Convert;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -18,6 +16,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.Valid;
+import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Objects;
@@ -50,11 +49,10 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     private Boolean enabled = Boolean.FALSE;
 
-    // Transform to lower case in JSON
     @NotNull
-    @Column(name = "endpoint_type")
-    @Convert(converter = EndpointTypeConverter.class)
-    private EndpointType type;
+    @Embedded
+    @JsonIgnore
+    private CompositeEndpointType compositeType = new CompositeEndpointType();
 
     @Schema(oneOf = { WebhookProperties.class, EmailSubscriptionProperties.class, CamelProperties.class })
     @JsonTypeInfo(
@@ -77,6 +75,14 @@ public class Endpoint extends CreationUpdateTimestamped {
     @OneToMany(mappedBy = "endpoint")
     @JsonIgnore
     private Set<NotificationHistory> notificationHistories;
+
+    @JsonIgnore
+    @AssertTrue(message = "This type requires a subtype")
+    private boolean isSubtypeOK() {
+        // Todo: NOTIF-429 backward compatibility change - Remove soon.
+        // Todo: Change to `return !compositeType.getType().requiresSubType || compositeType.getSubType() != null;` once users starts to send the subType
+        return true;
+    }
 
     public UUID getId() {
         return id;
@@ -118,12 +124,21 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.enabled = enabled;
     }
 
+    @JsonProperty(required = true)
     public EndpointType getType() {
-        return type;
+        return compositeType.getType();
     }
 
     public void setType(EndpointType type) {
-        this.type = type;
+        this.compositeType.setType(type);
+    }
+
+    public String getSubType() {
+        return compositeType.getSubType();
+    }
+
+    public void setSubType(String subType) {
+        compositeType.setSubType(subType);
     }
 
     public EndpointProperties getProperties() {
@@ -184,7 +199,8 @@ public class Endpoint extends CreationUpdateTimestamped {
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", enabled=" + enabled +
-                ", type=" + type +
+                ", type=" + compositeType.getType() +
+                ", subType=" + compositeType.getSubType() +
                 ", created=" + getCreated() +
                 ", updated=" + getUpdated() +
                 ", properties=" + properties +
