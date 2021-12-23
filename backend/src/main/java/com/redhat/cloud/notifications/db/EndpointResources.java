@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -65,35 +66,34 @@ public class EndpointResources {
         });
     }
 
+    public static class CompositeEndpointType {
+        public EndpointType type;
+        public String subType;
+
+        public CompositeEndpointType(EndpointType type) {
+            this.type = type;
+        }
+
+        public CompositeEndpointType(EndpointType type, String subType) {
+            this.type = type;
+            this.subType = subType;
+        }
+    }
+
+    public Uni<List<Endpoint>> getEndpointsPerCompositeType(String tenant, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
+        return sessionFactory.withSession(session -> getEndpointsPerCompositeTypeQuery(tenant, type, activeOnly, limiter)
+                .build(session::createQuery, Endpoint.class)
+                .getResultList()
+                .onItem().call(this::loadProperties));
+    }
+
     public Uni<List<Endpoint>> getEndpointsPerType(String tenant, Set<EndpointType> type, Boolean activeOnly, Query limiter) {
-        return sessionFactory.withSession(session -> {
-            // TODO Modify the parameter to take a vararg of Functions that modify the query
-            // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
-            String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.type IN (:endpointType)";
-            if (activeOnly != null) {
-                query += " AND enabled = :enabled";
-            }
-
-            if (limiter != null) {
-                query = limiter.getModifiedQuery(query);
-            }
-
-            Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
-                    .setParameter("accountId", tenant)
-                    .setParameter("endpointType", type);
-
-            if (activeOnly != null) {
-                mutinyQuery = mutinyQuery.setParameter("enabled", activeOnly);
-            }
-
-            if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-                mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
-                        .setFirstResult(limiter.getLimit().getOffset());
-            }
-
-            return mutinyQuery.getResultList()
-                    .onItem().call(this::loadProperties);
-        });
+        return getEndpointsPerCompositeType(
+                tenant,
+                type.stream().map(CompositeEndpointType::new).collect(Collectors.toSet()),
+                activeOnly,
+                limiter
+        );
     }
 
     public Uni<EndpointType> getEndpointTypeById(String accountId, UUID endpointId) {
@@ -132,23 +132,18 @@ public class EndpointResources {
         });
     }
 
+    public Uni<Long> getEndpointsCountPerCompositeType(String tenant, Set<CompositeEndpointType> type, Boolean activeOnly) {
+        return sessionFactory.withSession(session -> getEndpointsPerCompositeTypeQuery(tenant, type, activeOnly, null)
+        .build(session::createQuery, Long.class)
+        .getSingleResult());
+    }
+
     public Uni<Long> getEndpointsCountPerType(String tenant, Set<EndpointType> type, Boolean activeOnly) {
-        return sessionFactory.withSession(session -> {
-            String query = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId AND type IN (:endpointType)";
-            if (activeOnly != null) {
-                query += " AND enabled = :enabled";
-            }
-
-            Mutiny.Query<Long> mutinyQuery = session.createQuery(query, Long.class)
-                    .setParameter("accountId", tenant)
-                    .setParameter("endpointType", type);
-
-            if (activeOnly != null) {
-                mutinyQuery = mutinyQuery.setParameter("enabled", activeOnly);
-            }
-
-            return mutinyQuery.getSingleResult();
-        });
+        return getEndpointsCountPerCompositeType(
+                tenant,
+                type.stream().map(CompositeEndpointType::new).collect(Collectors.toSet()),
+                activeOnly
+        );
     }
 
     // Note: This method uses a stateless session
@@ -374,6 +369,32 @@ public class EndpointResources {
                 return session.find(typedEndpointClass, endpointIds.toArray());
             });
         }
+    }
+
+    private QueryBuilder getEndpointsPerCompositeTypeQuery(String tenant, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
+        Set<EndpointType> basicTypes = type.stream().filter(c -> c.subType == null).map(c -> c.type).collect(Collectors.toSet());
+        Set<CompositeEndpointType> compositeTypes = type.stream().filter(c -> c.subType != null).collect(Collectors.toSet());
+        return QueryBuilder
+                .builder(
+                        "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId",
+                        "accountId", tenant
+                )
+                .addIfTrue(
+                        basicTypes.size() > 0,
+                        " AND e.type IN (:endpointType)",
+                        "endpointType", basicTypes
+                )
+                .addIfTrue(
+                        compositeTypes.size() > 0,
+                        " AND (e.type, e.subType) IN (:compositeTypes)",
+                        "endpointType", compositeTypes
+                )
+                .addIfNotNull(
+                        activeOnly,
+                        " AND enabled = :enabled",
+                        "enabled", activeOnly
+                )
+                .addLimiter(limiter);
     }
 
     public Uni<Endpoint> loadProperties(Endpoint endpoint) {
