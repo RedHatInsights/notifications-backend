@@ -9,7 +9,7 @@ objects:
   metadata:
     name: notifications-post-deployment-tests-${IMAGE_TAG}-${UID}
   spec:
-    appName: notifications
+    appName: notifications-backend
     testing:
       iqe:
         debug: false
