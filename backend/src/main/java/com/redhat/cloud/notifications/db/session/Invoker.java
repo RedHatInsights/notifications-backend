@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications.db.session;
 
-import org.jboss.logging.Logger;
-
 import javax.persistence.PrePersist;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -18,7 +16,6 @@ import java.util.Map;
  */
 class Invoker {
 
-    private static final Logger LOGGER = Logger.getLogger(Invoker.class);
     private final Map<Class<?>, InvokerCache> cacheMap = new HashMap<>();
 
     private static class InvokerCache {
@@ -29,8 +26,7 @@ class Invoker {
         return cacheMap.computeIfAbsent(aClass, _aClass -> {
             InvokerCache cache = new InvokerCache();
             for (Method method: aClass.getMethods()) {
-                PrePersist prePersist = method.getAnnotation(PrePersist.class);
-                if (prePersist != null) {
+                if (method.isAnnotationPresent(PrePersist.class)) {
                     cache.prePersist = method;
                     break;
                 }
@@ -46,7 +42,9 @@ class Invoker {
             try {
                 cache.prePersist.invoke(instance);
             } catch (InvocationTargetException | IllegalAccessException exception) {
-                LOGGER.warnf(exception, "Unable to call PrePersist method [%s] found in class [%s]", cache.prePersist.getName(), instance.getClass().getName());
+                throw new RuntimeException(String.format(
+                    "Unable to call PrePersist method [%s] found in class [%s]", cache.prePersist.getName(), instance.getClass().getName()
+                ), exception);
             }
         }
     }

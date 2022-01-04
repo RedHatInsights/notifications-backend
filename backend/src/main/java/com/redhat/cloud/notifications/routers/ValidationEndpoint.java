@@ -13,9 +13,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import static com.redhat.cloud.notifications.Constants.INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 
-@Path(INTERNAL + "/validation")
+@Path(API_INTERNAL + "/validation")
 public class ValidationEndpoint {
 
     private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for [bundle=%s, application=%s, eventType=%s]";

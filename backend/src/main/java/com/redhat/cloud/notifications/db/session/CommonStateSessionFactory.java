@@ -22,12 +22,12 @@ public class CommonStateSessionFactory {
      * As a rule of thumb, we would use a stateful session on rest calls and stateless on kafka messages
      *
      * <pre>
-     * {@code
+     * {
      * commonStateSessionFactory.withSession(stateless, session -> session.find(MyClass.class, "1"));
      * }
      * </pre>
      *
-     * @param stateless If we want the session to be stateless
+     * @param stateless if true, the session will be stateless, otherwise it will be stateful
      * @param function function to execute the session on
      * @return a Uni<T> with the result of the executed function
      */

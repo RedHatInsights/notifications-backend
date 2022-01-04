@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.persistence.NoResultException;
 
-import static com.redhat.cloud.notifications.Constants.INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,7 +44,7 @@ class ValidationEndpointTest {
                 .param("bundle", "blabla")
                 .param("application", "Notifications")
                 .param("eventType", "Any")
-                .get(INTERNAL + "/validation/baet")
+                .get(API_INTERNAL + "/validation/baet")
                 .then()
                 .statusCode(404)
                 .extract().asString();
@@ -70,7 +70,7 @@ class ValidationEndpointTest {
                 .param("bundle", "my-bundle")
                 .param("application", "Policies")
                 .param("eventType", "Any")
-                .get(INTERNAL + "/validation/baet")
+                .get(API_INTERNAL + "/validation/baet")
                 .then()
                 .statusCode(200);
     }

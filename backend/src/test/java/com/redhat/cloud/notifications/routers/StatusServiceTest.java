@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
-import static com.redhat.cloud.notifications.Constants.INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.models.Status.MAINTENANCE;
@@ -107,7 +107,7 @@ public class StatusServiceTest extends DbIsolatedTest {
 
     private void getBundles() {
         given()
-                .basePath(INTERNAL)
+                .basePath(API_INTERNAL)
                 .when()
                 .get("/bundles")
                 .then()
@@ -170,7 +170,7 @@ public class StatusServiceTest extends DbIsolatedTest {
         currentStatus.setEndTime(endTime);
 
         given()
-                .basePath(INTERNAL)
+                .basePath(API_INTERNAL)
                 .contentType(JSON)
                 .body(Json.encode(currentStatus))
                 .when()

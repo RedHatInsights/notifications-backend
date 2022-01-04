@@ -7,9 +7,9 @@ import java.util.List;
 
 public interface CommonStateSession {
 
-    <T> Uni<List<T>> find(Class<T> aClass, Object... ids);
+    <T> Uni<List<T>> find(Class<T> resultType, Object... ids);
 
-    <T> Mutiny.Query<T> createQuery(String query, Class<T> aClass);
+    <T> Mutiny.Query<T> createQuery(String query, Class<T> resultType);
 
     Uni<Void> persist(Object object);
 
@@ -24,13 +24,13 @@ class SessionAdapter implements CommonStateSession {
     }
 
     @Override
-    public <T> Uni<List<T>> find(Class<T> aClass, Object... ids) {
-        return session.find(aClass, ids);
+    public <T> Uni<List<T>> find(Class<T> resultType, Object... ids) {
+        return session.find(resultType, ids);
     }
 
     @Override
-    public <T> Mutiny.Query<T> createQuery(String query, Class<T> aClass) {
-        return session.createQuery(query, aClass);
+    public <T> Mutiny.Query<T> createQuery(String query, Class<T> resultType) {
+        return session.createQuery(query, resultType);
     }
 
     @Override
@@ -46,23 +46,24 @@ class SessionAdapter implements CommonStateSession {
 
 class StatelessSessionAdapter implements CommonStateSession {
     private final Mutiny.StatelessSession statelessSession;
-    private final Invoker invoker = new Invoker();
+
+    private static final Invoker invoker = new Invoker();
 
     StatelessSessionAdapter(Mutiny.StatelessSession statelessSession) {
         this.statelessSession = statelessSession;
     }
 
     @Override
-    public <T> Uni<List<T>> find(Class<T> aClass, Object... ids) {
-        String query = "FROM " + aClass.getSimpleName() + " WHERE id IN (:ids)";
-        return statelessSession.createQuery(query, aClass)
+    public <T> Uni<List<T>> find(Class<T> resultType, Object... ids) {
+        String query = "FROM " + resultType.getSimpleName() + " WHERE id IN (:ids)";
+        return statelessSession.createQuery(query, resultType)
                 .setParameter("ids", List.of(ids))
                 .getResultList();
     }
 
     @Override
-    public <T> Mutiny.Query<T> createQuery(String query, Class<T> aClass) {
-        return statelessSession.createQuery(query, aClass);
+    public <T> Mutiny.Query<T> createQuery(String query, Class<T> resultType) {
+        return statelessSession.createQuery(query, resultType);
     }
 
     @Override

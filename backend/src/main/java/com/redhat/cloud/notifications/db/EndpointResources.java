@@ -70,12 +70,12 @@ public class EndpointResources {
         });
     }
 
-    public Uni<List<Endpoint>> getEndpointsPerType(String tenant, Set<EndpointType> type, Boolean activeOnly, Query limiter, boolean useStatelessSession) {
+    public Uni<List<Endpoint>> getEndpointsPerType(String accountId, Set<EndpointType> type, Boolean activeOnly, Query limiter, boolean useStatelessSession) {
         return commonStateSessionFactory.withSession(useStatelessSession, session -> {
             // TODO Modify the parameter to take a vararg of Functions that modify the query
             // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
             String query = "SELECT e FROM Endpoint e WHERE e.type IN (:endpointType)";
-            if (tenant == null) {
+            if (accountId == null) {
                 query += " AND e.accountId IS NULL";
             } else {
                 query += " AND e.accountId = :accountId";
@@ -91,8 +91,8 @@ public class EndpointResources {
             Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
                     .setParameter("endpointType", type);
 
-            if (tenant != null) {
-                mutinyQuery = mutinyQuery.setParameter("accountId", tenant);
+            if (accountId != null) {
+                mutinyQuery = mutinyQuery.setParameter("accountId", accountId);
             }
             if (activeOnly != null) {
                 mutinyQuery = mutinyQuery.setParameter("enabled", activeOnly);
@@ -132,7 +132,7 @@ public class EndpointResources {
                         }
 
                         Endpoint endpoint = new Endpoint();
-                        endpoint.setProperties(new EmailSubscriptionProperties(properties));
+                        endpoint.setProperties(properties);
                         endpoint.setAccountId(accountId);
                         endpoint.setEnabled(true);
                         endpoint.setDescription("System email endpoint");
@@ -175,10 +175,15 @@ public class EndpointResources {
                     .getResultList()
                     .onItem().call(endpoints -> loadProperties(endpoints, true))
                     .onItem().transformToMulti(endpoints -> Multi.createFrom().iterable(endpoints))
-                    .onItem().transformToUniAndMerge(endpoint -> {
+                    .onItem().transformToUniAndConcatenate(endpoint -> {
                         if (endpoint.getAccountId() == null) {
-                            if (endpoint.getType().equals(EndpointType.EMAIL_SUBSCRIPTION)) {
-                                return this.getOrCreateEmailSubscriptionEndpoint(tenant, endpoint.getProperties(EmailSubscriptionProperties.class), true);
+                            if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
+                                return this.getOrCreateEmailSubscriptionEndpoint(
+                                        tenant,
+                                        // We don't want to affect the original properties
+                                        new EmailSubscriptionProperties(endpoint.getProperties(EmailSubscriptionProperties.class)),
+                                        true
+                                );
                             } else {
                                 LOGGER.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
                             }

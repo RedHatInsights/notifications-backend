@@ -15,7 +15,7 @@ import javax.enterprise.context.ApplicationScoped;
 import java.util.Collections;
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.Constants.INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 
 /**
  * Implements Jakarta EE JSR-375 (Security API) HttpAuthenticationMechanism for the insight's
@@ -33,7 +33,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
 
         // Those two come via Turnpike and have a different identity header.
         // Skip the header check for now
-        if (path.startsWith(INTERNAL + "/")) {
+        if (path.startsWith(API_INTERNAL + "/")) {
             return Uni.createFrom().item(QuarkusSecurityIdentity.builder()
                 // Set a dummy principal, but add no roles.
                 .setPrincipal(new RhIdPrincipal("-noauth-", "-1"))
@@ -50,7 +50,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
                 if (path.endsWith("openapi.json")) {
                     good = true;
                 }
-            } else if (path.startsWith("/openapi.json") || path.startsWith(INTERNAL)
+            } else if (path.startsWith("/openapi.json") || path.startsWith(API_INTERNAL)
                     || path.startsWith("/admin") || path.startsWith("/health") || path.startsWith("/metrics")) {
                 good = true;
             }

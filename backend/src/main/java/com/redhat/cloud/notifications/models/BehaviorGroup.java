@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import org.hibernate.jpa.QueryHints;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -29,6 +30,7 @@ import java.util.UUID;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 import static javax.persistence.FetchType.LAZY;
 
@@ -47,8 +49,7 @@ import static javax.persistence.FetchType.LAZY;
 @NamedQuery(
         name = "findByBundleId",
         query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
-                "WHERE (b.accountId = :accountId AND b.bundle.id = :bundleId) " +
-                " OR (b.accountId IS NULL AND b.bundle.id = :bundleId) " +
+                "WHERE (b.accountId = :accountId OR b.accountId IS NULL) AND b.bundle.id = :bundleId " +
                 "ORDER BY b.created DESC, a.position ASC",
         hints = @QueryHint(name = QueryHints.HINT_PASS_DISTINCT_THROUGH, value = "false")
 )
@@ -92,8 +93,12 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
     @JsonIgnore
     private Set<EventTypeBehavior> behaviors;
 
-    @Transient
-    private Boolean defaultBehavior;
+    @JsonInclude
+    @JsonProperty(access = WRITE_ONLY)
+    @Column(name = "default_behavior")
+    public boolean isDefaultBehavior() {
+        return accountId == null;
+    }
 
     public UUID getId() {
         return id;
@@ -170,14 +175,6 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     public void setBehaviors(Set<EventTypeBehavior> behaviors) {
         this.behaviors = behaviors;
-    }
-
-    public void setDefaultBehavior(Boolean defaultBehavior) {
-        this.defaultBehavior = defaultBehavior;
-    }
-
-    public Boolean isDefaultBehavior() {
-        return defaultBehavior;
     }
 
     @Override

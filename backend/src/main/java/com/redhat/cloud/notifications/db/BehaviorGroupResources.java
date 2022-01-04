@@ -41,16 +41,18 @@ public class BehaviorGroupResources {
     }
 
     private Uni<BehaviorGroup> create(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
+        behaviorGroup.setAccountId(accountId);
+        if (isDefaultBehaviorGroup != behaviorGroup.isDefaultBehavior()) {
+            throw new BadRequestException(String.format(
+                    "Unexpected default behavior group status: Expected [%s] found: [%s]",
+                    isDefaultBehaviorGroup, behaviorGroup.isDefaultBehavior()
+            ));
+        }
+
         return sessionFactory.withSession(session -> {
             return session.find(Bundle.class, behaviorGroup.getBundleId())
                     .onItem().ifNull().failWith(new NotFoundException("bundle_id not found"))
-                    .onItem().invoke(bundle -> {
-                        behaviorGroup.setBundle(bundle);
-                        behaviorGroup.setAccountId(accountId);
-                        if (isDefaultBehaviorGroup != (accountId == null)) {
-                            throw new BadRequestException("account id is only null for default behavior groups");
-                        }
-                    })
+                    .onItem().invoke(behaviorGroup::setBundle)
                     .replaceWith(session.persist(behaviorGroup))
                     .call(session::flush)
                     .replaceWith(behaviorGroup)
@@ -138,7 +140,7 @@ public class BehaviorGroupResources {
                     .onItem().transformToUni(_ignored -> {
                         String deleteQuery = "DELETE FROM EventTypeBehavior b " +
                                 "WHERE eventType.id = :eventTypeId " +
-                                "AND EXISTS (SELECT 1 FROM BehaviorGroup WHERE accountId IS NULL AND id = :behaviorGroupId)";
+                                "AND id.behaviorGroupId = :behaviorGroupId";
                         return session.createQuery(deleteQuery)
                                 .setParameter("eventTypeId", eventTypeId)
                                 .setParameter("behaviorGroupId", behaviorGroupId)
@@ -330,12 +332,13 @@ public class BehaviorGroupResources {
                     .setParameter("accountId", accountId)
                     .setParameter("endpointId", endpointId)
                     .getResultList()
-                    .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutActions));
+                    .invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutActions));
         });
     }
 
     private Uni<BehaviorGroup> getBehaviorGroup(Session session, UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
         return session.find(BehaviorGroup.class, behaviorGroupId)
+                .onItem().ifNull().failWith(NoResultException::new)
                 .onItem().invoke(behaviorGroup -> {
                     if (isDefaultBehaviorGroup) {
                         if (behaviorGroup.getAccountId() != null) {
