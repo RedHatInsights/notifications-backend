@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * This class deals with calls that the stateful session do but the stateless session does not.
@@ -14,36 +15,30 @@ import java.util.Map;
  * It heavily relies on introspection to find what methods have the required annotation.
  * To lessen this burden, a cache is created per class once, so the methods are not inspected all the time.
  */
-class Invoker {
+class InvokerPrePersist {
 
-    private final Map<Class<?>, InvokerCache> cacheMap = new HashMap<>();
+    private final Map<Class<?>, Optional<Method>> cacheMap = new HashMap<>();
 
-    private static class InvokerCache {
-        private Method prePersist;
-    }
-
-    private <T> InvokerCache get(Class<T> aClass) {
+    private <T> Optional<Method> get(Class<T> aClass) {
         return cacheMap.computeIfAbsent(aClass, _aClass -> {
-            InvokerCache cache = new InvokerCache();
             for (Method method: aClass.getMethods()) {
                 if (method.isAnnotationPresent(PrePersist.class)) {
-                    cache.prePersist = method;
-                    break;
+                    return Optional.of(method);
                 }
             }
 
-            return cache;
+            return Optional.empty();
         });
     }
 
     public <T> void prePersist(T instance) {
-        InvokerCache cache = get(instance.getClass());
-        if (cache.prePersist != null) {
+        Optional<Method> cache = get(instance.getClass());
+        if (cache.isPresent()) {
             try {
-                cache.prePersist.invoke(instance);
+                cache.get().invoke(instance);
             } catch (InvocationTargetException | IllegalAccessException exception) {
                 throw new RuntimeException(String.format(
-                    "Unable to call PrePersist method [%s] found in class [%s]", cache.prePersist.getName(), instance.getClass().getName()
+                    "Unable to call PrePersist method [%s] found in class [%s]", cache.get().getName(), instance.getClass().getName()
                 ), exception);
             }
         }
