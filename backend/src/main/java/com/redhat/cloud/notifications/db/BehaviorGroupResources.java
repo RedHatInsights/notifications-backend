@@ -132,7 +132,8 @@ public class BehaviorGroupResources {
                                 .setParameter("created", LocalDateTime.now(UTC))
                                 .executeUpdate();
                     }).replaceWith(true)
-            .onFailure(BadRequestException.class).recoverWithItem(false);
+            .onFailure(BadRequestException.class).recoverWithItem(Boolean.FALSE)
+            .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
         });
     }
 
@@ -148,7 +149,9 @@ public class BehaviorGroupResources {
                                 .setParameter("behaviorGroupId", behaviorGroupId)
                                 .executeUpdate()
                                 .replaceWith(true);
-                    });
+                    })
+            .onFailure(BadRequestException.class).recoverWithItem(Boolean.FALSE)
+            .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
         });
     }
 
