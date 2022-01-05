@@ -309,6 +309,18 @@ public class InternalService {
     }
 
     @PUT
+    @Path("/defaultBehaviorGroups/{id}")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "Update a behavior group.")
+    public Uni<Boolean> createDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
+        return sessionFactory.withSession(session -> {
+            behaviorGroup.setId(id);
+            return behaviorGroupResources.updateDefault(behaviorGroup);
+        });
+    }
+
+    @PUT
     @Path("/defaultBehaviorGroups/{behaviorGroupId}/actions")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
