@@ -299,7 +299,7 @@ public class InternalService {
     }
 
     @POST
-    @Path("/defaultBehaviorGroups")
+    @Path("/behaviorGroups/default")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     public Uni<BehaviorGroup> createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
@@ -309,7 +309,7 @@ public class InternalService {
     }
 
     @PUT
-    @Path("/defaultBehaviorGroups/{id}")
+    @Path("/behaviorGroups/default/{id}")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Update a behavior group.")
@@ -321,7 +321,7 @@ public class InternalService {
     }
 
     @PUT
-    @Path("/defaultBehaviorGroups/{behaviorGroupId}/actions")
+    @Path("/behaviorGroups/default/{behaviorGroupId}/actions")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Update the list of actions of a default behavior group.")
@@ -353,7 +353,7 @@ public class InternalService {
     }
 
     @PUT
-    @Path("/defaultBehaviorGroups/{behaviorGroupId}/eventType/{eventTypeId}")
+    @Path("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Links the behavior group to the event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
@@ -369,7 +369,7 @@ public class InternalService {
     }
 
     @DELETE
-    @Path("/defaultBehaviorGroups/{behaviorGroupId}/eventType/{eventTypeId}")
+    @Path("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Links the behavior group to the event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))

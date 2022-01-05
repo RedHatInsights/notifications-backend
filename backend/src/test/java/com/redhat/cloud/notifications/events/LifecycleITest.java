@@ -392,7 +392,7 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private String createDefaultBehaviorGroup(String bundleId) {
-        return createBehaviorGroupInternal(API_INTERNAL + "/defaultBehaviorGroups", null, bundleId);
+        return createBehaviorGroupInternal(API_INTERNAL + "/behaviorGroups/default", null, bundleId);
     }
 
     private String getEmailEndpoint(Header identityHeader, RequestEmailSubscriptionProperties properties) {
@@ -500,7 +500,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .pathParam("behaviorGroupId", defaultBehaviorGroupId)
                 .body(Json.encode(List.of(properties)))
                 .when()
-                .put("/defaultBehaviorGroups/{behaviorGroupId}/actions")
+                .put("/behaviorGroups/default/{behaviorGroupId}/actions")
                 .then()
                 .statusCode(expectedHttpStatusCode)
                 .contentType(TEXT);
@@ -664,7 +664,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .pathParam("behaviorGroupId", behaviorGroupId)
                 .pathParam("eventTypeId", eventTypeId)
                 .when()
-                .put("/defaultBehaviorGroups/{behaviorGroupId}/eventType/{eventTypeId}")
+                .put("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
                 .then()
                 .statusCode(200)
                 .contentType(TEXT);
@@ -676,7 +676,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .pathParam("behaviorGroupId", behaviorGroupId)
                 .pathParam("eventTypeId", eventTypeId)
                 .when()
-                .delete("/defaultBehaviorGroups/{behaviorGroupId}/eventType/{eventTypeId}")
+                .delete("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
                 .then()
                 .statusCode(200)
                 .contentType(TEXT);
