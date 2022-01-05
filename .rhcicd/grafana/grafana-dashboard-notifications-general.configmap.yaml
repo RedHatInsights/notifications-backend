@@ -25,7 +25,7 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": null,
       "graphTooltip": 1,
-      "iteration": 1640014925767,
+      "iteration": 1641379450721,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -907,10 +907,11 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "exemplar": true,
               "expr": "sum(rate(processor_email_processed_total[5m])) by (application,bundle)",
               "hide": false,
               "interval": "",
-              "legendFormat": "emails",
+              "legendFormat": "{{bundle}}/{{application}}",
               "refId": "A"
             }
           ],
@@ -2755,7 +2756,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 32
+      "version": 33
     }
 kind: ConfigMap
 metadata:
