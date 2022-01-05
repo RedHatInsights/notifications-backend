@@ -907,7 +907,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(increase(processor_email_processed_total[5m]))",
+              "expr": "sum(rate(processor_email_processed_total[5m])) by (application,bundle)",
               "hide": false,
               "interval": "",
               "legendFormat": "emails",
