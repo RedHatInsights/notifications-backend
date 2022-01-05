@@ -70,12 +70,24 @@ public class EmailSender {
     @Inject
     MeterRegistry registry;
 
-    private Counter.Builder processedCount;
+    private Counter processedCount;
+
+    private Counter processedOpenShiftAdvisorCount;
+    private Counter processedRhelDriftCount;
+    private Counter processedRhelPoliciesCount;
+    private Counter processedRhelAdvisorCount;
+
     private Timer processTime;
 
     @PostConstruct
     public void init() {
-        processedCount = Counter.builder("processor.email.processed");
+        processedCount = registry.counter("processor.email.processed");
+
+        processedOpenShiftAdvisorCount = registry.counter("processor.email.openshift.advisor.processed");
+        processedRhelDriftCount = registry.counter("processor.email.rhel.drift.processed");
+        processedRhelPoliciesCount = registry.counter("processor.email.rhel.policies.processed");
+        processedRhelAdvisorCount = registry.counter("processor.email.rhel.advisor.processed");
+
         processTime = registry.timer("processor.email.process-time");
         /*
          * The token value we receive contains a line break because of the standard mime encryption. Gabor Burges tried
@@ -105,8 +117,18 @@ public class EmailSender {
                             bopRequest,
                             getPayload(user, action, subject, body)
                     ).onItem().invoke(unused -> {
-                        processedCount.tags("bundle", action.getBundle(), "application", action.getApplication());
-                        processedCount.register(registry).increment();
+                        final String application = action.getApplication();
+                        final String bundle = action.getBundle();
+                        if ("rhel".equals(bundle) && "advisor".equals(application)) {
+                            processedRhelAdvisorCount.increment();
+                        } else if ("rhel".equals(bundle) && "drift".equals(application)) {
+                            processedRhelDriftCount.increment();
+                        } else if ("rhel".equals(bundle) && "policies".equals(application)) {
+                            processedRhelPoliciesCount.increment();
+                        }  else if ("openshift".equals(bundle) && "advisor".equals(application)) {
+                            processedOpenShiftAdvisorCount.increment();
+                        }
+                        processedCount.increment();
 
                         processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
                     });
