@@ -13,6 +13,9 @@ public class CommonStateSessionFactory {
     @Inject
     Mutiny.SessionFactory sessionFactory;
 
+    @Inject
+    InvokerPrePersist invokerPrePersist;
+
     /**
      * Creates a stateless or stateful session depending on the provided params.
      *
@@ -33,7 +36,7 @@ public class CommonStateSessionFactory {
      */
     public <T> Uni<T> withSession(boolean stateless, Function<CommonStateSession, Uni<T>> function) {
         if (stateless) {
-            return sessionFactory.withStatelessSession(statelessSession -> function.apply(new StatelessSessionAdapter(statelessSession)));
+            return sessionFactory.withStatelessSession(statelessSession -> function.apply(new StatelessSessionAdapter(statelessSession, invokerPrePersist)));
         } else {
             return sessionFactory.withSession(session -> function.apply(new SessionAdapter(session)));
         }

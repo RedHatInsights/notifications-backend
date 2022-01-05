@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.session;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.persistence.PrePersist;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -15,6 +16,7 @@ import java.util.Optional;
  * It heavily relies on introspection to find what methods have the required annotation.
  * To lessen this burden, a cache is created per class once, so the methods are not inspected all the time.
  */
+@ApplicationScoped
 class InvokerPrePersist {
 
     private final Map<Class<?>, Optional<Method>> cacheMap = new HashMap<>();

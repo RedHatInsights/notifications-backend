@@ -46,11 +46,11 @@ class SessionAdapter implements CommonStateSession {
 
 class StatelessSessionAdapter implements CommonStateSession {
     private final Mutiny.StatelessSession statelessSession;
+    private final InvokerPrePersist invokerPrePersist;
 
-    private static final InvokerPrePersist INVOKER_PRE_PERSIST = new InvokerPrePersist();
-
-    StatelessSessionAdapter(Mutiny.StatelessSession statelessSession) {
+    StatelessSessionAdapter(Mutiny.StatelessSession statelessSession, InvokerPrePersist invokerPrePersist) {
         this.statelessSession = statelessSession;
+        this.invokerPrePersist = invokerPrePersist;
     }
 
     @Override
@@ -68,7 +68,7 @@ class StatelessSessionAdapter implements CommonStateSession {
 
     @Override
     public Uni<Void> persist(Object object) {
-        INVOKER_PRE_PERSIST.prePersist(object);
+        invokerPrePersist.prePersist(object);
 
         // Todo: Check if we need to retrieve the generated ID manually
         return statelessSession.insert(object);
