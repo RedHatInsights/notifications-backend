@@ -90,7 +90,8 @@ public class BehaviorGroupResources {
                             .executeUpdate()
                             .call(session::flush)
                             .onItem().transform(rowCount -> rowCount > 0)
-                    );
+                    )
+                    .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
         });
     }
 
@@ -113,7 +114,8 @@ public class BehaviorGroupResources {
                                 .executeUpdate()
                                 .call(session::flush)
                                 .onItem().transform(rowCount -> rowCount > 0)
-                    );
+                    )
+                    .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
         });
     }
 
