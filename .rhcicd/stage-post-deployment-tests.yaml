@@ -13,7 +13,7 @@ objects:
     testing:
       iqe:
         debug: false
-        dynaconfEnvName: clowder_smoke
+        dynaconfEnvName: stage_gatekeeper
         filter: ''
         marker: 'notification_smoke'
 parameters:
