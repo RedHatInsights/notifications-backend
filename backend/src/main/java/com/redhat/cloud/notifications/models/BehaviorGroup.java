@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import org.hibernate.jpa.QueryHints;
 
 import javax.persistence.CascadeType;
-import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -30,7 +29,6 @@ import java.util.UUID;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
-import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 import static javax.persistence.FetchType.LAZY;
 
@@ -94,8 +92,7 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
     private Set<EventTypeBehavior> behaviors;
 
     @JsonInclude
-    @JsonProperty(access = WRITE_ONLY)
-    @Column(name = "default_behavior")
+    @JsonProperty(access = READ_ONLY, value = "default_behavior")
     public boolean isDefaultBehavior() {
         return accountId == null;
     }

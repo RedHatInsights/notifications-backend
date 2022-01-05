@@ -381,6 +381,9 @@ public class LifecycleITest extends DbIsolatedTest {
         assertEquals(behaviorGroup.getBundleId().toString(), jsonBehaviorGroup.getString("bundle_id"));
         assertNotNull(jsonBehaviorGroup.getString("created"));
 
+        // No identity header means that we are creating a default behavior group
+        assertEquals(identityHeader == null, jsonBehaviorGroup.getBoolean("default_behavior"));
+
         return jsonBehaviorGroup.getString("id");
     }
 
