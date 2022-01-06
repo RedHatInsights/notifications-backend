@@ -20,15 +20,12 @@ public class KafkaConsumedTotalChecker {
     @ConfigProperty(name = "notifications.kafka-consumed-total-checker.enabled", defaultValue = "false")
     boolean enabled;
 
-    @ConfigProperty(name = "notifications.kafka-consumed-total-checker.max-failures", defaultValue = "5")
-    int maxFailures;
-
     @Inject
     MeterRegistry meterRegistry;
 
     private FunctionCounter consumedTotalCounter;
     private double previousTotal;
-    private int currentFailures;
+    private boolean down;
 
     @PostConstruct
     void postConstruct() {
@@ -42,25 +39,19 @@ public class KafkaConsumedTotalChecker {
         }
     }
 
-    @Scheduled(every = "${notifications.kafka-consumed-total-checker.period:1m}", delayed = "${notifications.kafka-consumed-total-checker.initial-delay:5m}")
+    @Scheduled(every = "${notifications.kafka-consumed-total-checker.period:5m}", delayed = "${notifications.kafka-consumed-total-checker.initial-delay:5m}")
     public void periodicCheck() {
         if (enabled) {
             double currentTotal = consumedTotalCounter.count();
-            if (currentTotal > previousTotal) {
-                if (currentFailures > 0) {
-                    LOGGER.debugf("Kafka records consumed total check succeeded for topic '%s' after %d failures",
-                            INGRESS_TOPIC, currentFailures);
-                    currentFailures = 0;
-                }
-            } else {
-                currentFailures++;
+            if (currentTotal == previousTotal) {
                 LOGGER.debugf("Kafka records consumed total check failed for topic '%s'", INGRESS_TOPIC);
+                down = true;
             }
             previousTotal = currentTotal;
         }
     }
 
     public boolean isDown() {
-        return enabled && currentFailures >= maxFailures;
+        return down;
     }
 }
