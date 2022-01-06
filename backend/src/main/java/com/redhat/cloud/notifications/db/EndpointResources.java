@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.logging.Logger;
@@ -174,23 +173,17 @@ public class EndpointResources {
                     .setParameter("accountId", tenant)
                     .getResultList()
                     .onItem().call(endpoints -> loadProperties(endpoints, true))
-                    .onItem().transformToMulti(endpoints -> Multi.createFrom().iterable(endpoints))
-                    .onItem().transformToUniAndConcatenate(endpoint -> {
-                        if (endpoint.getAccountId() == null) {
-                            if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
-                                return this.getOrCreateEmailSubscriptionEndpoint(
-                                        tenant,
-                                        // We don't want to affect the original properties
-                                        new EmailSubscriptionProperties(endpoint.getProperties(EmailSubscriptionProperties.class)),
-                                        true
-                                );
-                            } else {
-                                LOGGER.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
+                    .invoke(endpoints -> {
+                        for (Endpoint endpoint : endpoints) {
+                            if (endpoint.getAccountId() == null) {
+                                if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
+                                    endpoint.setAccountId(tenant);
+                                } else {
+                                    LOGGER.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
+                                }
                             }
                         }
-
-                        return Uni.createFrom().item(endpoint);
-                    }).collect().asList();
+                    });
         });
     }
 
