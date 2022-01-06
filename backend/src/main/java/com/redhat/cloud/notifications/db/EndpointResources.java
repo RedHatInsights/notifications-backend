@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.db.builder.QueryBuilder;
+import com.redhat.cloud.notifications.db.builder.WhereBuilder;
 import com.redhat.cloud.notifications.db.session.CommonStateSessionFactory;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -72,37 +74,11 @@ public class EndpointResources {
         return commonStateSessionFactory.withSession(useStatelessSession, session -> {
             // TODO Modify the parameter to take a vararg of Functions that modify the query
             // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
-            String query = "SELECT e FROM Endpoint e WHERE e.type IN (:endpointType)";
-            if (accountId == null) {
-                query += " AND e.accountId IS NULL";
-            } else {
-                query += " AND e.accountId = :accountId";
-            }
-            if (activeOnly != null) {
-                query += " AND enabled = :enabled";
-            }
-
-            if (limiter != null) {
-                query = limiter.getModifiedQuery(query);
-            }
-
-            Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
-                    .setParameter("endpointType", type);
-
-            if (accountId != null) {
-                mutinyQuery = mutinyQuery.setParameter("accountId", accountId);
-            }
-            if (activeOnly != null) {
-                mutinyQuery = mutinyQuery.setParameter("enabled", activeOnly);
-            }
-
-            if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-                mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
-                        .setFirstResult(limiter.getLimit().getOffset());
-            }
-
-            return mutinyQuery.getResultList()
-                    .onItem().call(endpoints -> loadProperties(endpoints, useStatelessSession));
+            return queryBuilderEndpointsPerType(accountId, type, activeOnly)
+                    .limit(limiter)
+                    .build(session::createQuery)
+                    .getResultList()
+                    .onItem().call(this::loadProperties);
         });
     }
 
@@ -142,22 +118,11 @@ public class EndpointResources {
         });
     }
 
-    public Uni<Long> getEndpointsCountPerType(String tenant, Set<EndpointType> type, Boolean activeOnly) {
+    public Uni<Long> getEndpointsCountPerType(String accountId, Set<EndpointType> type, Boolean activeOnly) {
         return sessionFactory.withSession(session -> {
-            String query = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId AND type IN (:endpointType)";
-            if (activeOnly != null) {
-                query += " AND enabled = :enabled";
-            }
-
-            Mutiny.Query<Long> mutinyQuery = session.createQuery(query, Long.class)
-                    .setParameter("accountId", tenant)
-                    .setParameter("endpointType", type);
-
-            if (activeOnly != null) {
-                mutinyQuery = mutinyQuery.setParameter("enabled", activeOnly);
-            }
-
-            return mutinyQuery.getSingleResult();
+            return queryBuilderEndpointsPerType(accountId, type, activeOnly)
+                    .buildCount(session::createQuery)
+                    .getSingleResult();
         });
     }
 
@@ -347,5 +312,20 @@ public class EndpointResources {
         }
         return this.loadProperties(Collections.singletonList(endpoint))
                 .replaceWith(endpoint);
+    }
+
+    private QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String accountId, Set<EndpointType> type, Boolean activeOnly) {
+        return QueryBuilder.builder(Endpoint.class)
+                .alias("e")
+                .where(
+                    WhereBuilder.builder()
+                    .ifElse(
+                            accountId == null,
+                            WhereBuilder.builder().and("e.accountId IS NULL"),
+                            WhereBuilder.builder().and("e.accountId = :accountId", "accountId", accountId)
+                    )
+                    .and("e.type IN (:endpointType)", "endpointType", type)
+                    .ifAnd(activeOnly != null, "enabled = :enabled", "enabled", activeOnly)
+                );
     }
 }

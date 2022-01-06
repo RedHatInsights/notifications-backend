@@ -115,6 +115,15 @@ public class Query {
         return query;
     }
 
+    public String getSortQuery() {
+        Sort sort = getSort();
+        String query = "";
+        if (sort != null) {
+            query = modifyWithSort(query, sort);
+        }
+        return query;
+    }
+
     public static Function<String, String> modifyToCountQuery() {
         return s -> "SELECT COUNT(*) FROM (" +
                 s +
