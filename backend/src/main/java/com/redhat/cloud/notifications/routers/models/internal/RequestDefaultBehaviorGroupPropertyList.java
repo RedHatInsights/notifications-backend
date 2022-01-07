@@ -1,9 +1,13 @@
 package com.redhat.cloud.notifications.routers.models.internal;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import javax.validation.constraints.NotNull;
 import java.util.Objects;
 import java.util.UUID;
 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class RequestDefaultBehaviorGroupPropertyList {
     @NotNull
     private boolean onlyAdmins;
