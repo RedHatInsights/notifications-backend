@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.rbac.pojo.ITUser;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -63,7 +64,7 @@ public class RbacRecipientUsersProvider {
             page -> {
                 Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
                 return retryOnError(
-                        rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
+                        rbacServiceToService.getUsers(new ITUser(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage))
                 )
                 .onItem().invoke(() -> getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId)));
             }

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.redhat.cloud.notifications.recipients.rbac.pojo.ITUser;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
@@ -7,6 +8,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -14,20 +16,15 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.UUID;
 
-@Path("/api/rbac/v1")
+@Path("/v2")
 @RegisterRestClient(configKey = "rbac-s2s")
 @RegisterProvider(AuthRequestFilter.class)
 public interface RbacServiceToService {
 
-    @GET
-    @Path("/principals/") // trailing slash is required by api
+    @POST
+    @Path("/findUsers/") // trailing slash is required by api
     @Produces(MediaType.APPLICATION_JSON)
-    Uni<Page<RbacUser>> getUsers(
-            @HeaderParam("x-rh-rbac-account") String accountId,
-            @QueryParam("admin_only") Boolean adminOnly,
-            @QueryParam("offset") Integer offset,
-            @QueryParam("limit") Integer limit
-    );
+    Uni<Page<RbacUser>> getUsers(ITUser ITUser);
 
     @GET
     @Path("/groups/") // trailing slash is required by api
