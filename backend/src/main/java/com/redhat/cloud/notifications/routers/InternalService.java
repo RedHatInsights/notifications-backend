@@ -321,6 +321,14 @@ public class InternalService {
         });
     }
 
+    @DELETE
+    @Path("/behaviorGroups/default/{id}")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "Deletes a default behavior group.")
+    public Uni<Boolean> deleteDefaultBehaviorGroup(@PathParam("id") UUID id) {
+        return sessionFactory.withSession(session -> behaviorGroupResources.deleteDefault(id));
+    }
+
     @PUT
     @Path("/behaviorGroups/default/{behaviorGroupId}/actions")
     @Consumes(APPLICATION_JSON)

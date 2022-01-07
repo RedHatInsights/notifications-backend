@@ -79,19 +79,30 @@ public class BehaviorGroupResources {
     }
 
     private Uni<Boolean> update(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehavior) {
-        String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE accountId = :accountId AND id = :id";
         return sessionFactory.withSession(session -> {
             return this.getBehaviorGroup(session, behaviorGroup.getId(), isDefaultBehavior)
-                    .replaceWith(
-                            session.createQuery(query)
+                .onItem().transformToUni(_ignored -> {
+                    String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE id = :id";
+
+                    if (accountId == null) {
+                        query += " AND accountId IS NULL";
+                    } else {
+                        query += " AND accountId = :accountId";
+                    }
+
+                    Mutiny.Query<Object> mutinyQuery = session.createQuery(query)
                             .setParameter("displayName", behaviorGroup.getDisplayName())
-                            .setParameter("accountId", accountId)
-                            .setParameter("id", behaviorGroup.getId())
-                            .executeUpdate()
+                            .setParameter("id", behaviorGroup.getId());
+
+                    if (accountId != null) {
+                        mutinyQuery = mutinyQuery.setParameter("accountId", accountId);
+                    }
+
+                    return mutinyQuery.executeUpdate()
                             .call(session::flush)
-                            .onItem().transform(rowCount -> rowCount > 0)
-                    )
-                    .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
+                            .onItem().transform(rowCount -> rowCount > 0);
+                })
+                .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
         });
     }
 
@@ -104,17 +115,28 @@ public class BehaviorGroupResources {
     }
 
     public Uni<Boolean> delete(String accountId, UUID behaviorGroupId, boolean isDefaultBehavior) {
-        String query = "DELETE FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
         return sessionFactory.withSession(session -> {
             return this.getBehaviorGroup(session, behaviorGroupId, isDefaultBehavior)
-                    .replaceWith(
-                        session.createQuery(query)
-                                .setParameter("accountId", accountId)
-                                .setParameter("id", behaviorGroupId)
-                                .executeUpdate()
+                    .onItem().transformToUni(_ignored -> {
+                        String query = "DELETE FROM BehaviorGroup WHERE id = :id";
+
+                        if (accountId == null) {
+                            query += " AND accountId IS NULL";
+                        } else {
+                            query += " AND accountId = :accountId";
+                        }
+
+                        Mutiny.Query<Object> mutinyQuery = session.createQuery(query)
+                                .setParameter("id", behaviorGroupId);
+
+                        if (accountId != null) {
+                            mutinyQuery = mutinyQuery.setParameter("accountId", accountId);
+                        }
+
+                        return mutinyQuery.executeUpdate()
                                 .call(session::flush)
-                                .onItem().transform(rowCount -> rowCount > 0)
-                    )
+                                .onItem().transform(rowCount -> rowCount > 0);
+                    })
                     .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
         });
     }

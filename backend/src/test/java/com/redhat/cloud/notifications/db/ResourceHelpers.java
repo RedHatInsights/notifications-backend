@@ -205,6 +205,13 @@ public class ResourceHelpers {
         return behaviorGroupResources.create(accountId, behaviorGroup);
     }
 
+    public Uni<BehaviorGroup> createDefaultBehaviorGroup(String displayName, UUID bundleId) {
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName(displayName);
+        behaviorGroup.setBundleId(bundleId);
+        return behaviorGroupResources.createDefault(behaviorGroup);
+    }
+
     public Uni<List<EventType>> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
         return behaviorGroupResources.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, behaviorGroupId);
     }
@@ -222,7 +229,15 @@ public class ResourceHelpers {
     }
 
     public Uni<Boolean> deleteBehaviorGroup(UUID behaviorGroupId) {
-        return behaviorGroupResources.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId, false);
+        return behaviorGroupResources.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
+    }
+
+    public Uni<Boolean> updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
+        return behaviorGroupResources.updateDefault(behaviorGroup);
+    }
+
+    public Uni<Boolean> deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
+        return behaviorGroupResources.deleteDefault(behaviorGroupId);
     }
 
     public Uni<Boolean> addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {

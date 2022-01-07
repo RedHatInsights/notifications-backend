@@ -251,6 +251,16 @@ public class LifecycleITest extends DbIsolatedTest {
         retry(() -> checkEndpointHistory(identityHeader, endpointId3, 3, false, 400));
         retry(() -> checkEndpointHistory(identityHeader, emailEndpoint, 2, true, 200));
 
+        // Linking the default behavior group again
+        linkDefaultBehaviorGroup(eventTypeId, defaultBehaviorGroupId);
+        checkEventTypeBehaviorGroups(identityHeader, eventTypeId, defaultBehaviorGroupId);
+        pushMessage(0, 1, 1);
+
+        // Deleting the default behavior group should unlink it
+        deleteDefaultBehaviorGroup(defaultBehaviorGroupId);
+        checkEventTypeBehaviorGroups(identityHeader, eventTypeId);
+        pushMessage(0, 0, 0);
+
         /*
          * We'll finish with a bundle removal.
          * Why would we do that here? I don't really know, it was there before the big test refactor... :)
@@ -393,6 +403,17 @@ public class LifecycleITest extends DbIsolatedTest {
 
     private String createDefaultBehaviorGroup(String bundleId) {
         return createBehaviorGroupInternal(API_INTERNAL + "/behaviorGroups/default", null, bundleId);
+    }
+
+    private void deleteDefaultBehaviorGroup(String defaultBehaviorGroupId) {
+        given()
+                .basePath(API_INTERNAL)
+                .pathParam("behaviorGroupId", defaultBehaviorGroupId)
+                .when()
+                .delete("/behaviorGroups/default/{behaviorGroupId}")
+                .then()
+                .statusCode(200)
+                .contentType(JSON);
     }
 
     private String getEmailEndpoint(Header identityHeader, RequestEmailSubscriptionProperties properties) {
