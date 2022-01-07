@@ -603,7 +603,7 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private void setupEmailMock(String accountId, String username) {
-        Mockito.when(emailTemplateFactory.get(anyString(), anyString())).then(_ignored -> new Blank());
+        Mockito.when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
 
         User user = new User();
         user.setUsername(username);
