@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipients.rbac.pojo;
+package com.redhat.cloud.notifications.recipients.itservice.pojo;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

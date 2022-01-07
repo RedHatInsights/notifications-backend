@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.recipients.rbac.pojo.ITUser;
+import com.redhat.cloud.notifications.recipients.itservice.ITUserServiceWrapper;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,6 +35,9 @@ public class RbacRecipientUsersProvider {
     @RestClient
     RbacServiceToService rbacServiceToService;
 
+    @Inject
+    ITUserServiceWrapper itUserService;
+
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     Integer rbacElementsPerPage;
 
@@ -64,7 +67,7 @@ public class RbacRecipientUsersProvider {
             page -> {
                 Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
                 return retryOnError(
-                        rbacServiceToService.getUsers(new ITUser(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage))
+                        itUserService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
                 )
                 .onItem().invoke(() -> getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId)));
             }

@@ -1,27 +1,25 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
-import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.itservice.ITUserServiceWrapper;
+import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 
-import java.util.List;
-
 @QuarkusTest
-public class RbacRecipientUsersProviderIntegrationTest {
+public class ITUserServiceIntegrationTest {
 
     @Inject
-    RbacRecipientUsersProvider rbacRecipientUsersProvider;
+    ITUserServiceWrapper itUserService;
 
     /**
      * - returns 404 when LifecycleManager mockserver stuff is present
      * - returns 401 and others when changing parameters in application.properties
-     *
      */
     @Test
     public void getAllUsersCache() {
-        final List<User> users = rbacRecipientUsersProvider.getUsers("5910538", false).await().indefinitely();
-        System.out.println(users);
+        final Page<RbacUser> someAccountId = itUserService.getUsers("someAccountId", false, 0, 0).await().indefinitely();
+        System.out.println("BLA: " + someAccountId);
     }
 }
