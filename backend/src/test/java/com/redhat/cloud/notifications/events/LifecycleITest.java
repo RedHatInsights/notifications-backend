@@ -188,7 +188,7 @@ public class LifecycleITest extends DbIsolatedTest {
         retry(() -> checkEndpointHistory(identityHeader, endpointId2, 1, true, 200));
         retry(() -> checkEndpointHistory(identityHeader, emailEndpoint, 0, true, 200));
 
-        // We'll link with the default behavior group
+        // We'll link the event type with the default behavior group
         linkDefaultBehaviorGroup(eventTypeId, defaultBehaviorGroupId);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId, behaviorGroupId1, defaultBehaviorGroupId);
 
