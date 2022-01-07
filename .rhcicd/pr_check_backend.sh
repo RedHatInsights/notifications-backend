@@ -8,7 +8,7 @@ export DEPLOY_TIMEOUT="420"
 
 # IQE plugin config
 export IQE_PLUGINS="notifications"
-export IQE_MARKER_EXPRESSION="notification_smoke"
+export IQE_MARKER_EXPRESSION="notification_smoke and api"
 export IQE_FILTER_EXPRESSION=""
 export IQE_CJI_TIMEOUT="30m"
 
