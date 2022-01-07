@@ -312,8 +312,8 @@ public class InternalService {
     @Path("/behaviorGroups/default/{id}")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Update a behavior group.")
-    public Uni<Boolean> createDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
+    @Operation(summary = "Update a default behavior group.")
+    public Uni<Boolean> updateDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         return sessionFactory.withSession(session -> {
             behaviorGroup.setId(id);
             return behaviorGroupResources.updateDefault(behaviorGroup);
@@ -348,7 +348,7 @@ public class InternalService {
     @PUT
     @Path("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
     @Produces(TEXT_PLAIN)
-    @Operation(summary = "Links the behavior group to the event type.")
+    @Operation(summary = "Links the default behavior group to the event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> linkDefaultBehaviorToEventType(@PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
         return behaviorGroupResources.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId)
@@ -364,7 +364,7 @@ public class InternalService {
     @DELETE
     @Path("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
     @Produces(TEXT_PLAIN)
-    @Operation(summary = "Links the behavior group to the event type.")
+    @Operation(summary = "Unlinks the default behavior group from the event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Uni<Response> unlinkDefaultBehaviorToEventType(@PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
         return behaviorGroupResources.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId)
