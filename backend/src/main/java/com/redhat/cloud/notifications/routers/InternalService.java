@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
+import com.redhat.cloud.notifications.routers.models.internal.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.templates.EmailTemplateService;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.smallrye.mutiny.Multi;
@@ -326,13 +327,26 @@ public class InternalService {
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Update the list of actions of a default behavior group.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> updateDefaultBehaviorGroupActions(@PathParam("behaviorGroupId") UUID behaviorGroupId, List<EmailSubscriptionProperties> propertiesList) {
+    public Uni<Response> updateDefaultBehaviorGroupActions(@PathParam("behaviorGroupId") UUID behaviorGroupId, List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
         if (propertiesList == null) {
             return Uni.createFrom().failure(new BadRequestException("The request body must contain a list of EmailSubscriptionProperties"));
         }
 
+        if (propertiesList.size() != propertiesList.stream().distinct().count()) {
+            return Uni.createFrom().failure(new BadRequestException("The list of EmailSubscriptionProperties should not contain duplicates"));
+        }
+
         return sessionFactory.withSession(session -> {
-            return Multi.createFrom().iterable(propertiesList)
+            return Multi.createFrom().iterable(
+                    propertiesList.stream().map(p -> {
+                        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+                        properties.setOnlyAdmins(p.isOnlyAdmins());
+                        properties.setIgnorePreferences(p.isIgnorePreferences());
+                        properties.setGroupId(p.getGroupId());
+                        return properties;
+                    })
+                    .collect(Collectors.toList())
+                )
                 // order matters
                 .onItem().transformToUniAndConcatenate(
                     properties -> endpointResources.getOrCreateEmailSubscriptionEndpoint(null, properties, false)
