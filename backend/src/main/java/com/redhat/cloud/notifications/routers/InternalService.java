@@ -330,13 +330,6 @@ public class InternalService {
         if (propertiesList == null) {
             return Uni.createFrom().failure(new BadRequestException("The request body must contain a list of EmailSubscriptionProperties"));
         }
-        // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
-        if (propertiesList.contains(null)) {
-            return Uni.createFrom().failure(new BadRequestException("The list of EmailSubscriptionProperties should not contain empty values"));
-        }
-        if (propertiesList.size() != propertiesList.stream().distinct().count()) {
-            return Uni.createFrom().failure(new BadRequestException("The list of EmailSubscriptionProperties should not contain duplicates"));
-        }
 
         return sessionFactory.withSession(session -> {
             return Multi.createFrom().iterable(propertiesList)

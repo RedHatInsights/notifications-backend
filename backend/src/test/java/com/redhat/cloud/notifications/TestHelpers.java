@@ -275,7 +275,7 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
-    public static <T, V> void updateField(T object, String field, V value, Class<T> klass) {
+    public static <T> void updateField(T object, String field, Object value, Class<T> klass) {
         try {
             Field bopUrlField = klass.getDeclaredField(field);
             bopUrlField.setAccessible(true);

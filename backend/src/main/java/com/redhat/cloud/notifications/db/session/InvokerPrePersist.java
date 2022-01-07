@@ -21,9 +21,9 @@ class InvokerPrePersist {
 
     private final Map<Class<?>, Optional<Method>> cacheMap = new HashMap<>();
 
-    private <T> Optional<Method> get(Class<T> aClass) {
+    private Optional<Method> get(Class<?> aClass) {
         return cacheMap.computeIfAbsent(aClass, _aClass -> {
-            for (Method method: aClass.getMethods()) {
+            for (Method method: _aClass.getMethods()) {
                 if (method.isAnnotationPresent(PrePersist.class)) {
                     return Optional.of(method);
                 }
@@ -33,7 +33,7 @@ class InvokerPrePersist {
         });
     }
 
-    public <T> void prePersist(T instance) {
+    public void prePersist(Object instance) {
         Optional<Method> cache = get(instance.getClass());
         if (cache.isPresent()) {
             try {
