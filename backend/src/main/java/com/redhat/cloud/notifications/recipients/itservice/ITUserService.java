@@ -24,5 +24,5 @@ public interface ITUserService {
     @POST
     @Path("/findUsers")
     @Produces(MediaType.APPLICATION_JSON)
-    List<ITUserResponse> getUserss(ITUserRequest string);
+    Uni<List<ITUserResponse>> getUserss(ITUserRequest string);
 }

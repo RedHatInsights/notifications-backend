@@ -33,7 +33,7 @@ public class ITUserServiceWrapper {
         return null;
     }
 
-    public List<ITUserResponse> getUserss(String accountId, boolean adminsOnly, int i, Integer rbacElementsPerPage) {
+    public Uni<List<ITUserResponse>> getUserss(String accountId, boolean adminsOnly) {
         return itUserService.getUserss(new ITUserRequest(adminsOnly));
     }
 }
