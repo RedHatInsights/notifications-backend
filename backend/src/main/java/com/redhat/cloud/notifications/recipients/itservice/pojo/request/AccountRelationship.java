@@ -14,14 +14,10 @@ import java.util.List;
 public class AccountRelationship {
 
     @JsonProperty("allOf")
-    private List<String> allOf = List.of("primary_email");
+    private List<String> allOf = null;
 
     @JsonProperty("by")
     private By__1 by;
-
-    public AccountRelationship() {
-        this.by = new By__1();
-    }
 
     public List<String> getAllOf() {
         return allOf;

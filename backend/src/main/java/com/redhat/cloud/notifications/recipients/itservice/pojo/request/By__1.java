@@ -11,8 +11,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 public class By__1 {
 
     @JsonProperty("active")
-    private Boolean active = true;
+    private Boolean active;
 
+    @JsonProperty("active")
     public Boolean getActive() {
         return active;
     }

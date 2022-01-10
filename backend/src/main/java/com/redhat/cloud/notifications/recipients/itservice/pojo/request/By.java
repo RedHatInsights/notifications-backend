@@ -11,11 +11,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 })
 public class By {
 
-    public By(AllOf allOf, WithPaging withPaging) {
-        this.allOf = allOf;
-        this.withPaging = withPaging;
-    }
-
     @JsonProperty("allOf")
     private AllOf allOf;
 

@@ -5,13 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"ebsAccountNumber", "status"})
+@JsonPropertyOrder({
+        "ebsAccountNumber",
+        "status"
+})
 public class AllOf {
-
-    public AllOf(String ebsAccountNumber, String status) {
-        this.ebsAccountNumber = ebsAccountNumber;
-        this.status = status;
-    }
 
     @JsonProperty("ebsAccountNumber")
     private String ebsAccountNumber;

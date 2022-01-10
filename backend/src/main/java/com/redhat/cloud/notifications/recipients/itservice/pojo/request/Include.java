@@ -14,10 +14,10 @@ import java.util.List;
 public class Include {
 
     @JsonProperty("allOf")
-    private List<String> allOf = List.of("authentications", "personal_information");
+    private List<String> allOf = null;
 
     @JsonProperty("accountRelationships")
-    private List<AccountRelationship> accountRelationships = List.of(new AccountRelationship());
+    private List<AccountRelationship> accountRelationships = null;
 
     public List<String> getAllOf() {
         return allOf;

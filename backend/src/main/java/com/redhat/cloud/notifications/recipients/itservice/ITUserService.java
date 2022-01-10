@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.recipients.itservice;
 
+import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.rbac.RbacUser;
 import com.redhat.cloud.notifications.routers.models.Page;
@@ -23,5 +24,5 @@ public interface ITUserService {
     @POST
     @Path("/findUsers")
     @Produces(MediaType.APPLICATION_JSON)
-    List<ITUserResponse> getUserss(String string);
+    List<ITUserResponse> getUserss(ITUserRequest string);
 }

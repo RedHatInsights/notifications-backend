@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.recipients.itservice;
 
+import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.rbac.RbacUser;
 import com.redhat.cloud.notifications.routers.models.Page;
@@ -33,14 +34,6 @@ public class ITUserServiceWrapper {
     }
 
     public List<ITUserResponse> getUserss(String accountId, boolean adminsOnly, int i, Integer rbacElementsPerPage) {
-        Path fileName = Path.of("src/main/resources/users.json");
-        final String s;
-        try {
-            s = Files.readString(fileName);
-            return itUserService.getUserss(s);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return itUserService.getUserss(new ITUserRequest());
     }
 }

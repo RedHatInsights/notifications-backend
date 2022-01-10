@@ -11,14 +11,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 })
 public class WithPaging {
 
-    public WithPaging(Integer firstResultIndex, Integer maxResults) {
-        this.firstResultIndex = firstResultIndex;
-        this.maxResults = maxResults;
-    }
-
     @JsonProperty("firstResultIndex")
     private Integer firstResultIndex;
-
     @JsonProperty("maxResults")
     private Integer maxResults;
 
