@@ -6,10 +6,12 @@ import com.redhat.cloud.notifications.models.EventType;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.mutiny.Mutiny.Session;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response.Status;
 import java.time.LocalDateTime;
@@ -31,13 +33,26 @@ public class BehaviorGroupResources {
     Mutiny.SessionFactory sessionFactory;
 
     public Uni<BehaviorGroup> create(String accountId, BehaviorGroup behaviorGroup) {
+        return this.create(accountId, behaviorGroup, false);
+    }
+
+    public Uni<BehaviorGroup> createDefault(BehaviorGroup behaviorGroup) {
+        return this.create(null, behaviorGroup, true);
+    }
+
+    private Uni<BehaviorGroup> create(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
+        behaviorGroup.setAccountId(accountId);
+        if (isDefaultBehaviorGroup != behaviorGroup.isDefaultBehavior()) {
+            throw new BadRequestException(String.format(
+                    "Unexpected default behavior group status: Expected [%s] found: [%s]",
+                    isDefaultBehaviorGroup, behaviorGroup.isDefaultBehavior()
+            ));
+        }
+
         return sessionFactory.withSession(session -> {
             return session.find(Bundle.class, behaviorGroup.getBundleId())
                     .onItem().ifNull().failWith(new NotFoundException("bundle_id not found"))
-                    .onItem().invoke(bundle -> {
-                        behaviorGroup.setBundle(bundle);
-                        behaviorGroup.setAccountId(accountId);
-                    })
+                    .onItem().invoke(behaviorGroup::setBundle)
                     .replaceWith(session.persist(behaviorGroup))
                     .call(session::flush)
                     .replaceWith(behaviorGroup)
@@ -55,30 +70,110 @@ public class BehaviorGroupResources {
         });
     }
 
-    // TODO Should this be forbidden for default behavior groups?
     public Uni<Boolean> update(String accountId, BehaviorGroup behaviorGroup) {
-        String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE accountId = :accountId AND id = :id";
+        return this.update(accountId, behaviorGroup, false);
+    }
+
+    public Uni<Boolean> updateDefault(BehaviorGroup behaviorGroup) {
+        return this.update(null, behaviorGroup, true);
+    }
+
+    private Uni<Boolean> update(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehavior) {
         return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
-                    .setParameter("displayName", behaviorGroup.getDisplayName())
-                    .setParameter("accountId", accountId)
-                    .setParameter("id", behaviorGroup.getId())
-                    .executeUpdate()
-                    .call(session::flush)
-                    .onItem().transform(rowCount -> rowCount > 0);
+            return this.getBehaviorGroup(session, behaviorGroup.getId(), isDefaultBehavior)
+                .onItem().transformToUni(_ignored -> {
+                    String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE id = :id";
+
+                    if (accountId == null) {
+                        query += " AND accountId IS NULL";
+                    } else {
+                        query += " AND accountId = :accountId";
+                    }
+
+                    Mutiny.Query<Object> mutinyQuery = session.createQuery(query)
+                            .setParameter("displayName", behaviorGroup.getDisplayName())
+                            .setParameter("id", behaviorGroup.getId());
+
+                    if (accountId != null) {
+                        mutinyQuery = mutinyQuery.setParameter("accountId", accountId);
+                    }
+
+                    return mutinyQuery.executeUpdate()
+                            .call(session::flush)
+                            .onItem().transform(rowCount -> rowCount > 0);
+                })
+                .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
         });
     }
 
-    // TODO Should this be forbidden for default behavior groups?
     public Uni<Boolean> delete(String accountId, UUID behaviorGroupId) {
-        String query = "DELETE FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
+        return this.delete(accountId, behaviorGroupId, false);
+    }
+
+    public Uni<Boolean> deleteDefault(UUID behaviorGroupId) {
+        return this.delete(null, behaviorGroupId, true);
+    }
+
+    public Uni<Boolean> delete(String accountId, UUID behaviorGroupId, boolean isDefaultBehavior) {
         return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
-                    .setParameter("accountId", accountId)
-                    .setParameter("id", behaviorGroupId)
-                    .executeUpdate()
-                    .call(session::flush)
-                    .onItem().transform(rowCount -> rowCount > 0);
+            return this.getBehaviorGroup(session, behaviorGroupId, isDefaultBehavior)
+                    .onItem().transformToUni(_ignored -> {
+                        String query = "DELETE FROM BehaviorGroup WHERE id = :id";
+
+                        if (accountId == null) {
+                            query += " AND accountId IS NULL";
+                        } else {
+                            query += " AND accountId = :accountId";
+                        }
+
+                        Mutiny.Query<Object> mutinyQuery = session.createQuery(query)
+                                .setParameter("id", behaviorGroupId);
+
+                        if (accountId != null) {
+                            mutinyQuery = mutinyQuery.setParameter("accountId", accountId);
+                        }
+
+                        return mutinyQuery.executeUpdate()
+                                .call(session::flush)
+                                .onItem().transform(rowCount -> rowCount > 0);
+                    })
+                    .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
+        });
+    }
+
+    public Uni<Boolean> linkEventTypeDefaultBehavior(UUID eventTypeId, UUID behaviorGroupId) {
+        return sessionFactory.withSession(session -> {
+            return getBehaviorGroup(session, behaviorGroupId, true)
+                    .onItem().transformToUni((_ignored) -> {
+                        String insertQuery = "INSERT INTO event_type_behavior (event_type_id, behavior_group_id, created) " +
+                                "VALUES (:eventTypeId, :behaviorGroupId, :created) " +
+                                "ON CONFLICT (event_type_id, behavior_group_id) DO NOTHING";
+                        return session.createNativeQuery(insertQuery)
+                                .setParameter("eventTypeId", eventTypeId)
+                                .setParameter("behaviorGroupId", behaviorGroupId)
+                                .setParameter("created", LocalDateTime.now(UTC))
+                                .executeUpdate();
+                    }).replaceWith(true)
+            .onFailure(BadRequestException.class).recoverWithItem(Boolean.FALSE)
+            .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
+        });
+    }
+
+    public Uni<Boolean> unlinkEventTypeDefaultBehavior(UUID eventTypeId, UUID behaviorGroupId) {
+        return sessionFactory.withSession(session -> {
+            return getBehaviorGroup(session, behaviorGroupId, true)
+                    .onItem().transformToUni(_ignored -> {
+                        String deleteQuery = "DELETE FROM EventTypeBehavior b " +
+                                "WHERE eventType.id = :eventTypeId " +
+                                "AND id.behaviorGroupId = :behaviorGroupId";
+                        return session.createQuery(deleteQuery)
+                                .setParameter("eventTypeId", eventTypeId)
+                                .setParameter("behaviorGroupId", behaviorGroupId)
+                                .executeUpdate()
+                                .replaceWith(true);
+                    })
+            .onFailure(BadRequestException.class).recoverWithItem(Boolean.FALSE)
+            .onFailure(NoResultException.class).recoverWithItem(Boolean.FALSE);
         });
     }
 
@@ -142,7 +237,7 @@ public class BehaviorGroupResources {
 
     public Uni<List<EventType>> findEventTypesByBehaviorGroupId(String accountId, UUID behaviorGroupId) {
         String query = "SELECT e FROM EventType e LEFT JOIN FETCH e.application JOIN e.behaviors b " +
-                "WHERE b.behaviorGroup.accountId = :accountId AND b.behaviorGroup.id = :behaviorGroupId";
+                "WHERE (b.behaviorGroup.accountId = :accountId OR b.behaviorGroup.accountId IS NULL) AND b.behaviorGroup.id = :behaviorGroupId";
         return sessionFactory.withSession(session -> {
             return session.createQuery(query, EventType.class)
                     .setParameter("accountId", accountId)
@@ -153,7 +248,7 @@ public class BehaviorGroupResources {
 
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByEventTypeId(String accountId, UUID eventTypeId, Query limiter) {
         return sessionFactory.withSession(session -> {
-            String query = "SELECT bg FROM BehaviorGroup bg JOIN bg.behaviors b WHERE bg.accountId = :accountId AND b.eventType.id = :eventTypeId";
+            String query = "SELECT bg FROM BehaviorGroup bg JOIN bg.behaviors b WHERE (bg.accountId = :accountId OR bg.accountId IS NULL) AND b.eventType.id = :eventTypeId";
 
             if (limiter != null) {
                 query = limiter.getModifiedQuery(query);
@@ -185,10 +280,21 @@ public class BehaviorGroupResources {
         return sessionFactory.withTransaction((session, tx) -> {
 
             // First, let's make sure the behavior group exists and is owned by the current account.
-            String checkBehaviorGroupQuery = "SELECT 1 FROM BehaviorGroup WHERE accountId = :accountId AND id = :id";
-            return session.createQuery(checkBehaviorGroupQuery)
-                    .setParameter("accountId", accountId)
-                    .setParameter("id", behaviorGroupId)
+            String checkBehaviorGroupQuery = "SELECT 1 FROM BehaviorGroup WHERE id = :id AND accountId ";
+            if (accountId == null) {
+                checkBehaviorGroupQuery += "IS NULL";
+            } else {
+                checkBehaviorGroupQuery += "= :accountId";
+            }
+
+            var query = session.createQuery(checkBehaviorGroupQuery)
+                    .setParameter("id", behaviorGroupId);
+
+            if (accountId != null) {
+                query = query.setParameter("accountId", accountId);
+            }
+
+            return query
                     .getSingleResult()
                     .onItem().call(() -> {
 
@@ -216,16 +322,22 @@ public class BehaviorGroupResources {
                          */
                         String upsertQuery = "INSERT INTO behavior_group_action (behavior_group_id, endpoint_id, position, created) " +
                                 "SELECT :behaviorGroupId, :endpointId, :position, :created " +
-                                "WHERE EXISTS (SELECT 1 FROM endpoints WHERE account_id = :accountId AND id = :endpointId) " +
+                                "WHERE EXISTS (SELECT 1 FROM endpoints WHERE account_id " +
+                                (accountId == null ? "IS NULL" : "= :accountId") +
+                                " AND id = :endpointId) " +
                                 "ON CONFLICT (behavior_group_id, endpoint_id) DO UPDATE SET position = :position";
-                        return session.createNativeQuery(upsertQuery)
+
+                        var sessionQuery = session.createNativeQuery(upsertQuery)
                                 .setParameter("behaviorGroupId", behaviorGroupId)
                                 .setParameter("endpointId", endpointId)
                                 .setParameter("position", endpointIds.indexOf(endpointId))
-                                .setParameter("created", LocalDateTime.now(UTC))
-                                .setParameter("accountId", accountId)
-                                .executeUpdate();
+                                .setParameter("created", LocalDateTime.now(UTC));
 
+                        if (accountId != null) {
+                            sessionQuery = sessionQuery.setParameter("accountId", accountId);
+                        }
+
+                        return sessionQuery.executeUpdate();
                     })
                     .collect().asList()
                     .replaceWith(OK)
@@ -236,6 +348,10 @@ public class BehaviorGroupResources {
         });
     }
 
+    public Uni<Status> updateDefaultBehaviorGroupActions(UUID behaviorGroupId, List<UUID> endpointIds) {
+        return updateBehaviorGroupActions(null, behaviorGroupId, endpointIds);
+    }
+
     public Uni<List<BehaviorGroup>> findBehaviorGroupsByEndpointId(String accountId, UUID endpointId) {
         String query = "SELECT bg FROM BehaviorGroup bg LEFT JOIN FETCH bg.bundle JOIN bg.actions a WHERE bg.accountId = :accountId AND a.endpoint.id = :endpointId";
         return sessionFactory.withSession(session -> {
@@ -243,7 +359,23 @@ public class BehaviorGroupResources {
                     .setParameter("accountId", accountId)
                     .setParameter("endpointId", endpointId)
                     .getResultList()
-                    .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutActions));
+                    .invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutActions));
         });
+    }
+
+    private Uni<BehaviorGroup> getBehaviorGroup(Session session, UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
+        return session.find(BehaviorGroup.class, behaviorGroupId)
+                .onItem().ifNull().failWith(NoResultException::new)
+                .onItem().invoke(behaviorGroup -> {
+                    if (isDefaultBehaviorGroup) {
+                        if (behaviorGroup.getAccountId() != null) {
+                            throw new BadRequestException("Default behavior groups must have a null accountId");
+                        }
+                    } else {
+                        if (behaviorGroup.getAccountId() == null) {
+                            throw new BadRequestException("Only default behavior groups have a null accountId");
+                        }
+                    }
+                });
     }
 }

@@ -47,7 +47,7 @@ import static javax.persistence.FetchType.LAZY;
 @NamedQuery(
         name = "findByBundleId",
         query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
-                "WHERE b.accountId = :accountId AND b.bundle.id = :bundleId " +
+                "WHERE (b.accountId = :accountId OR b.accountId IS NULL) AND b.bundle.id = :bundleId " +
                 "ORDER BY b.created DESC, a.position ASC",
         hints = @QueryHint(name = QueryHints.HINT_PASS_DISTINCT_THROUGH, value = "false")
 )
@@ -90,6 +90,12 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
     @OneToMany(mappedBy = "behaviorGroup", cascade = CascadeType.REMOVE)
     @JsonIgnore
     private Set<EventTypeBehavior> behaviors;
+
+    @JsonInclude
+    @JsonProperty(access = READ_ONLY, value = "default_behavior")
+    public boolean isDefaultBehavior() {
+        return accountId == null;
+    }
 
     public UUID getId() {
         return id;

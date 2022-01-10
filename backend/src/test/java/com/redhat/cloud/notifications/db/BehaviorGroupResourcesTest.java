@@ -88,6 +88,43 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateAndUpdateAndDeleteDefaultBehaviorGroup() {
+        String newDisplayName = "newDisplayName";
+        sessionFactory.withSession(session -> resourceHelpers.createBundle()
+                .invoke(model.bundles::add)
+                // Create behavior group.
+                .chain(() -> resourceHelpers.createDefaultBehaviorGroup("displayName", model.bundles.get(0).getId()))
+                .invoke(model.behaviorGroups::add)
+                .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId()))
+                .invoke(behaviorGroups -> {
+                    assertEquals(1, behaviorGroups.size());
+                    assertEquals(model.behaviorGroups.get(0), behaviorGroups.get(0));
+                    assertEquals(model.behaviorGroups.get(0).getDisplayName(), behaviorGroups.get(0).getDisplayName());
+                    assertEquals(model.bundles.get(0).getId(), behaviorGroups.get(0).getBundle().getId());
+                    assertNotNull(model.bundles.get(0).getCreated());
+                })
+                // Update behavior group.
+                .chain(() -> updateDefaultBehaviorGroup(model.behaviorGroups.get(0).getId(), newDisplayName))
+                .invoke(updated -> {
+                    assertTrue(updated);
+                    session.clear(); // We need to clear the session L1 cache before checking the update result.
+                })
+                .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId()))
+                .invoke(behaviorGroups -> {
+                    assertEquals(1, behaviorGroups.size());
+                    assertEquals(model.behaviorGroups.get(0).getId(), behaviorGroups.get(0).getId());
+                    assertEquals(newDisplayName, behaviorGroups.get(0).getDisplayName());
+                    assertEquals(model.bundles.get(0).getId(), behaviorGroups.get(0).getBundle().getId());
+                })
+                // Delete behavior group.
+                .chain(() -> resourceHelpers.deleteDefaultBehaviorGroup(model.behaviorGroups.get(0).getId()))
+                .invoke(Assertions::assertTrue)
+                .chain(() -> behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, model.bundles.get(0).getId()))
+                .invoke(behaviorGroups -> assertTrue(behaviorGroups.isEmpty()))
+        ).await().indefinitely();
+    }
+
+    @Test
     void testCreateBehaviorGroupWithNullDisplayName() {
         createBehaviorGroupWithIllegalDisplayName(null);
     }
@@ -288,6 +325,14 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(UUID.randomUUID()); // This should not have any effect, the bundle is not updatable.
         return resourceHelpers.updateBehaviorGroup(behaviorGroup);
+    }
+
+    private Uni<Boolean> updateDefaultBehaviorGroup(UUID behaviorGroupId, String displayName) {
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setId(behaviorGroupId);
+        behaviorGroup.setDisplayName(displayName);
+        behaviorGroup.setBundleId(UUID.randomUUID()); // This should not have any effect, the bundle is not updatable.
+        return resourceHelpers.updateDefaultBehaviorGroup(behaviorGroup);
     }
 
     private Uni<Void> updateAndCheckEventTypeBehaviors(String accountId, UUID eventTypeId, boolean expectedResult, UUID... behaviorGroupIds) {

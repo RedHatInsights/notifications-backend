@@ -13,8 +13,8 @@ import javax.ws.rs.core.Response;
 
 import java.util.List;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
-import static com.redhat.cloud.notifications.Constants.INTERNAL;
 import static com.redhat.cloud.notifications.models.Status.MAINTENANCE;
 import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 
@@ -25,7 +25,7 @@ public class MaintenanceModeRequestFilter {
 
     // This list contains all request paths that should never be affected by the maintenance mode.
     private static final List<String> NO_MAINTENANCE_REQUEST_PATHS = List.of(
-            INTERNAL,
+            API_INTERNAL,
             "/health",
             "/metrics",
             API_NOTIFICATIONS_V_1_0 + "/status"

@@ -148,7 +148,7 @@ public class ResourceHelpers {
         endpoint.setDescription(description);
         endpoint.setProperties(properties);
         endpoint.setEnabled(enabled);
-        return endpointResources.createEndpoint(endpoint);
+        return endpointResources.createEndpoint(endpoint, false);
     }
 
     public Uni<int[]> createTestEndpoints(String tenant, int count) {
@@ -176,7 +176,7 @@ public class ResourceHelpers {
                     }
 
                     ep.setAccountId(tenant);
-                    return endpointResources.createEndpoint(ep);
+                    return endpointResources.createEndpoint(ep, false);
                 })
                 .onItem().ignoreAsUni()
                 .replaceWith(statsValues);
@@ -194,7 +194,7 @@ public class ResourceHelpers {
     }
 
     public Uni<UUID> emailSubscriptionEndpointId(String accountId, EmailSubscriptionProperties properties) {
-        return endpointResources.getOrCreateEmailSubscriptionEndpoint(accountId, properties)
+        return endpointResources.getOrCreateEmailSubscriptionEndpoint(accountId, properties, false)
                 .onItem().transform(Endpoint::getId);
     }
 
@@ -203,6 +203,13 @@ public class ResourceHelpers {
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
         return behaviorGroupResources.create(accountId, behaviorGroup);
+    }
+
+    public Uni<BehaviorGroup> createDefaultBehaviorGroup(String displayName, UUID bundleId) {
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName(displayName);
+        behaviorGroup.setBundleId(bundleId);
+        return behaviorGroupResources.createDefault(behaviorGroup);
     }
 
     public Uni<List<EventType>> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
@@ -223,6 +230,14 @@ public class ResourceHelpers {
 
     public Uni<Boolean> deleteBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupResources.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
+    }
+
+    public Uni<Boolean> updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
+        return behaviorGroupResources.updateDefault(behaviorGroup);
+    }
+
+    public Uni<Boolean> deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
+        return behaviorGroupResources.deleteDefault(behaviorGroupId);
     }
 
     public Uni<Boolean> addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {

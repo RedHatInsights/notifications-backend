@@ -1,19 +1,28 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.BundleResources;
+import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.StatusResources;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CurrentStatus;
+import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
+import com.redhat.cloud.notifications.routers.models.internal.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.templates.EmailTemplateService;
 import com.redhat.cloud.notifications.utils.ActionParser;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -23,6 +32,7 @@ import org.hibernate.reactive.mutiny.Mutiny;
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -38,12 +48,13 @@ import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-import static com.redhat.cloud.notifications.Constants.INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
-@Path(INTERNAL)
+@Path(API_INTERNAL)
 public class InternalService {
 
     @Inject
@@ -51,6 +62,12 @@ public class InternalService {
 
     @Inject
     ApplicationResources appResources;
+
+    @Inject
+    BehaviorGroupResources behaviorGroupResources;
+
+    @Inject
+    EndpointResources endpointResources;
 
     @Inject
     StatusResources statusResources;
@@ -280,6 +297,106 @@ public class InternalService {
                 ).asTuple()
         ).onItem().transform(titleAndBody -> Response.ok(new RenderEmailTemplateResponse.Success(titleAndBody.getItem1(), titleAndBody.getItem2())).build())
         .onFailure().recoverWithItem(throwable -> Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(throwable.getMessage())).build());
+    }
+
+    @POST
+    @Path("/behaviorGroups/default")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    public Uni<BehaviorGroup> createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
+        return sessionFactory.withSession(session -> {
+            return behaviorGroupResources.createDefault(behaviorGroup);
+        });
+    }
+
+    @PUT
+    @Path("/behaviorGroups/default/{id}")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "Update a default behavior group.")
+    public Uni<Boolean> updateDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
+        return sessionFactory.withSession(session -> {
+            behaviorGroup.setId(id);
+            return behaviorGroupResources.updateDefault(behaviorGroup);
+        });
+    }
+
+    @DELETE
+    @Path("/behaviorGroups/default/{id}")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "Deletes a default behavior group.")
+    public Uni<Boolean> deleteDefaultBehaviorGroup(@PathParam("id") UUID id) {
+        return sessionFactory.withSession(session -> behaviorGroupResources.deleteDefault(id));
+    }
+
+    @PUT
+    @Path("/behaviorGroups/default/{behaviorGroupId}/actions")
+    @Consumes(APPLICATION_JSON)
+    @Produces(TEXT_PLAIN)
+    @Operation(summary = "Update the list of actions of a default behavior group.")
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    public Uni<Response> updateDefaultBehaviorGroupActions(@PathParam("behaviorGroupId") UUID behaviorGroupId, List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
+        if (propertiesList == null) {
+            return Uni.createFrom().failure(new BadRequestException("The request body must contain a list of EmailSubscriptionProperties"));
+        }
+
+        if (propertiesList.size() != propertiesList.stream().distinct().count()) {
+            return Uni.createFrom().failure(new BadRequestException("The list of EmailSubscriptionProperties should not contain duplicates"));
+        }
+
+        return sessionFactory.withSession(session -> {
+            return Multi.createFrom().iterable(
+                    propertiesList.stream().map(p -> {
+                        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+                        properties.setOnlyAdmins(p.isOnlyAdmins());
+                        properties.setIgnorePreferences(p.isIgnorePreferences());
+                        properties.setGroupId(p.getGroupId());
+                        return properties;
+                    })
+                    .collect(Collectors.toList())
+                )
+                // order matters
+                .onItem().transformToUniAndConcatenate(
+                    properties -> endpointResources.getOrCreateEmailSubscriptionEndpoint(null, properties, false)
+                ).collect().asList()
+                .onItem().transformToUni(endpoints -> behaviorGroupResources.updateDefaultBehaviorGroupActions(
+                        behaviorGroupId,
+                        endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
+                    ))
+                    .onItem().transform(status -> Response.status(status).build());
+        });
+    }
+
+    @PUT
+    @Path("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
+    @Produces(TEXT_PLAIN)
+    @Operation(summary = "Links the default behavior group to the event type.")
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    public Uni<Response> linkDefaultBehaviorToEventType(@PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
+        return behaviorGroupResources.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId)
+                .onItem().transform(isSuccess -> {
+                    if (isSuccess) {
+                        return Response.ok().build();
+                    } else {
+                        return Response.status(Response.Status.BAD_REQUEST).build();
+                    }
+                });
+    }
+
+    @DELETE
+    @Path("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
+    @Produces(TEXT_PLAIN)
+    @Operation(summary = "Unlinks the default behavior group from the event type.")
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    public Uni<Response> unlinkDefaultBehaviorToEventType(@PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
+        return behaviorGroupResources.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId)
+                .onItem().transform(isSuccess -> {
+                    if (isSuccess) {
+                        return Response.ok().build();
+                    } else {
+                        return Response.status(Response.Status.BAD_REQUEST).build();
+                    }
+                });
     }
 
     private User createInternalUser() {

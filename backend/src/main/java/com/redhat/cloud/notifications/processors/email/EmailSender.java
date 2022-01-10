@@ -90,7 +90,8 @@ public class EmailSender {
         LocalDateTime start = LocalDateTime.now(UTC);
 
         Action action = event.getAction();
-        return endpointResources.getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties())
+        // uses canonical EmailSubscription
+        return endpointResources.getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties(), true)
                 .onItem().transformToUni(endpoint -> {
                     Notification notification = new Notification(event, endpoint);
 

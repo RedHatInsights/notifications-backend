@@ -94,7 +94,7 @@ public class OApiFilter {
                             } else if (PRIVATE.equals(openApiOption)) {
                                 newPathValue = filterPrivateOperation(pathValue, false);
                                 mangledPath = path;
-                            } else if (INTERNAL.equals(openApiOption) && path.startsWith(Constants.INTERNAL)) {
+                            } else if (INTERNAL.equals(openApiOption) && path.startsWith(Constants.API_INTERNAL)) {
                                 newPathValue = filterPrivateOperation(pathValue, true);
                             }
 
@@ -197,8 +197,8 @@ public class OApiFilter {
             out = in.substring(Constants.API_INTEGRATIONS_V_1_0.length());
         } else if (in.startsWith(Constants.API_NOTIFICATIONS_V_1_0)) {
             out = in.substring(Constants.API_NOTIFICATIONS_V_1_0.length());
-        } else if (in.startsWith(Constants.INTERNAL)) {
-            out = in.substring(Constants.INTERNAL.length());
+        } else if (in.startsWith(Constants.API_INTERNAL)) {
+            out = in.substring(Constants.API_INTERNAL.length());
         }
         return out;
     }

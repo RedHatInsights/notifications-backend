@@ -15,14 +15,14 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
 
-import static com.redhat.cloud.notifications.Constants.INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
 /**
  * Stuff around admin of the service and debugging
  */
-@Path(INTERNAL + "/admin")
+@Path(API_INTERNAL + "/admin")
 public class AdminService {
 
     @Inject
