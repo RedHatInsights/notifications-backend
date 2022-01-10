@@ -86,6 +86,20 @@
           ]
         },
         {
+          "name": "compliance",
+          "display_name": "Compliance",
+          "event_types": [
+            {
+              "name": "compliance-below-threshold",
+              "display_name": "Compliance level dropped below threshold"
+            },
+            {
+              "name": "report-upload-failed",
+              "display_name": "Failed uploading a Policy report"
+            }
+          ]
+        },
+        {
           "name": "drift",
           "display_name": "Drift",
           "event_types": [
