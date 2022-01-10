@@ -1,0 +1,1 @@
+{action.timestamp.toUtcFormat()} - Failed to upload compliance report of Policy '{action.content.policy_name}' from Host '{action.content.host_name}'

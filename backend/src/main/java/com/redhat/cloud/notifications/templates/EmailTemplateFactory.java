@@ -13,6 +13,7 @@ public class EmailTemplateFactory {
     private static final String RHEL = "rhel";
     private static final String POLICIES = "policies";
     private static final String ADVISOR = "advisor";
+    private static final String COMPLIANCE = "compliance";
     private static final String DRIFT = "drift";
     private static final String OPENSHIFT = "openshift";
 
@@ -26,6 +27,8 @@ public class EmailTemplateFactory {
                     return new Policies();
                 case ADVISOR:
                     return new Advisor();
+                case COMPLIANCE:
+                    return new Compliance();
                 case DRIFT:
                     return new Drift();
                 default:
