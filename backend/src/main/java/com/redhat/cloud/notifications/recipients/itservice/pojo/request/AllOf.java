@@ -7,7 +7,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "ebsAccountNumber",
-        "status"
+        "status",
+        "permissionCode"
 })
 public class AllOf {
 
@@ -16,6 +17,9 @@ public class AllOf {
 
     @JsonProperty("status")
     private String status;
+
+    @JsonProperty("permissionCode")
+    private PermissionCode permissionCode;
 
     public String getEbsAccountNumber() {
         return ebsAccountNumber;
@@ -31,5 +35,13 @@ public class AllOf {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public PermissionCode getPermissionCode() {
+        return permissionCode;
+    }
+
+    public void setPermissionCode(PermissionCode permissionCode) {
+        this.permissionCode = permissionCode;
     }
 }

@@ -34,6 +34,6 @@ public class ITUserServiceWrapper {
     }
 
     public List<ITUserResponse> getUserss(String accountId, boolean adminsOnly, int i, Integer rbacElementsPerPage) {
-        return itUserService.getUserss(new ITUserRequest());
+        return itUserService.getUserss(new ITUserRequest(adminsOnly));
     }
 }

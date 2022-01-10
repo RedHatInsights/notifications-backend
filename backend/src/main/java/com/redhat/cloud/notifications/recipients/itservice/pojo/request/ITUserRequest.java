@@ -20,11 +20,18 @@ public class ITUserRequest {
     @JsonProperty("include")
     private Include include;
 
-    public ITUserRequest() {
+    public ITUserRequest(boolean adminsOnly) {
         final By by = new By();
         AllOf allOf = new AllOf();
         allOf.setStatus("enabled");
         allOf.setEbsAccountNumber("5910538");
+
+        if (adminsOnly) {
+            PermissionCode permissionCode = new PermissionCode();
+            permissionCode.setValue("admin:org:all");
+            permissionCode.setOperand("eq");
+            allOf.setPermissionCode(permissionCode);
+        }
         by.setAllOf(allOf);
 
         WithPaging withPaging = new WithPaging();
