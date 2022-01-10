@@ -21,18 +21,6 @@ public class ITUserServiceWrapper {
     @RestClient
     ITUserService itUserService;
 
-    public Uni<Page<RbacUser>> getUsers(String accountId, boolean adminsOnly, int i, Integer rbacElementsPerPage) {
-        Path fileName = Path.of("src/main/resources/users.json");
-        final String s;
-        try {
-            s = Files.readString(fileName);
-            return itUserService.getUsers(s);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public Uni<List<ITUserResponse>> getUserss(String accountId, boolean adminsOnly) {
         return itUserService.getUserss(new ITUserRequest(adminsOnly));
     }

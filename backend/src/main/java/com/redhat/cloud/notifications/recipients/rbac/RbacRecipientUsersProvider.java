@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserServiceWrapper;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -20,6 +21,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,17 +64,7 @@ public class RbacRecipientUsersProvider {
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
-        Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
-        return getWithPagination(
-            page -> {
-                Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                return retryOnError(
-                        itUserService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
-                )
-                .onItem().invoke(() -> getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId)));
-            }
-        )
-        .onItem().invoke(users -> getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size()))));
+        return getWithPagination(itUserService.getUserss(accountId, adminsOnly));
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
@@ -83,7 +75,7 @@ public class RbacRecipientUsersProvider {
                     if (rbacGroup.isPlatformDefault()) {
                         return getUsers(accountId, adminOnly);
                     } else {
-                        return getWithPagination(
+                        return getWithPaginationGroup(
                             page -> {
                                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
                                 return retryOnError(
@@ -118,7 +110,32 @@ public class RbacRecipientUsersProvider {
                 .onFailure().invoke(failure -> LOGGER.warnf("RBAC S2S call failed: %s", failure.getMessage()));
     }
 
-    private Uni<List<User>> getWithPagination(Function<Integer, Uni<Page<RbacUser>>> fetcher) {
+    private Uni<List<User>> getWithPagination(Uni<List<ITUserResponse>> itUserResponses) {
+        return itUserResponses.onItem().transform(page -> page.stream().map(itUserResponse -> {
+                    User user = new User();
+//                    user.setUsername(itUserResponse.getPersonalInformation().getUsername());
+                    user.setEmail(itUserResponse.getAccountRelationships().get(0).getEmails().toString());
+//                    user.setAdmin(rbacUser.getOrgAdmin());
+//                    user.setActive(rbacUser.getActive());
+                    user.setFirstName(itUserResponse.getPersonalInformation().getFirstName());
+                    user.setLastName(itUserResponse.getPersonalInformation().getLastNames());
+                    return user;
+        }).collect(Collectors.toList()));
+//        return Multi.createBy().repeating()
+//                .whilst(page -> page.getData().size() == rbacElementsPerPage)
+//                .onItem().transform(page -> page.getData().stream().map(rbacUser -> {
+//                    User user = new User();
+//                    user.setUsername(rbacUser.getUsername());
+//                    user.setEmail(rbacUser.getEmail());
+//                    user.setAdmin(rbacUser.getOrgAdmin());
+//                    user.setActive(rbacUser.getActive());
+//                    user.setFirstName(rbacUser.getFirstName());
+//                    user.setLastName(rbacUser.getLastName());
+//                    return user;
+//                }).collect(Collectors.toList())).collect().in(ArrayList::new, List::addAll);
+    }
+
+    private Uni<List<User>> getWithPaginationGroup(Function<Integer, Uni<Page<RbacUser>>> fetcher) {
         return Multi.createBy().repeating()
                 .uni(
                     AtomicInteger::new,
