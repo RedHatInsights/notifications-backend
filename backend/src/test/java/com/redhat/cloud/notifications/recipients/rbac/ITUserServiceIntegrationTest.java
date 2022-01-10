@@ -1,11 +1,12 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.itservice.ITUserServiceWrapper;
-import com.redhat.cloud.notifications.routers.models.Page;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import java.util.List;
 
 @QuarkusTest
 public class ITUserServiceIntegrationTest {
@@ -19,7 +20,7 @@ public class ITUserServiceIntegrationTest {
      */
     @Test
     public void getAllUsersCache() {
-        final Page<RbacUser> someAccountId = itUserService.getUsers("someAccountId", false, 0, 0).await().indefinitely();
-        System.out.println("BLA: " + someAccountId);
+        List<ITUserResponse> itUserResponse = itUserService.getUserss("someAccountId", false, 0, 0);
+        System.out.println("BLA: " + itUserResponse);
     }
 }
