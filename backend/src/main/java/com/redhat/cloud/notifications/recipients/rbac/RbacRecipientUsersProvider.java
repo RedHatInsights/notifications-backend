@@ -63,7 +63,7 @@ public class RbacRecipientUsersProvider {
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
-        return getWithPagination(itUserService.getUsers(accountId, adminsOnly));
+        return transformToUser(itUserService.getUsers(accountId, adminsOnly));
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
@@ -109,8 +109,8 @@ public class RbacRecipientUsersProvider {
                 .onFailure().invoke(failure -> LOGGER.warnf("RBAC S2S call failed: %s", failure.getMessage()));
     }
 
-    private Uni<List<User>> getWithPagination(Uni<List<ITUserResponse>> itUserResponses) {
-        return itUserResponses.onItem().transform(page -> page.stream().map(itUserResponse -> {
+    private Uni<List<User>> transformToUser(Uni<List<ITUserResponse>> itUserResponses) {
+        return itUserResponses.onItem().transform(itUser -> itUser.stream().map(itUserResponse -> {
             User user = new User();
             user.setUsername(itUserResponse.getAuthentications().get(0).getPrincipal());
             user.setEmail(itUserResponse.getAccountRelationships().get(0).getEmails().toString());
