@@ -30,7 +30,6 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                 variant={ ModalVariant.medium }
                 title={ `${ props.isEdit ? 'Update' : 'Create'} Event Type for ${ props.applicationName }` }
                 isOpen={ props.showModal }
-                onClose={ props.onClose }
             ><Form isHorizontal>
                     <FormGroup label='Name' fieldId='name' isRequired
                         helperText={ props.isEdit ? <HelperText><HelperTextItem variant="warning" hasIcon>

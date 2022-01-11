@@ -117,6 +117,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
     };
 
     const onClose = () => {
+        setShowModal(false);
+        eventTypesQuery.query();
+    };
+
+    const onDeleteClose = () => {
         setShowDeleteModal(false);
         eventTypesQuery.query();
     };
@@ -162,7 +167,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         <DeleteModal
                                             onDelete={ handleDelete }
                                             isOpen={ showDeleteModal }
-                                            onClose={ onClose }
+                                            onClose={ onDeleteClose }
                                             eventTypeName={ eventType.name }
                                             applicationName={ application?.displayName }
                                             bundleName={ bundle?.display_name }
