@@ -81,4 +81,3 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
         </React.Fragment>
     );
 };
-
