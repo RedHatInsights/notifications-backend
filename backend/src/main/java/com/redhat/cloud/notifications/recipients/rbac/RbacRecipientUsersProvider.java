@@ -63,7 +63,7 @@ public class RbacRecipientUsersProvider {
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
-        return getWithPagination(itUserService.getUserss(accountId, adminsOnly));
+        return getWithPagination(itUserService.getUsers(accountId, adminsOnly));
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
@@ -111,27 +111,15 @@ public class RbacRecipientUsersProvider {
 
     private Uni<List<User>> getWithPagination(Uni<List<ITUserResponse>> itUserResponses) {
         return itUserResponses.onItem().transform(page -> page.stream().map(itUserResponse -> {
-                    User user = new User();
-                    user.setUsername(itUserResponse.getAuthentications().get(0).getPrincipal());
-                    user.setEmail(itUserResponse.getAccountRelationships().get(0).getEmails().toString());
+            User user = new User();
+            user.setUsername(itUserResponse.getAuthentications().get(0).getPrincipal());
+            user.setEmail(itUserResponse.getAccountRelationships().get(0).getEmails().toString());
 //                    user.setAdmin(rbacUser.getOrgAdmin());
 //                    user.setActive(rbacUser.getActive());
-                    user.setFirstName(itUserResponse.getPersonalInformation().getFirstName());
-                    user.setLastName(itUserResponse.getPersonalInformation().getLastNames());
-                    return user;
+            user.setFirstName(itUserResponse.getPersonalInformation().getFirstName());
+            user.setLastName(itUserResponse.getPersonalInformation().getLastNames());
+            return user;
         }).collect(Collectors.toList()));
-//        return Multi.createBy().repeating()
-//                .whilst(page -> page.getData().size() == rbacElementsPerPage)
-//                .onItem().transform(page -> page.getData().stream().map(rbacUser -> {
-//                    User user = new User();
-//                    user.setUsername(rbacUser.getUsername());
-//                    user.setEmail(rbacUser.getEmail());
-//                    user.setAdmin(rbacUser.getOrgAdmin());
-//                    user.setActive(rbacUser.getActive());
-//                    user.setFirstName(rbacUser.getFirstName());
-//                    user.setLastName(rbacUser.getLastName());
-//                    return user;
-//                }).collect(Collectors.toList())).collect().in(ArrayList::new, List::addAll);
     }
 
     private Uni<List<User>> getWithPaginationGroup(Function<Integer, Uni<Page<RbacUser>>> fetcher) {

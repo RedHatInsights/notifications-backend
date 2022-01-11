@@ -2,8 +2,6 @@ package com.redhat.cloud.notifications.recipients.itservice;
 
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
-import com.redhat.cloud.notifications.recipients.rbac.RbacUser;
-import com.redhat.cloud.notifications.routers.models.Page;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
@@ -19,10 +17,5 @@ public interface ITUserService {
     @POST
     @Path("/findUsers")
     @Produces(MediaType.APPLICATION_JSON)
-    Uni<Page<RbacUser>> getUsers(String string);
-
-    @POST
-    @Path("/findUsers")
-    @Produces(MediaType.APPLICATION_JSON)
-    Uni<List<ITUserResponse>> getUserss(ITUserRequest string);
+    Uni<List<ITUserResponse>> getUsers(ITUserRequest string);
 }

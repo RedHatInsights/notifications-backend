@@ -14,6 +14,6 @@ public class ITUserServiceIntegrationTest {
 
     @Test
     public void getAllUsersCache() {
-        System.out.println(itUserService.getUserss("someAccountId", false).await().indefinitely());
+        System.out.println(itUserService.getUsers("someAccountId", false).await().indefinitely());
     }
 }

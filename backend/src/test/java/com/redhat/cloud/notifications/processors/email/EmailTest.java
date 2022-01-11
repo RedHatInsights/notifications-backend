@@ -303,7 +303,7 @@ public class EmailTest extends DbIsolatedTest {
 
     private void mockGetUsers(int elements, boolean adminsOnly) {
         MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
-        Mockito.when(itUserService.getUserss(
+        Mockito.when(itUserService.getUsers(
                 Mockito.anyString(),
                 Mockito.anyBoolean()
         )).then(invocationOnMock -> answer.mockedUserAnswer(invocationOnMock.getArgument(1, Boolean.class)));

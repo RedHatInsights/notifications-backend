@@ -16,7 +16,7 @@ public class ITUserServiceWrapper {
     @RestClient
     ITUserService itUserService;
 
-    public Uni<List<ITUserResponse>> getUserss(String accountId, boolean adminsOnly) {
-        return itUserService.getUserss(new ITUserRequest(adminsOnly));
+    public Uni<List<ITUserResponse>> getUsers(String accountId, boolean adminsOnly) {
+        return itUserService.getUsers(new ITUserRequest(adminsOnly));
     }
 }
