@@ -1,18 +1,9 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.util.List;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "id",
-        "authentications",
-        "accountRelationships",
-        "personalInformation"
-})
 public class ITUserResponse {
 
     @JsonProperty("id")
