@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.recipients;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -14,8 +13,6 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class RecipientResolver {
-
-    private static final Logger LOGGER = Logger.getLogger(RecipientResolver.class);
 
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
@@ -34,17 +31,31 @@ public class RecipientResolver {
             usersUni = rbacRecipientUsersProvider.getGroupUsers(accountId, request.isOnlyAdmins(), request.getGroupId());
         }
 
-        return usersUni.onItem().transform(users -> {
-            if (request.isIgnoreUserPreferences()) {
-                return Set.copyOf(users);
-            }
+        return usersUni
+                .onItem().transform(Set::copyOf)
+                .onItem().transform(users -> {
+                    // This step requires a specific set of users and all others needs to be ignored (for this step)
+                    if (request.getUsers().size() > 0) {
+                        return filterUsers(users, request.getUsers());
+                    }
 
-            return users.stream()
-                    .filter(user -> subscribers
+                    return users;
+                }).onItem().transform(users -> {
+                    if (request.isIgnoreUserPreferences()) {
+                        return Set.copyOf(users);
+                    }
+
+                    return filterUsers(users, subscribers);
+                });
+    }
+
+    private Set<User> filterUsers(Set<User> users, Set<String> target) {
+        return users.stream()
+                .filter(
+                    user -> target
                             .stream()
-                            .anyMatch(subscriber -> subscriber.equalsIgnoreCase(user.getUsername()))
-                    )
-                    .collect(Collectors.toSet());
-        });
+                            .anyMatch(requested -> requested.equalsIgnoreCase(user.getUsername()))
+                )
+                .collect(Collectors.toSet());
     }
 }
