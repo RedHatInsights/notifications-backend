@@ -91,8 +91,8 @@ objects:
               optional: true
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED}
-        - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_MAX_FAILURES
-          value: ${KAFKA_CONSUMED_TOTAL_CHECKER_MAX_FAILURES}
+        - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
+          value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
         - name: PROCESSOR_EMAIL_BOP_APITOKEN
           valueFrom:
             secretKeyRef:
@@ -249,9 +249,9 @@ parameters:
 - name: KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
   description: Is the Kafka records consumed total check included in the global health check?
   value: "false"
-- name: KAFKA_CONSUMED_TOTAL_CHECKER_MAX_FAILURES
-  description: Kafka records consumed total check failures required before the app is marked as DOWN in the global health check
-  value: "5"
+- name: KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
+  description: Time between two Kafka records consumed total checks
+  value: 5m
 - name: MEMORY_LIMIT
   description: Memory limit
   value: 500Mi
