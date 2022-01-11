@@ -15,9 +15,11 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserServiceWrapper;
-import com.redhat.cloud.notifications.recipients.rbac.RbacUser;
-import com.redhat.cloud.notifications.routers.models.Meta;
-import com.redhat.cloud.notifications.routers.models.Page;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authentication;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -25,6 +27,7 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.checkerframework.checker.units.qual.A;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -304,14 +308,10 @@ public class EmailTest extends DbIsolatedTest {
         Mockito.when(itUserService.getUserss(
                 Mockito.anyString(),
                 Mockito.anyBoolean()
-        )).then(invocationOnMock -> answer.mockedUserAnswer(
-                invocationOnMock.getArgument(2, Integer.class),
-                invocationOnMock.getArgument(3, Integer.class),
-                invocationOnMock.getArgument(1, Boolean.class)
-        ));
+        )).then(invocationOnMock -> answer.mockedUserAnswer(invocationOnMock.getArgument(1, Boolean.class)));
     }
 
-    class MockedUserAnswer {
+    static class MockedUserAnswer {
 
         private final int expectedElements;
         private final boolean expectedAdminsOnly;
@@ -321,30 +321,32 @@ public class EmailTest extends DbIsolatedTest {
             this.expectedAdminsOnly = expectedAdminsOnly;
         }
 
-        Uni<Page<RbacUser>> mockedUserAnswer(int offset, int limit, boolean adminsOnly) {
+        Uni<List<ITUserResponse>> mockedUserAnswer(boolean adminsOnly) {
 
             Assertions.assertEquals(expectedAdminsOnly, adminsOnly);
 
-            int bound = Math.min(offset + limit, expectedElements);
+            List<ITUserResponse> users = new ArrayList<>();
+            for (int i = 0; i < expectedElements; ++i) {
+                ITUserResponse user = new ITUserResponse();
+//                user.setActive(true);
+                user.setAuthentications(new LinkedList<>());
+                user.getAuthentications().add(new Authentication());
+                user.getAuthentications().get(0).setPrincipal(String.format("username-%d", i));
 
-            List<RbacUser> users = new ArrayList<>();
-            for (int i = offset; i < bound; ++i) {
-                RbacUser user = new RbacUser();
-                user.setActive(true);
-                user.setUsername(String.format("username-%d", i));
-                user.setEmail(String.format("username-%d@foobardotcom", i));
-                user.setFirstName("foo");
-                user.setLastName("bar");
-                user.setOrgAdmin(false);
+                Email email = new Email();
+                email.setAddress(String.format("username-%d@foobardotcom", i));
+                user.setAccountRelationships(new LinkedList<>());
+                user.getAccountRelationships().add(new AccountRelationship());
+                user.getAccountRelationships().get(0).setEmails(List.of(email));
+
+                user.setPersonalInformation(new PersonalInformation());
+                user.getPersonalInformation().setFirstName("foo");
+                user.getPersonalInformation().setLastNames("bar");
+//                user.setOrgAdmin(false);
                 users.add(user);
             }
 
-            Page<RbacUser> usersPage = new Page<>();
-            usersPage.setMeta(new Meta());
-            usersPage.setLinks(new HashMap<>());
-            usersPage.setData(users);
-
-            return Uni.createFrom().item(usersPage);
+            return Uni.createFrom().item(users);
         }
     }
 

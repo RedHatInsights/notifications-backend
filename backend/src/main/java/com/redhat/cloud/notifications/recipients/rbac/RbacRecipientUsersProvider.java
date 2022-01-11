@@ -113,7 +113,7 @@ public class RbacRecipientUsersProvider {
     private Uni<List<User>> getWithPagination(Uni<List<ITUserResponse>> itUserResponses) {
         return itUserResponses.onItem().transform(page -> page.stream().map(itUserResponse -> {
                     User user = new User();
-//                    user.setUsername(itUserResponse.getPersonalInformation().getUsername());
+                    user.setUsername(itUserResponse.getAuthentications().get(0).getPrincipal());
                     user.setEmail(itUserResponse.getAccountRelationships().get(0).getEmails().toString());
 //                    user.setAdmin(rbacUser.getOrgAdmin());
 //                    user.setActive(rbacUser.getActive());
