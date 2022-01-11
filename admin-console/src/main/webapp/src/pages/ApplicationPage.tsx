@@ -1,10 +1,5 @@
-import { Breadcrumb, BreadcrumbItem, Button, Modal, ModalVariant, PageSection, Spinner, Title, Toolbar,
+import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar,
     ToolbarContent, ToolbarItem } from '@patternfly/react-core';
-import {
-    ActionGroup,
-    Form,
-    FormGroup, HelperText, HelperTextItem, TextArea,
-    TextInput  } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
     TableComposable,
@@ -16,6 +11,7 @@ import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
+import { CreateEditModal } from '../components/CreateEditModal';
 import { DeleteModal } from '../components/DeleteModal';
 import { useCreateEventType } from '../services/CreateEventTypes';
 import { useDeleteEventType } from '../services/DeleteEventType';
@@ -33,10 +29,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const deleteEventTypeMutation = useDeleteEventType();
+    const newEvent = useCreateEventType();
 
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
-    const newEvent = useCreateEventType();
     const [ eventType, setEventType ] = React.useState<Partial<EventType>>({});
 
     const [ showModal, setShowModal ] = React.useState(false);
@@ -81,11 +77,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setShowModal(true);
         setIsEdit(false);
         setEventType({});
-    };
-
-    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
-        const target = event.target as HTMLInputElement;
-        setEventType(prev => ({ ...prev, [target.name]: target.value }));
     };
 
     const handleSubmit = React.useCallback(() => {
@@ -158,54 +149,15 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <ToolbarItem>
                                     <Button variant='primary' type='button'
                                         onClick={ createEventType }> Create Event Type </Button>
-                                    <Modal
-                                        variant={ ModalVariant.medium }
-                                        title={ `${ isEdit ? 'Update' : 'Create'} Event Type for ${ (applicationTypesQuery.loading ||
-                                            applicationTypesQuery.payload?.status !== 200) ?
-                                            <Spinner /> : applicationTypesQuery.payload.value.displayName }` }
-                                        isOpen={ showModal }
-                                        onClose={ () => setShowModal(false) }
-                                    ><Form isHorizontal>
-                                            <FormGroup label='Name' fieldId='name' isRequired
-                                                helperText={ isEdit ? <HelperText><HelperTextItem variant="warning" hasIcon>
-                                                    If this field is modified it may affect exisiting behavior.
-                                                </HelperTextItem></HelperText> : 'This is a short name, only composed of a-z 0-9 and - characters.' }>
-                                                <TextInput
-                                                    type='text'
-                                                    value={ eventType.name }
-                                                    onChange={ handleChange }
-                                                    id='name'
-                                                    name="name"
-                                                /></FormGroup>
-                                            <FormGroup label='Display name' fieldId='display-name' isRequired
-                                                helperText='This is the name you want to display on the UI'>
-                                                <TextInput
-                                                    type='text'
-                                                    value={ eventType.displayName }
-                                                    onChange={ handleChange }
-                                                    id='display-name'
-                                                    name="displayName"
-                                                /></FormGroup>
-                                            <FormGroup label='Description' fieldId='description'
-                                                helperText='Optional short description that appears in the UI
-                                                to help admin descide how to notify users.'>
-                                                <TextArea
-                                                    type='text'
-                                                    value={ eventType.description }
-                                                    onChange={ handleChange }
-                                                    id='description'
-                                                    name="description"
-                                                /></FormGroup>
-                                            <ActionGroup>
-                                                <Button variant='primary' type='submit'
-                                                    { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
-                                                        <Spinner /> : eventTypesQuery.payload.value }
-                                                    onClick={ handleSubmit }>{isEdit ? 'Update' : 'Submit' }</Button>
-                                                <Button variant='link' type='reset'
-                                                    onClick={ () => setShowModal(false) }>Cancel</Button>
-                                            </ActionGroup>
-                                        </Form>
-                                    </Modal>
+                                    <CreateEditModal
+                                        isEdit={ isEdit }
+                                        showModal={ showModal }
+                                        applicationName={ application?.displayName }
+                                        eventType={ eventType }
+                                        onClose={ onClose }
+                                        onSubmit={ handleSubmit }
+
+                                    />
                                     <React.Fragment>
                                         <DeleteModal
                                             onDelete={ handleDelete }
