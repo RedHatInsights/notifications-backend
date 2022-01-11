@@ -6,6 +6,8 @@ import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authent
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
+import com.redhat.cloud.notifications.routers.models.Meta;
+import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -19,6 +21,7 @@ import org.mockito.Mockito;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -144,7 +147,7 @@ public class RbacRecipientUsersProviderTest {
                 Mockito.anyInt(),
                 Mockito.anyInt()
         )).then(invocationOnMock -> {
-            MockedUserAnswer answer = new MockedUserAnswer(elements, false);
+            OldMockedUserAnswer answer = new OldMockedUserAnswer(elements, false);
             return answer.mockedUserAnswer(false);
         });
     }
@@ -198,6 +201,41 @@ public class RbacRecipientUsersProviderTest {
             }
 
             return Uni.createFrom().item(users);
+        }
+    }
+
+    class OldMockedUserAnswer {
+
+        private final int expectedElements;
+        private final boolean expectedAdminsOnly;
+
+        OldMockedUserAnswer(int expectedElements, boolean expectedAdminsOnly) {
+            this.expectedElements = expectedElements;
+            this.expectedAdminsOnly = expectedAdminsOnly;
+        }
+
+        Uni<Page<RbacUser>> mockedUserAnswer(boolean adminsOnly) {
+
+            assertEquals(expectedAdminsOnly, adminsOnly);
+
+            List<RbacUser> users = new ArrayList<>();
+            for (int i = 0; i < expectedElements; ++i) {
+                RbacUser user = new RbacUser();
+                user.setActive(true);
+                user.setUsername(String.format("username-%d", i));
+                user.setEmail(String.format("username-%d@foobardotcom", i));
+                user.setFirstName("foo");
+                user.setLastName("bar");
+                user.setOrgAdmin(false);
+                users.add(user);
+            }
+
+            Page<RbacUser> usersPage = new Page<>();
+            usersPage.setMeta(new Meta());
+            usersPage.setLinks(new HashMap<>());
+            usersPage.setData(users);
+
+            return Uni.createFrom().item(usersPage);
         }
     }
 }
