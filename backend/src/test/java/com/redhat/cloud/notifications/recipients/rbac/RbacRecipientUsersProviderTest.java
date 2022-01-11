@@ -1,22 +1,24 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.itservice.ITUserServiceWrapper;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authentication;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
-import com.redhat.cloud.notifications.routers.models.Meta;
-import com.redhat.cloud.notifications.routers.models.Page;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
 import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -159,7 +161,7 @@ public class RbacRecipientUsersProviderTest {
     void clearCached() {
     }
 
-    class MockedUserAnswer {
+    static class MockedUserAnswer {
 
         private final int expectedElements;
         private final boolean expectedAdminsOnly;
@@ -171,28 +173,31 @@ public class RbacRecipientUsersProviderTest {
 
         Uni<List<ITUserResponse>> mockedUserAnswer(boolean adminsOnly) {
 
-            assertEquals(expectedAdminsOnly, adminsOnly);
+            Assertions.assertEquals(expectedAdminsOnly, adminsOnly);
 
+            List<ITUserResponse> users = new ArrayList<>();
+            for (int i = 0; i < expectedElements; ++i) {
 
-//            List<RbacUser> users = new ArrayList<>();
-//            for (int i = 0; i < 10; ++i) {
-//                RbacUser user = new RbacUser();
+                ITUserResponse user = new ITUserResponse();
 //                user.setActive(true);
-//                user.setUsername(String.format("username-%d", i));
-//                user.setEmail(String.format("username-%d@foobardotcom", i));
-//                user.setFirstName("foo");
-//                user.setLastName("bar");
-//                user.setOrgAdmin(false);
-//                users.add(user);
-//            }
-//
-//            Page<RbacUser> usersPage = new Page<>();
-//            usersPage.setMeta(new Meta());
-//            usersPage.setLinks(new HashMap<>());
-//            usersPage.setData(users);
+                user.setAuthentications(new LinkedList<>());
+                user.getAuthentications().add(new Authentication());
+                user.getAuthentications().get(0).setPrincipal(String.format("username-%d", i));
 
-//            return Uni.createFrom().item(usersPage);
-            return Uni.createFrom().item(new LinkedList<>());
+                Email email = new Email();
+                email.setAddress(String.format("username-%d@foobardotcom", i));
+                user.setAccountRelationships(new LinkedList<>());
+                user.getAccountRelationships().add(new AccountRelationship());
+                user.getAccountRelationships().get(0).setEmails(List.of(email));
+
+                user.setPersonalInformation(new PersonalInformation());
+                user.getPersonalInformation().setFirstName("foo");
+                user.getPersonalInformation().setLastNames("bar");
+//                user.setOrgAdmin(false);
+                users.add(user);
+            }
+
+            return Uni.createFrom().item(users);
         }
     }
 }
