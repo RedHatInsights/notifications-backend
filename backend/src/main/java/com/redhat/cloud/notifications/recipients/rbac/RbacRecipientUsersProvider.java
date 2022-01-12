@@ -63,7 +63,7 @@ public class RbacRecipientUsersProvider {
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
-        return transformToUser(itUserService.getUsers(accountId, adminsOnly));
+        return transformToUser(itUserService.getUsers(accountId, adminsOnly), adminsOnly);
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
@@ -109,13 +109,15 @@ public class RbacRecipientUsersProvider {
                 .onFailure().invoke(failure -> LOGGER.warnf("RBAC S2S call failed: %s", failure.getMessage()));
     }
 
-    private Uni<List<User>> transformToUser(Uni<List<ITUserResponse>> itUserResponses) {
+    private Uni<List<User>> transformToUser(Uni<List<ITUserResponse>> itUserResponses, boolean adminsOnly) {
         return itUserResponses.onItem().transform(itUser -> itUser.stream().map(itUserResponse -> {
             User user = new User();
             user.setUsername(itUserResponse.authentications.get(0).principal);
             user.setEmail(itUserResponse.accountRelationships.get(0).emails.toString());
-//                    user.setAdmin(rbacUser.getOrgAdmin());
-//                    user.setActive(rbacUser.getActive());
+
+            user.setAdmin(adminsOnly);
+            user.setActive(true);
+
             user.setFirstName(itUserResponse.personalInformation.firstName);
             user.setLastName(itUserResponse.personalInformation.lastNames);
             return user;

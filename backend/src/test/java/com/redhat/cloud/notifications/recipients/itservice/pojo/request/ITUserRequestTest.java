@@ -30,4 +30,9 @@ class ITUserRequestTest {
     void shouldHaveStatusEnabled() {
         assertEquals("enabled", testee.by.allOf.status);
     }
+
+    @Test
+    void shouldContainFixedEbsAccountNumber() {
+        assertEquals("5910538", testee.by.allOf.ebsAccountNumber);
+    }
 }
