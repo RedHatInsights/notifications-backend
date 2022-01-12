@@ -111,6 +111,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
         return true;
     }, [ deleteEventTypeMutation.mutate, eventType.id ]);
 
+    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
+        const target = event.target as HTMLInputElement;
+        setEventType(prev => ({ ...prev, [target.name]: target.value }));
+    };
+
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
         setEventType(e);
@@ -161,6 +166,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         onClose={ onClose }
                                         onSubmit={ handleSubmit }
                                         eventTypeQuery={ eventTypesQuery }
+                                        onChange={ handleChange }
+                                        eventTypeName={ eventType.name }
+                                        eventTypeDisplayName={ eventType.displayName }
+                                        eventTypeDescription={ eventType.description }
 
                                     />
                                     <React.Fragment>
