@@ -7,46 +7,14 @@ import java.util.List;
 public class ITUserResponse {
 
     @JsonProperty("id")
-    private String id;
+    public String id;
 
     @JsonProperty("authentications")
-    private List<Authentication> authentications;
+    public List<Authentication> authentications;
 
     @JsonProperty("accountRelationships")
-    private List<AccountRelationship> accountRelationships;
+    public List<AccountRelationship> accountRelationships;
 
     @JsonProperty("personalInformation")
-    private PersonalInformation personalInformation;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public List<Authentication> getAuthentications() {
-        return authentications;
-    }
-
-    public void setAuthentications(List<Authentication> authentications) {
-        this.authentications = authentications;
-    }
-
-    public List<AccountRelationship> getAccountRelationships() {
-        return accountRelationships;
-    }
-
-    public void setAccountRelationships(List<AccountRelationship> accountRelationships) {
-        this.accountRelationships = accountRelationships;
-    }
-
-    public PersonalInformation getPersonalInformation() {
-        return personalInformation;
-    }
-
-    public void setPersonalInformation(PersonalInformation personalInformation) {
-        this.personalInformation = personalInformation;
-    }
+    public PersonalInformation personalInformation;
 }

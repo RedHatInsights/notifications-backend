@@ -7,24 +7,8 @@ import java.util.List;
 public class Include {
 
     @JsonProperty("allOf")
-    private List<String> allOf = null;
+    public List<String> allOf;
 
     @JsonProperty("accountRelationships")
-    private List<AccountRelationship> accountRelationships = null;
-
-    public List<String> getAllOf() {
-        return allOf;
-    }
-
-    public void setAllOf(List<String> allOf) {
-        this.allOf = allOf;
-    }
-
-    public List<AccountRelationship> getAccountRelationships() {
-        return accountRelationships;
-    }
-
-    public void setAccountRelationships(List<AccountRelationship> accountRelationships) {
-        this.accountRelationships = accountRelationships;
-    }
+    public List<AccountRelationship> accountRelationships;
 }

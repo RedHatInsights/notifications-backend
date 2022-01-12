@@ -112,12 +112,12 @@ public class RbacRecipientUsersProvider {
     private Uni<List<User>> transformToUser(Uni<List<ITUserResponse>> itUserResponses) {
         return itUserResponses.onItem().transform(itUser -> itUser.stream().map(itUserResponse -> {
             User user = new User();
-            user.setUsername(itUserResponse.getAuthentications().get(0).getPrincipal());
-            user.setEmail(itUserResponse.getAccountRelationships().get(0).getEmails().toString());
+            user.setUsername(itUserResponse.authentications.get(0).principal);
+            user.setEmail(itUserResponse.accountRelationships.get(0).emails.toString());
 //                    user.setAdmin(rbacUser.getOrgAdmin());
 //                    user.setActive(rbacUser.getActive());
-            user.setFirstName(itUserResponse.getPersonalInformation().getFirstName());
-            user.setLastName(itUserResponse.getPersonalInformation().getLastNames());
+            user.setFirstName(itUserResponse.personalInformation.firstName);
+            user.setLastName(itUserResponse.personalInformation.lastNames);
             return user;
         }).collect(Collectors.toList()));
     }

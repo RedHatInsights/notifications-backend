@@ -183,19 +183,19 @@ public class RbacRecipientUsersProviderTest {
 
                 ITUserResponse user = new ITUserResponse();
 //                user.setActive(true);
-                user.setAuthentications(new LinkedList<>());
-                user.getAuthentications().add(new Authentication());
-                user.getAuthentications().get(0).setPrincipal(String.format("username-%d", i));
+                user.authentications = new LinkedList<>();
+                user.authentications.add(new Authentication());
+                user.authentications.get(0).principal = String.format("username-%d", i);
 
                 Email email = new Email();
-                email.setAddress(String.format("username-%d@foobardotcom", i));
-                user.setAccountRelationships(new LinkedList<>());
-                user.getAccountRelationships().add(new AccountRelationship());
-                user.getAccountRelationships().get(0).setEmails(List.of(email));
+                email.address = String.format("username-%d@foobardotcom", i);
+                user.accountRelationships = new LinkedList<>();
+                user.accountRelationships.add(new AccountRelationship());
+                user.accountRelationships.get(0).emails = List.of(email);
 
-                user.setPersonalInformation(new PersonalInformation());
-                user.getPersonalInformation().setFirstName("foo");
-                user.getPersonalInformation().setLastNames("bar");
+                user.personalInformation = new PersonalInformation();
+                user.personalInformation.firstName = "foo";
+                user.personalInformation.lastNames = "bar";
 //                user.setOrgAdmin(false);
                 users.add(user);
             }

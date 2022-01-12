@@ -8,44 +8,44 @@ import java.util.List;
 public class ITUserRequest {
 
     @JsonProperty("by")
-    private By by;
+    public By by;
 
     @JsonProperty("include")
-    private Include include;
+    public Include include;
 
     public ITUserRequest(boolean adminsOnly) {
         final By by = new By();
         AllOf allOf = new AllOf();
-        allOf.setStatus("enabled");
-        allOf.setEbsAccountNumber("5910538");
+        allOf.status = "enabled";
+        allOf.ebsAccountNumber = "5910538";
 
         if (adminsOnly) {
             PermissionCode permissionCode = new PermissionCode();
-            permissionCode.setValue("admin:org:all");
-            permissionCode.setOperand("eq");
-            allOf.setPermissionCode(permissionCode);
+            permissionCode.value = "admin:org:all";
+            permissionCode.operand = "eq";
+            allOf.permissionCode = permissionCode;
         }
-        by.setAllOf(allOf);
+        by.allOf = allOf;
 
         WithPaging withPaging = new WithPaging();
-        withPaging.setFirstResultIndex(0);
-        withPaging.setMaxResults(10000);
-        by.setWithPaging(withPaging);
+        withPaging.firstResultIndex = 0;
+        withPaging.maxResults = 10000;
+        by.withPaging = withPaging;
 
         this.by = by;
 
         Include include = new Include();
 
-        include.setAllOf(List.of("authentications", "personal_information"));
+        include.allOf = List.of("authentications", "personal_information");
         List<AccountRelationship> accountRelationships = new LinkedList<>();
         AccountRelationship accountRelationship1 = new AccountRelationship();
-        accountRelationship1.setAllOf(List.of("primary_email"));
+        accountRelationship1.allOf = List.of("primary_email");
 
         final By__1 by1 = new By__1();
-        by1.setActive(true);
-        accountRelationship1.setBy(by1);
+        by1.active = true;
+        accountRelationship1.by = by1;
         accountRelationships.add(accountRelationship1);
-        include.setAccountRelationships(accountRelationships);
+        include.accountRelationships = accountRelationships;
 
         this.include = include;
     }
