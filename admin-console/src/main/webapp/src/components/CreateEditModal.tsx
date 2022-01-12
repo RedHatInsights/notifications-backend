@@ -15,7 +15,6 @@ interface CreateEditModalProps {
 }
 
 export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (props) => {
-
     const [ eventType, setEventType ] = React.useState<Partial<EventType>>(props.initialEventType ?? {});
 
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
@@ -45,8 +44,8 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                         </HelperTextItem></HelperText> : 'This is a short name, only composed of a-z 0-9 and - characters.' }>
                         <TextInput
                             type='text'
-                            value={ props.eventTypeName }
-                            onChange={ props.onChange }
+                            value={ eventType.name }
+                            onChange={ handleChange }
                             id='name'
                             name="name"
                         /></FormGroup>
@@ -54,8 +53,8 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                         helperText='This is the name you want to display on the UI'>
                         <TextInput
                             type='text'
-                            value={ props.eventTypeDisplayName }
-                            onChange={ props.onChange }
+                            value={ eventType.displayName }
+                            onChange={ handleChange }
                             id='display-name'
                             name="displayName"
                         /></FormGroup>
@@ -64,8 +63,8 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                                                 to help admin decide how to notify users.'>
                         <TextArea
                             type='text'
-                            value={ props.eventTypeDescription }
-                            onChange={ props.onChange }
+                            value={ eventType.description }
+                            onChange={ handleChange }
                             id='description'
                             name="description"
                         /></FormGroup>
