@@ -158,9 +158,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         isEdit={ isEdit }
                                         showModal={ showModal }
                                         applicationName={ application?.displayName }
-                                        eventTypeName={ eventType.name }
-                                        eventTypeDisplayName={ eventType.displayName }
-                                        eventTypeDescription={ eventType.description }                                        onClose={ onClose }
+                                        onClose={ onClose }
                                         onSubmit={ handleSubmit }
                                         eventTypeQuery={ eventTypesQuery }
 
