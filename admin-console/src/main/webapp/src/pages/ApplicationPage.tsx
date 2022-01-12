@@ -6,7 +6,6 @@ import {
     Tbody,
     Td,  Th,   Thead,
     Tr } from '@patternfly/react-table';
-import { produceWithPatches } from 'immer';
 import * as React from 'react';
 import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
