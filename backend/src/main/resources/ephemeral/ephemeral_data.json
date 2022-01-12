@@ -91,7 +91,7 @@
           "event_types": [
             {
               "name": "compliance-below-threshold",
-              "display_name": "Compliance level dropped below threshold"
+              "display_name": "Compliance score dropped below threshold"
             },
             {
               "name": "report-upload-failed",
