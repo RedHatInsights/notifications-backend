@@ -9,7 +9,7 @@ interface CreateEditModalProps {
     isEdit: boolean;
     showModal: boolean;
     applicationName?: string;
-    eventType: Partial<EventType>;
+    eventTypes: Partial<EventType>;
     onClose: () => void;
     onSubmit: () => void;
     eventTypesQuery: unknown;
