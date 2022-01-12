@@ -158,10 +158,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         isEdit={ isEdit }
                                         showModal={ showModal }
                                         applicationName={ application?.displayName }
-                                        eventTypes={ eventType }
-                                        onClose={ onClose }
+                                        eventTypeName={ eventType.name }
+                                        eventTypeDisplayName={ eventType.displayName }
+                                        eventTypeDescription={ eventType.description }                                        onClose={ onClose }
                                         onSubmit={ handleSubmit }
-                                        eventTypesQuery={ eventTypesQuery }
+                                        eventTypeQuery={ eventTypesQuery }
 
                                     />
                                     <React.Fragment>

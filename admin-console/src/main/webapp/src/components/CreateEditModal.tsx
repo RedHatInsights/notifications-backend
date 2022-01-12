@@ -3,26 +3,26 @@ import { ActionGroup, Button, Form, FormGroup, HelperText, HelperTextItem, Modal
 import React from 'react';
 
 import { useCreateEventType } from '../services/CreateEventTypes';
-import { EventType } from '../types/Notifications';
 
 interface CreateEditModalProps {
     isEdit: boolean;
     showModal: boolean;
     applicationName?: string;
-    eventTypes: Partial<EventType>;
+    eventTypeName?: string;
+    eventTypeDisplayName?: string;
+    eventTypeDescription?: string;
     onClose: () => void;
     onSubmit: () => void;
-    eventTypesQuery: unknown;
+    eventTypeQuery: unknown;
 
 }
 
 export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (props) => {
     const newEvent = useCreateEventType();
-    const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
 
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
         const target = event.target as HTMLInputElement;
-        setEventTypes((prev: any) => ({ ...prev, [target.name]: target.value }));
+        ((prev: any) => ({ ...prev, [target.name]: target.value }));
     };
 
     return (
@@ -39,7 +39,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                         </HelperTextItem></HelperText> : 'This is a short name, only composed of a-z 0-9 and - characters.' }>
                         <TextInput
                             type='text'
-                            value={ eventTypes.name }
+                            value={ props.eventTypeName }
                             onChange={ handleChange }
                             id='name'
                             name="name"
@@ -48,7 +48,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                         helperText='This is the name you want to display on the UI'>
                         <TextInput
                             type='text'
-                            value={ eventTypes.displayName }
+                            value={ props.eventTypeDisplayName }
                             onChange={ handleChange }
                             id='display-name'
                             name="displayName"
@@ -58,7 +58,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                                                 to help admin descide how to notify users.'>
                         <TextArea
                             type='text'
-                            value={ eventTypes.description }
+                            value={ props.eventTypeDescription }
                             onChange={ handleChange }
                             id='description'
                             name="description"
@@ -66,7 +66,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                     <ActionGroup>
                         <Button variant='primary' type='submit'
                             { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
-                                <Spinner /> : props.eventTypesQuery }
+                                <Spinner /> : props.eventTypeQuery }
                             onClick={ props.onSubmit }>{ props.isEdit ? 'Update' : 'Submit' }</Button>
                         <Button variant='link' type='reset'
                             onClick={ props.onClose }>Cancel</Button>
