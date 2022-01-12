@@ -13,7 +13,6 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -26,6 +25,7 @@ import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
+import com.redhat.cloud.notifications.routers.models.internal.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.templates.Blank;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -128,7 +128,7 @@ public class LifecycleITest extends DbIsolatedTest {
         final String username = "user";
         setupEmailMock(accountId, username);
 
-        EmailSubscriptionProperties defaultBehaviorGroupProperties = new EmailSubscriptionProperties();
+        RequestDefaultBehaviorGroupPropertyList defaultBehaviorGroupProperties = new RequestDefaultBehaviorGroupPropertyList();
         defaultBehaviorGroupProperties.setOnlyAdmins(true);
 
         // All events are stored in the canonical email endpoint
@@ -514,7 +514,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .contentType(TEXT);
     }
 
-    private void addDefaultBehaviorGroupActions(String defaultBehaviorGroupId, int expectedHttpStatusCode, EmailSubscriptionProperties... properties) {
+    private void addDefaultBehaviorGroupActions(String defaultBehaviorGroupId, int expectedHttpStatusCode, RequestDefaultBehaviorGroupPropertyList... properties) {
         given()
                 .basePath(API_INTERNAL)
                 .contentType(JSON)

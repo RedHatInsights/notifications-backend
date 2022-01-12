@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import javax.validation.constraints.NotNull;
 import java.util.Objects;
-import java.util.UUID;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class RequestDefaultBehaviorGroupPropertyList {
@@ -14,8 +13,6 @@ public class RequestDefaultBehaviorGroupPropertyList {
 
     @NotNull
     private boolean ignorePreferences;
-
-    private UUID groupId;
 
     public boolean isOnlyAdmins() {
         return onlyAdmins;
@@ -33,14 +30,6 @@ public class RequestDefaultBehaviorGroupPropertyList {
         this.ignorePreferences = ignorePreferences;
     }
 
-    public UUID getGroupId() {
-        return groupId;
-    }
-
-    public void setGroupId(UUID groupId) {
-        this.groupId = groupId;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -52,11 +41,11 @@ public class RequestDefaultBehaviorGroupPropertyList {
         }
 
         RequestDefaultBehaviorGroupPropertyList that = (RequestDefaultBehaviorGroupPropertyList) o;
-        return onlyAdmins == that.onlyAdmins && ignorePreferences == that.ignorePreferences && Objects.equals(groupId, that.groupId);
+        return onlyAdmins == that.onlyAdmins && ignorePreferences == that.ignorePreferences;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(onlyAdmins, ignorePreferences, groupId);
+        return Objects.hash(onlyAdmins, ignorePreferences);
     }
 }

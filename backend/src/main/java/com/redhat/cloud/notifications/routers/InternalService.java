@@ -299,6 +299,15 @@ public class InternalService {
         .onFailure().recoverWithItem(throwable -> Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(throwable.getMessage())).build());
     }
 
+    @GET
+    @Path("/behaviorGroups/default")
+    @Produces(APPLICATION_JSON)
+    public Uni<List<BehaviorGroup>> getDefaultBehaviorGroup() {
+        return sessionFactory.withSession(session -> {
+            return behaviorGroupResources.findDefault();
+        });
+    }
+
     @POST
     @Path("/behaviorGroups/default")
     @Consumes(APPLICATION_JSON)
@@ -350,7 +359,6 @@ public class InternalService {
                         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
                         properties.setOnlyAdmins(p.isOnlyAdmins());
                         properties.setIgnorePreferences(p.isIgnorePreferences());
-                        properties.setGroupId(p.getGroupId());
                         return properties;
                     })
                     .collect(Collectors.toList())
