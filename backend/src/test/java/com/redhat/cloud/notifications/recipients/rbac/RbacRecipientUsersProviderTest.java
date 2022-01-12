@@ -204,7 +204,7 @@ public class RbacRecipientUsersProviderTest {
         }
     }
 
-    class OldMockedUserAnswer {
+    static class OldMockedUserAnswer {
 
         private final int expectedElements;
         private final boolean expectedAdminsOnly;

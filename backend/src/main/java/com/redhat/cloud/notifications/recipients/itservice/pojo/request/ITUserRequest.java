@@ -49,20 +49,4 @@ public class ITUserRequest {
 
         this.include = include;
     }
-
-    public By getBy() {
-        return by;
-    }
-
-    public void setBy(By by) {
-        this.by = by;
-    }
-
-    public Include getInclude() {
-        return include;
-    }
-
-    public void setInclude(Include include) {
-        this.include = include;
-    }
 }
