@@ -109,6 +109,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
         return true;
     }, [ deleteEventTypeMutation.mutate, eventTypes.id ]);
 
+    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
+        const target = event.target as HTMLInputElement;
+        setEventType(prev => ({ ...prev, [target.name]: target.value }));
+    };
+
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
         setEventTypes(e);

@@ -45,8 +45,8 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                         </HelperTextItem></HelperText> : 'This is a short name, only composed of a-z 0-9 and - characters.' }>
                         <TextInput
                             type='text'
-                            value={ values.name }
-                            onChange={ handleChange }
+                            value={ props.eventTypeName }
+                            onChange={ props.onChange }
                             id='name'
                             name="name"
                         /></FormGroup>
@@ -54,8 +54,8 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                         helperText='This is the name you want to display on the UI'>
                         <TextInput
                             type='text'
-                            value={ values.displayName }
-                            onChange={ handleChange }
+                            value={ props.eventTypeDisplayName }
+                            onChange={ props.onChange }
                             id='display-name'
                             name="displayName"
                         /></FormGroup>
@@ -64,8 +64,8 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                                                 to help admin decide how to notify users.'>
                         <TextArea
                             type='text'
-                            value={ values.description }
-                            onChange={ handleChange }
+                            value={ props.eventTypeDescription }
+                            onChange={ props.onChange }
                             id='description'
                             name="description"
                         /></FormGroup>
