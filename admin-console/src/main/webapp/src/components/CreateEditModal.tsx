@@ -12,6 +12,7 @@ interface CreateEditModalProps {
     eventType: Partial<EventType>;
     onClose: () => void;
     onSubmit: () => void;
+    eventTypesQuery: unknown;
 
 }
 
@@ -30,6 +31,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                 variant={ ModalVariant.medium }
                 title={ `${ props.isEdit ? 'Update' : 'Create'} Event Type for ${ props.applicationName }` }
                 isOpen={ props.showModal }
+                onClose={ props.onClose }
             ><Form isHorizontal>
                     <FormGroup label='Name' fieldId='name' isRequired
                         helperText={ props.isEdit ? <HelperText><HelperTextItem variant="warning" hasIcon>
@@ -64,7 +66,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                     <ActionGroup>
                         <Button variant='primary' type='submit'
                             { ...(newEvent.loading || newEvent.payload?.status !== 200) ?
-                                <Spinner /> : eventType }
+                                <Spinner /> : props.eventTypesQuery }
                             onClick={ props.onSubmit }>{ props.isEdit ? 'Update' : 'Submit' }</Button>
                         <Button variant='link' type='reset'
                             onClick={ props.onClose }>Cancel</Button>

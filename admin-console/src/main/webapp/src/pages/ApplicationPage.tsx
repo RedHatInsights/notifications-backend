@@ -161,6 +161,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         eventType={ eventType }
                                         onClose={ onClose }
                                         onSubmit={ handleSubmit }
+                                        eventTypesQuery={ eventTypesQuery }
 
                                     />
                                     <React.Fragment>
