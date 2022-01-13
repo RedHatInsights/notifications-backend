@@ -113,7 +113,9 @@ public class RbacRecipientUsersProvider {
         return itUserResponses.onItem().transform(itUser -> itUser.stream().map(itUserResponse -> {
             User user = new User();
             user.setUsername(itUserResponse.authentications.get(0).principal);
-            user.setEmail(itUserResponse.accountRelationships.get(0).emails.toString());
+
+            // TODO is it okay to use the first email always?
+            user.setEmail(itUserResponse.accountRelationships.get(0).emails.get(0).address);
 
             user.setAdmin(adminsOnly);
             user.setActive(true);
