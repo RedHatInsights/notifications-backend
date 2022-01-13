@@ -2,6 +2,7 @@ import { ActionGroup, Button, Form, FormGroup, HelperText, HelperTextItem, Modal
     Spinner, TextArea, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
+import { useCreateEventType } from '../services/CreateEventTypes';
 import { EventType } from '../types/Notifications';
 
 interface CreateEditModalProps {
@@ -11,18 +12,27 @@ interface CreateEditModalProps {
     initialEventType?: EventType;
     isLoading?: boolean;
     onClose: () => void;
-    onSubmit: () => void;
+    onSubmit: (eventType: EventType) => void;
     eventTypeQuery: unknown;
 
 }
 
 export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (props) => {
+
     const [ eventType, setEventType ] = React.useState<Partial<EventType>>(props.initialEventType ?? {});
+    const newEvent = useCreateEventType();
 
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
         const target = event.target as HTMLInputElement;
         setEventType(prev => ({ ...prev, [target.name]: target.value }));
     };
+
+    const onSubmitLocal = React.useCallback(() => {
+        props.onSubmit(eventType); }, [ eventType, props ]);
+
+    React.useEffect(() => {
+        setEventType(props.initialEventType);
+    }, [ props.initialEventType ]);
 
     return (
         <React.Fragment>
@@ -65,7 +75,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                     <ActionGroup>
                         <Button variant='primary' type='submit'
                             { ...props.isLoading ? <Spinner /> : props.eventTypeQuery }
-                            onClick={ props.onSubmit }>{ props.isEdit ? 'Update' : 'Submit' }</Button>
+                            onSubmit={ onSubmitLocal }>{ props.isEdit ? 'Update' : 'Submit' }</Button>
                         <Button variant='link' type='reset'
                             onClick={ props.onClose }>Cancel</Button>
                     </ActionGroup>
