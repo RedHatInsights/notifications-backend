@@ -50,6 +50,8 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(FROMCAMEL_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(EGRESS_CHANNEL));
 
+        properties.put("reinject.enabled", "true");
+
         System.out.println(" -- Running with properties: " + properties);
         return properties;
     }
