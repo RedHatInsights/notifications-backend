@@ -68,7 +68,7 @@ public class FromCamelHistoryFiller {
     @Channel(EGRESS_CHANNEL)
     Emitter<String> emitter;
 
-    @ConfigProperty(name = "reinject.enabled", defaultValue = "true")
+    @ConfigProperty(name = "reinject.enabled", defaultValue = "false")
     boolean enableReInject;
 
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
@@ -78,7 +78,7 @@ public class FromCamelHistoryFiller {
         return Uni.createFrom().item(input::getPayload)
                 .onItem().invoke(payload -> log.infof("Processing return from camel: %s", payload))
                 .onItem().transform(this::decodeItem)
-                .onItem().invoke(this::reinjectIfNeeded)
+                .call(this::reinjectIfNeeded)
                 .onItem()
                 .transformToUni(payload -> {
                     return sessionFactory.withStatelessSession(statelessSession -> {
@@ -95,56 +95,51 @@ public class FromCamelHistoryFiller {
                 .eventually(() -> messagesProcessedCounter.increment());
     }
 
-    private void reinjectIfNeeded(Map<String, Object> payload) {
-        if (!enableReInject) {
-            return;
+    private Uni<Void> reinjectIfNeeded(Map<String, Object> payload) {
+        if (!enableReInject || (payload.containsKey("successful") && ((Boolean) payload.get("successful")))) {
+            return Uni.createFrom().voidItem();
         }
-        if (!payload.containsKey("successful") || !((Boolean) payload.get("successful"))) {
-            String historyId = (String) payload.get("historyId");
-            log.infof("Event with id %s was not successful, resubmitting for further processing", historyId);
+
+        String historyId = (String) payload.get("historyId");
+        log.infof("Event with id %s was not successful, resubmitting for further processing", historyId);
+
+        Uni<Endpoint> endpointUni = notificationResources.getEndpointForHistoryId(historyId);
+
+        return endpointUni.invoke(ep -> {
 
             Event event = new Event();
 
-            Uni<Endpoint> endpointUni = notificationResources.getEndpointForHistoryId(historyId);
-            endpointUni.onItem().transform(ep -> {
+            // TODO augment with details from Endpoint and original event
+            event.setPayload(payload);
 
-                // TODO augment with details from Endpoint and original event
-                event.setPayload(payload);
+            // Save the original id, as we may need it in the future.
+            Map<String, String> context = new HashMap<>();
+            context.put("original-id", historyId);
+            if (ep != null) { // TODO For the current tests. EP should not be null in real life
+                context.put("failed-integration", ep.getName());
+            }
 
-                // Save the original id, as we may need it in the future.
-                Map<String, String> context = new HashMap<>();
-                context.put("original-id", historyId);
-                if (ep != null) { // TODO For the current tests. EP should not be null in real life
-                    context.put("failed-integration", ep.getName());
-                }
+            Action action = Action.newBuilder()
+                    .setBundle("platform")
+                    .setApplication("notifications")
+                    .setEventType("integration_failed")
+                    .setAccountId(ep != null ? ep.getAccountId() : "")
+                    .setContext(context)
+                    .setTimestamp(LocalDateTime.now())
+                    .setEvents(Collections.singletonList(event))
+                    .setVersion("v1.1.0")
+                    .setRecipients(Collections.singletonList(
+                            Recipient.newBuilder()
+                                    .setOnlyAdmins(true)
+                                    .setIgnoreUserPreferences(true)
+                                    .build()))
+                    .build();
 
-                Action action = Action.newBuilder()
-                        .setBundle("platform")
-                        .setApplication("notifications")
-                        .setEventType("integration_failed")
-                        .setAccountId(ep != null ? ep.getAccountId() : "")
-                        .setContext(context)
-                        .setTimestamp(LocalDateTime.now())
-                        .setEvents(Collections.singletonList(event))
-                        .setVersion("v1.1.0")
-                        .setRecipients(Collections.singletonList(
-                                Recipient.newBuilder()
-                                        .setOnlyAdmins(true)
-                                        .setIgnoreUserPreferences(true)
-                                        .build()))
-                        .build();
-
-                String ser = new Encoder().encode(action);
-                // Add the message id in Kafka header for the de-duplicator
-                Message<String> message = buildMessageWithId(ser);
-                emitter.send(message);
-                return Uni.createFrom().voidItem();
-
-            })
-            .subscribe()
-                    .with(x -> x.onItem().invoke(item -> System.out.println(item))); // This triggers the actual work
-
-        }
+            String ser = new Encoder().encode(action);
+            // Add the message id in Kafka header for the de-duplicator
+            Message<String> message = buildMessageWithId(ser);
+            emitter.send(message);
+        }).replaceWithVoid();
     }
 
 
