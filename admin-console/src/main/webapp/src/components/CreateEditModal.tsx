@@ -9,10 +9,10 @@ interface CreateEditModalProps {
     isEdit: boolean;
     showModal: boolean;
     applicationName?: string;
-    initialEventType?: EventType;
+    initialEventType?: Partial<EventType>
     isLoading?: boolean;
     onClose: () => void;
-    onSubmit: (eventType: EventType) => void;
+    onSubmit: (eventType: Partial<EventType>) => void;
     eventTypeQuery: unknown;
 
 }
@@ -28,7 +28,8 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
     };
 
     const onSubmitLocal = React.useCallback(() => {
-        props.onSubmit(eventType); }, [ eventType, props ]);
+        props.onSubmit(eventType);
+    }, [ eventType, props ]);
 
     React.useEffect(() => {
         setEventType(props.initialEventType);
