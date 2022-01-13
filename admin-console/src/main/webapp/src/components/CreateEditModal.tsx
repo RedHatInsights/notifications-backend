@@ -9,7 +9,7 @@ interface CreateEditModalProps {
     isEdit: boolean;
     showModal: boolean;
     applicationName?: string;
-    initialEventType?: Partial<EventType>
+    initialEventType?: EventType;
     isLoading?: boolean;
     onClose: () => void;
     onSubmit: (eventType: Partial<EventType>) => void;
@@ -32,7 +32,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
     }, [ eventType, props ]);
 
     React.useEffect(() => {
-        setEventType(props.initialEventType);
+        setEventType(props.initialEventType ?? {});
     }, [ props.initialEventType ]);
 
     return (
