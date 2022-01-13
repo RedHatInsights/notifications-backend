@@ -91,6 +91,8 @@ objects:
               optional: true
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED}
+        - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY
+          value: ${KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
         - name: PROCESSOR_EMAIL_BOP_APITOKEN
@@ -249,6 +251,9 @@ parameters:
 - name: KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
   description: Is the Kafka records consumed total check included in the global health check?
   value: "false"
+- name: KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY
+  description: Delay after the server startup before the first check is performed
+  value: 5m
 - name: KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
   description: Time between two Kafka records consumed total checks
   value: 5m
