@@ -14,7 +14,7 @@ public class ActionRecipientSettings extends RecipientSettings {
     private final Recipient recipient;
     private final Set<String> users;
 
-    ActionRecipientSettings(Recipient recipient) {
+    public ActionRecipientSettings(Recipient recipient) {
         this.recipient = recipient;
         this.users = Set.copyOf(this.recipient.getUsers());
     }
