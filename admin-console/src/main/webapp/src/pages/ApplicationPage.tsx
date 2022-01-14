@@ -13,6 +13,7 @@ import { useParams } from 'react-router';
 
 import { CreateEditModal } from '../components/CreateEditModal';
 import { DeleteModal } from '../components/DeleteModal';
+import { useCreateEventType } from '../services/CreateEventTypes';
 import { useDeleteEventType } from '../services/DeleteEventType';
 import { useApplicationTypes } from '../services/GetApplication';
 import { getBundleAction  } from '../services/GetBundleAction';
@@ -28,6 +29,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const deleteEventTypeMutation = useDeleteEventType();
+    const newEvent = useCreateEventType();
 
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
@@ -79,10 +81,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
-            id: eventType.id,
-            displayName: eventType.displayName ?? '',
-            name: eventType.name ?? '',
-            description: eventType.description ?? '',
+            id: eventTypes.id,
+            displayName: eventTypes.displayName ?? '',
+            name: eventTypes.name ?? '',
+            description: eventTypes.description ?? '',
             applicationId
 
         })

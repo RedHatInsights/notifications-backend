@@ -1,7 +1,6 @@
 import { ActionGroup, Button, Form, FormGroup, HelperText, HelperTextItem, Modal, ModalVariant, TextArea, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
-import { useCreateEventType } from '../services/CreateEventTypes';
 import { EventType } from '../types/Notifications';
 
 interface CreateEditModalProps {
@@ -18,7 +17,6 @@ interface CreateEditModalProps {
 export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (props) => {
 
     const [ eventType, setEventType ] = React.useState<Partial<EventType>>(props.initialEventType ?? {});
-    const newEvent = useCreateEventType();
 
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
         const target = event.target as HTMLInputElement;
