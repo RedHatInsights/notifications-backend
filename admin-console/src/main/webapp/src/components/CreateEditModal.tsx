@@ -2,7 +2,6 @@ import { ActionGroup, Button, Form, FormGroup, HelperText, HelperTextItem, Modal
     Spinner, TextArea, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
-import { useCreateEventType } from '../services/CreateEventTypes';
 import { EventType } from '../types/Notifications';
 
 interface CreateEditModalProps {
@@ -20,7 +19,6 @@ interface CreateEditModalProps {
 export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (props) => {
 
     const [ eventType, setEventType ] = React.useState<Partial<EventType>>(props.initialEventType ?? {});
-    const newEvent = useCreateEventType();
 
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
         const target = event.target as HTMLInputElement;
@@ -76,7 +74,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                     <ActionGroup>
                         <Button variant='primary' type='submit'
                             { ...props.isLoading ? <Spinner /> : props.eventTypeQuery }
-                            onSubmit={ onSubmitLocal }>{ props.isEdit ? 'Update' : 'Submit' }</Button>
+                            onClick={ onSubmitLocal }>{ props.isEdit ? 'Update' : 'Submit' }</Button>
                         <Button variant='link' type='reset'
                             onClick={ props.onClose }>Cancel</Button>
                     </ActionGroup>

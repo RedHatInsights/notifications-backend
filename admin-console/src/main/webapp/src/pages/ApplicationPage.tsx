@@ -13,6 +13,7 @@ import { useParams } from 'react-router';
 
 import { CreateEditModal } from '../components/CreateEditModal';
 import { DeleteModal } from '../components/DeleteModal';
+import { useCreateEventType } from '../services/CreateEventTypes';
 import { useDeleteEventType } from '../services/DeleteEventType';
 import { useApplicationTypes } from '../services/GetApplication';
 import { getBundleAction  } from '../services/GetBundleAction';
@@ -28,14 +29,13 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const deleteEventTypeMutation = useDeleteEventType();
+    const newEvent = useCreateEventType();
 
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
-    const [ eventType, setEventType ] = React.useState<Partial<EventType>>({});
-
+    const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
-
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
     const getBundleId = React.useMemo(() => {
@@ -74,44 +74,44 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
-        setEventType({});
+        setEventTypes({});
     };
 
     const handleSubmit = React.useCallback(() => {
         setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
-            id: eventType.id,
-            displayName: eventType.displayName ?? '',
-            name: eventType.name ?? '',
-            description: eventType.description ?? '',
+            id: eventTypes.id,
+            displayName: eventTypes.displayName ?? '',
+            name: eventTypes.name ?? '',
+            description: eventTypes.description ?? '',
             applicationId
 
         })
         .then (eventTypesQuery.query);
 
-    }, [ applicationId, eventType, eventTypesQuery.query, newEvent.mutate ]);
+    }, [ applicationId, eventTypes, eventTypesQuery.query, newEvent.mutate ]);
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
         setIsEdit(true);
-        setEventType(e);
+        setEventTypes(e);
     };
 
     const handleDelete = React.useCallback(async () => {
         setShowDeleteModal(false);
         const deleteEventType = deleteEventTypeMutation.mutate;
-        const response = await deleteEventType(eventType.id);
+        const response = await deleteEventType(eventTypes.id);
         if (response.error) {
             return false;
         }
 
         return true;
-    }, [ deleteEventTypeMutation.mutate, eventType.id ]);
+    }, [ deleteEventTypeMutation.mutate, eventTypes.id ]);
 
     const deleteEventTypeModal = (e: EventType) => {
         setShowDeleteModal(true);
-        setEventType(e);
+        setEventTypes(e);
     };
 
     const onClose = () => {
@@ -166,7 +166,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                             onDelete={ handleDelete }
                                             isOpen={ showDeleteModal }
                                             onClose={ onDeleteClose }
-                                            eventTypeName={ eventType.name }
+                                            eventTypeName={ eventTypes.name }
                                             applicationName={ application?.displayName }
                                             bundleName={ bundle?.display_name }
 
