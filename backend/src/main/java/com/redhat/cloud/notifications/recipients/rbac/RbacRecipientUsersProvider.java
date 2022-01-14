@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserServiceWrapper;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.micrometer.core.instrument.Counter;
@@ -36,7 +37,6 @@ public class RbacRecipientUsersProvider {
     @RestClient
     RbacServiceToService rbacServiceToService;
 
-    @Inject
     ITUserServiceWrapper itUserService;
 
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
@@ -55,6 +55,10 @@ public class RbacRecipientUsersProvider {
     MeterRegistry meterRegistry;
 
     private Counter failuresCounter;
+
+    public RbacRecipientUsersProvider(ITUserServiceWrapper itUserService) {
+        this.itUserService = itUserService;
+    }
 
     @PostConstruct
     public void initCounters() {
@@ -114,8 +118,13 @@ public class RbacRecipientUsersProvider {
             User user = new User();
             user.setUsername(itUserResponse.authentications.get(0).principal);
 
-            // TODO is it okay to use the first email always?
-            user.setEmail(itUserResponse.accountRelationships.get(0).emails.get(0).address);
+            final List<Email> emails = itUserResponse.accountRelationships.get(0).emails;
+            for (Email email : emails) {
+                if (email != null && email.isPrimary != null && email.isPrimary) {
+                    String address = email.address;
+                    user.setEmail(address);
+                }
+            }
 
             user.setAdmin(adminsOnly);
             user.setActive(true);
