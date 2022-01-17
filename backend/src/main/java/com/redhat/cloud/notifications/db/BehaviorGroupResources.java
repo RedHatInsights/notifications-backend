@@ -60,6 +60,18 @@ public class BehaviorGroupResources {
         });
     }
 
+    public Uni<List<BehaviorGroup>> findDefaults() {
+        final String query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
+                "WHERE b.accountId IS NULL " +
+                "ORDER BY b.created DESC, a.position ASC";
+
+        return sessionFactory.withSession(session -> {
+            return session.createQuery(query, BehaviorGroup.class)
+                    .getResultList()
+                    .onItem().invoke(behaviorGroups -> behaviorGroups.forEach(BehaviorGroup::filterOutBundle));
+        });
+    }
+
     public Uni<List<BehaviorGroup>> findByBundleId(String accountId, UUID bundleId) {
         return sessionFactory.withSession(session -> {
             return session.createNamedQuery("findByBundleId", BehaviorGroup.class)

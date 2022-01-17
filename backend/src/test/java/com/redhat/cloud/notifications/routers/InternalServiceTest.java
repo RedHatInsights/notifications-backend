@@ -4,18 +4,25 @@ import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.Response.Status.Family;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -249,6 +256,49 @@ public class InternalServiceTest extends DbIsolatedTest {
 
         // The app should also contain one event type now.
         getEventTypes(appId, OK, 1);
+    }
+
+    @Test
+    void testDefaultBehaviorGroupCRUD() {
+        // We need to persist a bundle.
+        String bundleId = createBundle("dbg-bundle-name", "Bundle", OK).get();
+
+        // Creates 2 behavior groups
+        String dbgId1 = createDefaultBehaviorGroup("DefaultBehaviorGroup1", bundleId);
+        String dbgId2 = createDefaultBehaviorGroup("DefaultBehaviorGroup2", bundleId);
+
+        assertEquals(
+                Set.of(
+                        Pair.of(dbgId1, "DefaultBehaviorGroup1"),
+                        Pair.of(dbgId2, "DefaultBehaviorGroup2")
+                ),
+                getDefaultBehaviorGroups().stream().map(bg -> Pair.of(bg.getId().toString(), bg.getDisplayName())).collect(Collectors.toSet())
+        );
+
+        // Update displayName of behavior group 1
+        updateDefaultBehaviorGroup(dbgId1, "Group1", bundleId, true);
+        assertEquals(
+                Set.of(
+                        Pair.of(dbgId1, "Group1"),
+                        Pair.of(dbgId2, "DefaultBehaviorGroup2")
+                ),
+                getDefaultBehaviorGroups().stream().map(bg -> Pair.of(bg.getId().toString(), bg.getDisplayName())).collect(Collectors.toSet())
+        );
+
+        // Delete behaviors
+        deleteDefaultBehaviorGroup(dbgId1, true);
+        assertEquals(
+                Set.of(dbgId2),
+                getDefaultBehaviorGroups().stream().map(BehaviorGroup::getId).map(UUID::toString).collect(Collectors.toSet())
+        );
+        deleteDefaultBehaviorGroup(dbgId2, true);
+        assertEquals(
+                Set.of(),
+                getDefaultBehaviorGroups().stream().map(BehaviorGroup::getId).map(UUID::toString).collect(Collectors.toSet())
+        );
+
+        // Deleting again yields false
+        deleteDefaultBehaviorGroup(dbgId1, false);
     }
 
     private static Bundle buildBundle(String name, String displayName) {
@@ -569,5 +619,78 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .extract().body().as(Boolean.class);
 
         assertEquals(expectedResult, result);
+    }
+
+    private static BehaviorGroup buildDefaultBehaviorGroup(String displayName, String bundleId) {
+        BehaviorGroup bg = new BehaviorGroup();
+        bg.setDisplayName(displayName);
+        bg.setBundleId(UUID.fromString(bundleId));
+        return bg;
+    }
+
+    private static String createDefaultBehaviorGroup(String displayName, String bundleId) {
+        BehaviorGroup behaviorGroup = buildDefaultBehaviorGroup(displayName, bundleId);
+
+        return given()
+                .basePath(API_INTERNAL)
+                .contentType(JSON)
+                .body(Json.encode(behaviorGroup))
+                .post("/behaviorGroups/default")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getString("id");
+    }
+
+    private static void updateDefaultBehaviorGroup(String behaviorGroupId, String displayName, String bundleId, boolean expectedResult) {
+        BehaviorGroup behaviorGroup = buildDefaultBehaviorGroup(displayName, bundleId);
+
+        Boolean result = given()
+                .basePath(API_INTERNAL)
+                .contentType(JSON)
+                .body(Json.encode(behaviorGroup))
+                .pathParam("id", behaviorGroupId)
+                .put("/behaviorGroups/default/{id}")
+                .then()
+                .statusCode(200)
+                .extract().as(Boolean.class);
+
+        assertEquals(expectedResult, result);
+    }
+
+    private static void deleteDefaultBehaviorGroup(String behaviorGroupId, boolean expectedResult) {
+        Boolean result = given()
+                .basePath(API_INTERNAL)
+                .pathParam("id", behaviorGroupId)
+                .delete("/behaviorGroups/default/{id}")
+                .then()
+                .statusCode(200)
+                .extract().as(Boolean.class);
+
+        assertEquals(expectedResult, result);
+    }
+
+    private static List<BehaviorGroup> getDefaultBehaviorGroups() {
+        List<?> behaviorGroups = given()
+                .basePath(API_INTERNAL)
+                .get("/behaviorGroups/default")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract()
+                .body().as(List.class);
+
+        return behaviorGroups.stream().map(rawBg -> {
+            Map<String, Object> mbg = (Map<String, Object>) rawBg;
+            BehaviorGroup bg = new BehaviorGroup();
+            bg.setId(UUID.fromString(mbg.get("id").toString()));
+            bg.setDisplayName(mbg.get("display_name").toString());
+            bg.setBundleId(UUID.fromString(mbg.get("bundle_id").toString()));
+
+            return bg;
+        }).collect(Collectors.toList());
     }
 }
