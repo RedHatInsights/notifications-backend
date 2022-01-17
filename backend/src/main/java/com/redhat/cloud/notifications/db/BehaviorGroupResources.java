@@ -60,7 +60,7 @@ public class BehaviorGroupResources {
         });
     }
 
-    public Uni<List<BehaviorGroup>> findDefault() {
+    public Uni<List<BehaviorGroup>> findDefaults() {
         final String query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
                 "WHERE b.accountId IS NULL " +
                 "ORDER BY b.created DESC, a.position ASC";
