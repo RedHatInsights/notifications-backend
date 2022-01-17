@@ -125,7 +125,7 @@ public class FromCamelHistoryFiller {
                     .setEventType("integration_failed")
                     .setAccountId(ep != null ? ep.getAccountId() : "")
                     .setContext(context)
-                    .setTimestamp(LocalDateTime.now())
+                    .setTimestamp(LocalDateTime.now(ZoneOffset.UTC))
                     .setEvents(Collections.singletonList(event))
                     .setVersion("v1.1.0")
                     .setRecipients(Collections.singletonList(
