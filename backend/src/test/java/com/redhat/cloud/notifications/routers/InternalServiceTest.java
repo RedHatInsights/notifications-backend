@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonArray;
@@ -299,6 +300,27 @@ public class InternalServiceTest extends DbIsolatedTest {
 
         // Deleting again yields false
         deleteDefaultBehaviorGroup(dbgId1, false);
+    }
+
+    @Test
+    void testInvalidEmailTemplateRendering() {
+        RenderEmailTemplateRequest request = new RenderEmailTemplateRequest();
+        request.setPayload("I am invalid!");
+        request.setSubjectTemplate(""); // Not important, won't be used.
+        request.setBodyTemplate(""); // Not important, won't be used.
+
+        String responseBody = given()
+                .basePath(API_INTERNAL)
+                .contentType(JSON)
+                .body(Json.encode(request))
+                .when()
+                .post("/templates/email/render")
+                .then()
+                .contentType(JSON)
+                .statusCode(400)
+                .extract().asString();
+
+        assertEquals("Action parsing failed for payload: I am invalid!", new JsonObject(responseBody).getString("message"));
     }
 
     private static Bundle buildBundle(String name, String displayName) {
