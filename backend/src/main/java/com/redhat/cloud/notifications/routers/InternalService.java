@@ -302,9 +302,9 @@ public class InternalService {
     @GET
     @Path("/behaviorGroups/default")
     @Produces(APPLICATION_JSON)
-    public Uni<List<BehaviorGroup>> getDefaultBehaviorGroup() {
+    public Uni<List<BehaviorGroup>> getDefaultBehaviorGroups() {
         return sessionFactory.withSession(session -> {
-            return behaviorGroupResources.findDefault();
+            return behaviorGroupResources.findDefaults();
         });
     }
 

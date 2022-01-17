@@ -260,7 +260,7 @@ public class InternalServiceTest extends DbIsolatedTest {
 
     @Test
     void testDefaultBehaviorGroupCRUD() {
-        // We need to persist a bundle, an app and two event types for this test.
+        // We need to persist a bundle.
         String bundleId = createBundle("dbg-bundle-name", "Bundle", OK).get();
 
         // Creates 2 behavior groups
@@ -652,8 +652,8 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .basePath(API_INTERNAL)
                 .contentType(JSON)
                 .body(Json.encode(behaviorGroup))
-                .pathParam("behavior_group_id", behaviorGroupId)
-                .put("/behaviorGroups/default/{behavior_group_id}")
+                .pathParam("id", behaviorGroupId)
+                .put("/behaviorGroups/default/{id}")
                 .then()
                 .statusCode(200)
                 .extract().as(Boolean.class);
@@ -664,8 +664,8 @@ public class InternalServiceTest extends DbIsolatedTest {
     private static void deleteDefaultBehaviorGroup(String behaviorGroupId, boolean expectedResult) {
         Boolean result = given()
                 .basePath(API_INTERNAL)
-                .pathParam("behavior_group_id", behaviorGroupId)
-                .delete("/behaviorGroups/default/{behavior_group_id}")
+                .pathParam("id", behaviorGroupId)
+                .delete("/behaviorGroups/default/{id}")
                 .then()
                 .statusCode(200)
                 .extract().as(Boolean.class);
