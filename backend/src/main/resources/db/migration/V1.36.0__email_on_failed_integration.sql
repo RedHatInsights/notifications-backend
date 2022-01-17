@@ -17,7 +17,7 @@ insert into applications (bundle_id, name, display_name, id, created)
 
 insert into event_type (application_id, name, display_name, id )
     select a.id ,
-            'integration_failed',
+            'integration-failed',
             'Integration failed',
             public.gen_random_uuid()
     from applications a
