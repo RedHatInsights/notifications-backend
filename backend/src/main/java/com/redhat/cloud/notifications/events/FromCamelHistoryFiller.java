@@ -123,7 +123,7 @@ public class FromCamelHistoryFiller {
             Action action = Action.newBuilder()
                     .setBundle("platform")
                     .setApplication("notifications")
-                    .setEventType("integration_failed")
+                    .setEventType("integration-failed")
                     .setAccountId(ep != null ? ep.getAccountId() : "")
                     .setContext(context)
                     .setTimestamp(LocalDateTime.now(ZoneOffset.UTC))
