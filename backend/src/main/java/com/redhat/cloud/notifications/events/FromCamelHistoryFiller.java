@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.db.NotificationResources;
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Uni;
@@ -30,7 +30,7 @@ public class FromCamelHistoryFiller {
     private static final Logger log = Logger.getLogger(FromCamelHistoryFiller.class);
 
     @Inject
-    NotificationResources notificationResources;
+    NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
@@ -57,7 +57,7 @@ public class FromCamelHistoryFiller {
                 .onItem()
                 .transformToUni(payload -> {
                     return sessionFactory.withStatelessSession(statelessSession -> {
-                        return notificationResources.updateHistoryItem(payload)
+                        return notificationHistoryRepository.updateHistoryItem(payload)
                                 .onFailure().invoke(t -> log.info("|  Update Fail", t)
                                 );
                     });

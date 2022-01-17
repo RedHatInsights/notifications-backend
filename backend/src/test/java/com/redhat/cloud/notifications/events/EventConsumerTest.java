@@ -2,8 +2,8 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.ApplicationResources;
-import com.redhat.cloud.notifications.db.EventResources;
+import com.redhat.cloud.notifications.db.repositories.EventRepository;
+import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.Event;
@@ -69,10 +69,10 @@ public class EventConsumerTest {
     EndpointProcessor endpointProcessor;
 
     @InjectMock
-    ApplicationResources appResources;
+    EventTypeRepository eventTypeRepository;
 
     @InjectMock
-    EventResources eventResources;
+    EventRepository eventRepository;
 
     @InjectSpy
     KafkaMessageDeduplicator kafkaMessageDeduplicator;
@@ -278,10 +278,10 @@ public class EventConsumerTest {
 
     private EventType mockGetEventTypeAndCreateEvent() {
         EventType eventType = new EventType();
-        when(appResources.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(
+        when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(
                 Uni.createFrom().item(eventType)
         );
-        when(eventResources.create(any(Event.class))).thenAnswer(invocation -> {
+        when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> {
             Event event = invocation.getArgument(0);
             return Uni.createFrom().item(event);
         });
@@ -289,7 +289,7 @@ public class EventConsumerTest {
     }
 
     private void mockGetUnknownEventType() {
-        when(appResources.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(
+        when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(
                 Uni.createFrom().failure(() -> new NoResultException("I am a forced exception!"))
         );
     }

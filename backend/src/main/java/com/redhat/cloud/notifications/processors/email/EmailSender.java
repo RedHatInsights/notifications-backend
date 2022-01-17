@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.db.EndpointResources;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Event;
@@ -62,7 +62,7 @@ public class EmailSender {
     WebhookTypeProcessor webhookSender;
 
     @Inject
-    EndpointResources endpointResources;
+    EndpointRepository endpointRepository;
 
     @Inject
     EmailTemplateService emailTemplateService;
@@ -91,7 +91,7 @@ public class EmailSender {
 
         Action action = event.getAction();
         // uses canonical EmailSubscription
-        return endpointResources.getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties(), true)
+        return endpointRepository.getOrCreateEmailSubscriptionEndpoint(action.getAccountId(), new EmailSubscriptionProperties(), true)
                 .onItem().transformToUni(endpoint -> {
                     Notification notification = new Notification(event, endpoint);
 
