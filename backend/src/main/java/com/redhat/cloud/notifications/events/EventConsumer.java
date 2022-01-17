@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.db.ApplicationResources;
-import com.redhat.cloud.notifications.db.EventResources;
+import com.redhat.cloud.notifications.db.repositories.EventRepository;
+import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
@@ -45,10 +45,10 @@ public class EventConsumer {
     ActionParser actionParser;
 
     @Inject
-    ApplicationResources appResources;
+    EventTypeRepository eventTypeRepository;
 
     @Inject
-    EventResources eventResources;
+    EventRepository eventRepository;
 
     @Inject
     KafkaMessageDeduplicator kafkaMessageDeduplicator;
@@ -132,7 +132,7 @@ public class EventConsumer {
                                                      * We need to retrieve an EventType from the DB using the
                                                      * bundle/app/eventType triplet from the parsed Action.
                                                      */
-                                                    return appResources.getEventType(bundleName[0], appName[0], eventTypeName)
+                                                    return eventTypeRepository.getEventType(bundleName[0], appName[0], eventTypeName)
                                                             .onFailure(NoResultException.class).transform(e ->
                                                                     new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, bundleName[0], appName[0], eventTypeName))
                                                             )
@@ -150,7 +150,7 @@ public class EventConsumer {
                                                                  * message and persist it.
                                                                  */
                                                                 Event event = new Event(eventType, payload, action);
-                                                                return eventResources.create(event);
+                                                                return eventRepository.create(event);
                                                             })
                                                             /*
                                                              * Step 7

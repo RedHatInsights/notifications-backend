@@ -2,8 +2,8 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.db.EmailAggregationResources;
-import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
+import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregation;
@@ -54,13 +54,13 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     private static final Logger LOGGER = Logger.getLogger(EmailSubscriptionTypeProcessor.class);
 
     @Inject
-    EndpointEmailSubscriptionResources subscriptionResources;
+    EmailSubscriptionRepository emailSubscriptionRepository;
 
     @Inject
     RecipientResolver recipientResolver;
 
     @Inject
-    EmailAggregationResources emailAggregationResources;
+    EmailAggregationRepository emailAggregationRepository;
 
     @Inject
     BaseTransformer baseTransformer;
@@ -120,7 +120,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                             aggregation.setPayload(transformedAction);
                             return aggregation;
                         })
-                        .onItem().transformToUni(emailAggregation -> this.emailAggregationResources.addEmailAggregation(emailAggregation));
+                        .onItem().transformToUni(emailAggregation -> emailAggregationRepository.addEmailAggregation(emailAggregation));
             } else {
                 processUni = Uni.createFrom().item(false);
             }
@@ -153,7 +153,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 ActionRecipientSettings.fromAction(action).stream()
         ).collect(Collectors.toSet());
 
-        return subscriptionResources
+        return emailSubscriptionRepository
                 .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType)
                 .onItem().transform(Set::copyOf)
                 .onItem().transformToUni(subscribers -> recipientResolver.recipientUsers(action.getAccountId(), requests, subscribers))
@@ -197,7 +197,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
 
         Multi<Tuple2<NotificationHistory, EmailAggregationKey>> doDelete = delete ?
-                emailAggregationResources.purgeOldAggregation(aggregationKey, endTime)
+                emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime)
                         .onItem().transformToMulti(unused -> Multi.createFrom().empty()) :
                 Multi.createFrom().empty();
 

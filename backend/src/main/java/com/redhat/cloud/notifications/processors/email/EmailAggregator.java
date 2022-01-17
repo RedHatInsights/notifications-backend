@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.db.EmailAggregationResources;
-import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
-import com.redhat.cloud.notifications.db.EndpointResources;
+import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
+import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -27,22 +27,22 @@ import java.util.stream.Collectors;
 public class EmailAggregator {
 
     @Inject
-    EmailAggregationResources emailAggregationResources;
+    EmailAggregationRepository emailAggregationRepository;
 
     @Inject
-    EndpointResources endpointResources;
+    EndpointRepository endpointRepository;
 
     @Inject
     RecipientResolver recipientResolver;
 
     @Inject
-    EndpointEmailSubscriptionResources subscriptionResources;
+    EmailSubscriptionRepository emailSubscriptionRepository;
 
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
     private static final String EVENT_TYPE_KEY = "event_type";
 
     private Uni<Set<String>> getEmailSubscribers(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
-        return subscriptionResources
+        return emailSubscriptionRepository
                 .getEmailSubscribersUserId(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType)
                 .onItem().transform(Set::copyOf)
                 // This will prevent multiple database queries executions during the aggregation process.
@@ -53,14 +53,14 @@ public class EmailAggregator {
         Map<User, AbstractEmailPayloadAggregator> aggregated = new HashMap<>();
         Uni<Set<String>> subscribers = getEmailSubscribers(aggregationKey, emailSubscriptionType);
         // First, we retrieve all aggregations that match the given key.
-        return emailAggregationResources.getEmailAggregation(aggregationKey, start, end)
+        return emailAggregationRepository.getEmailAggregation(aggregationKey, start, end)
                 .onItem().transformToMulti(Multi.createFrom()::iterable)
                 // For each aggregation...
                 .onItem().transformToUniAndConcatenate(aggregation -> {
                     // We need its event type to determine the target endpoints.
                     String eventType = getEventType(aggregation);
                     // Let's retrieve these targets.
-                    return endpointResources.getTargetEndpointsFromType(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), eventType, EndpointType.EMAIL_SUBSCRIPTION)
+                    return endpointRepository.getTargetEndpointsFromType(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), eventType, EndpointType.EMAIL_SUBSCRIPTION)
                             .onItem().transform(Set::copyOf)
                             // Now we want to determine who will actually receive the aggregation email.
                             .onItem().transformToUni(endpoints ->

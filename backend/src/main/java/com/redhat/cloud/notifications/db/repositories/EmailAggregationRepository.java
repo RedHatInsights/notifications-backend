@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
@@ -10,8 +10,10 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.List;
 
+// TODO: Move this class to notifications-engine.
+
 @ApplicationScoped
-public class EmailAggregationResources {
+public class EmailAggregationRepository {
 
     @Inject
     Mutiny.SessionFactory sessionFactory;

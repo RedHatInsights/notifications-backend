@@ -23,15 +23,6 @@ public class EventResources {
     @Inject
     Mutiny.SessionFactory sessionFactory;
 
-    // Note: This method uses a stateless session
-    public Uni<Event> create(Event event) {
-        event.prePersist(); // This method must be called manually while using a StatelessSession.
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.insert(event)
-                    .replaceWith(event);
-        });
-    }
-
     public Uni<List<Event>> getEvents(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults,
                                       Integer limit, Integer offset, String sortBy) {

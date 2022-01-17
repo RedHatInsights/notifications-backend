@@ -1,6 +1,8 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -22,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class EmailAggregationResourcesTest extends DbIsolatedTest {
+public class EmailAggregationRepositoryTest extends DbIsolatedTest {
 
     private static final ZoneId UTC = ZoneId.of("UTC");
     private static final String ACCOUNT_ID = "123456789";
@@ -38,7 +40,7 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
     ResourceHelpers resourceHelpers;
 
     @Inject
-    EmailAggregationResources aggregationResources;
+    EmailAggregationRepository emailAggregationRepository;
 
     @Test
     void testAllMethods() {
@@ -52,7 +54,7 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
                 .chain(() -> resourceHelpers.addEmailAggregation("other-account", BUNDLE_NAME, APP_NAME, PAYLOAD2))
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2))
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2))
-                .chain(() -> aggregationResources.getEmailAggregation(key, start, end))
+                .chain(() -> emailAggregationRepository.getEmailAggregation(key, start, end))
                 .invoke(aggregations -> {
                     assertEquals(2, aggregations.size());
                     assertTrue(aggregations.stream().map(EmailAggregation::getAccountId).allMatch(ACCOUNT_ID::equals));
@@ -68,9 +70,9 @@ public class EmailAggregationResourcesTest extends DbIsolatedTest {
                     assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
                     assertEquals(APP_NAME, keys.get(0).getApplication());
                 })
-                .chain(() -> aggregationResources.purgeOldAggregation(key, end))
+                .chain(() -> emailAggregationRepository.purgeOldAggregation(key, end))
                 .invoke(purged -> assertEquals(2, purged))
-                .chain(() -> aggregationResources.getEmailAggregation(key, start, end))
+                .chain(() -> emailAggregationRepository.getEmailAggregation(key, start, end))
                 .invoke(aggregations -> assertEquals(0, aggregations.size()))
                 .chain(aggregations -> getApplicationsWithPendingAggregation(start, end))
                 .invoke(keys -> assertEquals(3, keys.size()))

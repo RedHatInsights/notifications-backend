@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.EmailAggregationResources;
+import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Event;
@@ -49,7 +49,7 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
     EmailTemplateFactory emailTemplateFactory;
 
     @InjectMock
-    EmailAggregationResources emailAggregationResources;
+    EmailAggregationRepository emailAggregationRepository;
 
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
@@ -101,26 +101,26 @@ class EmailSubscriptionTypeProcessorTest extends DbIsolatedTest {
         micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
 
         // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-        verify(emailAggregationResources, times(1)).getEmailAggregation(
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(
                 eq(aggregationCommand1.getAggregationKey()),
                 eq(aggregationCommand1.getStart()),
                 eq(aggregationCommand1.getEnd())
         );
 
-        verify(emailAggregationResources, times(1)).purgeOldAggregation(
+        verify(emailAggregationRepository, times(1)).purgeOldAggregation(
                 eq(aggregationCommand1.getAggregationKey()),
                 eq(aggregationCommand1.getEnd())
         );
-        verify(emailAggregationResources, times(1)).getEmailAggregation(
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(
                 eq(aggregationCommand2.getAggregationKey()),
                 eq(aggregationCommand2.getStart()),
                 eq(aggregationCommand2.getEnd())
         );
-        verify(emailAggregationResources, times(1)).purgeOldAggregation(
+        verify(emailAggregationRepository, times(1)).purgeOldAggregation(
                 eq(aggregationCommand2.getAggregationKey()),
                 eq(aggregationCommand2.getEnd())
         );
-        verifyNoMoreInteractions(emailAggregationResources);
+        verifyNoMoreInteractions(emailAggregationRepository);
 
         micrometerAssertionHelper.clearSavedValues();
     }

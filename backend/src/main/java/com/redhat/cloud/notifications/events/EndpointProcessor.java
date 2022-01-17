@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.db.EndpointResources;
-import com.redhat.cloud.notifications.db.NotificationResources;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -31,10 +31,10 @@ public class EndpointProcessor {
     private static final Logger LOGGER = Logger.getLogger(EndpointProcessor.class);
 
     @Inject
-    EndpointResources resources;
+    EndpointRepository endpointRepository;
 
     @Inject
-    NotificationResources notifResources;
+    NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
     WebhookTypeProcessor webhooks;
@@ -59,7 +59,7 @@ public class EndpointProcessor {
 
     public Uni<Void> process(Event event) {
         processedItems.increment();
-        return resources.getTargetEndpoints(event.getAccountId(), event.getEventType())
+        return endpointRepository.getTargetEndpoints(event.getAccountId(), event.getEventType())
 
                 // Target endpoints are grouped by endpoint type.
                 .onItem().transformToMulti(endpoints -> {
@@ -79,7 +79,7 @@ public class EndpointProcessor {
 
                 // TODO Action processing and history persistence should be a single atomic operation.
                 // Now each history entry is persisted.
-                .onItem().transformToUniAndConcatenate(history -> notifResources.createNotificationHistory(history)
+                .onItem().transformToUniAndConcatenate(history -> notificationHistoryRepository.createNotificationHistory(history)
                         .onFailure().invoke(failure -> LOGGER.errorf("Notification history creation failed for %s", history.getEndpoint()))
                 )
                 .onItem().ignoreAsUni();

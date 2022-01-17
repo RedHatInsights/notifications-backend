@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.NotificationResources;
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -36,7 +36,7 @@ public class FromCamelHistoryFillerTest {
     InMemoryConnector inMemoryConnector;
 
     @InjectMock
-    NotificationResources notificationResources;
+    NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
@@ -61,7 +61,7 @@ public class FromCamelHistoryFillerTest {
         micrometerAssertionHelper.awaitAndAssertCounterIncrement(MESSAGES_PROCESSED_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(MESSAGES_ERROR_COUNTER_NAME, 1);
 
-        verifyNoInteractions(notificationResources);
+        verifyNoInteractions(notificationHistoryRepository);
     }
 
     @Test
@@ -96,8 +96,8 @@ public class FromCamelHistoryFillerTest {
         micrometerAssertionHelper.assertCounterIncrement(MESSAGES_ERROR_COUNTER_NAME, 0);
 
         ArgumentCaptor<Map<String, Object>> decodedPayload = ArgumentCaptor.forClass(Map.class);
-        verify(notificationResources, times(1)).updateHistoryItem(decodedPayload.capture());
-        verifyNoMoreInteractions(notificationResources);
+        verify(notificationHistoryRepository, times(1)).updateHistoryItem(decodedPayload.capture());
+        verifyNoMoreInteractions(notificationHistoryRepository);
 
         assertEquals(expectedHistoryId, decodedPayload.getValue().get("historyId"));
         assertEquals(expectedDuration, decodedPayload.getValue().get("duration"));

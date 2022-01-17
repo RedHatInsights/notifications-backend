@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestHelpers;
+import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -48,13 +50,13 @@ public class ResourceHelpers {
     BundleResources bundleResources;
 
     @Inject
-    EmailAggregationResources emailAggregationResources;
+    EmailAggregationRepository emailAggregationRepository;
 
     @Inject
     BehaviorGroupResources behaviorGroupResources;
 
     @Inject
-    NotificationResources notificationResources;
+    NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
@@ -190,7 +192,7 @@ public class ResourceHelpers {
         history.setEvent(event);
         history.setEndpoint(endpoint);
         history.setEndpointType(endpoint.getType());
-        return notificationResources.createNotificationHistory(history);
+        return notificationHistoryRepository.createNotificationHistory(history);
     }
 
     public Uni<UUID> emailSubscriptionEndpointId(String accountId, EmailSubscriptionProperties properties) {
@@ -242,7 +244,7 @@ public class ResourceHelpers {
 
     public Uni<Boolean> addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
         EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, bundle, application, policyId, insightsId);
-        return emailAggregationResources.addEmailAggregation(aggregation);
+        return emailAggregationRepository.addEmailAggregation(aggregation);
     }
 
     public Uni<Boolean> addEmailAggregation(String accountId, String bundleName, String applicationName, JsonObject payload) {
@@ -251,6 +253,6 @@ public class ResourceHelpers {
         aggregation.setBundleName(bundleName);
         aggregation.setApplicationName(applicationName);
         aggregation.setPayload(payload);
-        return emailAggregationResources.addEmailAggregation(aggregation);
+        return emailAggregationRepository.addEmailAggregation(aggregation);
     }
 }
