@@ -101,7 +101,7 @@ public class FromCamelHistoryFiller {
         }
 
         String historyId = (String) payload.get("historyId");
-        log.infof("Event with id %s was not successful, resubmitting for further processing", historyId);
+        log.infof("Notification with id %s was not successful, resubmitting for further processing", historyId);
 
         Uni<Endpoint> endpointUni = notificationResources.getEndpointForHistoryId(historyId);
 
