@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -58,5 +59,15 @@ public class NotificationHistoryRepository {
                     .executeUpdate()
                     .replaceWith(Uni.createFrom().voidItem());
         });
+    }
+
+    public Uni<Endpoint> getEndpointForHistoryId(String historyId) {
+
+        String query = "SELECT e from Endpoint e, NotificationHistory h WHERE h.id = :id AND e.id = h.endpoint.id";
+        UUID hid = UUID.fromString(historyId);
+
+        return sessionFactory.withStatelessSession(statelessSession -> statelessSession.createQuery(query, Endpoint.class)
+                .setParameter("id", hid)
+                .getSingleResultOrNull());
     }
 }
