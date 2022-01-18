@@ -37,7 +37,6 @@ class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
     }
 
     void processEmailAggregation(EmailAggregation notification) {
-
         JsonObject notificationJson = notification.getPayload();
 
         JsonObject policies = context.getJsonObject(POLICIES_KEY);
