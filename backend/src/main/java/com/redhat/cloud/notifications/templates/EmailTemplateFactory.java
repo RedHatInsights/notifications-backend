@@ -48,7 +48,7 @@ public class EmailTemplateFactory {
             if (application.equalsIgnoreCase(APP_ANSIBLE_REPORTS)) {
                 return new Ansible();
             }
-        } else if (bundle.equalsIgnoreCase(PLATFORM)) {
+        } else if (bundle.equalsIgnoreCase(CONSOLE)) {
             if (application.equalsIgnoreCase(NOTIFICATIONS)) {
                 return new PlatformNotifications();
             }
