@@ -1,7 +1,5 @@
 --
--- Create a new b/a/et platform/notifications/integration-failed
---   and then link that to a default behaviour group to send email
---   to admin
+-- Create a new b/a/et console/notifications/integration-failed
 insert into  bundles (name, display_name, id, created)
     values ('console','Console', public.gen_random_uuid(), now() at time zone 'UTC' );
 
