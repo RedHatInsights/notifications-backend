@@ -121,7 +121,7 @@ public class FromCamelHistoryFiller {
             }
 
             Action action = Action.newBuilder()
-                    .setBundle("platform")
+                    .setBundle("console")
                     .setApplication("notifications")
                     .setEventType("integration-failed")
                     .setAccountId(ep != null ? ep.getAccountId() : "")
