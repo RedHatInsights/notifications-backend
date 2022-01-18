@@ -50,7 +50,7 @@ public class EmailTemplateFactory {
             }
         } else if (bundle.equalsIgnoreCase(CONSOLE)) {
             if (application.equalsIgnoreCase(NOTIFICATIONS)) {
-                return new PlatformNotifications();
+                return new ConsoleNotifications();
             }
         }
         return new EmailTemplateNotSupported();

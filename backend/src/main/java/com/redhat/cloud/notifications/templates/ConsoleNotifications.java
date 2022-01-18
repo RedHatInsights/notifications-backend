@@ -5,7 +5,7 @@ import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 
 // Class name is the folder name in resources/templates/
-public class PlatformNotifications implements EmailTemplate {
+public class ConsoleNotifications implements EmailTemplate {
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         return Templates.failedIntegrationTitle();
