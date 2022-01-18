@@ -16,7 +16,7 @@ public class EmailTemplateFactory {
     private static final String COMPLIANCE = "compliance";
     private static final String DRIFT = "drift";
     private static final String OPENSHIFT = "openshift";
-    private static final String PLATFORM = "platform";
+    private static final String CONSOLE = "console";
     private static final String NOTIFICATIONS = "notifications";
 
     private static final String BUNDLE_ANSIBLE = "ansible";
