@@ -1,5 +1,5 @@
 --
--- Create a new b/a/et platform/notifications/integration_failed
+-- Create a new b/a/et platform/notifications/integration-failed
 --   and then link that to a default behaviour group to send email
 --   to admin
 insert into  bundles (name, display_name, id, created)
@@ -39,7 +39,7 @@ insert into behavior_group (id, account_id, bundle_id, display_name, created )
 with etq AS (
     select et.id
     from event_type et
-    where et.name = 'integration_failed'
+    where et.name = 'integration-failed'
 )
 insert into event_type_behavior (behavior_group_id, event_type_id, created )
     select bg.id,
