@@ -13,12 +13,10 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
-import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.routers.models.internal.RequestDefaultBehaviorGroupPropertyList;
-import com.redhat.cloud.notifications.templates.EmailTemplateService;
-import com.redhat.cloud.notifications.utils.ActionParser;
+import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -27,6 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.inject.Inject;
@@ -53,6 +52,7 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
 @Path(API_INTERNAL)
 public class InternalService {
@@ -76,10 +76,8 @@ public class InternalService {
     OApiFilter oApiFilter;
 
     @Inject
-    EmailTemplateService emailTemplateService;
-
-    @Inject
-    ActionParser actionParser;
+    @RestClient
+    TemplateEngineClient templateEngineClient;
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
@@ -275,28 +273,9 @@ public class InternalService {
             })
     })
     public Uni<Response> renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {
-        User user = createInternalUser();
-
-        String payload = renderEmailTemplateRequest.getPayload();
-        return actionParser.fromJsonString(payload)
-                .onItem().transformToUni(action -> Uni.combine().all().unis(
-                    emailTemplateService
-                            .compileTemplate(renderEmailTemplateRequest.getSubjectTemplate(), "subject")
-                            .onItem().transformToUni(templateInstance -> emailTemplateService.renderTemplate(
-                            user,
-                            action,
-                            templateInstance
-                    )),
-                    emailTemplateService
-                            .compileTemplate(renderEmailTemplateRequest.getBodyTemplate(), "body")
-                            .onItem().transformToUni(templateInstance -> emailTemplateService.renderTemplate(
-                            user,
-                            action,
-                            templateInstance
-                    ))
-                ).asTuple()
-        ).onItem().transform(titleAndBody -> Response.ok(new RenderEmailTemplateResponse.Success(titleAndBody.getItem1(), titleAndBody.getItem2())).build())
-        .onFailure().recoverWithItem(throwable -> Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(throwable.getMessage())).build());
+        return templateEngineClient.render(renderEmailTemplateRequest)
+                // The following line is required to forward the HTTP 400 error message.
+                .onFailure(BadRequestException.class).recoverWithItem(throwable -> Response.status(BAD_REQUEST).entity(throwable.getMessage()).build());
     }
 
     @GET
@@ -386,7 +365,7 @@ public class InternalService {
                     if (isSuccess) {
                         return Response.ok().build();
                     } else {
-                        return Response.status(Response.Status.BAD_REQUEST).build();
+                        return Response.status(BAD_REQUEST).build();
                     }
                 });
     }
@@ -402,19 +381,8 @@ public class InternalService {
                     if (isSuccess) {
                         return Response.ok().build();
                     } else {
-                        return Response.status(Response.Status.BAD_REQUEST).build();
+                        return Response.status(BAD_REQUEST).build();
                     }
                 });
-    }
-
-    private User createInternalUser() {
-        User user = new User();
-        user.setUsername("jdoe");
-        user.setEmail("jdoe@jdoe.com");
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setActive(true);
-        user.setAdmin(false);
-        return user;
     }
 }
