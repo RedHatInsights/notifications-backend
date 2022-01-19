@@ -17,6 +17,6 @@ public class ITUserServiceWrapper {
     ITUserService itUserService;
 
     public Uni<List<ITUserResponse>> getUsers(String accountId, boolean adminsOnly) {
-        return itUserService.getUsers(new ITUserRequest(adminsOnly));
+        return itUserService.getUsers(new ITUserRequest(accountId, adminsOnly));
     }
 }

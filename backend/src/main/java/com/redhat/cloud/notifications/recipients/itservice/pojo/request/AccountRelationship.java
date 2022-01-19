@@ -1,14 +1,12 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.request;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AccountRelationship {
 
-    @JsonProperty("allOf")
     public List<String> allOf;
-
-    @JsonProperty("by")
-    public By__1 by;
+    public AccountRelationshipBy by;
 }

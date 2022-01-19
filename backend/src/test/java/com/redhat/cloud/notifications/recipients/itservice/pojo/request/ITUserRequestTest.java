@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ITUserRequestTest {
 
-    private final ITUserRequest testee = new ITUserRequest(true);
+    private final ITUserRequest testee = new ITUserRequest("someAccountId", true);
 
     @Test
     void shouldSetPermissionCodeWhenAdminsOnly() {
@@ -32,7 +32,7 @@ class ITUserRequestTest {
     }
 
     @Test
-    void shouldContainFixedEbsAccountNumber() {
-        assertEquals("5910538", testee.by.allOf.ebsAccountNumber);
+    void shouldContainAccountIdAsEbsAccountNumber() {
+        assertEquals("someAccountId", testee.by.allOf.ebsAccountNumber);
     }
 }

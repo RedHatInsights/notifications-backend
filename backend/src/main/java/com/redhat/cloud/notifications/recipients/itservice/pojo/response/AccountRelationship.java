@@ -1,23 +1,15 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AccountRelationship {
 
-    @JsonProperty("emails")
     public List<Email> emails;
-
-    @JsonProperty("accountId")
     public String accountId;
-
-    @JsonProperty("startDate")
     public String startDate;
-
-    @JsonProperty("id")
     public String id;
-
-    @JsonProperty("isPrimary")
     public Boolean isPrimary;
 }

@@ -1,23 +1,21 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.request;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.LinkedList;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ITUserRequest {
 
-    @JsonProperty("by")
-    public By by;
-
-    @JsonProperty("include")
+    public ITUserRequestBy by;
     public Include include;
 
-    public ITUserRequest(boolean adminsOnly) {
-        final By by = new By();
+    public ITUserRequest(String accountId, boolean adminsOnly) {
+        final ITUserRequestBy by = new ITUserRequestBy();
         AllOf allOf = new AllOf();
         allOf.status = "enabled";
-        allOf.ebsAccountNumber = "5910538";
+        allOf.ebsAccountNumber = accountId;
 
         if (adminsOnly) {
             PermissionCode permissionCode = new PermissionCode();
@@ -26,11 +24,6 @@ public class ITUserRequest {
             allOf.permissionCode = permissionCode;
         }
         by.allOf = allOf;
-
-        WithPaging withPaging = new WithPaging();
-        withPaging.firstResultIndex = 0;
-        withPaging.maxResults = 10000;
-        by.withPaging = withPaging;
 
         this.by = by;
 
@@ -41,7 +34,7 @@ public class ITUserRequest {
         AccountRelationship accountRelationship1 = new AccountRelationship();
         accountRelationship1.allOf = List.of("primary_email");
 
-        final By__1 by1 = new By__1();
+        final AccountRelationshipBy by1 = new AccountRelationshipBy();
         by1.active = true;
         accountRelationship1.by = by1;
         accountRelationships.add(accountRelationship1);

@@ -182,7 +182,7 @@ public class RbacRecipientUsersProviderTest {
             for (int i = 0; i < expectedElements; ++i) {
 
                 ITUserResponse user = new ITUserResponse();
-//                user.setActive(true);
+
                 user.authentications = new LinkedList<>();
                 user.authentications.add(new Authentication());
                 user.authentications.get(0).principal = String.format("username-%d", i);
@@ -196,7 +196,7 @@ public class RbacRecipientUsersProviderTest {
                 user.personalInformation = new PersonalInformation();
                 user.personalInformation.firstName = "foo";
                 user.personalInformation.lastNames = "bar";
-//                user.setOrgAdmin(false);
+
                 users.add(user);
             }
 
