@@ -15,7 +15,7 @@ objects:
         debug: false
         dynaconfEnvName: 'stage_post_deploy'
         filter: ''
-        marker: 'notification_smoke'
+        marker: 'notification_smoke and api'
 parameters:
 - name: IMAGE_TAG
   value: ''
