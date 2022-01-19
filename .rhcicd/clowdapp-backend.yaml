@@ -144,6 +144,15 @@ objects:
           value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: IT_USER_SERVICE_KEY_STORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: todo
+              key: todo
+        - name: IT_USER_SERVICE_KEY_STORE_FILE_NAME
+          value: ${IT_USER_SERVICE_KEY_STORE}
+        - name: IT_USER_SERVICE_URL
+          value: ${IT_USER_SERVICE_REST_URL}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -296,3 +305,9 @@ parameters:
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
+- name: IT_USER_SERVICE_KEY_STORE
+  description: IT User Service keystore file name
+  value: "nonprod-insightsnotifications.jks"
+- name: IT_USER_SERVICE_REST_URL
+  description: IT User Service url
+  value: "https://user.qa.api.redhat.com/v2"
