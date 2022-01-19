@@ -24,3 +24,4 @@ parameters:
   description: "Unique CJI name suffix"
   generate: expression
   from: "[a-z0-9]{6}"
+
