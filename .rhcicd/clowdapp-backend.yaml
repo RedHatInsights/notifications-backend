@@ -147,8 +147,8 @@ objects:
         - name: IT_USER_SERVICE_KEY_STORE_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: todo
-              key: todo
+              name: it-services
+              key: it-service-key-store-password
         - name: IT_USER_SERVICE_KEY_STORE_FILE_NAME
           value: ${IT_USER_SERVICE_KEY_STORE}
         - name: IT_USER_SERVICE_URL
