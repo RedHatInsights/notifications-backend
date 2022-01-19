@@ -35,21 +35,21 @@ public class ITUserServiceIntegrationTest {
     @Test
     @Disabled
     void shouldBeAdmin() {
-        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("5910538", true).await().indefinitely();
+        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", true).await().indefinitely();
         assertTrue(someAccountId.get(0).isAdmin());
     }
 
     @Test
     @Disabled
     void shouldBeActive() {
-        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("5910538", false).await().indefinitely();
+        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", false).await().indefinitely();
         assertTrue(someAccountId.get(0).isActive());
     }
 
     @Test
     @Disabled
     void shouldBeActiveWhenAdminOnly() {
-        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("5910538", true).await().indefinitely();
+        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", true).await().indefinitely();
         assertTrue(someAccountId.get(0).isActive());
     }
 
