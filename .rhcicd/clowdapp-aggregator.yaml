@@ -47,8 +47,6 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
-        - name: QUARKUS_HTTP_PORT
-          value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
           value: ${NOTIFICATIONS_LOG_LEVEL}
         - name: QUARKUS_LOG_CLOUDWATCH_ENABLED

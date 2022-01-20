@@ -20,6 +20,7 @@
     </properties>
 
     <dependencies>
+
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -29,13 +30,6 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-reactive-messaging-kafka</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>io.prometheus</groupId>
-            <artifactId>simpleclient_pushgateway</artifactId>
-            <version>${pushgateway.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-orm</artifactId>
@@ -44,16 +38,16 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-postgresql</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-logging-sentry</artifactId>
+        </dependency>
 
+        <!-- Quarkiverse -->
         <dependency>
             <groupId>io.quarkiverse.logging.cloudwatch</groupId>
             <artifactId>quarkus-logging-cloudwatch</artifactId>
             <version>${cloudwatch.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-logging-sentry</artifactId>
         </dependency>
 
         <!-- Insights -->
@@ -68,6 +62,12 @@
             <groupId>com.redhat.cloud.common</groupId>
             <artifactId>clowder-quarkus-config-source</artifactId>
             <version>${clowder-quarkus-config-source.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_pushgateway</artifactId>
+            <version>${pushgateway.version}</version>
         </dependency>
 
         <!-- Test dependencies -->
