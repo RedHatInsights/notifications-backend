@@ -13,9 +13,9 @@ objects:
     testing:
       iqe:
         debug: false
-        dynaconfEnvName: stage_gatekeeper
+        dynaconfEnvName: 'stage_post_deploy'
         filter: ''
-        marker: 'notification_smoke'
+        marker: 'notification_smoke and api'
 parameters:
 - name: IMAGE_TAG
   value: ''
@@ -24,3 +24,4 @@ parameters:
   description: "Unique CJI name suffix"
   generate: expression
   from: "[a-z0-9]{6}"
+
