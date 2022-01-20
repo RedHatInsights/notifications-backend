@@ -190,7 +190,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
     private NotificationHistory buildNotificationHistory(Notification item, long startTime) {
         long invocationTime = System.currentTimeMillis() - startTime;
-        return getHistoryStub(item, invocationTime, UUID.randomUUID());
+        return getHistoryStub(item.getEndpoint(), item.getEvent(), invocationTime, UUID.randomUUID());
     }
 
     /**
