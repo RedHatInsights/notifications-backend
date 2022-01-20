@@ -31,20 +31,24 @@ public class RecipientResolver {
             usersUni = rbacRecipientUsersProvider.getGroupUsers(accountId, request.isOnlyAdmins(), request.getGroupId());
         }
 
+        // The base list of recipients comes from RBAC.
         return usersUni
                 .onItem().transform(Set::copyOf)
                 .onItem().transform(users -> {
-                    // This step requires a specific set of users and all others needs to be ignored (for this step)
+                    // If the request contains a list of users, then the recipients from RBAC who are not included in
+                    // the request users list are filtered out.
                     if (request.getUsers().size() > 0) {
                         return filterUsers(users, request.getUsers());
                     }
-
+                    // Otherwise, the full list of recipients from RBAC will be processed by the next step.
                     return users;
                 }).onItem().transform(users -> {
+                    // If the user preferences should be ignored, the recipients from RBAC (possibly filtered by the
+                    // previous step) is returned without filtering out the users who didn't subscribe to the event type.
                     if (request.isIgnoreUserPreferences()) {
                         return Set.copyOf(users);
                     }
-
+                    // Otherwise, the recipients from RBAC who didn't subscribe to the event type are filtered out.
                     return filterUsers(users, subscribers);
                 });
     }
