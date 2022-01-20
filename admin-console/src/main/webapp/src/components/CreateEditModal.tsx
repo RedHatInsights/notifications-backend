@@ -11,7 +11,6 @@ interface CreateEditModalProps {
     isLoading: boolean;
     onClose: () => void;
     onSubmit: (eventType: Partial<EventType>) => void;
-
 }
 
 export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (props) => {

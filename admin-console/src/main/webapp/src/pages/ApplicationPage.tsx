@@ -81,10 +81,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
-            id: eventTypes.id,
-            displayName: eventTypes.displayName ?? '',
-            name: eventTypes.name ?? '',
-            description: eventTypes.description ?? '',
+            id: eventType.id,
+            displayName: eventType.displayName ?? '',
+            name: eventType.name ?? '',
+            description: eventType.description ?? '',
             applicationId
 
         })
