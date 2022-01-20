@@ -32,11 +32,13 @@ public class RecipientResolverTest {
         private final boolean onlyAdmins;
         private final boolean ignoreUserPreferences;
         private final UUID groupId;
+        private final Set<String> users;
 
-        TestRecipientSettings(boolean onlyAdmins, boolean ignoreUserPreferences, UUID groupId) {
+        TestRecipientSettings(boolean onlyAdmins, boolean ignoreUserPreferences, UUID groupId, Set<String> users) {
             this.onlyAdmins = onlyAdmins;
             this.ignoreUserPreferences = ignoreUserPreferences;
             this.groupId = groupId;
+            this.users = users;
         }
 
         @Override
@@ -52,6 +54,11 @@ public class RecipientResolverTest {
         @Override
         public UUID getGroupId() {
             return groupId;
+        }
+
+        @Override
+        public Set<String> getUsers() {
+            return users;
         }
     }
 
@@ -122,7 +129,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRecipientSettings(false, false, null)
+                        new TestRecipientSettings(false, false, null, Set.of())
                 ),
                 subscribedUsers
         ).subscribe()
@@ -142,7 +149,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRecipientSettings(true, false, null)
+                        new TestRecipientSettings(true, false, null, Set.of())
                 ),
                 subscribedUsers
         ).subscribe()
@@ -162,7 +169,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRecipientSettings(false, true, null)
+                        new TestRecipientSettings(false, true, null, Set.of())
                 ),
                 subscribedUsers
         ).subscribe()
@@ -182,7 +189,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRecipientSettings(true, true, null)
+                        new TestRecipientSettings(true, true, null, Set.of())
                 ),
                 subscribedUsers
         ).subscribe()
@@ -198,12 +205,104 @@ public class RecipientResolverTest {
         verifyNoMoreInteractions(rbacRecipientUsersProvider);
         clearInvocations(rbacRecipientUsersProvider);
 
+        // Specifying users
+        recipientResolver.recipientUsers(
+            ACCOUNT_ID,
+            Set.of(
+                    new TestRecipientSettings(false, false, null, Set.of(
+                            user1.getUsername(), user3.getUsername()
+                    ))
+            ),
+            subscribedUsers
+        ).subscribe()
+            .withSubscriber(UniAssertSubscriber.create())
+            .assertCompleted()
+            .assertItem(Set.of(
+                    user1
+            ));
+
+        verify(rbacRecipientUsersProvider, times(1)).getUsers(
+                eq(ACCOUNT_ID),
+                eq(false)
+        );
+        verifyNoMoreInteractions(rbacRecipientUsersProvider);
+        clearInvocations(rbacRecipientUsersProvider);
+
+        // Specifying users ignoring user preferences
+        recipientResolver.recipientUsers(
+                ACCOUNT_ID,
+                Set.of(
+                        new TestRecipientSettings(false, true, null, Set.of(
+                                user1.getUsername(), user3.getUsername()
+                        ))
+                ),
+                subscribedUsers
+        ).subscribe()
+            .withSubscriber(UniAssertSubscriber.create())
+            .assertCompleted()
+            .assertItem(Set.of(
+                    user1, user3
+            ));
+
+        verify(rbacRecipientUsersProvider, times(1)).getUsers(
+                eq(ACCOUNT_ID),
+                eq(false)
+        );
+        verifyNoMoreInteractions(rbacRecipientUsersProvider);
+        clearInvocations(rbacRecipientUsersProvider);
+
+        // Specifying users and only admins
+        recipientResolver.recipientUsers(
+                ACCOUNT_ID,
+                Set.of(
+                        new TestRecipientSettings(true, false, null, Set.of(
+                                user1.getUsername(), user3.getUsername(), admin1.getUsername(), admin2.getUsername()
+                        ))
+                ),
+                subscribedUsers
+        ).subscribe()
+            .withSubscriber(UniAssertSubscriber.create())
+            .assertCompleted()
+            .assertItem(Set.of(
+                    admin1
+            ));
+
+        verify(rbacRecipientUsersProvider, times(1)).getUsers(
+                eq(ACCOUNT_ID),
+                eq(true)
+        );
+        verifyNoMoreInteractions(rbacRecipientUsersProvider);
+        clearInvocations(rbacRecipientUsersProvider);
+
+        // Specifying users and only admins (ignoring user preferences)
+        recipientResolver.recipientUsers(
+                ACCOUNT_ID,
+                Set.of(
+                        new TestRecipientSettings(true, true, null, Set.of(
+                                user1.getUsername(), user3.getUsername(), admin1.getUsername(), admin2.getUsername()
+                        ))
+                ),
+                subscribedUsers
+        ).subscribe()
+            .withSubscriber(UniAssertSubscriber.create())
+            .assertCompleted()
+            .assertItem(Set.of(
+                    admin1, admin2
+            ));
+
+        verify(rbacRecipientUsersProvider, times(1)).getUsers(
+                eq(ACCOUNT_ID),
+                eq(true)
+        );
+        verifyNoMoreInteractions(rbacRecipientUsersProvider);
+        clearInvocations(rbacRecipientUsersProvider);
+
         // all subscribed users & admins ignoring preferences
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRecipientSettings(false, false, null),
-                        new TestRecipientSettings(true, true, null)
+                        new TestRecipientSettings(false, false, null, Set.of()),
+                        new TestRecipientSettings(true, true, null, Set.of())
                 ),
                 subscribedUsers
         ).subscribe()
@@ -227,8 +326,8 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRecipientSettings(false, true, null),
-                        new TestRecipientSettings(true, true, null)
+                        new TestRecipientSettings(false, true, null, Set.of()),
+                        new TestRecipientSettings(true, true, null, Set.of())
                 ),
                 subscribedUsers
         ).subscribe()
@@ -252,7 +351,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRecipientSettings(false, false, group1)
+                        new TestRecipientSettings(false, false, group1, Set.of())
                 ),
                 subscribedUsers
         ).subscribe()
@@ -273,7 +372,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRecipientSettings(true, false, group1)
+                        new TestRecipientSettings(true, false, group1, Set.of())
                 ),
                 subscribedUsers
         ).subscribe()
@@ -294,7 +393,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRecipientSettings(false, false, group2)
+                        new TestRecipientSettings(false, false, group2, Set.of())
                 ),
                 subscribedUsers
         ).subscribe()
@@ -313,7 +412,7 @@ public class RecipientResolverTest {
         recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
-                        new TestRecipientSettings(false, true, group2)
+                        new TestRecipientSettings(false, true, group2, Set.of())
                 ),
                 subscribedUsers
         ).subscribe()

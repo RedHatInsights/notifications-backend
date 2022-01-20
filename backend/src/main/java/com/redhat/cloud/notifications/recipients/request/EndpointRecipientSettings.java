@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 
+import java.util.Set;
 import java.util.UUID;
 
 public class EndpointRecipientSettings extends RecipientSettings {
@@ -27,5 +28,10 @@ public class EndpointRecipientSettings extends RecipientSettings {
     @Override
     public UUID getGroupId() {
         return endpoint.getProperties(EmailSubscriptionProperties.class).getGroupId();
+    }
+
+    @Override
+    public Set<String> getUsers() {
+        return Set.of();
     }
 }

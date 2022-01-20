@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -11,17 +12,22 @@ import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmail
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings;
 import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @ApplicationScoped
 public class EmailAggregator {
@@ -40,6 +46,7 @@ public class EmailAggregator {
 
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
     private static final String EVENT_TYPE_KEY = "event_type";
+    private static final String RECIPIENTS_KEY = "recipients";
 
     private Uni<Set<String>> getEmailSubscribers(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
         return emailSubscriptionRepository
@@ -72,10 +79,12 @@ public class EmailAggregator {
                                              */
                                             recipientResolver.recipientUsers(
                                                     aggregationKey.getAccountId(),
-                                                    endpoints
-                                                        .stream()
-                                                        .map(EndpointRecipientSettings::new)
-                                                        .collect(Collectors.toSet()),
+                                                    Stream.concat(
+                                                            endpoints
+                                                                    .stream()
+                                                                    .map(EndpointRecipientSettings::new),
+                                                            getActionRecipient(aggregation).stream()
+                                                    ).collect(Collectors.toSet()),
                                                     users
                                             )
                                     )
@@ -120,6 +129,20 @@ public class EmailAggregator {
 
     private String getEventType(EmailAggregation aggregation) {
         return aggregation.getPayload().getString(EVENT_TYPE_KEY);
+    }
+
+    private List<ActionRecipientSettings> getActionRecipient(EmailAggregation emailAggregation) {
+        if (emailAggregation.getPayload().containsKey(RECIPIENTS_KEY)) {
+            JsonArray recipients = emailAggregation.getPayload().getJsonArray(RECIPIENTS_KEY);
+            if (recipients.size() > 0) {
+                return recipients.stream().map(r -> {
+                    JsonObject recipient = (JsonObject) r;
+                    return recipient.mapTo(Recipient.class);
+                }).map(ActionRecipientSettings::new).collect(Collectors.toList());
+            }
+
+        }
+        return List.of();
     }
 
 }

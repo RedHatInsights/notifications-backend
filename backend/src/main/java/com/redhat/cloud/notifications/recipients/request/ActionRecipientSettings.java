@@ -5,15 +5,18 @@ import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ActionRecipientSettings extends RecipientSettings {
 
     private final Recipient recipient;
+    private final Set<String> users;
 
-    ActionRecipientSettings(Recipient recipient) {
+    public ActionRecipientSettings(Recipient recipient) {
         this.recipient = recipient;
+        this.users = Set.copyOf(this.recipient.getUsers());
     }
 
     @Override
@@ -29,6 +32,11 @@ public class ActionRecipientSettings extends RecipientSettings {
     @Override
     public UUID getGroupId() {
         return null;
+    }
+
+    @Override
+    public Set<String> getUsers() {
+        return users;
     }
 
     public static List<ActionRecipientSettings> fromAction(Action action) {
