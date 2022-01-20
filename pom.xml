@@ -52,9 +52,9 @@
 
         <cloudwatch.version>4.0.1</cloudwatch.version>
 
-        <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
+        <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>2.3.1.Final</quarkus.platform.version>
+        <quarkus.platform.version>2.6.3.Final</quarkus.platform.version>
     </properties>
 
     <dependencyManagement>
