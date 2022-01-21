@@ -10,8 +10,6 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// TODO: Move this class to notifications-engine.
-
 @ApplicationScoped
 public class EmailAggregationRepository {
 

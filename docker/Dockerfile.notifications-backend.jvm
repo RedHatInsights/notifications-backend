@@ -7,7 +7,8 @@ FROM registry.access.redhat.com/ubi8/openjdk-11:latest AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
-RUN ./mvnw clean package -DskipTests --projects :checkstyle,:notifications-common,:notifications-backend --no-transfer-progress
+# TODO NOTIF-450 Remove the notifications-engine project from the command below when that module becomes completely independent.
+RUN ./mvnw clean package -DskipTests --projects :checkstyle,:notifications-common,:notifications-engine,:notifications-backend --no-transfer-progress
 
 # Build the container
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest

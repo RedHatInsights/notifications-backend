@@ -17,6 +17,11 @@ public class RecipientResolver {
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
+    // TODO NOTIF-450 Remove this method when RecipientResolverTest is moved to notifications-engine.
+    public void setRbacRecipientUsersProvider(RbacRecipientUsersProvider rbacRecipientUsersProvider) {
+        this.rbacRecipientUsersProvider = rbacRecipientUsersProvider;
+    }
+
     public Uni<Set<User>> recipientUsers(String accountId, Set<RecipientSettings> requests, Set<String> subscribers) {
         return Multi.createFrom().iterable(requests)
                 .onItem().transformToUni(r -> recipientUsers(accountId, r, subscribers))

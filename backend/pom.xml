@@ -20,6 +20,11 @@
             <artifactId>notifications-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.redhat.cloud.notifications</groupId>
+            <artifactId>notifications-engine</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Quarkus -->
         <dependency>

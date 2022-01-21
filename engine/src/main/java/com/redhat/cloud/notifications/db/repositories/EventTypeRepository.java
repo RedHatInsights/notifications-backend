@@ -7,8 +7,6 @@ import org.hibernate.reactive.mutiny.Mutiny;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
-// TODO: Move this class to notifications-engine.
-
 @ApplicationScoped
 public class EventTypeRepository {
 

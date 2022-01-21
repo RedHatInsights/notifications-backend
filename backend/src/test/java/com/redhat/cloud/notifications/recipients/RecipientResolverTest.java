@@ -65,7 +65,7 @@ public class RecipientResolverTest {
     @Test
     public void withPersonalizedEmailOn() {
         RecipientResolver recipientResolver = new RecipientResolver();
-        recipientResolver.rbacRecipientUsersProvider = rbacRecipientUsersProvider;
+        recipientResolver.setRbacRecipientUsersProvider(rbacRecipientUsersProvider);
 
         User user1 = createUser("user1", false);
         User user2 = createUser("user2", false);

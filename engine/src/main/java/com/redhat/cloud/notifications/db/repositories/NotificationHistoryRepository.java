@@ -10,8 +10,6 @@ import javax.inject.Inject;
 import java.util.Map;
 import java.util.UUID;
 
-// TODO: Move this class to notifications-engine.
-
 @ApplicationScoped
 public class NotificationHistoryRepository {
 

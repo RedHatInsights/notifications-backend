@@ -37,7 +37,7 @@ class RhosakEmailAggregatorTest {
     @BeforeEach
     public void setup() {
         aggregator = new RhosakEmailAggregator();
-        context = aggregator.context;
+        context = aggregator.getContextForTest();
         upgrades = context.getJsonObject(UPGRADES);
         disruptions = context.getJsonObject(DISRUPTIONS);
     }

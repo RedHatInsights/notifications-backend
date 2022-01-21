@@ -1,15 +1,18 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.smallrye.mutiny.Uni;
+import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -28,6 +31,16 @@ public class TemplateEngineResource {
 
     @Inject
     EmailTemplateService emailTemplateService;
+
+    @Inject
+    EmailTemplateFactory emailTemplateFactory;
+
+    @GET
+    @Path("/subscription_type_supported")
+    @Produces(APPLICATION_JSON)
+    public Uni<Boolean> isSubscriptionTypeSupported(@NotNull @RestQuery String bundleName, @NotNull @RestQuery String applicationName, @NotNull @RestQuery EmailSubscriptionType subscriptionType) {
+        return Uni.createFrom().item(() -> emailTemplateFactory.get(bundleName, applicationName).isEmailSubscriptionSupported(subscriptionType));
+    }
 
     @PUT
     @Path("/render")

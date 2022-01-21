@@ -37,8 +37,9 @@ public class RhosakEmailAggregator extends AbstractEmailPayloadAggregator {
         context.put(SERVICE_DISRUPTIONS, new JsonObject());
     }
 
+    // TODO NOTIF-450 Remove the 'public' modifier on this method when RhosakEmailAggregatorTest is moved to notifications-engine.
     @Override
-    void processEmailAggregation(EmailAggregation aggregation) {
+    public void processEmailAggregation(EmailAggregation aggregation) {
         JsonObject aggregationPayload = aggregation.getPayload();
         String eventType = aggregationPayload.getString(EVENT_TYPE);
         JsonObject context = aggregationPayload.getJsonObject(CONTEXT);

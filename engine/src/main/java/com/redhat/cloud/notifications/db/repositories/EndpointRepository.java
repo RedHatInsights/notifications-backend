@@ -24,8 +24,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-// TODO: Move this class to notifications-engine.
-
 @ApplicationScoped
 public class EndpointRepository {
 

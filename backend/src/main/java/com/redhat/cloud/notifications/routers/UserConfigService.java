@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.auth.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
-import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
@@ -15,11 +14,11 @@ import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
-import com.redhat.cloud.notifications.templates.EmailTemplate;
-import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
+import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.inject.Inject;
@@ -37,6 +36,7 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -57,7 +57,8 @@ public class UserConfigService {
     ApplicationResources applicationResources;
 
     @Inject
-    EmailTemplateFactory emailTemplateFactory;
+    @RestClient
+    TemplateEngineClient templateEngineClient;
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
@@ -182,19 +183,24 @@ public class UserConfigService {
                                     bundleSettingsValue.displayName = bundle.getDisplayName();
                                     settingsValues.bundles.put(bundle.getName(), bundleSettingsValue);
                                     return applicationResources.getApplications(bundle.getName())
-                                            .onItem().invoke(applications -> {
-                                                for (Application application : applications) {
-                                                    ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
-                                                    applicationSettingsValue.displayName = application.getDisplayName();
-                                                    EmailTemplate applicationEmailTemplate = emailTemplateFactory.get(bundle.getName(), application.getName());
-                                                    settingsValues.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
-                                                    for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
-                                                        if (applicationEmailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
-                                                            settingsValues.bundles.get(bundle.getName()).applications.get(application.getName()).notifications.put(emailSubscriptionType, false);
-                                                        }
-                                                    }
-                                                }
-                                            });
+                                            .onItem().transformToMulti(Multi.createFrom()::iterable)
+                                            .onItem().transformToUniAndMerge(application -> {
+                                                ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
+                                                applicationSettingsValue.displayName = application.getDisplayName();
+                                                settingsValues.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
+                                                return Multi.createFrom().iterable(Arrays.asList(EmailSubscriptionType.values()))
+                                                        .onItem().transformToUniAndMerge(emailSubscriptionType -> {
+                                                            // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
+                                                            return templateEngineClient.isSubscriptionTypeSupported(bundle.getName(), application.getName(), emailSubscriptionType)
+                                                                    .invoke(supported -> {
+                                                                        if (supported) {
+                                                                            settingsValues.bundles.get(bundle.getName()).applications.get(application.getName()).notifications.put(emailSubscriptionType, false);
+                                                                        }
+                                                                    });
+                                                        })
+                                                        .onItem().ignoreAsUni();
+                                            })
+                                            .onItem().ignoreAsUni();
                                 })
                                 .onItem().call(ignoredBundle ->
                                         emailSubscriptionResources.getEmailSubscriptionsForUser(account, username)
