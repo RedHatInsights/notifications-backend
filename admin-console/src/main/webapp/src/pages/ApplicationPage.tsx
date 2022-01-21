@@ -77,20 +77,20 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventTypes({});
     };
 
-    const handleSubmit = React.useCallback(() => {
+    const handleSubmit = React.useCallback((eventType) => {
         setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
-            id: eventTypes.id,
-            displayName: eventTypes.displayName ?? '',
-            name: eventTypes.name ?? '',
-            description: eventTypes.description ?? '',
+            id: eventType.id,
+            displayName: eventType.displayName ?? '',
+            name: eventType.name ?? '',
+            description: eventType.description ?? '',
             applicationId
 
         })
         .then (eventTypesQuery.query);
 
-    }, [ applicationId, eventTypes, eventTypesQuery.query, newEvent.mutate ]);
+    }, [ applicationId, eventTypesQuery.query, newEvent.mutate ]);
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
@@ -154,11 +154,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         onClick={ createEventType }> Create Event Type </Button>
                                     <CreateEditModal
                                         isEdit={ isEdit }
+                                        initialEventType= { eventTypes }
                                         showModal={ showModal }
                                         applicationName={ application?.displayName }
                                         onClose={ onClose }
                                         onSubmit={ handleSubmit }
-                                        eventTypeQuery={ eventTypesQuery }
+                                        isLoading={ eventTypesQuery.loading }
 
                                     />
                                     <React.Fragment>

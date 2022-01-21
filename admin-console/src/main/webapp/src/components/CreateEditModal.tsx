@@ -1,5 +1,4 @@
-import { ActionGroup, Button, Form, FormGroup, HelperText, HelperTextItem, Modal, ModalVariant,
-    Spinner, TextArea, TextInput } from '@patternfly/react-core';
+import { ActionGroup, Button, Form, FormGroup, HelperText, HelperTextItem, Modal, ModalVariant, TextArea, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
 import { EventType } from '../types/Notifications';
@@ -8,11 +7,10 @@ interface CreateEditModalProps {
     isEdit: boolean;
     showModal: boolean;
     applicationName?: string;
-    initialEventType?: EventType;
-    isLoading?: boolean;
+    initialEventType?: Partial<EventType>;
+    isLoading: boolean;
     onClose: () => void;
     onSubmit: (eventType: Partial<EventType>) => void;
-    eventTypeQuery: unknown;
 
 }
 
@@ -63,7 +61,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                         /></FormGroup>
                     <FormGroup label='Description' fieldId='description'
                         helperText='Optional short description that appears in the UI
-                                                to help admin descide how to notify users.'>
+                                                to help admin decide how to notify users.'>
                         <TextArea
                             type='text'
                             value={ eventType.description }
@@ -73,7 +71,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                         /></FormGroup>
                     <ActionGroup>
                         <Button variant='primary' type='submit'
-                            { ...props.isLoading ? <Spinner /> : props.eventTypeQuery }
+                            isLoading={ props.isLoading } isDisabled={ props.isLoading }
                             onClick={ onSubmitLocal }>{ props.isEdit ? 'Update' : 'Submit' }</Button>
                         <Button variant='link' type='reset'
                             onClick={ props.onClose }>Cancel</Button>
