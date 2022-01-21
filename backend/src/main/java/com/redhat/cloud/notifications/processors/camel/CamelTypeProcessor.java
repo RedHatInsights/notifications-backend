@@ -129,7 +129,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                         .onItem().transform(resp -> {
                             final long endTime = System.currentTimeMillis();
                             // We only create a basic stub. The FromCamel filler will update it later
-                            NotificationHistory history = getHistoryStub(item, endTime - startTime, historyId);
+                            NotificationHistory history = getHistoryStub(item.getEndpoint(), item.getEvent(), endTime - startTime, historyId);
                             return history;
                         })
                 );

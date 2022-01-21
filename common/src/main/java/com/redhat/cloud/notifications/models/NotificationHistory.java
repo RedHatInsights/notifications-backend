@@ -162,12 +162,12 @@ public class NotificationHistory extends CreationTimestamped {
         return Objects.hash(id);
     }
 
-    public static NotificationHistory getHistoryStub(Notification item, long invocationTime, UUID historyId) {
+    public static NotificationHistory getHistoryStub(Endpoint endpoint, Event event, long invocationTime, UUID historyId) {
         NotificationHistory history = new NotificationHistory();
         history.setInvocationTime(invocationTime);
-        history.setEndpoint(item.getEndpoint());
-        history.setEndpointType(item.getEndpoint().getType());
-        history.setEvent(item.getEvent());
+        history.setEndpoint(endpoint);
+        history.setEndpointType(endpoint.getType());
+        history.setEvent(event);
         history.setInvocationResult(false);
         history.setId(historyId);
         return history;
