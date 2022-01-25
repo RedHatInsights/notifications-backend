@@ -1,0 +1,214 @@
+---
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: notifications-engine
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdApp
+  metadata:
+    name: notifications-engine
+    labels:
+      app: notifications-engine
+  spec:
+    envName: ${ENV_NAME}
+    dependencies:
+    - rbac
+    - ingress
+    database:
+      name: notifications-backend
+      version: 12
+    kafkaTopics:
+    - topicName: platform.notifications.ingress
+      partitions: 3
+      replicas: 3
+    - topicName: platform.notifications.tocamel
+      partitions: 3
+      replicas: 3
+    - topicName: platform.notifications.fromcamel
+      partitions: 3
+      replicas: 3
+    - topicName: platform.notifications.aggregation
+      partitions: 2
+      replicas: 3
+    deployments:
+    - name: service
+      minReplicas: ${{MIN_REPLICAS}}
+      webServices:
+        public:
+          enabled: true
+      podSpec:
+        image: ${IMAGE}:${IMAGE_TAG}
+        resources:
+          requests:
+            cpu: ${CPU_REQUEST}
+            memory: ${MEMORY_REQUEST}
+          limits:
+            cpu: ${CPU_LIMIT}
+            memory: ${MEMORY_LIMIT}
+        volumes:
+        - name: rds-client-ca
+          emptyDir: {}
+        volumeMounts:
+        - name: rds-client-ca
+          mountPath: /tmp
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+        env:
+        - name: ENV_NAME
+          value: ${ENV_NAME}
+        - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
+          value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS}
+        - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
+          value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS}
+        - name: MP_MESSAGING_INCOMING_INGRESS_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS
+          value: ${MP_MESSAGING_INCOMING_INGRESS_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS}
+        - name: NOTIFICATIONS_EPHEMERAL_DATA
+          valueFrom:
+            configMapKeyRef:
+              name: notifications-ephemeral-data
+              key: ephemeral_data.json
+              optional: true
+        - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
+          value: ${KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED}
+        - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY
+          value: ${KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY}
+        - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
+          value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
+        - name: PROCESSOR_EMAIL_BOP_APITOKEN
+          valueFrom:
+            secretKeyRef:
+              name: backoffice
+              key: token
+        - name: PROCESSOR_EMAIL_BOP_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: backoffice
+              key: client-id
+        - name: PROCESSOR_EMAIL_BOP_ENV
+          value: ${BACKOFFICE_CLIENT_ENV}
+        - name: PROCESSOR_EMAIL_BOP_URL
+          value: https://${BACKOFFICE_HOST}/v1/sendEmails
+        - name: PROCESSOR_EMAIL_NO_REPLY
+          value: ${PROCESSOR_EMAIL_NO_REPLY}
+        - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
+          value: ${RBAC_S2S_READ_TIMEOUT}
+        - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
+          value: ${RBAC_SERVICE_TO_SERVICE_APP}
+        - name: RBAC_SERVICE_TO_SERVICE_SECRET_MAP
+          valueFrom:
+            secretKeyRef:
+              name: rbac-psks
+              key: psks.json
+        - name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
+          value: ${RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE}
+        - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_USERS_EXPIRE_AFTER_WRITE
+          value: ${RBAC_USERS_RETENTION_DELAY}
+        - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
+          value: ${RBAC_GROUP_USERS_RETENTION_DELAY}
+        - name: QUARKUS_HTTP_PORT
+          value: "8000"
+        - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
+          value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+          value: ${CLOUDWATCH_ENABLED}
+        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
+          value: ${HOSTNAME}
+        - name: QUARKUS_LOG_SENTRY
+          value: ${SENTRY_ENABLED}
+        - name: QUARKUS_LOG_SENTRY_DSN
+          value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
+        - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
+          value: ${ENV_NAME}
+parameters:
+- name: BACKOFFICE_CLIENT_ENV
+  description: Back-office client environment
+  value: qa
+- name: BACKOFFICE_HOST
+  description: backoffice URL
+  value: backoffice-proxy.apps.ext.spoke.preprod.us-west-2.aws.paas.redhat.com
+- name: CLOUDWATCH_ENABLED
+  description: Enable Cloudwatch (or not)
+  value: "false"
+- name: CPU_LIMIT
+  description: CPU limit
+  value: 500m
+- name: CPU_REQUEST
+  description: CPU request
+  value: 500m
+- name: ENV_NAME
+  description: ClowdEnvironment name (ephemeral, stage, prod)
+  required: true
+- name: IMAGE
+  description: Image URL
+  value: quay.io/cloudservices/notifications-engine
+- name: IMAGE_TAG
+  value: latest
+- name: KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
+  description: Is the Kafka records consumed total check included in the global health check?
+  value: "false"
+- name: KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY
+  description: Delay after the server startup before the first check is performed
+  value: 5m
+- name: KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
+  description: Time between two Kafka records consumed total checks
+  value: 5m
+- name: MEMORY_LIMIT
+  description: Memory limit
+  value: 500Mi
+- name: MEMORY_REQUEST
+  description: Memory request
+  value: 250Mi
+- name: MIN_REPLICAS
+  value: "1"
+- name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
+  description: Maximum delay between invocations of poll()
+  value: "300000"
+- name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
+  description: Maximum number of records returned in a single call to poll()
+  value: "500"
+- name: MP_MESSAGING_INCOMING_INGRESS_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS
+  description: Max age in milliseconds that an unprocessed message can be before the connector is marked as unhealthy
+  value: "60000"
+- name: NOTIFICATIONS_LOG_LEVEL
+  description: Log level for com.redhat.cloud.notifications
+  value: INFO
+- name: PROCESSOR_EMAIL_NO_REPLY
+  description: Email address
+  value: no-reply@redhat.com
+- name: RBAC_S2S_READ_TIMEOUT
+  description: Delay in milliseconds before an RBAC S2S query is interrupted
+  value: "120000"
+- name: RBAC_GROUP_USERS_RETENTION_DELAY
+  description: RBAC group users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT10M
+- name: RBAC_SERVICE_TO_SERVICE_APP
+  description: RBAC application name to use for service-to-service communication
+  value: notifications
+- name: RBAC_USERS_RETENTION_DELAY
+  description: RBAC users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT10M
+- name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
+  description: Limit value sent as a query param to the RBAC REST API while querying RBAC users.
+  value: "1000"
+- name: SENTRY_ENABLED
+  description: Enable Sentry (or not)
+  value: "false"
