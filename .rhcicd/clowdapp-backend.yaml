@@ -156,7 +156,7 @@ objects:
     clean.sql: |
       CALL cleanEventLog();
       CALL cleanKafkaMessagesIds();
-- apiVersion: batch/v1beta1
+- apiVersion: batch/v1
   kind: CronJob
   metadata:
     name: notifications-db-cleaner-cronjob
