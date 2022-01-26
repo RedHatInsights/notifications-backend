@@ -37,7 +37,8 @@ public class AuthRequestFilter implements ClientRequestFilter {
 
     private static final Logger log = Logger.getLogger(AuthRequestFilter.class);
 
-    AuthRequestFilter() {
+    // TODO NOTIF-450 Remove the 'public' modifier on this method when AuthRequestFilterTest is moved to notifications-engine.
+    public AuthRequestFilter() {
         Config config = ConfigProvider.getConfig();
 
         application = config.getOptionalValue(RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY, String.class).orElse(RBAC_SERVICE_TO_SERVICE_APPLICATION_DEFAULT);

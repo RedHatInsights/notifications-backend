@@ -8,8 +8,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
 
-// TODO: Move this class to notifications-engine.
-
 @ApplicationScoped
 public class EmailSubscriptionRepository {
 
