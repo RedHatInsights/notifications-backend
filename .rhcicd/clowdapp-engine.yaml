@@ -13,11 +13,11 @@ objects:
   spec:
     envName: ${ENV_NAME}
     dependencies:
+    - notifications-backend
     - rbac
     - ingress
     database:
-      name: notifications-backend
-      version: 12
+      sharedDbAppName: notifications-backend
     kafkaTopics:
     - topicName: platform.notifications.ingress
       partitions: 3
