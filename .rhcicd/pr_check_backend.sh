@@ -4,7 +4,7 @@
 export APP_NAME="notifications"
 export COMPONENT_NAME="notifications-backend"
 export IMAGE="quay.io/cloudservices/notifications-backend"
-export DEPLOY_TIMEOUT="420"
+export DEPLOY_TIMEOUT="480"
 
 # IQE plugin config
 export IQE_PLUGINS="notifications"

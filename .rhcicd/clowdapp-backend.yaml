@@ -13,8 +13,9 @@ objects:
   spec:
     envName: ${ENV_NAME}
     dependencies:
-    - rbac
     - ingress
+    - notifications-engine
+    - rbac
     database:
       name: notifications-backend
       version: 12
