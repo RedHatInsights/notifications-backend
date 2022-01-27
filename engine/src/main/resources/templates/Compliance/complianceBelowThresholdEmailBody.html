@@ -35,10 +35,10 @@
                         <!-- Hi {{user.first_name}},
                         <br>
                         <br> -->
-                        Hi,
-                        <br>
-                        <br>
-                        Your system <a class="rh-url" href="https://console.redhat.com/insights/compliance/systems/{action.context.host_id}"><b>{action.context.host_name}</b></a> assigned to policy <a class="rh-url" href="https://console.redhat.com/insights/compliance/scappolicies/{action.context.policy_id}">{action.context.policy_name}</a> has been marked as non-compliant as its compliance score dropped below the configured threshold.
+                        Your system <a class="rh-url" href="https://console.redhat.com/insights/compliance/systems/{action.context.host_id}"><b>{action.context.host_name}</b></a> assigned to policy <a class="rh-url" href="https://console.redhat.com/insights/compliance/scappolicies/{action.context.policy_id}"><b>{action.context.policy_name}</b></a> has been marked as non-compliant as its compliance score () dropped below the configured compliance threshold () for this policy.
+                    </p>
+                    <p>
+                        Please review the <a class="rh-url" href="https://console.redhat.com/insights/compliance/reports/{action.context.policy_id}"><b>detailed policy report</b></a> for this system and take the appropriate steps to bring this system under compliance. For additional details on how to remediate compliance issues, learn more <a class="rh-url" href="https://access.redhat.com/documentation/en-us/red_hat_insights/2021/html/remediating_security-policy_compliance_issues_using_ansible_playbooks/index"><b>here</b></a>.
                     </p>
                 </td>
             </tr>
