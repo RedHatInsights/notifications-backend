@@ -91,11 +91,11 @@
           "event_types": [
             {
               "name": "compliance-below-threshold",
-              "display_name": "Compliance score dropped below threshold"
+              "display_name": "System is non compliant to SCAP policy"
             },
             {
               "name": "report-upload-failed",
-              "display_name": "Failed uploading a Policy report"
+              "display_name": "Policy report failed to upload"
             }
           ]
         },
