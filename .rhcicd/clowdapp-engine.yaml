@@ -13,9 +13,9 @@ objects:
   spec:
     envName: ${ENV_NAME}
     dependencies:
+    - ingress
     - notifications-backend
     - rbac
-    - ingress
     database:
       sharedDbAppName: notifications-backend
     kafkaTopics:
