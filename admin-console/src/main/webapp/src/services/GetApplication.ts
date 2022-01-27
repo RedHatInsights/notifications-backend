@@ -8,7 +8,9 @@ import { Application } from '../types/Notifications';
 const validateResponse = validationResponseTransformer(
     (payload: Operations.InternalServiceGetApplication.Payload) => {
         if (payload.status === 200) {
-            const applicationTypes: Application = { id: payload.value.id ?? '', displayName: payload.value.display_name,
+            const applicationTypes: Application = {
+                id: payload.value.id ?? '',
+                displayName: payload.value.display_name,
                 bundleId: payload.value.bundle_id };
 
             return validatedResponse(

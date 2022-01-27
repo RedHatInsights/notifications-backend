@@ -1,4 +1,4 @@
-import { Nav, NavExpandable, NavGroup, NavItem, NavItemSeparator, NavList } from '@patternfly/react-core';
+import { Nav, NavExpandable, NavItem, NavList } from '@patternfly/react-core';
 import * as React from 'react';
 import { Link, useRouteMatch } from 'react-router-dom';
 
@@ -32,16 +32,11 @@ export const Navigation: React.FunctionComponent<NavigationProps> = props => {
     return (
         <Nav>
             <NavList>
-                <NavGroup title="Bundles">
+                <NavExpandable title='Bundles'>
                     { props.bundles.map(b => (
-                        <NavExpandable key={ b.id } title={ b.displayName }>
-                            { b.applications.map(a => (
-                                <EnhancedNavItem key={ a.id } to={ linkTo.application(a.id) }>{ a.displayName }</EnhancedNavItem>
-                            )) }
-                        </NavExpandable>
-                    )) }
-                </NavGroup>
-                <NavItemSeparator />
+                        <EnhancedNavItem key={ b.id } to={ linkTo.bundle(b.id) }>{ b.displayName }
+                        </EnhancedNavItem>
+                    )) }</NavExpandable>
                 <EnhancedNavItem to={ linkTo.email() }>
                     Email templates
                 </EnhancedNavItem>

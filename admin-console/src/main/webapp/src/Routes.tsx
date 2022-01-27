@@ -3,6 +3,7 @@ import { Redirect, Route, Switch } from 'react-router';
 
 import { AggregationPage } from './pages/AggregationPage';
 import { ApplicationPage } from './pages/ApplicationPage';
+import { BundlePage } from './pages/BundlePage';
 import { RenderEmailPage } from './pages/RenderEmailPage';
 
 interface Path {
@@ -11,6 +12,7 @@ interface Path {
 }
 
 export const linkTo = {
+    bundle: (bundleId: string) => `/bundle/${bundleId}`,
     application: (applicationId: string) => `/application/${applicationId}`,
     aggregation: () => '/aggregation',
     email: () => '/email'
@@ -24,6 +26,10 @@ const pathRoutes: Path[] = [
     {
         path: linkTo.application(':applicationId'),
         component: ApplicationPage
+    },
+    {
+        path: linkTo.bundle(':bundleId'),
+        component: BundlePage
     },
     {
         path: linkTo.email(),
