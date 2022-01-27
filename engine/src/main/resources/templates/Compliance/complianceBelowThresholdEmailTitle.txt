@@ -1,1 +1,1 @@
-{action.timestamp.toUtcFormat()} - Compliance level below threshold for Host '{action.context.host_name}' under Policy '{action.context.policy_name}'
+{action.timestamp.toUtcFormat()} - Host '{action.context.host_name}' under Policy '{action.context.policy_name}' is non-compliant
