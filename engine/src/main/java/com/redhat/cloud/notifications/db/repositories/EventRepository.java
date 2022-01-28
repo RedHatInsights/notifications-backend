@@ -13,7 +13,6 @@ public class EventRepository {
     @Inject
     Mutiny.SessionFactory sessionFactory;
 
-    // Note: This method uses a stateless session
     public Uni<Event> create(Event event) {
         event.prePersist(); // This method must be called manually while using a StatelessSession.
         return sessionFactory.withStatelessSession(statelessSession -> {

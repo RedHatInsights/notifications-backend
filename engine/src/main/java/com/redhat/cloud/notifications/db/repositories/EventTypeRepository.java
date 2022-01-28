@@ -13,7 +13,6 @@ public class EventTypeRepository {
     @Inject
     Mutiny.SessionFactory sessionFactory;
 
-    // Note: This method uses a stateless session
     public Uni<EventType> getEventType(String bundleName, String applicationName, String eventTypeName) {
         final String query = "FROM EventType WHERE name = :eventTypeName AND application.name = :applicationName AND application.bundle.name = :bundleName";
         return sessionFactory.withStatelessSession(statelessSession -> {

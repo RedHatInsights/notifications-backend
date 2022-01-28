@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.session.CommonStateSessionFactory;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -24,6 +23,10 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
+import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
+import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
+
 @ApplicationScoped
 public class EndpointRepository {
 
@@ -35,83 +38,23 @@ public class EndpointRepository {
     @Inject
     CommonStateSessionFactory commonStateSessionFactory;
 
-    public Uni<Endpoint> createEndpoint(Endpoint endpoint, boolean useStatelessSession) {
-        return commonStateSessionFactory.withSession(useStatelessSession, session -> {
-            return session.persist(endpoint)
-                    .onItem().call(session::flush)
-                    .onItem().call(() -> {
-                        // If the endpoint properties are null, they won't be persisted.
-                        if (endpoint.getProperties() != null) {
-                            /*
-                             * As weird as it seems, we need the following line because the Endpoint instance was
-                             * deserialized from JSON and that JSON did not contain any information about the
-                             * @OneToOne relation from EndpointProperties to Endpoint.
-                             */
-                            endpoint.getProperties().setEndpoint(endpoint);
-                            switch (endpoint.getType()) {
-                                case CAMEL:
-                                case WEBHOOK:
-                                case EMAIL_SUBSCRIPTION:
-                                    return session.persist(endpoint.getProperties())
-                                            .onItem().call(session::flush);
-                                default:
-                                    // Do nothing.
-                                    break;
-                            }
-                        }
-                        /*
-                         * If this line is reached, it means the endpoint properties are null or we don't support
-                         * persisting properties for the endpoint type. We still have to return something.
-                         */
-                        return Uni.createFrom().voidItem();
-                    })
-                    .replaceWith(endpoint);
-        });
-    }
-
-    public Uni<List<Endpoint>> getEndpointsPerType(String accountId, Set<EndpointType> type, Boolean activeOnly, Query limiter, boolean useStatelessSession) {
-        return commonStateSessionFactory.withSession(useStatelessSession, session -> {
-            // TODO Modify the parameter to take a vararg of Functions that modify the query
-            // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
-            String query = "SELECT e FROM Endpoint e WHERE e.type IN (:endpointType)";
-            if (accountId == null) {
-                query += " AND e.accountId IS NULL";
-            } else {
-                query += " AND e.accountId = :accountId";
-            }
-            if (activeOnly != null) {
-                query += " AND enabled = :enabled";
-            }
-
-            if (limiter != null) {
-                query = limiter.getModifiedQuery(query);
-            }
-
-            Mutiny.Query<Endpoint> mutinyQuery = session.createQuery(query, Endpoint.class)
-                    .setParameter("endpointType", type);
-
-            if (accountId != null) {
-                mutinyQuery = mutinyQuery.setParameter("accountId", accountId);
-            }
-            if (activeOnly != null) {
-                mutinyQuery = mutinyQuery.setParameter("enabled", activeOnly);
-            }
-
-            if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-                mutinyQuery = mutinyQuery.setMaxResults(limiter.getLimit().getLimit())
-                        .setFirstResult(limiter.getLimit().getOffset());
-            }
-
-            return mutinyQuery.getResultList()
-                    .onItem().call(endpoints -> loadProperties(endpoints, useStatelessSession));
-        });
-    }
-
-    public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties, boolean useStatelessSession) {
-        return commonStateSessionFactory.withSession(useStatelessSession, session -> {
-            return getEndpointsPerType(accountId, Set.of(EndpointType.EMAIL_SUBSCRIPTION), null, null, useStatelessSession)
-                    .onItem().call(endpoints -> loadProperties(endpoints, useStatelessSession))
+    /**
+     * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION endpoint with empty properties. This
+     * endpoint is used to aggregate and store in the DB the email actions outcome, which will be used later by the
+     * event log. The recipients of the current email action have already been resolved before this step, possibly from
+     * multiple endpoints and recipients settings. The properties created below have no impact on the resolution of the
+     * action recipients.
+     */
+    public Uni<Endpoint> getOrCreateDefaultEmailSubscription(String accountId) {
+        String query = "FROM Endpoint WHERE accountId = :accountId AND type = :endpointType";
+        return commonStateSessionFactory.withSession(true, session -> {
+            return session.createQuery(query, Endpoint.class)
+                    .setParameter("accountId", accountId)
+                    .setParameter("endpointType", EMAIL_SUBSCRIPTION)
+                    .getResultList()
+                    .call(this::loadProperties)
                     .onItem().transformToUni(emailEndpoints -> {
+                        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
                         Optional<Endpoint> endpointOptional = emailEndpoints
                                 .stream()
                                 .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(EmailSubscriptionProperties.class)))
@@ -126,14 +69,16 @@ public class EndpointRepository {
                         endpoint.setEnabled(true);
                         endpoint.setDescription("System email endpoint");
                         endpoint.setName("Email endpoint");
-                        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+                        endpoint.setType(EMAIL_SUBSCRIPTION);
+                        properties.setEndpoint(endpoint);
 
-                        return createEndpoint(endpoint, useStatelessSession);
+                        return session.persist(endpoint)
+                                .call(() -> session.persist(endpoint.getProperties()))
+                                .replaceWith(endpoint);
                     });
         });
     }
 
-    // Note: This method uses a stateless session
     public Uni<List<Endpoint>> getTargetEndpoints(String tenant, EventType eventType) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                 "WHERE e.enabled = TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL)";
@@ -143,11 +88,11 @@ public class EndpointRepository {
                     .setParameter("eventType", eventType)
                     .setParameter("accountId", tenant)
                     .getResultList()
-                    .onItem().call(endpoints -> loadProperties(endpoints, true))
+                    .call(this::loadProperties)
                     .invoke(endpoints -> {
                         for (Endpoint endpoint : endpoints) {
                             if (endpoint.getAccountId() == null) {
-                                if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
+                                if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
                                     endpoint.setAccountId(tenant);
                                 } else {
                                     LOGGER.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
@@ -158,8 +103,7 @@ public class EndpointRepository {
         });
     }
 
-    // Note: This method uses a stateless session
-    public Uni<List<Endpoint>> getTargetEndpointsFromType(String tenant, String bundleName, String applicationName, String eventTypeName, EndpointType endpointType) {
+    public Uni<List<Endpoint>> getTargetEmailSubscriptionEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                 "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL) " +
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
@@ -171,13 +115,13 @@ public class EndpointRepository {
                     .setParameter("eventTypeName", eventTypeName)
                     .setParameter("accountId", tenant)
                     .setParameter("bundleName", bundleName)
-                    .setParameter("endpointType", endpointType)
+                    .setParameter("endpointType", EMAIL_SUBSCRIPTION)
                     .getResultList()
-                    .onItem().call(endpoints -> loadProperties(endpoints, true));
+                    .call(this::loadProperties);
         });
     }
 
-    private Uni<Void> loadProperties(List<Endpoint> endpoints, boolean useStatelessSession) {
+    private Uni<Void> loadProperties(List<Endpoint> endpoints) {
         if (endpoints.isEmpty()) {
             return Uni.createFrom().voidItem();
         }
@@ -185,12 +129,12 @@ public class EndpointRepository {
         // Group endpoints in types and load in batches for each type.
         Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
-        return this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK, useStatelessSession)
-                .chain(() -> loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL, useStatelessSession))
-                .chain(() -> loadTypedProperties(EmailSubscriptionProperties.class, endpointSet, EndpointType.EMAIL_SUBSCRIPTION, useStatelessSession));
+        return loadTypedProperties(WebhookProperties.class, endpointSet, WEBHOOK)
+                .chain(() -> loadTypedProperties(CamelProperties.class, endpointSet, CAMEL))
+                .chain(() -> loadTypedProperties(EmailSubscriptionProperties.class, endpointSet, EMAIL_SUBSCRIPTION));
     }
 
-    private <T extends EndpointProperties> Uni<Void> loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type, boolean useStatelessSession) {
+    private <T extends EndpointProperties> Uni<Void> loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type) {
         Map<UUID, Endpoint> endpointsMap = endpoints
                 .stream()
                 .filter(e -> e.getType().equals(type))
@@ -198,9 +142,9 @@ public class EndpointRepository {
 
         if (endpointsMap.size() > 0) {
             return commonStateSessionFactory.withSession(
-                useStatelessSession,
+                true,
                 commonStateSession -> commonStateSession.find(typedEndpointClass, endpointsMap.keySet().toArray())
-            ).onItem().invoke(propList -> propList.forEach(props -> {
+            ).invoke(propList -> propList.forEach(props -> {
                 if (props != null) {
                     Endpoint endpoint = endpointsMap.get(props.getId());
                     endpoint.setProperties(props);
