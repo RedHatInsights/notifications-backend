@@ -3,7 +3,11 @@ import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 
+import { useBundles } from '../services/GetBundles';
+
 export const BundlePage: React.FunctionComponent = () => {
+    const getBundles = useBundles();
+
     const columns = [ 'Application', 'Application Id', 'Event Types' ];
 
     return (
@@ -12,7 +16,7 @@ export const BundlePage: React.FunctionComponent = () => {
                 <Title headingLevel='h1'>
                     <Breadcrumb>
                         <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
-                        <BreadcrumbItem target='#'> Bundle Display Name </BreadcrumbItem>
+                        <BreadcrumbItem target='#'> {getBundles.bundles.map(b => (b.displayName))} </BreadcrumbItem>
                     </Breadcrumb>
                 </Title>
                 <TableComposable aria-label="Applications table">
@@ -31,14 +35,20 @@ export const BundlePage: React.FunctionComponent = () => {
                         </Tr>
                     </Thead>
                     <Tbody>
-                        <Tr>
-                            <Td>
-                                <Button className='edit' type='button' variant='plain'
-                                > { <PencilAltIcon /> } </Button></Td>
-                            <Td>
-                                <Button className='delete' type='button' variant='plain'
-                                >{ <TrashIcon /> } </Button></Td>
-                        </Tr>
+                        { getBundles.bundles.map(b => (
+                            b.applications.map(a => (
+                                <Tr key={ a.id }>
+                                    <Td>{ a.displayName }</Td>
+                                    <Td>{ a.id }</Td>
+                                    <Td>event types</Td>
+                                    <Td>
+                                        <Button className='edit' type='button' variant='plain'
+                                        > { <PencilAltIcon /> } </Button></Td>
+                                    <Td>
+                                        <Button className='delete' type='button' variant='plain'
+                                        >{ <TrashIcon /> } </Button></Td>
+                                </Tr>
+                            ))))}
                     </Tbody>
                 </TableComposable>
             </PageSection>
