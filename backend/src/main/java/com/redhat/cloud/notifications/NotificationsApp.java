@@ -25,14 +25,15 @@ public class NotificationsApp {
 
     // we do need a event as parameter here, otherwise the init method won't get called.
     void init(@Observes StartupEvent ev) {
-        disableRestClientContextualErrors();
+        // TODO Uncomment when Quarkus is bumped to 2.6.4.Final or newer.
+        //disableRestClientContextualErrors();
 
         initAccessLogFilter();
 
         LOG.info(readGitProperties());
 
-        logExternalServiceUrl("quarkus.rest-client.rbac-authentication.url");
-        logExternalServiceUrl("quarkus.rest-client.rbac-s2s.url");
+        logExternalServiceUrl("rbac-authentication/mp-rest/url");
+        logExternalServiceUrl("rbac-s2s/mp-rest/url");
     }
 
     private void disableRestClientContextualErrors() {

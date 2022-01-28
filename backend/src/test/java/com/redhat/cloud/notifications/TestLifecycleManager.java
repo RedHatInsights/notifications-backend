@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
-import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
+import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.MockServerContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -120,7 +120,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
         configurator = new MockServerClientConfig(mockEngineServer.getContainerIpAddress(), mockEngineServer.getServerPort());
 
-        props.put("quarkus.rest-client.rbac-authentication.url", mockServerUrl);
-        props.put("quarkus.rest-client.rbac-s2s.url", mockServerUrl);
+        props.put("rbac-authentication/mp-rest/url", mockServerUrl);
+        props.put("rbac-s2s/mp-rest/url", mockServerUrl);
     }
 }
