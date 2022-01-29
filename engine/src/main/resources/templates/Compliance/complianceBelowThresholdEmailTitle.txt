@@ -1,1 +1,1 @@
-{action.timestamp.toUtcFormat()} - Host '{action.context.host_name}' under Policy '{action.context.policy_name}' is non-compliant
+{action.timestamp.toUtcFormat()} - System '{action.context.host_name}' is non-compliant with policy '{action.context.policy_name}'
