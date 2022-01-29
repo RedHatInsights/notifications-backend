@@ -35,12 +35,12 @@
                         <!-- Hi {{user.first_name}},
                         <br>
                         <br> -->
-                        Your system <a class="rh-url" href="https://console.redhat.com/insights/compliance/systems/{action.context.host_id}"><b>{action.context.host_name}</b></a> assigned to policy <a class="rh-url" href="https://console.redhat.com/insights/compliance/scappolicies/{action.context.policy_id}"><b>{action.context.policy_name}</b></a> has failed to upload a new compliance report. The error message returned by our system was:<br>
+                        Your system <a class="rh-url" href="https://console.redhat.com/insights/compliance/systems/{action.context.host_id}"><b>{action.context.host_name}</b></a>, assigned to policy <a class="rh-url" href="https://console.redhat.com/insights/compliance/scappolicies/{action.context.policy_id}"><b>{action.context.policy_name}</b></a> failed to upload a new compliance report. The error message returned by our system was:<br>
 
-                        <i>{ action.context.message }</i>
+                        <i>{ action.context.error_message }</i>
                     </p>
                     <p>
-                        If you want to learn more about why reports can fail to upload and how to address this, refer to the <a class="rh-url" href="https://access.redhat.com/solutions/6675911"><b>following KCS article</b></a>.
+                        To learn more about why reports can fail to upload and how to address this, refer to this <a class="rh-url" href="https://access.redhat.com/solutions/6675911">KCS article</a>.
                     </p>
                 </td>
             </tr>
