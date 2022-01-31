@@ -23,7 +23,7 @@ class Parameters {
 
     void addParams(Object... params) {
         if (params.length % 2 != 0) {
-            throw new IllegalArgumentException("Odd number of params. It needs to be a pair number of params. The key followed by the value");
+            throw new IllegalArgumentException("Params must be an even number of arguments representing key/value pairs");
         }
 
         for (int i = 0; i < params.length; i += 2) {
