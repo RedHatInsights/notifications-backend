@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 
 /**
  * Implements Jakarta EE JSR-375 (Security API) HttpAuthenticationMechanism for the insight's
@@ -24,11 +25,9 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 @ApplicationScoped
 public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
 
-    public static final String IDENTITY_HEADER = "x-rh-identity";
-
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {
-        String xRhIdentityHeaderValue = routingContext.request().getHeader(IDENTITY_HEADER);
+        String xRhIdentityHeaderValue = routingContext.request().getHeader(X_RH_IDENTITY_HEADER);
         String path = routingContext.normalizedPath();
 
         // Those two come via Turnpike and have a different identity header.
@@ -56,7 +55,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
             }
 
             if (!good) {
-                return Uni.createFrom().failure(new AuthenticationFailedException("No " + IDENTITY_HEADER + " provided"));
+                return Uni.createFrom().failure(new AuthenticationFailedException("No " + X_RH_IDENTITY_HEADER + " provided"));
             } else {
                 return Uni.createFrom().item(QuarkusSecurityIdentity.builder()
                         // Set a dummy principal, but add no roles.

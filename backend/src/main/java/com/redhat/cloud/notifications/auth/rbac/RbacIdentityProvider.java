@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Base64;
 
-import static com.redhat.cloud.notifications.auth.rhid.RHIdentityAuthMechanism.IDENTITY_HEADER;
+import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -63,7 +63,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     public Uni<SecurityIdentity> authenticate(RhIdentityAuthenticationRequest rhAuthReq, AuthenticationRequestContext authenticationRequestContext) {
         if (!isRbacEnabled) {
             RhIdPrincipal principal;
-            String xH = rhAuthReq.getAttribute(IDENTITY_HEADER);
+            String xH = rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER);
             if (xH != null) {
                 RhIdentity rhid = getRhIdentityFromString(xH);
                 principal = new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(), rhid.getIdentity().getAccountNumber());
@@ -80,7 +80,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                     .build());
         }
         // Retrieve the identity header from the authentication request
-        return Uni.createFrom().item(() -> (String) rhAuthReq.getAttribute(IDENTITY_HEADER))
+        return Uni.createFrom().item(() -> (String) rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER))
                 .onItem().transformToUni(xRhIdHeader ->
                         // Start building a QuarkusSecurityIdentity
                         Uni.createFrom().item(QuarkusSecurityIdentity.builder())

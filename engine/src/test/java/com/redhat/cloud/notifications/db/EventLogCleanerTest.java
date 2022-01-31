@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class EventLogCleanerTest extends DbIsolatedTest {
+public class EventLogCleanerTest {
 
     /*
      * The Event#created field is automatically set because of the @PrePersist annotation in CreationTimestamped when
