@@ -111,6 +111,8 @@ objects:
           value: ${PROCESSOR_EMAIL_NO_REPLY}
         - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
           value: ${RBAC_S2S_READ_TIMEOUT}
+        - name: RBAC_S2S_MP_REST_READTIMEOUT
+          value: ${RBAC_S2S_READ_TIMEOUT}
         - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
           value: ${RBAC_SERVICE_TO_SERVICE_APP}
         - name: RBAC_SERVICE_TO_SERVICE_SECRET_MAP
