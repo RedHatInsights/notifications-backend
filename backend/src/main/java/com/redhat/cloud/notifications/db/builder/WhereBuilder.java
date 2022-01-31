@@ -18,7 +18,7 @@ public class WhereBuilder {
         return new WhereBuilder(new Parameters());
     }
 
-    public WhereBuilder if_(boolean condition, WhereBuilder whereBuilder) {
+    public WhereBuilder ifMerge(boolean condition, WhereBuilder whereBuilder) {
         if (condition) {
             merge(whereBuilder, false);
         }

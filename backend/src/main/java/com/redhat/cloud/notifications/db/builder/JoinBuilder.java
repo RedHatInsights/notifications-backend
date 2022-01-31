@@ -19,6 +19,10 @@ public class JoinBuilder {
         return this;
     }
 
+    public JoinBuilder leftJoinFetch(String what) {
+        return leftJoin("FETCH " + what);
+    }
+
     public JoinBuilder join(String what) {
         addSpaceIfNeeded();
         query.append("JOIN ").append(what);
@@ -34,6 +38,14 @@ public class JoinBuilder {
         return this;
     }
 
+    public JoinBuilder ifLeftJoinFetch(boolean condition, String what) {
+        if (condition) {
+            leftJoinFetch(what);
+        }
+
+        return this;
+    }
+
     public JoinBuilder ifJoin(boolean condition, String what) {
         if (condition) {
             join(what);
@@ -42,7 +54,7 @@ public class JoinBuilder {
         return this;
     }
 
-    public JoinBuilder if_(boolean condition, JoinBuilder joinBuilder) {
+    public JoinBuilder ifMerge(boolean condition, JoinBuilder joinBuilder) {
         if (condition) {
             merge(joinBuilder);
         }

@@ -74,8 +74,12 @@ public class EndpointResources {
         return commonStateSessionFactory.withSession(useStatelessSession, session -> {
             // TODO Modify the parameter to take a vararg of Functions that modify the query
             // TODO Modify to take account selective joins (JOIN (..) UNION (..)) based on the type, same for getEndpoints
+            Query.Limit limit = limiter == null ? null : limiter.getLimit();
+            Query.Sort sort = limiter == null ? null : limiter.getSort();
+
             return queryBuilderEndpointsPerType(accountId, type, activeOnly)
-                    .limit(limiter)
+                    .limit(limit)
+                    .sort(sort)
                     .build(session::createQuery)
                     .getResultList()
                     .onItem().call(this::loadProperties);

@@ -10,10 +10,10 @@ public class QueryBuilder<T> {
 
     private final String rawSelect;
 
-    private String rawSort = "";
-    private final WhereBuilder whereBuilder;
-    private final JoinBuilder joinBuilder;
-    private final Parameters parameters;
+    private String rawSort;
+    private final JoinBuilder joinBuilder = new JoinBuilder();
+    private final Parameters parameters = new Parameters();
+    private final WhereBuilder whereBuilder = new WhereBuilder(parameters);
     private final Class<T> resultType;
 
     private String alias;
@@ -22,13 +22,13 @@ public class QueryBuilder<T> {
 
     private QueryBuilder(Class<T> resultType, String baseQuery) {
         this.rawSelect = baseQuery;
-        parameters = new Parameters();
-        whereBuilder = new WhereBuilder(parameters);
-        joinBuilder = new JoinBuilder();
         this.resultType = resultType;
     }
 
     public static <T> QueryBuilder<T> builder(Class<T> resultType, String query) {
+        if (resultType == null) {
+            throw new IllegalArgumentException("resultType must be non null");
+        }
         return new QueryBuilder<T>(resultType, query);
     }
 
@@ -52,13 +52,18 @@ public class QueryBuilder<T> {
         return this;
     }
 
-    public QueryBuilder<T> limit(Query limiter) {
-        if (limiter != null) {
-            rawSort = " " + limiter.getSortQuery();
-            if (limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-                maxResult = limiter.getLimit().getLimit();
-                firstResult = limiter.getLimit().getOffset();
-            }
+    public QueryBuilder<T> sort(Query.Sort sort) {
+        if (sort != null) {
+            rawSort = " " + sort.getSortQuery();
+        }
+
+        return this;
+    }
+
+    public QueryBuilder<T> limit(Query.Limit limiter) {
+        if (limiter != null && limiter.getLimit() > 0) {
+            maxResult = limiter.getLimit();
+            firstResult = limiter.getOffset();
         }
 
         return this;
@@ -128,7 +133,9 @@ public class QueryBuilder<T> {
             rawQuery.append(" WHERE ").append(rawWhere);
         }
 
-        rawQuery.append(rawSort);
+        if (rawSort != null) {
+            rawQuery.append(rawSort);
+        }
     }
 
 }

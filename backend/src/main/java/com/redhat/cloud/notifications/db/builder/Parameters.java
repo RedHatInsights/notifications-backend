@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db.builder;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 class Parameters {
 
@@ -12,7 +13,7 @@ class Parameters {
         return new HashMap<>(parameters);
     }
 
-    void forEach(java.util.function.BiConsumer<String, Object> action) {
+    void forEach(BiConsumer<String, Object> action) {
         this.parameters.forEach(action);
     }
 

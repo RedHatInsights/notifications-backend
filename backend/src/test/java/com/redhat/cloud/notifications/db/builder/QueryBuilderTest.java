@@ -1,10 +1,18 @@
 package com.redhat.cloud.notifications.db.builder;
 
+import com.redhat.cloud.notifications.db.Query;
+import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 
 public class QueryBuilderTest {
 
@@ -43,7 +51,7 @@ public class QueryBuilderTest {
         QueryBuilder<Object> builder = QueryBuilder.builder(Object.class, "SELECT f FROM foo f")
                 .where(WhereBuilder.builder()
                         .and("abc = :abc", "abc", "my-abc")
-                        .if_(
+                        .ifMerge(
                                 false,
                                 WhereBuilder.builder()
                                         .and("xyz = :etc", "etc", "ignored")
@@ -161,12 +169,35 @@ public class QueryBuilderTest {
                 QueryBuilder.builder(Object.class).alias("o")
                         .join(
                                 JoinBuilder.builder()
-                                        .leftJoin("FETCH o.foo")
-                                        .if_(true, JoinBuilder.builder().join("o.bar"))
-                                        .if_(false, JoinBuilder.builder().join("Ignoring this").leftJoin("and this"))
+                                        .leftJoinFetch("o.foo")
+                                        .ifMerge(true, JoinBuilder.builder().join("o.bar"))
+                                        .ifMerge(false, JoinBuilder.builder().join("Ignoring this").leftJoin("and this"))
                         )
                         .buildRawQuery()
         );
     }
+
+    @Test
+    public void usingQueryLimit() {
+        Mutiny.Query<Object> query = mock(Mutiny.Query.class);
+        QueryBuilder.builder(Object.class).alias("o")
+                .limit(new Query.Limit(50, 10))
+                .build((s, c) -> query);
+        verify(query, times(1)).setMaxResults(eq(50));
+        verify(query, times(1)).setFirstResult(eq(10));
+        verifyNoMoreInteractions(query);
+    }
+
+    @Test
+    public void usingQuerySort() {
+        assertEquals(
+                "SELECT o FROM Object o ORDER BY o.col ASC",
+                QueryBuilder.builder(Object.class).alias("o")
+                        .sort(new Query.Sort("o.col", Query.Sort.Order.ASC))
+                        .buildRawQuery()
+        );
+    }
+
+
 
 }
