@@ -106,6 +106,8 @@ public class EmailSender {
                             bopRequest,
                             getPayload(user, action, subject, body)
                     ).onItem().invoke(unused -> {
+                        logger.infof("Adding metric for bundle: [%s] application: [%s]", action.getBundle(), action.getApplication());
+
                         processedCount.tags("bundle", action.getBundle(), "application", action.getApplication());
                         processedCount.register(registry).increment();
 
