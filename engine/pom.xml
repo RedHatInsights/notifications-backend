@@ -14,10 +14,15 @@
 
     <dependencies>
 
-        <!-- notifications-common module -->
+        <!-- notifications modules -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
             <artifactId>notifications-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.redhat.cloud.notifications</groupId>
+            <artifactId>notifications-database</artifactId>
             <version>${project.version}</version>
         </dependency>
 
