@@ -5,7 +5,6 @@ import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { linkTo } from '../Routes';
-import { useApplicationTypes } from '../services/GetApplication';
 import { useBundleTypes } from '../services/GetBundleById';
 
 type BundlePageParams = {
@@ -15,7 +14,6 @@ type BundlePageParams = {
 export const BundlePage: React.FunctionComponent = () => {
     const { bundleId } = useParams<BundlePageParams>();
     const getBundles = useBundleTypes(bundleId);
-    const getApplication = useApplicationTypes(bundleId);
 
     const columns = [ 'Application', 'Application Id', 'Event Types' ];
 
@@ -24,7 +22,7 @@ export const BundlePage: React.FunctionComponent = () => {
     }
 
     if (getBundles.payload?.status !== 200) {
-        return <span>Error while loading applications: {getBundles.errorObject.toString()}</span>;
+        return <span>Error while loading bundles: {getBundles.errorObject.toString()}</span>;
     }
 
     return (
@@ -52,6 +50,8 @@ export const BundlePage: React.FunctionComponent = () => {
                             ))}
                         </Tr>
                     </Thead>
+                    <Tbody>{ (getBundles.payload.value.applications.length === 0
+                        ? 'There are no applications found for this bundle' : '') }</Tbody>
                     <Tbody>
                         { getBundles.payload.value.applications.map(a =>
                             <Tr key={ a.id }>
