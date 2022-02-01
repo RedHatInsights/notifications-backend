@@ -2,30 +2,30 @@ import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolba
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
-import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { linkTo } from '../Routes';
-import { useBundles } from '../services/GetBundles';
+import { useApplicationTypes } from '../services/GetApplication';
+import { useBundleTypes } from '../services/GetBundleById';
 
 type BundlePageParams = {
-    applicationId: string;
+    bundleId: string;
 }
 
 export const BundlePage: React.FunctionComponent = () => {
-    const getBundles = useBundles();
-    const { applicationId } = useParams<BundlePageParams>();
-    const eventTypePageUrl = React.useMemo(() => linkTo.application(applicationId), [ applicationId ]);
-
-    const bundle = useMemo(() => {
-        if (getBundles.isLoading || getBundles.bundles.map(b => b.id)) {
-            return getBundles.bundles.map(b =>b.displayName);
-        }
-
-        return undefined;
-    }, [ getBundles.bundles, getBundles.isLoading ]);
+    const { bundleId } = useParams<BundlePageParams>();
+    const getBundles = useBundleTypes(bundleId);
+    const getApplication = useApplicationTypes(bundleId);
 
     const columns = [ 'Application', 'Application Id', 'Event Types' ];
+
+    if (getBundles.loading) {
+        return <Spinner />;
+    }
+
+    if (getBundles.payload?.status !== 200) {
+        return <span>Error while loading applications: {getBundles.errorObject.toString()}</span>;
+    }
 
     return (
         <React.Fragment>
@@ -33,7 +33,7 @@ export const BundlePage: React.FunctionComponent = () => {
                 <Title headingLevel='h1'>
                     <Breadcrumb>
                         <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
-                        <BreadcrumbItem target='#'> { bundle }
+                        <BreadcrumbItem target='#' >{ getBundles.payload.value.displayName }
                         </BreadcrumbItem>
                     </Breadcrumb>
                 </Title>
@@ -53,11 +53,11 @@ export const BundlePage: React.FunctionComponent = () => {
                         </Tr>
                     </Thead>
                     <Tbody>
-                        { getBundles.bundles.map(b => b.applications.map(a => (
+                        { getBundles.payload.value.applications.map(a =>
                             <Tr key={ a.id }>
-                                <Link to={ eventTypePageUrl }>{ a.displayName }</Link>
+                                <Link to={ linkTo.application(a.id) }>{ a.displayName }</Link>
                                 <Td>{ a.id }</Td>
-                                <Td>eventType</Td>
+                                <Td>event types</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
                                     > { <PencilAltIcon /> } </Button></Td>
@@ -65,7 +65,7 @@ export const BundlePage: React.FunctionComponent = () => {
                                     <Button className='delete' type='button' variant='plain'
                                     >{ <TrashIcon /> } </Button></Td>
                             </Tr>
-                        )))}
+                        )}
                     </Tbody>
                 </TableComposable>
             </PageSection>
