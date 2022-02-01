@@ -7,7 +7,7 @@ FROM registry.access.redhat.com/ubi8/openjdk-11:latest AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
-RUN ./mvnw clean package -DskipTests --projects :checkstyle,:notifications-aggregator --no-transfer-progress
+RUN ./mvnw clean package -DskipTests --projects :checkstyle,:notifications-database,:notifications-aggregator --no-transfer-progress
 
 # Build the container
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest

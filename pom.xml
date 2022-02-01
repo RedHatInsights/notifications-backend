@@ -10,11 +10,12 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>checkstyle</module>
         <module>aggregator</module>
         <module>backend</module>
         <module>camel-sender-demo</module>
+        <module>checkstyle</module>
         <module>common</module>
+        <module>database</module>
         <module>engine</module>
     </modules>
 
