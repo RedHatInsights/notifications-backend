@@ -59,10 +59,15 @@ public class Query {
             ASC, DESC
         }
 
-        private Order sortOrder = Order.ASC;
+        private Order sortOrder;
 
         public Sort(String sortColumn) {
+            this(sortColumn, Order.ASC);
+        }
+
+        public Sort(String sortColumn, Order sortOrder) {
             this.sortColumn = sortColumn;
+            this.sortOrder = sortOrder;
         }
 
         public String getSortColumn() {
@@ -79,6 +84,10 @@ public class Query {
 
         public void setSortOrder(Order sortOrder) {
             this.sortOrder = sortOrder;
+        }
+
+        public String getSortQuery() {
+            return "ORDER BY " + this.getSortColumn() + " " + this.getSortOrder().toString();
         }
     }
 
