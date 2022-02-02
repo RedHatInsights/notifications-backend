@@ -2,10 +2,6 @@ package com.redhat.cloud.notifications.db.builder;
 
 public class WhereBuilder {
 
-    private static final String BLANK_SEPARATOR = " ";
-    private static final String OPEN = "(";
-    private static final String CLOSE = ")";
-
     private LogicOperator firstOperator;
     final Parameters parameters;
     private final StringBuilder query = new StringBuilder();
@@ -78,13 +74,13 @@ public class WhereBuilder {
         if (!subquery.isEmpty()) {
             addOperationIfNeeded(builder.firstOperator);
             if (inBlock) {
-                query.append(OPEN);
+                query.append("(");
             }
 
             query.append(subquery);
 
             if (inBlock) {
-                query.append(CLOSE);
+                query.append(")");
             }
 
             parameters.merge(builder.parameters);
@@ -94,9 +90,9 @@ public class WhereBuilder {
     private void addOperationIfNeeded(LogicOperator operator) {
         if (this.query.length() > 0) {
             this.query
-                    .append(BLANK_SEPARATOR)
+                    .append(" ")
                     .append(operator.name())
-                    .append(BLANK_SEPARATOR);
+                    .append(" ");
         } else {
             firstOperator = operator;
         }
