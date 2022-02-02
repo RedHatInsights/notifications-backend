@@ -6,6 +6,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import { linkTo } from '../Routes';
 import { useBundleTypes } from '../services/GetBundleById';
+import { useBundles } from '../services/GetBundles';
 
 type BundlePageParams = {
     bundleId: string;
@@ -14,6 +15,7 @@ type BundlePageParams = {
 export const BundlePage: React.FunctionComponent = () => {
     const { bundleId } = useParams<BundlePageParams>();
     const getBundles = useBundleTypes(bundleId);
+    const getApplications = useBundles();
 
     const columns = [ 'Application', 'Application Id', 'Event Types' ];
 
@@ -50,10 +52,8 @@ export const BundlePage: React.FunctionComponent = () => {
                             ))}
                         </Tr>
                     </Thead>
-                    <Tbody>{ (getBundles.payload.value.applications.length === 0
-                        ? 'There are no applications found for this bundle' : '') }</Tbody>
                     <Tbody>
-                        { getBundles.payload.value.applications.map(a =>
+                        { getApplications.bundles.map(b => b.applications.map(a =>
                             <Tr key={ a.id }>
                                 <Link to={ linkTo.application(a.id) }>{ a.displayName }</Link>
                                 <Td>{ a.id }</Td>
@@ -65,7 +65,7 @@ export const BundlePage: React.FunctionComponent = () => {
                                     <Button className='delete' type='button' variant='plain'
                                     >{ <TrashIcon /> } </Button></Td>
                             </Tr>
-                        )}
+                        ))}
                     </Tbody>
                 </TableComposable>
             </PageSection>
