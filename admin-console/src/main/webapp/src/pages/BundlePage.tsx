@@ -5,25 +5,19 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import { ListEventTypes } from '../components/ListEventTypes';
 import { linkTo } from '../Routes';
 import { useApplications } from '../services/Applications/GetApplicationById';
 import { useBundleTypes } from '../services/Applications/GetBundleById';
-import { useEventTypes } from '../services/EventTypes/GetEventTypes';
 
 type BundlePageParams = {
     bundleId: string;
 }
 
-type EventTypeParams = {
-    applicationId: string;
-  }
-
 export const BundlePage: React.FunctionComponent = () => {
     const { bundleId } = useParams<BundlePageParams>();
     const getBundles = useBundleTypes(bundleId);
     const getApplications = useApplications(bundleId);
-    const { applicationId } = useParams<EventTypeParams>();
-    const getEventTypes = useEventTypes(applicationId);
 
     const columns = [ 'Application', 'Application Id', 'Event Types' ];
 
@@ -67,10 +61,9 @@ export const BundlePage: React.FunctionComponent = () => {
                                 <Link to={ linkTo.application(a.id) }>{ a.displayName }</Link>
                                 <Td>{ a.id }</Td>
                                 <ChipGroup>
-                                    { getEventTypes.loading || getEventTypes.payload?.status !== 200 ? '' : getEventTypes.payload.value.map(e =>
-                                        <Chip isReadOnly key={ e.id }>{ e.displayName }
-                                        </Chip>
-                                    )}
+                                    <Chip isReadOnly>
+                                        <ListEventTypes />
+                                    </Chip>
                                 </ChipGroup>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
