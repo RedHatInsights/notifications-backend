@@ -1,4 +1,4 @@
-import { List, ListItem, ListVariant, Spinner } from '@patternfly/react-core';
+import { Chip, ChipGroup, Spinner } from '@patternfly/react-core';
 import * as React from 'react';
 
 import { useEventTypes } from '../services/EventTypes/GetEventTypes';
@@ -20,9 +20,14 @@ export const ListEventTypes: React.FunctionComponent<EventTypeListProps> = (prop
 
     return (
         <React.Fragment>
-            <List variant={ ListVariant.inline }>
-                <ListItem>{ getEventTypes }</ListItem>
-            </List>
+            <ChipGroup>
+                { getEventTypes.payload.value.length === 0 ? 'No event types' : '' }
+            </ChipGroup>
+            <ChipGroup>
+                { getEventTypes.payload.value.map(e => (
+                    <Chip isReadOnly key={ e.id }>{ e.displayName}</Chip>
+                ))}
+            </ChipGroup>
         </React.Fragment>
     );
 };

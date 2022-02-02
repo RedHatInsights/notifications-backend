@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, Chip, ChipGroup, PageSection, Spinner,
+import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner,
     Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -60,11 +60,11 @@ export const BundlePage: React.FunctionComponent = () => {
                             <Tr key={ a.id }>
                                 <Link to={ linkTo.application(a.id) }>{ a.displayName }</Link>
                                 <Td>{ a.id }</Td>
-                                <ChipGroup>
-                                    <Chip isReadOnly>
-                                        <ListEventTypes />
-                                    </Chip>
-                                </ChipGroup>
+                                <Td>
+                                    <ListEventTypes
+                                        appId={ a.id }
+                                    />
+                                </Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
                                     > { <PencilAltIcon /> } </Button></Td>
