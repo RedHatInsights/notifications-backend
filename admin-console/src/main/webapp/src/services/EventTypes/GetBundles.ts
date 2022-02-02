@@ -3,8 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useClient } from 'react-fetching-library';
 import { useUnmountPromise } from 'react-use';
 
-import { Operations } from '../generated/OpenapiInternal';
-import { Bundle } from '../types/Notifications';
+import { Operations } from '../../generated/OpenapiInternal';
+import { Bundle } from '../../types/Notifications';
 
 export const useBundles = () => {
     const client = useClient();

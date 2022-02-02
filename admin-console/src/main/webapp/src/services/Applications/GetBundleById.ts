@@ -2,24 +2,22 @@ import { validatedResponse, validationResponseTransformer } from 'openapi2typesc
 import { useMemo } from 'react';
 import { useQuery } from 'react-fetching-library';
 
-import { Operations } from '../generated/OpenapiInternal';
-import { EventType } from '../types/Notifications';
+import { Operations } from '../../generated/OpenapiInternal';
+import { Bundle } from '../../types/Notifications';
 
 const validateResponse = validationResponseTransformer(
-    (payload: Operations.InternalServiceGetEventTypes.Payload) => {
+    (payload: Operations.InternalServiceGetBundle.Payload) => {
         if (payload.status === 200) {
-            const eventTypes: ReadonlyArray<EventType> = payload.value.map(value => ({
-                id: value.id ?? '',
-                name: value.name,
-                displayName: value.display_name,
-                description: value.description ?? '',
-                applicationId: value.application_id
-            }));
+            const bundleTypes: Bundle = {
+                id: payload.value.id ?? '',
+                displayName: payload.value.display_name,
+                applications: []
+            };
 
             return validatedResponse(
-                'EventTypes',
+                'Bundle',
                 200,
-                eventTypes,
+                bundleTypes,
                 payload.errors
             );
         }
@@ -28,9 +26,9 @@ const validateResponse = validationResponseTransformer(
     }
 );
 
-export const useEventTypes = (applicationId: string) => {
-    const query = useQuery(Operations.InternalServiceGetEventTypes.actionCreator({
-        appId: applicationId
+export const useBundleTypes = (bundleId: string) => {
+    const query = useQuery(Operations.InternalServiceGetBundle.actionCreator({
+        bundleId
     }));
 
     const queryPayload = useMemo(() => {

@@ -5,7 +5,7 @@ import { Brand, Page, PageHeader, PageSection, PageSidebar, Spinner } from '@pat
 import React from 'react';
 
 import { Routes } from '../Routes';
-import { useBundles } from '../services/GetBundles';
+import { useBundles } from '../services/EventTypes/GetBundles';
 import { Navigation } from './Navigation';
 import logo from './redhat-logo.svg';
 

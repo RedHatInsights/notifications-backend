@@ -2,8 +2,8 @@ import { validatedResponse, validationResponseTransformer } from 'openapi2typesc
 import { useMemo } from 'react';
 import { useQuery } from 'react-fetching-library';
 
-import { Operations } from '../generated/OpenapiInternal';
-import { Application } from '../types/Notifications';
+import { Operations } from '../../generated/OpenapiInternal';
+import { Application } from '../../types/Notifications';
 
 const validateResponse = validationResponseTransformer(
     (payload: Operations.InternalServiceGetApplication.Payload) => {

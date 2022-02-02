@@ -1,12 +1,13 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, Button, Chip, ChipGroup, PageSection, Spinner,
+    Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { linkTo } from '../Routes';
-import { useBundleTypes } from '../services/GetBundleById';
-import { useBundles } from '../services/GetBundles';
+import { useApplications } from '../services/Applications/GetApplicationById';
+import { useBundleTypes } from '../services/Applications/GetBundleById';
 
 type BundlePageParams = {
     bundleId: string;
@@ -15,16 +16,16 @@ type BundlePageParams = {
 export const BundlePage: React.FunctionComponent = () => {
     const { bundleId } = useParams<BundlePageParams>();
     const getBundles = useBundleTypes(bundleId);
-    const getApplications = useBundles();
+    const getApplications = useApplications(bundleId);
 
     const columns = [ 'Application', 'Application Id', 'Event Types' ];
 
-    if (getBundles.loading) {
+    if (getApplications.loading) {
         return <Spinner />;
     }
 
-    if (getBundles.payload?.status !== 200) {
-        return <span>Error while loading bundles: {getBundles.errorObject.toString()}</span>;
+    if (getApplications.payload?.status !== 200) {
+        return <span>Error while loading applications: {getApplications.errorObject.toString()}</span>;
     }
 
     return (
@@ -33,7 +34,8 @@ export const BundlePage: React.FunctionComponent = () => {
                 <Title headingLevel='h1'>
                     <Breadcrumb>
                         <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
-                        <BreadcrumbItem target='#' >{ getBundles.payload.value.displayName }
+                        <BreadcrumbItem target='#' >{ (getBundles.loading || getBundles.payload?.status !== 200)
+                            ? <Spinner /> : getBundles.payload.value.displayName }
                         </BreadcrumbItem>
                     </Breadcrumb>
                 </Title>
@@ -53,19 +55,21 @@ export const BundlePage: React.FunctionComponent = () => {
                         </Tr>
                     </Thead>
                     <Tbody>
-                        { getApplications.bundles.map(b => b.applications.map(a =>
+                        { getApplications.payload.value.map(a =>
                             <Tr key={ a.id }>
                                 <Link to={ linkTo.application(a.id) }>{ a.displayName }</Link>
                                 <Td>{ a.id }</Td>
-                                <Td>event types</Td>
+                                <ChipGroup>
+                                    <Chip isReadOnly>event type</Chip>
+                                </ChipGroup>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
                                     > { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
                                     >{ <TrashIcon /> } </Button></Td>
-                            </Tr>
-                        ))}
+                            </Tr>)}
+
                     </Tbody>
                 </TableComposable>
             </PageSection>

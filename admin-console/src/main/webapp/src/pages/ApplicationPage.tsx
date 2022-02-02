@@ -13,11 +13,11 @@ import { useParams } from 'react-router';
 
 import { CreateEditModal } from '../components/CreateEditModal';
 import { DeleteModal } from '../components/DeleteModal';
-import { useCreateEventType } from '../services/CreateEventTypes';
-import { useDeleteEventType } from '../services/DeleteEventType';
-import { useApplicationTypes } from '../services/GetApplication';
-import { getBundleAction  } from '../services/GetBundleAction';
-import { useEventTypes } from '../services/GetEventTypes';
+import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
+import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
+import { useApplicationTypes } from '../services/EventTypes/GetApplication';
+import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
+import { useEventTypes } from '../services/EventTypes/GetEventTypes';
 import { EventType } from '../types/Notifications';
 
 type ApplicationPageParams = {
