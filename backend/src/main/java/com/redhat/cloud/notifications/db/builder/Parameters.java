@@ -22,11 +22,19 @@ class Parameters {
     }
 
     void addParams(Object... params) {
+        if (params == null) {
+            throw new IllegalArgumentException("Params must be non null");
+        }
+
         if (params.length % 2 != 0) {
             throw new IllegalArgumentException("Params must be an even number of arguments representing key/value pairs");
         }
 
         for (int i = 0; i < params.length; i += 2) {
+            if (params[i] == null) {
+                throw new IllegalArgumentException("Even param must be a non null object");
+            }
+
             addParam(params[i].toString(), params[i + 1]);
         }
     }
