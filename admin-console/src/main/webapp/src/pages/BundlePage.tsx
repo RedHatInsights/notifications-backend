@@ -8,15 +8,22 @@ import { Link, useParams } from 'react-router-dom';
 import { linkTo } from '../Routes';
 import { useApplications } from '../services/Applications/GetApplicationById';
 import { useBundleTypes } from '../services/Applications/GetBundleById';
+import { useEventTypes } from '../services/EventTypes/GetEventTypes';
 
 type BundlePageParams = {
     bundleId: string;
 }
 
+type EventTypeParams = {
+    applicationId: string;
+  }
+
 export const BundlePage: React.FunctionComponent = () => {
     const { bundleId } = useParams<BundlePageParams>();
     const getBundles = useBundleTypes(bundleId);
     const getApplications = useApplications(bundleId);
+    const { applicationId } = useParams<EventTypeParams>();
+    const getEventTypes = useEventTypes(applicationId);
 
     const columns = [ 'Application', 'Application Id', 'Event Types' ];
 
@@ -60,7 +67,10 @@ export const BundlePage: React.FunctionComponent = () => {
                                 <Link to={ linkTo.application(a.id) }>{ a.displayName }</Link>
                                 <Td>{ a.id }</Td>
                                 <ChipGroup>
-                                    <Chip isReadOnly>event type</Chip>
+                                    { getEventTypes.loading || getEventTypes.payload?.status !== 200 ? '' : getEventTypes.payload.value.map(e =>
+                                        <Chip isReadOnly key={ e.id }>{ e.displayName }
+                                        </Chip>
+                                    )}
                                 </ChipGroup>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
@@ -68,8 +78,8 @@ export const BundlePage: React.FunctionComponent = () => {
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
                                     >{ <TrashIcon /> } </Button></Td>
-                            </Tr>)}
-
+                            </Tr>
+                        )}
                     </Tbody>
                 </TableComposable>
             </PageSection>
