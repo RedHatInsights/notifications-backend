@@ -114,14 +114,18 @@ public class EndpointService {
                 try {
                     compositeType = targetType.stream().map(s -> {
                         String[] pieces = s.split(":", 2);
-                        if (pieces.length == 1) {
-                            return new CompositeEndpointType(EndpointType.valueOf(s.toUpperCase()));
-                        } else {
-                            return new CompositeEndpointType(EndpointType.valueOf(pieces[0].toUpperCase()), pieces[1]);
+                        try {
+                            if (pieces.length == 1) {
+                                return new CompositeEndpointType(EndpointType.valueOf(s.toUpperCase()));
+                            } else {
+                                return new CompositeEndpointType(EndpointType.valueOf(pieces[0].toUpperCase()), pieces[1]);
+                            }
+                        } catch (IllegalArgumentException e) {
+                            throw new BadRequestException("Unknown endpoint type: [" + s + "]", e);
                         }
                     }).collect(Collectors.toSet());
-                } catch (IllegalArgumentException e) {
-                    return Uni.createFrom().failure(() -> new BadRequestException("Unknown endpoint type(s)"));
+                } catch (BadRequestException badRequestException) {
+                    return Uni.createFrom().failure(() -> badRequestException);
                 }
                 endpoints = resources
                         .getEndpointsPerCompositeType(principal.getAccount(), compositeType, activeOnly, query, false);
