@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.db.converters.MapConverter;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Map;
@@ -31,7 +32,9 @@ public class CamelProperties extends EndpointProperties {
     @Convert(converter = BasicAuthenticationConverter.class)
     private BasicAuthentication basicAuthentication;
 
-    // Subtype for camel
+    // Todo: NOTIF-429 backward compatibility change - Remove soon.
+    @Transient
+    @Deprecated(forRemoval = true)
     private String subType;
 
     @Convert(converter = MapConverter.class)

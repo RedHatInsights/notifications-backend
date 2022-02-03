@@ -115,15 +115,18 @@ public class CamelTypeProcessorTest {
         JsonObject notifMetadata = payload.getJsonObject(NOTIF_METADATA_KEY);
         assertEquals(properties1.getDisableSslVerification().toString(), notifMetadata.getString("trustAll"));
         assertEquals(properties1.getUrl(), notifMetadata.getString("url"));
+        assertEquals(endpoint1.getSubType(), notifMetadata.getString("type"));
+        // Todo: NOTIF-429 backward compatibility change - Remove soon.
         assertEquals(properties1.getSubType(), notifMetadata.getString("type"));
+
         assertEquals(new MapConverter().convertToDatabaseColumn(properties1.getExtras()), notifMetadata.getString("extras"));
         assertEquals(properties1.getSecretToken(), notifMetadata.getString(TOKEN_HEADER));
         checkBasicAuthentication(notifMetadata, properties1.getBasicAuthentication());
 
         // Finally, we need to check the Kafka message metadata.
         UUID historyId = result.get(0).getId();
-        checkKafkaMetadata(message, historyId, properties1.getSubType());
-        checkCloudEventMetadata(message, historyId, endpoint1.getAccountId(), properties1.getSubType());
+        checkKafkaMetadata(message, historyId, endpoint1.getSubType());
+        checkCloudEventMetadata(message, historyId, endpoint1.getAccountId(), endpoint1.getSubType());
         checkTracingMetadata(message);
     }
 
@@ -160,12 +163,14 @@ public class CamelTypeProcessorTest {
         properties.setDisableSslVerification(TRUE);
         properties.setSecretToken("top-secret");
         properties.setBasicAuthentication(basicAuth);
-        properties.setSubType("sub-type");
         properties.setExtras(Map.of("foo", "bar"));
+        // Todo: NOTIF-429 backward compatibility change - Remove soon.
+        properties.setSubType("sub-type");
 
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
         endpoint.setType(CAMEL);
+        endpoint.setSubType("sub-type");
         endpoint.setProperties(properties);
         return endpoint;
     }

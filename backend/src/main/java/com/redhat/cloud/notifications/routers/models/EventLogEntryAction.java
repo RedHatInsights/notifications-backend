@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.models;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.EndpointType;
 
@@ -20,9 +21,12 @@ public class EventLogEntryAction {
     @NotNull
     private EndpointType endpointType;
 
+    private String endpointSubType;
+
     @NotNull
     private Boolean invocationResult;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private UUID endpointId;
 
     @Nullable
@@ -42,6 +46,14 @@ public class EventLogEntryAction {
 
     public void setEndpointType(EndpointType endpointType) {
         this.endpointType = endpointType;
+    }
+
+    public String getEndpointSubType() {
+        return endpointSubType;
+    }
+
+    public void setEndpointSubType(String endpointSubType) {
+        this.endpointSubType = endpointSubType;
     }
 
     public Boolean getInvocationResult() {

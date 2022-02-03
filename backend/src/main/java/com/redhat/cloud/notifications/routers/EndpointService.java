@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -97,7 +98,11 @@ public class EndpointService {
                 schema = @Schema(type = SchemaType.INTEGER)
             )
     })
-    public Uni<EndpointPage> getEndpoints(@Context SecurityContext sec, @BeanParam Query query, @QueryParam("type") List<String> targetType, @QueryParam("active") Boolean activeOnly) {
+    public Uni<EndpointPage> getEndpoints(
+            @Context SecurityContext sec,
+            @BeanParam Query query,
+            @QueryParam("type") List<String> targetType,
+            @QueryParam("active") Boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
         return sessionFactory.withSession(session -> {
@@ -105,15 +110,26 @@ public class EndpointService {
             Uni<Long> count;
 
             if (targetType != null && targetType.size() > 0) {
-                Set<EndpointType> endpointType;
+                Set<CompositeEndpointType> compositeType;
                 try {
-                    endpointType = targetType.stream().map(s -> EndpointType.valueOf(s.toUpperCase())).collect(Collectors.toSet());
-                } catch (IllegalArgumentException e) {
-                    return Uni.createFrom().failure(() -> new BadRequestException("Unknown endpoint type(s)"));
+                    compositeType = targetType.stream().map(s -> {
+                        String[] pieces = s.split(":", 2);
+                        try {
+                            if (pieces.length == 1) {
+                                return new CompositeEndpointType(EndpointType.valueOf(s.toUpperCase()));
+                            } else {
+                                return new CompositeEndpointType(EndpointType.valueOf(pieces[0].toUpperCase()), pieces[1]);
+                            }
+                        } catch (IllegalArgumentException e) {
+                            throw new BadRequestException("Unknown endpoint type: [" + s + "]", e);
+                        }
+                    }).collect(Collectors.toSet());
+                } catch (BadRequestException badRequestException) {
+                    return Uni.createFrom().failure(() -> badRequestException);
                 }
                 endpoints = resources
-                        .getEndpointsPerType(principal.getAccount(), endpointType, activeOnly, query, false);
-                count = resources.getEndpointsCountPerType(principal.getAccount(), endpointType, activeOnly);
+                        .getEndpointsPerCompositeType(principal.getAccount(), compositeType, activeOnly, query, false);
+                count = resources.getEndpointsCountPerCompositeType(principal.getAccount(), compositeType, activeOnly, false);
             } else {
                 endpoints = resources.getEndpoints(principal.getAccount(), query);
                 count = resources.getEndpointsCount(principal.getAccount());
