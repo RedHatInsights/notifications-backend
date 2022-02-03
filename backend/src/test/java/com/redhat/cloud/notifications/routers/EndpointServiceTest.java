@@ -1135,7 +1135,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(400)
-                .body(is("Unknown endpoint type(s)"));
+                .body(is("Unknown endpoint type: [foo]"));
 
         given()
                 .header(identityHeader)
@@ -1144,7 +1144,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(400)
-                .body(is("Unknown endpoint type(s)"));
+                .body(is("Unknown endpoint type: [bar]"));
     }
 
     //    @Test
