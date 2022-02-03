@@ -34,6 +34,7 @@ public class CamelProperties extends EndpointProperties {
 
     // Todo: NOTIF-429 backward compatibility change - Remove soon.
     @Transient
+    @Deprecated(forRemoval = true)
     private String subType;
 
     @Convert(converter = MapConverter.class)
