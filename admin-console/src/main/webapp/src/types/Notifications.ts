@@ -8,6 +8,7 @@ export interface Application {
     id: string;
     displayName: string;
     bundleId: string;
+    name: string;
 
 }
 
