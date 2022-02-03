@@ -59,6 +59,13 @@ public class NotificationHistory extends CreationTimestamped {
     @JsonIgnore
     private EndpointType endpointType;
 
+    /*
+     * This is a duplicate of the Endpoint#subType field. We need it to guarantee that the endpoint type will remain
+     * available for the event log even if the endpoint is deleted by an org admin.
+     */
+    @JsonIgnore
+    private String endpointSubType;
+
     @Convert(converter = NotificationHistoryDetailsConverter.class)
     private Map<String, Object> details;
 
@@ -137,6 +144,14 @@ public class NotificationHistory extends CreationTimestamped {
         this.endpointType = endpointType;
     }
 
+    public String getEndpointSubType() {
+        return endpointSubType;
+    }
+
+    public void setEndpointSubType(String endpointSubType) {
+        this.endpointSubType = endpointSubType;
+    }
+
     public Map<String, Object> getDetails() {
         return details;
     }
@@ -167,6 +182,7 @@ public class NotificationHistory extends CreationTimestamped {
         history.setInvocationTime(invocationTime);
         history.setEndpoint(endpoint);
         history.setEndpointType(endpoint.getType());
+        history.setEndpointSubType(endpoint.getSubType());
         history.setEvent(event);
         history.setInvocationResult(false);
         history.setId(historyId);

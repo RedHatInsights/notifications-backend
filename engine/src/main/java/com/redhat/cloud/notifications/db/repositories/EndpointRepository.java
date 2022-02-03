@@ -46,7 +46,7 @@ public class EndpointRepository {
      * action recipients.
      */
     public Uni<Endpoint> getOrCreateDefaultEmailSubscription(String accountId) {
-        String query = "FROM Endpoint WHERE accountId = :accountId AND type = :endpointType";
+        String query = "FROM Endpoint WHERE accountId = :accountId AND compositeType.type = :endpointType";
         return commonStateSessionFactory.withSession(true, session -> {
             return session.createQuery(query, Endpoint.class)
                     .setParameter("accountId", accountId)
@@ -107,7 +107,7 @@ public class EndpointRepository {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                 "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL) " +
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
-                "AND e.type = :endpointType";
+                "AND e.compositeType.type = :endpointType";
 
         return sessionFactory.withStatelessSession(statelessSession -> {
             return statelessSession.createQuery(query, Endpoint.class)
@@ -148,6 +148,10 @@ public class EndpointRepository {
                 if (props != null) {
                     Endpoint endpoint = endpointsMap.get(props.getId());
                     endpoint.setProperties(props);
+                    // Todo: NOTIF-429 backward compatibility change - Remove soon.
+                    if (typedEndpointClass.equals(CamelProperties.class)) {
+                        endpoint.getProperties(CamelProperties.class).setSubType(endpoint.getSubType());
+                    }
                 }
             })).replaceWith(Uni.createFrom().voidItem());
         }
