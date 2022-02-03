@@ -23,7 +23,7 @@ export const BundlePage: React.FunctionComponent = () => {
     const getApplications = useApplications(bundleId);
     const newApplication = useCreateApplication();
 
-    const columns = [ 'Application', 'Application Id', 'Event Types' ];
+    const columns = [ 'Application', 'Name', 'Event Types', 'Application Id' ];
 
     const [ applications, setApplications ] = React.useState<Partial<Application>>({});
     const [ showModal, setShowModal ] = React.useState(false);
@@ -41,6 +41,12 @@ export const BundlePage: React.FunctionComponent = () => {
         setShowModal(true);
         setIsEdit(false);
         setApplications({});
+    };
+
+    const editApplication = (a: Application) => {
+        setShowModal(true);
+        setIsEdit(true);
+        setApplications(a);
     };
 
     const handleSubmit = React.useCallback((eventType) => {
@@ -114,14 +120,16 @@ export const BundlePage: React.FunctionComponent = () => {
                                     <Button variant="link" component={ (props: any) =>
                                         <Link { ...props } to={ linkTo.application(a.id) } /> }>{ a.displayName }</Button>
                                 </Td>
-                                <Td>{ a.id }</Td>
+                                <Td>{ a.name}</Td>
                                 <Td>
                                     <ListEventTypes
                                         appId={ a.id }
                                     />
                                 </Td>
+                                <Td>{ a.id }</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
+                                        onClick={ () => editApplication(a) }
                                     > { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
