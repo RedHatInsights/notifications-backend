@@ -3,8 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useClient } from 'react-fetching-library';
 import { useUnmountPromise } from 'react-use';
 
-import { Operations } from '../generated/OpenapiInternal';
-import { Bundle } from '../types/Notifications';
+import { Operations } from '../../generated/OpenapiInternal';
+import { Bundle } from '../../types/Notifications';
 
 export const useBundles = () => {
     const client = useClient();
@@ -46,6 +46,7 @@ export const useBundles = () => {
                         draftBundle.applications = applications.value.map(a => ({
                             id: a.id ?? '',
                             displayName: a.display_name,
+                            name: a.name,
                             bundleId: a.bundle_id
                         }));
                     }

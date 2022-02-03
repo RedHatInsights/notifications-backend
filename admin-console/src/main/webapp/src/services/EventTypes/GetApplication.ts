@@ -2,24 +2,22 @@ import { validatedResponse, validationResponseTransformer } from 'openapi2typesc
 import { useMemo } from 'react';
 import { useQuery } from 'react-fetching-library';
 
-import { Operations } from '../generated/OpenapiInternal';
-import { EventType } from '../types/Notifications';
+import { Operations } from '../../generated/OpenapiInternal';
+import { Application } from '../../types/Notifications';
 
 const validateResponse = validationResponseTransformer(
-    (payload: Operations.InternalServiceGetEventTypes.Payload) => {
+    (payload: Operations.InternalServiceGetApplication.Payload) => {
         if (payload.status === 200) {
-            const eventTypes: ReadonlyArray<EventType> = payload.value.map(value => ({
-                id: value.id ?? '',
-                name: value.name,
-                displayName: value.display_name,
-                description: value.description ?? '',
-                applicationId: value.application_id
-            }));
+            const applicationTypes: Application = {
+                id: payload.value.id ?? '',
+                displayName: payload.value.display_name,
+                name: payload.value.name,
+                bundleId: payload.value.bundle_id };
 
             return validatedResponse(
-                'EventTypes',
+                'Application',
                 200,
-                eventTypes,
+                applicationTypes,
                 payload.errors
             );
         }
@@ -28,8 +26,8 @@ const validateResponse = validationResponseTransformer(
     }
 );
 
-export const useEventTypes = (applicationId: string) => {
-    const query = useQuery(Operations.InternalServiceGetEventTypes.actionCreator({
+export const useApplicationTypes = (applicationId: string) => {
+    const query = useQuery(Operations.InternalServiceGetApplication.actionCreator({
         appId: applicationId
     }));
 
