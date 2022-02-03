@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -161,39 +160,6 @@ public class EndpointResources {
                 activeOnly,
                 useStatelessSession
         );
-    }
-
-    // Note: This method uses a stateless session
-    public Uni<List<Endpoint>> getTargetEndpoints(String tenant, EventType eventType) {
-        String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled = TRUE AND b.eventType = :eventType AND bga.behaviorGroup.accountId = :accountId";
-
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery(query, Endpoint.class)
-                    .setParameter("eventType", eventType)
-                    .setParameter("accountId", tenant)
-                    .getResultList()
-                    .onItem().call(endpoints -> loadProperties(endpoints, true));
-        });
-    }
-
-    // Note: This method uses a stateless session
-    public Uni<List<Endpoint>> getTargetEndpointsFromType(String tenant, String bundleName, String applicationName, String eventTypeName, EndpointType endpointType) {
-        String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND bga.behaviorGroup.accountId = :accountId " +
-                "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
-                "AND e.compositeType.type = :endpointType";
-
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery(query, Endpoint.class)
-                    .setParameter("applicationName", applicationName)
-                    .setParameter("eventTypeName", eventTypeName)
-                    .setParameter("accountId", tenant)
-                    .setParameter("bundleName", bundleName)
-                    .setParameter("endpointType", endpointType)
-                    .getResultList()
-                    .onItem().call(endpoints -> loadProperties(endpoints, true));
-        });
     }
 
     public Uni<List<Endpoint>> getEndpoints(String tenant, Query limiter) {
