@@ -102,6 +102,10 @@ public class ApplicationResources {
         }
     }
 
+    public EventType getEventType(UUID eventTypeId) {
+        return entityManager.find(EventType.class, eventTypeId);
+    }
+
     public EventType getEventType(String bundleName, String applicationName, String eventTypeName) {
         final String query = "FROM EventType WHERE name = :eventTypeName AND application.name = :applicationName AND application.bundle.name = :bundleName";
         return entityManager.createQuery(query, EventType.class)

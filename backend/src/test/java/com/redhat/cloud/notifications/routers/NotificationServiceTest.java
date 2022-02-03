@@ -76,9 +76,9 @@ public class NotificationServiceTest extends DbIsolatedTest {
     }
 
     private Header initRbacMock(String tenant, String username, RbacAccess access) {
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
         mockServerConfig.addMockRbacAccess(identityHeaderValue, access);
-        return TestHelpers.createIdentityHeader(identityHeaderValue);
+        return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
 
     @Test

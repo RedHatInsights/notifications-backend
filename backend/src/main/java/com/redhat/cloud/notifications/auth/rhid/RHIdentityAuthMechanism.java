@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.auth.rhid;
 
+import com.redhat.cloud.notifications.auth.ConsoleDotPrincipal;
+import com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -10,6 +12,7 @@ import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.quarkus.vertx.http.runtime.security.HttpCredentialTransport;
 import io.smallrye.mutiny.Uni;
 import io.vertx.ext.web.RoutingContext;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Collections;
@@ -25,32 +28,34 @@ import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 @ApplicationScoped
 public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
 
+    @ConfigProperty(name = "internal-rbac.enabled", defaultValue = "true")
+    Boolean isInternalRbacEnabled;
+
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {
         String xRhIdentityHeaderValue = routingContext.request().getHeader(X_RH_IDENTITY_HEADER);
         String path = routingContext.normalizedPath();
 
-        // Those two come via Turnpike and have a different identity header.
-        // Skip the header check for now
-        if (path.startsWith(API_INTERNAL + "/")) {
-            return Uni.createFrom().item(QuarkusSecurityIdentity.builder()
-                // Set a dummy principal, but add no roles.
-                .setPrincipal(new RhIdPrincipal("-noauth-", "-1"))
-                .build());
-        }
-
-        // Access that did not go through 3Scale (e.g internal API)
-        if (xRhIdentityHeaderValue == null) {
-
+        if (path.startsWith(API_INTERNAL) && !isInternalRbacEnabled) {
+            // Disable internal auth - useful for clowder until we setup turnpike
+            return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
+                    .setPrincipal(ConsoleDotPrincipal.noIdentity())
+                    .addRole(RbacIdentityProvider.RBAC_INTERNAL_UI_USER)
+                    .addRole(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+                    .build());
+        } else if (xRhIdentityHeaderValue == null) { // Access that did not go through 3Scale or turnpike
             boolean good = false;
 
             // We block access unless the openapi file is requested.
-            if (path.startsWith("/api/notifications") || path.startsWith("/api/integrations") || path.startsWith("/api/private")) {
+            if (path.startsWith("/api/notifications") || path.startsWith("/api/integrations") || path.startsWith("/api/private")
+                || path.startsWith(API_INTERNAL)) {
                 if (path.endsWith("openapi.json")) {
                     good = true;
                 }
-            } else if (path.startsWith("/openapi.json") || path.startsWith(API_INTERNAL)
-                    || path.startsWith("/admin") || path.startsWith("/health") || path.startsWith("/metrics")) {
+            }
+
+            if (path.startsWith("/openapi.json") || path.startsWith(API_INTERNAL + "/validation") || path.startsWith(API_INTERNAL + "/version")
+                    || path.startsWith("/health") || path.startsWith("/metrics")) {
                 good = true;
             }
 
@@ -59,7 +64,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
             } else {
                 return Uni.createFrom().item(QuarkusSecurityIdentity.builder()
                         // Set a dummy principal, but add no roles.
-                        .setPrincipal(new RhIdPrincipal("-noauth-", "-1"))
+                        .setPrincipal(ConsoleDotPrincipal.noIdentity())
                         .build());
             }
         }

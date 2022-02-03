@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.models.EventType;

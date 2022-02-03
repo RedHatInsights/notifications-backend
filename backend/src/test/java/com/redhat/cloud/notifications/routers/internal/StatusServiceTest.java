@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerClientConfig;
@@ -13,6 +13,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static com.redhat.cloud.notifications.models.Status.MAINTENANCE;
 import static com.redhat.cloud.notifications.models.Status.UP;
 import static io.restassured.RestAssured.given;
@@ -35,10 +37,13 @@ public class StatusServiceTest extends DbIsolatedTest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
+    @ConfigProperty(name = "internal-ui.admin-role")
+    String adminRole;
+
     @Test
     public void testValidCurrentStatus() {
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo("tenant", "username");
-        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("tenant", "username");
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
         // The test must not be run with a cached status from another test.
@@ -108,6 +113,7 @@ public class StatusServiceTest extends DbIsolatedTest {
     private void getBundles() {
         given()
                 .basePath(API_INTERNAL)
+                .header(createTurnpikeIdentityHeader("admin", adminRole))
                 .when()
                 .get("/bundles")
                 .then()
@@ -171,6 +177,7 @@ public class StatusServiceTest extends DbIsolatedTest {
 
         given()
                 .basePath(API_INTERNAL)
+                .header(createTurnpikeIdentityHeader("admin", adminRole))
                 .contentType(JSON)
                 .body(Json.encode(currentStatus))
                 .when()

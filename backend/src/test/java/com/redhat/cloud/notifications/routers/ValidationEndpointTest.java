@@ -32,8 +32,8 @@ class ValidationEndpointTest {
     void shouldReturnNotFoundWhenTripleIsInvalid() {
         when(appResources.getEventType(eq("blabla"), eq("Notifications"), eq("Any"))).thenThrow(new NoResultException());
 
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo("empty", "user");
-        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "user");
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
@@ -56,8 +56,8 @@ class ValidationEndpointTest {
         EventType eventType = new EventType();
         when(appResources.getEventType(eq("my-bundle"), eq("Policies"), eq("Any"))).thenReturn(eventType);
 
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo("empty", "user");
-        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "user");
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 

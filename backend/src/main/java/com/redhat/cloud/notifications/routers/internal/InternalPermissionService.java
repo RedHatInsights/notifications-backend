@@ -1,0 +1,93 @@
+package com.redhat.cloud.notifications.routers.internal;
+
+import com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider;
+import com.redhat.cloud.notifications.db.InternalRoleAccessResources;
+import com.redhat.cloud.notifications.models.InternalRoleAccess;
+import com.redhat.cloud.notifications.routers.internal.models.AddAccessRequest;
+import com.redhat.cloud.notifications.routers.internal.models.InternalUserPermissions;
+import io.quarkus.security.identity.SecurityIdentity;
+
+import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
+import javax.validation.Valid;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+
+@RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+@Path(API_INTERNAL + "/access")
+public class InternalPermissionService {
+
+    @Inject
+    InternalRoleAccessResources internalRoleAccessResources;
+
+    @Inject
+    SecurityIdentity securityIdentity;
+
+    @GET
+    @Path("/me")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_USER) // Overrides admin permission
+    public InternalUserPermissions getPermissions() {
+        InternalUserPermissions permissions = new InternalUserPermissions();
+        if (securityIdentity.hasRole(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)) {
+            permissions.setAdmin(true);
+            return permissions;
+        }
+
+        String privateRolePrefix = InternalRoleAccess.getPrivateRolePrefix();
+
+        Set<String> roles = securityIdentity
+                .getRoles()
+                .stream()
+                .filter(s -> s.startsWith(privateRolePrefix))
+                .map(s -> s.substring(privateRolePrefix.length()))
+                .collect(Collectors.toSet());
+
+        List<InternalRoleAccess> access = internalRoleAccessResources.getByRole(roles);
+        access.stream()
+                .map(InternalRoleAccess::getApplicationId)
+                .map(UUID::toString)
+                .forEach(permissions::addApplicationId);
+
+        return permissions;
+    }
+
+    @GET
+    @Path("/")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<InternalRoleAccess> getAccessList() {
+        return internalRoleAccessResources.getAll();
+    }
+
+    @POST
+    @Path("/")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public InternalRoleAccess addAccess(@Valid AddAccessRequest addAccessRequest) {
+        InternalRoleAccess access = new InternalRoleAccess();
+        access.setApplicationId(addAccessRequest.applicationId);
+        access.setRole(addAccessRequest.role);
+
+        return internalRoleAccessResources.addAccess(access);
+    }
+
+    @DELETE
+    @Path("/{internalRoleAccessId}")
+    public void deleteAccess(@Valid @PathParam("internalRoleAccessId") UUID internalRoleAccessId) {
+        internalRoleAccessResources.removeAccess(internalRoleAccessId);
+    }
+
+}

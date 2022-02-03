@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers.models.internal;
+package com.redhat.cloud.notifications.routers.internal.models;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;

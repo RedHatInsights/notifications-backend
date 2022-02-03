@@ -1,20 +1,14 @@
 package com.redhat.cloud.notifications.auth.rhid;
 
-import java.security.Principal;
+import com.redhat.cloud.notifications.auth.ConsoleDotPrincipal;
 
-public class RhIdPrincipal implements Principal {
+public class RhIdPrincipal extends ConsoleDotPrincipal<RhIdentity> {
 
-    private String name;
-    private String account;
+    private final String account;
 
-    public RhIdPrincipal(String name, String account) {
-        this.name = name;
-        this.account = account;
-    }
-
-    @Override
-    public String getName() {
-        return name;
+    public RhIdPrincipal(RhIdentity identity) {
+        super(identity);
+        this.account = identity.getAccountNumber();
     }
 
     public String getAccount() {

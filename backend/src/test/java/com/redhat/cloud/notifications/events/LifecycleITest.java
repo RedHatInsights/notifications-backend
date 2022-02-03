@@ -17,14 +17,15 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
-import com.redhat.cloud.notifications.routers.models.internal.RequestDefaultBehaviorGroupPropertyList;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -41,6 +42,7 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -75,10 +77,13 @@ public class LifecycleITest extends DbIsolatedTest {
     @Inject
     EntityManager entityManager;
 
+    @ConfigProperty(name = "internal-ui.admin-role")
+    String adminRole;
+
     private Header initRbacMock(String tenant, String username, MockServerClientConfig.RbacAccess access) {
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
         mockServerConfig.addMockRbacAccess(identityHeaderValue, access);
-        return TestHelpers.createIdentityHeader(identityHeaderValue);
+        return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
 
     @Test
@@ -99,19 +104,20 @@ public class LifecycleITest extends DbIsolatedTest {
         // All events are stored in the canonical email endpoint
         RequestEmailSubscriptionProperties userEmailEndpointRequest = new RequestEmailSubscriptionProperties();
 
-        // Identity header used for all public APIs calls. Internal APIs calls don't need that.
+        // Identity header used for all public APIs calls. Internal APIs calls need a different token.
         Header identityHeader = initRbacMock(accountId, username, RbacAccess.FULL_ACCESS);
+        Header turnpikeIdentityHeader = createTurnpikeIdentityHeader("admin", adminRole);
 
         // First, we need a bundle, an app and an event type. Let's create them!
-        String bundleId = createBundle();
-        String appId = createApp(bundleId);
-        String eventTypeId = createEventType(appId);
+        String bundleId = createBundle(turnpikeIdentityHeader);
+        String appId = createApp(turnpikeIdentityHeader, bundleId);
+        String eventTypeId = createEventType(turnpikeIdentityHeader, appId);
         checkAllEventTypes(identityHeader);
 
         // We also need behavior groups.
         String behaviorGroupId1 = createBehaviorGroup(identityHeader, bundleId);
         String behaviorGroupId2 = createBehaviorGroup(identityHeader, bundleId);
-        String defaultBehaviorGroupId = createDefaultBehaviorGroup(bundleId);
+        String defaultBehaviorGroupId = createDefaultBehaviorGroup(turnpikeIdentityHeader, bundleId);
 
         // We need actions for our behavior groups.
         String endpointId1 = createWebhookEndpoint(identityHeader, SECRET_TOKEN);
@@ -127,13 +133,13 @@ public class LifecycleITest extends DbIsolatedTest {
         addBehaviorGroupActions(identityHeader, defaultBehaviorGroupId, 404, endpointId1, endpointId2, endpointId3);
 
         // Can't add default actions to behavior group using internal API
-        addDefaultBehaviorGroupActions(behaviorGroupId1, 404, defaultBehaviorGroupProperties);
+        addDefaultBehaviorGroupActions(turnpikeIdentityHeader, behaviorGroupId1, 404, defaultBehaviorGroupProperties);
 
         // Adding the same config multiple times yields an error
-        addDefaultBehaviorGroupActions(defaultBehaviorGroupId, 400, defaultBehaviorGroupProperties, defaultBehaviorGroupProperties, defaultBehaviorGroupProperties);
+        addDefaultBehaviorGroupActions(turnpikeIdentityHeader, defaultBehaviorGroupId, 400, defaultBehaviorGroupProperties, defaultBehaviorGroupProperties, defaultBehaviorGroupProperties);
 
         // Adding an email endpoint to the default behavior group
-        addDefaultBehaviorGroupActions(defaultBehaviorGroupId, 200, defaultBehaviorGroupProperties);
+        addDefaultBehaviorGroupActions(turnpikeIdentityHeader, defaultBehaviorGroupId, 200, defaultBehaviorGroupProperties);
 
         // Before the notifications split, a Kafka message was sent here.
 
@@ -155,7 +161,7 @@ public class LifecycleITest extends DbIsolatedTest {
         retry(() -> checkEndpointHistory(identityHeader, emailEndpoint, 0, true, 200));
 
         // We'll link the event type with the default behavior group
-        linkDefaultBehaviorGroup(eventTypeId, defaultBehaviorGroupId);
+        linkDefaultBehaviorGroup(turnpikeIdentityHeader, eventTypeId, defaultBehaviorGroupId);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId, behaviorGroupId1, defaultBehaviorGroupId);
 
         // We'll link an additional behavior group to the event type.
@@ -218,7 +224,7 @@ public class LifecycleITest extends DbIsolatedTest {
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId, defaultBehaviorGroupId);
 
         // Unlinking default behavior groups
-        unlinkDefaultBehaviorGroup(eventTypeId, defaultBehaviorGroupId);
+        unlinkDefaultBehaviorGroup(turnpikeIdentityHeader, eventTypeId, defaultBehaviorGroupId);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId);
         // Before the notifications split, a Kafka message was sent here.
 
@@ -229,12 +235,12 @@ public class LifecycleITest extends DbIsolatedTest {
         retry(() -> checkEndpointHistory(identityHeader, emailEndpoint, 2, true, 200));
 
         // Linking the default behavior group again
-        linkDefaultBehaviorGroup(eventTypeId, defaultBehaviorGroupId);
+        linkDefaultBehaviorGroup(turnpikeIdentityHeader, eventTypeId, defaultBehaviorGroupId);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId, defaultBehaviorGroupId);
         // Before the notifications split, a Kafka message was sent here.
 
         // Deleting the default behavior group should unlink it
-        deleteDefaultBehaviorGroup(defaultBehaviorGroupId);
+        deleteDefaultBehaviorGroup(turnpikeIdentityHeader, defaultBehaviorGroupId);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId);
         // Before the notifications split, a Kafka message was sent here.
 
@@ -242,14 +248,15 @@ public class LifecycleITest extends DbIsolatedTest {
          * We'll finish with a bundle removal.
          * Why would we do that here? I don't really know, it was there before the big test refactor... :)
          */
-        deleteBundle(bundleId);
+        deleteBundle(turnpikeIdentityHeader, bundleId);
     }
 
-    private String createBundle() {
+    private String createBundle(Header header) {
         Bundle bundle = new Bundle(BUNDLE_NAME, "A bundle");
 
         String responseBody = given()
                 .basePath(API_INTERNAL)
+                .header(header)
                 .contentType(JSON)
                 .body(Json.encode(bundle))
                 .when()
@@ -269,7 +276,7 @@ public class LifecycleITest extends DbIsolatedTest {
         return jsonBundle.getString("id");
     }
 
-    private String createApp(String bundleId) {
+    private String createApp(Header header, String bundleId) {
         Application app = new Application();
         app.setBundleId(UUID.fromString(bundleId));
         app.setName(APP_NAME);
@@ -278,6 +285,7 @@ public class LifecycleITest extends DbIsolatedTest {
         String responseBody = given()
                 .when()
                 .basePath(API_INTERNAL)
+                .header(header)
                 .contentType(JSON)
                 .body(Json.encode(app))
                 .post("/applications")
@@ -297,7 +305,7 @@ public class LifecycleITest extends DbIsolatedTest {
         return jsonApp.getString("id");
     }
 
-    private String createEventType(String appId) {
+    private String createEventType(Header header, String appId) {
         EventType eventType = new EventType();
         eventType.setApplicationId(UUID.fromString(appId));
         eventType.setName(EVENT_TYPE_NAME);
@@ -307,6 +315,7 @@ public class LifecycleITest extends DbIsolatedTest {
         String responseBody = given()
                 .when()
                 .basePath(API_INTERNAL)
+                .header(header)
                 .contentType(JSON)
                 .body(Json.encode(eventType))
                 .post("/eventTypes")
@@ -369,9 +378,6 @@ public class LifecycleITest extends DbIsolatedTest {
         assertEquals(behaviorGroup.getBundleId().toString(), jsonBehaviorGroup.getString("bundle_id"));
         assertNotNull(jsonBehaviorGroup.getString("created"));
 
-        // No identity header means that we are creating a default behavior group
-        assertEquals(identityHeader == null, jsonBehaviorGroup.getBoolean("default_behavior"));
-
         return jsonBehaviorGroup.getString("id");
     }
 
@@ -379,8 +385,8 @@ public class LifecycleITest extends DbIsolatedTest {
         return createBehaviorGroupInternal(API_NOTIFICATIONS_V_1_0 + "/notifications/behaviorGroups", identityHeader, bundleId);
     }
 
-    private String createDefaultBehaviorGroup(String bundleId) {
-        return createBehaviorGroupInternal(API_INTERNAL + "/behaviorGroups/default", null, bundleId);
+    private String createDefaultBehaviorGroup(Header turnpikeIdentityHeader, String bundleId) {
+        return createBehaviorGroupInternal(API_INTERNAL + "/behaviorGroups/default", turnpikeIdentityHeader, bundleId);
     }
 
     @Transactional
@@ -418,9 +424,10 @@ public class LifecycleITest extends DbIsolatedTest {
         entityManager.persist(history);
     }
 
-    private void deleteDefaultBehaviorGroup(String defaultBehaviorGroupId) {
+    private void deleteDefaultBehaviorGroup(Header turnpikeIdentityHeader, String defaultBehaviorGroupId) {
         given()
                 .basePath(API_INTERNAL)
+                .header(turnpikeIdentityHeader)
                 .pathParam("behaviorGroupId", defaultBehaviorGroupId)
                 .when()
                 .delete("/behaviorGroups/default/{behaviorGroupId}")
@@ -527,9 +534,10 @@ public class LifecycleITest extends DbIsolatedTest {
                 .contentType(TEXT);
     }
 
-    private void addDefaultBehaviorGroupActions(String defaultBehaviorGroupId, int expectedHttpStatusCode, RequestDefaultBehaviorGroupPropertyList... properties) {
+    private void addDefaultBehaviorGroupActions(Header turnpikeIdentityHeader, String defaultBehaviorGroupId, int expectedHttpStatusCode, RequestDefaultBehaviorGroupPropertyList... properties) {
         given()
                 .basePath(API_INTERNAL)
+                .header(turnpikeIdentityHeader)
                 .contentType(JSON)
                 .pathParam("behaviorGroupId", defaultBehaviorGroupId)
                 .body(Json.encode(List.of(properties)))
@@ -554,9 +562,10 @@ public class LifecycleITest extends DbIsolatedTest {
                 .contentType(TEXT);
     }
 
-    private void linkDefaultBehaviorGroup(String eventTypeId, String behaviorGroupId) {
+    private void linkDefaultBehaviorGroup(Header turnpikeIdentityHeader, String eventTypeId, String behaviorGroupId) {
         given()
                 .basePath(API_INTERNAL)
+                .header(turnpikeIdentityHeader)
                 .pathParam("behaviorGroupId", behaviorGroupId)
                 .pathParam("eventTypeId", eventTypeId)
                 .when()
@@ -566,9 +575,10 @@ public class LifecycleITest extends DbIsolatedTest {
                 .contentType(TEXT);
     }
 
-    private void unlinkDefaultBehaviorGroup(String eventTypeId, String behaviorGroupId) {
+    private void unlinkDefaultBehaviorGroup(Header turnpikeIdentityHeader, String eventTypeId, String behaviorGroupId) {
         given()
                 .basePath(API_INTERNAL)
+                .header(turnpikeIdentityHeader)
                 .pathParam("behaviorGroupId", behaviorGroupId)
                 .pathParam("eventTypeId", eventTypeId)
                 .when()
@@ -657,9 +667,10 @@ public class LifecycleITest extends DbIsolatedTest {
         }
     }
 
-    private void deleteBundle(String bundleId) {
+    private void deleteBundle(Header turnpikeIdentityHeader, String bundleId) {
         given()
                 .basePath(API_INTERNAL)
+                .header(turnpikeIdentityHeader)
                 .when()
                 .pathParam("bundleId", bundleId)
                 .delete("/bundles/{bundleId}")

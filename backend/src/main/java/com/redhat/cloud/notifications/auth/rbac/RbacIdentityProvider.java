@@ -1,8 +1,13 @@
 package com.redhat.cloud.notifications.auth.rbac;
 
-import com.redhat.cloud.notifications.auth.rhid.RhIdPrincipal;
+import com.redhat.cloud.notifications.auth.ConsoleDotIdentity;
+import com.redhat.cloud.notifications.auth.ConsoleDotIdentityWrapper;
+import com.redhat.cloud.notifications.auth.ConsoleDotPrincipal;
+import com.redhat.cloud.notifications.auth.ConsoleDotPrincipalFactory;
 import com.redhat.cloud.notifications.auth.rhid.RhIdentity;
 import com.redhat.cloud.notifications.auth.rhid.RhIdentityAuthenticationRequest;
+import com.redhat.cloud.notifications.auth.turnpike.TurnpikeSamlIdentity;
+import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.AuthenticationRequestContext;
@@ -18,6 +23,7 @@ import org.jboss.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.security.Principal;
 import java.time.Duration;
 import java.util.Base64;
 
@@ -35,6 +41,15 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     public static final String RBAC_WRITE_NOTIFICATIONS = "write:notifications";
     public static final String RBAC_READ_INTEGRATIONS_ENDPOINTS = "read:integrations_ep";
     public static final String RBAC_WRITE_INTEGRATIONS_ENDPOINTS = "write:integrations_ep";
+
+    // This permission is added to users using turnpike to access the internal API
+    public static final String RBAC_INTERNAL_UI_USER = "read:internal";
+
+    // This permission is added to users of the ${internal-ui.admin-role} group
+    public static final String RBAC_INTERNAL_UI_ADMIN = "write:admin";
+
+    @ConfigProperty(name = "internal-ui.admin-role")
+    String adminRole;
 
     private static final Logger log = Logger.getLogger(RbacIdentityProvider.class);
 
@@ -62,14 +77,15 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     @Override
     public Uni<SecurityIdentity> authenticate(RhIdentityAuthenticationRequest rhAuthReq, AuthenticationRequestContext authenticationRequestContext) {
         if (!isRbacEnabled) {
-            RhIdPrincipal principal;
+            Principal principal;
             String xH = rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER);
             if (xH != null) {
-                RhIdentity rhid = getRhIdentityFromString(xH);
-                principal = new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(), rhid.getIdentity().getAccountNumber());
+                ConsoleDotIdentity identity = getRhIdentityFromString(xH);
+                principal = ConsoleDotPrincipalFactory.fromIdentity(identity);
             } else {
-                principal = new RhIdPrincipal("-noauth-", "-1");
+                principal = ConsoleDotPrincipal.noIdentity();
             }
+
             return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
                     .setPrincipal(principal)
                     .addRole(RBAC_READ_NOTIFICATIONS_EVENTS)
@@ -77,6 +93,9 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                     .addRole(RBAC_WRITE_NOTIFICATIONS)
                     .addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS)
                     .addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+                    .addRole(RBAC_INTERNAL_UI_USER)
+                    .addRole(RBAC_INTERNAL_UI_ADMIN)
+                    .addRole(adminRole)
                     .build());
         }
         // Retrieve the identity header from the authentication request
@@ -84,17 +103,14 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                 .onItem().transformToUni(xRhIdHeader ->
                         // Start building a QuarkusSecurityIdentity
                         Uni.createFrom().item(QuarkusSecurityIdentity.builder())
-                                .onItem().transform(builder -> {
+                                .onItem().transformToUni(builder -> {
                                     // Decode the header and deserialize the resulting JSON
-                                    RhIdentity rhid = getRhIdentityFromString(xRhIdHeader);
-                                    RhIdPrincipal principal = new RhIdPrincipal(rhid.getIdentity().getUser().getUsername(), rhid.getIdentity().getAccountNumber());
-                                    return builder.setPrincipal(principal);
-                                })
-                                // A decoding or a deserialization failure will cause an authentication failure
-                                .onFailure().transform(AuthenticationFailedException::new)
-                                // Otherwise, we can call the RBAC server
-                                .onItem().transformToUni(builder ->
-                                        rbacServer.getRbacInfo("notifications,integrations", xRhIdHeader)
+                                    ConsoleDotIdentity identity = getRhIdentityFromString(xRhIdHeader);
+                                    ConsoleDotPrincipal<?> principal = ConsoleDotPrincipalFactory.fromIdentity(identity);
+                                    builder.setPrincipal(principal);
+
+                                    if (identity instanceof RhIdentity) {
+                                        return rbacServer.getRbacInfo("notifications,integrations", xRhIdHeader)
                                                 /*
                                                  * RBAC server calls fail regularly because of RBAC instability so we need to retry.
                                                  * IOException is thrown when the connection between us and RBAC is reset during an RBAC call execution.
@@ -127,13 +143,30 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                                                         builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
                                                     }
                                                     return builder.build();
-                                                })
-                                )
+                                                });
+                                    } else if (identity instanceof TurnpikeSamlIdentity) {
+                                        builder.addRole(RBAC_INTERNAL_UI_USER);
+                                        for (String role : ((TurnpikeSamlIdentity) identity).associate.role) {
+                                            if (role.equals(adminRole)) {
+                                                builder.addRole(RBAC_INTERNAL_UI_ADMIN);
+                                            }
+
+                                            String internalRole = InternalRoleAccess.getPrivateRole(role);
+                                            builder.addRole(internalRole);
+                                        }
+
+                                        return Uni.createFrom().item(builder.build());
+                                    } else {
+                                        return Uni.createFrom().failure(new AuthenticationFailedException());
+                                    }
+                                })
+                                // A decoding or a deserialization failure will cause an authentication failure
+                                .onFailure().transform(AuthenticationFailedException::new)
                 );
     }
 
-    private static RhIdentity getRhIdentityFromString(String xRhIdHeader) {
+    private static ConsoleDotIdentity getRhIdentityFromString(String xRhIdHeader) {
         String xRhDecoded = new String(Base64.getDecoder().decode(xRhIdHeader.getBytes(UTF_8)), UTF_8);
-        return Json.decodeValue(xRhDecoded, RhIdentity.class);
+        return Json.decodeValue(xRhDecoded, ConsoleDotIdentityWrapper.class).getIdentity();
     }
 }
