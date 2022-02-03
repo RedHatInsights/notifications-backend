@@ -1,4 +1,4 @@
-import { ActionGroup, Button, Form, FormGroup, HelperText, HelperTextItem, Modal, ModalVariant, TextArea, TextInput } from '@patternfly/react-core';
+import { ActionGroup, Button, Form, FormGroup, HelperText, HelperTextItem, Modal, ModalVariant, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
 import { Application } from '../types/Notifications';
