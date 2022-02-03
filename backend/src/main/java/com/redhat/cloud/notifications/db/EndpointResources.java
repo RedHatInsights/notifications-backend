@@ -93,22 +93,12 @@ public class EndpointResources {
     public Uni<List<Endpoint>> getEndpointsPerCompositeType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter, boolean useStatelessSession) {
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
-        return commonStateSessionFactory.withSession(useStatelessSession, session -> queryBuilderEndpointsPerType(accountId, type, activeOnly)
+        return commonStateSessionFactory.withSession(useStatelessSession, session -> EndpointResources.queryBuilderEndpointsPerType(accountId, type, activeOnly)
                 .limit(limit)
                 .sort(sort)
                 .build(session::createQuery)
                 .getResultList()
                 .onItem().call(endpoints -> loadProperties(endpoints, useStatelessSession)));
-    }
-
-    public Uni<List<Endpoint>> getEndpointsPerType(String accountId, Set<EndpointType> type, Boolean activeOnly, Query limiter, boolean useStatelessSession) {
-        return getEndpointsPerCompositeType(
-                accountId,
-                type.stream().map(CompositeEndpointType::new).collect(Collectors.toSet()),
-                activeOnly,
-                limiter,
-                useStatelessSession
-        );
     }
 
     public Uni<EndpointType> getEndpointTypeById(String accountId, UUID endpointId) {
@@ -123,7 +113,7 @@ public class EndpointResources {
 
     public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties, boolean useStatelessSession) {
         return commonStateSessionFactory.withSession(useStatelessSession, session -> {
-            return getEndpointsPerType(accountId, Set.of(EndpointType.EMAIL_SUBSCRIPTION), null, null, useStatelessSession)
+            return getEndpointsPerCompositeType(accountId, Set.of(new CompositeEndpointType(EndpointType.EMAIL_SUBSCRIPTION)), null, null, useStatelessSession)
                     .onItem().call(endpoints -> loadProperties(endpoints, useStatelessSession))
                     .onItem().transformToUni(emailEndpoints -> {
                         Optional<Endpoint> endpointOptional = emailEndpoints
@@ -148,18 +138,9 @@ public class EndpointResources {
     }
 
     public Uni<Long> getEndpointsCountPerCompositeType(String tenant, Set<CompositeEndpointType> type, Boolean activeOnly, boolean useStatelessSession) {
-        return commonStateSessionFactory.withSession(useStatelessSession, session -> queryBuilderEndpointsPerType(tenant, type, activeOnly)
+        return commonStateSessionFactory.withSession(useStatelessSession, session -> EndpointResources.queryBuilderEndpointsPerType(tenant, type, activeOnly)
                 .buildCount(session::createQuery)
                 .getSingleResult());
-    }
-
-    public Uni<Long> getEndpointsCountPerType(String tenant, Set<EndpointType> type, Boolean activeOnly, boolean useStatelessSession) {
-        return getEndpointsCountPerCompositeType(
-                tenant,
-                type.stream().map(CompositeEndpointType::new).collect(Collectors.toSet()),
-                activeOnly,
-                useStatelessSession
-        );
     }
 
     public Uni<List<Endpoint>> getEndpoints(String tenant, Query limiter) {
@@ -342,22 +323,7 @@ public class EndpointResources {
         return Uni.createFrom().voidItem();
     }
 
-    private <T extends EndpointProperties> Uni<List<T>> find(Class<T> typedEndpointClass, Set<UUID> endpointIds, boolean useStatelessSession) {
-        if (useStatelessSession) {
-            String query = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:endpointIds)";
-            return sessionFactory.withStatelessSession(statelessSession -> {
-                return statelessSession.createQuery(query, typedEndpointClass)
-                        .setParameter("endpointIds", endpointIds)
-                        .getResultList();
-            });
-        } else {
-            return sessionFactory.withSession(session -> {
-                return session.find(typedEndpointClass, endpointIds.toArray());
-            });
-        }
-    }
-
-    private QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly) {
+    static QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly) {
         Set<EndpointType> basicTypes = type.stream().filter(c -> c.getSubType() == null).map(CompositeEndpointType::getType).collect(Collectors.toSet());
         Set<CompositeEndpointType> compositeTypes = type.stream().filter(c -> c.getSubType() != null).collect(Collectors.toSet());
         return QueryBuilder
