@@ -11,6 +11,7 @@ const validateResponse = validationResponseTransformer(
             const applicationTypes: Application = {
                 id: payload.value.id ?? '',
                 displayName: payload.value.display_name,
+                name: payload.value.name,
                 bundleId: payload.value.bundle_id };
 
             return validatedResponse(

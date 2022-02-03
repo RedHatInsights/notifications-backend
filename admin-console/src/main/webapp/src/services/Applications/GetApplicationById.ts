@@ -11,7 +11,8 @@ const validateResponse = validationResponseTransformer(
             const applications: ReadonlyArray<Application> = payload.value.map(value => ({
                 id: value.id ?? '',
                 displayName: value.display_name,
-                bundleId: value.bundle_id
+                bundleId: value.bundle_id,
+                name: value.name
             }));
 
             return validatedResponse(

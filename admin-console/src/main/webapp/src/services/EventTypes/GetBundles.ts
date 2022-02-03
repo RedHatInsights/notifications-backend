@@ -46,6 +46,7 @@ export const useBundles = () => {
                         draftBundle.applications = applications.value.map(a => ({
                             id: a.id ?? '',
                             displayName: a.display_name,
+                            name: a.name,
                             bundleId: a.bundle_id
                         }));
                     }

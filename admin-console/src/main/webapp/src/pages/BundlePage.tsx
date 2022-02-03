@@ -5,10 +5,13 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import { CreateEditApplicationModal } from '../components/CreateEditApplicationModal';
 import { ListEventTypes } from '../components/ListEventTypes';
 import { linkTo } from '../Routes';
+import { useCreateApplication } from '../services/Applications/CreateApplication';
 import { useApplications } from '../services/Applications/GetApplicationById';
 import { useBundleTypes } from '../services/Applications/GetBundleById';
+import { Application } from '../types/Notifications';
 
 type BundlePageParams = {
     bundleId: string;
@@ -18,8 +21,46 @@ export const BundlePage: React.FunctionComponent = () => {
     const { bundleId } = useParams<BundlePageParams>();
     const getBundles = useBundleTypes(bundleId);
     const getApplications = useApplications(bundleId);
+    const newApplication = useCreateApplication();
 
     const columns = [ 'Application', 'Application Id', 'Event Types' ];
+
+    const [ applications, setApplications ] = React.useState<Partial<Application>>({});
+    const [ showModal, setShowModal ] = React.useState(false);
+    const [ isEdit, setIsEdit ] = React.useState(false);
+
+    const bundle = React.useMemo(() => {
+        if (getBundles.payload?.status === 200) {
+            return getBundles.payload.value;
+        }
+
+        return undefined;
+    }, [ getBundles.payload?.status, getBundles.payload?.value ]);
+
+    const createApplication = () => {
+        setShowModal(true);
+        setIsEdit(false);
+        setApplications({});
+    };
+
+    const handleSubmit = React.useCallback((eventType) => {
+        setShowModal(false);
+        const mutate = newApplication.mutate;
+        mutate({
+            id: eventType.id,
+            displayName: eventType.displayName ?? '',
+            name: eventType.name ?? '',
+            bundleId
+
+        })
+        .then (getApplications.query);
+
+    }, [ bundleId, getApplications.query, newApplication.mutate ]);
+
+    const onClose = () => {
+        setShowModal(false);
+        getApplications.query();
+    };
 
     if (getApplications.loading) {
         return <Spinner />;
@@ -45,7 +86,18 @@ export const BundlePage: React.FunctionComponent = () => {
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button variant='primary' type='button'> Create Application </Button>
+                                    <Button variant='primary' type='button' onClick={ createApplication }> Create Application </Button>
+                                    <CreateEditApplicationModal
+                                        isEdit={ isEdit }
+                                        bundleName={ bundle?.displayName }
+                                        initialApplication = { applications }
+                                        showModal={ showModal }
+                                        applicationName={ applications.displayName }
+                                        onClose={ onClose }
+                                        onSubmit={ handleSubmit }
+                                        isLoading={ getApplications.loading }
+
+                                    />
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
@@ -58,7 +110,10 @@ export const BundlePage: React.FunctionComponent = () => {
                     <Tbody>
                         { getApplications.payload.value.map(a =>
                             <Tr key={ a.id }>
-                                <Link to={ linkTo.application(a.id) }>{ a.displayName }</Link>
+                                <Td>
+                                    <Button variant="link" component={ (props: any) =>
+                                        <Link { ...props } to={ linkTo.application(a.id) } /> }>{ a.displayName }</Button>
+                                </Td>
                                 <Td>{ a.id }</Td>
                                 <Td>
                                     <ListEventTypes

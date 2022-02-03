@@ -137,6 +137,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             <PageSection>
                 <Title headingLevel="h1">
                     <Breadcrumb>
+                        <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
                         <BreadcrumbItem target='#'>{ bundle ? bundle.display_name : <Spinner /> }
                         </BreadcrumbItem>
 
