@@ -21,7 +21,7 @@ services:
     command: -url=jdbc:postgresql://postgres:5432/notifications -schemas=public -user=postgres -password=postgres -connectRetries=60 migrate
     volumes:
       - type: 'bind'
-        source: ./../backend/src/main/resources/db/migration
+        source: ./../database/src/main/resources/db/migration
         target: /flyway/sql
         read_only: true
     environment:

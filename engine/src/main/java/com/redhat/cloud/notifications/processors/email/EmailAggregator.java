@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
@@ -67,7 +66,7 @@ public class EmailAggregator {
                     // We need its event type to determine the target endpoints.
                     String eventType = getEventType(aggregation);
                     // Let's retrieve these targets.
-                    return endpointRepository.getTargetEndpointsFromType(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), eventType, EndpointType.EMAIL_SUBSCRIPTION)
+                    return endpointRepository.getTargetEmailSubscriptionEndpoints(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), eventType)
                             .onItem().transform(Set::copyOf)
                             // Now we want to determine who will actually receive the aggregation email.
                             .onItem().transformToUni(endpoints ->
