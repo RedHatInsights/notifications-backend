@@ -1,20 +1,22 @@
 package com.redhat.cloud.notifications.ephemeral;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.db.FlywayEndEvent;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
+import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.logging.Logger;
 
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.io.InputStream;
 
+import static com.redhat.cloud.notifications.db.FlywayWorkaround.FLYWAY_PRIORITY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
@@ -35,8 +37,7 @@ public class EphemeralDataInitializer {
     /**
      * This method will always be invoked after the Flyway DB migration is complete.
      */
-    // TODO When FlywayWorkaround is removed, replace FlywayEndEvent with StartupEvent.
-    void init(@Observes FlywayEndEvent event) {
+    void init(@Observes @Priority(FLYWAY_PRIORITY + 1) StartupEvent event) {
         String envName = System.getenv(ENV_NAME_KEY);
         if (envName != null && envName.startsWith(ENV_EPHEMERAL_PREFIX)) {
             loadFromFile();

@@ -96,10 +96,6 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-reactive-pg-client</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-scheduler</artifactId>
-        </dependency>
 
         <!-- Flyway specific dependencies -->
         <dependency>
@@ -146,8 +142,10 @@
 
         <!-- Test dependencies -->
         <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit5</artifactId>
+            <groupId>com.redhat.cloud.notifications</groupId>
+            <artifactId>notifications-common</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>

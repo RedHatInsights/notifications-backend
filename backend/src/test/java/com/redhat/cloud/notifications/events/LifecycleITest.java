@@ -57,10 +57,10 @@ import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
+import static com.redhat.cloud.notifications.ReflectionHelper.updateField;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
-import static com.redhat.cloud.notifications.TestHelpers.updateField;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_ENDPOINTS_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_MESSAGES_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;

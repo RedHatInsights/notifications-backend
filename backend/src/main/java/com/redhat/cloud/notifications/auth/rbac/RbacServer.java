@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.auth.rbac;
 
-import com.redhat.cloud.notifications.auth.rhid.RHIdentityAuthMechanism;
 import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
@@ -12,6 +11,8 @@ import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+
+import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 
 @Path("/api/rbac/v1")
 @RegisterRestClient(configKey = "rbac-authentication")
@@ -25,7 +26,7 @@ public interface RbacServer {
     @Produces("application/json")
     @CacheResult(cacheName = "rbac-cache")
     Uni<RbacRaw> getRbacInfo(@QueryParam("application") String application,
-                             @HeaderParam(RHIdentityAuthMechanism.IDENTITY_HEADER) String rhIdentity
+                             @HeaderParam(X_RH_IDENTITY_HEADER) String rhIdentity
 
     );
 }
