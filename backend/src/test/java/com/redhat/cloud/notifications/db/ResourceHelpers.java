@@ -1,12 +1,9 @@
 package com.redhat.cloud.notifications.db;
 
-import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
@@ -18,7 +15,6 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.JsonObject;
 import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -48,9 +44,6 @@ public class ResourceHelpers {
 
     @Inject
     BundleResources bundleResources;
-
-    @Inject
-    EmailAggregationRepository emailAggregationRepository;
 
     @Inject
     BehaviorGroupResources behaviorGroupResources;
@@ -240,19 +233,5 @@ public class ResourceHelpers {
 
     public Uni<Boolean> deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupResources.deleteDefault(behaviorGroupId);
-    }
-
-    public Uni<Boolean> addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
-        EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, bundle, application, policyId, insightsId);
-        return emailAggregationRepository.addEmailAggregation(aggregation);
-    }
-
-    public Uni<Boolean> addEmailAggregation(String accountId, String bundleName, String applicationName, JsonObject payload) {
-        EmailAggregation aggregation = new EmailAggregation();
-        aggregation.setAccountId(accountId);
-        aggregation.setBundleName(bundleName);
-        aggregation.setApplicationName(applicationName);
-        aggregation.setPayload(payload);
-        return emailAggregationRepository.addEmailAggregation(aggregation);
     }
 }

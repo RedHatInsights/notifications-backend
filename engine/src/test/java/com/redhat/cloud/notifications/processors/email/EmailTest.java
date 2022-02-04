@@ -4,12 +4,9 @@ import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -46,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.ReflectionHelper.updateField;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -55,15 +54,12 @@ import static org.mockserver.model.HttpResponse.response;
 @QuarkusTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @QuarkusTestResource(TestLifecycleManager.class)
-public class EmailTest extends DbIsolatedTest {
+public class EmailTest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
     @Inject
     EmailSubscriptionTypeProcessor emailProcessor;
-
-    @Inject
-    EndpointEmailSubscriptionResources subscriptionResources;
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
@@ -84,10 +80,10 @@ public class EmailTest extends DbIsolatedTest {
     void init() {
         String url = String.format("http://%s/v1/sendEmails", mockServerConfig.getRunningAddress());
 
-        TestHelpers.updateField(emailSender, "bopUrl", url, EmailSender.class);
-        TestHelpers.updateField(emailSender, "bopApiToken", BOP_TOKEN, EmailSender.class);
-        TestHelpers.updateField(emailSender, "bopEnv", BOP_ENV, EmailSender.class);
-        TestHelpers.updateField(emailSender, "bopClientId", BOP_CLIENT_ID, EmailSender.class);
+        updateField(emailSender, "bopUrl", url, EmailSender.class);
+        updateField(emailSender, "bopApiToken", BOP_TOKEN, EmailSender.class);
+        updateField(emailSender, "bopEnv", BOP_ENV, EmailSender.class);
+        updateField(emailSender, "bopClientId", BOP_CLIENT_ID, EmailSender.class);
     }
 
     private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {
@@ -111,7 +107,7 @@ public class EmailTest extends DbIsolatedTest {
         String application = "policies";
 
         Multi.createFrom().items(usernames)
-                .onItem().transformToUniAndConcatenate(username -> subscriptionResources.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT))
+                .onItem().transformToUniAndConcatenate(username -> subscribe(tenant, username, bundle, application))
                 .onItem().ignoreAsUni()
                 .chain(() -> {
                     final List<String> bodyRequests = new ArrayList<>();
@@ -186,8 +182,7 @@ public class EmailTest extends DbIsolatedTest {
                                     assertTrue(bodyRequest.contains("03 Aug 2020 15:22 UTC"));
                                 }
                             });
-                })
-                .await().indefinitely();
+                }).chain(() -> clearSubscriptions()).await().indefinitely();
     }
 
     @Test
@@ -199,7 +194,7 @@ public class EmailTest extends DbIsolatedTest {
         String application = "policies";
 
         sessionFactory.withSession(session -> Multi.createFrom().items(usernames)
-                .onItem().transformToUniAndConcatenate(username -> subscriptionResources.subscribe(tenant, username, bundle, application, EmailSubscriptionType.INSTANT))
+                .onItem().transformToUniAndConcatenate(username -> subscribe(tenant, username, bundle, application))
                 .onItem().ignoreAsUni()
                 .chain(() -> {
                     final List<String> bodyRequests = new ArrayList<>();
@@ -268,7 +263,7 @@ public class EmailTest extends DbIsolatedTest {
                                 assertEquals(0, bodyRequests.size());
                             });
                 })
-        ).await().indefinitely();
+        ).chain(() -> clearSubscriptions()).await().indefinitely();
     }
 
     private String usernameOfRequest(String request, String[] users) {
@@ -358,4 +353,28 @@ public class EmailTest extends DbIsolatedTest {
         }
     }
 
+    private Uni<Boolean> subscribe(String accountNumber, String username, String bundleName, String applicationName) {
+        String query = "INSERT INTO endpoint_email_subscriptions(account_id, user_id, application_id, subscription_type) " +
+                "SELECT :accountId, :userId, a.id, :subscriptionType " +
+                "FROM applications a, bundles b WHERE a.bundle_id = b.id AND a.name = :applicationName AND b.name = :bundleName " +
+                "ON CONFLICT (account_id, user_id, application_id, subscription_type) DO NOTHING";
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createNativeQuery(query)
+                    .setParameter("accountId", accountNumber)
+                    .setParameter("userId", username)
+                    .setParameter("bundleName", bundleName)
+                    .setParameter("applicationName", applicationName)
+                    .setParameter("subscriptionType", INSTANT.name())
+                    .executeUpdate()
+                    .replaceWith(Boolean.TRUE);
+        });
+    }
+
+    private Uni<Void> clearSubscriptions() {
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createNativeQuery("DELETE FROM endpoint_email_subscriptions")
+                    .executeUpdate()
+                    .replaceWithVoid();
+        });
+    }
 }

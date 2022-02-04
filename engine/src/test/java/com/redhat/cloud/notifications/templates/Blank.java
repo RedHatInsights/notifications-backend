@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 
-// TODO NOTIF-450 Temp duplicate of the same class in the engine module. Remove ASAP!
 public class Blank implements EmailTemplate {
 
     @Override

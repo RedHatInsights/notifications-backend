@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.processors.webhook;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -37,7 +36,7 @@ import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class WebhookTest extends DbIsolatedTest {
+public class WebhookTest {
 
     private static final long MAX_RETRY_ATTEMPTS = 4L;
 

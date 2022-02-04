@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
@@ -24,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class EmailAggregationRepositoryTest extends DbIsolatedTest {
+public class EmailAggregationRepositoryTest {
 
     private static final ZoneId UTC = ZoneId.of("UTC");
     private static final String ACCOUNT_ID = "123456789";
@@ -49,7 +48,8 @@ public class EmailAggregationRepositoryTest extends DbIsolatedTest {
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
         EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, BUNDLE_NAME, APP_NAME);
 
-        sessionFactory.withSession(session -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1)
+        sessionFactory.withStatelessSession(statelessSession -> clearEmailAggregations()
+                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1))
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2))
                 .chain(() -> resourceHelpers.addEmailAggregation("other-account", BUNDLE_NAME, APP_NAME, PAYLOAD2))
                 .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2))
@@ -76,7 +76,7 @@ public class EmailAggregationRepositoryTest extends DbIsolatedTest {
                 .invoke(aggregations -> assertEquals(0, aggregations.size()))
                 .chain(aggregations -> getApplicationsWithPendingAggregation(start, end))
                 .invoke(keys -> assertEquals(3, keys.size()))
-        ).await().indefinitely();
+        ).chain(() -> clearEmailAggregations()).await().indefinitely();
     }
 
     @Test
@@ -100,6 +100,14 @@ public class EmailAggregationRepositoryTest extends DbIsolatedTest {
                     .setParameter("start", start)
                     .setParameter("end", end)
                     .getResultList();
+        });
+    }
+
+    private Uni<Void> clearEmailAggregations() {
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createQuery("DELETE FROM EmailAggregation")
+                    .executeUpdate()
+                    .replaceWithVoid();
         });
     }
 }
