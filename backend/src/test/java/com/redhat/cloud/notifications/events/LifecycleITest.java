@@ -1,69 +1,46 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.Json;
-import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Event;
-import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import com.redhat.cloud.notifications.processors.email.EmailSender;
-import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import com.redhat.cloud.notifications.routers.models.internal.RequestDefaultBehaviorGroupPropertyList;
-import com.redhat.cloud.notifications.templates.Blank;
-import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
-import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.http.Header;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.mockserver.model.HttpRequest;
 
-import javax.enterprise.inject.Any;
 import javax.inject.Inject;
-import java.io.IOException;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
-import static com.redhat.cloud.notifications.ReflectionHelper.updateField;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
-import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
-import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_ENDPOINTS_COUNTER_NAME;
-import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_MESSAGES_COUNTER_NAME;
-import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -74,9 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -93,28 +67,13 @@ public class LifecycleITest extends DbIsolatedTest {
     private static final String BUNDLE_NAME = "my-bundle";
     private static final String EVENT_TYPE_NAME = "all";
     private static final String WEBHOOK_MOCK_PATH = "/test/lifecycle";
-    private static final String EMAIL_SENDER_MOCK_PATH = "/test-email-sender/lifecycle";
     private static final String SECRET_TOKEN = "super-secret-token";
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
     @Inject
-    @Any
-    InMemoryConnector inMemoryConnector;
-
-    @Inject
-    MicrometerAssertionHelper micrometerAssertionHelper;
-
-    @InjectMock
-    EmailTemplateFactory emailTemplateFactory;
-
-    @InjectMock
-    RbacRecipientUsersProvider rbacRecipientUsersProvider;
-
-    // InjectSpy allows us to update the fields via reflection (Inject does not)
-    @InjectSpy
-    EmailSender emailSender;
+    Mutiny.SessionFactory sessionFactory;
 
     private Header initRbacMock(String tenant, String username, MockServerClientConfig.RbacAccess access) {
         String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);
@@ -123,10 +82,16 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     @Test
-    void test() throws IOException, InterruptedException {
+    void test() {
+        /*
+         * TODO
+         * The following code was written before the notifications backend/engine split. It was modified to allow
+         * splitting the projects, but some parts of it are no longer relevant now. It should probably be rewritten
+         * entirely.
+         */
+
         final String accountId = "tenant";
         final String username = "user";
-        setupEmailMock(accountId, username);
 
         RequestDefaultBehaviorGroupPropertyList defaultBehaviorGroupProperties = new RequestDefaultBehaviorGroupPropertyList();
         defaultBehaviorGroupProperties.setOnlyAdmins(true);
@@ -170,8 +135,7 @@ public class LifecycleITest extends DbIsolatedTest {
         // Adding an email endpoint to the default behavior group
         addDefaultBehaviorGroupActions(defaultBehaviorGroupId, 200, defaultBehaviorGroupProperties);
 
-        // Let's push a first message! It should not trigger any webhook call since we didn't link the event type with any behavior group.
-        pushMessage(0, 0, 0);
+        // Before the notifications split, a Kafka message was sent here.
 
         // Now we'll link the event type with one behavior group.
         updateEventTypeBehaviors(identityHeader, eventTypeId, behaviorGroupId1);
@@ -180,8 +144,11 @@ public class LifecycleITest extends DbIsolatedTest {
         // Get user email endpoint
         String emailEndpoint = getEmailEndpoint(identityHeader, userEmailEndpointRequest);
 
-        // Pushing a new message should trigger two webhook calls.
-        pushMessage(2, 0, 0);
+        // Before the notifications split, a Kafka message was sent here.
+        createEvent(accountId, eventTypeId).call(event -> {
+            return createNotificationHistory(event, endpointId1, true)
+                    .chain(() -> createNotificationHistory(event, endpointId2, true));
+        }).await().indefinitely();
 
         // Let's check the notifications history.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 1, true, 200));
@@ -196,8 +163,12 @@ public class LifecycleITest extends DbIsolatedTest {
         updateEventTypeBehaviors(identityHeader, eventTypeId, behaviorGroupId1, behaviorGroupId2);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId, behaviorGroupId1, behaviorGroupId2, defaultBehaviorGroupId);
 
-        // Pushing a new message should trigger three webhook calls and 1 emails - email is not sent as the user is not subscribed
-        pushMessage(3, 1, 0);
+        // Before the notifications split, a Kafka message was sent here.
+        createEvent(accountId, eventTypeId).call(event -> {
+            return createNotificationHistory(event, endpointId1, true)
+                    .chain(() -> createNotificationHistory(event, endpointId2, true))
+                    .chain(() -> createNotificationHistory(event, endpointId3, false));
+        }).await().indefinitely();
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 2, true, 200));
@@ -208,8 +179,13 @@ public class LifecycleITest extends DbIsolatedTest {
         // Lets subscribe the user to the email preferences
         subscribeUserPreferences(identityHeader, BUNDLE_NAME, APP_NAME);
 
-        // Pushing a new message should trigger three webhook calls and 1 email
-        pushMessage(3, 1, 1);
+        // Before the notifications split, a Kafka message was sent here.
+        createEvent(accountId, eventTypeId).call(event -> {
+            return createNotificationHistory(event, endpointId1, true)
+                    .chain(() -> createNotificationHistory(event, endpointId2, true))
+                    .chain(() -> createNotificationHistory(event, endpointId3, false))
+                    .chain(() -> createNotificationHistory(event, emailEndpoint, true));
+        }).await().indefinitely();
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 3, true, 200));
@@ -223,8 +199,13 @@ public class LifecycleITest extends DbIsolatedTest {
          */
         addBehaviorGroupActions(identityHeader, behaviorGroupId2, 200, endpointId3, endpointId2);
 
-        // Pushing a new message should trigger three webhook calls.
-        pushMessage(3, 1, 1);
+        // Before the notifications split, a Kafka message was sent here.
+        createEvent(accountId, eventTypeId).call(event -> {
+            return createNotificationHistory(event, endpointId1, true)
+                    .chain(() -> createNotificationHistory(event, endpointId2, true))
+                    .chain(() -> createNotificationHistory(event, endpointId3, false))
+                    .chain(() -> createNotificationHistory(event, emailEndpoint, true));
+        }).await().indefinitely();
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 4, true, 200));
@@ -243,7 +224,7 @@ public class LifecycleITest extends DbIsolatedTest {
         // Unlinking default behavior groups
         unlinkDefaultBehaviorGroup(eventTypeId, defaultBehaviorGroupId);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId);
-        pushMessage(0, 0, 0);
+        // Before the notifications split, a Kafka message was sent here.
 
         // The notifications history should be exactly the same than last time.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 4, true, 200));
@@ -254,12 +235,12 @@ public class LifecycleITest extends DbIsolatedTest {
         // Linking the default behavior group again
         linkDefaultBehaviorGroup(eventTypeId, defaultBehaviorGroupId);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId, defaultBehaviorGroupId);
-        pushMessage(0, 1, 1);
+        // Before the notifications split, a Kafka message was sent here.
 
         // Deleting the default behavior group should unlink it
         deleteDefaultBehaviorGroup(defaultBehaviorGroupId);
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId);
-        pushMessage(0, 0, 0);
+        // Before the notifications split, a Kafka message was sent here.
 
         /*
          * We'll finish with a bundle removal.
@@ -405,6 +386,49 @@ public class LifecycleITest extends DbIsolatedTest {
         return createBehaviorGroupInternal(API_INTERNAL + "/behaviorGroups/default", null, bundleId);
     }
 
+    private Uni<Event> createEvent(String accountId, String eventTypeId) {
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createQuery("FROM EventType WHERE id = :id", EventType.class)
+                    .setParameter("id", UUID.fromString(eventTypeId))
+                    .getSingleResult()
+                    .onItem().transformToUni(eventType -> {
+                        Event event = new Event();
+                        event.setAccountId(accountId);
+                        event.setEventType(eventType);
+                        event.prePersist();
+                        return statelessSession.insert(event)
+                            .replaceWith(event);
+                    });
+        });
+    }
+
+    private Uni<Void> createNotificationHistory(Event event, String endpointId, boolean invocationResult) {
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.createQuery("FROM Endpoint WHERE id = :id", Endpoint.class)
+                    .setParameter("id", UUID.fromString(endpointId))
+                    .getSingleResult()
+                    .call(endpoint -> {
+                        NotificationHistory history = new NotificationHistory();
+                        history.setId(UUID.randomUUID());
+                        history.setEvent(event);
+                        history.setEndpoint(endpoint);
+                        history.setEndpointType(endpoint.getType());
+                        history.setInvocationTime(123L);
+                        history.setInvocationResult(invocationResult);
+                        if (!invocationResult) {
+                            history.setDetails(Map.of(
+                                    "code", 400,
+                                    "url", "https://www.foo.com",
+                                    "method", "GET"
+                            ));
+                        }
+                        history.prePersist();
+                        return statelessSession.insert(history);
+                    })
+                    .replaceWithVoid();
+        });
+    }
+
     private void deleteDefaultBehaviorGroup(String defaultBehaviorGroupId) {
         given()
                 .basePath(API_INTERNAL)
@@ -525,144 +549,6 @@ public class LifecycleITest extends DbIsolatedTest {
                 .then()
                 .statusCode(expectedHttpStatusCode)
                 .contentType(TEXT);
-    }
-
-    /*
-     * Pushes a single message to the 'ingress' channel.
-     * Depending on the event type, behavior groups and endpoints configuration, it will trigger zero or more webhook calls.
-     */
-    private void pushMessage(int expectedWebhookCalls, int expectedEmailEndpoints, int expectedSentEmails) throws IOException, InterruptedException {
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
-
-        Runnable waitForWebhooks = setupCountdownCalls(
-                expectedWebhookCalls,
-                "HttpServer never received the requests",
-                this::setupWebhookMock
-        );
-
-        Runnable waitForEmails = setupCountdownCalls(
-                expectedSentEmails,
-                "Emails were never sent",
-                this::setupEmailMockServer
-        );
-
-        emitMockedIngressAction();
-
-        waitForWebhooks.run();
-        waitForEmails.run();
-
-        micrometerAssertionHelper.awaitAndAssertCounterIncrement(PROCESSED_MESSAGES_COUNTER_NAME, 1);
-        micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 0);
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_ENDPOINTS_COUNTER_NAME, expectedWebhookCalls + expectedEmailEndpoints);
-        micrometerAssertionHelper.clearSavedValues();
-    }
-
-    private Runnable setupCountdownCalls(int expected, String failMessage, Function<CountDownLatch, HttpRequest> setup) {
-        CountDownLatch requestCounter = new CountDownLatch(expected);
-        final HttpRequest request;
-
-        if (expected > 0) {
-            request = setup.apply(requestCounter);
-        } else {
-            request = null;
-        }
-
-        return () -> {
-            if (expected > 0) {
-                try {
-                    if (!requestCounter.await(30, TimeUnit.SECONDS)) {
-                        fail(failMessage);
-                    }
-                } catch (InterruptedException ex) {
-                    throw new RuntimeException(ex);
-                }
-                mockServerConfig.getMockServerClient().clear(request);
-            }
-        };
-    }
-
-    private void emitMockedIngressAction() throws IOException {
-        Action action = new Action();
-        action.setAccountId("tenant");
-        action.setVersion("v1.0.0");
-        action.setBundle(BUNDLE_NAME);
-        action.setApplication(APP_NAME);
-        action.setEventType(EVENT_TYPE_NAME);
-        action.setTimestamp(LocalDateTime.now());
-        action.setContext(Map.of());
-        action.setRecipients(List.of());
-        action.setEvents(List.of(
-                Event.newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of())
-                        .build()
-        ));
-
-        String serializedAction = serializeAction(action);
-        inMemoryConnector.source("ingress").send(serializedAction);
-    }
-
-    private void setupEmailMock(String accountId, String username) {
-        Mockito.when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
-
-        User user = new User();
-        user.setUsername(username);
-        user.setAdmin(true);
-        user.setActive(true);
-        user.setEmail("user email");
-        user.setFirstName("user firstname");
-        user.setLastName("user lastname");
-
-        Mockito.when(rbacRecipientUsersProvider.getUsers(
-                eq(accountId),
-                eq(true)
-        )).thenReturn(Uni.createFrom().item(List.of(user)));
-
-        updateField(
-                emailSender,
-                "bopUrl",
-                "http://" + mockServerConfig.getRunningAddress() + EMAIL_SENDER_MOCK_PATH,
-                EmailSender.class
-        );
-    }
-
-    private HttpRequest setupEmailMockServer(CountDownLatch requestsCounter) {
-        HttpRequest expectedRequestPattern = new HttpRequest()
-                .withPath(EMAIL_SENDER_MOCK_PATH)
-                .withMethod("POST");
-
-        mockServerConfig.getMockServerClient()
-                .withSecure(false)
-                .when(expectedRequestPattern)
-                .respond(request -> {
-                    requestsCounter.countDown();
-                    return response().withStatusCode(200).withBody("Success");
-                });
-
-        return expectedRequestPattern;
-    }
-
-    private HttpRequest setupWebhookMock(CountDownLatch requestsCounter) {
-        HttpRequest expectedRequestPattern = new HttpRequest()
-                .withPath(WEBHOOK_MOCK_PATH)
-                .withMethod("POST");
-
-        mockServerConfig.getMockServerClient()
-                .withSecure(false)
-                .when(expectedRequestPattern)
-                .respond(request -> {
-                    requestsCounter.countDown();
-                    List<String> header = request.getHeader("X-Insight-Token");
-                    if (header != null && header.size() == 1 && SECRET_TOKEN.equals(header.get(0))) {
-                        return response().withStatusCode(200)
-                                .withBody("Success");
-                    } else {
-                        return response().withStatusCode(400)
-                                .withBody("{ \"message\": \"Time is running out\" }");
-                    }
-                });
-
-        return expectedRequestPattern;
     }
 
     private void updateEventTypeBehaviors(Header identityHeader, String eventTypeId, String... behaviorGroupIds) {

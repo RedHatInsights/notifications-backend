@@ -20,6 +20,10 @@ public class EmailSubscription {
     @JoinColumn(name = "application_id")
     private Application application;
 
+    public void setId(EmailSubscriptionId id) {
+        this.id = id;
+    }
+
     public String getAccountId() {
         return id.accountId;
     }
