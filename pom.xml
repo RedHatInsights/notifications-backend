@@ -48,7 +48,7 @@
         <!-- Be careful with bumps, version 5.11.2 caused tests instability so we had to rollback to 5.5.4 -->
         <mockserver-client-java.version>5.5.4</mockserver-client-java.version>
 
-        <insights-notification-schemas-java.version>0.5</insights-notification-schemas-java.version>
+        <insights-notification-schemas-java.version>0.6</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>0.5.3</clowder-quarkus-config-source.version>
 
         <cloudwatch.version>4.1.0</cloudwatch.version>
@@ -60,6 +60,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Temporary as Quarkus 2.3.1 is pulling Avro 1.10.2, which overrides the one in the schema project -->
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>1.11.0</version>
+            </dependency>
             <dependency>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>${quarkus.platform.artifact-id}</artifactId>
