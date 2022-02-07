@@ -6,9 +6,11 @@ import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { CreateEditApplicationModal } from '../components/CreateEditApplicationModal';
+import { DeleteApplicationModal } from '../components/DeleteApplicationModal';
 import { ListEventTypes } from '../components/ListEventTypes';
 import { linkTo } from '../Routes';
 import { useCreateApplication } from '../services/Applications/CreateApplication';
+import { useDeleteApplication } from '../services/Applications/DeleteApplication';
 import { useApplications } from '../services/Applications/GetApplicationById';
 import { useBundleTypes } from '../services/Applications/GetBundleById';
 import { Application } from '../types/Notifications';
@@ -22,11 +24,13 @@ export const BundlePage: React.FunctionComponent = () => {
     const getBundles = useBundleTypes(bundleId);
     const getApplications = useApplications(bundleId);
     const newApplication = useCreateApplication();
+    const deleteApplicationMutation = useDeleteApplication();
 
     const columns = [ 'Application', 'Name', 'Event Types', 'Application Id' ];
 
     const [ applications, setApplications ] = React.useState<Partial<Application>>({});
     const [ showModal, setShowModal ] = React.useState(false);
+    const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
 
     const bundle = React.useMemo(() => {
@@ -68,6 +72,27 @@ export const BundlePage: React.FunctionComponent = () => {
         getApplications.query();
     };
 
+    const handleDelete = React.useCallback(async () => {
+        setShowDeleteModal(false);
+        const deleteApplication = deleteApplicationMutation.mutate;
+        const response = await deleteApplication(applications.id);
+        if (response.error) {
+            return false;
+        }
+
+        return true;
+    }, [ applications.id, deleteApplicationMutation.mutate ]);
+
+    const deleteApplicationModal = (a: Application) => {
+        setShowDeleteModal(true);
+        setApplications(a);
+    };
+
+    const onDeleteClose = () => {
+        setShowDeleteModal(false);
+        getApplications.query();
+    };
+
     if (getApplications.loading) {
         return <Spinner />;
     }
@@ -104,6 +129,16 @@ export const BundlePage: React.FunctionComponent = () => {
                                         isLoading={ getApplications.loading }
 
                                     />
+                                    <React.Fragment>
+                                        <DeleteApplicationModal
+                                            onDelete={ handleDelete }
+                                            isOpen={ showDeleteModal }
+                                            onClose={ onDeleteClose }
+                                            applicationName={ applications.displayName }
+                                            bundleName={ bundle?.displayName }
+
+                                        />
+                                    </React.Fragment>
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
@@ -133,6 +168,7 @@ export const BundlePage: React.FunctionComponent = () => {
                                     > { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
+                                        onClick={ () => deleteApplicationModal(a) }
                                     >{ <TrashIcon /> } </Button></Td>
                             </Tr>
                         )}
