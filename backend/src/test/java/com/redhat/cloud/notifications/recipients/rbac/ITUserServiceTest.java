@@ -9,52 +9,18 @@ import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserR
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import javax.inject.Inject;
 import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
-public class ITUserServiceIntegrationTest {
-
-    @Inject
-    RbacRecipientUsersProvider rbacRecipientUsersProvider;
+public class ITUserServiceTest {
 
     @Test
-    @Disabled
-    void shouldBeNonAdmin() {
-        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", false).await().indefinitely();
-        assertFalse(someAccountId.get(0).isAdmin());
-    }
-
-    @Test
-    @Disabled
-    void shouldBeAdmin() {
-        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", true).await().indefinitely();
-        assertTrue(someAccountId.get(0).isAdmin());
-    }
-
-    @Test
-    @Disabled
-    void shouldBeActive() {
-        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", false).await().indefinitely();
-        assertTrue(someAccountId.get(0).isActive());
-    }
-
-    @Test
-    @Disabled
-    void shouldBeActiveWhenAdminOnly() {
-        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", true).await().indefinitely();
-        assertTrue(someAccountId.get(0).isActive());
-    }
-
-    @Test
-    @Disabled
     void shouldPickPrimaryEMailAsUsersEmail() {
         final ITUserServiceWrapper itUserServiceWrapper = Mockito.mock(ITUserServiceWrapper.class);
 
@@ -92,19 +58,19 @@ public class ITUserServiceIntegrationTest {
         Mockito.when(itUserServiceWrapper.getUsers(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(Uni.createFrom().item(itUserResponses));
         final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", true).await().indefinitely();
         assertTrue(someAccountId.get(0).isActive());
+        assertTrue(someAccountId.get(0).isAdmin());
 
         assertEquals(someAccountId.get(0).getEmail(), "first_adress@trashmail.org");
     }
 
     @Test
-    @Disabled
     void shouldMapUsersCorrectly() {
         final RbacRecipientUsersProvider mock = Mockito.mock(RbacRecipientUsersProvider.class);
-        User mockedUser = createMockedUser();
+        User mockedUser = createNonAdminMockedUser();
         List<User> mockedUsers = List.of(mockedUser);
 
         Mockito.when(mock.getUsers(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(Uni.createFrom().item(mockedUsers));
-        final List<User> users = mock.getUsers("someAccountId", true).await().indefinitely();
+        final List<User> users = mock.getUsers("someAccountId", false).await().indefinitely();
 
         final User user = users.get(0);
         assertEquals("firstName", user.getFirstName());
@@ -112,17 +78,17 @@ public class ITUserServiceIntegrationTest {
         assertEquals("userName", user.getUsername());
         assertEquals("email@trashmail.xyz", user.getEmail());
         assertTrue(user.isActive());
-        assertTrue(user.isAdmin());
+        assertFalse(user.isAdmin());
     }
 
-    private User createMockedUser() {
+    private User createNonAdminMockedUser() {
         User mockedUser = new User();
         mockedUser.setActive(true);
         mockedUser.setLastName("lastName");
         mockedUser.setFirstName("firstName");
         mockedUser.setUsername("userName");
         mockedUser.setEmail("email@trashmail.xyz");
-        mockedUser.setAdmin(true);
+        mockedUser.setAdmin(false);
         mockedUser.setActive(true);
         return mockedUser;
     }
