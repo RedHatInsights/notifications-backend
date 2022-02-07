@@ -148,6 +148,8 @@ objects:
           value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: TEMPLATE_ENGINE_MP_REST_URL
+          value: ${TEMPLATE_ENGINE_URL}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -303,3 +305,6 @@ parameters:
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
+- name: TEMPLATE_ENGINE_URL
+  description: URL of the template engine REST endpoint
+  value: "${clowder.endpoints.notifications-backend-service:http://localhost:${quarkus.http.port}}"
