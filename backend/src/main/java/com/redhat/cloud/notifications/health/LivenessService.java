@@ -18,9 +18,6 @@ public class LivenessService implements AsyncHealthCheck {
     @Inject
     Mutiny.SessionFactory sessionFactory;
 
-    @Inject
-    KafkaConsumedTotalChecker kafkaConsumedTotalChecker;
-
     @Override
     public Uni<HealthCheckResponse> call() {
         boolean adminDown = StuffHolder.getInstance().isAdminDown();
@@ -29,11 +26,6 @@ public class LivenessService implements AsyncHealthCheck {
         if (adminDown) {
             return Uni.createFrom().item(() ->
                     response.down().withData("status", "admin-down").build()
-            );
-        }
-        if (kafkaConsumedTotalChecker.isDown()) {
-            return Uni.createFrom().item(() ->
-                    response.down().withData("kafka-consumed-total", "DOWN").build()
             );
         }
         return postgresConnectionHealth().onItem().transform(dbState ->

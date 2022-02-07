@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db;
 
-import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -47,9 +46,6 @@ public class ResourceHelpers {
 
     @Inject
     BehaviorGroupResources behaviorGroupResources;
-
-    @Inject
-    NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
@@ -185,7 +181,11 @@ public class ResourceHelpers {
         history.setEvent(event);
         history.setEndpoint(endpoint);
         history.setEndpointType(endpoint.getType());
-        return notificationHistoryRepository.createNotificationHistory(history);
+        history.prePersist();
+        return sessionFactory.withStatelessSession(statelessSession -> {
+            return statelessSession.insert(history)
+                    .replaceWith(history);
+        });
     }
 
     public Uni<UUID> emailSubscriptionEndpointId(String accountId, EmailSubscriptionProperties properties) {

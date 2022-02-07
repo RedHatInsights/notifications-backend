@@ -15,9 +15,7 @@ import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
-import com.redhat.cloud.notifications.templates.EmailTemplate;
-import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
-import io.quarkus.qute.TemplateInstance;
+import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -26,11 +24,9 @@ import io.restassured.http.Header;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.vertx.MutinyHelper;
 import io.vertx.core.Vertx;
-import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -42,7 +38,10 @@ import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTAN
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -57,16 +56,13 @@ public class UserConfigServiceTest extends DbIsolatedTest {
     MockServerClientConfig mockServerConfig;
 
     @Inject
-    Mutiny.SessionFactory sessionFactory;
-
-    @Inject
     Vertx vertx;
 
     @Inject
     EndpointEmailSubscriptionResources subscriptionResources;
 
     @InjectMock
-    EmailTemplateFactory emailTemplateFactory;
+    TemplateEngineClient templateEngineClient;
 
     private Field rhelPolicyForm(SettingsValueJsonForm jsonForm) {
         for (Field section : jsonForm.fields.get(0).sections) {
@@ -116,7 +112,8 @@ public class UserConfigServiceTest extends DbIsolatedTest {
         String bundle = "rhel";
         String application = "policies";
 
-        Mockito.when(emailTemplateFactory.get(bundle, application)).thenCallRealMethod();
+        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, INSTANT)).thenReturn(Uni.createFrom().item(TRUE));
+        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(Uni.createFrom().item(TRUE));
 
         SettingsValueJsonForm jsonForm = given()
                 .header(identityHeader)
@@ -310,30 +307,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .invoke(Assertions::assertNull)
                 .chain(runOnWorkerThread(() -> {
                     // Does not add event type if is not supported by the templates
-                    Mockito
-                            .when(emailTemplateFactory.get(bundle, application))
-                            .thenReturn(new EmailTemplate() {
-                                @Override
-                                public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
-                                    return null;
-                                }
-
-                                @Override
-                                public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
-                                    return null;
-                                }
-
-                                @Override
-                                public boolean isSupported(String eventType, EmailSubscriptionType type) {
-                                    return false;
-                                }
-
-                                @Override
-                                public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
-                                    return type == INSTANT;
-                                }
-                            });
-
+                    when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(Uni.createFrom().item(FALSE));
                     SettingsValueJsonForm settings = given()
                             .header(identityHeader)
                             .when().get("/user-config/notification-preference?bundleName=rhel")
