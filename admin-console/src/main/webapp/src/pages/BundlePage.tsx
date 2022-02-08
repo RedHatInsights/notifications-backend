@@ -1,7 +1,7 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner,
-    Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
-import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
+import { Breadcrumb, BreadcrumbItem, Button, Dropdown, DropdownItem, DropdownPosition, KebabToggle, PageSection, Spinner,
+    Title, ToggleGroup, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { TdActionsType } from '@patternfly/react-table/dist/esm/components/Table/base';
 import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
@@ -47,10 +47,10 @@ export const BundlePage: React.FunctionComponent = () => {
         setApplications({});
     };
 
-    const editApplication = (a: Application) => {
+    const editApplication = (e: Application) => {
         setShowModal(true);
         setIsEdit(true);
-        setApplications(a);
+        setApplications(e);
     };
 
     const handleSubmit = React.useCallback((eventType) => {
@@ -83,15 +83,22 @@ export const BundlePage: React.FunctionComponent = () => {
         return true;
     }, [ applications.id, deleteApplicationMutation.mutate ]);
 
-    const deleteApplicationModal = (a: Application) => {
+    const deleteApplicationModal = (e: Application) => {
         setShowDeleteModal(true);
-        setApplications(a);
+        setApplications(e);
     };
 
     const onDeleteClose = () => {
         setShowDeleteModal(false);
         getApplications.query();
     };
+
+    const [ toggle, setToggle ] = React.useState(false);
+    const toggleValue = React.useCallback(() => setToggle(prev => !prev), [ setToggle ]);
+    const actions = React.useMemo(() => [
+        <DropdownItem key="edit" onClick={ () => editApplication } > Edit </DropdownItem>,
+        <DropdownItem key="delete" onClick={ () => deleteApplicationModal } > Delete </DropdownItem>
+    ], []);
 
     if (getApplications.loading) {
         return <Spinner />;
@@ -163,13 +170,18 @@ export const BundlePage: React.FunctionComponent = () => {
                                 </Td>
                                 <Td>{ a.id }</Td>
                                 <Td>
-                                    <Button className='edit' type='button' variant='plain'
-                                        onClick={ () => editApplication(a) }
-                                    > { <PencilAltIcon /> } </Button></Td>
-                                <Td>
-                                    <Button className='delete' type='button' variant='plain'
-                                        onClick={ () => deleteApplicationModal(a) }
-                                    >{ <TrashIcon /> } </Button></Td>
+                                    <Dropdown
+                                        toggle={ <KebabToggle onToggle={ setToggle } /> }
+                                        onSelect={ toggleValue }
+                                        dropdownItems={ actions }
+                                        isOpen={ toggle }
+                                        isPlain
+                                        position={ DropdownPosition.right }
+                                        menuAppendTo={ () => document.body }>
+
+                                    </Dropdown>
+
+                                </Td>
                             </Tr>
                         )}
                     </Tbody>
