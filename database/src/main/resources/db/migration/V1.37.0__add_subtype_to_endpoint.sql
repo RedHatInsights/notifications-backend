@@ -11,7 +11,7 @@ CREATE INDEX ix_endpoints_type_sub_type ON endpoints (endpoint_type, endpoint_su
 UPDATE endpoints as e SET endpoint_sub_type = (SELECT sub_type FROM camel_properties WHERE id = e.id);
 
 -- Populate notification_history endpoint_sub_type
-UPDATE notification_history as n SET endpoint_sub_type = (SELECT endpoint_sub_type FROM endpoints WHERE id = n.endpoint_id);
+UPDATE notification_history as n SET endpoint_sub_type = e.endpoint_sub_type FROM endpoints e WHERE e.id = n.endpoint_id;
 
 -- Drop column
 ALTER TABLE camel_properties DROP COLUMN sub_type;
