@@ -1,7 +1,6 @@
-import { Breadcrumb, BreadcrumbItem, Button, Dropdown, DropdownItem, DropdownPosition, KebabToggle, PageSection, Spinner,
-    Title, ToggleGroup, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner,
+    Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { TdActionsType } from '@patternfly/react-table/dist/esm/components/Table/base';
 import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
@@ -47,10 +46,13 @@ export const BundlePage: React.FunctionComponent = () => {
         setApplications({});
     };
 
-    const editApplication = (e: Application) => {
-        setShowModal(true);
-        setIsEdit(true);
-        setApplications(e);
+    const editApplication = (rowId: number) => {
+        if (getApplications.payload?.status === 200) {
+            setShowModal(true);
+            setIsEdit(true);
+            setApplications(getApplications.payload.value[rowId]);
+
+        }
     };
 
     const handleSubmit = React.useCallback((eventType) => {
@@ -83,9 +85,13 @@ export const BundlePage: React.FunctionComponent = () => {
         return true;
     }, [ applications.id, deleteApplicationMutation.mutate ]);
 
-    const deleteApplicationModal = (e: Application) => {
-        setShowDeleteModal(true);
-        setApplications(e);
+    const deleteApplicationModal = (rowId: number) => {
+        if (getApplications.payload?.status === 200) {
+            setShowModal(true);
+            setIsEdit(true);
+            setApplications(getApplications.payload.value[rowId]);
+
+        }
     };
 
     const onDeleteClose = () => {
@@ -93,12 +99,19 @@ export const BundlePage: React.FunctionComponent = () => {
         getApplications.query();
     };
 
-    const [ toggle, setToggle ] = React.useState(false);
-    const toggleValue = React.useCallback(() => setToggle(prev => !prev), [ setToggle ]);
-    const actions = React.useMemo(() => [
-        <DropdownItem key="edit" onClick={ () => editApplication } > Edit </DropdownItem>,
-        <DropdownItem key="delete" onClick={ () => deleteApplicationModal } > Delete </DropdownItem>
-    ], []);
+    const actions = [
+        {
+            title: 'Edit',
+            onClick: editApplication
+        },
+        {
+            isSeperator: true
+        },
+        {
+            title: 'Delete',
+            onClick: deleteApplicationModal
+        }
+    ];
 
     if (getApplications.loading) {
         return <Spinner />;
@@ -169,17 +182,11 @@ export const BundlePage: React.FunctionComponent = () => {
                                     />
                                 </Td>
                                 <Td>{ a.id }</Td>
-                                <Td>
-                                    <Dropdown
-                                        toggle={ <KebabToggle onToggle={ setToggle } /> }
-                                        onSelect={ toggleValue }
-                                        dropdownItems={ actions }
-                                        isOpen={ toggle }
-                                        isPlain
-                                        position={ DropdownPosition.right }
-                                        menuAppendTo={ () => document.body }>
-
-                                    </Dropdown>
+                                <Td key={ a.id }
+                                    actions={ {
+                                        items: actions,
+                                        isSeperator: false
+                                    } }>
 
                                 </Td>
                             </Tr>
