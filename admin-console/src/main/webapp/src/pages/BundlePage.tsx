@@ -27,7 +27,7 @@ export const BundlePage: React.FunctionComponent = () => {
 
     const columns = [ 'Application', 'Name', 'Event Types', 'Application Id' ];
 
-    const [ applications, setApplications ] = React.useState<Partial<Application>>({});
+    const [ application, setApplication ] = React.useState<Partial<Application>>({});
     const [ showModal, setShowModal ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
@@ -43,14 +43,14 @@ export const BundlePage: React.FunctionComponent = () => {
     const createApplication = () => {
         setShowModal(true);
         setIsEdit(false);
-        setApplications({});
+        setApplication({});
     };
 
-    const editApplication = (rowId: number) => {
+    const editApplication = (event: React.MouseEvent<Element, MouseEvent>, rowId: number) => {
         if (getApplications.payload?.status === 200) {
             setShowModal(true);
             setIsEdit(true);
-            setApplications(getApplications.payload.value[rowId]);
+            setApplication(getApplications.payload.value[rowId]);
 
         }
     };
@@ -77,19 +77,18 @@ export const BundlePage: React.FunctionComponent = () => {
     const handleDelete = React.useCallback(async () => {
         setShowDeleteModal(false);
         const deleteApplication = deleteApplicationMutation.mutate;
-        const response = await deleteApplication(applications.id);
+        const response = await deleteApplication(application.id);
         if (response.error) {
             return false;
         }
 
         return true;
-    }, [ applications.id, deleteApplicationMutation.mutate ]);
+    }, [ application?.id, deleteApplicationMutation.mutate ]);
 
-    const deleteApplicationModal = (rowId: number) => {
+    const deleteApplicationModal = (event: React.MouseEvent<Element, MouseEvent>, rowId: number) => {
         if (getApplications.payload?.status === 200) {
-            setShowModal(true);
-            setIsEdit(true);
-            setApplications(getApplications.payload.value[rowId]);
+            setShowDeleteModal(true);
+            setApplication(getApplications.payload.value[rowId]);
 
         }
     };
@@ -102,11 +101,13 @@ export const BundlePage: React.FunctionComponent = () => {
     const actions = [
         {
             title: 'Edit',
-            onClick: editApplication
+            onClick: editApplication,
+            isSeparator: false
         },
         {
             title: 'Delete',
-            onClick: deleteApplicationModal
+            onClick: deleteApplicationModal,
+            isSeparator: false
         }
     ];
 
@@ -138,9 +139,9 @@ export const BundlePage: React.FunctionComponent = () => {
                                     <CreateEditApplicationModal
                                         isEdit={ isEdit }
                                         bundleName={ bundle?.displayName }
-                                        initialApplication = { applications }
+                                        initialApplication = { application }
                                         showModal={ showModal }
-                                        applicationName={ applications.displayName }
+                                        applicationName={ application?.displayName }
                                         onClose={ onClose }
                                         onSubmit={ handleSubmit }
                                         isLoading={ getApplications.loading }
@@ -151,7 +152,7 @@ export const BundlePage: React.FunctionComponent = () => {
                                             onDelete={ handleDelete }
                                             isOpen={ showDeleteModal }
                                             onClose={ onDeleteClose }
-                                            applicationName={ applications.displayName }
+                                            applicationName={ application?.displayName }
                                             bundleName={ bundle?.displayName }
 
                                         />
@@ -179,12 +180,11 @@ export const BundlePage: React.FunctionComponent = () => {
                                     />
                                 </Td>
                                 <Td>{ a.id }</Td>
-                                <Td key={ a.id }
+                                <Td
+                                    key={ a.id }
                                     actions={ {
-                                        items: actions,
-                                        isSeperator: false
+                                        items: actions
                                     } }>
-
                                 </Td>
                             </Tr>
                         )}
