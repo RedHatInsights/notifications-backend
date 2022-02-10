@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
@@ -28,7 +27,6 @@ import java.util.List;
 public class DbCleaner {
 
     private static final List<Class<?>> ENTITIES = List.of(
-            EmailAggregation.class,
             EmailSubscription.class,
             NotificationHistory.class,
             Event.class,

@@ -8,13 +8,18 @@ import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
+import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response.Status.Family;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +39,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -51,6 +57,9 @@ public class InternalServiceTest extends DbIsolatedTest {
     private static final int NOT_FOUND = 404;
     private static final int INTERNAL_SERVER_ERROR = 500;
     private static final String NOT_USED = "not-used-in-assertions";
+
+    @InjectMock
+    TemplateEngineClient templateEngineClient;
 
     @Test
     void testCreateNullBundle() {
@@ -308,6 +317,11 @@ public class InternalServiceTest extends DbIsolatedTest {
         request.setPayload("I am invalid!");
         request.setSubjectTemplate(""); // Not important, won't be used.
         request.setBodyTemplate(""); // Not important, won't be used.
+
+        JsonObject exceptionMessage = new JsonObject();
+        exceptionMessage.put("message", "Action parsing failed for payload: I am invalid!");
+        BadRequestException badRequest = new BadRequestException(exceptionMessage.toString());
+        when(templateEngineClient.render(Mockito.any(RenderEmailTemplateRequest.class))).thenReturn(Uni.createFrom().failure(badRequest));
 
         String responseBody = given()
                 .basePath(API_INTERNAL)

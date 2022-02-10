@@ -205,21 +205,6 @@
                     <generateGitPropertiesFile>true</generateGitPropertiesFile>
                 </configuration>
             </plugin>
-            <!-- TODO NOTIF-450 Remove this plugin when the notifications-engine module becomes completely independent. -->
-            <!-- The following plugin is required to inject beans from this module into other modules -->
-            <plugin>
-                <groupId>org.jboss.jandex</groupId>
-                <artifactId>jandex-maven-plugin</artifactId>
-                <version>1.2.2</version>
-                <executions>
-                    <execution>
-                        <id>make-index</id>
-                        <goals>
-                            <goal>jandex</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 </project>
