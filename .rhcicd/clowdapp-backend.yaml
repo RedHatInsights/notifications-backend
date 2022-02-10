@@ -38,19 +38,9 @@ objects:
         volumes:
         - name: rds-client-ca
           emptyDir: {}
-        - name: keystore
-          secret:
-            secretName: nonprod-insightsnotifications
-            items:
-              - key: keystore.jks
-                path: clientkeystore.jks
-            defaultMode: 420
         volumeMounts:
         - name: rds-client-ca
           mountPath: /tmp
-        - name: keystore
-          readOnly: true
-          mountpath: /mnt/secrets
         readinessProbe:
           httpGet:
             path: /health/ready
