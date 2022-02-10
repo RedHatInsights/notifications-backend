@@ -61,7 +61,7 @@ objects:
           mountPath: /tmp
         - name: keystore
           readOnly: true
-          mountpath: /mnt/secrets
+          mountPath: /mnt/secrets
         readinessProbe:
           httpGet:
             path: /health/ready
