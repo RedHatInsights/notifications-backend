@@ -105,9 +105,6 @@ export const BundlePage: React.FunctionComponent = () => {
             onClick: editApplication
         },
         {
-            isSeperator: true
-        },
-        {
             title: 'Delete',
             onClick: deleteApplicationModal
         }
