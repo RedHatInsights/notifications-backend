@@ -6,9 +6,11 @@ import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { CreateEditApplicationModal } from '../components/CreateEditApplicationModal';
+import { DeleteApplicationModal } from '../components/DeleteApplicationModal';
 import { ListEventTypes } from '../components/ListEventTypes';
 import { linkTo } from '../Routes';
 import { useCreateApplication } from '../services/Applications/CreateApplication';
+import { useDeleteApplication } from '../services/Applications/DeleteApplication';
 import { useApplications } from '../services/Applications/GetApplicationById';
 import { useBundleTypes } from '../services/Applications/GetBundleById';
 import { Application } from '../types/Notifications';
@@ -22,11 +24,13 @@ export const BundlePage: React.FunctionComponent = () => {
     const getBundles = useBundleTypes(bundleId);
     const getApplications = useApplications(bundleId);
     const newApplication = useCreateApplication();
+    const deleteApplicationMutation = useDeleteApplication();
 
-    const columns = [ 'Application', 'Application Id', 'Event Types' ];
+    const columns = [ 'Application', 'Name', 'Event Types', 'Application Id' ];
 
-    const [ applications, setApplications ] = React.useState<Partial<Application>>({});
+    const [ application, setApplication ] = React.useState<Partial<Application>>({});
     const [ showModal, setShowModal ] = React.useState(false);
+    const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
 
     const bundle = React.useMemo(() => {
@@ -40,7 +44,14 @@ export const BundlePage: React.FunctionComponent = () => {
     const createApplication = () => {
         setShowModal(true);
         setIsEdit(false);
-        setApplications({});
+        setApplication({});
+    };
+
+    const editApplication = (a: Application) => {
+        setShowModal(true);
+        setIsEdit(true);
+        setApplication(a);
+
     };
 
     const handleSubmit = React.useCallback((eventType) => {
@@ -59,6 +70,27 @@ export const BundlePage: React.FunctionComponent = () => {
 
     const onClose = () => {
         setShowModal(false);
+        getApplications.query();
+    };
+
+    const handleDelete = React.useCallback(async () => {
+        setShowDeleteModal(false);
+        const deleteApplication = deleteApplicationMutation.mutate;
+        const response = await deleteApplication(application.id);
+        if (response.error) {
+            return false;
+        }
+
+        return true;
+    }, [ application.id, deleteApplicationMutation.mutate ]);
+
+    const deleteApplicationModal = (a: Application) => {
+        setShowDeleteModal(true);
+        setApplication(a);
+    };
+
+    const onDeleteClose = () => {
+        setShowDeleteModal(false);
         getApplications.query();
     };
 
@@ -90,14 +122,24 @@ export const BundlePage: React.FunctionComponent = () => {
                                     <CreateEditApplicationModal
                                         isEdit={ isEdit }
                                         bundleName={ bundle?.displayName }
-                                        initialApplication = { applications }
+                                        initialApplication = { application }
                                         showModal={ showModal }
-                                        applicationName={ applications.displayName }
+                                        applicationName={ application.displayName }
                                         onClose={ onClose }
                                         onSubmit={ handleSubmit }
                                         isLoading={ getApplications.loading }
 
                                     />
+                                    <React.Fragment>
+                                        <DeleteApplicationModal
+                                            onDelete={ handleDelete }
+                                            isOpen={ showDeleteModal }
+                                            onClose={ onDeleteClose }
+                                            applicationName={ application.displayName }
+                                            bundleName={ bundle?.displayName }
+
+                                        />
+                                    </React.Fragment>
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
@@ -114,17 +156,21 @@ export const BundlePage: React.FunctionComponent = () => {
                                     <Button variant="link" component={ (props: any) =>
                                         <Link { ...props } to={ linkTo.application(a.id) } /> }>{ a.displayName }</Button>
                                 </Td>
-                                <Td>{ a.id }</Td>
+                                <Td>{ a.name}</Td>
                                 <Td>
                                     <ListEventTypes
                                         appId={ a.id }
                                     />
                                 </Td>
+                                <Td>{ a.id }</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
+                                        onClick={ () => editApplication(a) }
                                     > { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
+                                        onClick={ () => deleteApplicationModal(a) }
+
                                     >{ <TrashIcon /> } </Button></Td>
                             </Tr>
                         )}

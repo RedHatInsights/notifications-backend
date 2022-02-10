@@ -35,7 +35,7 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
         <React.Fragment>
             <Modal
                 variant={ ModalVariant.medium }
-                title={ `${ props.isEdit ? 'Update' : 'Create'} Application for ${ props.bundleName }` }
+                title={ `${ props.isEdit ? `Update ${ props.applicationName }` : 'Create Application'} for ${ props.bundleName }` }
                 isOpen={ props.showModal }
                 onClose={ props.onClose }
             ><Form isHorizontal>
