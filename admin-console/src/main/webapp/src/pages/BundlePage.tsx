@@ -1,5 +1,6 @@
 import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner,
     Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -46,13 +47,11 @@ export const BundlePage: React.FunctionComponent = () => {
         setApplication({});
     };
 
-    const editApplication = (event: React.MouseEvent<Element, MouseEvent>, rowId: number) => {
-        if (getApplications.payload?.status === 200) {
-            setShowModal(true);
-            setIsEdit(true);
-            setApplication(getApplications.payload.value[rowId]);
+    const editApplication = (a: Application) => {
+        setShowModal(true);
+        setIsEdit(true);
+        setApplication(a);
 
-        }
     };
 
     const handleSubmit = React.useCallback((eventType) => {
@@ -83,33 +82,17 @@ export const BundlePage: React.FunctionComponent = () => {
         }
 
         return true;
-    }, [ application?.id, deleteApplicationMutation.mutate ]);
+    }, [ application.id, deleteApplicationMutation.mutate ]);
 
-    const deleteApplicationModal = (event: React.MouseEvent<Element, MouseEvent>, rowId: number) => {
-        if (getApplications.payload?.status === 200) {
-            setShowDeleteModal(true);
-            setApplication(getApplications.payload.value[rowId]);
-
-        }
+    const deleteApplicationModal = (a: Application) => {
+        setShowDeleteModal(true);
+        setApplication(a);
     };
 
     const onDeleteClose = () => {
         setShowDeleteModal(false);
         getApplications.query();
     };
-
-    const actions = [
-        {
-            title: 'Edit',
-            onClick: editApplication,
-            isSeparator: false
-        },
-        {
-            title: 'Delete',
-            onClick: deleteApplicationModal,
-            isSeparator: false
-        }
-    ];
 
     if (getApplications.loading) {
         return <Spinner />;
@@ -141,7 +124,7 @@ export const BundlePage: React.FunctionComponent = () => {
                                         bundleName={ bundle?.displayName }
                                         initialApplication = { application }
                                         showModal={ showModal }
-                                        applicationName={ application?.displayName }
+                                        applicationName={ application.displayName }
                                         onClose={ onClose }
                                         onSubmit={ handleSubmit }
                                         isLoading={ getApplications.loading }
@@ -152,7 +135,7 @@ export const BundlePage: React.FunctionComponent = () => {
                                             onDelete={ handleDelete }
                                             isOpen={ showDeleteModal }
                                             onClose={ onDeleteClose }
-                                            applicationName={ application?.displayName }
+                                            applicationName={ application.displayName }
                                             bundleName={ bundle?.displayName }
 
                                         />
@@ -180,12 +163,15 @@ export const BundlePage: React.FunctionComponent = () => {
                                     />
                                 </Td>
                                 <Td>{ a.id }</Td>
-                                <Td
-                                    key={ a.id }
-                                    actions={ {
-                                        items: actions
-                                    } }>
-                                </Td>
+                                <Td>
+                                    <Button className='edit' type='button' variant='plain'
+                                        onClick={ () => editApplication(a) }
+                                    > { <PencilAltIcon /> } </Button></Td>
+                                <Td>
+                                    <Button className='delete' type='button' variant='plain'
+                                        onClick={ () => deleteApplicationModal(a) }
+
+                                    >{ <TrashIcon /> } </Button></Td>
                             </Tr>
                         )}
                     </Tbody>
