@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -32,18 +31,14 @@ import static com.redhat.cloud.notifications.routers.EventService.SORT_BY_PATTER
 @ApplicationScoped
 public class EventResources {
 
-    private static final Logger LOGGER = Logger.getLogger(EventResources.class);
-
     @Inject
     Mutiny.SessionFactory sessionFactory;
 
     public Uni<Page<EventLogEntry>> getEvents(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                               LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults,
                                               Integer limit, Integer offset, String sortBy, boolean includeDetails, boolean includePayload) {
-        LOGGER.debug("getEvents invoked");
         return sessionFactory.withSession(session -> {
             return getEventIdsAndCount(session, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, sortBy)
-                    .invoke(() -> LOGGER.debug("getEventIdsAndCount ended"))
                     .onItem().transformToUni(records -> {
                         if (records.isEmpty()) {
                             return Uni.createFrom().item(() -> buildPage(Collections.emptyList(), 0L, limit, offset));
@@ -62,12 +57,10 @@ public class EventResources {
                                 hql += orderByCondition.get();
                             }
 
-                            LOGGER.debug("Preparing the events retrieval query");
                             return session.createQuery(hql, Event.class)
                                     .setParameter("eventIds", eventIds)
                                     .getResultList()
                                     .onItem().transform(events -> {
-                                        LOGGER.debug("Events retrieved from DB, transforming them...");
 
                                         List<EventLogEntry> entries = events.stream().map(event -> {
                                             List<EventLogEntryAction> actions = event.getHistoryEntries().stream().map(historyEntry -> {
@@ -90,8 +83,6 @@ public class EventResources {
                                                     actions
                                             );
                                         }).collect(Collectors.toList());
-
-                                        LOGGER.debug("Events transformed");
 
                                         return buildPage(entries, count, limit, offset);
                                     });
@@ -142,8 +133,6 @@ public class EventResources {
         if (offset != null) {
             query.setFirstResult(offset);
         }
-
-        LOGGER.debug("getEventIdsAndCount query is ready to be executed");
 
         return query.getResultList();
     }
@@ -269,7 +258,6 @@ public class EventResources {
         page.setData(events);
         page.setMeta(meta);
         page.setLinks(links);
-        LOGGER.debug("Page is ready to be returned");
         return page;
     }
 }

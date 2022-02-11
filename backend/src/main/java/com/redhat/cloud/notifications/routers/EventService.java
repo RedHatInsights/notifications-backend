@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.routers.models.Page;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.hibernate.reactive.mutiny.Mutiny;
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.annotation.security.RolesAllowed;
@@ -37,8 +36,6 @@ public class EventService {
     public static final String PATH = API_NOTIFICATIONS_V_1_0 + "/notifications/events";
     public static final Pattern SORT_BY_PATTERN = Pattern.compile("^([a-z0-9_-]+):(asc|desc)$", CASE_INSENSITIVE);
 
-    private static final Logger LOGGER = Logger.getLogger(EventService.class);
-
     @Inject
     EventResources eventResources;
 
@@ -54,7 +51,6 @@ public class EventService {
                                               @RestQuery Set<EndpointType> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                               @RestQuery @DefaultValue("10") int limit, @RestQuery @DefaultValue("0") int offset, @RestQuery String sortBy,
                                               @RestQuery boolean includeDetails, @RestQuery boolean includePayload) {
-        LOGGER.debug("REST request received");
         if (limit < 1 || limit > 200) {
             throw new BadRequestException("Invalid 'limit' query parameter, its value must be between 1 and 200");
         }
@@ -65,8 +61,7 @@ public class EventService {
             return getAccountId(securityContext)
                     .onItem().transformToUni(accountId ->
                             eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, sortBy, includeDetails, includePayload)
-                    )
-                    .invoke(() -> LOGGER.debug("REST response ready to be sent"));
+                    );
         });
     }
 }
