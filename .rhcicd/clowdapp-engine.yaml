@@ -51,7 +51,7 @@ objects:
           emptyDir: {}
         - name: keystore
           secret:
-            secretName: notifications-keystore
+            secretName: it-services
             items:
               - key: keystore.jks
                 path: clientkeystore.jks
