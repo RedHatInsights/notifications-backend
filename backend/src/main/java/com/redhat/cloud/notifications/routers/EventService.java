@@ -3,10 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.db.EventResources;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
-import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
-import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
-import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -22,12 +19,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS;
@@ -66,50 +60,7 @@ public class EventService {
         return sessionFactory.withSession(session -> {
             return getAccountId(securityContext)
                     .onItem().transformToUni(accountId ->
-                            eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, sortBy)
-                                    .onItem().transform(events ->
-                                            events.stream().map(event -> {
-                                                List<EventLogEntryAction> actions = event.getHistoryEntries().stream().map(historyEntry -> {
-                                                    EventLogEntryAction action = new EventLogEntryAction();
-                                                    action.setId(historyEntry.getId());
-                                                    action.setEndpointId(historyEntry.getEndpointId());
-                                                    action.setEndpointType(historyEntry.getEndpointType());
-                                                    action.setEndpointSubType(historyEntry.getEndpointSubType());
-                                                    action.setInvocationResult(historyEntry.isInvocationResult());
-                                                    if (includeDetails) {
-                                                        action.setDetails(historyEntry.getDetails());
-                                                    }
-                                                    return action;
-                                                }).collect(Collectors.toList());
-
-                                                EventLogEntry entry = new EventLogEntry();
-                                                entry.setId(event.getId());
-                                                entry.setCreated(event.getCreated());
-                                                entry.setBundle(event.getEventType().getApplication().getBundle().getDisplayName());
-                                                entry.setApplication(event.getEventType().getApplication().getDisplayName());
-                                                entry.setEventType(event.getEventType().getDisplayName());
-                                                entry.setActions(actions);
-                                                if (includePayload) {
-                                                    entry.setPayload(event.getPayload());
-                                                }
-                                                return entry;
-                                            }).collect(Collectors.toList())
-                                    )
-                                    .onItem().transformToUni(entries ->
-                                            eventResources.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults)
-                                                    .onItem().transform(count -> {
-                                                        Meta meta = new Meta();
-                                                        meta.setCount(count);
-
-                                                        Map<String, String> links = PageLinksBuilder.build(PATH, count, limit, offset);
-
-                                                        Page<EventLogEntry> page = new Page<>();
-                                                        page.setData(entries);
-                                                        page.setMeta(meta);
-                                                        page.setLinks(links);
-                                                        return page;
-                                                    })
-                                    )
+                            eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, sortBy, includeDetails, includePayload)
                     );
         });
     }
