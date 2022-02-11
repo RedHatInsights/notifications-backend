@@ -18,11 +18,6 @@ public abstract class AbstractEmailPayloadAggregator {
 
     JsonObject context = new JsonObject();
 
-    // TODO NOTIF-450 Remove this method when RhosakEmailAggregatorTest is moved to notifications-engine.
-    public JsonObject getContextForTest() {
-        return context;
-    }
-
     abstract void processEmailAggregation(EmailAggregation aggregation);
 
     public void aggregate(EmailAggregation aggregation) {
@@ -55,8 +50,7 @@ public abstract class AbstractEmailPayloadAggregator {
         this.endTime = endTime;
     }
 
-    // TODO NOTIF-450 Remove the 'public' modifier on this method when the calling tests are moved to notifications-engine.
-    public String getAccountId() {
+    String getAccountId() {
         return accountId;
     }
 
