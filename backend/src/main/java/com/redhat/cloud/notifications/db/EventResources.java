@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -19,6 +20,8 @@ import static com.redhat.cloud.notifications.routers.EventService.SORT_BY_PATTER
 
 @ApplicationScoped
 public class EventResources {
+
+    private static final Logger LOGGER = Logger.getLogger(EventResources.class);
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
@@ -39,10 +42,12 @@ public class EventResources {
                             hql += orderByCondition.get();
                         }
 
+                        LOGGER.debug("Preparing events retrieval");
                         return session.createQuery(hql, Event.class)
                                 .setParameter("accountId", accountId)
                                 .setParameter("eventIds", eventIds)
-                                .getResultList();
+                                .getResultList()
+                                .invoke(() -> LOGGER.debug("Events retrieved"));
                     });
         });
     }
@@ -58,7 +63,9 @@ public class EventResources {
             Mutiny.Query<Long> query = session.createQuery(hql, Long.class);
             setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
 
-            return query.getSingleResult();
+            LOGGER.debug("count query ready to be executed");
+            return query.getSingleResult()
+                    .invoke(() -> LOGGER.debug("count query execution complete"));
         });
     }
 
@@ -100,7 +107,9 @@ public class EventResources {
                 query.setFirstResult(offset);
             }
 
-            return query.getResultList();
+            LOGGER.debug("getEventIds query ready to be executed");
+            return query.getResultList()
+                    .invoke(() -> LOGGER.debug("getEventIds execution complete"));
         });
     }
 
