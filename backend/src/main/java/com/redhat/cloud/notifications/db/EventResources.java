@@ -212,6 +212,11 @@ public class EventResources {
         }
     }
 
+    /*
+     * Each entry of the 'records' arg contains two values:
+     * - records[0]: an eventId
+     * - records[1]: the total count of events (that value is identical for all records)
+     */
     private static List<UUID> parseEventIds(List<Object[]> records) {
         List<UUID> result = new ArrayList<>();
         for (Object[] record : records) {
