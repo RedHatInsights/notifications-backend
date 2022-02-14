@@ -28,14 +28,14 @@ public class EventResources {
 
     public Uni<List<Event>> getEvents(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults,
-                                      Integer limit, Integer offset, String sortBy) {
+                                      boolean fetchNotificationHistory, Integer limit, Integer offset, String sortBy) {
         return sessionFactory.withSession(session -> {
             Optional<String> orderByCondition = getOrderByCondition(sortBy);
             return getEventIds(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, orderByCondition)
                     .onItem().transformToUni(eventIds -> {
-                        String hql = "SELECT DISTINCT e FROM Event e " +
+                        String hql = "SELECT " + (fetchNotificationHistory ? "DISTINCT " : "") + "e FROM Event e " +
                                 "JOIN FETCH e.eventType et JOIN FETCH et.application a JOIN FETCH a.bundle b " +
-                                "LEFT JOIN FETCH e.historyEntries he " +
+                                (fetchNotificationHistory ? "LEFT JOIN FETCH e.historyEntries he " : "") +
                                 "WHERE e.accountId = :accountId AND e.id IN (:eventIds)";
 
                         if (orderByCondition.isPresent()) {
