@@ -80,7 +80,7 @@ public class EventService {
                                     .onItem().transform(events ->
                                             events.stream().map(event -> {
                                                 List<EventLogEntryAction> actions;
-                                                if (event.getHistoryEntries() == null) {
+                                                if (!fetchNotificationHistory) {
                                                     actions = Collections.emptyList();
                                                 } else {
                                                     actions = event.getHistoryEntries().stream().map(historyEntry -> {

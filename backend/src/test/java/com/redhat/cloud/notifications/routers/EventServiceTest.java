@@ -466,6 +466,11 @@ public class EventServiceTest extends DbIsolatedTest {
                     assertNull(page.getData().get(0).getPayload());
                     assertLinks(page.getLinks(), "first", "last");
                 })
+                .chain(runOnWorkerThread(() -> {
+                    // TODO Temp test, remove ASAP
+                    System.setProperty("notifications.event-service.legacy-mode", "false");
+                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, false);
+                }))
         ).await().indefinitely();
     }
 
