@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.resteasy.reactive.RestQuery;
@@ -22,6 +23,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,6 +50,13 @@ public class EventService {
     @Inject
     Mutiny.SessionFactory sessionFactory;
 
+    /*
+     * TODO Temp config property used to test the response time of this service with and without returning the actions.
+     * If this is true, then the actions will always be returned no matter which value is set for 'includeActions'.
+     */
+    @ConfigProperty(name = "notifications.event-service.legacy-mode", defaultValue = "true")
+    boolean legacyMode;
+
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_READ_NOTIFICATIONS_EVENTS)
@@ -56,31 +65,37 @@ public class EventService {
                                               @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
                                               @RestQuery Set<EndpointType> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                               @RestQuery @DefaultValue("10") int limit, @RestQuery @DefaultValue("0") int offset, @RestQuery String sortBy,
-                                              @RestQuery boolean includeDetails, @RestQuery boolean includePayload) {
+                                              @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
         if (limit < 1 || limit > 200) {
             throw new BadRequestException("Invalid 'limit' query parameter, its value must be between 1 and 200");
         }
         if (sortBy != null && !SORT_BY_PATTERN.matcher(sortBy).matches()) {
             throw new BadRequestException("Invalid 'sortBy' query parameter");
         }
+        boolean fetchNotificationHistory = legacyMode || includeActions;
         return sessionFactory.withSession(session -> {
             return getAccountId(securityContext)
                     .onItem().transformToUni(accountId ->
-                            eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, sortBy)
+                            eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, fetchNotificationHistory, limit, offset, sortBy)
                                     .onItem().transform(events ->
                                             events.stream().map(event -> {
-                                                List<EventLogEntryAction> actions = event.getHistoryEntries().stream().map(historyEntry -> {
-                                                    EventLogEntryAction action = new EventLogEntryAction();
-                                                    action.setId(historyEntry.getId());
-                                                    action.setEndpointId(historyEntry.getEndpointId());
-                                                    action.setEndpointType(historyEntry.getEndpointType());
-                                                    action.setEndpointSubType(historyEntry.getEndpointSubType());
-                                                    action.setInvocationResult(historyEntry.isInvocationResult());
-                                                    if (includeDetails) {
-                                                        action.setDetails(historyEntry.getDetails());
-                                                    }
-                                                    return action;
-                                                }).collect(Collectors.toList());
+                                                List<EventLogEntryAction> actions;
+                                                if (event.getHistoryEntries() == null) {
+                                                    actions = Collections.emptyList();
+                                                } else {
+                                                    actions = event.getHistoryEntries().stream().map(historyEntry -> {
+                                                        EventLogEntryAction action = new EventLogEntryAction();
+                                                        action.setId(historyEntry.getId());
+                                                        action.setEndpointId(historyEntry.getEndpointId());
+                                                        action.setEndpointType(historyEntry.getEndpointType());
+                                                        action.setEndpointSubType(historyEntry.getEndpointSubType());
+                                                        action.setInvocationResult(historyEntry.isInvocationResult());
+                                                        if (includeDetails) {
+                                                            action.setDetails(historyEntry.getDetails());
+                                                        }
+                                                        return action;
+                                                    }).collect(Collectors.toList());
+                                                }
 
                                                 EventLogEntry entry = new EventLogEntry();
                                                 entry.setId(event.getId());
