@@ -1,6 +1,9 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.itservice.ITUserServiceWrapper;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.routers.models.Page;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
@@ -20,6 +23,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
@@ -33,6 +37,8 @@ public class RbacRecipientUsersProvider {
     @Inject
     @RestClient
     RbacServiceToService rbacServiceToService;
+
+    ITUserServiceWrapper itUserService;
 
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     Integer rbacElementsPerPage;
@@ -52,6 +58,10 @@ public class RbacRecipientUsersProvider {
     private Counter failuresCounter;
     private RetryPolicy<Object> retryPolicy;
 
+    public RbacRecipientUsersProvider(ITUserServiceWrapper itUserService) {
+        this.itUserService = itUserService;
+    }
+
     @PostConstruct
     public void initCounters() {
         failuresCounter = meterRegistry.counter("rbac.failures");
@@ -69,18 +79,7 @@ public class RbacRecipientUsersProvider {
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public List<User> getUsers(String accountId, boolean adminsOnly) {
-        Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
-        List<User> users = getWithPagination(
-            page -> {
-                Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                Page<RbacUser> rbacUsers = retryOnError(() ->
-                        rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
-                getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
-                return rbacUsers;
-            }
-        );
-        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
-        return users;
+        return transformToUser(itUserService.getUsers(accountId, adminsOnly), adminsOnly);
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
@@ -128,6 +127,31 @@ public class RbacRecipientUsersProvider {
                 users.add(user);
             }
         } while (rbacUsers.getData().size() == rbacElementsPerPage);
+        return users;
+    }
+
+    private List<User> transformToUser(List<ITUserResponse> itUserResponses, boolean adminsOnly) {
+        List<User> users = new LinkedList<>();
+        for (ITUserResponse itUserResponse : itUserResponses) {
+            User user = new User();
+            user.setUsername(itUserResponse.authentications.get(0).principal);
+
+            final List<Email> emails = itUserResponse.accountRelationships.get(0).emails;
+            for (Email email : emails) {
+                if (email != null && email.isPrimary != null && email.isPrimary) {
+                    String address = email.address;
+                    user.setEmail(address);
+                }
+            }
+
+            user.setAdmin(adminsOnly);
+            user.setActive(true);
+
+            user.setFirstName(itUserResponse.personalInformation.firstName);
+            user.setLastName(itUserResponse.personalInformation.lastNames);
+
+            users.add(user);
+        }
         return users;
     }
 }

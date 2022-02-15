@@ -102,6 +102,23 @@ objects:
             secretKeyRef:
               name: backoffice
               key: token
+        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE_TYPE
+          value: ${IT_USER_SERVICE_KEY_STORE_FILE_TYPE}
+        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE
+          valueFrom:
+            secretKeyRef:
+              name: it-services
+              key: keystore.jks
+        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: it-services
+              key: it-services-keystorepassword
+        - name: IT_S2S_MP_REST_URL
+          valueFrom:
+            secretKeyRef:
+              name: it-services
+              key: url
         - name: PROCESSOR_EMAIL_BOP_CLIENT_ID
           valueFrom:
             secretKeyRef:
