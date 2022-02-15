@@ -3,6 +3,8 @@ package com.redhat.cloud.notifications.routers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
+import java.util.regex.Pattern;
+
 import static io.restassured.RestAssured.when;
 import static io.restassured.RestAssured.with;
 import static io.restassured.http.ContentType.TEXT;
@@ -15,6 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @QuarkusTest
 public class HealthCheckTest {
+
+    private static final Pattern PATTERN = Pattern.compile("\"name\": \"Reactive PostgreSQL connections health check\",\\R[ ]+\"status\": \"UP\"");
 
     @Test
     void testNormalHealth() {
@@ -67,7 +71,7 @@ public class HealthCheckTest {
     void testRepeatedHealth() {
         for (int i = 0; i < 150; i++) {
             String body = normalHealthCheck();
-            assertTrue(body.contains("\"reactive-db-check\": true"));
+            assertTrue(PATTERN.matcher(body).find());
         }
     }
 }
