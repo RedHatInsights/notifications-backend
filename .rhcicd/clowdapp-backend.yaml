@@ -94,10 +94,14 @@ objects:
     name: notifications-db-cleaner-config
   data:
     clean.sh: |
-      cat /notifications-db-cleaner/clean.sql | psql > /dev/null
+      cat /notifications-db-cleaner/clean.sql | psql
     clean.sql: |
+      \timing
       CALL cleanEventLog();
+      VACUUM event;
+      VACUUM notification_history;
       CALL cleanKafkaMessagesIds();
+      VACUUM kafka_message;
 - apiVersion: batch/v1
   kind: CronJob
   metadata:
@@ -160,7 +164,7 @@ parameters:
   value: 500m
 - name: DB_CLEANER_SCHEDULE
   description: Execution time specified in cron format
-  value: "*/10 * * * *"
+  value: "0 1 * * *"
 - name: DB_NAME
   description: Database name used by the notifications-db-cleaner CronJob
   value: notifications_backend
