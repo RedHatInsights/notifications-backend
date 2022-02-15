@@ -6,8 +6,10 @@ import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.util.regex.Pattern;
 
 @ApplicationScoped
@@ -27,9 +29,17 @@ public class StartupUtils {
     }
 
     public void logGitProperties() {
+        try {
+            LOG.info(readGitProperties());
+        } catch (Exception e) {
+            LOG.error("Could not read git.properties", e);
+        }
+    }
+
+    public String readGitProperties() {
         try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("git.properties")) {
             if (inputStream == null) {
-                LOG.info("git.properties is not available");
+                return "git.properties is not available";
             } else {
                 StringBuilder result = new StringBuilder();
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -40,10 +50,10 @@ public class StartupUtils {
                         }
                     }
                 }
-                LOG.info(result.toString());
+                return result.toString();
             }
-        } catch (Exception e) {
-            LOG.error("Could not read git.properties", e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

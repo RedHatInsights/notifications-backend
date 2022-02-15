@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.StartupUtils;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.BundleResources;
@@ -27,6 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.jboss.logging.Logger;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
@@ -47,6 +49,8 @@ import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
@@ -56,6 +60,9 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
 @Path(API_INTERNAL)
 public class InternalService {
+
+    private static final Logger LOGGER = Logger.getLogger(InternalService.class);
+    private static final Pattern GIT_COMMIT_ID_PATTERN = Pattern.compile("git.commit.id.abbrev=([0-9a-f]{7})");
 
     @Inject
     BundleResources bundleResources;
@@ -81,6 +88,23 @@ public class InternalService {
 
     @Inject
     Mutiny.SessionFactory sessionFactory;
+
+    @Inject
+    StartupUtils startupUtils;
+
+    // This endpoint is used during the IQE tests to determine which version of the code is tested.
+    @GET
+    @Path("/version")
+    public Uni<String> getVersion() {
+        String gitProperties = startupUtils.readGitProperties();
+        Matcher m = GIT_COMMIT_ID_PATTERN.matcher(gitProperties);
+        if (m.matches()) {
+            return Uni.createFrom().item(m.group(1));
+        } else {
+            LOGGER.infof("Git commit hash not found: %s", gitProperties);
+            return Uni.createFrom().item("Git commit hash not found");
+        }
+    }
 
     @GET
     @Path("/")

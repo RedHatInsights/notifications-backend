@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
@@ -335,6 +336,19 @@ public class InternalServiceTest extends DbIsolatedTest {
                 .extract().asString();
 
         assertEquals("Action parsing failed for payload: I am invalid!", new JsonObject(responseBody).getString("message"));
+    }
+
+    @Test
+    void testVersion() {
+        String responseBody = given()
+                .basePath(API_INTERNAL)
+                .when()
+                .get("/version")
+                .then()
+                .contentType(TEXT)
+                .statusCode(200)
+                .extract().asString();
+        assertTrue(responseBody.matches("^[0-9a-f]{7}$"));
     }
 
     private static Bundle buildBundle(String name, String displayName) {
