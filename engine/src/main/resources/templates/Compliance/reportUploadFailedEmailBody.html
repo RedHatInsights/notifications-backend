@@ -35,9 +35,9 @@
                         <!-- Hi {{user.first_name}},
                         <br>
                         <br> -->
-                        Your system <a class="rh-url" href="https://console.redhat.com/insights/compliance/systems/{action.context.host_id}"><b>{action.context.host_name}</b></a>, assigned to policy <a class="rh-url" href="https://console.redhat.com/insights/compliance/scappolicies/{action.context.policy_id}"><b>{action.context.policy_name}</b></a> failed to upload a new compliance report. The error message returned by our system was:<br>
+                        Your system <a class="rh-url" href="https://console.redhat.com/insights/compliance/systems/{action.events[0].payload.host_id}"><b>{action.events[0].payload.host_name}</b></a>, assigned to policy <a class="rh-url" href="https://console.redhat.com/insights/compliance/scappolicies/{action.events[0].payload.policy_id}"><b>{action.events[0].payload.policy_name}</b></a> failed to upload a new compliance report. The error message returned by our system was:<br>
 
-                        <i>{ action.context.error_message }</i>
+                        <i>{ action.events[0].payload.error_message }</i>
                     </p>
                     <p>
                         To learn more about why reports can fail to upload and how to address this, refer to this <a class="rh-url" href="https://access.redhat.com/solutions/6675911">KCS article</a>.
