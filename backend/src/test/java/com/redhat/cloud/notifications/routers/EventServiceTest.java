@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NOTIFICATIONS_ACCESS_ONLY;
@@ -469,7 +470,16 @@ public class EventServiceTest extends DbIsolatedTest {
                 .chain(runOnWorkerThread(() -> {
                     // TODO Temp test, remove ASAP
                     System.setProperty("notifications.event-service.legacy-mode", "false");
-                    return getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, false);
+                    getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, false);
+                    System.setProperty("notifications.event-service.legacy-mode", "true");
+                    given()
+                            .basePath(API_INTERNAL)
+                            .when()
+                            .get("/denormalizedEvents/migrate")
+                            .then()
+                            .statusCode(200);
+                    System.setProperty("notifications.event-service.use-denormalized-events", "true");
+                    getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(1).getId()), Set.of(model.applications.get(1).getId()), model.eventTypes.get(1).getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), Set.of(EMAIL_SUBSCRIPTION), Set.of(TRUE), 10, 0, "created:desc", true);
                 }))
         ).await().indefinitely();
     }

@@ -57,6 +57,10 @@ public class EventService {
     @ConfigProperty(name = "notifications.event-service.legacy-mode", defaultValue = "true")
     boolean legacyMode;
 
+    // TODO NOTIF-491 Remove this after the data migration on prod.
+    @ConfigProperty(name = "notifications.event-service.use-denormalized-events", defaultValue = "false")
+    boolean useDenormalizedEvents;
+
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_READ_NOTIFICATIONS_EVENTS)
@@ -76,7 +80,7 @@ public class EventService {
         return sessionFactory.withSession(session -> {
             return getAccountId(securityContext)
                     .onItem().transformToUni(accountId ->
-                            eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, fetchNotificationHistory, limit, offset, sortBy)
+                            eventResources.getEvents(useDenormalizedEvents, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, fetchNotificationHistory, limit, offset, sortBy)
                                     .onItem().transform(events ->
                                             events.stream().map(event -> {
                                                 List<EventLogEntryAction> actions;
@@ -100,9 +104,15 @@ public class EventService {
                                                 EventLogEntry entry = new EventLogEntry();
                                                 entry.setId(event.getId());
                                                 entry.setCreated(event.getCreated());
-                                                entry.setBundle(event.getEventType().getApplication().getBundle().getDisplayName());
-                                                entry.setApplication(event.getEventType().getApplication().getDisplayName());
-                                                entry.setEventType(event.getEventType().getDisplayName());
+                                                if (useDenormalizedEvents) {
+                                                    entry.setBundle(event.getBundleDisplayName());
+                                                    entry.setApplication(event.getApplicationDisplayName());
+                                                    entry.setEventType(event.getEventTypeDisplayName());
+                                                } else {
+                                                    entry.setBundle(event.getEventType().getApplication().getBundle().getDisplayName());
+                                                    entry.setApplication(event.getEventType().getApplication().getDisplayName());
+                                                    entry.setEventType(event.getEventType().getDisplayName());
+                                                }
                                                 entry.setActions(actions);
                                                 if (includePayload) {
                                                     entry.setPayload(event.getPayload());
@@ -111,7 +121,7 @@ public class EventService {
                                             }).collect(Collectors.toList())
                                     )
                                     .onItem().transformToUni(entries ->
-                                            eventResources.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults)
+                                            eventResources.count(useDenormalizedEvents, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults)
                                                     .onItem().transform(count -> {
                                                         Meta meta = new Meta();
                                                         meta.setCount(count);

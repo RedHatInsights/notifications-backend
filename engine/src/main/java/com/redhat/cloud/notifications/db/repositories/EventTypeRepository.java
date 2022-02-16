@@ -14,7 +14,8 @@ public class EventTypeRepository {
     Mutiny.SessionFactory sessionFactory;
 
     public Uni<EventType> getEventType(String bundleName, String applicationName, String eventTypeName) {
-        final String query = "FROM EventType WHERE name = :eventTypeName AND application.name = :applicationName AND application.bundle.name = :bundleName";
+        String query = "FROM EventType e JOIN FETCH e.application a JOIN FETCH a.bundle b " +
+                "WHERE e.name = :eventTypeName AND a.name = :applicationName AND b.name = :bundleName";
         return sessionFactory.withStatelessSession(statelessSession -> {
             return statelessSession.createQuery(query, EventType.class)
                     .setParameter("bundleName", bundleName)
