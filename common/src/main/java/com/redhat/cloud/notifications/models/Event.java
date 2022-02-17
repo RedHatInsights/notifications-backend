@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static javax.persistence.CascadeType.REMOVE;
+import static javax.persistence.FetchType.LAZY;
 
 @Entity
 @Table(name = "event")
@@ -45,7 +46,7 @@ public class Event extends CreationTimestamped {
     private String applicationDisplayName;
 
     @NotNull
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = LAZY, optional = false)
     @JoinColumn(name = "event_type_id")
     private EventType eventType;
 
