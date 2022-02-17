@@ -6,6 +6,8 @@ import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -277,7 +279,16 @@ public class EventConsumerTest {
     }
 
     private EventType mockGetEventTypeAndCreateEvent() {
+        Bundle bundle = new Bundle();
+        bundle.setDisplayName("Bundle");
+
+        Application app = new Application();
+        app.setDisplayName("Application");
+        app.setBundle(bundle);
+
         EventType eventType = new EventType();
+        eventType.setDisplayName("Event type");
+        eventType.setApplication(app);
         when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(
                 Uni.createFrom().item(eventType)
         );

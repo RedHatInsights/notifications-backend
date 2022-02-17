@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static javax.persistence.CascadeType.REMOVE;
+import static javax.persistence.FetchType.LAZY;
 
 @Entity
 @Table(name = "event")
@@ -30,10 +31,28 @@ public class Event extends CreationTimestamped {
     @Size(max = 50)
     private String accountId;
 
+    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
+    private UUID bundleId;
+
+    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
+    // TODO NOTIF-491 Should we update this if the bundle is updated?
+    private String bundleDisplayName;
+
+    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
+    private UUID applicationId;
+
+    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
+    // TODO NOTIF-491 Should we update this if the application is updated?
+    private String applicationDisplayName;
+
     @NotNull
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = LAZY, optional = false)
     @JoinColumn(name = "event_type_id")
     private EventType eventType;
+
+    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
+    // TODO NOTIF-491 Should we update this if the event type is updated?
+    private String eventTypeDisplayName;
 
     @OneToMany(mappedBy = "event", cascade = REMOVE)
     Set<NotificationHistory> historyEntries;
@@ -50,6 +69,11 @@ public class Event extends CreationTimestamped {
         this.eventType = eventType;
         this.payload = payload;
         this.action = action;
+        bundleId = eventType.getApplication().getBundle().getId();
+        bundleDisplayName = eventType.getApplication().getBundle().getDisplayName();
+        applicationId = eventType.getApplication().getId();
+        applicationDisplayName = eventType.getApplication().getDisplayName();
+        eventTypeDisplayName = eventType.getDisplayName();
     }
 
     public UUID getId() {
@@ -68,12 +92,52 @@ public class Event extends CreationTimestamped {
         this.accountId = accountId;
     }
 
+    public UUID getBundleId() {
+        return bundleId;
+    }
+
+    public void setBundleId(UUID bundleId) {
+        this.bundleId = bundleId;
+    }
+
+    public String getBundleDisplayName() {
+        return bundleDisplayName;
+    }
+
+    public void setBundleDisplayName(String bundleDisplayName) {
+        this.bundleDisplayName = bundleDisplayName;
+    }
+
+    public UUID getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(UUID applicationId) {
+        this.applicationId = applicationId;
+    }
+
+    public String getApplicationDisplayName() {
+        return applicationDisplayName;
+    }
+
+    public void setApplicationDisplayName(String applicationDisplayName) {
+        this.applicationDisplayName = applicationDisplayName;
+    }
+
     public EventType getEventType() {
         return eventType;
     }
 
     public void setEventType(EventType eventType) {
         this.eventType = eventType;
+    }
+
+    public String getEventTypeDisplayName() {
+        return eventTypeDisplayName;
+    }
+
+    public void setEventTypeDisplayName(String eventTypeDisplayName) {
+        this.eventTypeDisplayName = eventTypeDisplayName;
     }
 
     public Set<NotificationHistory> getHistoryEntries() {
