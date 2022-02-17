@@ -539,7 +539,12 @@ public class EventServiceTest extends DbIsolatedTest {
     private Uni<Event> createEvent(String accountId, EventType eventType, LocalDateTime created) {
         Event event = new Event();
         event.setAccountId(accountId);
+        event.setBundleId(eventType.getApplication().getBundle().getId());
+        event.setBundleDisplayName(eventType.getApplication().getBundle().getDisplayName());
+        event.setApplicationId(eventType.getApplication().getId());
+        event.setApplicationDisplayName(eventType.getApplication().getDisplayName());
         event.setEventType(eventType);
+        event.setEventTypeDisplayName(eventType.getDisplayName());
         event.setCreated(created);
         event.setPayload(PAYLOAD);
         return sessionFactory.withStatelessSession(statelessSession -> statelessSession.insert(event)
