@@ -35,14 +35,20 @@ public class ApplicationResources {
     }
 
     public Uni<Integer> updateApplication(UUID id, Application app) {
-        String query = "UPDATE Application SET name = :name, displayName = :displayName WHERE id = :id";
-        return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
+        String appQuery = "UPDATE Application SET name = :name, displayName = :displayName WHERE id = :id";
+        return sessionFactory.withTransaction((session, transaction) -> {
+            return session.createQuery(appQuery)
                     .setParameter("name", app.getName())
                     .setParameter("displayName", app.getDisplayName())
                     .setParameter("id", id)
                     .executeUpdate()
-                    .call(session::flush);
+                    .call(() -> {
+                        String eventQuery = "UPDATE Event SET applicationDisplayName = :displayName WHERE applicationId = :applicationId";
+                        return session.createQuery(eventQuery)
+                                .setParameter("displayName", app.getDisplayName())
+                                .setParameter("applicationId", id)
+                                .executeUpdate();
+                    });
         });
     }
 
@@ -135,15 +141,21 @@ public class ApplicationResources {
     }
 
     public Uni<Integer> updateEventType(UUID id, EventType eventType) {
-        String query = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description WHERE id = :id";
-        return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
+        String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description WHERE id = :id";
+        return sessionFactory.withTransaction((session, transaction) -> {
+            return session.createQuery(eventTypeQuery)
                     .setParameter("name", eventType.getName())
                     .setParameter("displayName", eventType.getDisplayName())
                     .setParameter("description", eventType.getDescription())
                     .setParameter("id", id)
                     .executeUpdate()
-                    .call(session::flush);
+                    .call(() -> {
+                        String eventQuery = "UPDATE Event SET eventTypeDisplayName = :displayName WHERE eventType.id = :eventTypeId";
+                        return session.createQuery(eventQuery)
+                                .setParameter("displayName", eventType.getDisplayName())
+                                .setParameter("eventTypeId", id)
+                                .executeUpdate();
+                    });
         });
     }
 

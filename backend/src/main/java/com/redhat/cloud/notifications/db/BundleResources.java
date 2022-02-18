@@ -51,14 +51,20 @@ public class BundleResources {
     }
 
     public Uni<Integer> updateBundle(UUID id, Bundle bundle) {
-        String query = "UPDATE Bundle SET name = :name, displayName = :displayName WHERE id = :id";
-        return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
+        String bundleQuery = "UPDATE Bundle SET name = :name, displayName = :displayName WHERE id = :id";
+        return sessionFactory.withTransaction((session, transaction) -> {
+            return session.createQuery(bundleQuery)
                     .setParameter("name", bundle.getName())
                     .setParameter("displayName", bundle.getDisplayName())
                     .setParameter("id", id)
                     .executeUpdate()
-                    .call(session::flush);
+                    .call(() -> {
+                        String eventQuery = "UPDATE Event SET bundleDisplayName = :displayName WHERE bundleId = :bundleId";
+                        return session.createQuery(eventQuery)
+                                .setParameter("displayName", bundle.getDisplayName())
+                                .setParameter("bundleId", id)
+                                .executeUpdate();
+                    });
         });
     }
 

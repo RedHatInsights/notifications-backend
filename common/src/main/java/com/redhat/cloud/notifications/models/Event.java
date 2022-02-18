@@ -31,18 +31,16 @@ public class Event extends CreationTimestamped {
     @Size(max = 50)
     private String accountId;
 
-    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
+    @NotNull
     private UUID bundleId;
 
-    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
-    // TODO NOTIF-491 Should we update this if the bundle is updated?
+    @NotNull
     private String bundleDisplayName;
 
-    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
+    @NotNull
     private UUID applicationId;
 
-    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
-    // TODO NOTIF-491 Should we update this if the application is updated?
+    @NotNull
     private String applicationDisplayName;
 
     @NotNull
@@ -50,8 +48,7 @@ public class Event extends CreationTimestamped {
     @JoinColumn(name = "event_type_id")
     private EventType eventType;
 
-    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
-    // TODO NOTIF-491 Should we update this if the event type is updated?
+    @NotNull
     private String eventTypeDisplayName;
 
     @OneToMany(mappedBy = "event", cascade = REMOVE)
@@ -65,10 +62,14 @@ public class Event extends CreationTimestamped {
     public Event() { }
 
     public Event(EventType eventType, String payload, Action action) {
-        this.accountId = action.getAccountId();
-        this.eventType = eventType;
+        this(action.getAccountId(), eventType);
         this.payload = payload;
         this.action = action;
+    }
+
+    public Event(String accountId, EventType eventType) {
+        this.accountId = accountId;
+        this.eventType = eventType;
         bundleId = eventType.getApplication().getBundle().getId();
         bundleDisplayName = eventType.getApplication().getBundle().getDisplayName();
         applicationId = eventType.getApplication().getId();

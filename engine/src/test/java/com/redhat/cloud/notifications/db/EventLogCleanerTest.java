@@ -78,9 +78,7 @@ public class EventLogCleanerTest {
     }
 
     private Uni<Void> createEvent(EventType eventType, LocalDateTime created) {
-        Event event = new Event();
-        event.setEventType(eventType);
-        event.setAccountId("account-id");
+        Event event = new Event("account-id", eventType);
         event.setCreated(created);
         return sessionFactory.withStatelessSession(statelessSession -> statelessSession.insert(event));
     }
