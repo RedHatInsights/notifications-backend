@@ -388,13 +388,11 @@ public class LifecycleITest extends DbIsolatedTest {
 
     private Uni<Event> createEvent(String accountId, String eventTypeId) {
         return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery("FROM EventType WHERE id = :id", EventType.class)
+            return statelessSession.createQuery("FROM EventType e JOIN FETCH e.application a JOIN FETCH a.bundle WHERE e.id = :id", EventType.class)
                     .setParameter("id", UUID.fromString(eventTypeId))
                     .getSingleResult()
                     .onItem().transformToUni(eventType -> {
-                        Event event = new Event();
-                        event.setAccountId(accountId);
-                        event.setEventType(eventType);
+                        Event event = new Event(accountId, eventType);
                         event.prePersist();
                         return statelessSession.insert(event)
                             .replaceWith(event);

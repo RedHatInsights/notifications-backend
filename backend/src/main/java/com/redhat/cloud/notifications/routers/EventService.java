@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import io.smallrye.mutiny.Uni;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.resteasy.reactive.RestQuery;
@@ -50,17 +49,6 @@ public class EventService {
     @Inject
     Mutiny.SessionFactory sessionFactory;
 
-    /*
-     * TODO Temp config property used to test the response time of this service with and without returning the actions.
-     * If this is true, then the actions will always be returned no matter which value is set for 'includeActions'.
-     */
-    @ConfigProperty(name = "notifications.event-service.legacy-mode", defaultValue = "true")
-    boolean legacyMode;
-
-    // TODO NOTIF-491 Remove this after the data migration on prod.
-    @ConfigProperty(name = "notifications.event-service.use-denormalized-events", defaultValue = "false")
-    boolean useDenormalizedEvents;
-
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_READ_NOTIFICATIONS_EVENTS)
@@ -76,15 +64,14 @@ public class EventService {
         if (sortBy != null && !SORT_BY_PATTERN.matcher(sortBy).matches()) {
             throw new BadRequestException("Invalid 'sortBy' query parameter");
         }
-        boolean fetchNotificationHistory = legacyMode || includeActions;
         return sessionFactory.withSession(session -> {
             return getAccountId(securityContext)
                     .onItem().transformToUni(accountId ->
-                            eventResources.getEvents(useDenormalizedEvents, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, fetchNotificationHistory, limit, offset, sortBy)
+                            eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, includeActions, limit, offset, sortBy)
                                     .onItem().transform(events ->
                                             events.stream().map(event -> {
                                                 List<EventLogEntryAction> actions;
-                                                if (!fetchNotificationHistory) {
+                                                if (!includeActions) {
                                                     actions = Collections.emptyList();
                                                 } else {
                                                     actions = event.getHistoryEntries().stream().map(historyEntry -> {
@@ -104,15 +91,9 @@ public class EventService {
                                                 EventLogEntry entry = new EventLogEntry();
                                                 entry.setId(event.getId());
                                                 entry.setCreated(event.getCreated());
-                                                if (useDenormalizedEvents) {
-                                                    entry.setBundle(event.getBundleDisplayName());
-                                                    entry.setApplication(event.getApplicationDisplayName());
-                                                    entry.setEventType(event.getEventTypeDisplayName());
-                                                } else {
-                                                    entry.setBundle(event.getEventType().getApplication().getBundle().getDisplayName());
-                                                    entry.setApplication(event.getEventType().getApplication().getDisplayName());
-                                                    entry.setEventType(event.getEventType().getDisplayName());
-                                                }
+                                                entry.setBundle(event.getBundleDisplayName());
+                                                entry.setApplication(event.getApplicationDisplayName());
+                                                entry.setEventType(event.getEventTypeDisplayName());
                                                 entry.setActions(actions);
                                                 if (includePayload) {
                                                     entry.setPayload(event.getPayload());
@@ -121,7 +102,7 @@ public class EventService {
                                             }).collect(Collectors.toList())
                                     )
                                     .onItem().transformToUni(entries ->
-                                            eventResources.count(useDenormalizedEvents, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults)
+                                            eventResources.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults)
                                                     .onItem().transform(count -> {
                                                         Meta meta = new Meta();
                                                         meta.setCount(count);

@@ -70,10 +70,6 @@ objects:
               name: notifications-ephemeral-data
               key: ephemeral_data.json
               optional: true
-        - name: NOTIFICATIONS_EVENT_SERVICE_LEGACY_MODE
-          value: ${NOTIFICATIONS_EVENT_SERVICE_LEGACY_MODE}
-        - name: NOTIFICATIONS_EVENT_SERVICE_USE_DENORMALIZED_EVENTS
-          value: ${NOTIFICATIONS_EVENT_SERVICE_USE_DENORMALIZED_EVENTS}
         - name: RBAC_AUTHENTICATION_MP_REST_READTIMEOUT
           value: ${RBAC_AUTHENTICATION_READ_TIMEOUT}
         - name: QUARKUS_HTTP_PORT
@@ -198,12 +194,6 @@ parameters:
   value: 250Mi
 - name: MIN_REPLICAS
   value: "1"
-- name: NOTIFICATIONS_EVENT_SERVICE_LEGACY_MODE
-  description: Temp param used to test an /events response time improvement attempt on stage
-  value: "true"
-- name: NOTIFICATIONS_EVENT_SERVICE_USE_DENORMALIZED_EVENTS
-  description: Temp param used to test another /events response time improvement attempt on stage
-  value: "false"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO

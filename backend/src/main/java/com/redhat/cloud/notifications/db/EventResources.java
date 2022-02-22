@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -21,79 +20,74 @@ import static com.redhat.cloud.notifications.routers.EventService.SORT_BY_PATTER
 @ApplicationScoped
 public class EventResources {
 
-    private static final Logger LOGGER = Logger.getLogger(EventResources.class);
-
     @Inject
     Mutiny.SessionFactory sessionFactory;
 
-    public Uni<List<Event>> getEvents(boolean useDenormalizedEvents, String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+    public Uni<List<Event>> getEvents(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults,
                                       boolean fetchNotificationHistory, Integer limit, Integer offset, String sortBy) {
         return sessionFactory.withSession(session -> {
-            Optional<String> orderByCondition = getOrderByCondition(useDenormalizedEvents, sortBy);
-            return getEventIds(useDenormalizedEvents, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, orderByCondition)
+            Optional<String> orderByCondition = getOrderByCondition(sortBy);
+            return getEventIds(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, orderByCondition)
                     .onItem().transformToUni(eventIds -> {
-                        String hql = "SELECT " + (fetchNotificationHistory ? "DISTINCT " : "") + "e FROM Event e " +
-                                (useDenormalizedEvents ? "" : "JOIN FETCH e.eventType et JOIN FETCH et.application a JOIN FETCH a.bundle b ") +
-                                (fetchNotificationHistory ? "LEFT JOIN FETCH e.historyEntries he " : "") +
-                                "WHERE e.accountId = :accountId AND e.id IN (:eventIds)";
+                        String hql;
+                        if (fetchNotificationHistory) {
+                            hql = "SELECT DISTINCT e FROM Event e LEFT JOIN FETCH e.historyEntries he WHERE e.id IN (:eventIds)";
+                        } else {
+                            hql = "FROM Event e WHERE e.id IN (:eventIds)";
+                        }
 
                         if (orderByCondition.isPresent()) {
                             hql += orderByCondition.get();
                         }
 
-                        LOGGER.debug("Preparing events retrieval");
                         return session.createQuery(hql, Event.class)
-                                .setParameter("accountId", accountId)
                                 .setParameter("eventIds", eventIds)
-                                .getResultList()
-                                .invoke(() -> LOGGER.debug("Events retrieved"));
+                                .getResultList();
                     });
         });
     }
 
-    public Uni<Long> count(boolean useDenormalizedEvents, String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+    public Uni<Long> count(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults) {
         return sessionFactory.withSession(session -> {
-            String hql = "SELECT COUNT(*) FROM Event e " +
-                    (useDenormalizedEvents ? "" : "JOIN e.eventType et JOIN et.application a JOIN a.bundle b ") +
-                    "WHERE e.accountId = :accountId";
+            String hql = "SELECT COUNT(*) FROM Event e WHERE e.accountId = :accountId";
 
-            hql = addHqlConditions(useDenormalizedEvents, hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+            hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
 
             Mutiny.Query<Long> query = session.createQuery(hql, Long.class);
             setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
 
-            LOGGER.debug("count query ready to be executed");
-            return query.getSingleResult()
-                    .invoke(() -> LOGGER.debug("count query execution complete"));
+            return query.getSingleResult();
         });
     }
 
-    private Optional<String> getOrderByCondition(boolean useDenormalizedEvents, String sortBy) {
+    private Optional<String> getOrderByCondition(String sortBy) {
         if (sortBy == null) {
             return Optional.of(" ORDER BY e.created DESC");
         } else {
             Matcher sortByMatcher = SORT_BY_PATTERN.matcher(sortBy);
             if (sortByMatcher.matches()) {
-                String sortField = getSortField(useDenormalizedEvents, sortByMatcher.group(1));
+                String sortField = getSortField(sortByMatcher.group(1));
                 String sortDirection = sortByMatcher.group(2);
-                return Optional.of(" ORDER BY " + sortField + " " + sortDirection + ", e.created DESC");
+                String orderBy = " ORDER BY " + sortField + " " + sortDirection;
+                if (!sortField.equals("e.created")) {
+                    orderBy += ", e.created DESC";
+                }
+                return Optional.of(orderBy);
             } else {
                 return Optional.empty();
             }
         }
     }
 
-    private Uni<List<UUID>> getEventIds(boolean useDenormalizedEvents, String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+    private Uni<List<UUID>> getEventIds(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                         LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults,
                                         Integer limit, Integer offset, Optional<String> orderByCondition) {
         return sessionFactory.withSession(session -> {
-            String hql = "SELECT e.id FROM Event e " +
-                    (useDenormalizedEvents ? "" : "JOIN e.eventType et JOIN et.application a JOIN a.bundle b ") +
-                    "WHERE e.accountId = :accountId";
+            String hql = "SELECT e.id FROM Event e WHERE e.accountId = :accountId";
 
-            hql = addHqlConditions(useDenormalizedEvents, hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+            hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
 
             if (orderByCondition.isPresent()) {
                 hql += orderByCondition.get();
@@ -109,22 +103,20 @@ public class EventResources {
                 query.setFirstResult(offset);
             }
 
-            LOGGER.debug("getEventIds query ready to be executed");
-            return query.getResultList()
-                    .invoke(() -> LOGGER.debug("getEventIds execution complete"));
+            return query.getResultList();
         });
     }
 
-    private static String addHqlConditions(boolean useDenormalizedEvents, String hql, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+    private static String addHqlConditions(String hql, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                            LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults) {
         if (bundleIds != null && !bundleIds.isEmpty()) {
-            hql += " AND " + (useDenormalizedEvents ? "e.bundleId" : "b.id") + " IN (:bundleIds)";
+            hql += " AND e.bundleId IN (:bundleIds)";
         }
         if (appIds != null && !appIds.isEmpty()) {
-            hql += " AND " + (useDenormalizedEvents ? "e.applicationId" : "a.id") + " IN (:appIds)";
+            hql += " AND e.applicationId IN (:appIds)";
         }
         if (eventTypeDisplayName != null) {
-            hql += " AND LOWER(" + (useDenormalizedEvents ? "e.eventTypeDisplayName" : "et.displayName") + ") LIKE :eventTypeDisplayName";
+            hql += " AND LOWER(e.eventTypeDisplayName) LIKE :eventTypeDisplayName";
         }
         if (startDate != null && endDate != null) {
             hql += " AND DATE(e.created) BETWEEN :startDate AND :endDate";
@@ -176,14 +168,14 @@ public class EventResources {
         }
     }
 
-    private static String getSortField(boolean useDenormalizedEvents, String field) {
+    private static String getSortField(String field) {
         switch (field) {
             case "bundle":
-                return useDenormalizedEvents ? "e.bundleDisplayName" : "b.displayName";
+                return "e.bundleDisplayName";
             case "application":
-                return useDenormalizedEvents ? "e.applicationDisplayName" : "a.displayName";
+                return "e.applicationDisplayName";
             case "event":
-                return useDenormalizedEvents ? "e.eventTypeDisplayName" : "et.displayName";
+                return "e.eventTypeDisplayName";
             case "created":
                 return "e.created";
             default:
