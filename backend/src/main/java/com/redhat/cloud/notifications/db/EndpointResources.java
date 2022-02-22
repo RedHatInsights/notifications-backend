@@ -9,6 +9,11 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.openbridge.Bridge;
+import com.redhat.cloud.notifications.openbridge.BridgeApiService;
+import com.redhat.cloud.notifications.openbridge.BridgeAuth;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -16,8 +21,9 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
-import javax.ws.rs.BadRequestException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,23 +37,32 @@ import java.util.stream.Collectors;
 public class EndpointResources {
 
     private static final Logger LOGGER = Logger.getLogger(EndpointResources.class);
+    public static final String OB_PROCESSOR_ID = "processorId";
+    public static final String OB_PROCESSOR_NAME = "processorname"; // Must be all lower for the filter.
+    public static final String SLACK = "Slack";
 
     @Inject
     EntityManager entityManager;
+
+    @ConfigProperty(name = "ob.enabled", defaultValue = "false")
+    boolean obEnabled;
+
+    @Inject
+    @RestClient
+    BridgeApiService bridgeApiService;
+
+    @Inject
+    Bridge bridge;
+
+    @Inject
+    BridgeAuth bridgeAuth;
+
 
     @Transactional
     public Endpoint createEndpoint(Endpoint endpoint) {
         // Todo: NOTIF-429 backward compatibility change - Remove soon.
         if (endpoint.getType() == EndpointType.CAMEL) {
             CamelProperties properties = endpoint.getProperties(CamelProperties.class);
-
-            if (endpoint.getSubType() == null && properties.getSubType() == null) {
-                throw new BadRequestException("endpoint.subtype must have a value");
-            }
-
-            if (endpoint.getSubType() != null && properties.getSubType() != null && !properties.getSubType().equals(endpoint.getSubType())) {
-                throw new BadRequestException("endpoint.subtype must be equal to endpoint.properties.subtype. Consider removing endpoint.properties.subtype as it is deprecated");
-            }
 
             if (endpoint.getSubType() == null) {
                 endpoint.setSubType(properties.getSubType());
@@ -73,11 +88,74 @@ public class EndpointResources {
                     // Do nothing.
                     break;
             }
+
+            if (obEnabled && endpoint.getSubType().equals("slack")) {
+                CamelProperties properties = endpoint.getProperties(CamelProperties.class);
+                String processorName = "p-" + endpoint.getAccountId() + "-" + UUID.randomUUID();
+                properties.getExtras().put(OB_PROCESSOR_NAME, processorName);
+                String processorId = setupOpenBridgeProcessor(endpoint, properties, processorName);
+
+                // TODO find a better place for these, that should not be
+                //       visible to users / OB actions
+                //       See also CamelTypeProcessor#callOpenBridge
+                properties.getExtras().put(OB_PROCESSOR_ID, processorId);
+
+            }
         }
         return endpoint;
     }
 
+    private String setupOpenBridgeProcessor(Endpoint endpoint, CamelProperties properties, String processorName) {
+
+        Map<String, Object> out = new HashMap<>();
+        out.put("name", processorName);
+
+        List<Object> filters = new ArrayList<>();
+        out.put("filters", filters);
+        filters.add(mkFilter("StringEquals", "rhaccount", endpoint.getAccountId()));
+        filters.add(mkFilter("StringEquals", OB_PROCESSOR_NAME, processorName));
+
+        Map<String, Object> actionMap = new HashMap<>();
+        out.put("action", actionMap);
+
+        actionMap.put("type", SLACK); // needs to be literally like this
+
+        // A qute template we should get it from DB
+        String template = "Hello from *Notifications* via _OpenBridge_ with {data.events.size()} event{#if data.events.size() > 1}s{/} from Application _{data.application}_ in Bundle _{data.bundle}_\n" +
+                "First event: {data.events.get(0).payload} \n" +
+                "{#if data.context.size() > 0} Context is:\n" +
+                "{#each data.context}*{it.key}* -> _{it.value}_\n" +
+                "{/each}{/if}\n" +
+                "Brought to you by :redhat:\n";
+        out.put("transformationTemplate", template);
+
+        Map<String, String> props = new HashMap<>();
+        props.put("channel", properties.getExtras().getOrDefault("channel", "#general"));
+        props.put("webhookUrl", properties.getUrl());
+        actionMap.put("parameters", props);
+
+        String token = bridgeAuth.getToken();
+
+        Map<String, Object> pInfo = bridgeApiService.addProcessor(bridge.getId(), token, out);
+
+        String processorId = (String) pInfo.get("id");
+
+        return processorId;
+
+    }
+
+
+    private Map<String, String> mkFilter(String type, String key, String value) {
+        Map<String, String> out = new HashMap<>(3);
+        out.put("type", type);
+        out.put("key", key);
+        out.put("value", value);
+        return out;
+    }
+
+
     public List<Endpoint> getEndpointsPerCompositeType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
+
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
         List<Endpoint> endpoints = EndpointResources.queryBuilderEndpointsPerType(accountId, type, activeOnly)
@@ -172,6 +250,20 @@ public class EndpointResources {
 
     @Transactional
     public boolean deleteEndpoint(String tenant, UUID id) {
+
+        Endpoint e = getEndpoint(tenant, id);
+        if (e != null) {
+            EndpointProperties properties = e.getProperties();
+            if (properties instanceof CamelProperties) {
+                CamelProperties cp = (CamelProperties) properties;
+                // Special case wrt OpenBridge
+                if (cp.getSubType().equals("slack")) {
+                    String processorId = cp.getExtras().get(OB_PROCESSOR_ID);
+                    bridgeApiService.deleteProcessor(bridge.getId(), processorId, bridgeAuth.getToken());
+                }
+            }
+        }
+
         String query = "DELETE FROM Endpoint WHERE accountId = :accountId AND id = :id";
         int rowCount = entityManager.createQuery(query)
                 .setParameter("id", id)

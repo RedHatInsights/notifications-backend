@@ -8,6 +8,9 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.temp.openbridge.Bridge;
+import com.redhat.cloud.notifications.temp.openbridge.BridgeAuth;
+import com.redhat.cloud.notifications.temp.openbridge.BridgeEventService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -17,14 +20,17 @@ import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.net.URI;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +52,10 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     public static final String CLOUD_EVENT_ACCOUNT_EXTENSION_KEY = "rh-account";
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     public static final String CAMEL_SUBTYPE_HEADER = "CAMEL_SUBTYPE";
+    public static final String PROCESSORNAME = "processorname";
+
+    @ConfigProperty(name = "ob.enabled", defaultValue = "false")
+    boolean obEnabled;
 
     @Inject
     BaseTransformer transformer;
@@ -58,6 +68,12 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     MeterRegistry registry;
+
+    @Inject
+    Bridge bridge;
+
+    @Inject
+    BridgeAuth bridgeAuth;
 
     private Counter processedCount;
 
@@ -120,6 +136,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         String accountId = item.getEndpoint().getAccountId();
         // the next could give a CCE, but we only come here when it is a camel endpoint anyway
         String subType = item.getEndpoint().getSubType();
+        CamelProperties camelProperties = (CamelProperties) item.getEndpoint().getProperties();
 
         reallyCallCamel(payload, historyId, accountId, subType);
         final long endTime = System.currentTimeMillis();
