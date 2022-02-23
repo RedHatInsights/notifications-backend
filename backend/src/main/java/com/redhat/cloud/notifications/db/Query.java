@@ -10,6 +10,7 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 public class Query {
 
     private static final Pattern SORT_FIELD_PATTERN = Pattern.compile("^[a-z0-9._-]+$", CASE_INSENSITIVE);
+    private static final int DEFAULT_RESULTS_PER_PAGE  = 20;
 
     @QueryParam("limit")
     private Integer pageSize;
@@ -46,17 +47,18 @@ public class Query {
     }
 
     public Limit getLimit() {
-        if (pageSize != null) {
-            // offset takes precedence over pageNumber if both are set
-            if (pageNumber != null && offset == null) {
-                offset = Limit.calculateOffset(pageNumber, pageSize);
-            }
-            if (offset == null) {
-                offset = 0;
-            }
-            return new Limit(pageSize, offset);
+        if (pageSize == null) {
+            pageSize = DEFAULT_RESULTS_PER_PAGE;
         }
-        return new Limit(0, 0);
+
+        // offset takes precedence over pageNumber if both are set
+        if (pageNumber != null && offset == null) {
+            offset = Limit.calculateOffset(pageNumber, pageSize);
+        }
+        if (offset == null) {
+            offset = 0;
+        }
+        return new Limit(pageSize, offset);
     }
 
     public static class Sort {

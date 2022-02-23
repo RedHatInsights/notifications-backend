@@ -336,7 +336,8 @@ public class LifecycleITest extends DbIsolatedTest {
                 .contentType(JSON)
                 .extract().body().asString();
 
-        JsonArray jsonEventTypes = new JsonArray(responseBody);
+        JsonObject jsonPageEventTypes = new JsonObject(responseBody);
+        JsonArray jsonEventTypes = jsonPageEventTypes.getJsonArray("data");
         assertEquals(2, jsonEventTypes.size()); // One from the current test, one from the default DB records.
     }
 
