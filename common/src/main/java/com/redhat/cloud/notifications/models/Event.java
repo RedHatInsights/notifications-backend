@@ -8,23 +8,29 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import static java.time.ZoneOffset.UTC;
 import static javax.persistence.CascadeType.REMOVE;
 
 @Entity
 @Table(name = "event")
-public class Event extends CreationTimestamped {
+public class Event {
 
     @Id
     @GeneratedValue
     private UUID id;
+
+    private Timestamp created;
 
     @NotNull
     @Size(max = 50)
@@ -58,6 +64,19 @@ public class Event extends CreationTimestamped {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public LocalDateTime getCreated() {
+        return created.toLocalDateTime();
+    }
+
+    public void setCreated(LocalDateTime created) {
+        this.created = Timestamp.valueOf(created);
+    }
+
+    @PrePersist
+    public void prePersist() {
+        created = Timestamp.valueOf(LocalDateTime.now(UTC));
     }
 
     public String getAccountId() {
