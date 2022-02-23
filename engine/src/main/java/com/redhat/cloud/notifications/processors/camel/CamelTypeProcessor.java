@@ -93,7 +93,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         }
 
         BasicAuthentication basicAuthentication = properties.getBasicAuthentication();
-        if (basicAuthentication != null) {
+        if (basicAuthentication != null && basicAuthentication.getUsername() != null && basicAuthentication.getPassword() != null) {
             StringBuilder sb = new StringBuilder(basicAuthentication.getUsername());
             sb.append(":");
             sb.append(basicAuthentication.getPassword());
