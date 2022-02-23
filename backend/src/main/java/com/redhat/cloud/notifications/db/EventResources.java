@@ -7,7 +7,9 @@ import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -119,11 +121,11 @@ public class EventResources {
             hql += " AND LOWER(e.eventTypeDisplayName) LIKE :eventTypeDisplayName";
         }
         if (startDate != null && endDate != null) {
-            hql += " AND DATE(e.created) BETWEEN :startDate AND :endDate";
+            hql += " AND e.created BETWEEN :startDate AND :endDate";
         } else if (startDate != null) {
-            hql += " AND DATE(e.created) >= :startDate";
+            hql += " AND e.created >= :startDate";
         } else if (endDate != null) {
-            hql += " AND DATE(e.created) <= :endDate";
+            hql += " AND e.created <= :endDate";
         }
 
         boolean checkEndpointType = endpointTypes != null && !endpointTypes.isEmpty();
@@ -155,10 +157,10 @@ public class EventResources {
             query.setParameter("eventTypeDisplayName", "%" + eventTypeName.toLowerCase() + "%");
         }
         if (startDate != null) {
-            query.setParameter("startDate", startDate);
+            query.setParameter("startDate", Timestamp.valueOf(startDate.atStartOfDay()));
         }
         if (endDate != null) {
-            query.setParameter("endDate", endDate);
+            query.setParameter("endDate", Timestamp.valueOf(endDate.atTime(LocalTime.MAX))); // at end of day
         }
         if (endpointTypes != null && !endpointTypes.isEmpty()) {
             query.setParameter("endpointTypes", endpointTypes);
