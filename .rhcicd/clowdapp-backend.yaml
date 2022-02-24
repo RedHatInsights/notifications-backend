@@ -46,21 +46,21 @@ objects:
             path: /health/ready
             port: 8000
             scheme: HTTP
-          initialDelaySeconds: 120
+          initialDelaySeconds: 40
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
-          failureThreshold: 10
+          failureThreshold: 3
         livenessProbe:
           httpGet:
             path: /health/live
             port: 8000
             scheme: HTTP
-          initialDelaySeconds: 120
+          initialDelaySeconds: 40
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
-          failureThreshold: 10
+          failureThreshold: 3
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
