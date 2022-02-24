@@ -44,3 +44,6 @@ release.properties
 
 # webapp build
 backend/src/main/resources/META-INF
+
+# python
+__pycache__
