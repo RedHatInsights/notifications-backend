@@ -12,6 +12,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
+import java.time.Duration;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
@@ -33,7 +34,8 @@ public class AdminService {
     public Response debugRbac(@QueryParam("rhid") String rhid) {
 
         try {
-            RbacRaw rbacRaw = rbacServer.getRbacInfo("notifications,integrations", rhid).await().indefinitely();
+            RbacRaw rbacRaw = rbacServer.getRbacInfo("notifications,integrations", rhid)
+                    .await().atMost(Duration.ofSeconds(2L));
             return Response.ok(rbacRaw.data).build();
         } catch (Exception e) {
             return Response.serverError().entity("Rbac call failed -- see logs").build();
