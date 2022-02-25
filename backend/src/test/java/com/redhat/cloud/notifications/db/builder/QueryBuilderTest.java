@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.db.builder;
 
 import com.redhat.cloud.notifications.db.Query;
-import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Test;
 
+import javax.persistence.TypedQuery;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -179,7 +179,7 @@ public class QueryBuilderTest {
 
     @Test
     public void usingQueryLimit() {
-        Mutiny.Query<Object> query = mock(Mutiny.Query.class);
+        TypedQuery<Object> query = mock(TypedQuery.class);
         QueryBuilder.builder(Object.class).alias("o")
                 .limit(new Query.Limit(50, 10))
                 .build((s, c) -> query);

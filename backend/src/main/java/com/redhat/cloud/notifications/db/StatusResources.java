@@ -1,36 +1,31 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.CurrentStatus;
-import io.smallrye.mutiny.Uni;
-import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 
 @ApplicationScoped
 public class StatusResources {
 
     @Inject
-    Mutiny.SessionFactory sessionFactory;
+    EntityManager entityManager;
 
-    public Uni<CurrentStatus> getCurrentStatus() {
+    public CurrentStatus getCurrentStatus() {
         String query = "FROM CurrentStatus";
-        return sessionFactory.withSession(session -> {
-            return session.createQuery(query, CurrentStatus.class)
-                    .getSingleResult();
-        });
+        return entityManager.createQuery(query, CurrentStatus.class)
+                .getSingleResult();
     }
 
-    public Uni<Void> setCurrentStatus(CurrentStatus currentStatus) {
+    @Transactional
+    public void setCurrentStatus(CurrentStatus currentStatus) {
         String query = "UPDATE CurrentStatus SET status = :status, startTime = :startTime, endTime = :endTime";
-        return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
-                    .setParameter("status", currentStatus.getStatus())
-                    .setParameter("startTime", currentStatus.getStartTime())
-                    .setParameter("endTime", currentStatus.getEndTime())
-                    .executeUpdate()
-                    .call(session::flush)
-                    .replaceWith(Uni.createFrom().voidItem());
-        });
+        entityManager.createQuery(query)
+                .setParameter("status", currentStatus.getStatus())
+                .setParameter("startTime", currentStatus.getStartTime())
+                .setParameter("endTime", currentStatus.getEndTime())
+                .executeUpdate();
     }
 }

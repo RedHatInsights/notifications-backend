@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.db.builder;
 
 import com.redhat.cloud.notifications.db.Query;
-import org.hibernate.reactive.mutiny.Mutiny;
 
+import javax.persistence.TypedQuery;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -69,8 +69,8 @@ public class QueryBuilder<T> {
         return this;
     }
 
-    public Mutiny.Query<T> build(BiFunction<String, Class<T>, Mutiny.Query<T>> queryCreator) {
-        Mutiny.Query<T> query = queryCreator.apply(buildRawQuery(), resultType);
+    public TypedQuery<T> build(BiFunction<String, Class<T>, TypedQuery<T>> queryCreator) {
+        TypedQuery<T> query = queryCreator.apply(buildRawQuery(), resultType);
         parameters.forEach(query::setParameter);
 
         if (maxResult != null) {
@@ -84,8 +84,8 @@ public class QueryBuilder<T> {
         return query;
     }
 
-    public Mutiny.Query<Long> buildCount(BiFunction<String, Class<Long>, Mutiny.Query<Long>> queryCreator) {
-        Mutiny.Query<Long> query = queryCreator.apply(buildRawCountQuery(), Long.class);
+    public TypedQuery<Long> buildCount(BiFunction<String, Class<Long>, TypedQuery<Long>> queryCreator) {
+        TypedQuery<Long> query = queryCreator.apply(buildRawCountQuery(), Long.class);
         parameters.forEach(query::setParameter);
 
         return query;

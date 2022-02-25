@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.StuffHolder;
 import com.redhat.cloud.notifications.auth.rbac.RbacRaw;
 import com.redhat.cloud.notifications.auth.rbac.RbacServer;
-import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.inject.Inject;
@@ -31,15 +30,14 @@ public class AdminService {
 
     @GET
     @Produces(APPLICATION_JSON)
-    public Uni<Response> debugRbac(@QueryParam("rhid") String rhid) {
+    public Response debugRbac(@QueryParam("rhid") String rhid) {
 
-        Uni<RbacRaw> rbacRawUni = rbacServer.getRbacInfo("notifications,integrations", rhid);
-
-        return rbacRawUni
-                .onItem()
-                .transform(r -> Response.ok(r.data).build())
-                .onFailure()
-                .call(t -> Uni.createFrom().item(Response.serverError().entity("Rbac call failed -- see logs").build()));
+        try {
+            RbacRaw rbacRaw = rbacServer.getRbacInfo("notifications,integrations", rhid).await().indefinitely();
+            return Response.ok(rbacRaw.data).build();
+        } catch (Exception e) {
+            return Response.serverError().entity("Rbac call failed -- see logs").build();
+        }
 
     }
 

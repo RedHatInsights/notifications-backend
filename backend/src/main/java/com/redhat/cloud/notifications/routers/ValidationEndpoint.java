@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.models.EventType;
-import io.smallrye.mutiny.Uni;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.inject.Inject;
@@ -26,11 +25,12 @@ public class ValidationEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/baet")
-    public Uni<Response> validate(@RestQuery String bundle, @RestQuery String application, @RestQuery String eventType) {
-        return appResources.getEventType(bundle, application, eventType)
-                .onItem()
-                .transform(this::convertToOkayResponse)
-                .onFailure(NoResultException.class).recoverWithItem(t -> convertToNotFoundResponse(bundle, application, eventType));
+    public Response validate(@RestQuery String bundle, @RestQuery String application, @RestQuery String eventType) {
+        try {
+            return convertToOkayResponse(appResources.getEventType(bundle, application, eventType));
+        } catch (NoResultException e) {
+            return convertToNotFoundResponse(bundle, application, eventType);
+        }
     }
 
     private Response convertToNotFoundResponse(String bundle, String application, String eventType) {

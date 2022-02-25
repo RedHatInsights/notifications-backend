@@ -3,9 +3,9 @@ package com.redhat.cloud.notifications.db;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
-import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Test;
 
+import javax.persistence.TypedQuery;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,7 +20,7 @@ public class EndpointResourcesTest {
 
     @Test
     public void queryBuilderTest() {
-        Mutiny.Query<Endpoint> query = mock(Mutiny.Query.class);
+        TypedQuery<Endpoint> query = mock(TypedQuery.class);
 
         // types with subtype and without it
         EndpointResources.queryBuilderEndpointsPerType(

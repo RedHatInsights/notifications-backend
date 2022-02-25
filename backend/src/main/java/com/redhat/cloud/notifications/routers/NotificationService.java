@@ -12,16 +12,15 @@ import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.Facet;
-import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
@@ -64,23 +63,18 @@ public class NotificationService {
     @Inject
     EndpointResources endpointResources;
 
-    @Inject
-    Mutiny.SessionFactory sessionFactory;
-
-    private Uni<String> getAccountId(SecurityContext sec) {
-        return Uni.createFrom().item(() -> {
-            RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-            return principal.getAccount();
-        });
+    private String getAccountId(SecurityContext sec) {
+        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+        return principal.getAccount();
     }
 
     @DELETE
     @Path("/{id}")
     @Produces(TEXT_PLAIN)
     @APIResponse(responseCode = "204", description = "Notification has been marked as read", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> markRead(@Context SecurityContext sec, @PathParam("id") Integer id) {
+    public Response markRead(@Context SecurityContext sec, @PathParam("id") Integer id) {
         // Mark the notification id for <tenantId><userId> 's subscription as read
-        return Uni.createFrom().nullItem();
+        return null;
     }
 
     @GET
@@ -88,10 +82,8 @@ public class NotificationService {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve all event types. The returned list can be filtered by bundle or application.")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Uni<List<EventType>> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId) {
-        return sessionFactory.withSession(session -> {
-            return apps.getEventTypes(query, applicationIds, bundleId);
-        });
+    public List<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId) {
+        return apps.getEventTypes(query, applicationIds, bundleId);
     }
 
     /*
@@ -103,11 +95,9 @@ public class NotificationService {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the event types affected by the removal of a behavior group.")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Uni<List<EventType>> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
-        return sessionFactory.withSession(session -> {
-            return getAccountId(sec)
-                    .onItem().transformToUni(accountId -> behaviorGroupResources.findEventTypesByBehaviorGroupId(accountId, behaviorGroupId));
-        });
+    public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
+        String accountId = getAccountId(sec);
+        return behaviorGroupResources.findEventTypesByBehaviorGroupId(accountId, behaviorGroupId);
     }
 
     /*
@@ -119,11 +109,9 @@ public class NotificationService {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the behavior groups affected by the removal of an endpoint.")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Uni<List<BehaviorGroup>> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
-        return sessionFactory.withSession(session -> {
-            return getAccountId(sec)
-                    .onItem().transformToUni(accountId -> behaviorGroupResources.findBehaviorGroupsByEndpointId(accountId, endpointId));
-        });
+    public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
+        String accountId = getAccountId(sec);
+        return behaviorGroupResources.findBehaviorGroupsByEndpointId(accountId, endpointId);
     }
 
     @GET
@@ -131,39 +119,31 @@ public class NotificationService {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the behavior groups linked to an event type.")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Uni<List<BehaviorGroup>> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
-        return sessionFactory.withSession(session -> {
-            return getAccountId(sec)
-                    .onItem().transformToUni(accountId -> behaviorGroupResources.findBehaviorGroupsByEventTypeId(accountId, eventTypeId, query));
-        });
+    public List<BehaviorGroup> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
+        String accountId = getAccountId(sec);
+        return behaviorGroupResources.findBehaviorGroupsByEventTypeId(accountId, eventTypeId, query);
     }
 
     @GET
     @Path("/facets/applications")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Return a thin list of configured applications. This can be used to configure a filter in the UI")
-    public Uni<List<Facet>> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
-        return sessionFactory.withSession(session -> {
-            return apps.getApplications(bundleName)
-                    .onItem().transform(apps -> apps.stream()
-                            .map(a -> new Facet(a.getId().toString(), a.getName(), a.getDisplayName()))
-                            .collect(Collectors.toList())
-                    );
-        });
+    public List<Facet> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
+        return apps.getApplications(bundleName)
+                .stream()
+                .map(a -> new Facet(a.getId().toString(), a.getName(), a.getDisplayName()))
+                .collect(Collectors.toList());
     }
 
     @GET
     @Path("/facets/bundles")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Return a thin list of configured bundles. This can be used to configure a filter in the UI")
-    public Uni<List<Facet>> getBundleFacets(@Context SecurityContext sec) {
-        return sessionFactory.withSession(session -> {
-            return bundleResources.getBundles()
-                    .onItem().transform(bundles -> bundles.stream()
-                            .map(b -> new Facet(b.getId().toString(), b.getName(), b.getDisplayName()))
-                            .collect(Collectors.toList())
-                    );
-        });
+    public List<Facet> getBundleFacets(@Context SecurityContext sec) {
+        return bundleResources.getBundles()
+                .stream()
+                .map(b -> new Facet(b.getId().toString(), b.getName(), b.getDisplayName()))
+                .collect(Collectors.toList());
     }
 
     @POST
@@ -172,11 +152,10 @@ public class NotificationService {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Create a behavior group.")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    public Uni<BehaviorGroup> createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
-        return sessionFactory.withSession(session -> {
-            return getAccountId(sec)
-                    .onItem().transformToUni(accountId -> behaviorGroupResources.create(accountId, behaviorGroup));
-        });
+    @Transactional
+    public BehaviorGroup createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
+        String accountId = getAccountId(sec);
+        return behaviorGroupResources.create(accountId, behaviorGroup);
     }
 
     @PUT
@@ -185,14 +164,11 @@ public class NotificationService {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Update a behavior group.")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    public Uni<Boolean> updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
-        return sessionFactory.withSession(session -> {
-            return getAccountId(sec)
-                    .onItem().transformToUni(accountId -> {
-                        behaviorGroup.setId(id);
-                        return behaviorGroupResources.update(accountId, behaviorGroup);
-                    });
-        });
+    @Transactional
+    public Boolean updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
+        String accountId = getAccountId(sec);
+        behaviorGroup.setId(id);
+        return behaviorGroupResources.update(accountId, behaviorGroup);
     }
 
     @DELETE
@@ -200,11 +176,10 @@ public class NotificationService {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Delete a behavior group.")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    public Uni<Boolean> deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
-        return sessionFactory.withSession(session -> {
-            return getAccountId(sec)
-                    .onItem().transformToUni(accountId -> behaviorGroupResources.delete(accountId, behaviorGroupId, false));
-        });
+    @Transactional
+    public Boolean deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
+        String accountId = getAccountId(sec);
+        return behaviorGroupResources.delete(accountId, behaviorGroupId, false);
     }
 
     @PUT
@@ -214,22 +189,21 @@ public class NotificationService {
     @Operation(summary = "Update the list of actions of a behavior group.")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
+    @Transactional
+    public Response updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
         if (endpointIds == null) {
-            return Uni.createFrom().failure(new BadRequestException("The request body must contain an endpoints identifiers list"));
+            throw new BadRequestException("The request body must contain an endpoints identifiers list");
         }
         // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
         if (endpointIds.contains(null)) {
-            return Uni.createFrom().failure(new BadRequestException("The endpoints identifiers list should not contain empty values"));
+            throw new BadRequestException("The endpoints identifiers list should not contain empty values");
         }
         if (endpointIds.size() != endpointIds.stream().distinct().count()) {
-            return Uni.createFrom().failure(new BadRequestException("The endpoints identifiers list should not contain duplicates"));
+            throw new BadRequestException("The endpoints identifiers list should not contain duplicates");
         }
-        return sessionFactory.withSession(session -> {
-            return getAccountId(sec)
-                    .onItem().transformToUni(accountId -> behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds))
-                    .onItem().transform(status -> Response.status(status).build());
-        });
+        String accountId = getAccountId(sec);
+        Status status = behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds);
+        return Response.status(status).build();
     }
 
     @PUT
@@ -239,22 +213,19 @@ public class NotificationService {
     @Operation(summary = "Update the list of behavior groups of an event type.")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> updateEventTypeBehaviors(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, Set<UUID> behaviorGroupIds) {
+    @Transactional
+    public Response updateEventTypeBehaviors(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, Set<UUID> behaviorGroupIds) {
         // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
         if (behaviorGroupIds.contains(null)) {
-            return Uni.createFrom().failure(new BadRequestException("The behavior groups identifiers list should not contain empty values"));
+            throw new BadRequestException("The behavior groups identifiers list should not contain empty values");
         }
-        return sessionFactory.withSession(session -> {
-            return getAccountId(sec)
-                    .onItem().transformToUni(accountId -> behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds))
-                    .onItem().transform(updated -> {
-                        if (updated) {
-                            return Response.ok().build();
-                        } else {
-                            return Response.status(Status.NOT_FOUND).build();
-                        }
-                    });
-        });
+        String accountId = getAccountId(sec);
+        boolean updated = behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds);
+        if (updated) {
+            return Response.ok().build();
+        } else {
+            return Response.status(Status.NOT_FOUND).build();
+        }
     }
 
     @GET
@@ -262,20 +233,18 @@ public class NotificationService {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the behavior groups of a bundle.")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Uni<List<BehaviorGroup>> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
-        return sessionFactory.withSession(session -> {
-            return getAccountId(sec)
-                    .onItem().transformToUni(accountId -> behaviorGroupResources.findByBundleId(accountId, bundleId))
-                    .onItem().call(behaviorGroups -> endpointResources.loadProperties(
-                                    behaviorGroups
-                                            .stream()
-                                            .map(BehaviorGroup::getActions)
-                                            .filter(Objects::nonNull)
-                                            .flatMap(Collection::stream)
-                                            .map(BehaviorGroupAction::getEndpoint)
-                                            .collect(Collectors.toList())
-                            )
-                    );
-        });
+    public List<BehaviorGroup> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
+        String accountId = getAccountId(sec);
+        List<BehaviorGroup> behaviorGroups = behaviorGroupResources.findByBundleId(accountId, bundleId);
+        endpointResources.loadProperties(
+                behaviorGroups
+                        .stream()
+                        .map(BehaviorGroup::getActions)
+                        .filter(Objects::nonNull)
+                        .flatMap(Collection::stream)
+                        .map(BehaviorGroupAction::getEndpoint)
+                        .collect(Collectors.toList())
+        );
+        return behaviorGroups;
     }
 }

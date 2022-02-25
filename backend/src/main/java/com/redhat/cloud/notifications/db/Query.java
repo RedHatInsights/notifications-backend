@@ -1,9 +1,16 @@
 package com.redhat.cloud.notifications.db;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.QueryParam;
 import java.util.function.Function;
+import java.util.regex.Pattern;
+
+import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class Query {
+
+    private static final Pattern SORT_FIELD_PATTERN = Pattern.compile("^[a-z0-9_-]+$", CASE_INSENSITIVE);
+
     @QueryParam("limit")
     private Integer pageSize;
 
@@ -102,15 +109,19 @@ public class Query {
         }
 
         String[] sortSplit = sortBy.split(":");
-        Sort sort = new Sort(sortSplit[0]);
-        if (sortSplit.length > 1) {
-            try {
-                Sort.Order order = Sort.Order.valueOf(sortSplit[1].toUpperCase());
-                sort.setSortOrder(order);
-            } catch (IllegalArgumentException | NullPointerException iae) {
+        if (!SORT_FIELD_PATTERN.matcher(sortSplit[0]).matches()) {
+            throw new BadRequestException("Invalid 'sort_by' query parameter");
+        } else {
+            Sort sort = new Sort(sortSplit[0]);
+            if (sortSplit.length > 1) {
+                try {
+                    Sort.Order order = Sort.Order.valueOf(sortSplit[1].toUpperCase());
+                    sort.setSortOrder(order);
+                } catch (IllegalArgumentException | NullPointerException iae) {
+                }
             }
+            return sort;
         }
-        return sort;
     }
 
     public String getModifiedQuery(String basicQuery) {

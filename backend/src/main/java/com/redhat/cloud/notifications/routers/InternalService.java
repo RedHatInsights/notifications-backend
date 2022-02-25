@@ -18,8 +18,6 @@ import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.routers.models.internal.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.templates.TemplateEngineClient;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -27,10 +25,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.logging.Logger;
 
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
@@ -87,22 +85,19 @@ public class InternalService {
     TemplateEngineClient templateEngineClient;
 
     @Inject
-    Mutiny.SessionFactory sessionFactory;
-
-    @Inject
     StartupUtils startupUtils;
 
     // This endpoint is used during the IQE tests to determine which version of the code is tested.
     @GET
     @Path("/version")
-    public Uni<String> getVersion() {
+    public String getVersion() {
         String gitProperties = startupUtils.readGitProperties();
         Matcher m = GIT_COMMIT_ID_PATTERN.matcher(gitProperties);
         if (m.matches()) {
-            return Uni.createFrom().item(m.group(1));
+            return m.group(1);
         } else {
             LOGGER.infof("Git commit hash not found: %s", gitProperties);
-            return Uni.createFrom().item("Git commit hash not found");
+            return "Git commit hash not found";
         }
     }
 
@@ -115,7 +110,7 @@ public class InternalService {
     @GET
     @Path("/openapi.json")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<String> serveInternalOpenAPI() {
+    public String serveInternalOpenAPI() {
         return oApiFilter.serveOpenApi(OApiFilter.INTERNAL);
     }
 
@@ -123,165 +118,147 @@ public class InternalService {
     @Path("/bundles")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    public Uni<Bundle> createBundle(@NotNull @Valid Bundle bundle) {
-        return sessionFactory.withSession(session -> {
-            return bundleResources.createBundle(bundle);
-        });
+    @Transactional
+    public Bundle createBundle(@NotNull @Valid Bundle bundle) {
+        return bundleResources.createBundle(bundle);
     }
 
     @GET
     @Path("/bundles")
     @Produces(APPLICATION_JSON)
-    public Uni<List<Bundle>> getBundles() {
-        return sessionFactory.withSession(session -> {
-            // Return configured with types?
-            return bundleResources.getBundles();
-        });
+    public List<Bundle> getBundles() {
+        // Return configured with types?
+        return bundleResources.getBundles();
     }
 
     @GET
     @Path("/bundles/{bundleId}")
     @Produces(APPLICATION_JSON)
-    public Uni<Bundle> getBundle(@PathParam("bundleId") UUID bundleId) {
-        return sessionFactory.withSession(session -> {
-            return bundleResources.getBundle(bundleId)
-                    .onItem().ifNull().failWith(new NotFoundException());
-        });
+    public Bundle getBundle(@PathParam("bundleId") UUID bundleId) {
+        Bundle bundle = bundleResources.getBundle(bundleId);
+        if (bundle == null) {
+            throw new NotFoundException();
+        } else {
+            return bundle;
+        }
     }
 
     @PUT
     @Path("/bundles/{bundleId}")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    public Uni<Response> updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
-        return sessionFactory.withSession(session -> {
-            return bundleResources.updateBundle(bundleId, bundle)
-                    .onItem().transform(rowCount -> {
-                        if (rowCount == 0) {
-                            return Response.status(Response.Status.NOT_FOUND).build();
-                        } else {
-                            return Response.ok().build();
-                        }
-                    });
-        });
+    @Transactional
+    public Response updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
+        int rowCount = bundleResources.updateBundle(bundleId, bundle);
+        if (rowCount == 0) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        } else {
+            return Response.ok().build();
+        }
     }
 
     @DELETE
     @Path("/bundles/{bundleId}")
     @Produces(APPLICATION_JSON)
-    public Uni<Boolean> deleteBundle(@PathParam("bundleId") UUID bundleId) {
-        return sessionFactory.withSession(session -> {
-            return bundleResources.deleteBundle(bundleId);
-        });
+    @Transactional
+    public boolean deleteBundle(@PathParam("bundleId") UUID bundleId) {
+        return bundleResources.deleteBundle(bundleId);
     }
 
     @GET
     @Path("/bundles/{bundleId}/applications")
     @Produces(APPLICATION_JSON)
-    public Uni<List<Application>> getApplications(@PathParam("bundleId") UUID bundleId) {
-        return sessionFactory.withSession(session -> {
-            return bundleResources.getApplications(bundleId);
-        });
+    public List<Application> getApplications(@PathParam("bundleId") UUID bundleId) {
+        return bundleResources.getApplications(bundleId);
     }
 
     @POST
     @Path("/applications")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    public Uni<Application> createApplication(@NotNull @Valid Application app) {
-        return sessionFactory.withSession(session -> {
-            return appResources.createApp(app);
-        });
+    @Transactional
+    public Application createApplication(@NotNull @Valid Application app) {
+        return appResources.createApp(app);
     }
 
     @GET
     @Path("/applications/{appId}")
     @Produces(APPLICATION_JSON)
-    public Uni<Application> getApplication(@PathParam("appId") UUID appId) {
-        return sessionFactory.withSession(session -> {
-            return appResources.getApplication(appId)
-                    .onItem().ifNull().failWith(new NotFoundException());
-        });
+    public Application getApplication(@PathParam("appId") UUID appId) {
+        Application app = appResources.getApplication(appId);
+        if (app == null) {
+            throw new NotFoundException();
+        } else {
+            return app;
+        }
     }
 
     @PUT
     @Path("/applications/{appId}")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    public Uni<Response> updateApplication(@PathParam("appId") UUID appId, @NotNull @Valid Application app) {
-        return sessionFactory.withSession(session -> {
-            return appResources.updateApplication(appId, app)
-                    .onItem().transform(rowCount -> {
-                        if (rowCount == 0) {
-                            return Response.status(Response.Status.NOT_FOUND).build();
-                        } else {
-                            return Response.ok().build();
-                        }
-                    });
-        });
+    @Transactional
+    public Response updateApplication(@PathParam("appId") UUID appId, @NotNull @Valid Application app) {
+        int rowCount = appResources.updateApplication(appId, app);
+        if (rowCount == 0) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        } else {
+            return Response.ok().build();
+        }
     }
 
     @DELETE
     @Path("/applications/{appId}")
     @Produces(APPLICATION_JSON)
-    public Uni<Boolean> deleteApplication(@PathParam("appId") UUID appId) {
-        return sessionFactory.withSession(session -> {
-            return appResources.deleteApplication(appId);
-        });
+    @Transactional
+    public boolean deleteApplication(@PathParam("appId") UUID appId) {
+        return appResources.deleteApplication(appId);
     }
 
     @GET
     @Path("/applications/{appId}/eventTypes")
     @Produces(APPLICATION_JSON)
-    public Uni<List<EventType>> getEventTypes(@PathParam("appId") UUID appId) {
-        return sessionFactory.withSession(session -> {
-            return appResources.getEventTypes(appId);
-        });
+    public List<EventType> getEventTypes(@PathParam("appId") UUID appId) {
+        return appResources.getEventTypes(appId);
     }
 
     @POST
     @Path("/eventTypes")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    public Uni<EventType> createEventType(@NotNull @Valid EventType eventType) {
-        return sessionFactory.withSession(session -> {
-            return appResources.createEventType(eventType);
-        });
+    @Transactional
+    public EventType createEventType(@NotNull @Valid EventType eventType) {
+        return appResources.createEventType(eventType);
     }
 
     @PUT
     @Path("/eventTypes/{eventTypeId}")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    public Uni<Response> updateEventType(@PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
-        return sessionFactory.withSession(session -> {
-            return appResources.updateEventType(eventTypeId, eventType)
-                    .onItem().transform(rowCount -> {
-                        if (rowCount == 0) {
-                            return Response.status(Response.Status.NOT_FOUND).build();
-                        } else {
-                            return Response.ok().build();
-                        }
-                    });
-        });
+    @Transactional
+    public Response updateEventType(@PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
+        int rowCount = appResources.updateEventType(eventTypeId, eventType);
+        if (rowCount == 0) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        } else {
+            return Response.ok().build();
+        }
     }
 
     @DELETE
     @Path("/eventTypes/{eventTypeId}")
     @Produces(APPLICATION_JSON)
-    public Uni<Boolean> deleteEventType(@PathParam("eventTypeId") UUID eventTypeId) {
-        return sessionFactory.withSession(session -> {
-            return appResources.deleteEventTypeById(eventTypeId);
-        });
+    @Transactional
+    public boolean deleteEventType(@PathParam("eventTypeId") UUID eventTypeId) {
+        return appResources.deleteEventTypeById(eventTypeId);
     }
 
     @PUT
     @Path("/status")
     @Consumes(APPLICATION_JSON)
-    public Uni<Void> setCurrentStatus(@NotNull @Valid CurrentStatus status) {
-        return sessionFactory.withSession(session -> {
-            return statusResources.setCurrentStatus(status);
-        });
+    @Transactional
+    public void setCurrentStatus(@NotNull @Valid CurrentStatus status) {
+        statusResources.setCurrentStatus(status);
     }
 
     @POST
@@ -296,29 +273,29 @@ public class InternalService {
                     @Content(schema = @Schema(title = "RenderEmailTemplateResponseError", implementation = RenderEmailTemplateResponse.Error.class))
             })
     })
-    public Uni<Response> renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {
-        return templateEngineClient.render(renderEmailTemplateRequest)
-                // The following line is required to forward the HTTP 400 error message.
-                .onFailure(BadRequestException.class).recoverWithItem(throwable -> Response.status(BAD_REQUEST).entity(throwable.getMessage()).build());
+    public Response renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {
+        try {
+            return templateEngineClient.render(renderEmailTemplateRequest);
+        } catch (BadRequestException e) {
+            // The following line is required to forward the HTTP 400 error message.
+            return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
+        }
     }
 
     @GET
     @Path("/behaviorGroups/default")
     @Produces(APPLICATION_JSON)
-    public Uni<List<BehaviorGroup>> getDefaultBehaviorGroups() {
-        return sessionFactory.withSession(session -> {
-            return behaviorGroupResources.findDefaults();
-        });
+    public List<BehaviorGroup> getDefaultBehaviorGroups() {
+        return behaviorGroupResources.findDefaults();
     }
 
     @POST
     @Path("/behaviorGroups/default")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    public Uni<BehaviorGroup> createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
-        return sessionFactory.withSession(session -> {
-            return behaviorGroupResources.createDefault(behaviorGroup);
-        });
+    @Transactional
+    public BehaviorGroup createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
+        return behaviorGroupResources.createDefault(behaviorGroup);
     }
 
     @PUT
@@ -326,19 +303,19 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Update a default behavior group.")
-    public Uni<Boolean> updateDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
-        return sessionFactory.withSession(session -> {
-            behaviorGroup.setId(id);
-            return behaviorGroupResources.updateDefault(behaviorGroup);
-        });
+    @Transactional
+    public boolean updateDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
+        behaviorGroup.setId(id);
+        return behaviorGroupResources.updateDefault(behaviorGroup);
     }
 
     @DELETE
     @Path("/behaviorGroups/default/{id}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Deletes a default behavior group.")
-    public Uni<Boolean> deleteDefaultBehaviorGroup(@PathParam("id") UUID id) {
-        return sessionFactory.withSession(session -> behaviorGroupResources.deleteDefault(id));
+    @Transactional
+    public boolean deleteDefaultBehaviorGroup(@PathParam("id") UUID id) {
+        return behaviorGroupResources.deleteDefault(id);
     }
 
     @PUT
@@ -347,35 +324,27 @@ public class InternalService {
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Update the list of actions of a default behavior group.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> updateDefaultBehaviorGroupActions(@PathParam("behaviorGroupId") UUID behaviorGroupId, List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
+    @Transactional
+    public Response updateDefaultBehaviorGroupActions(@PathParam("behaviorGroupId") UUID behaviorGroupId, List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
         if (propertiesList == null) {
-            return Uni.createFrom().failure(new BadRequestException("The request body must contain a list of EmailSubscriptionProperties"));
+            throw new BadRequestException("The request body must contain a list of EmailSubscriptionProperties");
         }
 
         if (propertiesList.size() != propertiesList.stream().distinct().count()) {
-            return Uni.createFrom().failure(new BadRequestException("The list of EmailSubscriptionProperties should not contain duplicates"));
+            throw new BadRequestException("The list of EmailSubscriptionProperties should not contain duplicates");
         }
 
-        return sessionFactory.withSession(session -> {
-            return Multi.createFrom().iterable(
-                    propertiesList.stream().map(p -> {
-                        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
-                        properties.setOnlyAdmins(p.isOnlyAdmins());
-                        properties.setIgnorePreferences(p.isIgnorePreferences());
-                        return properties;
-                    })
-                    .collect(Collectors.toList())
-                )
-                // order matters
-                .onItem().transformToUniAndConcatenate(
-                    properties -> endpointResources.getOrCreateEmailSubscriptionEndpoint(null, properties, false)
-                ).collect().asList()
-                .onItem().transformToUni(endpoints -> behaviorGroupResources.updateDefaultBehaviorGroupActions(
-                        behaviorGroupId,
-                        endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
-                    ))
-                    .onItem().transform(status -> Response.status(status).build());
-        });
+        List<Endpoint> endpoints = propertiesList.stream().map(p -> {
+            EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+            properties.setOnlyAdmins(p.isOnlyAdmins());
+            properties.setIgnorePreferences(p.isIgnorePreferences());
+            return endpointResources.getOrCreateEmailSubscriptionEndpoint(null, properties);
+        }).collect(Collectors.toList());
+        Response.Status status = behaviorGroupResources.updateDefaultBehaviorGroupActions(
+                behaviorGroupId,
+                endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
+        );
+        return Response.status(status).build();
     }
 
     @PUT
@@ -383,15 +352,14 @@ public class InternalService {
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Links the default behavior group to the event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> linkDefaultBehaviorToEventType(@PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
-        return behaviorGroupResources.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId)
-                .onItem().transform(isSuccess -> {
-                    if (isSuccess) {
-                        return Response.ok().build();
-                    } else {
-                        return Response.status(BAD_REQUEST).build();
-                    }
-                });
+    @Transactional
+    public Response linkDefaultBehaviorToEventType(@PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
+        boolean isSuccess = behaviorGroupResources.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
+        if (isSuccess) {
+            return Response.ok().build();
+        } else {
+            return Response.status(BAD_REQUEST).build();
+        }
     }
 
     @DELETE
@@ -399,14 +367,13 @@ public class InternalService {
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Unlinks the default behavior group from the event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> unlinkDefaultBehaviorToEventType(@PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
-        return behaviorGroupResources.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId)
-                .onItem().transform(isSuccess -> {
-                    if (isSuccess) {
-                        return Response.ok().build();
-                    } else {
-                        return Response.status(BAD_REQUEST).build();
-                    }
-                });
+    @Transactional
+    public Response unlinkDefaultBehaviorToEventType(@PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
+        boolean isSuccess = behaviorGroupResources.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
+        if (isSuccess) {
+            return Response.ok().build();
+        } else {
+            return Response.status(BAD_REQUEST).build();
+        }
     }
 }
