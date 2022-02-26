@@ -1,11 +1,12 @@
 package com.redhat.cloud.notifications.oapi;
 
 import com.redhat.cloud.notifications.Constants;
-import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.core.buffer.Buffer;
+import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -40,18 +41,13 @@ public class OApiFilter {
                 new WebClientOptions().setDefaultHost("localhost").setDefaultPort(port));
     }
 
-    public Uni<String> serveOpenApi(String openApiOption) {
+    public String serveOpenApi(String openApiOption) {
         if (!openApiOptions.contains(openApiOption)) {
             throw new WebApplicationException("No openapi file for [" + openApiOption + "] found.", 404);
         }
 
-        return client.get("/openapi.json")
-                .send()
-                .onItem()
-                .transform(response ->
-                        filterJson(response.bodyAsJsonObject(), openApiOption)
-                )
-                .onItem().transform(JsonObject::encode);
+        HttpResponse<Buffer> response = client.get("/openapi.json").sendAndAwait();
+        return filterJson(response.bodyAsJsonObject(), openApiOption).encode();
     }
 
     private JsonObject filterJson(JsonObject oapiModelJson, String openApiOption) {

@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.db.builder.WhereBuilder;
-import com.redhat.cloud.notifications.db.session.CommonStateSessionFactory;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -10,12 +9,13 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import io.smallrye.mutiny.Uni;
-import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.transaction.Transactional;
 import javax.ws.rs.BadRequestException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,193 +33,175 @@ public class EndpointResources {
     private static final Logger LOGGER = Logger.getLogger(EndpointResources.class);
 
     @Inject
-    Mutiny.SessionFactory sessionFactory;
+    EntityManager entityManager;
 
-    @Inject
-    CommonStateSessionFactory commonStateSessionFactory;
+    @Transactional
+    public Endpoint createEndpoint(Endpoint endpoint) {
+        // Todo: NOTIF-429 backward compatibility change - Remove soon.
+        if (endpoint.getType() == EndpointType.CAMEL) {
+            CamelProperties properties = endpoint.getProperties(CamelProperties.class);
 
-    public Uni<Endpoint> createEndpoint(Endpoint endpoint, boolean useStatelessSession) {
-        return commonStateSessionFactory.withSession(useStatelessSession, session -> {
-            // Todo: NOTIF-429 backward compatibility change - Remove soon.
-            if (endpoint.getType() == EndpointType.CAMEL) {
-                CamelProperties properties = endpoint.getProperties(CamelProperties.class);
-
-                if (endpoint.getSubType() == null && properties.getSubType() == null) {
-                    throw new BadRequestException("endpoint.subtype must have a value");
-                }
-
-                if (endpoint.getSubType() != null && properties.getSubType() != null && !properties.getSubType().equals(endpoint.getSubType())) {
-                    throw new BadRequestException("endpoint.subtype must be equal to endpoint.properties.subtype. Consider removing endpoint.properties.subtype as it is deprecated");
-                }
-
-                if (endpoint.getSubType() == null) {
-                    endpoint.setSubType(properties.getSubType());
-                } else if (properties.getSubType() == null) {
-                    properties.setSubType(endpoint.getSubType());
-                }
+            if (endpoint.getSubType() == null && properties.getSubType() == null) {
+                throw new BadRequestException("endpoint.subtype must have a value");
             }
-            return session.persist(endpoint)
-                    .onItem().call(session::flush)
-                    .onItem().call(() -> {
-                        // If the endpoint properties are null, they won't be persisted.
-                        if (endpoint.getProperties() != null) {
-                            /*
-                             * As weird as it seems, we need the following line because the Endpoint instance was
-                             * deserialized from JSON and that JSON did not contain any information about the
-                             * @OneToOne relation from EndpointProperties to Endpoint.
-                             */
-                            endpoint.getProperties().setEndpoint(endpoint);
-                            switch (endpoint.getType()) {
-                                case CAMEL:
-                                case WEBHOOK:
-                                case EMAIL_SUBSCRIPTION:
-                                    return session.persist(endpoint.getProperties())
-                                            .onItem().call(session::flush);
-                                default:
-                                    // Do nothing.
-                                    break;
-                            }
-                        }
-                        /*
-                         * If this line is reached, it means the endpoint properties are null or we don't support
-                         * persisting properties for the endpoint type. We still have to return something.
-                         */
-                        return Uni.createFrom().voidItem();
-                    })
-                    .replaceWith(endpoint);
-        });
+
+            if (endpoint.getSubType() != null && properties.getSubType() != null && !properties.getSubType().equals(endpoint.getSubType())) {
+                throw new BadRequestException("endpoint.subtype must be equal to endpoint.properties.subtype. Consider removing endpoint.properties.subtype as it is deprecated");
+            }
+
+            if (endpoint.getSubType() == null) {
+                endpoint.setSubType(properties.getSubType());
+            } else if (properties.getSubType() == null) {
+                properties.setSubType(endpoint.getSubType());
+            }
+        }
+        entityManager.persist(endpoint);
+        // If the endpoint properties are null, they won't be persisted.
+        if (endpoint.getProperties() != null) {
+            /*
+             * As weird as it seems, we need the following line because the Endpoint instance was
+             * deserialized from JSON and that JSON did not contain any information about the
+             * @OneToOne relation from EndpointProperties to Endpoint.
+             */
+            endpoint.getProperties().setEndpoint(endpoint);
+            switch (endpoint.getType()) {
+                case CAMEL:
+                case WEBHOOK:
+                case EMAIL_SUBSCRIPTION:
+                    entityManager.persist(endpoint.getProperties());
+                default:
+                    // Do nothing.
+                    break;
+            }
+        }
+        return endpoint;
     }
 
-    public Uni<List<Endpoint>> getEndpointsPerCompositeType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter, boolean useStatelessSession) {
+    public List<Endpoint> getEndpointsPerCompositeType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
-        return commonStateSessionFactory.withSession(useStatelessSession, session -> EndpointResources.queryBuilderEndpointsPerType(accountId, type, activeOnly)
+        List<Endpoint> endpoints = EndpointResources.queryBuilderEndpointsPerType(accountId, type, activeOnly)
                 .limit(limit)
                 .sort(sort)
-                .build(session::createQuery)
-                .getResultList()
-                .onItem().call(endpoints -> loadProperties(endpoints, useStatelessSession)));
+                .build(entityManager::createQuery)
+                .getResultList();
+        loadProperties(endpoints);
+        return endpoints;
     }
 
-    public Uni<EndpointType> getEndpointTypeById(String accountId, UUID endpointId) {
+    public EndpointType getEndpointTypeById(String accountId, UUID endpointId) {
         String query = "Select e.compositeType.type from Endpoint e WHERE e.accountId = :accountId AND e.id = :endpointId";
-        return sessionFactory.withSession(session -> {
-            return session.createQuery(query, EndpointType.class)
+        try {
+            return entityManager.createQuery(query, EndpointType.class)
                     .setParameter("accountId", accountId)
                     .setParameter("endpointId", endpointId)
-                    .getSingleResultOrNull();
-        });
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
     }
 
-    public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties, boolean useStatelessSession) {
-        return commonStateSessionFactory.withSession(useStatelessSession, session -> {
-            return getEndpointsPerCompositeType(accountId, Set.of(new CompositeEndpointType(EndpointType.EMAIL_SUBSCRIPTION)), null, null, useStatelessSession)
-                    .onItem().call(endpoints -> loadProperties(endpoints, useStatelessSession))
-                    .onItem().transformToUni(emailEndpoints -> {
-                        Optional<Endpoint> endpointOptional = emailEndpoints
-                                .stream()
-                                .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(EmailSubscriptionProperties.class)))
-                                .findFirst();
-                        if (endpointOptional.isPresent()) {
-                            return Uni.createFrom().item(endpointOptional.get());
-                        }
+    @Transactional
+    public Endpoint getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties) {
+        List<Endpoint> emailEndpoints = getEndpointsPerCompositeType(accountId, Set.of(new CompositeEndpointType(EndpointType.EMAIL_SUBSCRIPTION)), null, null);
+        loadProperties(emailEndpoints);
+        Optional<Endpoint> endpointOptional = emailEndpoints
+                .stream()
+                .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(EmailSubscriptionProperties.class)))
+                .findFirst();
+        if (endpointOptional.isPresent()) {
+            return endpointOptional.get();
+        }
+        Endpoint endpoint = new Endpoint();
+        endpoint.setProperties(properties);
+        endpoint.setAccountId(accountId);
+        endpoint.setEnabled(true);
+        endpoint.setDescription("System email endpoint");
+        endpoint.setName("Email endpoint");
+        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
-                        Endpoint endpoint = new Endpoint();
-                        endpoint.setProperties(properties);
-                        endpoint.setAccountId(accountId);
-                        endpoint.setEnabled(true);
-                        endpoint.setDescription("System email endpoint");
-                        endpoint.setName("Email endpoint");
-                        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
-
-                        return createEndpoint(endpoint, useStatelessSession);
-                    });
-        });
+        return createEndpoint(endpoint);
     }
 
-    public Uni<Long> getEndpointsCountPerCompositeType(String tenant, Set<CompositeEndpointType> type, Boolean activeOnly, boolean useStatelessSession) {
-        return commonStateSessionFactory.withSession(useStatelessSession, session -> EndpointResources.queryBuilderEndpointsPerType(tenant, type, activeOnly)
-                .buildCount(session::createQuery)
-                .getSingleResult());
+    public Long getEndpointsCountPerCompositeType(String tenant, Set<CompositeEndpointType> type, Boolean activeOnly) {
+        return EndpointResources.queryBuilderEndpointsPerType(tenant, type, activeOnly)
+                .buildCount(entityManager::createQuery)
+                .getSingleResult();
     }
 
-    public Uni<List<Endpoint>> getEndpoints(String tenant, Query limiter) {
+    public List<Endpoint> getEndpoints(String tenant, Query limiter) {
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
 
-        return sessionFactory.withSession(session -> {
-            // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
-            //      or should I just create a new method for it?
-            return QueryBuilder.builder(Endpoint.class)
-                    .alias("e")
-                    .where(
-                            WhereBuilder.builder()
-                                    .and("e.accountId = :accountId", "accountId", tenant)
-                    )
-                    .limit(limit)
-                    .sort(sort)
-                    .build(session::createQuery)
-                    .getResultList()
-                    .onItem().call(this::loadProperties);
-        });
+        // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
+        //      or should I just create a new method for it?
+        List<Endpoint> endpoints = QueryBuilder.builder(Endpoint.class)
+                .alias("e")
+                .where(
+                        WhereBuilder.builder()
+                                .and("e.accountId = :accountId", "accountId", tenant)
+                )
+                .limit(limit)
+                .sort(sort)
+                .build(entityManager::createQuery)
+                .getResultList();
+        loadProperties(endpoints);
+        return endpoints;
     }
 
-    public Uni<Long> getEndpointsCount(String tenant) {
+    public Long getEndpointsCount(String tenant) {
         String query = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId";
-        return sessionFactory.withSession(session -> {
-            return session.createQuery(query, Long.class)
+        return entityManager.createQuery(query, Long.class)
+                .setParameter("accountId", tenant)
+                .getSingleResult();
+    }
+
+    public Endpoint getEndpoint(String tenant, UUID id) {
+        String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.id = :id";
+        try {
+            Endpoint endpoint = entityManager.createQuery(query, Endpoint.class)
+                    .setParameter("id", id)
                     .setParameter("accountId", tenant)
                     .getSingleResult();
-        });
+            loadProperties(endpoint);
+            return endpoint;
+        } catch (NoResultException e) {
+            return null;
+        }
     }
 
-    public Uni<Endpoint> getEndpoint(String tenant, UUID id) {
-        String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.id = :id";
-        return sessionFactory.withSession(session -> {
-            return session.createQuery(query, Endpoint.class)
-                    .setParameter("id", id)
-                    .setParameter("accountId", tenant)
-                    .getSingleResultOrNull()
-                    .onItem().ifNotNull().transformToUni(endpoint -> loadProperties(endpoint));
-        });
-    }
-
-    public Uni<Boolean> deleteEndpoint(String tenant, UUID id) {
+    @Transactional
+    public boolean deleteEndpoint(String tenant, UUID id) {
         String query = "DELETE FROM Endpoint WHERE accountId = :accountId AND id = :id";
-        return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
-                    .setParameter("id", id)
-                    .setParameter("accountId", tenant)
-                    .executeUpdate()
-                    .call(session::flush)
-                    .onItem().transform(rowCount -> rowCount > 0);
-        });
+        int rowCount = entityManager.createQuery(query)
+                .setParameter("id", id)
+                .setParameter("accountId", tenant)
+                .executeUpdate();
+        return rowCount > 0;
         // Actually, the endpoint targeting this should be repeatable
     }
 
-    public Uni<Boolean> disableEndpoint(String tenant, UUID id) {
+    public boolean disableEndpoint(String tenant, UUID id) {
         return modifyEndpointStatus(tenant, id, false);
     }
 
-    public Uni<Boolean> enableEndpoint(String tenant, UUID id) {
+    public boolean enableEndpoint(String tenant, UUID id) {
         return modifyEndpointStatus(tenant, id, true);
     }
 
-    private Uni<Boolean> modifyEndpointStatus(String tenant, UUID id, boolean enabled) {
+    @Transactional
+    private boolean modifyEndpointStatus(String tenant, UUID id, boolean enabled) {
         String query = "UPDATE Endpoint SET enabled = :enabled WHERE accountId = :accountId AND id = :id";
-
-        return sessionFactory.withSession(session -> {
-            return session.createQuery(query)
-                    .setParameter("id", id)
-                    .setParameter("accountId", tenant)
-                    .setParameter("enabled", enabled)
-                    .executeUpdate()
-                    .call(session::flush)
-                    .onItem().transform(rowCount -> rowCount > 0);
-        });
+        int rowCount = entityManager.createQuery(query)
+                .setParameter("id", id)
+                .setParameter("accountId", tenant)
+                .setParameter("enabled", enabled)
+                .executeUpdate();
+        return rowCount > 0;
     }
 
-    public Uni<Boolean> updateEndpoint(Endpoint endpoint) {
+    @Transactional
+    public boolean updateEndpoint(Endpoint endpoint) {
         // TODO Update could fail because the item did not exist, throw 404 in that case?
         // TODO Fix transaction so that we don't end up with half the updates applied
         String endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled " +
@@ -234,81 +216,70 @@ public class EndpointResources {
             throw new RuntimeException("Unable to update an endpoint of type EMAIL_SUBSCRIPTION");
         }
 
-        return sessionFactory.withSession(session -> {
-            return session.createQuery(endpointQuery)
-                    .setParameter("name", endpoint.getName())
-                    .setParameter("description", endpoint.getDescription())
-                    .setParameter("enabled", endpoint.isEnabled())
-                    .setParameter("accountId", endpoint.getAccountId())
-                    .setParameter("id", endpoint.getId())
-                    .executeUpdate()
-                    .call(session::flush)
-                    .onItem().transformToUni(endpointRowCount -> {
-                        if (endpointRowCount == 0) {
-                            return Uni.createFrom().item(Boolean.FALSE);
-                        } else if (endpoint.getProperties() == null) {
-                            return Uni.createFrom().item(Boolean.TRUE);
-                        } else {
-                            switch (endpoint.getType()) {
-                                case WEBHOOK:
-                                    WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
-                                    return session.createQuery(webhookQuery)
-                                            .setParameter("url", properties.getUrl())
-                                            .setParameter("method", properties.getMethod())
-                                            .setParameter("disableSslVerification", properties.getDisableSslVerification())
-                                            .setParameter("secretToken", properties.getSecretToken())
-                                            .setParameter("endpointId", endpoint.getId())
-                                            .executeUpdate()
-                                            .call(session::flush)
-                                            .onItem().transform(rowCount -> rowCount > 0);
-                                case CAMEL:
-                                    CamelProperties cAttr = (CamelProperties) endpoint.getProperties();
-                                    return session.createQuery(camelQuery)
-                                            .setParameter("url", cAttr.getUrl())
-                                            .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
-                                            .setParameter("secretToken", cAttr.getSecretToken())
-                                            .setParameter("endpointId", endpoint.getId())
-                                            .setParameter("extras", cAttr.getExtras())
-                                            .setParameter("basicAuthentication", cAttr.getBasicAuthentication())
-                                            .executeUpdate()
-                                            .call(session::flush)
-                                            .onItem().transform(rowCount -> rowCount > 0);
-                                default:
-                                    return Uni.createFrom().item(Boolean.TRUE);
-                            }
-                        }
-                    });
-        });
+        int endpointRowCount = entityManager.createQuery(endpointQuery)
+                .setParameter("name", endpoint.getName())
+                .setParameter("description", endpoint.getDescription())
+                .setParameter("enabled", endpoint.isEnabled())
+                .setParameter("accountId", endpoint.getAccountId())
+                .setParameter("id", endpoint.getId())
+                .executeUpdate();
+
+        if (endpointRowCount == 0) {
+            return false;
+        } else if (endpoint.getProperties() == null) {
+            return true;
+        } else {
+            switch (endpoint.getType()) {
+                case WEBHOOK:
+                    WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
+                    return entityManager.createQuery(webhookQuery)
+                            .setParameter("url", properties.getUrl())
+                            .setParameter("method", properties.getMethod())
+                            .setParameter("disableSslVerification", properties.getDisableSslVerification())
+                            .setParameter("secretToken", properties.getSecretToken())
+                            .setParameter("endpointId", endpoint.getId())
+                            .executeUpdate() > 0;
+                case CAMEL:
+                    CamelProperties cAttr = (CamelProperties) endpoint.getProperties();
+                    return entityManager.createQuery(camelQuery)
+                            .setParameter("url", cAttr.getUrl())
+                            .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
+                            .setParameter("secretToken", cAttr.getSecretToken())
+                            .setParameter("endpointId", endpoint.getId())
+                            .setParameter("extras", cAttr.getExtras())
+                            .setParameter("basicAuthentication", cAttr.getBasicAuthentication())
+                            .executeUpdate() > 0;
+                default:
+                    return true;
+            }
+        }
     }
 
-    public Uni<Void> loadProperties(List<Endpoint> endpoints) {
-        return loadProperties(endpoints, false);
-    }
-
-    public Uni<Void> loadProperties(List<Endpoint> endpoints, boolean useStatelessSession) {
+    public void loadProperties(List<Endpoint> endpoints) {
         if (endpoints.isEmpty()) {
-            return Uni.createFrom().voidItem();
+            return;
         }
 
         // Group endpoints in types and load in batches for each type.
         Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
-        return this.loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK, useStatelessSession)
-                .chain(() -> loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL, useStatelessSession))
-                .chain(() -> loadTypedProperties(EmailSubscriptionProperties.class, endpointSet, EndpointType.EMAIL_SUBSCRIPTION, useStatelessSession));
+        loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK);
+        loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL);
+        loadTypedProperties(EmailSubscriptionProperties.class, endpointSet, EndpointType.EMAIL_SUBSCRIPTION);
     }
 
-    private <T extends EndpointProperties> Uni<Void> loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type, boolean useStatelessSession) {
+    private <T extends EndpointProperties> void loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type) {
         Map<UUID, Endpoint> endpointsMap = endpoints
                 .stream()
                 .filter(e -> e.getType().equals(type))
                 .collect(Collectors.toMap(Endpoint::getId, Function.identity()));
 
         if (endpointsMap.size() > 0) {
-            return commonStateSessionFactory.withSession(
-                useStatelessSession,
-                commonStateSession -> commonStateSession.find(typedEndpointClass, endpointsMap.keySet().toArray())
-            ).onItem().invoke(propList -> propList.forEach(props -> {
+            String query = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:ids)";
+            List<T> propList = entityManager.createQuery(query, typedEndpointClass)
+                    .setParameter("ids", endpointsMap.keySet())
+                    .getResultList();
+            for (T props : propList) {
                 if (props != null) {
                     Endpoint endpoint = endpointsMap.get(props.getId());
                     endpoint.setProperties(props);
@@ -317,10 +288,8 @@ public class EndpointResources {
                         endpoint.getProperties(CamelProperties.class).setSubType(endpoint.getSubType());
                     }
                 }
-            })).replaceWith(Uni.createFrom().voidItem());
+            }
         }
-
-        return Uni.createFrom().voidItem();
     }
 
     static QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly) {
@@ -345,12 +314,12 @@ public class EndpointResources {
                 );
     }
 
-    public Uni<Endpoint> loadProperties(Endpoint endpoint) {
+    public Endpoint loadProperties(Endpoint endpoint) {
         if (endpoint == null) {
             LOGGER.warn("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
-            return Uni.createFrom().nullItem();
+            return null;
         }
-        return this.loadProperties(Collections.singletonList(endpoint))
-                .replaceWith(endpoint);
+        loadProperties(Collections.singletonList(endpoint));
+        return endpoint;
     }
 }

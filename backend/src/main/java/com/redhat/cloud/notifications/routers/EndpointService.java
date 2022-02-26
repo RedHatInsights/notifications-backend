@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -17,8 +18,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
-import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.infrastructure.Infrastructure;
+import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -26,10 +26,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
@@ -78,9 +78,6 @@ public class EndpointService {
     @Inject
     ApplicationResources applicationResources;
 
-    @Inject
-    Mutiny.SessionFactory sessionFactory;
-
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
@@ -98,54 +95,46 @@ public class EndpointService {
                 schema = @Schema(type = SchemaType.INTEGER)
             )
     })
-    public Uni<EndpointPage> getEndpoints(
+    public EndpointPage getEndpoints(
             @Context SecurityContext sec,
             @BeanParam Query query,
             @QueryParam("type") List<String> targetType,
             @QueryParam("active") Boolean activeOnly) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        return sessionFactory.withSession(session -> {
-            Uni<List<Endpoint>> endpoints;
-            Uni<Long> count;
+        List<Endpoint> endpoints;
+        Long count;
 
-            if (targetType != null && targetType.size() > 0) {
-                Set<CompositeEndpointType> compositeType;
+        if (targetType != null && targetType.size() > 0) {
+            Set<CompositeEndpointType> compositeType = targetType.stream().map(s -> {
+                String[] pieces = s.split(":", 2);
                 try {
-                    compositeType = targetType.stream().map(s -> {
-                        String[] pieces = s.split(":", 2);
-                        try {
-                            if (pieces.length == 1) {
-                                return new CompositeEndpointType(EndpointType.valueOf(s.toUpperCase()));
-                            } else {
-                                return new CompositeEndpointType(EndpointType.valueOf(pieces[0].toUpperCase()), pieces[1]);
-                            }
-                        } catch (IllegalArgumentException e) {
-                            throw new BadRequestException("Unknown endpoint type: [" + s + "]", e);
-                        }
-                    }).collect(Collectors.toSet());
-                } catch (BadRequestException badRequestException) {
-                    return Uni.createFrom().failure(() -> badRequestException);
+                    if (pieces.length == 1) {
+                        return new CompositeEndpointType(EndpointType.valueOf(s.toUpperCase()));
+                    } else {
+                        return new CompositeEndpointType(EndpointType.valueOf(pieces[0].toUpperCase()), pieces[1]);
+                    }
+                } catch (IllegalArgumentException e) {
+                    throw new BadRequestException("Unknown endpoint type: [" + s + "]", e);
                 }
-                endpoints = resources
-                        .getEndpointsPerCompositeType(principal.getAccount(), compositeType, activeOnly, query, false);
-                count = resources.getEndpointsCountPerCompositeType(principal.getAccount(), compositeType, activeOnly, false);
-            } else {
-                endpoints = resources.getEndpoints(principal.getAccount(), query);
-                count = resources.getEndpointsCount(principal.getAccount());
-            }
+            }).collect(Collectors.toSet());
+            endpoints = resources
+                    .getEndpointsPerCompositeType(principal.getAccount(), compositeType, activeOnly, query);
+            count = resources.getEndpointsCountPerCompositeType(principal.getAccount(), compositeType, activeOnly);
+        } else {
+            endpoints = resources.getEndpoints(principal.getAccount(), query);
+            count = resources.getEndpointsCount(principal.getAccount());
+        }
 
-            return endpoints
-                    .onItem().transformToUni(endpointsList -> count
-                            .onItem().transform(endpointsCount -> new EndpointPage(endpointsList, new HashMap<>(), new Meta(endpointsCount))));
-        });
+        return new EndpointPage(endpoints, new HashMap<>(), new Meta(count));
     }
 
     @POST
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Uni<Endpoint> createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
+    @Transactional
+    public Endpoint createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
         checkSystemEndpoint(endpoint.getType());
 
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -155,9 +144,7 @@ public class EndpointService {
             throw new BadRequestException("Properties is required");
         }
 
-        return sessionFactory.withSession(session -> {
-            return resources.createEndpoint(endpoint, false);
-        });
+        return resources.createEndpoint(endpoint);
     }
 
     @POST
@@ -165,45 +152,42 @@ public class EndpointService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public Uni<Endpoint> getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid RequestEmailSubscriptionProperties requestProps) {
+    @Transactional
+    public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid RequestEmailSubscriptionProperties requestProps) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
         // Prevent from creating not public facing properties
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
         properties.setOnlyAdmins(requestProps.isOnlyAdmins());
 
-        return sessionFactory.withSession(session -> {
-            return resources.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties, false);
-        });
+        return resources.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties);
     }
 
     @GET
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public Uni<Endpoint> getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    public Endpoint getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return sessionFactory.withSession(session -> {
-            return resources.getEndpoint(principal.getAccount(), id)
-                    .onItem().ifNull().failWith(new NotFoundException());
-        });
+        Endpoint endpoint = resources.getEndpoint(principal.getAccount(), id);
+        if (endpoint == null) {
+            throw new NotFoundException();
+        } else {
+            return endpoint;
+        }
     }
 
     @DELETE
     @Path("/{id}")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "204", description = "The integration has been deleted", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    @Transactional
+    public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return sessionFactory.withSession(session -> {
-            return resources.getEndpointTypeById(principal.getAccount(), id)
-                    .onItem().transformToUni(endpointType -> {
-                        checkSystemEndpoint(endpointType);
-                        return resources.deleteEndpoint(principal.getAccount(), id);
-                    })
-                    // onFailure() ?
-                    .onItem().transform(ignored -> Response.noContent().build());
-        });
+        EndpointType endpointType = resources.getEndpointTypeById(principal.getAccount(), id);
+        checkSystemEndpoint(endpointType);
+        resources.deleteEndpoint(principal.getAccount(), id);
+        return Response.noContent().build();
     }
 
     @PUT
@@ -211,32 +195,26 @@ public class EndpointService {
     @Produces(TEXT_PLAIN)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    @Transactional
+    public Response enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return sessionFactory.withSession(session -> {
-            return resources.getEndpointTypeById(principal.getAccount(), id)
-                    .onItem().transformToUni(endpointType -> {
-                        checkSystemEndpoint(endpointType);
-                        return resources.enableEndpoint(principal.getAccount(), id);
-                    })
-                    .onItem().transform(ignored -> Response.ok().build());
-        });
+        EndpointType endpointType = resources.getEndpointTypeById(principal.getAccount(), id);
+        checkSystemEndpoint(endpointType);
+        resources.enableEndpoint(principal.getAccount(), id);
+        return Response.ok().build();
     }
 
     @DELETE
     @Path("/{id}/enable")
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "204", description = "The integration has been disabled", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    @Transactional
+    public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return sessionFactory.withSession(session -> {
-            return resources.getEndpointTypeById(principal.getAccount(), id)
-                    .onItem().transformToUni(endpointType -> {
-                        checkSystemEndpoint(endpointType);
-                        return resources.disableEndpoint(principal.getAccount(), id);
-                    })
-                    .onItem().transform(ignored -> Response.noContent().build());
-        });
+        EndpointType endpointType = resources.getEndpointTypeById(principal.getAccount(), id);
+        checkSystemEndpoint(endpointType);
+        resources.disableEndpoint(principal.getAccount(), id);
+        return Response.noContent().build();
     }
 
     @PUT
@@ -245,22 +223,19 @@ public class EndpointService {
     @Produces(TEXT_PLAIN)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> updateEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid Endpoint endpoint) {
+    @Transactional
+    public Response updateEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid Endpoint endpoint) {
         // This prevents from updating an endpoint from whatever EndpointType to a system EndpointType
         checkSystemEndpoint(endpoint.getType());
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         endpoint.setAccountId(principal.getAccount());
         endpoint.setId(id);
 
-        return sessionFactory.withSession(session -> {
-            return resources.getEndpointTypeById(principal.getAccount(), id)
-                    .onItem().transformToUni(endpointType -> {
-                        // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
-                        checkSystemEndpoint(endpointType);
-                        return resources.updateEndpoint(endpoint);
-                    })
-                    .onItem().transform(ignored -> Response.ok().build());
-        });
+        EndpointType endpointType = resources.getEndpointTypeById(principal.getAccount(), id);
+        // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
+        checkSystemEndpoint(endpointType);
+        resources.updateEndpoint(endpoint);
+        return Response.ok().build();
     }
 
     @GET
@@ -287,19 +262,11 @@ public class EndpointService {
     })
 
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public Uni<List<NotificationHistory>> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
+    public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
         // TODO We need globally limitations (Paging support and limits etc)
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         boolean doDetail = includeDetail != null && includeDetail;
-        return sessionFactory.withSession(session -> {
-            return notifResources.getNotificationHistory(principal.getAccount(), id, doDetail, query);
-        })
-        /*
-         * If the response List contains a huge number of items, the event loop thread will be blocked during the List
-         * serialization by Jackson. To prevent blocking the event loop, the serialization is dispatched to a worker
-         * thread from the Quarkus worker threads pool.
-         */
-        .emitOn(Infrastructure.getDefaultWorkerPool());
+        return notifResources.getNotificationHistory(principal.getAccount(), id, doDetail, query);
     }
 
     @GET
@@ -307,63 +274,66 @@ public class EndpointService {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Uni<Response> getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId) {
+    public Response getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return sessionFactory.withSession(session -> {
-            return notifResources.getNotificationDetails(principal.getAccount(), endpointId, historyId)
-                    // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
-                    .onItem().ifNull().failWith(new NotFoundException())
-                    .onItem().transform(json -> {
-                        if (json.isEmpty()) {
-                            return Response.noContent().build();
-                        }
-                        return Response.ok(json).build();
-                    });
-        });
+        JsonObject json = notifResources.getNotificationDetails(principal.getAccount(), endpointId, historyId);
+        if (json == null) {
+            // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
+            throw new NotFoundException();
+        } else {
+            if (json.isEmpty()) {
+                return Response.noContent().build();
+            }
+            return Response.ok(json).build();
+        }
     }
 
     @PUT
     @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Uni<Boolean> subscribeEmail(
+    @Transactional
+    public boolean subscribeEmail(
             @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName,
             @PathParam("type") EmailSubscriptionType type) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        return sessionFactory.withSession(session -> {
-            return applicationResources.getApplication(bundleName, applicationName)
-                    .onItem().ifNull().failWith(new NotFoundException())
-                    .onItem().transformToUni(application -> emailSubscriptionResources.subscribe(
-                            principal.getAccount(),
-                            principal.getName(),
-                            bundleName,
-                            applicationName,
-                            type
-                    ));
-        });
+        Application app = applicationResources.getApplication(bundleName, applicationName);
+        if (app == null) {
+            throw new NotFoundException();
+        } else {
+            return emailSubscriptionResources.subscribe(
+                    principal.getAccount(),
+                    principal.getName(),
+                    bundleName,
+                    applicationName,
+                    type
+            );
+        }
     }
 
     @DELETE
     @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Uni<Boolean> unsubscribeEmail(
+    @Transactional
+    public boolean unsubscribeEmail(
             @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName,
             @PathParam("type") EmailSubscriptionType type) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        return sessionFactory.withSession(session -> {
-            return applicationResources.getApplication(bundleName, applicationName)
-                    .onItem().ifNull().failWith(new NotFoundException())
-                    .onItem().transformToUni(application -> emailSubscriptionResources.unsubscribe(
-                            principal.getAccount(),
-                            principal.getName(),
-                            bundleName,
-                            applicationName,
-                            type
-                    ));
-        });
+        Application app = applicationResources.getApplication(bundleName, applicationName);
+        if (app == null) {
+            throw new NotFoundException();
+        } else {
+            return emailSubscriptionResources.unsubscribe(
+                    principal.getAccount(),
+                    principal.getName(),
+                    bundleName,
+                    applicationName,
+                    type
+            );
+        }
     }
 
     private static void checkSystemEndpoint(EndpointType endpointType) {

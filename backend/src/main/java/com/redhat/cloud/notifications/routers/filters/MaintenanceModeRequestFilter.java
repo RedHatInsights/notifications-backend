@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers.filters;
 
 import com.redhat.cloud.notifications.db.StatusResources;
 import io.quarkus.cache.CacheResult;
-import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.ServerRequestFilter;
 
@@ -37,7 +36,7 @@ public class MaintenanceModeRequestFilter {
     StatusResources statusResources;
 
     @ServerRequestFilter
-    public Uni<Response> filter(ContainerRequestContext requestContext) {
+    public Response filter(ContainerRequestContext requestContext) {
         String requestPath = requestContext.getUriInfo().getRequestUri().getPath();
         LOGGER.tracef("Filtering request to %s", requestPath);
 
@@ -54,21 +53,17 @@ public class MaintenanceModeRequestFilter {
          * If this point is reached, the current request path can be affected by the maintenance mode.
          * Let's check if maintenance is on in the database.
          */
-        return isMaintenance()
-                .onItem().transform(isMaintenance -> {
-                    if (isMaintenance) {
-                        LOGGER.trace("Maintenance mode is enabled in the database, aborting request and returning HTTP status 503");
-                        return MAINTENANCE_IN_PROGRESS;
-                    } else {
-                        // This filter work is done. The request will be processed normally.
-                        return null;
-                    }
-                });
+        if (isMaintenance()) {
+            LOGGER.trace("Maintenance mode is enabled in the database, aborting request and returning HTTP status 503");
+            return MAINTENANCE_IN_PROGRESS;
+        } else {
+            // This filter work is done. The request will be processed normally.
+            return null;
+        }
     }
 
     @CacheResult(cacheName = "maintenance")
-    public Uni<Boolean> isMaintenance() {
-        return statusResources.getCurrentStatus()
-                .onItem().transform(currentStatus -> currentStatus.status == MAINTENANCE);
+    public Boolean isMaintenance() {
+        return statusResources.getCurrentStatus().status == MAINTENANCE;
     }
 }

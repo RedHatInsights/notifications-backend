@@ -12,7 +12,6 @@ import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.tuple.Pair;
@@ -322,7 +321,7 @@ public class InternalServiceTest extends DbIsolatedTest {
         JsonObject exceptionMessage = new JsonObject();
         exceptionMessage.put("message", "Action parsing failed for payload: I am invalid!");
         BadRequestException badRequest = new BadRequestException(exceptionMessage.toString());
-        when(templateEngineClient.render(Mockito.any(RenderEmailTemplateRequest.class))).thenReturn(Uni.createFrom().failure(badRequest));
+        when(templateEngineClient.render(Mockito.any(RenderEmailTemplateRequest.class))).thenThrow(badRequest);
 
         String responseBody = given()
                 .basePath(API_INTERNAL)

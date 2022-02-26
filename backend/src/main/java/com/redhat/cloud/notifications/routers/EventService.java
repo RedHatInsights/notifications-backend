@@ -2,14 +2,13 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.EventResources;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
-import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.annotation.security.RolesAllowed;
@@ -46,14 +45,11 @@ public class EventService {
     @Inject
     EventResources eventResources;
 
-    @Inject
-    Mutiny.SessionFactory sessionFactory;
-
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_READ_NOTIFICATIONS_EVENTS)
     @Operation(summary = "Retrieve the event log entries.")
-    public Uni<Page<EventLogEntry>> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
+    public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
                                               @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
                                               @RestQuery Set<EndpointType> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                               @RestQuery @DefaultValue("10") int limit, @RestQuery @DefaultValue("0") int offset, @RestQuery String sortBy,
@@ -64,59 +60,50 @@ public class EventService {
         if (sortBy != null && !SORT_BY_PATTERN.matcher(sortBy).matches()) {
             throw new BadRequestException("Invalid 'sortBy' query parameter");
         }
-        return sessionFactory.withSession(session -> {
-            return getAccountId(securityContext)
-                    .onItem().transformToUni(accountId ->
-                            eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, includeActions, limit, offset, sortBy)
-                                    .onItem().transform(events ->
-                                            events.stream().map(event -> {
-                                                List<EventLogEntryAction> actions;
-                                                if (!includeActions) {
-                                                    actions = Collections.emptyList();
-                                                } else {
-                                                    actions = event.getHistoryEntries().stream().map(historyEntry -> {
-                                                        EventLogEntryAction action = new EventLogEntryAction();
-                                                        action.setId(historyEntry.getId());
-                                                        action.setEndpointId(historyEntry.getEndpointId());
-                                                        action.setEndpointType(historyEntry.getEndpointType());
-                                                        action.setEndpointSubType(historyEntry.getEndpointSubType());
-                                                        action.setInvocationResult(historyEntry.isInvocationResult());
-                                                        if (includeDetails) {
-                                                            action.setDetails(historyEntry.getDetails());
-                                                        }
-                                                        return action;
-                                                    }).collect(Collectors.toList());
-                                                }
+        String accountId = getAccountId(securityContext);
+        List<Event> events = eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, includeActions, limit, offset, sortBy);
+        List<EventLogEntry> eventLogEntries = events.stream().map(event -> {
+            List<EventLogEntryAction> actions;
+            if (!includeActions) {
+                actions = Collections.emptyList();
+            } else {
+                actions = event.getHistoryEntries().stream().map(historyEntry -> {
+                    EventLogEntryAction action = new EventLogEntryAction();
+                    action.setId(historyEntry.getId());
+                    action.setEndpointId(historyEntry.getEndpointId());
+                    action.setEndpointType(historyEntry.getEndpointType());
+                    action.setEndpointSubType(historyEntry.getEndpointSubType());
+                    action.setInvocationResult(historyEntry.isInvocationResult());
+                    if (includeDetails) {
+                        action.setDetails(historyEntry.getDetails());
+                    }
+                    return action;
+                }).collect(Collectors.toList());
+            }
 
-                                                EventLogEntry entry = new EventLogEntry();
-                                                entry.setId(event.getId());
-                                                entry.setCreated(event.getCreated());
-                                                entry.setBundle(event.getBundleDisplayName());
-                                                entry.setApplication(event.getApplicationDisplayName());
-                                                entry.setEventType(event.getEventTypeDisplayName());
-                                                entry.setActions(actions);
-                                                if (includePayload) {
-                                                    entry.setPayload(event.getPayload());
-                                                }
-                                                return entry;
-                                            }).collect(Collectors.toList())
-                                    )
-                                    .onItem().transformToUni(entries ->
-                                            eventResources.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults)
-                                                    .onItem().transform(count -> {
-                                                        Meta meta = new Meta();
-                                                        meta.setCount(count);
+            EventLogEntry entry = new EventLogEntry();
+            entry.setId(event.getId());
+            entry.setCreated(event.getCreated());
+            entry.setBundle(event.getBundleDisplayName());
+            entry.setApplication(event.getApplicationDisplayName());
+            entry.setEventType(event.getEventTypeDisplayName());
+            entry.setActions(actions);
+            if (includePayload) {
+                entry.setPayload(event.getPayload());
+            }
+            return entry;
+        }).collect(Collectors.toList());
+        Long count = eventResources.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
 
-                                                        Map<String, String> links = PageLinksBuilder.build(PATH, count, limit, offset);
+        Meta meta = new Meta();
+        meta.setCount(count);
 
-                                                        Page<EventLogEntry> page = new Page<>();
-                                                        page.setData(entries);
-                                                        page.setMeta(meta);
-                                                        page.setLinks(links);
-                                                        return page;
-                                                    })
-                                    )
-                    );
-        });
+        Map<String, String> links = PageLinksBuilder.build(PATH, count, limit, offset);
+
+        Page<EventLogEntry> page = new Page<>();
+        page.setData(eventLogEntries);
+        page.setMeta(meta);
+        page.setLinks(links);
+        return page;
     }
 }

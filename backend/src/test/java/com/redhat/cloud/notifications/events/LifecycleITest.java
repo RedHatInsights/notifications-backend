@@ -23,13 +23,13 @@ import com.redhat.cloud.notifications.routers.models.internal.RequestDefaultBeha
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.Header;
-import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -73,7 +73,7 @@ public class LifecycleITest extends DbIsolatedTest {
     MockServerClientConfig mockServerConfig;
 
     @Inject
-    Mutiny.SessionFactory sessionFactory;
+    EntityManager entityManager;
 
     private Header initRbacMock(String tenant, String username, MockServerClientConfig.RbacAccess access) {
         String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);
@@ -145,10 +145,9 @@ public class LifecycleITest extends DbIsolatedTest {
         String emailEndpoint = getEmailEndpoint(identityHeader, userEmailEndpointRequest);
 
         // Before the notifications split, a Kafka message was sent here.
-        createEvent(accountId, eventTypeId).call(event -> {
-            return createNotificationHistory(event, endpointId1, true)
-                    .chain(() -> createNotificationHistory(event, endpointId2, true));
-        }).await().indefinitely();
+        Event event = createEvent(accountId, eventTypeId);
+        createNotificationHistory(event, endpointId1, true);
+        createNotificationHistory(event, endpointId2, true);
 
         // Let's check the notifications history.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 1, true, 200));
@@ -164,11 +163,10 @@ public class LifecycleITest extends DbIsolatedTest {
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId, behaviorGroupId1, behaviorGroupId2, defaultBehaviorGroupId);
 
         // Before the notifications split, a Kafka message was sent here.
-        createEvent(accountId, eventTypeId).call(event -> {
-            return createNotificationHistory(event, endpointId1, true)
-                    .chain(() -> createNotificationHistory(event, endpointId2, true))
-                    .chain(() -> createNotificationHistory(event, endpointId3, false));
-        }).await().indefinitely();
+        event = createEvent(accountId, eventTypeId);
+        createNotificationHistory(event, endpointId1, true);
+        createNotificationHistory(event, endpointId2, true);
+        createNotificationHistory(event, endpointId3, false);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 2, true, 200));
@@ -180,12 +178,11 @@ public class LifecycleITest extends DbIsolatedTest {
         subscribeUserPreferences(identityHeader, BUNDLE_NAME, APP_NAME);
 
         // Before the notifications split, a Kafka message was sent here.
-        createEvent(accountId, eventTypeId).call(event -> {
-            return createNotificationHistory(event, endpointId1, true)
-                    .chain(() -> createNotificationHistory(event, endpointId2, true))
-                    .chain(() -> createNotificationHistory(event, endpointId3, false))
-                    .chain(() -> createNotificationHistory(event, emailEndpoint, true));
-        }).await().indefinitely();
+        event = createEvent(accountId, eventTypeId);
+        createNotificationHistory(event, endpointId1, true);
+        createNotificationHistory(event, endpointId2, true);
+        createNotificationHistory(event, endpointId3, false);
+        createNotificationHistory(event, emailEndpoint, true);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 3, true, 200));
@@ -200,12 +197,11 @@ public class LifecycleITest extends DbIsolatedTest {
         addBehaviorGroupActions(identityHeader, behaviorGroupId2, 200, endpointId3, endpointId2);
 
         // Before the notifications split, a Kafka message was sent here.
-        createEvent(accountId, eventTypeId).call(event -> {
-            return createNotificationHistory(event, endpointId1, true)
-                    .chain(() -> createNotificationHistory(event, endpointId2, true))
-                    .chain(() -> createNotificationHistory(event, endpointId3, false))
-                    .chain(() -> createNotificationHistory(event, emailEndpoint, true));
-        }).await().indefinitely();
+        createEvent(accountId, eventTypeId);
+        createNotificationHistory(event, endpointId1, true);
+        createNotificationHistory(event, endpointId2, true);
+        createNotificationHistory(event, endpointId3, false);
+        createNotificationHistory(event, emailEndpoint, true);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 4, true, 200));
@@ -386,45 +382,39 @@ public class LifecycleITest extends DbIsolatedTest {
         return createBehaviorGroupInternal(API_INTERNAL + "/behaviorGroups/default", null, bundleId);
     }
 
-    private Uni<Event> createEvent(String accountId, String eventTypeId) {
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery("FROM EventType e JOIN FETCH e.application a JOIN FETCH a.bundle WHERE e.id = :id", EventType.class)
-                    .setParameter("id", UUID.fromString(eventTypeId))
-                    .getSingleResult()
-                    .onItem().transformToUni(eventType -> {
-                        Event event = new Event(accountId, eventType);
-                        event.prePersist();
-                        return statelessSession.insert(event)
-                            .replaceWith(event);
-                    });
-        });
+    @Transactional
+    Event createEvent(String accountId, String eventTypeId) {
+        EventType eventType =  entityManager.createQuery("FROM EventType e JOIN FETCH e.application a JOIN FETCH a.bundle WHERE e.id = :id", EventType.class)
+                .setParameter("id", UUID.fromString(eventTypeId))
+                .getSingleResult();
+
+        Event event = new Event(accountId, eventType);
+        entityManager.persist(event);
+        return event;
     }
 
-    private Uni<Void> createNotificationHistory(Event event, String endpointId, boolean invocationResult) {
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery("FROM Endpoint WHERE id = :id", Endpoint.class)
-                    .setParameter("id", UUID.fromString(endpointId))
-                    .getSingleResult()
-                    .call(endpoint -> {
-                        NotificationHistory history = new NotificationHistory();
-                        history.setId(UUID.randomUUID());
-                        history.setEvent(event);
-                        history.setEndpoint(endpoint);
-                        history.setEndpointType(endpoint.getType());
-                        history.setInvocationTime(123L);
-                        history.setInvocationResult(invocationResult);
-                        if (!invocationResult) {
-                            history.setDetails(Map.of(
-                                    "code", 400,
-                                    "url", "https://www.foo.com",
-                                    "method", "GET"
-                            ));
-                        }
-                        history.prePersist();
-                        return statelessSession.insert(history);
-                    })
-                    .replaceWithVoid();
-        });
+    @Transactional
+    void createNotificationHistory(Event event, String endpointId, boolean invocationResult) {
+        Endpoint endpoint = entityManager.createQuery("FROM Endpoint WHERE id = :id", Endpoint.class)
+                .setParameter("id", UUID.fromString(endpointId))
+                .getSingleResult();
+
+        NotificationHistory history = new NotificationHistory();
+        history.setId(UUID.randomUUID());
+        history.setEvent(event);
+        history.setEndpoint(endpoint);
+        history.setEndpointType(endpoint.getType());
+        history.setInvocationTime(123L);
+        history.setInvocationResult(invocationResult);
+        if (!invocationResult) {
+            history.setDetails(Map.of(
+                    "code", 400,
+                    "url", "https://www.foo.com",
+                    "method", "GET"
+            ));
+        }
+        history.prePersist();
+        entityManager.persist(history);
     }
 
     private void deleteDefaultBehaviorGroup(String defaultBehaviorGroupId) {

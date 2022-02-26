@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class HealthCheckTest {
 
-    private static final Pattern PATTERN = Pattern.compile("\"name\": \"Reactive PostgreSQL connections health check\",\\R[ ]+\"status\": \"UP\"");
+    private static final Pattern PATTERN = Pattern.compile("\"name\": \"Database connections health check\",\\R[ ]+\"status\": \"UP\"");
 
     @Test
     void testNormalHealth() {

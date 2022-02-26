@@ -101,7 +101,10 @@ public class Event {
 
     @PrePersist
     public void prePersist() {
-        created = Timestamp.valueOf(LocalDateTime.now(UTC));
+        // The 'created' field value can be set in tests.
+        if (created == null) {
+            created = Timestamp.valueOf(LocalDateTime.now(UTC));
+        }
     }
 
     public String getAccountId() {

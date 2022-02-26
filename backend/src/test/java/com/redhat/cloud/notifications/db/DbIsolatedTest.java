@@ -17,7 +17,6 @@ public abstract class DbIsolatedTest {
     @BeforeEach
     @AfterEach
     void cleanDatabase() {
-        dbCleaner.clean()
-                .await().indefinitely();
+        dbCleaner.clean();
     }
 }

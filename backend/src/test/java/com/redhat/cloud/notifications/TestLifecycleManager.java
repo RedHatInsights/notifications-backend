@@ -74,8 +74,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         // quarkus.datasource.driver=io.opentracing.contrib.jdbc.TracingDriver
         // Driver needs a 'tracing' in the middle like jdbc:tracing:postgresql://localhost:5432/postgres
         String jdbcUrl = postgreSQLContainer.getJdbcUrl();
-        String dbUrl = jdbcUrl.substring(jdbcUrl.indexOf(':') + 1).replace("jdbc:", "");
-        props.put("quarkus.datasource.reactive.url", dbUrl);
+        props.put("quarkus.datasource.jdbc.url", jdbcUrl);
         props.put("quarkus.datasource.username", "test");
         props.put("quarkus.datasource.password", "test");
         props.put("quarkus.datasource.db-kind", "postgresql");

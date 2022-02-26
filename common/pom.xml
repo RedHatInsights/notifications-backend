@@ -14,11 +14,19 @@
 
     <dependencies>
 
-        <!-- Quarkus -->
+        <!-- TODO NOTIF-488 Replace with quarkus-hibernate-orm after the reactiveness removal. -->
         <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-hibernate-reactive</artifactId>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
+
+        <!-- TODO NOTIF-488 Remove this dependency after the reactiveness removal. -->
+        <dependency>
+            <groupId>org.hibernate.reactive</groupId>
+            <artifactId>hibernate-reactive-core</artifactId>
+        </dependency>
+
+        <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-validator</artifactId>

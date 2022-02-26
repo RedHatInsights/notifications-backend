@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.oapi.OApiFilter;
-import io.smallrye.mutiny.Uni;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -22,7 +21,7 @@ public class OApiService {
     @GET
     @Path("/{what}/v1.0/openapi.json")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<String> serveOpenAPI(@PathParam("what") String what) {
+    public String serveOpenAPI(@PathParam("what") String what) {
         return oApiFilter.serveOpenApi(what);
     }
 
