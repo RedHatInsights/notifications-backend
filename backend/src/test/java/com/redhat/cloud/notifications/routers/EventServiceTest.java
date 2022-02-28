@@ -6,10 +6,10 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.EndpointResources;
-import com.redhat.cloud.notifications.db.ModelInstancesHolder;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
@@ -74,9 +74,6 @@ public class EventServiceTest extends DbIsolatedTest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
-    // A new instance is automatically created by JUnit before each test is executed.
-    private final ModelInstancesHolder model = new ModelInstancesHolder();
-
     @Test
     void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly() {
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user2", NOTIFICATIONS_ACCESS_ONLY);
@@ -98,24 +95,24 @@ public class EventServiceTest extends DbIsolatedTest {
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", FULL_ACCESS);
         Header otherIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, "other-username", FULL_ACCESS);
 
-        model.bundles.add(resourceHelpers.createBundle("bundle-1", "Bundle 1"));
-        model.bundles.add(resourceHelpers.createBundle("bundle-2", "Bundle 2"));
-        model.applications.add(resourceHelpers.createApplication(model.bundles.get(0).getId(), "app-1", "Application 1"));
-        model.applications.add(resourceHelpers.createApplication(model.bundles.get(1).getId(), "app-2", "Application 2"));
-        model.eventTypes.add(resourceHelpers.createEventType(model.applications.get(0).getId(), "event-type-1", "Event type 1", "Event type 1"));
-        model.eventTypes.add(resourceHelpers.createEventType(model.applications.get(1).getId(), "event-type-2", "Event type 2", "Event type 2"));
-        model.events.add(createEvent(DEFAULT_ACCOUNT_ID, model.bundles.get(0), model.applications.get(0), model.eventTypes.get(0), NOW.minusDays(5L)));
-        model.events.add(createEvent(DEFAULT_ACCOUNT_ID, model.bundles.get(1), model.applications.get(1), model.eventTypes.get(1), NOW));
-        model.events.add(createEvent(DEFAULT_ACCOUNT_ID, model.bundles.get(1), model.applications.get(1), model.eventTypes.get(1), NOW.minusDays(2L)));
-        model.events.add(createEvent(OTHER_ACCOUNT_ID, model.bundles.get(1), model.applications.get(1), model.eventTypes.get(1), NOW.minusDays(10L)));
-        model.endpoints.add(resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK));
-        model.endpoints.add(resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION));
-        model.notificationHistories.add(resourceHelpers.createNotificationHistory(model.events.get(0), model.endpoints.get(0), TRUE));
-        model.notificationHistories.add(resourceHelpers.createNotificationHistory(model.events.get(0), model.endpoints.get(1), FALSE));
-        model.notificationHistories.add(resourceHelpers.createNotificationHistory(model.events.get(1), model.endpoints.get(0), TRUE));
-        model.notificationHistories.add(resourceHelpers.createNotificationHistory(model.events.get(2), model.endpoints.get(1), TRUE));
-        endpointResources.deleteEndpoint(DEFAULT_ACCOUNT_ID, model.endpoints.get(0).getId());
-        endpointResources.deleteEndpoint(DEFAULT_ACCOUNT_ID, model.endpoints.get(1).getId());
+        Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1");
+        Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2");
+        Application app1 = resourceHelpers.createApplication(bundle1.getId(), "app-1", "Application 1");
+        Application app2 = resourceHelpers.createApplication(bundle2.getId(), "app-2", "Application 2");
+        EventType eventType1 = resourceHelpers.createEventType(app1.getId(), "event-type-1", "Event type 1", "Event type 1");
+        EventType eventType2 = resourceHelpers.createEventType(app2.getId(), "event-type-2", "Event type 2", "Event type 2");
+        Event event1 = createEvent(DEFAULT_ACCOUNT_ID, bundle1, app1, eventType1, NOW.minusDays(5L));
+        Event event2 = createEvent(DEFAULT_ACCOUNT_ID, bundle2, app2, eventType2, NOW);
+        Event event3 = createEvent(DEFAULT_ACCOUNT_ID, bundle2, app2, eventType2, NOW.minusDays(2L));
+        Event event4 = createEvent(OTHER_ACCOUNT_ID, bundle2, app2, eventType2, NOW.minusDays(10L));
+        Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK);
+        Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION);
+        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, TRUE);
+        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, FALSE);
+        NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, TRUE);
+        NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, TRUE);
+        endpointResources.deleteEndpoint(DEFAULT_ACCOUNT_ID, endpoint1.getId());
+        endpointResources.deleteEndpoint(DEFAULT_ACCOUNT_ID, endpoint2.getId());
 
         /*
          * Test #1
@@ -126,9 +123,9 @@ public class EventServiceTest extends DbIsolatedTest {
         Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
-        assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
-        assertSameEvent(page.getData().get(2), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4);
+        assertSameEvent(page.getData().get(2), event1, history1, history2);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -141,7 +138,7 @@ public class EventServiceTest extends DbIsolatedTest {
         page = getEventLogPage(otherIdentityHeader, null, null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(3));
+        assertSameEvent(page.getData().get(0), event4);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -160,10 +157,10 @@ public class EventServiceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: One existing bundle
          */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(0).getId()), null, null, null, null, null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId()), null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -172,12 +169,12 @@ public class EventServiceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Multiple existing bundles, sort by ascending bundle names
          */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(0).getId(), model.bundles.get(1).getId()), null, null, null, null, null, null, null, null, "bundle:asc", false, true);
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId(), bundle2.getId()), null, null, null, null, null, null, null, null, "bundle:asc", false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
-        assertSameEvent(page.getData().get(1), model.events.get(1), model.notificationHistories.get(2));
-        assertSameEvent(page.getData().get(2), model.events.get(2), model.notificationHistories.get(3));
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(1), event2, history3);
+        assertSameEvent(page.getData().get(2), event3, history4);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -196,11 +193,11 @@ public class EventServiceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: One existing application
          */
-        page = getEventLogPage(defaultIdentityHeader, null, Set.of(model.applications.get(1).getId()), null, null, null, null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, Set.of(app2.getId()), null, null, null, null, null, null, null, null, false, true);
         assertEquals(2, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
-        assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -209,12 +206,12 @@ public class EventServiceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Multiple existing applications, sort by ascending application names
          */
-        page = getEventLogPage(defaultIdentityHeader, null, Set.of(model.applications.get(0).getId(), model.applications.get(1).getId()), null, null, null, null, null, null, null, "application:asc", false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, Set.of(app1.getId(), app2.getId()), null, null, null, null, null, null, null, "application:asc", false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
-        assertSameEvent(page.getData().get(1), model.events.get(1), model.notificationHistories.get(2));
-        assertSameEvent(page.getData().get(2), model.events.get(2), model.notificationHistories.get(3));
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(1), event2, history3);
+        assertSameEvent(page.getData().get(2), event3, history4);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -233,10 +230,10 @@ public class EventServiceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Existing event type
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, model.eventTypes.get(0).getDisplayName().substring(2).toUpperCase(), null, null, null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, eventType1.getDisplayName().substring(2).toUpperCase(), null, null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -248,8 +245,8 @@ public class EventServiceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), null, null, null, null, null, null, false, true);
         assertEquals(2, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
-        assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -261,7 +258,7 @@ public class EventServiceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, NOW.minusDays(3L), null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -273,7 +270,7 @@ public class EventServiceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), NOW.minusDays(1L), null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(2), model.notificationHistories.get(3));
+        assertSameEvent(page.getData().get(0), event3, history4);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -282,10 +279,10 @@ public class EventServiceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Let's try all request params at once!
          */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(model.bundles.get(1).getId()), Set.of(model.applications.get(1).getId()), model.eventTypes.get(1).getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), Set.of(EMAIL_SUBSCRIPTION), Set.of(TRUE), 10, 0, "created:desc", true, true);
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle2.getId()), Set.of(app2.getId()), eventType2.getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), Set.of(EMAIL_SUBSCRIPTION), Set.of(TRUE), 10, 0, "created:desc", true, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(2), model.notificationHistories.get(3));
+        assertSameEvent(page.getData().get(0), event3, history4);
         assertEquals(PAYLOAD, page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -297,8 +294,8 @@ public class EventServiceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, 2, null, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
-        assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last", "next");
 
@@ -310,7 +307,7 @@ public class EventServiceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, 1, 2, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last", "prev");
 
@@ -322,9 +319,9 @@ public class EventServiceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, "event:asc", false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
-        assertSameEvent(page.getData().get(1), model.events.get(1), model.notificationHistories.get(2));
-        assertSameEvent(page.getData().get(2), model.events.get(2), model.notificationHistories.get(3));
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(1), event2, history3);
+        assertSameEvent(page.getData().get(2), event3, history4);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -336,8 +333,8 @@ public class EventServiceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(WEBHOOK), null, null, null, null, false, true);
         assertEquals(2, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
-        assertSameEvent(page.getData().get(1), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event1, history1, history2);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -349,9 +346,9 @@ public class EventServiceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, Set.of(TRUE), null, null, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(1), model.notificationHistories.get(2));
-        assertSameEvent(page.getData().get(1), model.events.get(2), model.notificationHistories.get(3));
-        assertSameEvent(page.getData().get(2), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4);
+        assertSameEvent(page.getData().get(2), event1, history1, history2);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -363,7 +360,7 @@ public class EventServiceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(EMAIL_SUBSCRIPTION), Set.of(FALSE), null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(0), model.notificationHistories.get(0), model.notificationHistories.get(1));
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -376,9 +373,9 @@ public class EventServiceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, false, false);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), model.events.get(1));
-        assertSameEvent(page.getData().get(1), model.events.get(2));
-        assertSameEvent(page.getData().get(2), model.events.get(0));
+        assertSameEvent(page.getData().get(0), event2);
+        assertSameEvent(page.getData().get(1), event3);
+        assertSameEvent(page.getData().get(2), event1);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
     }

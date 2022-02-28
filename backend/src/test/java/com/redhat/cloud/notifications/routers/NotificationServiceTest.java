@@ -10,7 +10,6 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.ModelInstancesHolder;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
@@ -70,9 +69,6 @@ public class NotificationServiceTest extends DbIsolatedTest {
     @Inject
     BehaviorGroupResources behaviorGroupResources;
 
-    // A new instance is automatically created by JUnit before each test is executed.
-    private ModelInstancesHolder model = new ModelInstancesHolder();
-
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
@@ -115,13 +111,12 @@ public class NotificationServiceTest extends DbIsolatedTest {
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationResources.getApplications(TEST_BUNDLE_NAME);
         UUID myOtherTesterApplicationId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getId();
-        model.applicationIds.add(myOtherTesterApplicationId);
         Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
                 .header(identityHeader)
-                .queryParam("applicationIds", model.applicationIds.get(0))
+                .queryParam("applicationIds", myOtherTesterApplicationId)
                 .get("/notifications/eventTypes")
                 .then()
                 .statusCode(200)
@@ -132,7 +127,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
         for (int i = 0; i < eventTypes.size(); i++) {
             JsonObject ev = eventTypes.getJsonObject(i);
             ev.mapTo(EventType.class);
-            assertEquals(model.applicationIds.get(0).toString(), ev.getJsonObject("application").getString("id"));
+            assertEquals(myOtherTesterApplicationId.toString(), ev.getJsonObject("application").getString("id"));
         }
 
         assertEquals(100, eventTypes.size());
@@ -143,14 +138,13 @@ public class NotificationServiceTest extends DbIsolatedTest {
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationResources.getApplications(TEST_BUNDLE_NAME);
         UUID myBundleId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getBundleId();
-        model.bundleIds.add(myBundleId);
 
         Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
                 .header(identityHeader)
-                .queryParam("bundleId", model.bundleIds.get(0))
+                .queryParam("bundleId", myBundleId)
                 .get("/notifications/eventTypes")
                 .then()
                 .statusCode(200)
@@ -161,7 +155,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
         for (int i = 0; i < eventTypes.size(); i++) {
             JsonObject ev = eventTypes.getJsonObject(i);
             ev.mapTo(EventType.class);
-            assertEquals(model.bundleIds.get(0).toString(), ev.getJsonObject("application").getString("bundle_id"));
+            assertEquals(myBundleId.toString(), ev.getJsonObject("application").getString("bundle_id"));
         }
 
         assertEquals(200, eventTypes.size());
@@ -173,16 +167,14 @@ public class NotificationServiceTest extends DbIsolatedTest {
         List<Application> apps = applicationResources.getApplications(TEST_BUNDLE_NAME);
         Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
         UUID myOtherTesterApplicationId = app.getId();
-        model.applicationIds.add(myOtherTesterApplicationId);
         UUID myBundleId = app.getBundleId();
-        model.bundleIds.add(myBundleId);
         Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
                 .header(identityHeader)
-                .queryParam("bundleId", model.bundleIds.get(0))
-                .queryParam("applicationIds", model.applicationIds.get(0))
+                .queryParam("bundleId", myBundleId)
+                .queryParam("applicationIds", myOtherTesterApplicationId)
                 .get("/notifications/eventTypes")
                 .then()
                 .statusCode(200)
@@ -193,8 +185,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
         for (int i = 0; i < eventTypes.size(); i++) {
             JsonObject ev = eventTypes.getJsonObject(i);
             ev.mapTo(EventType.class);
-            assertEquals(model.bundleIds.get(0).toString(), ev.getJsonObject("application").getString("bundle_id"));
-            assertEquals(model.applicationIds.get(0).toString(), ev.getJsonObject("application").getString("id"));
+            assertEquals(myBundleId.toString(), ev.getJsonObject("application").getString("bundle_id"));
+            assertEquals(myOtherTesterApplicationId.toString(), ev.getJsonObject("application").getString("id"));
         }
 
         assertEquals(100, eventTypes.size());
@@ -204,24 +196,22 @@ public class NotificationServiceTest extends DbIsolatedTest {
     void testGetEventTypesAffectedByEndpoint() {
         String tenant = "testGetEventTypesAffectedByEndpoint";
         Header identityHeader = initRbacMock(tenant, "user", FULL_ACCESS);
-        model.bundleIds.add(helpers.createTestAppAndEventTypes());
-        model.behaviorGroupIds.add(helpers.createBehaviorGroup(tenant, "behavior-group-1", model.bundleIds.get(0)).getId());
-        model.behaviorGroupIds.add(helpers.createBehaviorGroup(tenant, "behavior-group-2", model.bundleIds.get(0)).getId());
-        model.applicationIds.add(
-                applicationResources.getApplications(TEST_BUNDLE_NAME).stream()
-                        .filter(a -> a.getName().equals(TEST_APP_NAME_2))
-                        .findFirst().get().getId()
-        );
-        model.endpointIds.add(helpers.createWebhookEndpoint(tenant));
-        model.endpointIds.add(helpers.createWebhookEndpoint(tenant));
-        model.eventTypes.addAll(applicationResources.getEventTypes(model.applicationIds.get(0)));
+        UUID bundleId = helpers.createTestAppAndEventTypes();
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(tenant, "behavior-group-1", bundleId).getId();
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(tenant, "behavior-group-2", bundleId).getId();
+        UUID appId = applicationResources.getApplications(TEST_BUNDLE_NAME).stream()
+                .filter(a -> a.getName().equals(TEST_APP_NAME_2))
+                .findFirst().get().getId();
+        UUID endpointId1 = helpers.createWebhookEndpoint(tenant);
+        UUID endpointId2 = helpers.createWebhookEndpoint(tenant);
+        List<EventType> eventTypes = applicationResources.getEventTypes(appId);
         // ep1 assigned to ev0; ep2 not assigned.
-        behaviorGroupResources.updateEventTypeBehaviors(tenant, model.eventTypes.get(0).getId(), Set.of(model.behaviorGroupIds.get(0)));
-        behaviorGroupResources.updateBehaviorGroupActions(tenant, model.behaviorGroupIds.get(0), List.of(model.endpointIds.get(0)));
+        behaviorGroupResources.updateEventTypeBehaviors(tenant, eventTypes.get(0).getId(), Set.of(behaviorGroupId1));
+        behaviorGroupResources.updateBehaviorGroupActions(tenant, behaviorGroupId1, List.of(endpointId1));
 
         String responseBody = given()
                 .header(identityHeader)
-                .pathParam("endpointId", model.endpointIds.get(0).toString())
+                .pathParam("endpointId", endpointId1.toString())
                 .when()
                 .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
@@ -232,11 +222,11 @@ public class NotificationServiceTest extends DbIsolatedTest {
         JsonArray behaviorGroups = new JsonArray(responseBody);
         assertEquals(1, behaviorGroups.size());
         behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
-        assertEquals(model.behaviorGroupIds.get(0).toString(), behaviorGroups.getJsonObject(0).getString("id"));
+        assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
 
         responseBody = given()
                 .header(identityHeader)
-                .pathParam("endpointId", model.endpointIds.get(1).toString())
+                .pathParam("endpointId", endpointId2.toString())
                 .when()
                 .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
@@ -248,12 +238,12 @@ public class NotificationServiceTest extends DbIsolatedTest {
         assertEquals(0, behaviorGroups.size());
 
         // ep1 assigned to event ev0; ep2 assigned to event ev1
-        behaviorGroupResources.updateEventTypeBehaviors(tenant, model.eventTypes.get(0).getId(), Set.of(model.behaviorGroupIds.get(1)));
-        behaviorGroupResources.updateBehaviorGroupActions(tenant, model.behaviorGroupIds.get(1), List.of(model.endpointIds.get(1)));
+        behaviorGroupResources.updateEventTypeBehaviors(tenant, eventTypes.get(0).getId(), Set.of(behaviorGroupId2));
+        behaviorGroupResources.updateBehaviorGroupActions(tenant, behaviorGroupId2, List.of(endpointId2));
 
         responseBody = given()
                 .header(identityHeader)
-                .pathParam("endpointId", model.endpointIds.get(0).toString())
+                .pathParam("endpointId", endpointId1.toString())
                 .when()
                 .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
@@ -264,11 +254,11 @@ public class NotificationServiceTest extends DbIsolatedTest {
         behaviorGroups = new JsonArray(responseBody);
         assertEquals(1, behaviorGroups.size());
         behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
-        assertEquals(model.behaviorGroupIds.get(0).toString(), behaviorGroups.getJsonObject(0).getString("id"));
+        assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
 
         responseBody = given()
                 .header(identityHeader)
-                .pathParam("endpointId", model.endpointIds.get(1).toString())
+                .pathParam("endpointId", endpointId2.toString())
                 .when()
                 .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
@@ -279,7 +269,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
         behaviorGroups = new JsonArray(responseBody);
         assertEquals(1, behaviorGroups.size());
         behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
-        assertEquals(model.behaviorGroupIds.get(1).toString(), behaviorGroups.getJsonObject(0).getString("id"));
+        assertEquals(behaviorGroupId2.toString(), behaviorGroups.getJsonObject(0).getString("id"));
     }
 
     @Test
