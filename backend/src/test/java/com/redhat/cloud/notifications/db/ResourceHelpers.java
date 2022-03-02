@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.db;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -172,11 +171,6 @@ public class ResourceHelpers {
         history.prePersist();
         entityManager.persist(history);
         return history;
-    }
-
-    public UUID emailSubscriptionEndpointId(String accountId, EmailSubscriptionProperties properties) {
-        return endpointResources.getOrCreateEmailSubscriptionEndpoint(accountId, properties)
-                .getId();
     }
 
     public BehaviorGroup createBehaviorGroup(String accountId, String displayName, UUID bundleId) {
