@@ -3,21 +3,19 @@ package com.redhat.cloud.notifications.recipients;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-
 
 @QuarkusTest
 public class RecipientResolverTest {
@@ -82,62 +80,58 @@ public class RecipientResolverTest {
         when(rbacRecipientUsersProvider.getUsers(
                 eq(ACCOUNT_ID),
                 eq(false)
-        )).thenReturn(Uni.createFrom().item(List.of(
+        )).thenReturn(List.of(
                 user1, user2, user3, admin1, admin2
-        )));
+        ));
 
         when(rbacRecipientUsersProvider.getUsers(
                 eq(ACCOUNT_ID),
                 eq(true)
-        )).thenReturn(Uni.createFrom().item(List.of(
+        )).thenReturn(List.of(
                 admin1, admin2
-        )));
+        ));
 
         when(rbacRecipientUsersProvider.getGroupUsers(
                 eq(ACCOUNT_ID),
                 eq(false),
                 eq(group1)
-        )).thenReturn(Uni.createFrom().item(List.of(
+        )).thenReturn(List.of(
                 user1, admin1
-        )));
+        ));
 
         when(rbacRecipientUsersProvider.getGroupUsers(
                 eq(ACCOUNT_ID),
                 eq(true),
                 eq(group1)
-        )).thenReturn(Uni.createFrom().item(List.of(
+        )).thenReturn(List.of(
                 admin1
-        )));
+        ));
 
         when(rbacRecipientUsersProvider.getGroupUsers(
                 eq(ACCOUNT_ID),
                 eq(false),
                 eq(group2)
-        )).thenReturn(Uni.createFrom().item(List.of(
+        )).thenReturn(List.of(
                 user2, admin2
-        )));
+        ));
 
         when(rbacRecipientUsersProvider.getGroupUsers(
                 eq(ACCOUNT_ID),
                 eq(true),
                 eq(group2)
-        )).thenReturn(Uni.createFrom().item(List.of(
+        )).thenReturn(List.of(
                 admin2
-        )));
+        ));
 
         // Default request, all subscribed users
-        recipientResolver.recipientUsers(
+        Set<User> users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(false, false, null, Set.of())
                 ),
                 subscribedUsers
-        ).subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
-                .assertItem(Set.of(
-                        user1, admin1
-                ));
+        );
+        assertEquals(Set.of(user1, admin1), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
                 eq(ACCOUNT_ID),
                 eq(false)
@@ -146,18 +140,14 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // subscribed admin users
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(true, false, null, Set.of())
                 ),
                 subscribedUsers
-        ).subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
-                .assertItem(Set.of(
-                        admin1
-                ));
+        );
+        assertEquals(Set.of(admin1), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
                 eq(ACCOUNT_ID),
                 eq(true)
@@ -166,18 +156,14 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // users, ignoring preferences
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(false, true, null, Set.of())
                 ),
                 subscribedUsers
-        ).subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
-                .assertItem(Set.of(
-                        user1, user2, user3, admin1, admin2
-                ));
+        );
+        assertEquals(Set.of(user1, user2, user3, admin1, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
                 eq(ACCOUNT_ID),
                 eq(false)
@@ -186,18 +172,14 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // admins, ignoring preferences
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(true, true, null, Set.of())
                 ),
                 subscribedUsers
-        ).subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
-                .assertItem(Set.of(
-                        admin1, admin2
-                ));
+        );
+        assertEquals(Set.of(admin1, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
                 eq(ACCOUNT_ID),
                 eq(true)
@@ -206,7 +188,7 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // Specifying users
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
             ACCOUNT_ID,
             Set.of(
                     new TestRecipientSettings(false, false, null, Set.of(
@@ -214,12 +196,8 @@ public class RecipientResolverTest {
                     ))
             ),
             subscribedUsers
-        ).subscribe()
-            .withSubscriber(UniAssertSubscriber.create())
-            .assertCompleted()
-            .assertItem(Set.of(
-                    user1
-            ));
+        );
+        assertEquals(Set.of(user1), users);
 
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
                 eq(ACCOUNT_ID),
@@ -229,7 +207,7 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // Specifying users ignoring user preferences
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(false, true, null, Set.of(
@@ -237,12 +215,8 @@ public class RecipientResolverTest {
                         ))
                 ),
                 subscribedUsers
-        ).subscribe()
-            .withSubscriber(UniAssertSubscriber.create())
-            .assertCompleted()
-            .assertItem(Set.of(
-                    user1, user3
-            ));
+        );
+        assertEquals(Set.of(user1, user3), users);
 
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
                 eq(ACCOUNT_ID),
@@ -252,7 +226,7 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // Specifying users and only admins
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(true, false, null, Set.of(
@@ -260,12 +234,8 @@ public class RecipientResolverTest {
                         ))
                 ),
                 subscribedUsers
-        ).subscribe()
-            .withSubscriber(UniAssertSubscriber.create())
-            .assertCompleted()
-            .assertItem(Set.of(
-                    admin1
-            ));
+        );
+        assertEquals(Set.of(admin1), users);
 
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
                 eq(ACCOUNT_ID),
@@ -275,7 +245,7 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // Specifying users and only admins (ignoring user preferences)
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(true, true, null, Set.of(
@@ -283,12 +253,8 @@ public class RecipientResolverTest {
                         ))
                 ),
                 subscribedUsers
-        ).subscribe()
-            .withSubscriber(UniAssertSubscriber.create())
-            .assertCompleted()
-            .assertItem(Set.of(
-                    admin1, admin2
-            ));
+        );
+        assertEquals(Set.of(admin1, admin2), users);
 
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
                 eq(ACCOUNT_ID),
@@ -298,19 +264,15 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // all subscribed users & admins ignoring preferences
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(false, false, null, Set.of()),
                         new TestRecipientSettings(true, true, null, Set.of())
                 ),
                 subscribedUsers
-        ).subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
-                .assertItem(Set.of(
-                        user1, admin1, admin2
-                ));
+        );
+        assertEquals(Set.of(user1, admin1, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
                 eq(ACCOUNT_ID),
                 eq(true)
@@ -323,19 +285,15 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // all users ignoring preferences & admins ignoring preferences (redundant, but possible)
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(false, true, null, Set.of()),
                         new TestRecipientSettings(true, true, null, Set.of())
                 ),
                 subscribedUsers
-        ).subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
-                .assertItem(Set.of(
-                        user1, user2, user3, admin1, admin2
-                ));
+        );
+        assertEquals(Set.of(user1, user2, user3, admin1, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
                 eq(ACCOUNT_ID),
                 eq(true)
@@ -348,18 +306,14 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // all subscribed users from group 1
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(false, false, group1, Set.of())
                 ),
                 subscribedUsers
-        ).subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
-                .assertItem(Set.of(
-                        user1, admin1
-                ));
+        );
+        assertEquals(Set.of(user1, admin1), users);
         verify(rbacRecipientUsersProvider, times(1)).getGroupUsers(
                 eq(ACCOUNT_ID),
                 eq(false),
@@ -369,18 +323,14 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // all subscribed admins from group 1
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(true, false, group1, Set.of())
                 ),
                 subscribedUsers
-        ).subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
-                .assertItem(Set.of(
-                        admin1
-                ));
+        );
+        assertEquals(Set.of(admin1), users);
         verify(rbacRecipientUsersProvider, times(1)).getGroupUsers(
                 eq(ACCOUNT_ID),
                 eq(true),
@@ -390,16 +340,14 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // all subscribed users from group 2
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(false, false, group2, Set.of())
                 ),
                 subscribedUsers
-        ).subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
-                .assertItem(Set.of());
+        );
+        assertEquals(Set.of(), users);
         verify(rbacRecipientUsersProvider, times(1)).getGroupUsers(
                 eq(ACCOUNT_ID),
                 eq(false),
@@ -409,18 +357,14 @@ public class RecipientResolverTest {
         clearInvocations(rbacRecipientUsersProvider);
 
         // all users from group 2 (ignoring preferences)
-        recipientResolver.recipientUsers(
+        users = recipientResolver.recipientUsers(
                 ACCOUNT_ID,
                 Set.of(
                         new TestRecipientSettings(false, true, group2, Set.of())
                 ),
                 subscribedUsers
-        ).subscribe()
-                .withSubscriber(UniAssertSubscriber.create())
-                .assertCompleted()
-                .assertItem(Set.of(
-                        user2, admin2
-                ));
+        );
+        assertEquals(Set.of(user2, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getGroupUsers(
                 eq(ACCOUNT_ID),
                 eq(false),

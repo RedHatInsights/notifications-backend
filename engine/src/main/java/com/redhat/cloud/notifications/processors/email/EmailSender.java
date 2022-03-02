@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -14,7 +15,6 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.qute.TemplateInstance;
-import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
@@ -84,58 +84,62 @@ public class EmailSender {
         bopApiToken = LineBreakCleaner.clean(bopApiToken);
     }
 
-    public Uni<NotificationHistory> sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body) {
+    public NotificationHistory sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
         LocalDateTime start = LocalDateTime.now(UTC);
 
         Action action = event.getAction();
         // uses canonical EmailSubscription
-        return endpointRepository.getOrCreateDefaultEmailSubscription(action.getAccountId())
-                .onItem().transformToUni(endpoint -> {
-                    Notification notification = new Notification(event, endpoint);
+        try {
+            Endpoint endpoint = endpointRepository.getOrCreateDefaultEmailSubscription(action.getAccountId());
+            Notification notification = new Notification(event, endpoint);
 
-                    // TODO Add recipients processing from policies-notifications processing (failed recipients)
-                    //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)
+            // TODO Add recipients processing from policies-notifications processing (failed recipients)
+            //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)
 
-                    // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
-                    //      also add metrics for these failures
+            // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
+            //      also add metrics for these failures
 
-                    return webhookSender.doHttpRequest(
-                            notification,
-                            bopRequest,
-                            getPayload(user, action, subject, body)
-                    ).onItem().invoke(unused -> {
-                        processedCount.tags("bundle", action.getBundle(), "application", action.getApplication());
-                        processedCount.register(registry).increment();
+            NotificationHistory history = webhookSender.doHttpRequest(
+                    notification,
+                    bopRequest,
+                    getPayload(user, action, subject, body));
 
-                        processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
-                    });
-                }).onFailure().recoverWithNull();
+            processedCount.tags("bundle", action.getBundle(), "application", action.getApplication());
+            processedCount.register(registry).increment();
+
+            processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
+
+            return history;
+        } catch (Exception e) {
+            logger.info("Email sending failed", e);
+            return null;
+        }
     }
 
-    private Uni<JsonObject> getPayload(User user, Action action, TemplateInstance subject, TemplateInstance body) {
-        return Uni.combine().all().unis(
-                emailTemplateService.renderTemplate(user, action, subject),
-                emailTemplateService.renderTemplate(user, action, body)
-        )
-                .asTuple()
-                .onFailure().invoke(templateEx -> {
-                    logger.warnf(templateEx,
-                            "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",
-                            action.getBundle(),
-                            action.getApplication(),
-                            action.getEventType()
-                    );
-                })
-                .onItem().transform(rendered -> {
-                    Emails emails = new Emails();
-                    emails.addEmail(buildEmail(
-                            user.getUsername(),
-                            rendered.getItem1(),
-                            rendered.getItem2()
-                    ));
-                    return JsonObject.mapFrom(emails);
-                });
+    private JsonObject getPayload(User user, Action action, TemplateInstance subject, TemplateInstance body) {
+
+        String renderedSubject;
+        String renderedBody;
+        try {
+            renderedSubject = emailTemplateService.renderTemplate(user, action, subject);
+            renderedBody = emailTemplateService.renderTemplate(user, action, body);
+        } catch (Exception e) {
+            logger.warnf(e,
+                    "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",
+                    action.getBundle(),
+                    action.getApplication(),
+                    action.getEventType()
+            );
+            throw e;
+        }
+        Emails emails = new Emails();
+        emails.addEmail(buildEmail(
+                user.getUsername(),
+                renderedSubject,
+                renderedBody
+        ));
+        return JsonObject.mapFrom(emails);
     }
 
     protected HttpRequest<Buffer> buildBOPHttpRequest() {

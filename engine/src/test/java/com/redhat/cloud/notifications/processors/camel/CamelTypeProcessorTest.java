@@ -82,9 +82,7 @@ public class CamelTypeProcessorTest {
         Endpoint endpoint2 = buildCamelEndpoint(event.getAction().getAccountId());
 
         // Let's trigger the processing.
-        List<NotificationHistory> result = processor.process(event, List.of(endpoint1, endpoint2))
-                .collect().asList()
-                .await().indefinitely();
+        List<NotificationHistory> result = processor.process(event, List.of(endpoint1, endpoint2));
 
         // Two endpoints should have been processed.
         assertEquals(2, result.size());

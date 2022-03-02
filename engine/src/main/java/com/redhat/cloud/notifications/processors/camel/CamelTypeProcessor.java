@@ -12,8 +12,6 @@ import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.context.Context;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.TracingMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
@@ -32,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
@@ -68,15 +67,16 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     }
 
     @Override
-    public Multi<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
-        return Multi.createFrom().iterable(endpoints)
-                .onItem().transformToUniAndConcatenate(endpoint -> {
+    public List<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
+        return endpoints.stream()
+                .map(endpoint -> {
                     Notification notification = new Notification(event, endpoint);
                     return process(notification);
-                });
+                })
+                .collect(Collectors.toList());
     }
 
-    private Uni<NotificationHistory> process(Notification item) {
+    private NotificationHistory process(Notification item) {
         processedCount.increment();
         Endpoint endpoint = item.getEndpoint();
         CamelProperties properties = (CamelProperties) endpoint.getProperties();
@@ -103,19 +103,17 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         metaData.put("extras", new MapConverter().convertToDatabaseColumn(properties.getExtras()));
 
-        Uni<JsonObject> payload = transformer.transform(item.getEvent().getAction());
+        JsonObject payload = transformer.transform(item.getEvent().getAction());
         UUID historyId = UUID.randomUUID();
 
-        payload = payload.onItem().transform(json -> {
-            JsonObject metadataAsJson = new JsonObject();
-            json.put(NOTIF_METADATA_KEY, metadataAsJson);
-            metaData.forEach(metadataAsJson::put);
-            return json;
-        });
+        JsonObject metadataAsJson = new JsonObject();
+        payload.put(NOTIF_METADATA_KEY, metadataAsJson);
+        metaData.forEach(metadataAsJson::put);
+
         return callCamel(item, historyId, payload);
     }
 
-    public Uni<NotificationHistory> callCamel(Notification item, UUID historyId, Uni<JsonObject> payload) {
+    public NotificationHistory callCamel(Notification item, UUID historyId, JsonObject payload) {
 
         final long startTime = System.currentTimeMillis();
 
@@ -123,19 +121,14 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         // the next could give a CCE, but we only come here when it is a camel endpoint anyway
         String subType = item.getEndpoint().getSubType();
 
-        return payload.onItem()
-
-                .transformToUni(json -> reallyCallCamel(json, historyId, accountId, subType)
-                        .onItem().transform(resp -> {
-                            final long endTime = System.currentTimeMillis();
-                            // We only create a basic stub. The FromCamel filler will update it later
-                            NotificationHistory history = getHistoryStub(item.getEndpoint(), item.getEvent(), endTime - startTime, historyId);
-                            return history;
-                        })
-                );
+        reallyCallCamel(payload, historyId, accountId, subType);
+        final long endTime = System.currentTimeMillis();
+        // We only create a basic stub. The FromCamel filler will update it later
+        NotificationHistory history = getHistoryStub(item.getEndpoint(), item.getEvent(), endTime - startTime, historyId);
+        return history;
     }
 
-    public Uni<Boolean> reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
+    public boolean reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
 
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
         Message<String> msg = Message.of(body.encode());
@@ -152,11 +145,8 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         );
         msg = msg.addMetadata(tracingMetadata);
         LOGGER.infof("Sending for account %s and history id %s", accountId, historyId);
-        Message<String> finalMsg = msg;
-        return Uni.createFrom().item(() -> {
-            emitter.send(finalMsg);
-            return true;
-        });
+        emitter.send(msg);
+        return true;
 
     }
 

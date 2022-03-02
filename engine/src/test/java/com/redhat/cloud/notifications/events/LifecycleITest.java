@@ -34,21 +34,22 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
-import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
-import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockserver.model.HttpRequest;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -107,7 +108,7 @@ public class LifecycleITest {
     EmailSender emailSender;
 
     @Inject
-    Mutiny.SessionFactory sessionFactory;
+    EntityManager entityManager;
 
     @Inject
     EndpointRepository endpointRepository;
@@ -134,9 +135,9 @@ public class LifecycleITest {
         Endpoint endpoint3 = createWebhookEndpoint(accountId, "wrong-secret-token");
 
         // We'll start with a first behavior group actions configuration. This will slightly change later in the test.
-        addBehaviorGroupAction(behaviorGroup1, endpoint1);
-        addBehaviorGroupAction(behaviorGroup1, endpoint2);
-        addBehaviorGroupAction(behaviorGroup2, endpoint3);
+        addBehaviorGroupAction(behaviorGroup1.getId(), endpoint1.getId());
+        addBehaviorGroupAction(behaviorGroup1.getId(), endpoint2.getId());
+        addBehaviorGroupAction(behaviorGroup2.getId(), endpoint3.getId());
 
         // Adding an email endpoint to the default behavior group
         addDefaultBehaviorGroupAction(defaultBehaviorGroup);
@@ -145,7 +146,7 @@ public class LifecycleITest {
         pushMessage(0, 0, 0);
 
         // Now we'll link the event type with one behavior group.
-        addEventTypeBehavior(eventType, behaviorGroup1);
+        addEventTypeBehavior(eventType.getId(), behaviorGroup1.getId());
 
         // Get the account canonical email endpoint
         Endpoint emailEndpoint = getAccountCanonicalEmailEndpoint(accountId);
@@ -159,10 +160,10 @@ public class LifecycleITest {
         retry(() -> checkEndpointHistory(emailEndpoint, 0, true));
 
         // We'll link the event type with the default behavior group
-        addEventTypeBehavior(eventType, defaultBehaviorGroup);
+        addEventTypeBehavior(eventType.getId(), defaultBehaviorGroup.getId());
 
         // We'll link an additional behavior group to the event type.
-        addEventTypeBehavior(eventType, behaviorGroup2);
+        addEventTypeBehavior(eventType.getId(), behaviorGroup2.getId());
 
         // Pushing a new message should trigger three webhook calls and 1 emails - email is not sent as the user is not subscribed
         pushMessage(3, 1, 0);
@@ -174,7 +175,7 @@ public class LifecycleITest {
         retry(() -> checkEndpointHistory(emailEndpoint, 0, true));
 
         // Lets subscribe the user to the email preferences
-        subscribeUserPreferences(accountId, username, app);
+        subscribeUserPreferences(accountId, username, app.getId());
 
         // Pushing a new message should trigger three webhook calls and 1 email
         pushMessage(3, 1, 1);
@@ -189,7 +190,7 @@ public class LifecycleITest {
          * Let's change the behavior group actions configuration by adding an action to the second behavior group.
          * Endpoint 2 is now an action for both behavior groups, but it should not be notified twice on each message because we don't want duplicate notifications.
          */
-        addBehaviorGroupAction(behaviorGroup2, endpoint2);
+        addBehaviorGroupAction(behaviorGroup2.getId(), endpoint2.getId());
 
         // Pushing a new message should trigger three webhook calls.
         pushMessage(3, 1, 1);
@@ -216,7 +217,7 @@ public class LifecycleITest {
         retry(() -> checkEndpointHistory(emailEndpoint, 2, true));
 
         // Linking the default behavior group again
-        addEventTypeBehavior(eventType, defaultBehaviorGroup);
+        addEventTypeBehavior(eventType.getId(), defaultBehaviorGroup.getId());
         pushMessage(0, 1, 1);
 
         // Deleting the default behavior group should unlink it
@@ -227,62 +228,56 @@ public class LifecycleITest {
         deleteBundle(bundle);
     }
 
-    private Bundle createBundle() {
+    @Transactional
+    Bundle createBundle() {
         Bundle bundle = new Bundle(BUNDLE_NAME, "A bundle");
-        bundle.prePersist();
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.insert(bundle)
-                    .replaceWith(bundle);
-        }).await().indefinitely();
+        entityManager.persist(bundle);
+        return bundle;
     }
 
-    private Application createApp(Bundle bundle) {
+    @Transactional
+    Application createApp(Bundle bundle) {
         Application app = new Application();
         app.setBundle(bundle);
+        app.setBundleId(bundle.getId());
         app.setName(APP_NAME);
         app.setDisplayName("The best app in the life");
-        app.prePersist();
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.insert(app)
-                   .replaceWith(app);
-        }).await().indefinitely();
+        entityManager.persist(app);
+        return app;
     }
 
-    private EventType createEventType(Application app) {
+    @Transactional
+    EventType createEventType(Application app) {
         EventType eventType = new EventType();
         eventType.setApplication(app);
+        eventType.setApplicationId(app.getId());
         eventType.setName(EVENT_TYPE_NAME);
         eventType.setDisplayName("Policies will take care of the rules");
         eventType.setDescription("Policies is super cool, you should use it");
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.insert(eventType)
-                    .replaceWith(eventType);
-        }).await().indefinitely();
+        entityManager.persist(eventType);
+        return eventType;
     }
 
-    private BehaviorGroup createBehaviorGroup(String accountId, Bundle bundle) {
+    @Transactional
+    BehaviorGroup createBehaviorGroup(String accountId, Bundle bundle) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setAccountId(accountId);
         behaviorGroup.setDisplayName("Behavior group");
         behaviorGroup.setBundle(bundle);
-        behaviorGroup.prePersist();
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.insert(behaviorGroup)
-                   .replaceWith(behaviorGroup);
-        }).await().indefinitely();
+        behaviorGroup.setBundleId(bundle.getId());
+        entityManager.persist(behaviorGroup);
+        return behaviorGroup;
     }
 
-    private void deleteBehaviorGroup(BehaviorGroup behaviorGroup) {
-        sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery("DELETE FROM BehaviorGroup WHERE id = :id")
-                    .setParameter("id", behaviorGroup.getId())
-                    .executeUpdate();
-        }).await().indefinitely();
+    @Transactional
+    void deleteBehaviorGroup(BehaviorGroup behaviorGroup) {
+        entityManager.createQuery("DELETE FROM BehaviorGroup WHERE id = :id")
+                .setParameter("id", behaviorGroup.getId())
+                .executeUpdate();
     }
 
-    private Endpoint getAccountCanonicalEmailEndpoint(String accountId) {
-        return endpointRepository.getOrCreateDefaultEmailSubscription(accountId)
-                .await().indefinitely();
+    Endpoint getAccountCanonicalEmailEndpoint(String accountId) {
+        return endpointRepository.getOrCreateDefaultEmailSubscription(accountId);
     }
 
     private Endpoint createWebhookEndpoint(String accountId, String secretToken) {
@@ -298,38 +293,34 @@ public class LifecycleITest {
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
         properties.setOnlyAdmins(true);
         Endpoint endpoint = createEndpoint(null, EMAIL_SUBSCRIPTION, "Email endpoint", "System email endpoint", properties);
-        addBehaviorGroupAction(behaviorGroup, endpoint);
+        addBehaviorGroupAction(behaviorGroup.getId(), endpoint.getId());
     }
 
-    private Endpoint createEndpoint(String accountId, EndpointType type, String name, String description, EndpointProperties properties) {
+    @Transactional
+    Endpoint createEndpoint(String accountId, EndpointType type, String name, String description, EndpointProperties properties) {
         Endpoint endpoint = new Endpoint();
         endpoint.setType(type);
         endpoint.setAccountId(accountId);
         endpoint.setEnabled(true);
         endpoint.setName(name);
         endpoint.setDescription(description);
-        endpoint.prePersist();
         endpoint.setProperties(properties);
         properties.setEndpoint(endpoint);
 
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.insert(endpoint)
-                    .replaceWith(endpoint)
-                    .call(() -> {
-                        return statelessSession.insert(endpoint.getProperties());
-                    });
-        }).await().indefinitely();
+        entityManager.persist(endpoint);
+        entityManager.persist(endpoint.getProperties());
+        return endpoint;
     }
 
-    private Void addBehaviorGroupAction(BehaviorGroup behaviorGroup, Endpoint endpoint) {
+    @Transactional
+    void addBehaviorGroupAction(UUID behaviorGroupId, UUID endpointId) {
+        BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
+        Endpoint endpoint = entityManager.find(Endpoint.class, endpointId);
         BehaviorGroupAction action = new BehaviorGroupAction();
         action.setId(new BehaviorGroupActionId());
         action.setBehaviorGroup(behaviorGroup);
         action.setEndpoint(endpoint);
-        action.prePersist();
-        return sessionFactory.withStatelessSession(statelessSession ->  {
-            return statelessSession.insert(action);
-        }).await().indefinitely();
+        entityManager.persist(action);
     }
 
     /*
@@ -425,7 +416,7 @@ public class LifecycleITest {
         Mockito.when(rbacRecipientUsersProvider.getUsers(
                 eq(accountId),
                 eq(true)
-        )).thenReturn(Uni.createFrom().item(List.of(user)));
+        )).thenReturn(List.of(user));
 
         updateField(
                 emailSender,
@@ -474,24 +465,22 @@ public class LifecycleITest {
         return expectedRequestPattern;
     }
 
-    private void addEventTypeBehavior(EventType eventType, BehaviorGroup behaviorGroup) {
+    @Transactional
+    void addEventTypeBehavior(UUID eventTypeId, UUID behaviorGroupId) {
+        EventType eventType = entityManager.find(EventType.class, eventTypeId);
+        BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
         EventTypeBehavior behavior = new EventTypeBehavior();
         behavior.setId(new EventTypeBehaviorId());
         behavior.setEventType(eventType);
         behavior.setBehaviorGroup(behaviorGroup);
-        behavior.prePersist();
-        sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.insert(behavior);
-        }).await().indefinitely();
+        entityManager.persist(behavior);
     }
 
-    private void clearEventTypeBehaviors(EventType eventType) {
-        sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery("DELETE EventTypeBehavior WHERE eventType = :eventType")
-                    .setParameter("eventType", eventType)
-                    .executeUpdate()
-                    .replaceWithVoid();
-        }).await().indefinitely();
+    @Transactional
+    void clearEventTypeBehaviors(EventType eventType) {
+        entityManager.createQuery("DELETE EventTypeBehavior WHERE eventType = :eventType")
+                .setParameter("eventType", eventType)
+                .executeUpdate();
     }
 
     private void retry(Supplier<Boolean> checkEndpointHistoryResult) {
@@ -501,34 +490,30 @@ public class LifecycleITest {
                 .until(checkEndpointHistoryResult::get);
     }
 
-    private boolean checkEndpointHistory(Endpoint endpoint, int expectedHistoryEntries, boolean expectedInvocationResult) {
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery("FROM NotificationHistory WHERE endpoint = :endpoint AND invocationResult = :invocationResult", NotificationHistory.class)
-                    .setParameter("endpoint", endpoint)
-                    .setParameter("invocationResult", expectedInvocationResult)
-                    .getResultList()
-                    .onItem().transform(historyEntries -> historyEntries.size() == expectedHistoryEntries);
-        }).await().indefinitely();
+    @Transactional
+    boolean checkEndpointHistory(Endpoint endpoint, int expectedHistoryEntries, boolean expectedInvocationResult) {
+        return entityManager.createQuery("FROM NotificationHistory WHERE endpoint = :endpoint AND invocationResult = :invocationResult", NotificationHistory.class)
+                .setParameter("endpoint", endpoint)
+                .setParameter("invocationResult", expectedInvocationResult)
+                .getResultList().size() == expectedHistoryEntries;
     }
 
-    private void deleteBundle(Bundle bundle) {
-        sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery("DELETE FROM Bundle WHERE id = :id")
-                   .setParameter("id", bundle.getId())
-                   .executeUpdate()
-                   .replaceWithVoid();
-        }).await().indefinitely();
+    @Transactional
+    void deleteBundle(Bundle bundle) {
+        entityManager.createQuery("DELETE FROM Bundle WHERE id = :id")
+               .setParameter("id", bundle.getId())
+               .executeUpdate();
     }
 
-    private void subscribeUserPreferences(String accountId, String userId, Application application) {
+    @Transactional
+    void subscribeUserPreferences(String accountId, String userId, UUID appId) {
+        Application application = entityManager.find(Application.class, appId);
         EmailSubscription subscription = new EmailSubscription();
         subscription.setId(new EmailSubscriptionId());
         subscription.setAccountId(accountId);
         subscription.setUserId(userId);
         subscription.setApplication(application);
         subscription.setType(INSTANT);
-        sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.insert(subscription);
-        }).await().indefinitely();
+        entityManager.persist(subscription);
     }
 }

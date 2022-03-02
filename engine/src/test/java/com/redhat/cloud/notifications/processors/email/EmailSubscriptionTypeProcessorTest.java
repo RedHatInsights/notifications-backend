@@ -6,13 +6,10 @@ import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.templates.Blank;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.helpers.test.AssertSubscriber;
 import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +24,7 @@ import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionT
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_ERROR_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_REJECTED_COUNTER_NAME;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -55,22 +53,12 @@ class EmailSubscriptionTypeProcessorTest {
 
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
-        final Multi<NotificationHistory> process = testee.process(new Event(), null);
-
-        process.subscribe()
-                .withSubscriber(AssertSubscriber.create())
-                .assertCompleted()
-                .assertHasNotReceivedAnyItem();
+        assertTrue(testee.process(new Event(), null).isEmpty());
     }
 
     @Test
     void shouldNotProcessWhenEndpointsAreEmpty() {
-        final Multi<NotificationHistory> process = testee.process(new Event(), List.of());
-
-        process.subscribe()
-                .withSubscriber(AssertSubscriber.create())
-                .assertCompleted()
-                .assertHasNotReceivedAnyItem();
+        assertTrue(testee.process(new Event(), List.of()).isEmpty());
     }
 
     @Test
