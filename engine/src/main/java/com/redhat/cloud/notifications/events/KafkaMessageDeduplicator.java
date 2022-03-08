@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.KafkaMessage;
-import com.redhat.cloud.notifications.session.StatelessSessionFactory;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
@@ -112,7 +112,7 @@ public class KafkaMessageDeduplicator {
         } else {
             String hql = "SELECT TRUE FROM KafkaMessage WHERE id = :messageId";
             try {
-                return statelessSessionFactory.getOrCreateSession().createQuery(hql, Boolean.class)
+                return statelessSessionFactory.getCurrentSession().createQuery(hql, Boolean.class)
                         .setParameter("messageId", messageId)
                         .getSingleResult();
             } catch (NoResultException e) {
@@ -125,7 +125,7 @@ public class KafkaMessageDeduplicator {
         if (messageId != null) {
             KafkaMessage kafkaMessage = new KafkaMessage(messageId);
             kafkaMessage.prePersist(); // This method must be called manually while using a StatelessSession.
-            statelessSessionFactory.getOrCreateSession().insert(kafkaMessage);
+            statelessSessionFactory.getCurrentSession().insert(kafkaMessage);
         }
     }
 }

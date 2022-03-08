@@ -1,12 +1,12 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Encoder;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.session.StatelessSessionFactory;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;

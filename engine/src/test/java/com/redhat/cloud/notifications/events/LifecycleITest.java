@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -113,6 +114,9 @@ public class LifecycleITest {
     @Inject
     EndpointRepository endpointRepository;
 
+    @Inject
+    StatelessSessionFactory statelessSessionFactory;
+
     @Test
     void test() {
         final String accountId = "tenant";
@@ -149,7 +153,9 @@ public class LifecycleITest {
         addEventTypeBehavior(eventType.getId(), behaviorGroup1.getId());
 
         // Get the account canonical email endpoint
-        Endpoint emailEndpoint = getAccountCanonicalEmailEndpoint(accountId);
+        Endpoint emailEndpoint = statelessSessionFactory.withSession(statelessSession -> {
+            return getAccountCanonicalEmailEndpoint(accountId);
+        });
 
         // Pushing a new message should trigger two webhook calls.
         pushMessage(2, 0, 0);
@@ -501,8 +507,8 @@ public class LifecycleITest {
     @Transactional
     void deleteBundle(Bundle bundle) {
         entityManager.createQuery("DELETE FROM Bundle WHERE id = :id")
-               .setParameter("id", bundle.getId())
-               .executeUpdate();
+                .setParameter("id", bundle.getId())
+                .executeUpdate();
     }
 
     @Transactional

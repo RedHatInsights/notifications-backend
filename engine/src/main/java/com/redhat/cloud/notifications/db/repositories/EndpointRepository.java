@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -7,7 +8,6 @@ import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import com.redhat.cloud.notifications.session.StatelessSessionFactory;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -42,7 +42,7 @@ public class EndpointRepository {
      */
     public Endpoint getOrCreateDefaultEmailSubscription(String accountId) {
         String query = "FROM Endpoint WHERE accountId = :accountId AND compositeType.type = :endpointType";
-        List<Endpoint> emailEndpoints = statelessSessionFactory.getOrCreateSession().createQuery(query, Endpoint.class)
+        List<Endpoint> emailEndpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
                 .setParameter("accountId", accountId)
                 .setParameter("endpointType", EMAIL_SUBSCRIPTION)
                 .getResultList();
@@ -67,8 +67,8 @@ public class EndpointRepository {
         endpoint.prePersist();
         properties.setEndpoint(endpoint);
 
-        statelessSessionFactory.getOrCreateSession().insert(endpoint);
-        statelessSessionFactory.getOrCreateSession().insert(endpoint.getProperties());
+        statelessSessionFactory.getCurrentSession().insert(endpoint);
+        statelessSessionFactory.getCurrentSession().insert(endpoint.getProperties());
         return endpoint;
     }
 
@@ -76,7 +76,7 @@ public class EndpointRepository {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                 "WHERE e.enabled = TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL)";
 
-        List<Endpoint> endpoints = statelessSessionFactory.getOrCreateSession().createQuery(query, Endpoint.class)
+        List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
                 .setParameter("eventType", eventType)
                 .setParameter("accountId", tenant)
                 .getResultList();
@@ -99,7 +99,7 @@ public class EndpointRepository {
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
                 "AND e.compositeType.type = :endpointType";
 
-        List<Endpoint> endpoints = statelessSessionFactory.getOrCreateSession().createQuery(query, Endpoint.class)
+        List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
                 .setParameter("applicationName", applicationName)
                 .setParameter("eventTypeName", eventTypeName)
                 .setParameter("accountId", tenant)
@@ -129,7 +129,7 @@ public class EndpointRepository {
 
         if (endpointsMap.size() > 0) {
             String hql = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:endpointIds)";
-            List<T> propList = statelessSessionFactory.getOrCreateSession().createQuery(hql, typedEndpointClass)
+            List<T> propList = statelessSessionFactory.getCurrentSession().createQuery(hql, typedEndpointClass)
                     .setParameter("endpointIds", endpointsMap.keySet())
                     .getResultList();
             for (T props : propList) {

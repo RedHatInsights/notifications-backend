@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.session.StatelessSessionFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -18,7 +18,7 @@ public class NotificationHistoryRepository {
 
     public NotificationHistory createNotificationHistory(NotificationHistory history) {
         history.prePersist(); // This method must be called manually while using a StatelessSession.
-        statelessSessionFactory.getOrCreateSession().insert(history);
+        statelessSessionFactory.getCurrentSession().insert(history);
         return history;
     }
 
@@ -38,7 +38,7 @@ public class NotificationHistoryRepository {
         }
 
         String outcome = (String) jo.get("outcome");
-        boolean result = outcome == null ? false : outcome.startsWith("Success");
+        boolean result = outcome != null && outcome.startsWith("Success");
         Map details = (Map) jo.get("details");
         if (!details.containsKey("outcome")) {
             details.put("outcome", outcome);
@@ -46,7 +46,7 @@ public class NotificationHistoryRepository {
         Integer duration = (Integer) jo.get("duration");
 
         String updateQuery = "UPDATE NotificationHistory SET details = :details, invocationResult = :result, invocationTime= :invocationTime WHERE id = :id";
-        statelessSessionFactory.getOrCreateSession().createQuery(updateQuery)
+        statelessSessionFactory.getCurrentSession().createQuery(updateQuery)
                 .setParameter("details", details)
                 .setParameter("result", result)
                 .setParameter("id", UUID.fromString(historyId))
@@ -60,7 +60,7 @@ public class NotificationHistoryRepository {
         UUID hid = UUID.fromString(historyId);
 
         try {
-            return statelessSessionFactory.getOrCreateSession().createQuery(query, Endpoint.class)
+            return statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
                     .setParameter("id", hid)
                     .getSingleResult();
         } catch (NoResultException e) {

@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -62,6 +63,9 @@ public class EmailTest {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    StatelessSessionFactory statelessSessionFactory;
 
     @InjectMock
     @RestClient
@@ -136,7 +140,9 @@ public class EmailTest {
         ep.setProperties(properties);
 
         try {
-            List<NotificationHistory> historyEntries = emailProcessor.process(event, List.of(ep));
+            List<NotificationHistory> historyEntries = statelessSessionFactory.withSession(statelessSession -> {
+                return emailProcessor.process(event, List.of(ep));
+            });
 
             NotificationHistory history = historyEntries.get(0);
             assertTrue(history.isInvocationResult());
@@ -241,7 +247,9 @@ public class EmailTest {
         ep.setProperties(properties);
 
         try {
-            List<NotificationHistory> historyEntries = emailProcessor.process(event, List.of(ep));
+            List<NotificationHistory> historyEntries = statelessSessionFactory.withSession(statelessSession -> {
+                return emailProcessor.process(event, List.of(ep));
+            });
 
             // The processor returns a null history value but Multi does not support null values so the resulting Multi is empty.
             assertTrue(historyEntries.isEmpty());

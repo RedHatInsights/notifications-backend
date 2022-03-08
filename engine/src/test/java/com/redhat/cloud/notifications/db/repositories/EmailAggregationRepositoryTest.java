@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -36,6 +37,9 @@ public class EmailAggregationRepositoryTest {
     EntityManager entityManager;
 
     @Inject
+    StatelessSessionFactory statelessSessionFactory;
+
+    @Inject
     ResourceHelpers resourceHelpers;
 
     @Inject
@@ -47,32 +51,34 @@ public class EmailAggregationRepositoryTest {
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
         EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, BUNDLE_NAME, APP_NAME);
 
-        clearEmailAggregations();
-        resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
-        resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
-        resourceHelpers.addEmailAggregation("other-account", BUNDLE_NAME, APP_NAME, PAYLOAD2);
-        resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2);
-        resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
+        statelessSessionFactory.withSession(statelessSession -> {
+            clearEmailAggregations();
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation("other-account", BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
 
-        List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end);
-        assertEquals(2, aggregations.size());
-        assertTrue(aggregations.stream().map(EmailAggregation::getAccountId).allMatch(ACCOUNT_ID::equals));
-        assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
-        assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
-        assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
-        assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
+            List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end);
+            assertEquals(2, aggregations.size());
+            assertTrue(aggregations.stream().map(EmailAggregation::getAccountId).allMatch(ACCOUNT_ID::equals));
+            assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
+            assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
+            assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
+            assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
 
-        List<EmailAggregationKey> keys = getApplicationsWithPendingAggregation(start, end);
-        assertEquals(4, keys.size());
-        assertEquals(ACCOUNT_ID, keys.get(0).getAccountId());
-        assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
-        assertEquals(APP_NAME, keys.get(0).getApplication());
+            List<EmailAggregationKey> keys = getApplicationsWithPendingAggregation(start, end);
+            assertEquals(4, keys.size());
+            assertEquals(ACCOUNT_ID, keys.get(0).getAccountId());
+            assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
+            assertEquals(APP_NAME, keys.get(0).getApplication());
 
-        assertEquals(2, purgeOldAggregation(key, end));
-        assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end).size());
-        assertEquals(3, getApplicationsWithPendingAggregation(start, end).size());
+            assertEquals(2, purgeOldAggregation(key, end));
+            assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end).size());
+            assertEquals(3, getApplicationsWithPendingAggregation(start, end).size());
 
-        clearEmailAggregations();
+            clearEmailAggregations();
+        });
     }
 
     @Test

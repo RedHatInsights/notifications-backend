@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
-import com.redhat.cloud.notifications.session.StatelessSessionFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -16,7 +16,7 @@ public class EmailSubscriptionRepository {
     public List<String> getEmailSubscribersUserId(String accountNumber, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "SELECT es.id.userId FROM EmailSubscription es WHERE id.accountId = :accountId AND application.bundle.name = :bundleName " +
                 "AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
-        return statelessSessionFactory.getOrCreateSession().createQuery(query, String.class)
+        return statelessSessionFactory.getCurrentSession().createQuery(query, String.class)
                 .setParameter("accountId", accountNumber)
                 .setParameter("bundleName", bundleName)
                 .setParameter("applicationName", applicationName)
