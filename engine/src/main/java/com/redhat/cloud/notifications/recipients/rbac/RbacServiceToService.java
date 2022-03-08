@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.routers.models.Page;
-import io.smallrye.common.annotation.Blocking;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
@@ -22,7 +21,6 @@ public interface RbacServiceToService {
     @GET
     @Path("/principals/") // trailing slash is required by api
     @Produces(MediaType.APPLICATION_JSON)
-    @Blocking
     Page<RbacUser> getUsers(
             @HeaderParam("x-rh-rbac-account") String accountId,
             @QueryParam("admin_only") Boolean adminOnly,
@@ -33,7 +31,6 @@ public interface RbacServiceToService {
     @GET
     @Path("/groups/") // trailing slash is required by api
     @Produces(MediaType.APPLICATION_JSON)
-    @Blocking
     Page<RbacGroup> getGroups(
             @HeaderParam("x-rh-rbac-account") String accountId,
             @QueryParam("offset") Integer offset,
@@ -43,7 +40,6 @@ public interface RbacServiceToService {
     @GET
     @Path("/groups/{groupId}/") // trailing slash is required by api
     @Produces(MediaType.APPLICATION_JSON)
-    @Blocking
     RbacGroup getGroup(
             @HeaderParam("x-rh-rbac-account") String accountId,
             @PathParam("groupId") UUID groupId
@@ -52,7 +48,6 @@ public interface RbacServiceToService {
     @GET
     @Path("/groups/{groupId}/principals/") // trailing slash is required by api
     @Produces(MediaType.APPLICATION_JSON)
-    @Blocking
     Page<RbacUser> getGroupUsers(
             @HeaderParam("x-rh-rbac-account") String accountId,
             @PathParam("groupId") UUID groupId,
