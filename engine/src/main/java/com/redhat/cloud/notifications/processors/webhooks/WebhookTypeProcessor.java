@@ -52,6 +52,9 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     @ConfigProperty(name = "processor.webhook.retry.back-off.max-value", defaultValue = "30S")
     Duration maxRetryBackOff;
 
+    @ConfigProperty(name = "processor.webhook.await-timeout", defaultValue = "60S")
+    Duration awaitTimeout;
+
     @Inject
     @SslVerificationEnabled
     WebClient securedWebClient;
@@ -125,7 +128,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
             return Failsafe.with(retryPolicy).get(() -> {
 
                 // TODO NOTIF-488 We may want to move to a non-reactive HTTP client in the future.
-                HttpResponse<Buffer> resp = req.sendJsonObject(payload).await().indefinitely();
+                HttpResponse<Buffer> resp = req.sendJsonObject(payload).await().atMost(awaitTimeout);
                 NotificationHistory history = buildNotificationHistory(item, startTime);
 
                 HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
