@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import io.smallrye.reactive.messaging.annotations.Blocking;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -71,6 +72,7 @@ public class EventConsumer {
 
     @Incoming(INGRESS_CHANNEL)
     @Acknowledgment(PRE_PROCESSING)
+    @Blocking
     public CompletionStage<Void> process(Message<String> message) {
         // This timer will have dynamic tag values based on the action parsed from the received message.
         Timer.Sample consumedTimer = Timer.start(registry);
