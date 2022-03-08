@@ -83,10 +83,12 @@ public class EmailAggregationRepositoryTest {
 
     @Test
     void addEmailAggregationWithConstraintViolations() {
-        assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null));
-        assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1));
-        assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, null, APP_NAME, PAYLOAD1));
-        assertFalse(resourceHelpers.addEmailAggregation(null, BUNDLE_NAME, APP_NAME, PAYLOAD1));
+        statelessSessionFactory.withSession(statelessSession -> {
+            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null));
+            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1));
+            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, null, APP_NAME, PAYLOAD1));
+            assertFalse(resourceHelpers.addEmailAggregation(null, BUNDLE_NAME, APP_NAME, PAYLOAD1));
+        });
     }
 
     List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
