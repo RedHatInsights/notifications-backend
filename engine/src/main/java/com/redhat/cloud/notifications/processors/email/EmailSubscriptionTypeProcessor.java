@@ -25,7 +25,6 @@ import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.qute.TemplateInstance;
-import io.smallrye.mutiny.tuples.Tuple2;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -40,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -152,7 +152,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         return recipientResolver.recipientUsers(action.getAccountId(), requests, subscribers)
                 .stream()
                 .map(user -> emailSender.sendEmail(user, event, subject, body))
-                .filter(history -> history != null)
+                // The value may be an empty Optional in case of Qute template exception.
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
@@ -187,48 +189,49 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         }
     }
 
-    private List<Tuple2<NotificationHistory, EmailAggregationKey>> processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
+    private void processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
         final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
 
-        if (delete) {
-            // TODO NOTIF-488 To be changed
-            emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime);
-        }
-
         if (!emailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
-            return Collections.emptyList();
+            if (delete) {
+                emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime);
+            }
+            return;
         }
 
         TemplateInstance subject = emailTemplate.getTitle(null, emailSubscriptionType);
         TemplateInstance body = emailTemplate.getBody(null, emailSubscriptionType);
 
         if (subject == null || body == null) {
-            return Collections.emptyList();
+            if (delete) {
+                emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime);
+            }
+            return;
         }
+        try {
+            for (Map.Entry<User, Map<String, Object>> aggregation :
+                    emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime).entrySet()) {
 
-        Set<Map.Entry<User, Map<String, Object>>> bla = emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime)
-                .entrySet();
+                Action action = new Action();
+                action.setContext(aggregation.getValue());
+                action.setEvents(List.of());
+                action.setAccountId(aggregationKey.getAccountId());
+                action.setApplication(aggregationKey.getApplication());
+                action.setBundle(aggregationKey.getBundle());
 
-        return bla.stream()
-                .map(s -> {
+                // We don't have a eventtype as this aggregates over multiple event types
+                action.setEventType(null);
+                action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 
-                    Action action = new Action();
-                    action.setContext(s.getValue());
-                    action.setEvents(List.of());
-                    action.setAccountId(aggregationKey.getAccountId());
-                    action.setApplication(aggregationKey.getApplication());
-                    action.setBundle(aggregationKey.getBundle());
+                Event event = new Event();
+                event.setAction(action);
 
-                    // We don't have a eventtype as this aggregates over multiple event types
-                    action.setEventType(null);
-                    action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
-
-                    Event event = new Event();
-                    event.setAction(action);
-
-                    NotificationHistory history = emailSender.sendEmail(s.getKey(), event, subject, body);
-                    return Tuple2.of(history, aggregationKey);
-                })
-                .collect(Collectors.toList());
+                emailSender.sendEmail(aggregation.getKey(), event, subject, body);
+            }
+        } finally {
+            if (delete) {
+                emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime);
+            }
+        }
     }
 }

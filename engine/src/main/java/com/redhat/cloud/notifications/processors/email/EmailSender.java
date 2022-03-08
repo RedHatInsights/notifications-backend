@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Optional;
 import java.util.Set;
 
 @ApplicationScoped
@@ -84,7 +85,7 @@ public class EmailSender {
         bopApiToken = LineBreakCleaner.clean(bopApiToken);
     }
 
-    public NotificationHistory sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body) {
+    public Optional<NotificationHistory> sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
         LocalDateTime start = LocalDateTime.now(UTC);
 
@@ -110,10 +111,10 @@ public class EmailSender {
 
             processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
 
-            return history;
+            return Optional.of(history);
         } catch (Exception e) {
             logger.info("Email sending failed", e);
-            return null;
+            return Optional.empty();
         }
     }
 
