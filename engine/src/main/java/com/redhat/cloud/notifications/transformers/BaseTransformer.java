@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.transformers;
 
 import com.redhat.cloud.notifications.ingress.Action;
-import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.avro.Schema;
@@ -21,8 +20,8 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class BaseTransformer {
 
-    public Uni<JsonObject> transform(Action action) {
-        return Uni.createFrom().item(toJsonObject(action));
+    public JsonObject transform(Action action) {
+        return toJsonObject(action);
     }
 
     protected JsonObject toJsonObject(Action action) {

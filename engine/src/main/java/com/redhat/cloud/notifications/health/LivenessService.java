@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.health;
 
-import io.smallrye.health.api.AsyncHealthCheck;
-import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Liveness;
@@ -11,20 +10,18 @@ import javax.inject.Inject;
 
 @Liveness
 @ApplicationScoped
-public class LivenessService implements AsyncHealthCheck {
+public class LivenessService implements HealthCheck {
 
     @Inject
     KafkaConsumedTotalChecker kafkaConsumedTotalChecker;
 
     @Override
-    public Uni<HealthCheckResponse> call() {
+    public HealthCheckResponse call() {
         HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications readiness check");
         if (kafkaConsumedTotalChecker.isDown()) {
-            return Uni.createFrom().item(() ->
-                    response.down().withData("kafka-consumed-total", "DOWN").build()
-            );
+            return response.down().withData("kafka-consumed-total", "DOWN").build();
         } else {
-            return Uni.createFrom().item(() -> response.up().build());
+            return response.up().build();
         }
     }
 }

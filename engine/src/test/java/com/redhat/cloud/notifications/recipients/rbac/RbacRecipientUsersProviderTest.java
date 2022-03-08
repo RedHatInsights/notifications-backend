@@ -1,11 +1,11 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,14 +46,11 @@ public class RbacRecipientUsersProviderTest {
         mockGetGroup(defaultGroup);
         mockGetUsers(elements, false);
 
-        rbacRecipientUsersProvider.getGroupUsers(accountId, false, defaultGroup.getUuid())
-                .invoke(users -> {
-                    assertEquals(elements, users.size());
-                    for (int i = 0; i < elements; ++i) {
-                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-                    }
-                })
-                .await().indefinitely();
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, defaultGroup.getUuid());
+        assertEquals(elements, users.size());
+        for (int i = 0; i < elements; ++i) {
+            assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+        }
     }
 
     @Test
@@ -62,23 +59,21 @@ public class RbacRecipientUsersProviderTest {
         int updatedSize = 1323;
         mockGetUsers(initialSize, false);
 
-        rbacRecipientUsersProvider.getUsers(accountId, false)
-                .invoke(users -> {
-                    assertEquals(initialSize, users.size());
-                    for (int i = 0; i < initialSize; ++i) {
-                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-                    }
-                    mockGetUsers(updatedSize, false);
-                })
-                .chain(() -> rbacRecipientUsersProvider.getUsers(accountId, false))
-                .invoke(users -> {
-                    // Should still have the initial size because of the cache
-                    assertEquals(initialSize, users.size());
-                    clearCached();
-                })
-                .chain(() -> rbacRecipientUsersProvider.getUsers(accountId, false))
-                .invoke(users -> assertEquals(updatedSize, users.size()))
-                .await().indefinitely();
+        List<User> users = rbacRecipientUsersProvider.getUsers(accountId, false);
+        assertEquals(initialSize, users.size());
+        for (int i = 0; i < initialSize; ++i) {
+            assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+        }
+
+        mockGetUsers(updatedSize, false);
+
+        users = rbacRecipientUsersProvider.getUsers(accountId, false);
+        // Should still have the initial size because of the cache
+        assertEquals(initialSize, users.size());
+        clearCached();
+
+        users = rbacRecipientUsersProvider.getUsers(accountId, false);
+        assertEquals(updatedSize, users.size());
     }
 
     @Test
@@ -93,23 +88,21 @@ public class RbacRecipientUsersProviderTest {
         mockGetGroup(group);
         mockGetGroupUsers(initialSize, group.getUuid());
 
-        rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid())
-                .invoke(users -> {
-                    assertEquals(initialSize, users.size());
-                    for (int i = 0; i < initialSize; ++i) {
-                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-                    }
-                    mockGetGroupUsers(updatedSize, group.getUuid());
-                })
-                .chain(() -> rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()))
-                .invoke(users -> {
-                    // Should still have the initial size because of the cache
-                    assertEquals(initialSize, users.size());
-                    clearCached();
-                })
-                .chain(() -> rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()))
-                .invoke(users -> assertEquals(updatedSize, users.size()))
-                .await().indefinitely();
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid());
+        assertEquals(initialSize, users.size());
+        for (int i = 0; i < initialSize; ++i) {
+            assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+        }
+
+        mockGetGroupUsers(updatedSize, group.getUuid());
+
+        users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid());
+        // Should still have the initial size because of the cache
+        assertEquals(initialSize, users.size());
+        clearCached();
+
+        users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid());
+        assertEquals(updatedSize, users.size());
     }
 
     private void mockGetUsers(int elements, boolean adminsOnly) {
@@ -130,7 +123,7 @@ public class RbacRecipientUsersProviderTest {
         Mockito.when(rbacServiceToService.getGroup(
                 Mockito.eq(accountId),
                 Mockito.eq(group.getUuid())
-        )).thenReturn(Uni.createFrom().item(group));
+        )).thenReturn(group);
     }
 
     private void mockGetGroupUsers(int elements, UUID groupId) {
@@ -171,7 +164,7 @@ public class RbacRecipientUsersProviderTest {
             this.expectedAdminsOnly = expectedAdminsOnly;
         }
 
-        Uni<Page<RbacUser>> mockedUserAnswer(int offset, int limit, boolean adminsOnly) {
+        Page<RbacUser> mockedUserAnswer(int offset, int limit, boolean adminsOnly) {
 
             assertEquals(rbacElementsPerPage.intValue(), limit);
             assertEquals(expectedAdminsOnly, adminsOnly);
@@ -195,7 +188,7 @@ public class RbacRecipientUsersProviderTest {
             usersPage.setLinks(new HashMap<>());
             usersPage.setData(users);
 
-            return Uni.createFrom().item(usersPage);
+            return usersPage;
         }
     }
 }

@@ -14,7 +14,6 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.smallrye.mutiny.Multi;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
@@ -75,8 +74,8 @@ public class WebhookTest {
         Endpoint ep = buildWebhookEndpoint(url);
 
         try {
-            Multi<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
-            NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
+            List<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
+            NotificationHistory history = process.get(0);
             assertTrue(history.isInvocationResult());
         } catch (Exception e) {
             e.printStackTrace();
@@ -137,8 +136,8 @@ public class WebhookTest {
             Event event = new Event();
             event.setAction(action);
             Endpoint ep = buildWebhookEndpoint(url);
-            Multi<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
-            NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
+            List<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
+            NotificationHistory history = process.get(0);
 
             assertEquals(shouldSucceedEventually, history.isInvocationResult());
             assertEquals(MAX_RETRY_ATTEMPTS, callsCounter.get());

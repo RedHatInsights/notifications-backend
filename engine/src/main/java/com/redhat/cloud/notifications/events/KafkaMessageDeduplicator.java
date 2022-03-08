@@ -1,23 +1,22 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.KafkaMessage;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
 import org.apache.kafka.common.header.Header;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.hibernate.reactive.mutiny.Mutiny;
 import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.NoResultException;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.UUID;
 
-import static java.lang.Boolean.FALSE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
@@ -32,7 +31,7 @@ public class KafkaMessageDeduplicator {
     private static final String ACCEPTED_UUID_VERSION = "4";
 
     @Inject
-    Mutiny.SessionFactory sessionFactory;
+    StatelessSessionFactory statelessSessionFactory;
 
     @Inject
     MeterRegistry meterRegistry;
@@ -103,33 +102,30 @@ public class KafkaMessageDeduplicator {
      * offset. Such failure can happen when a consumer is kicked out of its consumer group because it didn't poll new
      * messages fast enough. We experienced that already on production.
      */
-    public Uni<Boolean> isDuplicate(UUID messageId) {
+    public boolean isDuplicate(UUID messageId) {
         if (messageId == null) {
             /*
              * For now, messages without an ID are always considered new. This is necessary to give the onboarded apps
              * time to change their integration and start sending the new header. The message ID may become mandatory later.
              */
-            return Uni.createFrom().item(FALSE);
+            return false;
         } else {
             String hql = "SELECT TRUE FROM KafkaMessage WHERE id = :messageId";
-            return sessionFactory.withStatelessSession(statelessSession -> {
-                return statelessSession.createQuery(hql, Boolean.class)
+            try {
+                return statelessSessionFactory.getCurrentSession().createQuery(hql, Boolean.class)
                         .setParameter("messageId", messageId)
-                        .getSingleResultOrNull()
-                        .onItem().ifNull().continueWith(FALSE);
-            });
+                        .getSingleResult();
+            } catch (NoResultException e) {
+                return false;
+            }
         }
     }
 
-    public Uni<Void> registerMessageId(UUID messageId) {
-        if (messageId == null) {
-            return Uni.createFrom().voidItem();
-        } else {
+    public void registerMessageId(UUID messageId) {
+        if (messageId != null) {
             KafkaMessage kafkaMessage = new KafkaMessage(messageId);
             kafkaMessage.prePersist(); // This method must be called manually while using a StatelessSession.
-            return sessionFactory.withStatelessSession(statelessSession -> {
-                return statelessSession.insert(kafkaMessage);
-            });
+            statelessSessionFactory.getCurrentSession().insert(kafkaMessage);
         }
     }
 }

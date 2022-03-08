@@ -217,7 +217,7 @@ class RhosakEmailAggregatorTest {
 
         emailActionMessage.setAccountId(ACCOUNT_ID);
 
-        JsonObject payload = baseTransformer.transform(emailActionMessage).await().indefinitely();
+        JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);
 
         return aggregation;
@@ -252,7 +252,7 @@ class RhosakEmailAggregatorTest {
 
         emailActionMessage.setAccountId(ACCOUNT_ID);
 
-        JsonObject payload = baseTransformer.transform(emailActionMessage).await().indefinitely();
+        JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);
 
         return aggregation;

@@ -7,11 +7,11 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.smallrye.mutiny.Uni;
-import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -22,72 +22,60 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class EventLogCleanerTest {
 
-    /*
-     * The Event#created field is automatically set because of the @PrePersist annotation in CreationTimestamped when
-     * an Event is persisted using a stateful session. @PrePersist does not work with a stateless session. We need to
-     * set Event#created manually to a past date in the tests below, that's why these tests are run using a stateless
-     * session.
-     */
     @Inject
-    Mutiny.SessionFactory sessionFactory;
+    EntityManager entityManager;
 
     @Test
+    @Transactional
     void testPostgresStoredProcedure() {
-        sessionFactory.withStatelessSession(statelessSession -> deleteAllEvents()
-                .chain(() -> createEventType())
-                .call(eventType -> createEvent(eventType, now().minus(Duration.ofHours(1L))))
-                .call(eventType -> createEvent(eventType, now().minus(Duration.ofDays(62L))))
-                .chain(() -> count())
-                .invoke(count -> assertEquals(2L, count))
-                .chain(() -> statelessSession.createNativeQuery("CALL cleanEventLog()").executeUpdate())
-                .chain(() -> count())
-                .invoke(count -> assertEquals(1L, count))
-        ).await().indefinitely();
+        deleteAllEvents();
+        EventType eventType = createEventType();
+        createEvent(eventType, now().minus(Duration.ofHours(1L)));
+        createEvent(eventType, now().minus(Duration.ofDays(62L)));
+        assertEquals(2L, count());
+        entityManager.createNativeQuery("CALL cleanEventLog()").executeUpdate();
+        assertEquals(1L, count());
     }
 
-    private Uni<Integer> deleteAllEvents() {
-        return sessionFactory.withStatelessSession(statelessSession ->
-                statelessSession.createQuery("DELETE FROM Event")
-                    .executeUpdate()
-        );
+    private Integer deleteAllEvents() {
+        return entityManager.createQuery("DELETE FROM Event")
+                .executeUpdate();
     }
 
-    private Uni<EventType> createEventType() {
+    private EventType createEventType() {
         Bundle bundle = new Bundle();
         bundle.setName("bundle");
         bundle.setDisplayName("Bundle");
         bundle.prePersist();
+        entityManager.persist(bundle);
 
         Application app = new Application();
         app.setBundle(bundle);
+        app.setBundleId(bundle.getId());
         app.setName("app");
         app.setDisplayName("Application");
         app.prePersist();
+        entityManager.persist(app);
 
         EventType eventType = new EventType();
         eventType.setApplication(app);
+        eventType.setApplicationId(app.getId());
         eventType.setName("event-type");
         eventType.setDisplayName("Event type");
+        entityManager.persist(eventType);
 
-        return sessionFactory.withStatelessSession(statelessSession ->
-                statelessSession.insert(bundle)
-                        .call(() -> statelessSession.insert(app))
-                        .call(() -> statelessSession.insert(eventType))
-                        .replaceWith(eventType)
-        );
+        return eventType;
     }
 
-    private Uni<Void> createEvent(EventType eventType, LocalDateTime created) {
+    private void createEvent(EventType eventType, LocalDateTime created) {
         Event event = new Event("account-id", eventType);
         event.setCreated(created);
-        return sessionFactory.withStatelessSession(statelessSession -> statelessSession.insert(event));
+        entityManager.persist(event);
     }
 
-    private Uni<Long> count() {
-        return sessionFactory.withStatelessSession(statelessSession ->
-                statelessSession.createQuery("SELECT COUNT(*) FROM Event", Long.class)
-                        .getSingleResult()
-        );
+    private Long count() {
+        return entityManager.createQuery("SELECT COUNT(*) FROM Event", Long.class)
+                .getSingleResult();
     }
 
     private static LocalDateTime now() {
