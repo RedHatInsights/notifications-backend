@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.jboss.logging.Logger;
@@ -21,6 +22,8 @@ import javax.persistence.NoResultException;
 
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
+
+import static org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy.PRE_PROCESSING;
 
 @ApplicationScoped
 public class EventConsumer {
@@ -67,6 +70,7 @@ public class EventConsumer {
     }
 
     @Incoming(INGRESS_CHANNEL)
+    @Acknowledgment(PRE_PROCESSING)
     public CompletionStage<Void> process(Message<String> message) {
         // This timer will have dynamic tag values based on the action parsed from the received message.
         Timer.Sample consumedTimer = Timer.start(registry);
@@ -91,8 +95,8 @@ public class EventConsumer {
                 throw e;
             }
             /*
-             * The payload was successfully parsed. The resulting Action contains a bundle/app/eventType triplet
-             * which is logged.
+             * The payload was successfully parsed. The resulting Action contains a bundle/app/eventType triplet which
+             * is logged.
              */
             bundleName[0] = action.getBundle();
             appName[0] = action.getApplication();
@@ -100,17 +104,17 @@ public class EventConsumer {
             LOGGER.infof("Processing received action: (%s) %s/%s/%s", action.getAccountId(), bundleName[0], appName[0], eventTypeName);
             /*
              * Step 2
-             * The message ID is extracted from the Kafka message headers. It can be null for now to give the
-             * onboarded apps time to change their integration and start sending the new header. The message ID
-             * may become mandatory later. If so, we may want to throw an exception when it is null.
+             * The message ID is extracted from the Kafka message headers. It can be null for now to give the onboarded
+             * apps time to change their integration and start sending the new header. The message ID may become
+             * mandatory later. If so, we may want to throw an exception when it is null.
              */
             UUID messageId = kafkaMessageDeduplicator.findMessageId(bundleName[0], appName[0], message);
-            /*
-             * Step 3
-             * It's time to check if the message ID is already known. For now, messages without an ID
-             * (messageId == null) are always considered new.
-             */
             statelessSessionFactory.withSession(statelessSession -> {
+                /*
+                 * Step 3
+                 * It's time to check if the message ID is already known. For now, messages without an ID
+                 * (messageId == null) are always considered new.
+                 */
                 if (kafkaMessageDeduplicator.isDuplicate(messageId)) {
                     /*
                      * The message ID is already known which means we already processed the current
@@ -120,41 +124,35 @@ public class EventConsumer {
                 } else {
                     /*
                      * Step 4
-                     * The message ID is new. Let's persist it. The current message will never
-                     * be processed again as long as its ID stays in the DB.
+                     * The message ID is new. Let's persist it. The current message will never be processed again as
+                     * long as its ID stays in the DB.
                      */
                     kafkaMessageDeduplicator.registerMessageId(messageId);
                     /*
                      * Step 5
-                     * We need to retrieve an EventType from the DB using the
-                     * bundle/app/eventType triplet from the parsed Action.
+                     * We need to retrieve an EventType from the DB using the bundle/app/eventType triplet from the
+                     * parsed Action.
                      */
                     EventType eventType;
                     try {
-                        try {
-                            eventType = eventTypeRepository.getEventType(bundleName[0], appName[0], eventTypeName);
-                        } catch (NoResultException e) {
-                            throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, bundleName[0], appName[0], eventTypeName));
-                        }
-                    } catch (Exception e) {
+                        eventType = eventTypeRepository.getEventType(bundleName[0], appName[0], eventTypeName);
+                    } catch (NoResultException e) {
                         /*
-                         * A NoResultException was thrown because no EventType was found. The
-                         * message is therefore considered rejected.
+                         * A NoResultException was thrown because no EventType was found. The message is therefore
+                         * considered rejected.
                          */
                         rejectedCounter.increment();
-                        throw e;
+                        throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, bundleName[0], appName[0], eventTypeName));
                     }
                     /*
                      * Step 6
-                     * The EventType was found. It's time to create an Event from the current
-                     * message and persist it.
+                     * The EventType was found. It's time to create an Event from the current message and persist it.
                      */
                     Event event = new Event(eventType, payload, action);
                     eventRepository.create(event);
                     /*
                      * Step 7
-                     * The Event and the Action it contains are processed by all relevant endpoint
-                     * processors.
+                     * The Event and the Action it contains are processed by all relevant endpoint processors.
                      */
                     try {
                         endpointProcessor.process(event);
