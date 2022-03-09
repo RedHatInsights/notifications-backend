@@ -11,13 +11,13 @@ class MaintenanceModeRequestFilterTest {
     private final MaintenanceModeRequestFilter testee = new MaintenanceModeRequestFilter();
 
     @ParameterizedTest
-    @ValueSource(strings = {"/blabla", "internal/admin/status"})
+    @ValueSource(strings = {"/blabla", "/api/notifications/v1.0/notifications/eventTypes"})
     void shouldBeAffectedByMaintenanceMode(String requestPath) {
         assertTrue(testee.isAffectedByMaintenanceMode(requestPath));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/health", "/metrics", "/internal", "/api/notifications/v1.0/status" })
+    @ValueSource(strings = {"/health", "/metrics", "/internal", "/internal/admin/status", "/api/notifications/v1.0/status"})
     void shouldNotBeAffectedByMaintenanceModeWhenPathIsHealth(String requestPath) {
         assertFalse(testee.isAffectedByMaintenanceMode(requestPath));
     }
