@@ -21,7 +21,6 @@ public class Query {
     private Integer pageNumber;
 
     @QueryParam("offset")
-    @DefaultValue("0")
     private Integer offset;
 
     @QueryParam("sort_by")
