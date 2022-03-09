@@ -7,9 +7,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,7 +25,7 @@ public class MicrometerAssertionHelper {
     @Inject
     MeterRegistry registry;
 
-    private final Map<String, Double> counterValuesBeforeTest = new HashMap<>();
+    private final Map<String, Double> counterValuesBeforeTest = new ConcurrentHashMap<>();
 
     public void saveCounterValuesBeforeTest(String... counterNames) {
         for (String counterName : counterNames) {

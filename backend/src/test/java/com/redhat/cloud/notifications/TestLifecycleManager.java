@@ -16,7 +16,7 @@ import java.util.Map;
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
     // Keep the version synced with pom.xml.
-    private static final DockerImageName MOCK_SERVER_DOCKER_IMAGE = DockerImageName.parse("jamesdbloom/mockserver").withTag("mockserver-5.5.4");
+    private static final DockerImageName MOCK_SERVER_DOCKER_IMAGE = DockerImageName.parse("jamesdbloom/mockserver").withTag("mockserver-5.13.0");
 
     PostgreSQLContainer<?> postgreSQLContainer;
     MockServerContainer mockEngineServer;
