@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -13,12 +14,14 @@ public class Query {
     private static final int DEFAULT_RESULTS_PER_PAGE  = 20;
 
     @QueryParam("limit")
+    @DefaultValue(DEFAULT_RESULTS_PER_PAGE+"")
     private Integer pageSize;
 
     @QueryParam("pageNumber")
     private Integer pageNumber;
 
     @QueryParam("offset")
+    @DefaultValue("0")
     private Integer offset;
 
     @QueryParam("sort_by")
