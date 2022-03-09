@@ -73,7 +73,7 @@ public class EmailAggregationRepositoryTest {
             assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
             assertEquals(APP_NAME, keys.get(0).getApplication());
 
-            assertEquals(2, purgeOldAggregation(key, end));
+            assertEquals(2, emailAggregationRepository.purgeOldAggregation(key, end));
             assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end).size());
             assertEquals(3, getApplicationsWithPendingAggregation(start, end).size());
 
@@ -98,11 +98,6 @@ public class EmailAggregationRepositoryTest {
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getResultList();
-    }
-
-    @Transactional
-    int purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        return emailAggregationRepository.purgeOldAggregation(key, lastUsedTime);
     }
 
     @Transactional
