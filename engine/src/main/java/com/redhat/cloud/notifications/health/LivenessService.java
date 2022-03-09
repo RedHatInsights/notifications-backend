@@ -17,7 +17,7 @@ public class LivenessService implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
-        HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications readiness check");
+        HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications liveness check");
         if (kafkaConsumedTotalChecker.isDown()) {
             return response.down().withData("kafka-consumed-total", "DOWN").build();
         } else {
