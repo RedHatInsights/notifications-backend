@@ -136,9 +136,9 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         String accountId = item.getEndpoint().getAccountId();
         // the next could give a CCE, but we only come here when it is a camel endpoint anyway
         String subType = item.getEndpoint().getSubType();
-        CamelProperties camelProperties = (CamelProperties) item.getEndpoint().getProperties();
+        CamelProperties camelProperties = item.getEndpoint().getProperties(CamelProperties.class);
 
-        if (camelProperties.getSubType().equals("slack")) { // OpenBridge
+        if (item.getEndpoint().getSubType().equals("slack")) { // OpenBridge
             callOpenBridge(payload, historyId, accountId, camelProperties);
         } else {
             reallyCallCamel(payload, historyId, accountId, subType);
@@ -149,7 +149,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         return history;
     }
 
-    public boolean reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
+    public void reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
 
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
         Message<String> msg = Message.of(body.encode());
@@ -167,11 +167,10 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         msg = msg.addMetadata(tracingMetadata);
         LOGGER.infof("Sending for account %s and history id %s", accountId, historyId);
         emitter.send(msg);
-        return true;
 
     }
 
-    private boolean callOpenBridge(JsonObject body, UUID id, String accountId, CamelProperties camelProperties) {
+    private void callOpenBridge(JsonObject body, UUID id, String accountId, CamelProperties camelProperties) {
 
         Map<String, String> extras = camelProperties.getExtras();
 
@@ -185,7 +184,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         ce.put(PROCESSORNAME, extras.get(PROCESSORNAME));
         // TODO add dataschema
 
-        LOGGER.infof("Sending Event with id(%s) for processor with name %s and id=%s\n",
+        LOGGER.infof("Sending Event with id(%s) for processor with name %s and id=%s",
                 id.toString(), extras.get(PROCESSORNAME), extras.get("processorId"));
 
         body.remove(NOTIF_METADATA_KEY); // Not needed on OB
@@ -196,8 +195,6 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                 .build(BridgeEventService.class);
 
         evtSvc.sendEvent(ce, bridgeAuth.getToken());
-
-        return true;
     }
 
 

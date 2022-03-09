@@ -257,7 +257,7 @@ public class EndpointResources {
             if (properties instanceof CamelProperties) {
                 CamelProperties cp = (CamelProperties) properties;
                 // Special case wrt OpenBridge
-                if (cp.getSubType().equals("slack")) {
+                if (e.getSubType().equals("slack")) {
                     String processorId = cp.getExtras().get(OB_PROCESSOR_ID);
                     bridgeApiService.deleteProcessor(bridge.getId(), processorId, bridgeAuth.getToken());
                 }

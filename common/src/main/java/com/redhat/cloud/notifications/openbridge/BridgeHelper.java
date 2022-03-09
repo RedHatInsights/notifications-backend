@@ -4,6 +4,7 @@ import io.quarkus.cache.CacheResult;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +15,7 @@ import java.util.Map;
 /**
  *
  */
+@ApplicationScoped
 public class BridgeHelper {
 
     @ConfigProperty(name = "ob.enabled", defaultValue = "false")
@@ -23,8 +25,8 @@ public class BridgeHelper {
     String kcUser;
     @ConfigProperty(name = "ob.kcPass")
     String kcPass;
-    @ConfigProperty(name = "ob.bridge.name")
-    String ourBridge = "heiko-bridge";
+    @ConfigProperty(name = "ob.bridge.name", defaultValue = "notifications-bridge")
+    String ourBridge;
     @ConfigProperty(name = "ob.token.user")
     String tokenUser;
     @ConfigProperty(name = "ob.token.pass")
@@ -38,7 +40,10 @@ public class BridgeHelper {
     @RestClient
     BridgeAuthService authService;
 
+    private Bridge bridgeInstance;
 
+
+    @ApplicationScoped
     @Produces
     public Bridge getBridgeIfNeeded() {
 
@@ -46,8 +51,8 @@ public class BridgeHelper {
             return new Bridge("- OB not enabled -", "http://does.not.exist");
         }
 
-        if (BridgeHolder.getInstance().getBridge() != null) {
-            return BridgeHolder.getInstance().getBridge();
+        if (bridgeInstance != null) {
+            return bridgeInstance;
         }
 
         String token = getAuthTokenInternal();
@@ -62,7 +67,7 @@ public class BridgeHelper {
                 String ep = b.get("endpoint");
 
                 Bridge bridge = new Bridge(bid, ep);
-                BridgeHolder.getInstance().setBridge(bridge);
+                bridgeInstance = bridge;
 
                 return bridge;
             }
@@ -71,6 +76,7 @@ public class BridgeHelper {
         throw new IllegalStateException("Bridge not found");
     }
 
+    @ApplicationScoped
     @Produces
     public BridgeAuth getAuthToken() {
         if (!obEnabled) {
@@ -99,7 +105,7 @@ public class BridgeHelper {
 
     private String getKcAuthHeader() {
         String tmp = kcUser + ":" + kcPass;
-        String encoded = Base64.getEncoder().encodeToString(tmp.getBytes(StandardCharsets.UTF_8));
+        String encoded = new String(Base64.getEncoder().encode(tmp.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
 
         return "Basic " + encoded;
     }
