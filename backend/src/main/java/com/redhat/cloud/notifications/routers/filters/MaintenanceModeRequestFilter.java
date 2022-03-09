@@ -40,13 +40,8 @@ public class MaintenanceModeRequestFilter {
         String requestPath = requestContext.getUriInfo().getRequestUri().getPath();
         LOGGER.tracef("Filtering request to %s", requestPath);
 
-        // First, we check if the request path should be affected by the maintenance mode.
-        for (int i = 0; i < NO_MAINTENANCE_REQUEST_PATHS.size(); i++) {
-            if (requestPath.startsWith(NO_MAINTENANCE_REQUEST_PATHS.get(i))) {
-                LOGGER.trace("Request path shouldn't be affected by the maintenance mode, database check will be skipped");
-                // This filter work is done. The request will be processed normally.
-                return null;
-            }
+        if (!isAffectedByMaintenanceMode(requestPath)) {
+            return null;
         }
 
         /*
@@ -60,6 +55,18 @@ public class MaintenanceModeRequestFilter {
             // This filter work is done. The request will be processed normally.
             return null;
         }
+    }
+
+    boolean isAffectedByMaintenanceMode(String requestPath) {
+        // First, we check if the request path should be affected by the maintenance mode.
+        for (String noMaintenanceRequestPath : NO_MAINTENANCE_REQUEST_PATHS) {
+            if (requestPath.startsWith(noMaintenanceRequestPath)) {
+                LOGGER.trace("Request path shouldn't be affected by the maintenance mode, database check will be skipped");
+                // This filter work is done. The request will be processed normally.
+                return false;
+            }
+        }
+        return true;
     }
 
     @CacheResult(cacheName = "maintenance")
