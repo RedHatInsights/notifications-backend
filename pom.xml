@@ -43,7 +43,7 @@
         <testcontainers.version>1.16.3</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
-        <failsafe.version>3.2.2</failsafe.version>
+        <failsafe.version>3.2.3</failsafe.version>
 
         <!-- Keep the version synced with TestLifecycleManager -->
         <!-- Be careful with bumps, version 5.11.2 caused tests instability so we had to rollback to 5.5.4 -->
