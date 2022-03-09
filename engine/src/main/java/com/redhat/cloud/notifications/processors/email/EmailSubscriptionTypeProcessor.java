@@ -25,6 +25,7 @@ import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.qute.TemplateInstance;
+import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -160,6 +161,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     @Incoming(AGGREGATION_CHANNEL)
     @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
+    @Blocking
     public void consumeEmailAggregations(String aggregationCommandJson) {
         AggregationCommand aggregationCommand;
         try {

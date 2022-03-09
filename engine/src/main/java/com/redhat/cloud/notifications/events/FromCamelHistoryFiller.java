@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.Json;
 import org.apache.kafka.common.header.internals.RecordHeaders;
@@ -73,6 +74,7 @@ public class FromCamelHistoryFiller {
 
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
     @Incoming(FROMCAMEL_CHANNEL)
+    @Blocking
     public void processAsync(String payload) {
         try {
             log.infof("Processing return from camel: %s", payload);
