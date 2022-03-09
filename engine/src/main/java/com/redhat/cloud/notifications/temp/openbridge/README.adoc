@@ -1,6 +1,0 @@
-= README
-
-This package is only temporary while `engine` is still reactive.
-It provides reactive counterparts of the methods from the
-`commons` module, which should be used, once the `engine` is
-no longer reactive.

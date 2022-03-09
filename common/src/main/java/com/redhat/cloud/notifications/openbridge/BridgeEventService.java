@@ -18,7 +18,7 @@ public interface BridgeEventService {
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    String sendEvent(Map<String, Object> payload,
+    void sendEvent(Map<String, Object> payload,
                       @HeaderParam("Authorization") String bearerToken
     );
 
