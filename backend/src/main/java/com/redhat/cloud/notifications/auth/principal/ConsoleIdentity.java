@@ -1,12 +1,12 @@
-package com.redhat.cloud.notifications.auth;
+package com.redhat.cloud.notifications.auth.principal;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.redhat.cloud.notifications.auth.rhid.RhIdentity;
-import com.redhat.cloud.notifications.auth.turnpike.TurnpikeSamlIdentity;
-import com.redhat.cloud.notifications.auth.turnpike.TurnpikeX509Identity;
+import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
+import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeSamlIdentity;
+import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeX509Identity;
 
 /**
  * x-rh-identity header can have several identity 'payloads' depending on
@@ -26,7 +26,7 @@ import com.redhat.cloud.notifications.auth.turnpike.TurnpikeX509Identity;
         @JsonSubTypes.Type(value = TurnpikeX509Identity.class, name = "X509"),
         @JsonSubTypes.Type(value = TurnpikeSamlIdentity.class, name = "Associate"),
 })
-public abstract class ConsoleDotIdentity {
+public abstract class ConsoleIdentity {
     @JsonProperty(required = true)
     public String type;
 

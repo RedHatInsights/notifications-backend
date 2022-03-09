@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.StuffHolder;
-import com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider;
+import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.rbac.RbacRaw;
 import com.redhat.cloud.notifications.auth.rbac.RbacServer;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -24,7 +24,7 @@ import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 /**
  * Stuff around admin of the service and debugging
  */
-@RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
 @Path(API_INTERNAL + "/admin")
 public class AdminService {
 

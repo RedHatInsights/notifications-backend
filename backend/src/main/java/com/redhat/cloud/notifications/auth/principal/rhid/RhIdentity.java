@@ -1,11 +1,11 @@
-package com.redhat.cloud.notifications.auth.rhid;
+package com.redhat.cloud.notifications.auth.principal.rhid;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.redhat.cloud.notifications.auth.ConsoleDotIdentity;
+import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class RhIdentity extends ConsoleDotIdentity {
+public class RhIdentity extends ConsoleIdentity {
 
     @JsonProperty("account_number")
     private String accountNumber;

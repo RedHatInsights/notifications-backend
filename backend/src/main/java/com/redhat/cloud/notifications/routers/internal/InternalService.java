@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.StartupUtils;
-import com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider;
+import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.BundleResources;
@@ -62,7 +62,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
-@RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_USER)
+@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_USER)
 @Path(API_INTERNAL)
 public class InternalService {
 
@@ -130,7 +130,7 @@ public class InternalService {
     @Path("/bundles")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
     public Bundle createBundle(@NotNull @Valid Bundle bundle) {
         return bundleResources.createBundle(bundle);
@@ -160,7 +160,7 @@ public class InternalService {
     @Path("/bundles/{bundleId}")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
     public Response updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
         int rowCount = bundleResources.updateBundle(bundleId, bundle);
@@ -174,7 +174,7 @@ public class InternalService {
     @DELETE
     @Path("/bundles/{bundleId}")
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
     public boolean deleteBundle(@PathParam("bundleId") UUID bundleId) {
         return bundleResources.deleteBundle(bundleId);
@@ -191,7 +191,7 @@ public class InternalService {
     @Path("/applications")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
     public Application createApplication(@NotNull @Valid Application app) {
         return appResources.createApp(app);
@@ -227,7 +227,7 @@ public class InternalService {
     @DELETE
     @Path("/applications/{appId}")
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
     public boolean deleteApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId) {
         return appResources.deleteApplication(appId);
@@ -277,7 +277,7 @@ public class InternalService {
     @PUT
     @Path("/status")
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
     public void setCurrentStatus(@NotNull @Valid CurrentStatus status) {
         statusResources.setCurrentStatus(status);
@@ -315,7 +315,7 @@ public class InternalService {
     @Path("/behaviorGroups/default")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
     public BehaviorGroup createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
         return behaviorGroupResources.createDefault(behaviorGroup);
@@ -326,7 +326,7 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Update a default behavior group.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
     public boolean updateDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         behaviorGroup.setId(id);
@@ -337,7 +337,7 @@ public class InternalService {
     @Path("/behaviorGroups/default/{id}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Deletes a default behavior group.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
     public boolean deleteDefaultBehaviorGroup(@PathParam("id") UUID id) {
         return behaviorGroupResources.deleteDefault(id);
@@ -349,7 +349,7 @@ public class InternalService {
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Update the list of actions of a default behavior group.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
     public Response updateDefaultBehaviorGroupActions(@PathParam("behaviorGroupId") UUID behaviorGroupId, List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
         if (propertiesList == null) {

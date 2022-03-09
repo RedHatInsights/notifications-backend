@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.routers.internal;
 
-import com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider;
+import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.db.InternalRoleAccessResources;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.routers.internal.models.AddAccessRequest;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 
-@RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
 @Path(API_INTERNAL + "/access")
 public class InternalPermissionService {
 
@@ -39,10 +39,10 @@ public class InternalPermissionService {
     @GET
     @Path("/me")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed(RbacIdentityProvider.RBAC_INTERNAL_UI_USER) // Overrides admin permission
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_USER) // Overrides admin permission
     public InternalUserPermissions getPermissions() {
         InternalUserPermissions permissions = new InternalUserPermissions();
-        if (securityIdentity.hasRole(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)) {
+        if (securityIdentity.hasRole(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)) {
             permissions.setAdmin(true);
             return permissions;
         }

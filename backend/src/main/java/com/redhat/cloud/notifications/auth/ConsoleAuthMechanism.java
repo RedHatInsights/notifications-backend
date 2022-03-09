@@ -1,7 +1,6 @@
-package com.redhat.cloud.notifications.auth.rhid;
+package com.redhat.cloud.notifications.auth;
 
-import com.redhat.cloud.notifications.auth.ConsoleDotPrincipal;
-import com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider;
+import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -26,7 +25,7 @@ import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
  * x-rh-identity header and RBAC
  */
 @ApplicationScoped
-public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
+public class ConsoleAuthMechanism implements HttpAuthenticationMechanism {
 
     @ConfigProperty(name = "internal-rbac.enabled", defaultValue = "true")
     Boolean isInternalRbacEnabled;
@@ -37,11 +36,11 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
         String path = routingContext.normalizedPath();
 
         if (path.startsWith(API_INTERNAL) && !isInternalRbacEnabled) {
-            // Disable internal auth - useful for clowder until we setup turnpike
+            // Disable internal auth - could be useful for ephemeral environments
             return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
-                    .setPrincipal(ConsoleDotPrincipal.noIdentity())
-                    .addRole(RbacIdentityProvider.RBAC_INTERNAL_UI_USER)
-                    .addRole(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+                    .setPrincipal(ConsolePrincipal.noIdentity())
+                    .addRole(ConsoleIdentityProvider.RBAC_INTERNAL_UI_USER)
+                    .addRole(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
                     .build());
         } else if (xRhIdentityHeaderValue == null) { // Access that did not go through 3Scale or turnpike
             boolean good = false;
@@ -64,12 +63,12 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
             } else {
                 return Uni.createFrom().item(QuarkusSecurityIdentity.builder()
                         // Set a dummy principal, but add no roles.
-                        .setPrincipal(ConsoleDotPrincipal.noIdentity())
+                        .setPrincipal(ConsolePrincipal.noIdentity())
                         .build());
             }
         }
 
-        RhIdentityAuthenticationRequest authReq = new RhIdentityAuthenticationRequest(xRhIdentityHeaderValue);
+        ConsoleAuthenticationRequest authReq = new ConsoleAuthenticationRequest(xRhIdentityHeaderValue);
         return identityProviderManager.authenticate(authReq);
     }
 
@@ -80,7 +79,7 @@ public class RHIdentityAuthMechanism implements HttpAuthenticationMechanism {
 
     @Override
     public Set<Class<? extends AuthenticationRequest>> getCredentialTypes() {
-        return Collections.singleton(RhIdentityAuthenticationRequest.class);
+        return Collections.singleton(ConsoleAuthenticationRequest.class);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.auth.turnpike;
+package com.redhat.cloud.notifications.auth.principal.turnpike;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

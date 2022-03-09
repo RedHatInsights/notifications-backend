@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider;
-import com.redhat.cloud.notifications.auth.rhid.RhIdPrincipal;
+import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.InternalRoleAccessResources;
 import com.redhat.cloud.notifications.models.EventType;
@@ -29,7 +29,7 @@ public class SecurityContextUtil {
     }
 
     public void hasPermissionForEventType(SecurityContext securityContext, UUID eventTypeId) {
-        if (securityContext.isUserInRole(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)) {
+        if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)) {
             return;
         }
 
@@ -38,7 +38,7 @@ public class SecurityContextUtil {
     }
 
     public void hasPermissionForApplication(SecurityContext securityContext, UUID applicationId) {
-        if (securityContext.isUserInRole(RbacIdentityProvider.RBAC_INTERNAL_UI_ADMIN)) {
+        if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)) {
             return;
         }
 

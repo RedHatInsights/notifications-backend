@@ -1,8 +1,8 @@
-package com.redhat.cloud.notifications.auth.rhid;
+package com.redhat.cloud.notifications.auth.principal.rhid;
 
-import com.redhat.cloud.notifications.auth.ConsoleDotPrincipal;
+import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 
-public class RhIdPrincipal extends ConsoleDotPrincipal<RhIdentity> {
+public class RhIdPrincipal extends ConsolePrincipal<RhIdentity> {
 
     private final String account;
 

@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
-import static com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS;
+import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS;
 import static com.redhat.cloud.notifications.routers.EventService.PATH;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;

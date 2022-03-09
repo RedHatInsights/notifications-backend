@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.cloud.notifications.auth.turnpike;
+package com.redhat.cloud.notifications.auth.principal.turnpike;
 
 /**
  * author hrupp

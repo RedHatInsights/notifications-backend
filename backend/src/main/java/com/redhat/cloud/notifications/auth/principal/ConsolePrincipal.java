@@ -1,18 +1,18 @@
-package com.redhat.cloud.notifications.auth;
+package com.redhat.cloud.notifications.auth.principal;
 
 import java.security.Principal;
 
-public abstract class ConsoleDotPrincipal<T extends ConsoleDotIdentity> implements Principal {
+public abstract class ConsolePrincipal<T extends ConsoleIdentity> implements Principal {
     private final String name;
     private final T identity;
-    private static final ConsoleDotPrincipal<ConsoleDotIdentity> NO_IDENTITY_PRINCIPAL = new ConsoleDotPrincipal<>() { };
+    private static final ConsolePrincipal<ConsoleIdentity> NO_IDENTITY_PRINCIPAL = new ConsolePrincipal<>() { };
 
-    private ConsoleDotPrincipal() {
+    private ConsolePrincipal() {
         this.identity = null;
         this.name = "-noauth-";
     }
 
-    public ConsoleDotPrincipal(T identity) {
+    public ConsolePrincipal(T identity) {
         this.identity = identity;
         this.name = identity.getName();
     }
@@ -26,7 +26,7 @@ public abstract class ConsoleDotPrincipal<T extends ConsoleDotIdentity> implemen
         return this.identity;
     }
 
-    public static ConsoleDotPrincipal<ConsoleDotIdentity> noIdentity() {
+    public static ConsolePrincipal<ConsoleIdentity> noIdentity() {
         return NO_IDENTITY_PRINCIPAL;
     }
 }

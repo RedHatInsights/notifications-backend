@@ -1,17 +1,16 @@
-package com.redhat.cloud.notifications.auth.rbac;
+package com.redhat.cloud.notifications.auth;
 
-import com.redhat.cloud.notifications.auth.ConsoleDotIdentity;
-import com.redhat.cloud.notifications.auth.ConsoleDotIdentityWrapper;
-import com.redhat.cloud.notifications.auth.ConsoleDotPrincipal;
-import com.redhat.cloud.notifications.auth.ConsoleDotPrincipalFactory;
-import com.redhat.cloud.notifications.auth.rhid.RhIdentity;
-import com.redhat.cloud.notifications.auth.rhid.RhIdentityAuthenticationRequest;
-import com.redhat.cloud.notifications.auth.turnpike.TurnpikeSamlIdentity;
+import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
+import com.redhat.cloud.notifications.auth.principal.ConsoleIdentityWrapper;
+import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
+import com.redhat.cloud.notifications.auth.principal.ConsolePrincipalFactory;
+import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
+import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeSamlIdentity;
+import com.redhat.cloud.notifications.auth.rbac.RbacServer;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.AuthenticationRequestContext;
-import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.smallrye.mutiny.Uni;
@@ -34,7 +33,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Authorizes the data from the insight's RBAC-server and adds the appropriate roles
  */
 @ApplicationScoped
-public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenticationRequest> {
+public class ConsoleIdentityProvider implements io.quarkus.security.identity.IdentityProvider<ConsoleAuthenticationRequest> {
 
     public static final String RBAC_READ_NOTIFICATIONS_EVENTS = "read:events";
     public static final String RBAC_READ_NOTIFICATIONS = "read:notifications";
@@ -51,7 +50,7 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     @ConfigProperty(name = "internal-ui.admin-role")
     String adminRole;
 
-    private static final Logger log = Logger.getLogger(RbacIdentityProvider.class);
+    private static final Logger log = Logger.getLogger(ConsoleIdentityProvider.class);
 
     @Inject
     @RestClient
@@ -70,20 +69,20 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
     Duration maxBackOff;
 
     @Override
-    public Class<RhIdentityAuthenticationRequest> getRequestType() {
-        return RhIdentityAuthenticationRequest.class;
+    public Class<ConsoleAuthenticationRequest> getRequestType() {
+        return ConsoleAuthenticationRequest.class;
     }
 
     @Override
-    public Uni<SecurityIdentity> authenticate(RhIdentityAuthenticationRequest rhAuthReq, AuthenticationRequestContext authenticationRequestContext) {
+    public Uni<SecurityIdentity> authenticate(ConsoleAuthenticationRequest rhAuthReq, AuthenticationRequestContext authenticationRequestContext) {
         if (!isRbacEnabled) {
             Principal principal;
             String xH = rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER);
             if (xH != null) {
-                ConsoleDotIdentity identity = getRhIdentityFromString(xH);
-                principal = ConsoleDotPrincipalFactory.fromIdentity(identity);
+                ConsoleIdentity identity = getRhIdentityFromString(xH);
+                principal = ConsolePrincipalFactory.fromIdentity(identity);
             } else {
-                principal = ConsoleDotPrincipal.noIdentity();
+                principal = ConsolePrincipal.noIdentity();
             }
 
             return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
@@ -105,8 +104,8 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                         Uni.createFrom().item(QuarkusSecurityIdentity.builder())
                                 .onItem().transformToUni(builder -> {
                                     // Decode the header and deserialize the resulting JSON
-                                    ConsoleDotIdentity identity = getRhIdentityFromString(xRhIdHeader);
-                                    ConsoleDotPrincipal<?> principal = ConsoleDotPrincipalFactory.fromIdentity(identity);
+                                    ConsoleIdentity identity = getRhIdentityFromString(xRhIdHeader);
+                                    ConsolePrincipal<?> principal = ConsolePrincipalFactory.fromIdentity(identity);
                                     builder.setPrincipal(principal);
 
                                     if (identity instanceof RhIdentity) {
@@ -165,8 +164,8 @@ public class RbacIdentityProvider implements IdentityProvider<RhIdentityAuthenti
                 );
     }
 
-    private static ConsoleDotIdentity getRhIdentityFromString(String xRhIdHeader) {
+    private static ConsoleIdentity getRhIdentityFromString(String xRhIdHeader) {
         String xRhDecoded = new String(Base64.getDecoder().decode(xRhIdHeader.getBytes(UTF_8)), UTF_8);
-        return Json.decodeValue(xRhDecoded, ConsoleDotIdentityWrapper.class).getIdentity();
+        return Json.decodeValue(xRhDecoded, ConsoleIdentityWrapper.class).getIdentity();
     }
 }
