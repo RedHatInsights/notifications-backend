@@ -1,18 +1,19 @@
 package com.redhat.cloud.notifications.routers.filters;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MaintenanceModeRequestFilterTest {
 
     private final MaintenanceModeRequestFilter testee = new MaintenanceModeRequestFilter();
 
-    @Test
-    void shouldBeAffectedByMaintenanceMode() {
-        assertTrue(testee.isAffectedByMaintenanceMode("/blabla"));
+    @ParameterizedTest
+    @ValueSource(strings = {"/blabla", "internal/admin/status"})
+    void shouldBeAffectedByMaintenanceMode(String requestPath) {
+        assertTrue(testee.isAffectedByMaintenanceMode(requestPath));
     }
 
     @ParameterizedTest
