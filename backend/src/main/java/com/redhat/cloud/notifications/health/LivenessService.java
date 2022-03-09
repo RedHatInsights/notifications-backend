@@ -16,7 +16,7 @@ public class LivenessService implements HealthCheck {
     public HealthCheckResponse call() {
         boolean adminDown = StuffHolder.getInstance().isAdminDown();
 
-        HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications readiness check");
+        HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications liveness check");
         if (adminDown) {
             return response.down().withData("status", "admin-down").build();
         } else {
