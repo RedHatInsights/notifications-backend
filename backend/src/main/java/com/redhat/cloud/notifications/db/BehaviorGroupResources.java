@@ -115,7 +115,7 @@ public class BehaviorGroupResources {
             q = q.setParameter("accountId", accountId);
         }
 
-        return q.executeUpdate()  > 0;
+        return q.executeUpdate() > 0;
     }
 
     public boolean delete(String accountId, UUID behaviorGroupId) {
@@ -356,21 +356,20 @@ public class BehaviorGroupResources {
         return behaviorGroups;
     }
 
-    private BehaviorGroup getBehaviorGroup(UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
+    private void getBehaviorGroup(UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
         BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
         if (behaviorGroup == null) {
             throw new NoResultException();
-        } else {
-            if (isDefaultBehaviorGroup) {
-                if (behaviorGroup.getAccountId() != null) {
-                    throw new BadRequestException("Default behavior groups must have a null accountId");
-                }
-            } else {
-                if (behaviorGroup.getAccountId() == null) {
-                    throw new BadRequestException("Only default behavior groups have a null accountId");
-                }
+        }
+
+        if (isDefaultBehaviorGroup) {
+            if (behaviorGroup.getAccountId() != null) {
+                throw new BadRequestException("Default behavior groups must have a null accountId");
             }
-            return behaviorGroup;
+        } else {
+            if (behaviorGroup.getAccountId() == null) {
+                throw new BadRequestException("Only default behavior groups have a null accountId");
+            }
         }
     }
 }

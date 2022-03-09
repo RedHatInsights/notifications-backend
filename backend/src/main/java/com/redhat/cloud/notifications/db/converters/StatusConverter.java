@@ -10,19 +10,11 @@ public class StatusConverter implements AttributeConverter<Status, String> {
 
     @Override
     public String convertToDatabaseColumn(Status status) {
-        if (status == null) {
-            return null;
-        } else {
-            return status.name();
-        }
+        return status == null ? null : status.name();
     }
 
     @Override
     public Status convertToEntityAttribute(String name) {
-        if (name == null) {
-            return null;
-        } else {
-            return Status.valueOf(name);
-        }
+        return name == null ? null : Status.valueOf(name);
     }
 }

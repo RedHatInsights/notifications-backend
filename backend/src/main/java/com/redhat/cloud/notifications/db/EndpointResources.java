@@ -228,30 +228,30 @@ public class EndpointResources {
             return false;
         } else if (endpoint.getProperties() == null) {
             return true;
-        } else {
-            switch (endpoint.getType()) {
-                case WEBHOOK:
-                    WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
-                    return entityManager.createQuery(webhookQuery)
-                            .setParameter("url", properties.getUrl())
-                            .setParameter("method", properties.getMethod())
-                            .setParameter("disableSslVerification", properties.getDisableSslVerification())
-                            .setParameter("secretToken", properties.getSecretToken())
-                            .setParameter("endpointId", endpoint.getId())
-                            .executeUpdate() > 0;
-                case CAMEL:
-                    CamelProperties cAttr = (CamelProperties) endpoint.getProperties();
-                    return entityManager.createQuery(camelQuery)
-                            .setParameter("url", cAttr.getUrl())
-                            .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
-                            .setParameter("secretToken", cAttr.getSecretToken())
-                            .setParameter("endpointId", endpoint.getId())
-                            .setParameter("extras", cAttr.getExtras())
-                            .setParameter("basicAuthentication", cAttr.getBasicAuthentication())
-                            .executeUpdate() > 0;
-                default:
-                    return true;
-            }
+        }
+
+        switch (endpoint.getType()) {
+            case WEBHOOK:
+                WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
+                return entityManager.createQuery(webhookQuery)
+                        .setParameter("url", properties.getUrl())
+                        .setParameter("method", properties.getMethod())
+                        .setParameter("disableSslVerification", properties.getDisableSslVerification())
+                        .setParameter("secretToken", properties.getSecretToken())
+                        .setParameter("endpointId", endpoint.getId())
+                        .executeUpdate() > 0;
+            case CAMEL:
+                CamelProperties cAttr = (CamelProperties) endpoint.getProperties();
+                return entityManager.createQuery(camelQuery)
+                        .setParameter("url", cAttr.getUrl())
+                        .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
+                        .setParameter("secretToken", cAttr.getSecretToken())
+                        .setParameter("endpointId", endpoint.getId())
+                        .setParameter("extras", cAttr.getExtras())
+                        .setParameter("basicAuthentication", cAttr.getBasicAuthentication())
+                        .executeUpdate() > 0;
+            default:
+                return true;
         }
     }
 
@@ -274,19 +274,21 @@ public class EndpointResources {
                 .filter(e -> e.getType().equals(type))
                 .collect(Collectors.toMap(Endpoint::getId, Function.identity()));
 
-        if (endpointsMap.size() > 0) {
-            String query = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:ids)";
-            List<T> propList = entityManager.createQuery(query, typedEndpointClass)
-                    .setParameter("ids", endpointsMap.keySet())
-                    .getResultList();
-            for (T props : propList) {
-                if (props != null) {
-                    Endpoint endpoint = endpointsMap.get(props.getId());
-                    endpoint.setProperties(props);
-                    // Todo: NOTIF-429 backward compatibility change - Remove soon.
-                    if (typedEndpointClass.equals(CamelProperties.class)) {
-                        endpoint.getProperties(CamelProperties.class).setSubType(endpoint.getSubType());
-                    }
+        if (endpointsMap.size() <= 0) {
+            return;
+        }
+        
+        String query = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:ids)";
+        List<T> propList = entityManager.createQuery(query, typedEndpointClass)
+                .setParameter("ids", endpointsMap.keySet())
+                .getResultList();
+        for (T props : propList) {
+            if (props != null) {
+                Endpoint endpoint = endpointsMap.get(props.getId());
+                endpoint.setProperties(props);
+                // Todo: NOTIF-429 backward compatibility change - Remove soon.
+                if (typedEndpointClass.equals(CamelProperties.class)) {
+                    endpoint.getProperties(CamelProperties.class).setSubType(endpoint.getSubType());
                 }
             }
         }
@@ -300,17 +302,17 @@ public class EndpointResources {
                 .alias("e")
                 .where(
                         WhereBuilder.builder()
-                            .ifElse(
-                                    accountId == null,
-                                    WhereBuilder.builder().and("e.accountId IS NULL"),
-                                    WhereBuilder.builder().and("e.accountId = :accountId", "accountId", accountId)
-                            )
-                            .and(
-                                    WhereBuilder.builder()
-                                            .ifOr(basicTypes.size() > 0, "e.compositeType.type IN (:endpointType)", "endpointType", basicTypes)
-                                            .ifOr(compositeTypes.size() > 0, "e.compositeType IN (:compositeTypes)", "compositeTypes", compositeTypes)
-                            )
-                            .ifAnd(activeOnly != null, "e.enabled = :enabled", "enabled", activeOnly)
+                                .ifElse(
+                                        accountId == null,
+                                        WhereBuilder.builder().and("e.accountId IS NULL"),
+                                        WhereBuilder.builder().and("e.accountId = :accountId", "accountId", accountId)
+                                )
+                                .and(
+                                        WhereBuilder.builder()
+                                                .ifOr(basicTypes.size() > 0, "e.compositeType.type IN (:endpointType)", "endpointType", basicTypes)
+                                                .ifOr(compositeTypes.size() > 0, "e.compositeType IN (:compositeTypes)", "compositeTypes", compositeTypes)
+                                )
+                                .ifAnd(activeOnly != null, "e.enabled = :enabled", "enabled", activeOnly)
                 );
     }
 
