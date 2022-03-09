@@ -32,7 +32,6 @@ public class AdminService {
     @GET
     @Produces(APPLICATION_JSON)
     public Response debugRbac(@QueryParam("rhid") String rhid) {
-
         try {
             RbacRaw rbacRaw = rbacServer.getRbacInfo("notifications,integrations", rhid)
                     .await().atMost(Duration.ofSeconds(2L));
