@@ -118,11 +118,11 @@ public class EndpointResources {
         Map<String, Object> actionMap = new HashMap<>();
         out.put("action", actionMap);
 
-        actionMap.put("type", SLACK); // needs to be literally like this
+        actionMap.put("type", SLACK); // needs to be literally like this to the Slack Action
 
         // A qute template we should get it from DB
         String template = "Hello from *Notifications* via _OpenBridge_ with {data.events.size()} event{#if data.events.size() > 1}s{/} from Application _{data.application}_ in Bundle _{data.bundle}_\n" +
-                "First event: {data.events.get(0).payload} \n" +
+                "Events: {data.events} \n" +
                 "{#if data.context.size() > 0} Context is:\n" +
                 "{#each data.context}*{it.key}* -> _{it.value}_\n" +
                 "{/each}{/if}\n" +
