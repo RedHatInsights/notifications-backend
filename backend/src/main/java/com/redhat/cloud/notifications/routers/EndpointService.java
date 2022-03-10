@@ -9,16 +9,22 @@ import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.openbridge.Bridge;
+import com.redhat.cloud.notifications.openbridge.BridgeApiService;
+import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -26,6 +32,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -47,8 +54,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -61,6 +70,11 @@ import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 // Email endpoints are not added at this point
 // TODO Needs documentation annotations
 public class EndpointService {
+
+    public static final String OB_PROCESSOR_ID = "processorId";
+    public static final String OB_PROCESSOR_NAME = "processorname"; // Must be all lower for the filter.
+    public static final String SLACK = "Slack";
+
 
     private static final List<EndpointType> systemEndpointType = List.of(
             EndpointType.EMAIL_SUBSCRIPTION
@@ -77,6 +91,20 @@ public class EndpointService {
 
     @Inject
     ApplicationResources applicationResources;
+
+    @ConfigProperty(name = "ob.enabled", defaultValue = "false")
+    boolean obEnabled;
+
+    @Inject
+    @RestClient
+    BridgeApiService bridgeApiService;
+
+    @Inject
+    Bridge bridge;
+
+    @Inject
+    BridgeAuth bridgeAuth;
+
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -144,6 +172,24 @@ public class EndpointService {
             throw new BadRequestException("Properties is required");
         }
 
+        if (obEnabled) {
+            // TODO NOTIF-429 - see similar in EndpointResources#createEndpoint
+            String endpointSubType = endpoint.getSubType() != null ? endpoint.getSubType() : endpoint.getProperties(CamelProperties.class).getSubType();
+
+            if (endpointSubType.equals("slack")) {
+                CamelProperties properties = endpoint.getProperties(CamelProperties.class);
+                String processorName = "p-" + endpoint.getAccountId() + "-" + UUID.randomUUID();
+                properties.getExtras().put(OB_PROCESSOR_NAME, processorName);
+                String processorId = setupOpenBridgeProcessor(endpoint, properties, processorName);
+
+                // TODO find a better place for these, that should not be
+                //       visible to users / OB actions
+                //       See also CamelTypeProcessor#callOpenBridge
+                properties.getExtras().put(OB_PROCESSOR_ID, processorId);
+
+            }
+        }
+
         return resources.createEndpoint(endpoint);
     }
 
@@ -186,7 +232,22 @@ public class EndpointService {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         EndpointType endpointType = resources.getEndpointTypeById(principal.getAccount(), id);
         checkSystemEndpoint(endpointType);
+
+        Endpoint e = resources.getEndpoint(principal.getAccount(), id);
+        if (e != null) {
+            EndpointProperties properties = e.getProperties();
+            if (properties instanceof CamelProperties) {
+                CamelProperties cp = (CamelProperties) properties;
+                // Special case wrt OpenBridge
+                if (e.getSubType().equals("slack")) {
+                    String processorId = cp.getExtras().get(OB_PROCESSOR_ID);
+                    bridgeApiService.deleteProcessor(bridge.getId(), processorId, bridgeAuth.getToken());
+                }
+            }
+        }
+
         resources.deleteEndpoint(principal.getAccount(), id);
+
         return Response.noContent().build();
     }
 
@@ -344,5 +405,54 @@ public class EndpointService {
             ));
         }
     }
+
+    private String setupOpenBridgeProcessor(Endpoint endpoint, CamelProperties properties, String processorName) {
+
+        Map<String, Object> out = new HashMap<>();
+        out.put("name", processorName);
+
+        List<Object> filters = new ArrayList<>();
+        out.put("filters", filters);
+        filters.add(mkFilter("StringEquals", "rhaccount", endpoint.getAccountId()));
+        filters.add(mkFilter("StringEquals", OB_PROCESSOR_NAME, processorName));
+
+        Map<String, Object> actionMap = new HashMap<>();
+        out.put("action", actionMap);
+
+        actionMap.put("type", SLACK); // needs to be literally like this to the Slack Action
+
+        // A qute template we should get it from DB
+        String template = "Hello from *Notifications* via _OpenBridge_ with {data.events.size()} event{#if data.events.size() > 1}s{/} from Application _{data.application}_ in Bundle _{data.bundle}_\n" +
+                "Events: {data.events} \n" +
+                "{#if data.context.size() > 0} Context is:\n" +
+                "{#each data.context}*{it.key}* -> _{it.value}_\n" +
+                "{/each}{/if}\n" +
+                "Brought to you by :redhat:\n";
+        out.put("transformationTemplate", template);
+
+        Map<String, String> props = new HashMap<>();
+        props.put("channel", properties.getExtras().getOrDefault("channel", "#general"));
+        props.put("webhookUrl", properties.getUrl());
+        actionMap.put("parameters", props);
+
+        String token = bridgeAuth.getToken();
+
+        Map<String, Object> pInfo = bridgeApiService.addProcessor(bridge.getId(), token, out);
+
+        String processorId = (String) pInfo.get("id");
+
+        return processorId;
+
+    }
+
+    private Map<String, String> mkFilter(String type, String key, String value) {
+        Map<String, String> out = new HashMap<>(3);
+        out.put("type", type);
+        out.put("key", key);
+        out.put("value", value);
+        return out;
+    }
+
+
 
 }
