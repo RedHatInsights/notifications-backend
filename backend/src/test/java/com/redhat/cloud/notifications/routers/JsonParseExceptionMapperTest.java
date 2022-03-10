@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class JsonParseExceptionMapperTest {
 
-    @ConfigProperty(name = "internal-ui.admin-role")
+    @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
     @Test

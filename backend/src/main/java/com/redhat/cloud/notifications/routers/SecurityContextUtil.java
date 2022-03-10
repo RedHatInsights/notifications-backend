@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.InternalRoleAccessResources;
-import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import io.quarkus.security.ForbiddenException;
 
@@ -29,16 +28,16 @@ public class SecurityContextUtil {
     }
 
     public void hasPermissionForEventType(SecurityContext securityContext, UUID eventTypeId) {
-        if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)) {
+        if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
             return;
         }
 
-        EventType eventType = applicationResources.getEventType(eventTypeId);
-        hasPermissionForApplication(securityContext, eventType.getApplicationId());
+        UUID applicationId = applicationResources.getApplicationIdOfEventType(eventTypeId);
+        hasPermissionForApplication(securityContext, applicationId);
     }
 
     public void hasPermissionForApplication(SecurityContext securityContext, UUID applicationId) {
-        if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)) {
+        if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
             return;
         }
 

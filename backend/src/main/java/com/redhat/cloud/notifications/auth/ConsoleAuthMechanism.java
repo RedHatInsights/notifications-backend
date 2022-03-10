@@ -39,8 +39,8 @@ public class ConsoleAuthMechanism implements HttpAuthenticationMechanism {
             // Disable internal auth - could be useful for ephemeral environments
             return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
                     .setPrincipal(ConsolePrincipal.noIdentity())
-                    .addRole(ConsoleIdentityProvider.RBAC_INTERNAL_UI_USER)
-                    .addRole(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+                    .addRole(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
+                    .addRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
                     .build());
         } else if (xRhIdentityHeaderValue == null) { // Access that did not go through 3Scale or turnpike
             boolean good = false;

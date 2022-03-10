@@ -77,7 +77,7 @@ public class LifecycleITest extends DbIsolatedTest {
     @Inject
     EntityManager entityManager;
 
-    @ConfigProperty(name = "internal-ui.admin-role")
+    @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
     private Header initRbacMock(String tenant, String username, MockServerClientConfig.RbacAccess access) {

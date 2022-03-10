@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class ApiResponseFilterTest {
 
-    @ConfigProperty(name = "internal-ui.admin-role")
+    @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
     private Header turnpikeIdentityHeader() {

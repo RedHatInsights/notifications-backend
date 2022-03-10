@@ -25,14 +25,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class InternalPermissionsServiceTest extends DbIsolatedTest {
 
-    @ConfigProperty(name = "internal-ui.admin-role")
+    @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
     @Test
     void userAccess() {
         String appRole = "crc-app-team";
         Header turnpikeAdminHeader = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);
-        Header turnpikeAppAdmin = TestHelpers.createTurnpikeIdentityHeader("app-admin", appRole);
+        Header turnpikeAppDev = TestHelpers.createTurnpikeIdentityHeader("app-admin", appRole);
 
         String bundleId = CrudTestHelpers.createBundle(turnpikeAdminHeader, "test-permission-bundle", "Test permissions Bundle", 200).get();
         String appId = CrudTestHelpers.createApp(turnpikeAdminHeader, bundleId, "test-permission-app", "Test permissions App", 200).get();
@@ -52,7 +52,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
 
         // App admin - no permissions are set yet, no admin and no applicationIds
         permissions = given()
-                .header(turnpikeAppAdmin)
+                .header(turnpikeAppDev)
                 .get("/internal/access/me")
                 .then()
                 .contentType(JSON)
@@ -63,20 +63,20 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         assertEquals(Set.of(), permissions.getApplicationIds());
 
         // Can't create an event type without the permission
-        CrudTestHelpers.createEventType(turnpikeAppAdmin, appId, "my-event", "My event", "Event description", 403);
+        CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", 403);
 
         // non admins can't create a role
-        CrudTestHelpers.createInternalRoleAccess(turnpikeAppAdmin, appRole, appId, 403);
+        CrudTestHelpers.createInternalRoleAccess(turnpikeAppDev, appRole, appId, 403);
 
         // Give permissions to appRole over appId
         String appRoleInternalAccessId = CrudTestHelpers.createInternalRoleAccess(turnpikeAdminHeader, appRole, appId, 200).get();
 
         // Non admins can't create a role - even if they have permissions to an app
-        CrudTestHelpers.createInternalRoleAccess(turnpikeAppAdmin, appRole, appId, 403);
+        CrudTestHelpers.createInternalRoleAccess(turnpikeAppDev, appRole, appId, 403);
 
         // App admin - no admin and applicationIds is [ appId ]
         permissions = given()
-                .header(turnpikeAppAdmin)
+                .header(turnpikeAppDev)
                 .get("/internal/access/me")
                 .then()
                 .contentType(JSON)
@@ -87,7 +87,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         assertEquals(Set.of(appId), permissions.getApplicationIds());
 
         // We can create the event type now
-        String eventTypeId = CrudTestHelpers.createEventType(turnpikeAppAdmin, appId, "my-event", "My event", "Event description", 200).get();
+        String eventTypeId = CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", 200).get();
 
         List<Map> roleAccessList = given()
                 .header(turnpikeAdminHeader)
@@ -116,7 +116,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
 
         // permission removed
         permissions = given()
-                .header(turnpikeAppAdmin)
+                .header(turnpikeAppDev)
                 .get("/internal/access/me")
                 .then()
                 .contentType(JSON)
@@ -127,7 +127,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         assertEquals(Set.of(), permissions.getApplicationIds());
 
         // Without permissions we can't remove the event type
-        CrudTestHelpers.deleteEventType(turnpikeAppAdmin, eventTypeId, null, 403);
+        CrudTestHelpers.deleteEventType(turnpikeAppDev, eventTypeId, null, 403);
 
         // but the admin can
         CrudTestHelpers.deleteEventType(turnpikeAdminHeader, eventTypeId, true, 200);

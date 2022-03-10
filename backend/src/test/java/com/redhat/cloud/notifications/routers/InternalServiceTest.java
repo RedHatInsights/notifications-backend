@@ -72,7 +72,7 @@ public class InternalServiceTest extends DbIsolatedTest {
     @InjectMock
     TemplateEngineClient templateEngineClient;
 
-    @ConfigProperty(name = "internal-ui.admin-role")
+    @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
     @Test

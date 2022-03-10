@@ -88,7 +88,7 @@ public class OpenApiTest {
             Files.copy(in, Paths.get("./target/openapi.private.json"), StandardCopyOption.REPLACE_EXISTING);
         }
 
-        try (InputStream in = privateUrl.openStream()) {
+        try (InputStream in = internalUrl.openStream()) {
             Files.copy(in, Paths.get("./target/openapi.internal.json"), StandardCopyOption.REPLACE_EXISTING);
         }
     }

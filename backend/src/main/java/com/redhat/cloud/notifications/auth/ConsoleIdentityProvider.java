@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.AuthenticationRequestContext;
+import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.smallrye.mutiny.Uni;
@@ -33,7 +34,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Authorizes the data from the insight's RBAC-server and adds the appropriate roles
  */
 @ApplicationScoped
-public class ConsoleIdentityProvider implements io.quarkus.security.identity.IdentityProvider<ConsoleAuthenticationRequest> {
+public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenticationRequest> {
 
     public static final String RBAC_READ_NOTIFICATIONS_EVENTS = "read:events";
     public static final String RBAC_READ_NOTIFICATIONS = "read:notifications";
@@ -42,12 +43,12 @@ public class ConsoleIdentityProvider implements io.quarkus.security.identity.Ide
     public static final String RBAC_WRITE_INTEGRATIONS_ENDPOINTS = "write:integrations_ep";
 
     // This permission is added to users using turnpike to access the internal API
-    public static final String RBAC_INTERNAL_UI_USER = "read:internal";
+    public static final String RBAC_INTERNAL_USER = "read:internal";
 
-    // This permission is added to users of the ${internal-ui.admin-role} group
-    public static final String RBAC_INTERNAL_UI_ADMIN = "write:admin";
+    // This permission is added to users of the ${internal.admin-role} group
+    public static final String RBAC_INTERNAL_ADMIN = "write:internal";
 
-    @ConfigProperty(name = "internal-ui.admin-role")
+    @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
     private static final Logger log = Logger.getLogger(ConsoleIdentityProvider.class);
@@ -92,8 +93,8 @@ public class ConsoleIdentityProvider implements io.quarkus.security.identity.Ide
                     .addRole(RBAC_WRITE_NOTIFICATIONS)
                     .addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS)
                     .addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-                    .addRole(RBAC_INTERNAL_UI_USER)
-                    .addRole(RBAC_INTERNAL_UI_ADMIN)
+                    .addRole(RBAC_INTERNAL_USER)
+                    .addRole(RBAC_INTERNAL_ADMIN)
                     .addRole(adminRole)
                     .build());
         }
@@ -144,10 +145,10 @@ public class ConsoleIdentityProvider implements io.quarkus.security.identity.Ide
                                                     return builder.build();
                                                 });
                                     } else if (identity instanceof TurnpikeSamlIdentity) {
-                                        builder.addRole(RBAC_INTERNAL_UI_USER);
-                                        for (String role : ((TurnpikeSamlIdentity) identity).associate.role) {
+                                        builder.addRole(RBAC_INTERNAL_USER);
+                                        for (String role : ((TurnpikeSamlIdentity) identity).associate.roles) {
                                             if (role.equals(adminRole)) {
-                                                builder.addRole(RBAC_INTERNAL_UI_ADMIN);
+                                                builder.addRole(RBAC_INTERNAL_ADMIN);
                                             }
 
                                             String internalRole = InternalRoleAccess.getPrivateRole(role);

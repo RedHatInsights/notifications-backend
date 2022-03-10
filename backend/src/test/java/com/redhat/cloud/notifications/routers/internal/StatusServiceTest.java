@@ -37,7 +37,7 @@ public class StatusServiceTest extends DbIsolatedTest {
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
-    @ConfigProperty(name = "internal-ui.admin-role")
+    @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
     @Test

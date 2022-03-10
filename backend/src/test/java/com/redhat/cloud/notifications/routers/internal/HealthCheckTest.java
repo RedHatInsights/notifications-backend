@@ -22,7 +22,7 @@ public class HealthCheckTest {
 
     private static final Pattern PATTERN = Pattern.compile("\"name\": \"Database connections health check\",\\R[ ]+\"status\": \"UP\"");
 
-    @ConfigProperty(name = "internal-ui.admin-role")
+    @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
     @Test

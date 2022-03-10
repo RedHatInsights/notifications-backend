@@ -24,7 +24,7 @@ import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 /**
  * Stuff around admin of the service and debugging
  */
-@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL + "/admin")
 public class AdminService {
 

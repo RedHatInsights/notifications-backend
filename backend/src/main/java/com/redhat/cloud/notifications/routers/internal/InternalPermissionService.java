@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 
-@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
+@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL + "/access")
 public class InternalPermissionService {
 
@@ -39,10 +39,10 @@ public class InternalPermissionService {
     @GET
     @Path("/me")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_USER) // Overrides admin permission
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER) // Overrides admin permission
     public InternalUserPermissions getPermissions() {
         InternalUserPermissions permissions = new InternalUserPermissions();
-        if (securityIdentity.hasRole(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)) {
+        if (securityIdentity.hasRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
             permissions.setAdmin(true);
             return permissions;
         }
@@ -56,7 +56,7 @@ public class InternalPermissionService {
                 .map(s -> s.substring(privateRolePrefix.length()))
                 .collect(Collectors.toSet());
 
-        List<InternalRoleAccess> access = internalRoleAccessResources.getByRole(roles);
+        List<InternalRoleAccess> access = internalRoleAccessResources.getByRoles(roles);
         access.stream()
                 .map(InternalRoleAccess::getApplicationId)
                 .map(UUID::toString)

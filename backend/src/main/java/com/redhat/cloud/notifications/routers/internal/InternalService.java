@@ -62,7 +62,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
-@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_USER)
+@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL)
 public class InternalService {
 
@@ -114,6 +114,7 @@ public class InternalService {
 
     @GET
     @Path("/")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public void httpRoot() {
         throw new RedirectionException(Response.Status.OK, URI.create("index.html"));
     }
@@ -130,8 +131,8 @@ public class InternalService {
     @Path("/bundles")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public Bundle createBundle(@NotNull @Valid Bundle bundle) {
         return bundleResources.createBundle(bundle);
     }
@@ -139,6 +140,7 @@ public class InternalService {
     @GET
     @Path("/bundles")
     @Produces(APPLICATION_JSON)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<Bundle> getBundles() {
         // Return configured with types?
         return bundleResources.getBundles();
@@ -147,6 +149,7 @@ public class InternalService {
     @GET
     @Path("/bundles/{bundleId}")
     @Produces(APPLICATION_JSON)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Bundle getBundle(@PathParam("bundleId") UUID bundleId) {
         Bundle bundle = bundleResources.getBundle(bundleId);
         if (bundle == null) {
@@ -160,8 +163,8 @@ public class InternalService {
     @Path("/bundles/{bundleId}")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public Response updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
         int rowCount = bundleResources.updateBundle(bundleId, bundle);
         if (rowCount == 0) {
@@ -174,8 +177,8 @@ public class InternalService {
     @DELETE
     @Path("/bundles/{bundleId}")
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean deleteBundle(@PathParam("bundleId") UUID bundleId) {
         return bundleResources.deleteBundle(bundleId);
     }
@@ -183,6 +186,7 @@ public class InternalService {
     @GET
     @Path("/bundles/{bundleId}/applications")
     @Produces(APPLICATION_JSON)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<Application> getApplications(@PathParam("bundleId") UUID bundleId) {
         return bundleResources.getApplications(bundleId);
     }
@@ -191,8 +195,8 @@ public class InternalService {
     @Path("/applications")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public Application createApplication(@NotNull @Valid Application app) {
         return appResources.createApp(app);
     }
@@ -200,6 +204,7 @@ public class InternalService {
     @GET
     @Path("/applications/{appId}")
     @Produces(APPLICATION_JSON)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Application getApplication(@PathParam("appId") UUID appId) {
         Application app = appResources.getApplication(appId);
         if (app == null) {
@@ -214,6 +219,7 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response updateApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId, @NotNull @Valid Application app) {
         securityContextUtil.hasPermissionForApplication(sec, appId);
         int rowCount = appResources.updateApplication(appId, app);
@@ -227,8 +233,8 @@ public class InternalService {
     @DELETE
     @Path("/applications/{appId}")
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean deleteApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId) {
         return appResources.deleteApplication(appId);
     }
@@ -236,6 +242,7 @@ public class InternalService {
     @GET
     @Path("/applications/{appId}/eventTypes")
     @Produces(APPLICATION_JSON)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<EventType> getEventTypes(@PathParam("appId") UUID appId) {
         return appResources.getEventTypes(appId);
     }
@@ -245,6 +252,7 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public EventType createEventType(@Context SecurityContext sec, @NotNull @Valid EventType eventType) {
         securityContextUtil.hasPermissionForApplication(sec, eventType.getApplicationId());
         return appResources.createEventType(eventType);
@@ -255,6 +263,7 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response updateEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
         securityContextUtil.hasPermissionForApplication(sec, eventType.getApplicationId());
         int rowCount = appResources.updateEventType(eventTypeId, eventType);
@@ -269,6 +278,7 @@ public class InternalService {
     @Path("/eventTypes/{eventTypeId}")
     @Produces(APPLICATION_JSON)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public boolean deleteEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId) {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
         return appResources.deleteEventTypeById(eventTypeId);
@@ -277,8 +287,8 @@ public class InternalService {
     @PUT
     @Path("/status")
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public void setCurrentStatus(@NotNull @Valid CurrentStatus status) {
         statusResources.setCurrentStatus(status);
     }
@@ -295,6 +305,7 @@ public class InternalService {
                     @Content(schema = @Schema(title = "RenderEmailTemplateResponseError", implementation = RenderEmailTemplateResponse.Error.class))
             })
     })
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {
         try {
             return templateEngineClient.render(renderEmailTemplateRequest);
@@ -307,6 +318,7 @@ public class InternalService {
     @GET
     @Path("/behaviorGroups/default")
     @Produces(APPLICATION_JSON)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<BehaviorGroup> getDefaultBehaviorGroups() {
         return behaviorGroupResources.findDefaults();
     }
@@ -315,8 +327,8 @@ public class InternalService {
     @Path("/behaviorGroups/default")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public BehaviorGroup createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
         return behaviorGroupResources.createDefault(behaviorGroup);
     }
@@ -326,8 +338,8 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Update a default behavior group.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean updateDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         behaviorGroup.setId(id);
         return behaviorGroupResources.updateDefault(behaviorGroup);
@@ -337,8 +349,8 @@ public class InternalService {
     @Path("/behaviorGroups/default/{id}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Deletes a default behavior group.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean deleteDefaultBehaviorGroup(@PathParam("id") UUID id) {
         return behaviorGroupResources.deleteDefault(id);
     }
@@ -349,8 +361,8 @@ public class InternalService {
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Update the list of actions of a default behavior group.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_UI_ADMIN)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public Response updateDefaultBehaviorGroupActions(@PathParam("behaviorGroupId") UUID behaviorGroupId, List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
         if (propertiesList == null) {
             throw new BadRequestException("The request body must contain a list of EmailSubscriptionProperties");
@@ -379,6 +391,7 @@ public class InternalService {
     @Operation(summary = "Links the default behavior group to the event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response linkDefaultBehaviorToEventType(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
         boolean isSuccess = behaviorGroupResources.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
@@ -395,6 +408,7 @@ public class InternalService {
     @Operation(summary = "Unlinks the default behavior group from the event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response unlinkDefaultBehaviorToEventType(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
         boolean isSuccess = behaviorGroupResources.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
