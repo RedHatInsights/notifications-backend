@@ -12,7 +12,6 @@ import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,9 +31,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class RbacRecipientUsersProviderTest {
 
     private final String accountId = "test-account-id";
-
-    @ConfigProperty(name = "recipient-provider.rbac.elements-per-page")
-    Integer rbacElementsPerPage;
 
     @InjectMock
     @RestClient

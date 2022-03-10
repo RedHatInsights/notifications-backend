@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
+import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -17,13 +18,16 @@ import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Account
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authentication;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
@@ -40,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.ReflectionHelper.updateField;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -47,9 +52,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpResponse.response;
 
-//@QuarkusTest
-//@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-//@QuarkusTestResource(TestLifecycleManager.class)
+@QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@QuarkusTestResource(TestLifecycleManager.class)
 public class EmailTest {
 
     @MockServerConfig
@@ -76,15 +81,15 @@ public class EmailTest {
     static final String BOP_ENV = "unitTest";
     static final String BOP_CLIENT_ID = "test-client-id";
 
-//    @BeforeAll
-//    void init() {
-//        String url = String.format("http://%s/v1/sendEmails", mockServerConfig.getRunningAddress());
-//
-//        updateField(emailSender, "bopUrl", url, EmailSender.class);
-//        updateField(emailSender, "bopApiToken", BOP_TOKEN, EmailSender.class);
-//        updateField(emailSender, "bopEnv", BOP_ENV, EmailSender.class);
-//        updateField(emailSender, "bopClientId", BOP_CLIENT_ID, EmailSender.class);
-//    }
+    @BeforeAll
+    void init() {
+        String url = String.format("http://%s/v1/sendEmails", mockServerConfig.getRunningAddress());
+
+        updateField(emailSender, "bopUrl", url, EmailSender.class);
+        updateField(emailSender, "bopApiToken", BOP_TOKEN, EmailSender.class);
+        updateField(emailSender, "bopEnv", BOP_ENV, EmailSender.class);
+        updateField(emailSender, "bopClientId", BOP_CLIENT_ID, EmailSender.class);
+    }
 
     private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {
         HttpRequest postReq = new HttpRequest()
@@ -98,9 +103,8 @@ public class EmailTest {
     }
 
     @Test
-    @Disabled
     void testEmailSubscriptionInstant() {
-        mockGetUsers(8, false);
+        mockGetUsers(8);
 
         final String tenant = "instant-email-tenant";
         final String[] usernames = {"username-1", "username-2", "username-4"};
@@ -186,9 +190,8 @@ public class EmailTest {
     }
 
     @Test
-    @Disabled
     void testEmailSubscriptionInstantWrongPayload() {
-        mockGetUsers(8, false);
+        mockGetUsers(8);
         final String tenant = "instant-email-tenant-wrong-payload";
         final String[] usernames = {"username-1", "username-2", "username-4"};
         String bundle = "rhel";
@@ -300,8 +303,8 @@ public class EmailTest {
         return emailJson;
     }
 
-    private void mockGetUsers(int elements, boolean adminsOnly) {
-        MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
+    private void mockGetUsers(int elements) {
+        MockedUserAnswer answer = new MockedUserAnswer(elements);
         Mockito.when(itUserService.getUsers(Mockito.any(ITUserRequest.class)
         )).then(invocationOnMock -> answer.mockedUserAnswer());
     }
@@ -309,16 +312,12 @@ public class EmailTest {
     static class MockedUserAnswer {
 
         private final int expectedElements;
-        private final boolean expectedAdminsOnly;
 
-        MockedUserAnswer(int expectedElements, boolean expectedAdminsOnly) {
+        MockedUserAnswer(int expectedElements) {
             this.expectedElements = expectedElements;
-            this.expectedAdminsOnly = expectedAdminsOnly;
         }
 
         List<ITUserResponse> mockedUserAnswer() {
-
-//            Assertions.assertEquals(expectedAdminsOnly, adminsOnly);
 
             List<ITUserResponse> users = new ArrayList<>();
             for (int i = 0; i < expectedElements; ++i) {
@@ -346,7 +345,7 @@ public class EmailTest {
     }
 
     @Transactional
-    boolean subscribe(String accountNumber, String username, String bundleName, String applicationName) {
+    void subscribe(String accountNumber, String username, String bundleName, String applicationName) {
         String query = "INSERT INTO endpoint_email_subscriptions(account_id, user_id, application_id, subscription_type) " +
                 "SELECT :accountId, :userId, a.id, :subscriptionType " +
                 "FROM applications a, bundles b WHERE a.bundle_id = b.id AND a.name = :applicationName AND b.name = :bundleName " +
@@ -358,22 +357,11 @@ public class EmailTest {
                 .setParameter("applicationName", applicationName)
                 .setParameter("subscriptionType", INSTANT.name())
                 .executeUpdate();
-        return true;
     }
 
     @Transactional
     void clearSubscriptions() {
         entityManager.createNativeQuery("DELETE FROM endpoint_email_subscriptions")
                 .executeUpdate();
-//        return statelessSessionFactory.withSession(statelessSession -> {
-//            return statelessSession.createNativeQuery(query)
-//                    .setParameter("accountId", accountNumber)
-//                    .setParameter("userId", username)
-//                    .setParameter("bundleName", bundleName)
-//                    .setParameter("applicationName", applicationName)
-//                    .setParameter("subscriptionType", INSTANT.name())
-//                    .executeUpdate()
-//                    .replaceWith(Boolean.TRUE);
-//        });
     }
 }
