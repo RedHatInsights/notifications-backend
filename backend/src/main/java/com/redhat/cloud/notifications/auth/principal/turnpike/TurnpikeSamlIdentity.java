@@ -38,7 +38,7 @@ public class TurnpikeSamlIdentity extends TurnpikeIdentity {
         return associate.email;
     }
 
-    public class Associate {
+    public static class Associate {
         public String email;
         public String givenName;
         public String surname;

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
 
 public abstract class TurnpikeIdentity extends ConsoleIdentity {
-    @JsonProperty
-    public String auth_info;
+    @JsonProperty("auth_info")
+    public String authInfo;
 
 }

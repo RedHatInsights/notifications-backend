@@ -28,7 +28,7 @@ import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 public class ConsoleAuthMechanism implements HttpAuthenticationMechanism {
 
     @ConfigProperty(name = "internal-rbac.enabled", defaultValue = "true")
-    Boolean isInternalRbacEnabled;
+    boolean isInternalRbacEnabled;
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {

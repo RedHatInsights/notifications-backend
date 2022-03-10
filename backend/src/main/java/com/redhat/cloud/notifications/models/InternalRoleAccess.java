@@ -21,6 +21,8 @@ public class InternalRoleAccess {
     @GeneratedValue
     private UUID id;
 
+    @NotNull
+    @Size(max = 200)
     private String role;
 
     @NotNull
@@ -60,5 +62,22 @@ public class InternalRoleAccess {
 
     public static String getPrivateRolePrefix() {
         return getPrivateRole("");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof InternalRoleAccess) {
+            InternalRoleAccess other = (InternalRoleAccess) o;
+            return Objects.equals(id, other.id);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
