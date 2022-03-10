@@ -45,6 +45,8 @@ jobs:
         run: bash .github/scripts/push-admin-console.sh
       - name: Build with Maven
         run: ./mvnw clean verify --no-transfer-progress
+      - name: Pushes coverage
+        run: bash <(curl -s https://codecov.io/bash)
       - uses: actions/upload-artifact@v2
         name: Upload notifications openapi.json
         with:
