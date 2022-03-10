@@ -104,6 +104,10 @@ objects:
               key: token
         - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE_TYPE
           value: ${IT_USER_SERVICE_KEY_STORE_FILE_TYPE}
+          valueFrom:
+            secretKeyRef:
+              name: it-services
+              key: keystoretype
         - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE
           valueFrom:
             secretKeyRef:
