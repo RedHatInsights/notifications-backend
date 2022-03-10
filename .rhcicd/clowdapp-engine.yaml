@@ -107,7 +107,7 @@ objects:
           valueFrom:
             secretKeyRef:
               name: it-services
-              key: keystoretype
+              key:  it-services-keystoretype
         - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE
           valueFrom:
             secretKeyRef:
