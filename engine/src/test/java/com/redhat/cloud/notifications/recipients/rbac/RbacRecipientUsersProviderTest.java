@@ -1,13 +1,19 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.itservice.ITUserServiceWrapper;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authentication;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -15,6 +21,7 @@ import org.mockito.Mockito;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,12 +32,12 @@ public class RbacRecipientUsersProviderTest {
 
     private final String accountId = "test-account-id";
 
-    @ConfigProperty(name = "recipient-provider.rbac.elements-per-page")
-    Integer rbacElementsPerPage;
-
     @InjectMock
     @RestClient
     RbacServiceToService rbacServiceToService;
+
+    @InjectMock
+    ITUserServiceWrapper itUserService;
 
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
@@ -107,14 +114,10 @@ public class RbacRecipientUsersProviderTest {
 
     private void mockGetUsers(int elements, boolean adminsOnly) {
         MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
-        Mockito.when(rbacServiceToService.getUsers(
+        Mockito.when(itUserService.getUsers(
                 Mockito.eq(accountId),
-                Mockito.eq(adminsOnly),
-                Mockito.anyInt(),
-                Mockito.anyInt()
+                Mockito.eq(adminsOnly)
         )).then(invocationOnMock -> answer.mockedUserAnswer(
-                invocationOnMock.getArgument(2, Integer.class),
-                invocationOnMock.getArgument(3, Integer.class),
                 invocationOnMock.getArgument(1, Boolean.class)
         ));
     }
@@ -133,12 +136,8 @@ public class RbacRecipientUsersProviderTest {
                 Mockito.anyInt(),
                 Mockito.anyInt()
         )).then(invocationOnMock -> {
-            MockedUserAnswer answer = new MockedUserAnswer(elements, false);
-            return answer.mockedUserAnswer(
-                    invocationOnMock.getArgument(2, Integer.class),
-                    invocationOnMock.getArgument(3, Integer.class),
-                    false
-            );
+            OldMockedUserAnswer answer = new OldMockedUserAnswer(elements, false);
+            return answer.mockedUserAnswer(false);
         });
     }
 
@@ -154,7 +153,7 @@ public class RbacRecipientUsersProviderTest {
     void clearCached() {
     }
 
-    class MockedUserAnswer {
+    static class MockedUserAnswer {
 
         private final int expectedElements;
         private final boolean expectedAdminsOnly;
@@ -164,15 +163,49 @@ public class RbacRecipientUsersProviderTest {
             this.expectedAdminsOnly = expectedAdminsOnly;
         }
 
-        Page<RbacUser> mockedUserAnswer(int offset, int limit, boolean adminsOnly) {
+        List<ITUserResponse> mockedUserAnswer(boolean adminsOnly) {
+            Assertions.assertEquals(expectedAdminsOnly, adminsOnly);
 
-            assertEquals(rbacElementsPerPage.intValue(), limit);
+            List<ITUserResponse> users = new ArrayList<>();
+            for (int i = 0; i < expectedElements; ++i) {
+
+                ITUserResponse user = new ITUserResponse();
+
+                user.authentications = new LinkedList<>();
+                user.authentications.add(new Authentication());
+                user.authentications.get(0).principal = String.format("username-%d", i);
+
+                Email email = new Email();
+                email.address = String.format("username-%d@foobardotcom", i);
+                user.accountRelationships = new LinkedList<>();
+                user.accountRelationships.add(new AccountRelationship());
+                user.accountRelationships.get(0).emails = List.of(email);
+
+                user.personalInformation = new PersonalInformation();
+                user.personalInformation.firstName = "foo";
+                user.personalInformation.lastNames = "bar";
+
+                users.add(user);
+            }
+            return users;
+        }
+    }
+
+    static class OldMockedUserAnswer {
+
+        private final int expectedElements;
+        private final boolean expectedAdminsOnly;
+
+        OldMockedUserAnswer(int expectedElements, boolean expectedAdminsOnly) {
+            this.expectedElements = expectedElements;
+            this.expectedAdminsOnly = expectedAdminsOnly;
+        }
+
+        Page<RbacUser> mockedUserAnswer(boolean adminsOnly) {
             assertEquals(expectedAdminsOnly, adminsOnly);
 
-            int bound = Math.min(offset + limit, expectedElements);
-
             List<RbacUser> users = new ArrayList<>();
-            for (int i = offset; i < bound; ++i) {
+            for (int i = 0; i < expectedElements; ++i) {
                 RbacUser user = new RbacUser();
                 user.setActive(true);
                 user.setUsername(String.format("username-%d", i));

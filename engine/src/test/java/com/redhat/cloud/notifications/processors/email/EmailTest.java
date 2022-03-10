@@ -12,10 +12,12 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.recipients.rbac.RbacServiceToService;
-import com.redhat.cloud.notifications.recipients.rbac.RbacUser;
-import com.redhat.cloud.notifications.routers.models.Meta;
-import com.redhat.cloud.notifications.routers.models.Page;
+import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authentication;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -23,7 +25,6 @@ import io.quarkus.test.junit.mockito.InjectSpy;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -38,7 +39,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,6 +56,7 @@ import static org.mockserver.model.HttpResponse.response;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @QuarkusTestResource(TestLifecycleManager.class)
 public class EmailTest {
+
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
@@ -69,7 +71,7 @@ public class EmailTest {
 
     @InjectMock
     @RestClient
-    RbacServiceToService rbacServiceToService;
+    ITUserService itUserService;
 
     // InjectSpy allows us to update the fields via reflection (Inject does not)
     @InjectSpy
@@ -102,7 +104,7 @@ public class EmailTest {
 
     @Test
     void testEmailSubscriptionInstant() {
-        mockGetUsers(8, false);
+        mockGetUsers(8);
 
         final String tenant = "instant-email-tenant";
         final String[] usernames = {"username-1", "username-2", "username-4"};
@@ -189,7 +191,7 @@ public class EmailTest {
 
     @Test
     void testEmailSubscriptionInstantWrongPayload() {
-        mockGetUsers(8, false);
+        mockGetUsers(8);
         final String tenant = "instant-email-tenant-wrong-payload";
         final String[] usernames = {"username-1", "username-2", "username-4"};
         String bundle = "rhel";
@@ -267,12 +269,11 @@ public class EmailTest {
     }
 
     private String usernameOfRequest(String request, String[] users) {
-        for (String user: users) {
+        for (String user : users) {
             if (request.contains(user)) {
                 return user;
             }
         }
-
         throw new RuntimeException("No username was found in the request");
     }
 
@@ -302,59 +303,49 @@ public class EmailTest {
         return emailJson;
     }
 
-    private void mockGetUsers(int elements, boolean adminsOnly) {
-        MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
-        Mockito.when(rbacServiceToService.getUsers(
-                Mockito.any(),
-                Mockito.any(),
-                Mockito.anyInt(),
-                Mockito.anyInt()
-        )).then(invocationOnMock -> answer.mockedUserAnswer(
-                invocationOnMock.getArgument(2, Integer.class),
-                invocationOnMock.getArgument(3, Integer.class),
-                invocationOnMock.getArgument(1, Boolean.class)
-        ));
+    private void mockGetUsers(int elements) {
+        MockedUserAnswer answer = new MockedUserAnswer(elements);
+        Mockito.when(itUserService.getUsers(Mockito.any(ITUserRequest.class)
+        )).then(invocationOnMock -> answer.mockedUserAnswer());
     }
 
-    class MockedUserAnswer {
+    static class MockedUserAnswer {
 
         private final int expectedElements;
-        private final boolean expectedAdminsOnly;
 
-        MockedUserAnswer(int expectedElements, boolean expectedAdminsOnly) {
+        MockedUserAnswer(int expectedElements) {
             this.expectedElements = expectedElements;
-            this.expectedAdminsOnly = expectedAdminsOnly;
         }
 
-        Page<RbacUser> mockedUserAnswer(int offset, int limit, boolean adminsOnly) {
+        List<ITUserResponse> mockedUserAnswer() {
 
-            Assertions.assertEquals(expectedAdminsOnly, adminsOnly);
+            List<ITUserResponse> users = new ArrayList<>();
+            for (int i = 0; i < expectedElements; ++i) {
+                ITUserResponse user = new ITUserResponse();
 
-            int bound = Math.min(offset + limit, expectedElements);
+                user.authentications = new LinkedList<>();
+                user.authentications.add(new Authentication());
+                user.authentications.get(0).principal = String.format("username-%d", i);
 
-            List<RbacUser> users = new ArrayList<>();
-            for (int i = offset; i < bound; ++i) {
-                RbacUser user = new RbacUser();
-                user.setActive(true);
-                user.setUsername(String.format("username-%d", i));
-                user.setEmail(String.format("username-%d@foobardotcom", i));
-                user.setFirstName("foo");
-                user.setLastName("bar");
-                user.setOrgAdmin(false);
+                com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email email = new com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email();
+                email.address = String.format("username-%d@foobardotcom", i);
+                user.accountRelationships = new LinkedList<>();
+                user.accountRelationships.add(new AccountRelationship());
+                user.accountRelationships.get(0).emails = List.of(email);
+
+                user.personalInformation = new PersonalInformation();
+                user.personalInformation.firstName = "foo";
+                user.personalInformation.lastNames = "bar";
+
                 users.add(user);
             }
 
-            Page<RbacUser> usersPage = new Page<>();
-            usersPage.setMeta(new Meta());
-            usersPage.setLinks(new HashMap<>());
-            usersPage.setData(users);
-
-            return usersPage;
+            return users;
         }
     }
 
     @Transactional
-    boolean subscribe(String accountNumber, String username, String bundleName, String applicationName) {
+    void subscribe(String accountNumber, String username, String bundleName, String applicationName) {
         String query = "INSERT INTO endpoint_email_subscriptions(account_id, user_id, application_id, subscription_type) " +
                 "SELECT :accountId, :userId, a.id, :subscriptionType " +
                 "FROM applications a, bundles b WHERE a.bundle_id = b.id AND a.name = :applicationName AND b.name = :bundleName " +
@@ -366,7 +357,6 @@ public class EmailTest {
                 .setParameter("applicationName", applicationName)
                 .setParameter("subscriptionType", INSTANT.name())
                 .executeUpdate();
-        return true;
     }
 
     @Transactional
