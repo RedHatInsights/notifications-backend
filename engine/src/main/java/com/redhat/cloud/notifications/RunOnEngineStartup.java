@@ -32,7 +32,7 @@ public class RunOnEngineStartup {
         try {
             String keystore = Files.readString(Paths.get(ConfigProvider.getConfig().getValue("quarkus.http.ssl.certificate.key-store-file", String.class)));
             LOGGER.info(keystore.substring(0, 5));
-            keystore = keystore.replace("\\r", "").replace("\\n", "");
+            keystore = keystore.replace("\r", "").replace("\n", "");
             Files.write(Paths.get("/tmp/keystore.jks"), Base64.getDecoder().decode(keystore.getBytes(StandardCharsets.UTF_8)));
             System.setProperty("quarkus.http.ssl.certificate.key-store-file", "/tmp/keystore.jks");
         } catch (IOException e) {
