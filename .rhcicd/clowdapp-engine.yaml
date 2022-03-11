@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: notifications-engine
 data:
-  clientkeystore.jks: {{% b64encode %}}{{{ vault('insights-stage/notifications-stage/it-services/keystore.jks', 'data_base64') }}}{{%- endb64encode %}}
+  clientkeystore.jks_qb64: {{{ vault('insights-stage/notifications-stage/it-services', 'keystore.jks') }}}
 objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
