@@ -160,7 +160,7 @@ def find_event_type(application_id, name):
     return None
 
 
-def create_endpoint(name, xrhid, properties, ep_type="webhook"):
+def create_endpoint(name, xrhid, properties, ep_type="webhook", ep_subtype= None):
     """Creates an endpoint"""
 
     ep_uuid = uuid.uuid4()
@@ -171,6 +171,8 @@ def create_endpoint(name, xrhid, properties, ep_type="webhook"):
                "enabled": True,
                "properties": properties,
                "type": ep_type}
+    if ep_subtype is not None:
+        ep_json["sub_type"] = ep_subtype
 
     h = {"x-rh-identity": xrhid}
 
