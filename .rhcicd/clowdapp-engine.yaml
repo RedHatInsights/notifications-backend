@@ -102,11 +102,6 @@ objects:
             secretKeyRef:
               name: backoffice
               key: token
-        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE_TYPE
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key:  it-services-keystoretype
         - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE
           value: /mnt/secrets/clientkeystore.jks
         - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_PASSWORD
