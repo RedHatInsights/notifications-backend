@@ -1,5 +1,8 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PersonalInformation {
 
     public String firstName;
