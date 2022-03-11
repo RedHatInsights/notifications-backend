@@ -16,6 +16,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
+import javax.ws.rs.BadRequestException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -41,6 +42,14 @@ public class EndpointResources {
         // Todo: NOTIF-429 backward compatibility change - Remove soon.
         if (endpoint.getType() == EndpointType.CAMEL) {
             CamelProperties properties = endpoint.getProperties(CamelProperties.class);
+
+            if (endpoint.getSubType() == null && properties.getSubType() == null) {
+                throw new BadRequestException("endpoint.subtype must have a value");
+            }
+
+            if (endpoint.getSubType() != null && properties.getSubType() != null && !properties.getSubType().equals(endpoint.getSubType())) {
+                throw new BadRequestException("endpoint.subtype must be equal to endpoint.properties.subtype. Consider removing endpoint.properties.subtype as it is deprecated");
+            }
 
             if (endpoint.getSubType() == null) {
                 endpoint.setSubType(properties.getSubType());

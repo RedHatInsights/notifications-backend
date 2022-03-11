@@ -138,7 +138,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         String subType = item.getEndpoint().getSubType();
         CamelProperties camelProperties = item.getEndpoint().getProperties(CamelProperties.class);
 
-        if (item.getEndpoint().getSubType().equals("slack")) { // OpenBridge
+        if (subType.equals("slack")) { // OpenBridge
             callOpenBridge(payload, historyId, accountId, camelProperties);
         } else {
             reallyCallCamel(payload, historyId, accountId, subType);
