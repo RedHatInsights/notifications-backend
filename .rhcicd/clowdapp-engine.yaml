@@ -108,10 +108,7 @@ objects:
               name: it-services
               key:  it-services-keystoretype
         - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: keystore.jks
+          value: /mnt/secrets/clientkeystore.jks
         - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_PASSWORD
           valueFrom:
             secretKeyRef:
