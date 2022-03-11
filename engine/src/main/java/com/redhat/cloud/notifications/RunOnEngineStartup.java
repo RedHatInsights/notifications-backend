@@ -37,6 +37,7 @@ public class RunOnEngineStartup {
             LOGGER.info(new String(decodedKs, StandardCharsets.UTF_8).substring(0, 5));
             Files.write(Paths.get("/tmp/keystore.jks"), decodedKs);
             System.setProperty("quarkus.http.ssl.certificate.key-store-file", "/tmp/keystore.jks");
+            System.setProperty("com.redhat.cloud.notifications.recipients.itservice.ITUserService/mp-rest/keyStore", "/tmp/keystore.jks");
             logConfigValue("quarkus.http.ssl.certificate.key-store-file");
         } catch (IOException e) {
             e.printStackTrace();
