@@ -2,8 +2,8 @@
 
 # Clowder config
 export APP_NAME="notifications"
-export COMPONENT_NAME="notifications-backend"
-export IMAGE="quay.io/cloudservices/notifications-backend"
+export COMPONENT_NAME="notifications-engine"
+export IMAGE="quay.io/cloudservices/notifications-engine"
 export DEPLOY_TIMEOUT="900"
 
 # IQE plugin config
@@ -17,11 +17,11 @@ CICD_URL=https://raw.githubusercontent.com/RedHatInsights/bonfire/master/cicd
 curl -s $CICD_URL/bootstrap.sh > .cicd_bootstrap.sh && source .cicd_bootstrap.sh
 
 # Build the image and push to Quay
-export DOCKERFILE=docker/Dockerfile.notifications-backend.jvm
+export DOCKERFILE=docker/Dockerfile.notifications-engine.jvm
 source $CICD_ROOT/build.sh
 
 # Deploy on ephemeral
-export COMPONENTS="notifications-backend"
+export COMPONENTS="notifications-engine"
 source $CICD_ROOT/deploy_ephemeral_env.sh
 
 # Run smoke tests with ClowdJobInvocation
