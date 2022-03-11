@@ -12,7 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
 
-@Startup
+@Startup(0)
 public class RunOnEngineStartup {
 
     private static Logger LOGGER = Logger.getLogger(RunOnEngineStartup.class);
