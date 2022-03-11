@@ -7,8 +7,10 @@ import org.jboss.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Base64;
 
 @Startup
 public class RunOnEngineStartup {
@@ -29,6 +31,8 @@ public class RunOnEngineStartup {
 
         try {
             String keystore = Files.readString(Paths.get(ConfigProvider.getConfig().getValue("quarkus.http.ssl.certificate.key-store-file", String.class)));
+            Files.write(Paths.get("/tmp/keystore.jks"), Base64.getDecoder().decode(keystore.getBytes(StandardCharsets.UTF_8)));
+            System.setProperty("quarkus.http.ssl.certificate.key-store-file", "/tmp/keystore.jks");
             LOGGER.info(keystore.substring(0, 5));
         } catch (IOException e) {
             e.printStackTrace();
