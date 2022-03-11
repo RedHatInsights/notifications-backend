@@ -3,6 +3,8 @@ apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
   name: notifications-engine
+data:
+  clientkeystore.jks: {{% b64encode %}}{{{ vault('insights-stage/notifications-stage/it-services/keystore.jks', 'data_base64') }}}{{%- endb64encode %}}
 objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
