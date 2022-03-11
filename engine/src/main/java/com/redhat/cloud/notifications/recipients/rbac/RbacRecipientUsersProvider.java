@@ -23,7 +23,6 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
@@ -131,7 +130,7 @@ public class RbacRecipientUsersProvider {
     }
 
     private List<User> transformToUser(List<ITUserResponse> itUserResponses, boolean adminsOnly) {
-        List<User> users = new LinkedList<>();
+        List<User> users = new ArrayList<>();
         for (ITUserResponse itUserResponse : itUserResponses) {
             User user = new User();
             user.setUsername(itUserResponse.authentications.get(0).principal);
