@@ -131,7 +131,7 @@ public class RbacRecipientUsersProvider {
     }
 
     private List<User> transformToUser(List<ITUserResponse> itUserResponses, boolean adminsOnly) {
-        List<User> users = new LinkedList<>();
+        List<User> users = new ArrayList<>();
         for (ITUserResponse itUserResponse : itUserResponses) {
             User user = new User();
             user.setUsername(itUserResponse.authentications.get(0).principal);
