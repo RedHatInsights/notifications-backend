@@ -186,7 +186,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <debug>5007</debug>
+                    <debug>5008</debug>
                     <suspend>false</suspend>
                 </configuration>
             </plugin>

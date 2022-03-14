@@ -35,6 +35,8 @@ public class EndpointResources {
     @Inject
     EntityManager entityManager;
 
+
+
     @Transactional
     public Endpoint createEndpoint(Endpoint endpoint) {
         // Todo: NOTIF-429 backward compatibility change - Remove soon.
@@ -78,6 +80,7 @@ public class EndpointResources {
     }
 
     public List<Endpoint> getEndpointsPerCompositeType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
+
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
         List<Endpoint> endpoints = EndpointResources.queryBuilderEndpointsPerType(accountId, type, activeOnly)
@@ -172,6 +175,7 @@ public class EndpointResources {
 
     @Transactional
     public boolean deleteEndpoint(String tenant, UUID id) {
+
         String query = "DELETE FROM Endpoint WHERE accountId = :accountId AND id = :id";
         int rowCount = entityManager.createQuery(query)
                 .setParameter("id", id)

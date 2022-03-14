@@ -7,6 +7,9 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.openbridge.Bridge;
+import com.redhat.cloud.notifications.openbridge.BridgeAuth;
+import com.redhat.cloud.notifications.openbridge.BridgeEventService;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
@@ -17,14 +20,17 @@ import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.net.URI;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +52,10 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     public static final String CLOUD_EVENT_ACCOUNT_EXTENSION_KEY = "rh-account";
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     public static final String CAMEL_SUBTYPE_HEADER = "CAMEL_SUBTYPE";
+    public static final String PROCESSORNAME = "processorname";
+
+    @ConfigProperty(name = "ob.enabled", defaultValue = "false")
+    boolean obEnabled;
 
     @Inject
     BaseTransformer transformer;
@@ -58,6 +68,12 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     MeterRegistry registry;
+
+    @Inject
+    Bridge bridge;
+
+    @Inject
+    BridgeAuth bridgeAuth;
 
     private Counter processedCount;
 
@@ -120,15 +136,20 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         String accountId = item.getEndpoint().getAccountId();
         // the next could give a CCE, but we only come here when it is a camel endpoint anyway
         String subType = item.getEndpoint().getSubType();
+        CamelProperties camelProperties = item.getEndpoint().getProperties(CamelProperties.class);
 
-        reallyCallCamel(payload, historyId, accountId, subType);
+        if (subType.equals("slack")) { // OpenBridge
+            callOpenBridge(payload, historyId, accountId, camelProperties);
+        } else {
+            reallyCallCamel(payload, historyId, accountId, subType);
+        }
         final long endTime = System.currentTimeMillis();
         // We only create a basic stub. The FromCamel filler will update it later
         NotificationHistory history = getHistoryStub(item.getEndpoint(), item.getEvent(), endTime - startTime, historyId);
         return history;
     }
 
-    public boolean reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
+    public void reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
 
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
         Message<String> msg = Message.of(body.encode());
@@ -146,8 +167,35 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         msg = msg.addMetadata(tracingMetadata);
         LOGGER.infof("Sending for account %s and history id %s", accountId, historyId);
         emitter.send(msg);
-        return true;
 
     }
+
+    private void callOpenBridge(JsonObject body, UUID id, String accountId, CamelProperties camelProperties) {
+
+        Map<String, String> extras = camelProperties.getExtras();
+
+        Map<String, Object> ce = new HashMap<>();
+
+        ce.put("id", id);
+        ce.put("source", "notifications"); // Source of original event?
+        ce.put("specversion", "1.0");
+        ce.put("type", "myType"); // Type of original event?
+        ce.put("rhaccount", accountId);
+        ce.put(PROCESSORNAME, extras.get(PROCESSORNAME));
+        // TODO add dataschema
+
+        LOGGER.infof("Sending Event with id(%s) for processor with name %s and id=%s",
+                id.toString(), extras.get(PROCESSORNAME), extras.get("processorId"));
+
+        body.remove(NOTIF_METADATA_KEY); // Not needed on OB
+        ce.put("data", body.getMap());
+
+        BridgeEventService evtSvc = RestClientBuilder.newBuilder()
+                .baseUri(URI.create(bridge.getEventsEndpoint()))
+                .build(BridgeEventService.class);
+
+        evtSvc.sendEvent(ce, bridgeAuth.getToken());
+    }
+
 
 }

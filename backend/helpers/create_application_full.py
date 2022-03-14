@@ -54,13 +54,12 @@ helpers.link_bg_endpoint(bg_id, ep_id, x_rh_id)
 print(">>> create camel endpoint")
 props = {
     "url": "http://does-not-matter",
-    "sub_type": "demo-log",
     "extras": {
         "mode": "random",
         "channel": "myLogger"
     }
 }
-ep_id = helpers.create_endpoint("demo-log", x_rh_id, props, "camel")
+ep_id = helpers.create_endpoint("demo-log", x_rh_id, props, "camel", "demo-log")
 
 print(">>> link camel endpoint to behaviour group")
 helpers.link_bg_endpoint(bg_id, ep_id, x_rh_id)
