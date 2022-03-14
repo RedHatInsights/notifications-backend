@@ -86,6 +86,7 @@ public class NotificationServiceTest extends DbIsolatedTest {
         helpers.createTestAppAndEventTypes();
         Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
 
+        // no offset
         Response response = given()
                 .when()
                 .header(identityHeader)
@@ -95,8 +96,10 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .contentType(JSON)
                 .extract().response();
 
-        JsonArray eventTypes = new JsonArray(response.getBody().asString());
-        assertEquals(201, eventTypes.size()); // One of the event types is part of the default DB records.
+        JsonObject page = new JsonObject(response.getBody().asString());
+        JsonArray eventTypes = page.getJsonArray("data");
+        assertEquals(20, eventTypes.size());
+        assertEquals(201, page.getJsonObject("meta").getNumber("count")); // One of the event types is part of the default DB records.
 
         JsonObject policiesAll = eventTypes.getJsonObject(0);
         policiesAll.mapTo(EventType.class);
@@ -104,6 +107,51 @@ public class NotificationServiceTest extends DbIsolatedTest {
         assertNotNull(policiesAll.getJsonObject("application"));
         assertNotNull(policiesAll.getJsonObject("application").getString("id"));
 
+        // offset = 200
+        response = given()
+                .when()
+                .header(identityHeader)
+                .queryParam("offset", "200")
+                .get("/notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        page = new JsonObject(response.getBody().asString());
+        eventTypes = page.getJsonArray("data");
+        assertEquals(1, eventTypes.size()); // only one element past 200
+        assertEquals(201, page.getJsonObject("meta").getNumber("count")); // One of the event types is part of the default DB records.
+
+        // different limit
+        response = given()
+                .when()
+                .header(identityHeader)
+                .get("/notifications/eventTypes?limit=100")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        page = new JsonObject(response.getBody().asString());
+        eventTypes = page.getJsonArray("data");
+        assertEquals(100, eventTypes.size());
+        assertEquals(201, page.getJsonObject("meta").getNumber("count")); // One of the event types is part of the default DB records.
+
+        // different limit and offset
+        response = given()
+                .when()
+                .header(identityHeader)
+                .get("/notifications/eventTypes?limit=100&offset=150")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        page = new JsonObject(response.getBody().asString());
+        eventTypes = page.getJsonArray("data");
+        assertEquals(51, eventTypes.size()); // 51 elements past 150
+        assertEquals(201, page.getJsonObject("meta").getNumber("count")); // One of the event types is part of the default DB records.
     }
 
     @Test
@@ -123,14 +171,16 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .contentType(JSON)
                 .extract().response();
 
-        JsonArray eventTypes = new JsonArray(response.getBody().asString());
+        JsonObject page = new JsonObject(response.getBody().asString());
+        JsonArray eventTypes = page.getJsonArray("data");
         for (int i = 0; i < eventTypes.size(); i++) {
             JsonObject ev = eventTypes.getJsonObject(i);
             ev.mapTo(EventType.class);
             assertEquals(myOtherTesterApplicationId.toString(), ev.getJsonObject("application").getString("id"));
         }
 
-        assertEquals(100, eventTypes.size());
+        assertEquals(100, page.getJsonObject("meta").getInteger("count"));
+        assertEquals(20, eventTypes.size());
     }
 
     @Test
@@ -151,14 +201,16 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .contentType(JSON)
                 .extract().response();
 
-        JsonArray eventTypes = new JsonArray(response.getBody().asString());
+        JsonObject page = new JsonObject(response.getBody().asString());
+        JsonArray eventTypes = page.getJsonArray("data");
         for (int i = 0; i < eventTypes.size(); i++) {
             JsonObject ev = eventTypes.getJsonObject(i);
             ev.mapTo(EventType.class);
             assertEquals(myBundleId.toString(), ev.getJsonObject("application").getString("bundle_id"));
         }
 
-        assertEquals(200, eventTypes.size());
+        assertEquals(200, page.getJsonObject("meta").getInteger("count"));
+        assertEquals(20, eventTypes.size());
     }
 
     @Test
@@ -181,7 +233,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
                 .contentType(JSON)
                 .extract().response();
 
-        JsonArray eventTypes = new JsonArray(response.getBody().asString());
+        JsonObject page = new JsonObject(response.getBody().asString());
+        JsonArray eventTypes = page.getJsonArray("data");
         for (int i = 0; i < eventTypes.size(); i++) {
             JsonObject ev = eventTypes.getJsonObject(i);
             ev.mapTo(EventType.class);
@@ -189,7 +242,8 @@ public class NotificationServiceTest extends DbIsolatedTest {
             assertEquals(myOtherTesterApplicationId.toString(), ev.getJsonObject("application").getString("id"));
         }
 
-        assertEquals(100, eventTypes.size());
+        assertEquals(100, page.getJsonObject("meta").getInteger("count"));
+        assertEquals(20, eventTypes.size());
     }
 
     @Test

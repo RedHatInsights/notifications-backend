@@ -1,5 +1,8 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.db.builder.JoinBuilder;
+import com.redhat.cloud.notifications.db.builder.QueryBuilder;
+import com.redhat.cloud.notifications.db.builder.WhereBuilder;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
@@ -11,7 +14,6 @@ import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import javax.ws.rs.NotFoundException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -152,36 +154,29 @@ public class ApplicationResources {
     }
 
     public List<EventType> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId) {
-        String query = "SELECT e FROM EventType e LEFT JOIN FETCH e.application";
+        return getEventTypesQueryBuilder(appIds, bundleId)
+                .join(JoinBuilder.builder().leftJoinFetch("e.application"))
+                .limit(limiter != null ? limiter.getLimit() : null)
+                .sort(limiter != null ? limiter.getSort() : null)
+                .build(entityManager::createQuery)
+                .getResultList();
+    }
 
-        List<String> conditions = new ArrayList<>();
-        if (appIds != null && appIds.size() > 0) {
-            conditions.add("e.application.id IN (:appIds)");
-        }
-        if (bundleId != null) {
-            conditions.add("e.application.bundle.id = :bundleId");
-        }
-        if (conditions.size() > 0) {
-            query += " WHERE " + String.join(" AND ", conditions);
-        }
+    public Long getEventTypesCount(Set<UUID> appIds, UUID bundleId) {
+        return getEventTypesQueryBuilder(appIds, bundleId)
+                .buildCount(entityManager::createQuery)
+                .getSingleResult();
+    }
 
-        if (limiter != null) {
-            query = limiter.getModifiedQuery(query);
-        }
-
-        TypedQuery<EventType> typedQuery = entityManager.createQuery(query, EventType.class);
-        if (appIds != null && appIds.size() > 0) {
-            typedQuery.setParameter("appIds", appIds);
-        }
-        if (bundleId != null) {
-            typedQuery.setParameter("bundleId", bundleId);
-        }
-
-        if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
-            typedQuery.setMaxResults(limiter.getLimit().getLimit())
-                    .setFirstResult(limiter.getLimit().getOffset());
-        }
-
-        return typedQuery.getResultList();
+    private QueryBuilder<EventType> getEventTypesQueryBuilder(Set<UUID> appIds, UUID bundleId) {
+        return QueryBuilder
+                .builder(EventType.class)
+                .alias("e")
+                .where(
+                        WhereBuilder
+                                .builder()
+                                .ifAnd(appIds != null && appIds.size() > 0, "e.application.id IN (:appIds)", "appIds", appIds)
+                                .ifAnd(bundleId != null, "e.application.bundle.id = :bundleId", "bundleId", bundleId)
+                );
     }
 }

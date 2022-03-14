@@ -12,6 +12,9 @@ import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.Facet;
+import com.redhat.cloud.notifications.routers.models.Meta;
+import com.redhat.cloud.notifications.routers.models.Page;
+import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -37,6 +40,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.UriInfo;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -82,8 +86,14 @@ public class NotificationService {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve all event types. The returned list can be filtered by bundle or application.")
     @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public List<EventType> getEventTypes(@BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId) {
-        return apps.getEventTypes(query, applicationIds, bundleId);
+    public Page<EventType> getEventTypes(@Context UriInfo uriInfo, @BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId) {
+        List<EventType> eventTypes = apps.getEventTypes(query, applicationIds, bundleId);
+        Long count = apps.getEventTypesCount(applicationIds, bundleId);
+        return new Page<>(
+                eventTypes,
+                PageLinksBuilder.build(uriInfo.getPath(), count, query.getLimit().getLimit(), query.getLimit().getOffset()),
+                new Meta(count)
+        );
     }
 
     /*
