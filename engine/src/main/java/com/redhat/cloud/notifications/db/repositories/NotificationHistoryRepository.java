@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
+import javax.transaction.Transactional;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,6 +30,7 @@ public class NotificationHistoryRepository {
      * @return Nothing
      * @see com.redhat.cloud.notifications.events.FromCamelHistoryFiller for the source of data
      */
+    @Transactional
     public void updateHistoryItem(Map<String, Object> jo) {
 
         String historyId = (String) jo.get("historyId");
