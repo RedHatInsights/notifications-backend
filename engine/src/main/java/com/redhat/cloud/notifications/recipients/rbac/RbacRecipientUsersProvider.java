@@ -78,7 +78,7 @@ public class RbacRecipientUsersProvider {
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public List<User> getUsers(String accountId, boolean adminsOnly) {
-        return transformToUser(itUserService.getUsers(accountId, adminsOnly), adminsOnly);
+        return transformToUser(accountId, itUserService.getUsers(accountId, adminsOnly), adminsOnly);
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
@@ -129,7 +129,8 @@ public class RbacRecipientUsersProvider {
         return users;
     }
 
-    private List<User> transformToUser(List<ITUserResponse> itUserResponses, boolean adminsOnly) {
+    private List<User> transformToUser(String accountId, List<ITUserResponse> itUserResponses, boolean adminsOnly) {
+        Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
         List<User> users = new ArrayList<>();
         for (ITUserResponse itUserResponse : itUserResponses) {
             User user = new User();
@@ -151,6 +152,7 @@ public class RbacRecipientUsersProvider {
 
             users.add(user);
         }
+        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
         return users;
     }
 }
