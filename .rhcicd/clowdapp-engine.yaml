@@ -142,6 +142,22 @@ objects:
           value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: OB_ENABLED
+          value: ${OB_ENABLED}
+        - name: OB_BRIDGE_NAME
+          value: ${OB_BRIDGE_NAME}
+        - name: OB_KCUSER
+          value: ${OB_KCUSER}
+        - name: OB_KCPASS
+          value: ${OB_KCPASS}
+        - name: OB_TOKEN_USER
+          value: ${OB_TOKEN_USER}
+        - name: OB_TOKEN_PASS
+          value: ${OB_TOKEN_PASS}
+        - name: OB_MP_REST_URL
+          value: ${OB_MP_REST_URL}
+        - name: OB_KC_REST_URL
+          value: ${OB_KC_REST_URL}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -195,6 +211,30 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
+- name: OB_ENABLED
+  description: Is the OpenBridge integration enabled
+  value: "false"
+- name: OB_BRIDGE_NAME
+  description: The name of the bridge to use. Must be pre-provisioned
+  value: "notifications-bridge"
+- name: OB_KCUSER
+  description: User name to talk to the SSO server
+  value: ob.kcUser
+- name: OB_KCPASS
+  description: Password to talk to the SSO server
+  value: ob.kcPass
+- name: OB_TOKEN_USER
+  description: User to get a token from SSO
+  value: ob.token.user
+- name: OB_TOKEN_PASS
+  description: Password to get a token from SSO
+  value: ob.token.pass
+- name: OB_MP_REST_URL
+  description: URL of the OpenBridge fleet manager
+  value: "http://addMe"
+- name: OB_KC_REST_URL
+  description: URL of the SSO server
+  value: "https://addMe"
 - name: PROCESSOR_EMAIL_NO_REPLY
   description: Email address
   value: no-reply@redhat.com
