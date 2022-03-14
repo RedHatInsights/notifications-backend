@@ -88,8 +88,8 @@ objects:
           value: ${ENV_NAME}
         - name: OB_ENABLED
           value: ${OB_ENABLED}
-        - name: OB_BRIDGE_NAME
-          value: ${OB_BRIDGE_NAME}
+        - name: OB_BRIDGE_UUID
+          value: ${OB_BRIDGE_UUID}
         - name: OB_KCUSER
           value: ${OB_KCUSER}
         - name: OB_KCPASS
@@ -216,9 +216,9 @@ parameters:
 - name: OB_ENABLED
   description: Is the OpenBridge integration enabled
   value: "false"
-- name: OB_BRIDGE_NAME
-  description: The name of the bridge to use. Must be pre-provisioned
-  value: "notifications-bridge"
+- name: OB_BRIDGE_UUID
+  description: The uuid of the bridge to use. Must be pre-provisioned
+  value: "00000000-0000-0000-0000-000000000000"
 - name: OB_KCUSER
   description: User name to talk to the SSO server
   value: ob.kcUser
