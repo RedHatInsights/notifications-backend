@@ -51,14 +51,14 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
     Duration maxBackOff;
 
-    @Inject
     MeterRegistry meterRegistry;
 
     private Counter failuresCounter;
     private RetryPolicy<Object> retryPolicy;
 
-    public RbacRecipientUsersProvider(ITUserServiceWrapper itUserService) {
+    public RbacRecipientUsersProvider(ITUserServiceWrapper itUserService, MeterRegistry meterRegistry) {
         this.itUserService = itUserService;
+        this.meterRegistry = meterRegistry;
     }
 
     @PostConstruct
