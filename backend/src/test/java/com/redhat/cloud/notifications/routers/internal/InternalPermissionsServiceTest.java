@@ -35,29 +35,16 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
 
         String bundleId = CrudTestHelpers.createBundle(turnpikeAdminHeader, "test-permission-bundle", "Test permissions Bundle", 200).get();
         String appDisplayName = "Test permissions App";
-        String appId = CrudTestHelpers.createApp(turnpikeAdminHeader, bundleId, "test-permission-app", appDisplayName, 200).get();
+        String appId = CrudTestHelpers.createApp(turnpikeAdminHeader, bundleId, "test-permission-app", appDisplayName, null, 200).get();
 
         // admin - Has admin access and no applicationIds
-        InternalUserPermissions permissions = given()
-                .header(turnpikeAdminHeader)
-                .when()
-                .get("/internal/access/me")
-                .then()
-                .contentType(JSON)
-                .statusCode(200)
-                .extract().as(InternalUserPermissions.class);
+        InternalUserPermissions permissions = permissions(turnpikeAdminHeader);
 
         assertTrue(permissions.isAdmin());
         assertTrue(permissions.getApplications().isEmpty());
 
         // App admin - no permissions are set yet, no admin and no applicationIds
-        permissions = given()
-                .header(turnpikeAppDev)
-                .get("/internal/access/me")
-                .then()
-                .contentType(JSON)
-                .statusCode(200)
-                .extract().as(InternalUserPermissions.class);
+        permissions = permissions(turnpikeAppDev);
 
         assertFalse(permissions.isAdmin());
         assertTrue(permissions.getApplications().isEmpty());
@@ -75,13 +62,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         CrudTestHelpers.createInternalRoleAccess(turnpikeAppDev, appRole, appId, 403);
 
         // App admin - no admin and applicationIds is [ appId ]
-        permissions = given()
-                .header(turnpikeAppDev)
-                .get("/internal/access/me")
-                .then()
-                .contentType(JSON)
-                .statusCode(200)
-                .extract().as(InternalUserPermissions.class);
+        permissions = permissions(turnpikeAppDev);
 
         assertFalse(permissions.isAdmin());
         assertEquals(List.of(new InternalUserPermissions.Application(appId, appDisplayName)), permissions.getApplications());
@@ -115,13 +96,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         CrudTestHelpers.deleteInternalRoleAccess(turnpikeAdminHeader, appRoleInternalAccessId, 204);
 
         // permission removed
-        permissions = given()
-                .header(turnpikeAppDev)
-                .get("/internal/access/me")
-                .then()
-                .contentType(JSON)
-                .statusCode(200)
-                .extract().as(InternalUserPermissions.class);
+        permissions = permissions(turnpikeAppDev);
 
         assertFalse(permissions.isAdmin());
         assertTrue(permissions.getApplications().isEmpty());
@@ -131,5 +106,79 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
 
         // but the admin can
         CrudTestHelpers.deleteEventType(turnpikeAdminHeader, eventTypeId, true, 200);
+    }
+
+    @Test
+    void createAppWithPermissions() {
+        String appRole = "crc-app-team";
+        Header turnpikeAdminHeader = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);
+        Header turnpikeAppDev = TestHelpers.createTurnpikeIdentityHeader("app-admin", appRole);
+
+        String bundleId = CrudTestHelpers.createBundle(turnpikeAdminHeader, "test-with-permission-bundle", "Test permissions Bundle", 200).get();
+
+        // regular user can't create apps without a role
+        CrudTestHelpers.createApp(
+                turnpikeAppDev,
+                bundleId,
+                "will-fail",
+                "will-faill",
+                null,
+                403
+        );
+
+        // regular user can't create aps with a role they do not own
+        CrudTestHelpers.createApp(
+                turnpikeAppDev,
+                bundleId,
+                "will-fail",
+                "will-faill",
+                "policies-team",
+                403
+        );
+
+        // regular users can create apps with a role they own
+        String appId = CrudTestHelpers.createApp(
+                turnpikeAppDev,
+                bundleId,
+                "app-with-role",
+                "app-with-role",
+                appRole,
+                200
+        ).get();
+
+        InternalUserPermissions permissions = permissions(turnpikeAppDev);
+        assertEquals(Set.of(appId), permissions.getApplicationIds());
+
+        // admins can create apps without a role
+        CrudTestHelpers.createApp(
+                turnpikeAdminHeader,
+                bundleId,
+                "i-will-succeed-no-role",
+                "i-will-succeed-no-role",
+                null,
+                200
+        );
+
+        // admins can create apps with any role
+        CrudTestHelpers.createApp(
+                turnpikeAdminHeader,
+                bundleId,
+                "i-will-succeed-with-role",
+                "i-will-succeed-with-role",
+                "policies-team",
+                200
+        );
+
+
+    }
+
+    InternalUserPermissions permissions(Header auth) {
+        return given()
+                .header(auth)
+                .get("/internal/access/me")
+                .then()
+                .contentType(JSON)
+                .statusCode(200)
+                .extract().as(InternalUserPermissions.class);
     }
 }

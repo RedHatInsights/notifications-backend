@@ -6,11 +6,13 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.routers.internal.models.AddAccessRequest;
+import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import io.restassured.http.Header;
 import io.restassured.response.ValidatableResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
@@ -147,16 +149,26 @@ public abstract class CrudTestHelpers {
         return app;
     }
 
-    public static Optional<String> createApp(Header identity, String bundleId, String name, String displayName, int expectedStatusCode) {
+    public static Optional<String> createApp(Header identity, String bundleId, String name, String displayName, @Nullable String ownerRole, int expectedStatusCode) {
         Application app = buildApp(bundleId, name, displayName);
-        return createApp(identity, app, expectedStatusCode);
+        return createApp(identity, app, ownerRole, expectedStatusCode);
     }
 
-    public static Optional<String> createApp(Header identity, Application app, int expectedStatusCode) {
+    public static Optional<String> createApp(Header identity, @Nullable Application app, @Nullable String ownerRole, int expectedStatusCode) {
+        AddApplicationRequest request = null;
+
+        if (app != null) {
+            request = new AddApplicationRequest();
+            request.bundleId = app.getBundleId();
+            request.displayName = app.getDisplayName();
+            request.name = app.getName();
+            request.ownerRole = ownerRole;
+        }
+
         String responseBody = given()
                 .contentType(JSON)
                 .header(identity)
-                .body(Json.encode(app))
+                .body(Json.encode(request))
                 .when()
                 .post("/internal/applications")
                 .then()

@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.BundleResources;
 import com.redhat.cloud.notifications.db.EndpointResources;
+import com.redhat.cloud.notifications.db.InternalRoleAccessResources;
 import com.redhat.cloud.notifications.db.StatusResources;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
@@ -14,13 +15,16 @@ import com.redhat.cloud.notifications.models.CurrentStatus;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
+import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.internal.models.ServerInfo;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.templates.TemplateEngineClient;
+import io.quarkus.security.ForbiddenException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -84,6 +88,9 @@ public class InternalService {
 
     @Inject
     StatusResources statusResources;
+
+    @Inject
+    InternalRoleAccessResources internalRoleAccessResources;
 
     @Inject
     OApiFilter oApiFilter;
@@ -210,9 +217,24 @@ public class InternalService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Transactional
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public Application createApplication(@NotNull @Valid Application app) {
-        return appResources.createApp(app);
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
+    public Application createApplication(@Context SecurityContext sec, @NotNull @Valid AddApplicationRequest request) {
+        securityContextUtil.hasPermissionForRole(sec, request.ownerRole);
+
+        Application app = new Application();
+        app.setBundleId(request.bundleId);
+        app.setDisplayName(request.displayName);
+        app.setName(request.name);
+        app = appResources.createApp(app);
+
+        if (request.ownerRole != null) {
+            InternalRoleAccess access = new InternalRoleAccess();
+            access.setRole(request.ownerRole);
+            access.setApplicationId(app.getId());
+            internalRoleAccessResources.addAccess(access);
+        }
+
+        return app;
     }
 
     @GET
