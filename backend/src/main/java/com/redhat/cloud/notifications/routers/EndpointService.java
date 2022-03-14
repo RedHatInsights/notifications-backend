@@ -127,7 +127,8 @@ public class EndpointService {
             @Context SecurityContext sec,
             @BeanParam Query query,
             @QueryParam("type") List<String> targetType,
-            @QueryParam("active") Boolean activeOnly) {
+            @QueryParam("active") Boolean activeOnly,
+            @QueryParam("name") String name) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
         List<Endpoint> endpoints;
@@ -147,11 +148,11 @@ public class EndpointService {
                 }
             }).collect(Collectors.toSet());
             endpoints = resources
-                    .getEndpointsPerCompositeType(principal.getAccount(), compositeType, activeOnly, query);
-            count = resources.getEndpointsCountPerCompositeType(principal.getAccount(), compositeType, activeOnly);
+                    .getEndpointsPerCompositeType(principal.getAccount(), name, compositeType, activeOnly, query);
+            count = resources.getEndpointsCountPerCompositeType(principal.getAccount(), name, compositeType, activeOnly);
         } else {
-            endpoints = resources.getEndpoints(principal.getAccount(), query);
-            count = resources.getEndpointsCount(principal.getAccount());
+            endpoints = resources.getEndpoints(principal.getAccount(), name, query);
+            count = resources.getEndpointsCount(principal.getAccount(), name);
         }
 
         return new EndpointPage(endpoints, new HashMap<>(), new Meta(count));
