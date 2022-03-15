@@ -133,19 +133,23 @@ public class EndpointResources {
                 .getSingleResult();
     }
 
+    public QueryBuilder<Endpoint> getEndpointsQuery(String tenant, @Nullable String name) {
+        return QueryBuilder.builder(Endpoint.class)
+                .alias("e")
+                .where(
+                        WhereBuilder.builder()
+                                .and("e.accountId = :accountId", "accountId", tenant)
+                                .ifAnd(name != null && !name.equals(""), "e.name LIKE :name", "name", "%" + name + "%")
+                );
+    }
+
     public List<Endpoint> getEndpoints(String tenant, @Nullable String name, Query limiter) {
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
 
         // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
         //      or should I just create a new method for it?
-        List<Endpoint> endpoints = QueryBuilder.builder(Endpoint.class)
-                .alias("e")
-                .where(
-                        WhereBuilder.builder()
-                                .and("e.accountId = :accountId", "accountId", tenant)
-                                .ifAnd(name != null && !name.equals(""), "e.name LIKE :name", "%" + name + "%")
-                )
+        List<Endpoint> endpoints = getEndpointsQuery(tenant, name)
                 .limit(limit)
                 .sort(sort)
                 .build(entityManager::createQuery)
@@ -155,9 +159,8 @@ public class EndpointResources {
     }
 
     public Long getEndpointsCount(String tenant, @Nullable String name) {
-        String query = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId";
-        return entityManager.createQuery(query, Long.class)
-                .setParameter("accountId", tenant)
+        return getEndpointsQuery(tenant, name)
+                .buildCount(entityManager::createQuery)
                 .getSingleResult();
     }
 
