@@ -14,6 +14,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import javax.ws.rs.NotFoundException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -84,6 +85,14 @@ public class ApplicationResources {
             query = query.setParameter("bundleName", bundleName);
         }
         return query.getResultList();
+    }
+
+    public List<Application> getApplications(Collection<UUID> applicationIds) {
+        String sql = "FROM Application WHERE id IN (:applicationIds)";
+        return entityManager
+                .createQuery(sql, Application.class)
+                .setParameter("applicationIds", applicationIds)
+                .getResultList();
     }
 
     public Application getApplication(UUID id) {

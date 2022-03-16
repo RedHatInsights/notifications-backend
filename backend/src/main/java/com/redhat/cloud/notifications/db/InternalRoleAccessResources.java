@@ -17,14 +17,14 @@ public class InternalRoleAccessResources {
     EntityManager entityManager;
 
     public List<InternalRoleAccess> getByApplication(UUID applicationId) {
-        final String query = "FROM InternalRoleAccess WHERE applicationId = :applicationId";
+        final String query = "FROM InternalRoleAccess WHERE applicationId = :applicationId ORDER BY id DESC";
         return entityManager.createQuery(query, InternalRoleAccess.class)
                 .setParameter("applicationId", applicationId)
                 .getResultList();
     }
 
     public List<InternalRoleAccess> getAll() {
-        final String query = "FROM InternalRoleAccess";
+        final String query = "FROM InternalRoleAccess ORDER BY id DESC";
         return entityManager.createQuery(query, InternalRoleAccess.class).getResultList();
     }
 
@@ -43,7 +43,7 @@ public class InternalRoleAccessResources {
     }
 
     public List<InternalRoleAccess> getByRoles(Collection<String> roles) {
-        final String query = "FROM InternalRoleAccess WHERE role IN (:role)";
+        final String query = "FROM InternalRoleAccess WHERE role IN (:role) ORDER BY id DESC";
         return entityManager.createQuery(query, InternalRoleAccess.class)
                 .setParameter("role", roles)
                 .getResultList();

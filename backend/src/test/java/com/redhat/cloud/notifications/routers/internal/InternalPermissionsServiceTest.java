@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -35,7 +34,8 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         Header turnpikeAppDev = TestHelpers.createTurnpikeIdentityHeader("app-admin", appRole);
 
         String bundleId = CrudTestHelpers.createBundle(turnpikeAdminHeader, "test-permission-bundle", "Test permissions Bundle", 200).get();
-        String appId = CrudTestHelpers.createApp(turnpikeAdminHeader, bundleId, "test-permission-app", "Test permissions App", 200).get();
+        String appDisplayName = "Test permissions App";
+        String appId = CrudTestHelpers.createApp(turnpikeAdminHeader, bundleId, "test-permission-app", appDisplayName, 200).get();
 
         // admin - Has admin access and no applicationIds
         InternalUserPermissions permissions = given()
@@ -48,7 +48,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
                 .extract().as(InternalUserPermissions.class);
 
         assertTrue(permissions.isAdmin());
-        assertTrue(permissions.getApplicationIds().isEmpty());
+        assertTrue(permissions.getApplications().isEmpty());
 
         // App admin - no permissions are set yet, no admin and no applicationIds
         permissions = given()
@@ -60,7 +60,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
                 .extract().as(InternalUserPermissions.class);
 
         assertFalse(permissions.isAdmin());
-        assertEquals(Set.of(), permissions.getApplicationIds());
+        assertTrue(permissions.getApplications().isEmpty());
 
         // Can't create an event type without the permission
         CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", 403);
@@ -84,7 +84,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
                 .extract().as(InternalUserPermissions.class);
 
         assertFalse(permissions.isAdmin());
-        assertEquals(Set.of(appId), permissions.getApplicationIds());
+        assertEquals(List.of(new InternalUserPermissions.Application(appId, appDisplayName)), permissions.getApplications());
 
         // We can create the event type now
         String eventTypeId = CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", 200).get();
@@ -124,7 +124,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
                 .extract().as(InternalUserPermissions.class);
 
         assertFalse(permissions.isAdmin());
-        assertEquals(Set.of(), permissions.getApplicationIds());
+        assertTrue(permissions.getApplications().isEmpty());
 
         // Without permissions we can't remove the event type
         CrudTestHelpers.deleteEventType(turnpikeAppDev, eventTypeId, null, 403);

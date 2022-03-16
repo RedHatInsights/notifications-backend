@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.InternalRoleAccessResources;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.routers.internal.models.AddAccessRequest;
 import com.redhat.cloud.notifications.routers.internal.models.InternalUserPermissions;
@@ -34,6 +36,9 @@ public class InternalPermissionService {
     InternalRoleAccessResources internalRoleAccessResources;
 
     @Inject
+    ApplicationResources applicationResources;
+
+    @Inject
     SecurityIdentity securityIdentity;
 
     @GET
@@ -47,7 +52,7 @@ public class InternalPermissionService {
             return permissions;
         }
 
-        String privateRolePrefix = InternalRoleAccess.getPrivateRolePrefix();
+        String privateRolePrefix = InternalRoleAccess.INTERNAL_ROLE_PREFIX;
 
         Set<String> roles = securityIdentity
                 .getRoles()
@@ -57,10 +62,15 @@ public class InternalPermissionService {
                 .collect(Collectors.toSet());
 
         List<InternalRoleAccess> access = internalRoleAccessResources.getByRoles(roles);
-        access.stream()
+        Set<UUID> applicationIds = access.stream()
                 .map(InternalRoleAccess::getApplicationId)
-                .map(UUID::toString)
-                .forEach(permissions::addApplicationId);
+                .collect(Collectors.toSet());
+
+        List<Application> applications = applicationResources.getApplications(applicationIds);
+
+        for (Application app : applications) {
+            permissions.addApplication(app.getId().toString(), app.getDisplayName());
+        }
 
         return permissions;
     }

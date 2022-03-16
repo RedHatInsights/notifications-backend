@@ -14,7 +14,7 @@ public class ConsolePrincipalFactory {
             return new TurnpikePrincipal((TurnpikeIdentity) identity);
         }
 
-        throw new IllegalArgumentException("Unknown identity provided" + identity);
+        throw new IllegalArgumentException(String.format("Unprocessed identity found. type: %s and name: %s", identity.type, identity.getName()));
     }
 
 }

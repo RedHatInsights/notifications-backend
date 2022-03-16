@@ -123,6 +123,8 @@ objects:
               optional: true
         - name: RBAC_AUTHENTICATION_MP_REST_READTIMEOUT
           value: ${RBAC_AUTHENTICATION_READ_TIMEOUT}
+        - name: INTERNAL_RBAC_ENABLED
+          value: ${INTERNAL_RBAC_ENABLED}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -310,6 +312,9 @@ parameters:
 - name: RBAC_AUTHENTICATION_READ_TIMEOUT
   description: Delay in milliseconds before an RBAC authentication query is interrupted
   value: "2000"
+- name: INTERNAL_RBAC_ENABLED
+  description: Enable Internal RBAC
+  value: "false"
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
@@ -334,4 +339,3 @@ parameters:
 - name: FLOORIST_LOGLEVEL
   description: Floorist loglevel config
   value: 'INFO'
-

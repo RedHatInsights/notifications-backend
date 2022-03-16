@@ -509,8 +509,6 @@ public abstract class CrudTestHelpers {
             JsonObject jsonInternalRoleAccess = new JsonObject(responseBody);
             jsonInternalRoleAccess.mapTo(InternalRoleAccess.class);
             assertNotNull(jsonInternalRoleAccess.getString("id"));
-            assertNotNull(jsonInternalRoleAccess.getString("application_id"));
-            assertNotNull(jsonInternalRoleAccess.getString("role"));
             assertEquals(appId, jsonInternalRoleAccess.getString("application_id"));
             assertEquals(role, jsonInternalRoleAccess.getString("role"));
             return Optional.of(jsonInternalRoleAccess.getString("id"));

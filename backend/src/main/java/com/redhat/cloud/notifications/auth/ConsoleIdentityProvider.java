@@ -151,16 +151,17 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                                                 builder.addRole(RBAC_INTERNAL_ADMIN);
                                             }
 
-                                            String internalRole = InternalRoleAccess.getPrivateRole(role);
+                                            String internalRole = InternalRoleAccess.getInternalRole(role);
                                             builder.addRole(internalRole);
                                         }
 
                                         return Uni.createFrom().item(builder.build());
                                     } else {
+                                        log.warnf("Unprocessed identity found. type: %s and name: %s", identity.type, identity.getName());
                                         return Uni.createFrom().failure(new AuthenticationFailedException());
                                     }
                                 })
-                                // A decoding or a deserialization failure will cause an authentication failure
+                                // A failure will cause an authentication failure
                                 .onFailure().transform(AuthenticationFailedException::new)
                 );
     }

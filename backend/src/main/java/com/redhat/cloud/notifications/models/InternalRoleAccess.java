@@ -19,6 +19,8 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @JsonNaming(SnakeCaseStrategy.class)
 public class InternalRoleAccess {
 
+    public static final String INTERNAL_ROLE_PREFIX = "internal-role:";
+
     @Id
     @GeneratedValue
     private UUID id;
@@ -54,16 +56,12 @@ public class InternalRoleAccess {
         this.applicationId = applicationId;
     }
 
-    public String getPrivateRole() {
-        return InternalRoleAccess.getPrivateRole(this.role);
+    public String getInternalRole() {
+        return InternalRoleAccess.getInternalRole(this.role);
     }
 
-    public static String getPrivateRole(String role) {
-        return String.format("internal-role:%s", role);
-    }
-
-    public static String getPrivateRolePrefix() {
-        return getPrivateRole("");
+    public static String getInternalRole(String role) {
+        return INTERNAL_ROLE_PREFIX + role;
     }
 
     @Override

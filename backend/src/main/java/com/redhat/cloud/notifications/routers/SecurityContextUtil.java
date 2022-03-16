@@ -45,7 +45,7 @@ public class SecurityContextUtil {
 
         boolean hasAccess = internalRoleAccessList
                 .stream()
-                .anyMatch(internalRoleAccess -> securityContext.isUserInRole(internalRoleAccess.getPrivateRole()));
+                .anyMatch(internalRoleAccess -> securityContext.isUserInRole(internalRoleAccess.getInternalRole()));
 
         if (!hasAccess) {
             throw new ForbiddenException();
