@@ -28,6 +28,12 @@ public interface BridgeApiService {
     );
 
     @GET
+    @Path("/{bridgeId}")
+    Map<String, String> getBridgeById(@PathParam("bridgeId") String bridgeId,
+                                      @HeaderParam("Authorization") String bearerToken
+    );
+
+    @GET
     @Path("/{bridgeId}/processors")
     Map<String, Object> getProcessors(@PathParam("bridgeId") String bridgeId,
                                       @HeaderParam("Authorization") String bearerToken

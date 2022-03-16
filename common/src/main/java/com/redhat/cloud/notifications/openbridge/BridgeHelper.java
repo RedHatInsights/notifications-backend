@@ -9,7 +9,6 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,7 +24,7 @@ public class BridgeHelper {
     String kcUser;
     @ConfigProperty(name = "ob.kcPass")
     String kcPass;
-    @ConfigProperty(name = "ob.bridge.name", defaultValue = "notifications-bridge")
+    @ConfigProperty(name = "ob.bridge.uuid")
     String ourBridge;
     @ConfigProperty(name = "ob.token.user")
     String tokenUser;
@@ -48,7 +47,7 @@ public class BridgeHelper {
     public Bridge getBridgeIfNeeded() {
 
         if (!obEnabled) {
-            return new Bridge("- OB not enabled -", "http://does.not.exist");
+            return new Bridge("- OB not enabled -", "http://does.not.exist", "no name");
         }
 
         if (bridgeInstance != null) {
@@ -57,23 +56,16 @@ public class BridgeHelper {
 
         String token = getAuthTokenInternal();
 
-        Map<String, Object> bridges = apiService.getBridges(token);
-        // List of bridges is in 'items'
-        List<Map<String, String>> bridgesList = (List<Map<String, String>>) bridges.get("items");
+        Map<String, String> bridgeMap = apiService.getBridgeById(ourBridge, token);
 
-        for (Map<String, String> b : bridgesList) {
-            if (b.get("name").equals(ourBridge)) {
-                String bid = b.get("id");
-                String ep = b.get("endpoint");
+        String bid = bridgeMap.get("id");
+        String ep = bridgeMap.get("endpoint");
+        String name = bridgeMap.get("name");
 
-                Bridge bridge = new Bridge(bid, ep);
-                bridgeInstance = bridge;
+        Bridge bridge = new Bridge(bid, ep, name);
+        bridgeInstance = bridge;
 
-                return bridge;
-            }
-        }
-        // No luck
-        throw new IllegalStateException("Bridge not found");
+        return bridge;
     }
 
     @ApplicationScoped
