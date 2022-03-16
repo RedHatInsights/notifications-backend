@@ -31,6 +31,57 @@ objects:
     - topicName: platform.notifications.aggregation
       partitions: 2
       replicas: 3
+    jobs:
+    - name: floorist
+      schedule: ${FLOORIST_SCHEDULE}
+      suspend: ${{FLOORIST_SUSPEND}}
+      concurrencyPolicy: Forbid
+      podSpec:
+        image: ${FLOORIST_IMAGE}:${FLOORIST_IMAGE_TAG}
+        env:
+        - name: AWS_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: ${FLOORIST_BUCKET_SECRET_NAME}
+              key: bucket
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: ${FLOORIST_BUCKET_SECRET_NAME}
+              key: aws_region
+        - name: AWS_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: ${FLOORIST_BUCKET_SECRET_NAME}
+              key: endpoint
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: ${FLOORIST_BUCKET_SECRET_NAME}
+              key: aws_access_key_id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ${FLOORIST_BUCKET_SECRET_NAME}
+              key: aws_secret_access_key
+        - name: FLOORPLAN_FILE
+          value: "/tmp/floorplan/floorplan.yaml"
+        - name: LOGLEVEL
+          value: ${FLOORIST_LOGLEVEL}
+        volumeMounts:
+          - name: floorplan-volume
+            mountPath: "/tmp/floorplan"
+        volumes:
+          - name: floorplan-volume
+            configMap:
+              name: floorplan
+      resources:
+        limits:
+          cpu: "${CPU_LIMIT_FLOO}"
+          memory: "${MEMORY_LIMIT_FLOO}"
+        requests:
+          cpu: "${CPU_REQUEST_FLOO}"
+          memory: "${MEMORY_REQUEST_FLOO}"
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
@@ -154,6 +205,27 @@ objects:
           value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: floorplan
+  data:
+    floorplan.yaml: |
+      - prefix: insights/notifications/splunk
+        query: >-
+          SELECT 
+            DISTINCT "account_id" 
+            FROM "endpoints"
+            WHERE "endpoint_sub_type"='splunk';
+      - prefix: insights/notifications/accounts
+        query: >-
+          SELECT
+          "applications"."id", "applications"."name", COUNT(*) 
+          FROM "applications" 
+          INNER JOIN "endpoint_email_subscriptions" ON "applications"."id"="endpoint_email_subscriptions"."application_id" 
+          GROUP BY "applications"."id" HAVING COUNT(*) > 1;
+
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -228,3 +300,24 @@ parameters:
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
+- name: FLOORIST_SCHEDULE
+  description: Cronjob schedule definition
+  required: true
+- name: FLOORIST_SUSPEND
+  description: Disable Floorist cronjob execution
+  required: true
+  value: 'true'
+- description: Floorist image name
+  name: FLOORIST_IMAGE
+  value: quay.io/cloudservices/floorist
+- description: Floorist Image tag
+  name: FLOORIST_IMAGE_TAG
+  required: true
+  value: latest
+- description: bucket secret name
+  name: FLOORIST_BUCKET_SECRET_NAME
+  required: true
+  value: dummy-secret
+- name: FLOORIST_LOGLEVEL
+  description: Floorist loglevel config
+  value: 'INFO'
