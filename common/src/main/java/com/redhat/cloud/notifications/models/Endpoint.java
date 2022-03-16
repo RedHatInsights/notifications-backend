@@ -49,6 +49,8 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     private Boolean enabled = Boolean.FALSE;
 
+    private EndpointStatus status = EndpointStatus.UNKNOWN;
+
     @Valid
     @NotNull
     @Embedded
@@ -175,6 +177,14 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.notificationHistories = notificationHistories;
     }
 
+    public EndpointStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(EndpointStatus status) {
+        this.status = status;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -202,6 +212,7 @@ public class Endpoint extends CreationUpdateTimestamped {
                 ", enabled=" + enabled +
                 ", type=" + compositeType.getType() +
                 ", subType=" + compositeType.getSubType() +
+                ", status=" + status + '\'' +
                 ", created=" + getCreated() +
                 ", updated=" + getUpdated() +
                 ", properties=" + properties +

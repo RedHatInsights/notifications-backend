@@ -215,6 +215,18 @@ def find_endpoint(name, xrhid):
     return None
 
 
+def list_endpoints(xrhid):
+    """List all endpoints for the passed user"""
+    h = {"x-rh-identity": xrhid}
+    r = requests.get(integrations_prefix + "/endpoints", headers = h)
+    if r.status_code / 100 != 2:
+        print(r.reason)
+        exit(1)
+
+    response_json = r.json()
+    return response_json["data"]
+
+
 def find_behavior_group(display_name, bundle_id, x_rhid):
     """Find a behavior group by its display name"""
 
