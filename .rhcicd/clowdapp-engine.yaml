@@ -170,6 +170,27 @@ objects:
           value: ${OB_MP_REST_URL}
         - name: OB_KC_REST_URL
           value: ${OB_KC_REST_URL}
+
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: floorplan
+  data:
+    floorplan.yaml: |
+      - prefix: insights/notifications/splunk
+        query: >-
+          SELECT 
+            DISTINCT "account_id" 
+            FROM "endpoints"
+            WHERE "endpoint_sub_type"='splunk';
+      - prefix: insights/notifications/accounts
+        query: >-
+          SELECT
+          "applications"."id", "applications"."name", COUNT(*) 
+          FROM "applications" 
+          INNER JOIN "endpoint_email_subscriptions" ON "applications"."id"="endpoint_email_subscriptions"."application_id" 
+          GROUP BY "applications"."id" HAVING COUNT(*) > 1;
+
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
