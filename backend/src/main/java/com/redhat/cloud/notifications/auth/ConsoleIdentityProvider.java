@@ -162,7 +162,10 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                                     }
                                 })
                                 // A failure will cause an authentication failure
-                                .onFailure().transform(AuthenticationFailedException::new)
+                                .onFailure().transform(throwable -> {
+                                    log.error("Error while processing identity", throwable);
+                                    return new AuthenticationFailedException(throwable);
+                                })
                 );
     }
 
