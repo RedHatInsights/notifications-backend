@@ -23,6 +23,8 @@ public class ITUserRequest {
         by.allOf = allOf;
 
         this.by = by;
+        this.by.withPaging.firstResultIndex = 0;
+        this.by.withPaging.maxResults = 10000;
 
         Include include = new Include();
 
