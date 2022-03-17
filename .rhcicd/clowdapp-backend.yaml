@@ -232,10 +232,10 @@ objects:
       - prefix: insights/notifications/accounts
         query: >-
           SELECT
-          "applications"."id", "applications"."name", COUNT(*) 
+          "applications"."id", "applications"."name", COUNT("applications"."id") AS "applications_count" 
           FROM "applications" 
           INNER JOIN "endpoint_email_subscriptions" ON "applications"."id"="endpoint_email_subscriptions"."application_id" 
-          GROUP BY "applications"."id" HAVING COUNT(*) > 1;
+          GROUP BY "applications"."id" HAVING COUNT("applications"."id") > 1;
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
