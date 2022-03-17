@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
-import com.redhat.cloud.notifications.auth.rbac.RbacIdentityProvider;
-import com.redhat.cloud.notifications.auth.rhid.RhIdPrincipal;
+import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.ApplicationResources;
 import com.redhat.cloud.notifications.db.BehaviorGroupResources;
 import com.redhat.cloud.notifications.db.BundleResources;
@@ -85,7 +85,7 @@ public class NotificationService {
     @Path("/eventTypes")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve all event types. The returned list can be filtered by bundle or application.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Page<EventType> getEventTypes(@Context UriInfo uriInfo, @BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId) {
         List<EventType> eventTypes = apps.getEventTypes(query, applicationIds, bundleId);
         Long count = apps.getEventTypesCount(applicationIds, bundleId);
@@ -104,7 +104,7 @@ public class NotificationService {
     @Path("/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the event types affected by the removal of a behavior group.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         String accountId = getAccountId(sec);
         return behaviorGroupResources.findEventTypesByBehaviorGroupId(accountId, behaviorGroupId);
@@ -118,7 +118,7 @@ public class NotificationService {
     @Path("/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the behavior groups affected by the removal of an endpoint.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         String accountId = getAccountId(sec);
         return behaviorGroupResources.findBehaviorGroupsByEndpointId(accountId, endpointId);
@@ -128,7 +128,7 @@ public class NotificationService {
     @Path("/eventTypes/{eventTypeId}/behaviorGroups")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the behavior groups linked to an event type.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
         String accountId = getAccountId(sec);
         return behaviorGroupResources.findBehaviorGroupsByEventTypeId(accountId, eventTypeId, query);
@@ -161,7 +161,7 @@ public class NotificationService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Create a behavior group.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public BehaviorGroup createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
         String accountId = getAccountId(sec);
@@ -173,7 +173,7 @@ public class NotificationService {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Update a behavior group.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public Boolean updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         String accountId = getAccountId(sec);
@@ -185,7 +185,7 @@ public class NotificationService {
     @Path("/behaviorGroups/{id}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Delete a behavior group.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public Boolean deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
         String accountId = getAccountId(sec);
@@ -197,7 +197,7 @@ public class NotificationService {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Update the list of actions of a behavior group.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
@@ -221,7 +221,7 @@ public class NotificationService {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Update the list of behavior groups of an event type.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response updateEventTypeBehaviors(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, Set<UUID> behaviorGroupIds) {
@@ -242,7 +242,7 @@ public class NotificationService {
     @Path("/bundles/{bundleId}/behaviorGroups")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the behavior groups of a bundle.")
-    @RolesAllowed(RbacIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
         String accountId = getAccountId(sec);
         List<BehaviorGroup> behaviorGroups = behaviorGroupResources.findByBundleId(accountId, bundleId);

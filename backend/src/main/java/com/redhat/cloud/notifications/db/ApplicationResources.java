@@ -14,6 +14,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import javax.ws.rs.NotFoundException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -86,6 +87,14 @@ public class ApplicationResources {
         return query.getResultList();
     }
 
+    public List<Application> getApplications(Collection<UUID> applicationIds) {
+        String sql = "FROM Application WHERE id IN (:applicationIds)";
+        return entityManager
+                .createQuery(sql, Application.class)
+                .setParameter("applicationIds", applicationIds)
+                .getResultList();
+    }
+
     public Application getApplication(UUID id) {
         return entityManager.find(Application.class, id);
     }
@@ -100,6 +109,13 @@ public class ApplicationResources {
         } catch (NoResultException e) {
             return null;
         }
+    }
+
+    public UUID getApplicationIdOfEventType(UUID eventTypeId) {
+        String query = "SELECT application.id FROM EventType WHERE id = :id";
+        return entityManager.createQuery(query, UUID.class)
+                .setParameter("id", eventTypeId)
+                .getSingleResult();
     }
 
     public EventType getEventType(String bundleName, String applicationName, String eventTypeName) {

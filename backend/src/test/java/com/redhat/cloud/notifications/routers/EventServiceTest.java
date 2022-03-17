@@ -449,9 +449,9 @@ public class EventServiceTest extends DbIsolatedTest {
     }
 
     private Header mockRbac(String tenant, String username, RbacAccess access) {
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
         mockServerConfig.addMockRbacAccess(identityHeaderValue, access);
-        return TestHelpers.createIdentityHeader(identityHeaderValue);
+        return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
 
     private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
