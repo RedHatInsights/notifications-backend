@@ -51,6 +51,9 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
     Duration maxBackOff;
 
+    @ConfigProperty(name = "recipient-provider.use-it-impl", defaultValue = "false")
+    public boolean retrieveUsersFromIt;
+
     MeterRegistry meterRegistry;
 
     private Counter failuresCounter;
@@ -79,9 +82,23 @@ public class RbacRecipientUsersProvider {
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public List<User> getUsers(String accountId, boolean adminsOnly) {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
-        final List<ITUserResponse> itUserResponses = itUserService.getUsers(accountId, adminsOnly);
-        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(itUserResponses.size())));
-        return transformToUser(accountId, itUserResponses, adminsOnly);
+        List<User> users;
+        if (retrieveUsersFromIt) {
+            final List<ITUserResponse> itUserResponses = itUserService.getUsers(accountId, adminsOnly);
+            users = transformToUser(accountId, itUserResponses, adminsOnly);
+        } else {
+            users = getWithPagination(
+                page -> {
+                    Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
+                    Page<RbacUser> rbacUsers = retryOnError(() ->
+                            rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
+                    getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
+                    return rbacUsers;
+                }
+            );
+        }
+        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
+        return users;
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")

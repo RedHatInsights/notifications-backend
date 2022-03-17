@@ -136,6 +136,8 @@ objects:
               key: psks.json
         - name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
           value: ${RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE}
+        - name: RECIPIENT_PROVIDER_USE_IT_IMPL
+          value: ${RECIPIENT_PROVIDER_USE_IT_IMPL}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_USERS_RETENTION_DELAY}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
@@ -266,6 +268,9 @@ parameters:
 - name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
   description: Limit value sent as a query param to the RBAC REST API while querying RBAC users.
   value: "1000"
+- name: RECIPIENT_PROVIDER_USE_IT_IMPL
+  description: Temporary recipients retrieval switch between RBAC and IT
+  value: "false"
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
