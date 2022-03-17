@@ -228,7 +228,7 @@ objects:
           SELECT 
             DISTINCT "account_id" 
             FROM "endpoints"
-            WHERE "endpoint_sub_type"='splunk';
+            WHERE "endpoint_type"=3 AND "endpoint_sub_type"='splunk';
       - prefix: insights/notifications/accounts
         query: >-
           SELECT
