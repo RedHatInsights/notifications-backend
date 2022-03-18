@@ -85,7 +85,7 @@ public class RbacRecipientUsersProvider {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
-        if (retrieveUsersFromIt) {                      
+        if (retrieveUsersFromIt) {
             List<ITUserResponse> usersPaging;
             List<ITUserResponse> usersTotal = new LinkedList<>();
 
@@ -102,17 +102,17 @@ public class RbacRecipientUsersProvider {
             } while (!usersPaging.isEmpty());
 
             getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(usersTotal.size())));
-          
+
             users = transformToUser(accountId, usersTotal, adminsOnly);
         } else {
             users = getWithPagination(
-                page -> {
-                    Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                    Page<RbacUser> rbacUsers = retryOnError(() ->
-                            rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
-                    getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
-                    return rbacUsers;
-                }
+                    page -> {
+                        Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
+                        Page<RbacUser> rbacUsers = retryOnError(() ->
+                                rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
+                        getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
+                        return rbacUsers;
+                    }
             );
         }
         getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));

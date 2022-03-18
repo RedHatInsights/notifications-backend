@@ -59,7 +59,7 @@ public class ITUserServiceTest {
         RbacRecipientUsersProvider rbacRecipientUsersProvider = new RbacRecipientUsersProvider(itUserServiceWrapper, new SimpleMeterRegistry());
 
         Mockito.when(itUserServiceWrapper.getUsers(Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(itUserResponses);
-      
+
         // TODO NOTIF-381 Remove this when the recipients retrieval from RBAC is removed.
         rbacRecipientUsersProvider.retrieveUsersFromIt = true;
 
