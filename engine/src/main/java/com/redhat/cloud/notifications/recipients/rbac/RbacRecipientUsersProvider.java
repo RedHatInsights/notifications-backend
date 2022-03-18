@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class RbacRecipientUsersProvider {
 
+    private static final int PAGING_OFFSET = 1000;
+
     private static final Logger LOGGER = Logger.getLogger(RbacRecipientUsersProvider.class);
 
     @Inject
@@ -98,21 +100,21 @@ public class RbacRecipientUsersProvider {
                 usersTotal.addAll(usersPaging);
 
                 pagingStart = pagingEnd + 1;
-                pagingEnd = pagingEnd + 1000;
+                pagingEnd = pagingEnd + PAGING_OFFSET;
             } while (!usersPaging.isEmpty() || usersPaging.size() != expectedUsersCount);
 
             getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(usersTotal.size())));
 
-            users = transformToUser(accountId, usersTotal, adminsOnly);
+            users = transformToUser(usersTotal, adminsOnly);
         } else {
             users = getWithPagination(
-                    page -> {
-                        Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                        Page<RbacUser> rbacUsers = retryOnError(() ->
-                                rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
-                        getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
-                        return rbacUsers;
-                    }
+                page -> {
+                    Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
+                    Page<RbacUser> rbacUsers = retryOnError(() ->
+                            rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
+                    getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
+                    return rbacUsers;
+                }
             );
         }
         getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
@@ -167,7 +169,7 @@ public class RbacRecipientUsersProvider {
         return users;
     }
 
-    private List<User> transformToUser(String accountId, List<ITUserResponse> itUserResponses, boolean adminsOnly) {
+    private List<User> transformToUser(List<ITUserResponse> itUserResponses, boolean adminsOnly) {
         List<User> users = new ArrayList<>();
         for (ITUserResponse itUserResponse : itUserResponses) {
             User user = new User();
