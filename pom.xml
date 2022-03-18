@@ -47,7 +47,7 @@
 
         <!-- Keep the version synced with TestLifecycleManager -->
         <!-- Be careful with bumps, version 5.11.2 caused tests instability so we had to rollback to 5.5.4 -->
-        <mockserver-client-java.version>5.5.4</mockserver-client-java.version>
+        <mockserver-client-java.version>5.13.0</mockserver-client-java.version>
 
         <insights-notification-schemas-java.version>0.6</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>0.5.3</clowder-quarkus-config-source.version>
