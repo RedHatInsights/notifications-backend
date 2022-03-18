@@ -4,9 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
-import com.redhat.cloud.notifications.db.ApplicationResources;
-import com.redhat.cloud.notifications.db.BundleResources;
-import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.BundleRepository;
+import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailSubscription;
@@ -42,18 +42,18 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
-public class UserConfigService {
+public class UserConfigResource {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Inject
-    EndpointEmailSubscriptionResources emailSubscriptionResources;
+    EmailSubscriptionRepository emailSubscriptionRepository;
 
     @Inject
-    BundleResources bundleResources;
+    BundleRepository bundleRepository;
 
     @Inject
-    ApplicationResources applicationResources;
+    ApplicationRepository applicationRepository;
 
     @Inject
     @RestClient
@@ -75,16 +75,16 @@ public class UserConfigService {
 
         values.bundles.forEach((bundleName, bundleSettingsValue) ->
                 bundleSettingsValue.applications.forEach((applicationName, applicationSettingsValue) -> {
-                    Application app = applicationResources.getApplication(bundleName, applicationName);
+                    Application app = applicationRepository.getApplication(bundleName, applicationName);
                     applicationSettingsValue.notifications.forEach((emailSubscriptionType, subscribed) -> {
                         if (subscribed) {
                             if (app != null) {
-                                subscriptionRequests.add(emailSubscriptionResources.subscribe(
+                                subscriptionRequests.add(emailSubscriptionRepository.subscribe(
                                         account, name, bundleName, applicationName, emailSubscriptionType
                                 ));
                             }
                         } else {
-                            subscriptionRequests.add(emailSubscriptionResources.unsubscribe(
+                            subscriptionRequests.add(emailSubscriptionRepository.unsubscribe(
                                     account, name, bundleName, applicationName, emailSubscriptionType
                             ));
                         }
@@ -117,9 +117,9 @@ public class UserConfigService {
 
         final UserConfigPreferences preferences = new UserConfigPreferences();
         // TODO Get the DAILY and INSTANT subscriptions with a single SQL query and return UserConfigPreferences directly from Hibernate.
-        EmailSubscription daily = emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.DAILY);
+        EmailSubscription daily = emailSubscriptionRepository.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.DAILY);
         preferences.setDailyEmail(daily != null);
-        EmailSubscription instant = emailSubscriptionResources.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.INSTANT);
+        EmailSubscription instant = emailSubscriptionRepository.getEmailSubscription(account, name, bundleName, applicationName, EmailSubscriptionType.INSTANT);
         preferences.setInstantEmail(instant != null);
         return preferences;
     }
@@ -153,14 +153,14 @@ public class UserConfigService {
         }
 
         SettingsValues settingsValues = new SettingsValues();
-        Bundle bundle = bundleResources.getBundle(bundleName);
+        Bundle bundle = bundleRepository.getBundle(bundleName);
         if (bundle == null) {
             throw new BadRequestException("Unknown bundleName: " + bundleName);
         } else {
             BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
             bundleSettingsValue.displayName = bundle.getDisplayName();
             settingsValues.bundles.put(bundle.getName(), bundleSettingsValue);
-            for (Application application : applicationResources.getApplications(bundle.getName())) {
+            for (Application application : applicationRepository.getApplications(bundle.getName())) {
                 ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
                 applicationSettingsValue.displayName = application.getDisplayName();
                 settingsValues.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
@@ -172,7 +172,7 @@ public class UserConfigService {
                     }
                 }
             }
-            List<EmailSubscription> emailSubscriptions = emailSubscriptionResources.getEmailSubscriptionsForUser(account, username);
+            List<EmailSubscription> emailSubscriptions = emailSubscriptionRepository.getEmailSubscriptionsForUser(account, username);
             for (EmailSubscription emailSubscription : emailSubscriptions) {
                 if (settingsValues.bundles.containsKey(emailSubscription.getApplication().getBundle().getName())) {
                     BundleSettingsValue bundleSettings = settingsValues.bundles.get(emailSubscription.getApplication().getBundle().getName());

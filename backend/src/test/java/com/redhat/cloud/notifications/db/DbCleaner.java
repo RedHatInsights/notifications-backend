@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
@@ -50,10 +52,10 @@ public class DbCleaner {
     EntityManager entityManager;
 
     @Inject
-    BundleResources bundleResources;
+    BundleRepository bundleRepository;
 
     @Inject
-    ApplicationResources appResources;
+    ApplicationRepository applicationRepository;
 
     /**
      * Deletes all records from all database tables (except for flyway_schema_history) and restores the default records.
@@ -67,20 +69,20 @@ public class DbCleaner {
         }
 
         Bundle bundle = new Bundle(DEFAULT_BUNDLE_NAME, DEFAULT_BUNDLE_DISPLAY_NAME);
-        bundleResources.createBundle(bundle);
+        bundleRepository.createBundle(bundle);
 
         Application app = new Application();
         app.setBundleId(bundle.getId());
         app.setName(DEFAULT_APP_NAME);
         app.setDisplayName(DEFAULT_APP_DISPLAY_NAME);
-        appResources.createApp(app);
+        applicationRepository.createApp(app);
 
         EventType eventType = new EventType();
         eventType.setApplicationId(app.getId());
         eventType.setName(DEFAULT_EVENT_TYPE_NAME);
         eventType.setDisplayName(DEFAULT_EVENT_TYPE_DISPLAY_NAME);
         eventType.setDescription(DEFAULT_EVENT_TYPE_DESCRIPTION);
-        appResources.createEventType(eventType);
+        applicationRepository.createEventType(eventType);
 
         entityManager.createQuery("UPDATE CurrentStatus SET status = :status")
                 .setParameter("status", Status.UP)

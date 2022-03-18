@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.CurrentStatus;
 
@@ -8,7 +8,7 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 @ApplicationScoped
-public class StatusResources {
+public class StatusRepository {
 
     @Inject
     EntityManager entityManager;

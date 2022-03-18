@@ -2,8 +2,8 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
-import com.redhat.cloud.notifications.db.ApplicationResources;
-import com.redhat.cloud.notifications.db.InternalRoleAccessResources;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import io.quarkus.security.ForbiddenException;
 
@@ -17,10 +17,10 @@ import java.util.UUID;
 public class SecurityContextUtil {
 
     @Inject
-    InternalRoleAccessResources internalRoleAccessResources;
+    InternalRoleAccessRepository internalRoleAccessRepository;
 
     @Inject
-    ApplicationResources applicationResources;
+    ApplicationRepository applicationRepository;
 
     public static String getAccountId(SecurityContext securityContext) {
         RhIdPrincipal principal = (RhIdPrincipal) securityContext.getUserPrincipal();
@@ -42,7 +42,7 @@ public class SecurityContextUtil {
             return;
         }
 
-        UUID applicationId = applicationResources.getApplicationIdOfEventType(eventTypeId);
+        UUID applicationId = applicationRepository.getApplicationIdOfEventType(eventTypeId);
         hasPermissionForApplication(securityContext, applicationId);
     }
 
@@ -51,7 +51,7 @@ public class SecurityContextUtil {
             return;
         }
 
-        List<InternalRoleAccess> internalRoleAccessList = internalRoleAccessResources.getByApplication(applicationId);
+        List<InternalRoleAccess> internalRoleAccessList = internalRoleAccessRepository.getByApplication(applicationId);
 
         boolean hasAccess = internalRoleAccessList
                 .stream()

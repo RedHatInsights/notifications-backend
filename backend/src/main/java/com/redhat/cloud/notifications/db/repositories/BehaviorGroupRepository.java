@@ -1,5 +1,6 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
@@ -24,7 +25,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.OK;
 
 @ApplicationScoped
-public class BehaviorGroupResources {
+public class BehaviorGroupRepository {
 
     private static final ZoneId UTC = ZoneId.of("UTC");
 

@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.routers.internal;
 
-import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.models.EventType;
 import org.jboss.resteasy.reactive.RestQuery;
 
@@ -15,19 +15,19 @@ import javax.ws.rs.core.Response;
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 
 @Path(API_INTERNAL + "/validation")
-public class ValidationEndpoint {
+public class ValidationResource {
 
     private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for [bundle=%s, application=%s, eventType=%s]";
 
     @Inject
-    ApplicationResources appResources;
+    ApplicationRepository applicationRepository;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/baet")
     public Response validate(@RestQuery String bundle, @RestQuery String application, @RestQuery String eventType) {
         try {
-            return convertToOkayResponse(appResources.getEventType(bundle, application, eventType));
+            return convertToOkayResponse(applicationRepository.getEventType(bundle, application, eventType));
         } catch (NoResultException e) {
             return convertToNotFoundResponse(bundle, application, eventType);
         }

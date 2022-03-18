@@ -3,11 +3,11 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
-import com.redhat.cloud.notifications.db.ApplicationResources;
-import com.redhat.cloud.notifications.db.BehaviorGroupResources;
-import com.redhat.cloud.notifications.db.BundleResources;
-import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
+import com.redhat.cloud.notifications.db.repositories.BundleRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.EventType;
@@ -53,19 +53,19 @@ import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.Response.Status;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
-public class NotificationService {
+public class NotificationResource {
 
     @Inject
-    BundleResources bundleResources;
+    BundleRepository bundleRepository;
 
     @Inject
-    ApplicationResources apps;
+    ApplicationRepository applicationRepository;
 
     @Inject
-    BehaviorGroupResources behaviorGroupResources;
+    BehaviorGroupRepository behaviorGroupRepository;
 
     @Inject
-    EndpointResources endpointResources;
+    EndpointRepository endpointRepository;
 
     private String getAccountId(SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -87,8 +87,8 @@ public class NotificationService {
     @Operation(summary = "Retrieve all event types. The returned list can be filtered by bundle or application.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Page<EventType> getEventTypes(@Context UriInfo uriInfo, @BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId) {
-        List<EventType> eventTypes = apps.getEventTypes(query, applicationIds, bundleId);
-        Long count = apps.getEventTypesCount(applicationIds, bundleId);
+        List<EventType> eventTypes = applicationRepository.getEventTypes(query, applicationIds, bundleId);
+        Long count = applicationRepository.getEventTypesCount(applicationIds, bundleId);
         return new Page<>(
                 eventTypes,
                 PageLinksBuilder.build(uriInfo.getPath(), count, query.getLimit().getLimit(), query.getLimit().getOffset()),
@@ -107,7 +107,7 @@ public class NotificationService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         String accountId = getAccountId(sec);
-        return behaviorGroupResources.findEventTypesByBehaviorGroupId(accountId, behaviorGroupId);
+        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(accountId, behaviorGroupId);
     }
 
     /*
@@ -121,7 +121,7 @@ public class NotificationService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         String accountId = getAccountId(sec);
-        return behaviorGroupResources.findBehaviorGroupsByEndpointId(accountId, endpointId);
+        return behaviorGroupRepository.findBehaviorGroupsByEndpointId(accountId, endpointId);
     }
 
     @GET
@@ -131,7 +131,7 @@ public class NotificationService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
         String accountId = getAccountId(sec);
-        return behaviorGroupResources.findBehaviorGroupsByEventTypeId(accountId, eventTypeId, query);
+        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(accountId, eventTypeId, query);
     }
 
     @GET
@@ -139,7 +139,7 @@ public class NotificationService {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Return a thin list of configured applications. This can be used to configure a filter in the UI")
     public List<Facet> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
-        return apps.getApplications(bundleName)
+        return applicationRepository.getApplications(bundleName)
                 .stream()
                 .map(a -> new Facet(a.getId().toString(), a.getName(), a.getDisplayName()))
                 .collect(Collectors.toList());
@@ -150,7 +150,7 @@ public class NotificationService {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Return a thin list of configured bundles. This can be used to configure a filter in the UI")
     public List<Facet> getBundleFacets(@Context SecurityContext sec) {
-        return bundleResources.getBundles()
+        return bundleRepository.getBundles()
                 .stream()
                 .map(b -> new Facet(b.getId().toString(), b.getName(), b.getDisplayName()))
                 .collect(Collectors.toList());
@@ -165,7 +165,7 @@ public class NotificationService {
     @Transactional
     public BehaviorGroup createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
         String accountId = getAccountId(sec);
-        return behaviorGroupResources.create(accountId, behaviorGroup);
+        return behaviorGroupRepository.create(accountId, behaviorGroup);
     }
 
     @PUT
@@ -178,7 +178,7 @@ public class NotificationService {
     public Boolean updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         String accountId = getAccountId(sec);
         behaviorGroup.setId(id);
-        return behaviorGroupResources.update(accountId, behaviorGroup);
+        return behaviorGroupRepository.update(accountId, behaviorGroup);
     }
 
     @DELETE
@@ -189,7 +189,7 @@ public class NotificationService {
     @Transactional
     public Boolean deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
         String accountId = getAccountId(sec);
-        return behaviorGroupResources.delete(accountId, behaviorGroupId, false);
+        return behaviorGroupRepository.delete(accountId, behaviorGroupId, false);
     }
 
     @PUT
@@ -212,7 +212,7 @@ public class NotificationService {
             throw new BadRequestException("The endpoints identifiers list should not contain duplicates");
         }
         String accountId = getAccountId(sec);
-        Status status = behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds);
+        Status status = behaviorGroupRepository.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds);
         return Response.status(status).build();
     }
 
@@ -230,7 +230,7 @@ public class NotificationService {
             throw new BadRequestException("The behavior groups identifiers list should not contain empty values");
         }
         String accountId = getAccountId(sec);
-        boolean updated = behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds);
+        boolean updated = behaviorGroupRepository.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds);
         if (updated) {
             return Response.ok().build();
         } else {
@@ -245,8 +245,8 @@ public class NotificationService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
         String accountId = getAccountId(sec);
-        List<BehaviorGroup> behaviorGroups = behaviorGroupResources.findByBundleId(accountId, bundleId);
-        endpointResources.loadProperties(
+        List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findByBundleId(accountId, bundleId);
+        endpointRepository.loadProperties(
                 behaviorGroups
                         .stream()
                         .map(BehaviorGroup::getActions)

@@ -1,6 +1,8 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
@@ -37,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class BehaviorGroupResourcesTest extends DbIsolatedTest {
+public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
 
     @Inject
     EntityManager entityManager;
@@ -46,7 +48,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     ResourceHelpers resourceHelpers;
 
     @Inject
-    BehaviorGroupResources behaviorGroupResources;
+    BehaviorGroupRepository behaviorGroupRepository;
 
     @Test
     void testCreateAndUpdateAndDeleteBehaviorGroup() {
@@ -56,7 +58,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
         // Create behavior group.
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        List<BehaviorGroup> behaviorGroups = behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
+        List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
         assertEquals(1, behaviorGroups.size());
         assertEquals(behaviorGroup, behaviorGroups.get(0));
         assertEquals(behaviorGroup.getDisplayName(), behaviorGroups.get(0).getDisplayName());
@@ -67,7 +69,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         assertTrue(updateBehaviorGroup(behaviorGroup.getId(), newDisplayName));
         entityManager.clear(); // We need to clear the session L1 cache before checking the update result.
 
-        behaviorGroups = behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
+        behaviorGroups = behaviorGroupRepository.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
         assertEquals(1, behaviorGroups.size());
         assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
         assertEquals(newDisplayName, behaviorGroups.get(0).getDisplayName());
@@ -76,7 +78,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         // Delete behavior group.
         assertTrue(resourceHelpers.deleteBehaviorGroup(behaviorGroup.getId()));
 
-        behaviorGroups = behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
+        behaviorGroups = behaviorGroupRepository.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
         assertTrue(behaviorGroups.isEmpty());
     }
 
@@ -89,7 +91,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         // Create behavior group.
         BehaviorGroup behaviorGroup = resourceHelpers.createDefaultBehaviorGroup("displayName", bundle.getId());
 
-        List<BehaviorGroup> behaviorGroups = behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
+        List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
         assertEquals(1, behaviorGroups.size());
         assertEquals(behaviorGroup, behaviorGroups.get(0));
         assertEquals(behaviorGroup.getDisplayName(), behaviorGroups.get(0).getDisplayName());
@@ -100,7 +102,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         assertTrue(updateDefaultBehaviorGroup(behaviorGroup.getId(), newDisplayName));
         entityManager.clear(); // We need to clear the session L1 cache before checking the update result.
 
-        behaviorGroups = behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
+        behaviorGroups = behaviorGroupRepository.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
         assertEquals(1, behaviorGroups.size());
         assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
         assertEquals(newDisplayName, behaviorGroups.get(0).getDisplayName());
@@ -109,7 +111,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         // Delete behavior group.
         assertTrue(resourceHelpers.deleteDefaultBehaviorGroup(behaviorGroup.getId()));
 
-        behaviorGroups = behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
+        behaviorGroups = behaviorGroupRepository.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
         assertTrue(behaviorGroups.isEmpty());
     }
 
@@ -150,7 +152,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
         BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
         BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
         BehaviorGroup behaviorGroup3 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        List<BehaviorGroup> behaviorGroups = behaviorGroupResources.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
+        List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
         assertEquals(3, behaviorGroups.size());
         // Behavior groups should be sorted on descending creation date.
         assertEquals(behaviorGroup3, behaviorGroups.get(0));
@@ -280,7 +282,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
     @Transactional
     void updateAndCheckEventTypeBehaviors(String accountId, UUID eventTypeId, boolean expectedResult, UUID... behaviorGroupIds) {
-        boolean updated = behaviorGroupResources.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupIds));
+        boolean updated = behaviorGroupRepository.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupIds));
         // Is the update result the one we expected?
         assertEquals(expectedResult, updated);
         if (expectedResult) {
@@ -303,7 +305,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
 
     @Transactional
     void updateAndCheckBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId, Status expectedResult, UUID... endpointIds) {
-        Status status = behaviorGroupResources.updateBehaviorGroupActions(accountId, behaviorGroupId, Arrays.asList(endpointIds));
+        Status status = behaviorGroupRepository.updateBehaviorGroupActions(accountId, behaviorGroupId, Arrays.asList(endpointIds));
         // Is the update result the one we expected?
         assertEquals(expectedResult, status);
         if (expectedResult == Status.OK) {
@@ -318,7 +320,7 @@ public class BehaviorGroupResourcesTest extends DbIsolatedTest {
     }
 
     private List<BehaviorGroupAction> findBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId) {
-        return behaviorGroupResources.findByBundleId(accountId, bundleId)
+        return behaviorGroupRepository.findByBundleId(accountId, bundleId)
                 .stream().filter(behaviorGroup -> behaviorGroup.getId().equals(behaviorGroupId))
                 .findFirst().get().getActions();
     }

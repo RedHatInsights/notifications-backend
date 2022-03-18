@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.db.ApplicationResources;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -20,17 +20,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
-class ValidationEndpointTest {
+class ValidationResourceTest {
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
 
     @InjectMock
-    ApplicationResources appResources;
+    ApplicationRepository applicationRepository;
 
     @Test
     void shouldReturnNotFoundWhenTripleIsInvalid() {
-        when(appResources.getEventType(eq("blabla"), eq("Notifications"), eq("Any"))).thenThrow(new NoResultException());
+        when(applicationRepository.getEventType(eq("blabla"), eq("Notifications"), eq("Any"))).thenThrow(new NoResultException());
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -54,7 +54,7 @@ class ValidationEndpointTest {
     @Test
     void shouldReturnStatusOkWhenTripleExists() {
         EventType eventType = new EventType();
-        when(appResources.getEventType(eq("my-bundle"), eq("Policies"), eq("Any"))).thenReturn(eventType);
+        when(applicationRepository.getEventType(eq("my-bundle"), eq("Policies"), eq("Any"))).thenReturn(eventType);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);

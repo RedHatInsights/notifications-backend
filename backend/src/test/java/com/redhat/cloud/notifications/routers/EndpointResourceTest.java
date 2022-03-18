@@ -7,8 +7,8 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class EndpointServiceTest extends DbIsolatedTest {
+public class EndpointResourceTest extends DbIsolatedTest {
 
     /*
      * In the tests below, most JSON responses are verified using JsonObject/JsonArray instead of deserializing these
@@ -78,7 +78,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
     ResourceHelpers helpers;
 
     @Inject
-    EndpointEmailSubscriptionResources subscriptionResources;
+    EmailSubscriptionRepository emailSubscriptionRepository;
 
     @Test
     void testEndpointAdding() {
@@ -976,10 +976,10 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .then().statusCode(200)
                 .contentType(JSON);
 
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
 
         // Enable instant on rhel.policies
         given()
@@ -988,10 +988,10 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .put("/endpoints/email/subscription/rhel/policies/instant")
                 .then().statusCode(200).contentType(JSON);
 
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
 
         // Enable daily on rhel.policies
         given()
@@ -1000,10 +1000,10 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .put("/endpoints/email/subscription/rhel/policies/daily")
                 .then().statusCode(200).contentType(JSON);
 
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
 
         // Enable instant on TEST_BUNDLE_NAME.TEST_APP_NAME
         given()
@@ -1012,10 +1012,10 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/instant")
                 .then().statusCode(200).contentType(JSON);
 
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
 
         // Disable daily on rhel.policies
         given()
@@ -1024,10 +1024,10 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .delete("/endpoints/email/subscription/rhel/policies/daily")
                 .then().statusCode(200).contentType(JSON);
 
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
 
         // Disable instant on rhel.policies
         given()
@@ -1036,10 +1036,10 @@ public class EndpointServiceTest extends DbIsolatedTest {
                 .delete("/endpoints/email/subscription/rhel/policies/instant")
                 .then().statusCode(200).contentType(JSON);
 
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
-        assertNotNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "rhel", "policies", DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
     }
 
     @Test

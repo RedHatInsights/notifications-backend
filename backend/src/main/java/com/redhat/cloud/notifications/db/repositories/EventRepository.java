@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -17,10 +17,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 
-import static com.redhat.cloud.notifications.routers.EventService.SORT_BY_PATTERN;
+import static com.redhat.cloud.notifications.routers.EventResource.SORT_BY_PATTERN;
 
 @ApplicationScoped
-public class EventResources {
+public class EventRepository {
 
     @Inject
     EntityManager entityManager;

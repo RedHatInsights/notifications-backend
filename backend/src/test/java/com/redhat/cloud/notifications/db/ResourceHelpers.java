@@ -1,5 +1,9 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
+import com.redhat.cloud.notifications.db.repositories.BundleRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -34,16 +38,16 @@ public class ResourceHelpers {
     public static final String TEST_BUNDLE_NAME = "testbundle";
 
     @Inject
-    EndpointResources endpointResources;
+    EndpointRepository endpointRepository;
 
     @Inject
-    ApplicationResources appResources;
+    ApplicationRepository applicationRepository;
 
     @Inject
-    BundleResources bundleResources;
+    BundleRepository bundleRepository;
 
     @Inject
-    BehaviorGroupResources behaviorGroupResources;
+    BehaviorGroupRepository behaviorGroupRepository;
 
     @Inject
     EntityManager entityManager;
@@ -54,11 +58,11 @@ public class ResourceHelpers {
 
     public Bundle createBundle(String name, String displayName) {
         Bundle bundle = new Bundle(name, displayName);
-        return bundleResources.createBundle(bundle);
+        return bundleRepository.createBundle(bundle);
     }
 
     public UUID getBundleId(String bundleName) {
-        return bundleResources.getBundle(bundleName)
+        return bundleRepository.getBundle(bundleName)
                 .getId();
     }
 
@@ -71,11 +75,11 @@ public class ResourceHelpers {
         app.setBundleId(bundleId);
         app.setName(name);
         app.setDisplayName(displayName);
-        return appResources.createApp(app);
+        return applicationRepository.createApp(app);
     }
 
     public UUID createEventType(String bundleName, String applicationName, String eventTypeName) {
-        Application app = appResources.getApplication(bundleName, applicationName);
+        Application app = applicationRepository.getApplication(bundleName, applicationName);
         return createEventType(app.getId(), eventTypeName, eventTypeName, "new event type")
                 .getId();
     }
@@ -86,7 +90,7 @@ public class ResourceHelpers {
         eventType.setDisplayName(displayName);
         eventType.setDescription(description);
         eventType.setApplicationId(applicationId);
-        return appResources.createEventType(eventType);
+        return applicationRepository.createEventType(eventType);
     }
 
     public UUID createTestAppAndEventTypes() {
@@ -128,7 +132,7 @@ public class ResourceHelpers {
         endpoint.setDescription(description);
         endpoint.setProperties(properties);
         endpoint.setEnabled(enabled);
-        return endpointResources.createEndpoint(endpoint);
+        return endpointRepository.createEndpoint(endpoint);
     }
 
     public int[] createTestEndpoints(String tenant, int count) {
@@ -155,7 +159,7 @@ public class ResourceHelpers {
             }
 
             ep.setAccountId(tenant);
-            endpointResources.createEndpoint(ep);
+            endpointRepository.createEndpoint(ep);
         }
         return statsValues;
     }
@@ -177,41 +181,41 @@ public class ResourceHelpers {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupResources.create(accountId, behaviorGroup);
+        return behaviorGroupRepository.create(accountId, behaviorGroup);
     }
 
     public BehaviorGroup createDefaultBehaviorGroup(String displayName, UUID bundleId) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupResources.createDefault(behaviorGroup);
+        return behaviorGroupRepository.createDefault(behaviorGroup);
     }
 
     public List<EventType> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
-        return behaviorGroupResources.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, behaviorGroupId);
+        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, behaviorGroupId);
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEventTypeId(UUID eventTypeId) {
-        return behaviorGroupResources.findBehaviorGroupsByEventTypeId(DEFAULT_ACCOUNT_ID, eventTypeId, new Query());
+        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ACCOUNT_ID, eventTypeId, new Query());
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEndpointId(UUID endpointId) {
-        return behaviorGroupResources.findBehaviorGroupsByEndpointId(DEFAULT_ACCOUNT_ID, endpointId);
+        return behaviorGroupRepository.findBehaviorGroupsByEndpointId(DEFAULT_ACCOUNT_ID, endpointId);
     }
 
     public Boolean updateBehaviorGroup(BehaviorGroup behaviorGroup) {
-        return behaviorGroupResources.update(DEFAULT_ACCOUNT_ID, behaviorGroup);
+        return behaviorGroupRepository.update(DEFAULT_ACCOUNT_ID, behaviorGroup);
     }
 
     public Boolean deleteBehaviorGroup(UUID behaviorGroupId) {
-        return behaviorGroupResources.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
+        return behaviorGroupRepository.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
     }
 
     public Boolean updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
-        return behaviorGroupResources.updateDefault(behaviorGroup);
+        return behaviorGroupRepository.updateDefault(behaviorGroup);
     }
 
     public Boolean deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
-        return behaviorGroupResources.deleteDefault(behaviorGroupId);
+        return behaviorGroupRepository.deleteDefault(behaviorGroupId);
     }
 }

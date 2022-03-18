@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -11,7 +11,7 @@ import javax.transaction.Transactional;
 import java.util.List;
 
 @ApplicationScoped
-public class EndpointEmailSubscriptionResources {
+public class EmailSubscriptionRepository {
 
     @Inject
     EntityManager entityManager;

@@ -13,7 +13,7 @@ import javax.ws.rs.core.MediaType;
  * Serve the final OpenAPI documents.
  */
 @Path("/api")
-public class OApiService {
+public class OApiResource {
 
     @Inject
     OApiFilter oApiFilter;

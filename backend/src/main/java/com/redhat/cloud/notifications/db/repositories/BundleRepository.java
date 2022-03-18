@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 @ApplicationScoped
-public class BundleResources {
+public class BundleRepository {
 
     @Inject
     EntityManager entityManager;

@@ -1,5 +1,6 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.builder.JoinBuilder;
 import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.db.builder.WhereBuilder;
@@ -20,7 +21,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @ApplicationScoped
-public class ApplicationResources {
+public class ApplicationRepository {
 
     @Inject
     EntityManager entityManager;
