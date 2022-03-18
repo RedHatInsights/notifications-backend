@@ -38,6 +38,7 @@
 
         <surefire-plugin.version>2.22.2</surefire-plugin.version>
         <checkstyle-plugin.version>3.1.2</checkstyle-plugin.version>
+        <jacoco-plugin.version>0.8.7</jacoco-plugin.version>
         <checkstyle.version>8.44</checkstyle.version>
 
         <testcontainers.version>1.16.3</testcontainers.version>
@@ -84,7 +85,7 @@
         </dependency>
     </dependencies>
 
-    <build>
+    <build>0.8.7
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -118,7 +119,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.7</version>
+                <version>${jacoco-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>default-prepare-agent</id>
