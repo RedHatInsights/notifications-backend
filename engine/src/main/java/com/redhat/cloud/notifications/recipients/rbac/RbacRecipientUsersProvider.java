@@ -91,26 +91,28 @@ public class RbacRecipientUsersProvider {
 
             int pagingStart = 0;
             int pagingEnd = 10000;
+            int expectedUsersCount = pagingStart + pagingEnd;
+
             do {
                 usersPaging = itUserService.getUsers(accountId, adminsOnly, pagingStart, pagingEnd);
                 usersTotal.addAll(usersPaging);
 
                 pagingStart = pagingEnd + 1;
-                pagingEnd = pagingEnd + 10;
-            } while (!usersPaging.isEmpty());
+                pagingEnd = pagingEnd + 1000;
+            } while (!usersPaging.isEmpty() || usersPaging.size() != expectedUsersCount);
 
             getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(usersTotal.size())));
 
             users = transformToUser(accountId, usersTotal, adminsOnly);
         } else {
             users = getWithPagination(
-                page -> {
-                    Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                    Page<RbacUser> rbacUsers = retryOnError(() ->
-                            rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
-                    getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
-                    return rbacUsers;
-                }
+                    page -> {
+                        Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
+                        Page<RbacUser> rbacUsers = retryOnError(() ->
+                                rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
+                        getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
+                        return rbacUsers;
+                    }
             );
         }
         getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
