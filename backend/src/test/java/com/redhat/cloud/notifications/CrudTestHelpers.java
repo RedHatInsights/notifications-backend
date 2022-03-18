@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.is;
 import static org.jboss.resteasy.reactive.RestResponse.StatusCode.OK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public abstract class CrudTestHelpers {
@@ -511,6 +512,7 @@ public abstract class CrudTestHelpers {
             assertNotNull(jsonInternalRoleAccess.getString("id"));
             assertEquals(appId, jsonInternalRoleAccess.getString("application_id"));
             assertEquals(role, jsonInternalRoleAccess.getString("role"));
+            assertNull(jsonInternalRoleAccess.getString("internal_role"));
             return Optional.of(jsonInternalRoleAccess.getString("id"));
         }
 
