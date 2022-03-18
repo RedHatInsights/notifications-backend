@@ -125,6 +125,8 @@ objects:
           value: ${RBAC_AUTHENTICATION_READ_TIMEOUT}
         - name: INTERNAL_RBAC_ENABLED
           value: ${INTERNAL_RBAC_ENABLED}
+        - name: INTERNAL_ADMIN_ROLE
+          value: ${INTERNAL_RBAC_ADMIN}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -315,6 +317,9 @@ parameters:
 - name: INTERNAL_RBAC_ENABLED
   description: Enable Internal RBAC
   value: "false"
+- name: INTERNAL_RBAC_ADMIN
+  description: Internal admin group
+  value: "crc-notifications-team"
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"

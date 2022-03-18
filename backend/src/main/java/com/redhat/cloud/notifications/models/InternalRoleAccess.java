@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import javax.persistence.Entity;
@@ -56,6 +57,7 @@ public class InternalRoleAccess {
         this.applicationId = applicationId;
     }
 
+    @JsonIgnore
     public String getInternalRole() {
         return InternalRoleAccess.getInternalRole(this.role);
     }
