@@ -57,7 +57,7 @@ public class ITUserServiceTest {
         List<ITUserResponse> itUserResponses = List.of(itUserResponse);
 
         RbacRecipientUsersProvider rbacRecipientUsersProvider = new RbacRecipientUsersProvider(itUserServiceWrapper, new SimpleMeterRegistry());
-        Mockito.when(itUserServiceWrapper.getUsers(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(itUserResponses);
+        Mockito.when(itUserServiceWrapper.getUsers(Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(itUserResponses);
         final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", true);
         assertTrue(someAccountId.get(0).isActive());
         assertTrue(someAccountId.get(0).isAdmin());

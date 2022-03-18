@@ -51,7 +51,7 @@ public class RbacRecipientUsersProviderTest {
         int elements = 133;
 
         mockGetGroup(defaultGroup);
-        mockGetUsers(elements, false);
+        mockGetUsers(elements, false, 0, 101);
 
         List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, defaultGroup.getUuid());
         assertEquals(elements, users.size());
@@ -64,7 +64,7 @@ public class RbacRecipientUsersProviderTest {
     public void getAllUsersCache() {
         int initialSize = 1095;
         int updatedSize = 1323;
-        mockGetUsers(initialSize, false);
+        mockGetUsers(initialSize, false, 0, 101);
 
         List<User> users = rbacRecipientUsersProvider.getUsers(accountId, false);
         assertEquals(initialSize, users.size());
@@ -72,7 +72,7 @@ public class RbacRecipientUsersProviderTest {
             assertEquals(String.format("username-%d", i), users.get(i).getUsername());
         }
 
-        mockGetUsers(updatedSize, false);
+        mockGetUsers(updatedSize, false, 0, 101);
 
         users = rbacRecipientUsersProvider.getUsers(accountId, false);
         // Should still have the initial size because of the cache
@@ -112,12 +112,14 @@ public class RbacRecipientUsersProviderTest {
         assertEquals(updatedSize, users.size());
     }
 
-    private void mockGetUsers(int elements, boolean adminsOnly) {
+    private void mockGetUsers(int elements, boolean adminsOnly, int pagingStart, int pagingEnd) {
         MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
         Mockito.when(itUserService.getUsers(
                 Mockito.eq(accountId),
-                Mockito.eq(adminsOnly)
-        )).then(invocationOnMock -> answer.mockedUserAnswer(
+                Mockito.eq(adminsOnly),
+                Mockito.eq(pagingStart),
+                Mockito.eq(pagingEnd)
+                )).then(invocationOnMock -> answer.mockedUserAnswer(
                 invocationOnMock.getArgument(1, Boolean.class)
         ));
     }

@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
@@ -79,9 +80,24 @@ public class RbacRecipientUsersProvider {
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
     public List<User> getUsers(String accountId, boolean adminsOnly) {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
-        final List<ITUserResponse> itUserResponses = itUserService.getUsers(accountId, adminsOnly);
-        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(itUserResponses.size())));
-        return transformToUser(accountId, itUserResponses, adminsOnly);
+
+        List<ITUserResponse> usersPaging;
+        List<ITUserResponse> users = new LinkedList<>();
+
+        int pagingStart = 0;
+        int pagingEnd = 10000;
+        do {
+            usersPaging = itUserService.getUsers(accountId, adminsOnly, pagingStart, pagingEnd);
+            users.addAll(usersPaging);
+
+            pagingStart = pagingEnd + 1;
+            pagingEnd = pagingEnd + 10;
+
+
+        } while (!usersPaging.isEmpty());
+
+        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
+        return transformToUser(accountId, users, adminsOnly);
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
