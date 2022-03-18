@@ -57,7 +57,12 @@ public class ITUserServiceTest {
         List<ITUserResponse> itUserResponses = List.of(itUserResponse);
 
         RbacRecipientUsersProvider rbacRecipientUsersProvider = new RbacRecipientUsersProvider(itUserServiceWrapper, new SimpleMeterRegistry());
+
         Mockito.when(itUserServiceWrapper.getUsers(Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(itUserResponses);
+      
+        // TODO NOTIF-381 Remove this when the recipients retrieval from RBAC is removed.
+        rbacRecipientUsersProvider.retrieveUsersFromIt = true;
+
         final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", true);
         assertTrue(someAccountId.get(0).isActive());
         assertTrue(someAccountId.get(0).isAdmin());

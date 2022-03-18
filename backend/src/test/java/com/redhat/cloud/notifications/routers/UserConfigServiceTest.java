@@ -97,8 +97,8 @@ public class UserConfigServiceTest extends DbIsolatedTest {
     void testSettings() {
         String tenant = "empty";
         String username = "user";
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, username);
-        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
 
         String bundle = "rhel";

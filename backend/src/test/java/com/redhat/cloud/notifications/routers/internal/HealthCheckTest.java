@@ -1,10 +1,12 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.internal;
 
 import io.quarkus.test.junit.QuarkusTest;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 import java.util.regex.Pattern;
 
+import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static io.restassured.RestAssured.when;
 import static io.restassured.RestAssured.with;
 import static io.restassured.http.ContentType.TEXT;
@@ -19,6 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class HealthCheckTest {
 
     private static final Pattern PATTERN = Pattern.compile("\"name\": \"Database connections health check\",\\R[ ]+\"status\": \"UP\"");
+
+    @ConfigProperty(name = "internal.admin-role")
+    String adminRole;
 
     @Test
     void testNormalHealth() {
@@ -41,6 +46,7 @@ public class HealthCheckTest {
 
         with()
                 .queryParam("status", "admin-down")
+                .header(createTurnpikeIdentityHeader("admin", adminRole))
                 .when()
                 .post("/internal/admin/status")
                 .then()
@@ -58,6 +64,7 @@ public class HealthCheckTest {
         } finally {
             with()
                     .queryParam("status", "ok")
+                    .header(createTurnpikeIdentityHeader("admin", adminRole))
                     .when()
                     .post("/internal/admin/status")
                     .then()
