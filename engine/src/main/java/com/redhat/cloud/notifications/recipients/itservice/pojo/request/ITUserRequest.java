@@ -24,8 +24,8 @@ public class ITUserRequest {
 
         this.by = by;
         this.by.withPaging = new WithPaging();
-        this.by.withPaging.firstResultIndex = pagingStart;
-        this.by.withPaging.maxResults = pagingEnd;
+        this.by.withPaging.firstResultIndex = firstResult;
+        this.by.withPaging.maxResults = maxResults;
 
         Include include = new Include();
 
