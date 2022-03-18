@@ -32,7 +32,7 @@ public class SecurityContextUtil {
             return;
         }
 
-        if (role == null || !securityContext.isUserInRole(InternalRoleAccess.getPrivateRole(role))) {
+        if (role == null || !securityContext.isUserInRole(InternalRoleAccess.getInternalRole(role))) {
             throw new ForbiddenException("You don't have access to the role: " + role);
         }
     }

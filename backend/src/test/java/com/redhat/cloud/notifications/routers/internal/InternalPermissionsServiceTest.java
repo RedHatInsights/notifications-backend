@@ -137,17 +137,18 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         );
 
         // regular users can create apps with a role they own
+        String appDisplayName = "Test permissions App";
         String appId = CrudTestHelpers.createApp(
                 turnpikeAppDev,
                 bundleId,
                 "app-with-role",
-                "app-with-role",
+                appDisplayName,
                 appRole,
                 200
         ).get();
 
         InternalUserPermissions permissions = permissions(turnpikeAppDev);
-        assertEquals(Set.of(appId), permissions.getApplicationIds());
+        assertEquals(List.of(new InternalUserPermissions.Application(appId, appDisplayName)), permissions.getApplications());
 
         // admins can create apps without a role
         CrudTestHelpers.createApp(
@@ -168,8 +169,6 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
                 "policies-team",
                 200
         );
-
-
     }
 
     InternalUserPermissions permissions(Header auth) {
