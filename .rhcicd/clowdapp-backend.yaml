@@ -121,7 +121,7 @@ objects:
               name: notifications-ephemeral-data
               key: ephemeral_data.json
               optional: true
-        - name: RBAC_AUTHENTICATION_MP_REST_READTIMEOUT
+        - name: QUARKUS_REST_CLIENT_RBAC_AUTHENTICATION_READ_TIMEOUT
           value: ${RBAC_AUTHENTICATION_READ_TIMEOUT}
         - name: INTERNAL_RBAC_ENABLED
           value: ${INTERNAL_RBAC_ENABLED}
@@ -151,9 +151,9 @@ objects:
           value: ${OB_TOKEN_USER}
         - name: OB_TOKEN_PASS
           value: ${OB_TOKEN_PASS}
-        - name: OB_MP_REST_URL
+        - name: QUARKUS_REST_CLIENT_OB_URL
           value: ${OB_MP_REST_URL}
-        - name: OB_KC_REST_URL
+        - name: QUARKUS_REST_CLIENT_KC_URL
           value: ${OB_KC_REST_URL}
 - apiVersion: v1
   kind: ConfigMap

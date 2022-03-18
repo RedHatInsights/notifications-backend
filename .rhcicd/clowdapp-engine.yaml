@@ -109,7 +109,7 @@ objects:
             secretKeyRef:
               name: it-services
               key: it-services-keystorepassword
-        - name: IT_S2S_MP_REST_URL
+        - name: QUARKUS_REST_CLIENT_IT_S2S_URL
           valueFrom:
             secretKeyRef:
               name: it-services
@@ -125,7 +125,7 @@ objects:
           value: https://${BACKOFFICE_HOST}/v1/sendEmails
         - name: PROCESSOR_EMAIL_NO_REPLY
           value: ${PROCESSOR_EMAIL_NO_REPLY}
-        - name: RBAC_S2S_MP_REST_READTIMEOUT
+        - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
           value: ${RBAC_S2S_READ_TIMEOUT}
         - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
           value: ${RBAC_SERVICE_TO_SERVICE_APP}
@@ -168,9 +168,9 @@ objects:
           value: ${OB_TOKEN_USER}
         - name: OB_TOKEN_PASS
           value: ${OB_TOKEN_PASS}
-        - name: OB_MP_REST_URL
+        - name: QUARKUS_REST_CLIENT_OB_URL
           value: ${OB_MP_REST_URL}
-        - name: OB_KC_REST_URL
+        - name: QUARKUS_REST_CLIENT_KC_URL
           value: ${OB_KC_REST_URL}
 
 parameters:
