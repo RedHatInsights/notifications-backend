@@ -97,8 +97,6 @@ public class RbacRecipientUsersProvider {
 
                 pagingStart = pagingEnd + 1;
                 pagingEnd = pagingEnd + 10;
-
-
             } while (!usersPaging.isEmpty());
 
             getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(usersTotal.size())));
@@ -106,13 +104,13 @@ public class RbacRecipientUsersProvider {
             users = transformToUser(accountId, usersTotal, adminsOnly);
         } else {
             users = getWithPagination(
-                    page -> {
-                        Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                        Page<RbacUser> rbacUsers = retryOnError(() ->
-                                rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
-                        getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
-                        return rbacUsers;
-                    }
+                page -> {
+                    Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
+                    Page<RbacUser> rbacUsers = retryOnError(() ->
+                            rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
+                    getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
+                    return rbacUsers;
+                }
             );
         }
         getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
