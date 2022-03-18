@@ -91,16 +91,16 @@ public class RbacRecipientUsersProvider {
             List<ITUserResponse> usersPaging;
             List<ITUserResponse> usersTotal = new LinkedList<>();
 
-            int pagingStart = 0;
-            int pagingEnd = 10000;
-            int expectedUsersCount = pagingStart + pagingEnd;
+            int firstResult = 0;
+            int maxResults = 10000;
+            int expectedUsersCount = firstResult + maxResults;
 
             do {
-                usersPaging = itUserService.getUsers(accountId, adminsOnly, pagingStart, pagingEnd);
+                usersPaging = itUserService.getUsers(accountId, adminsOnly, firstResult, maxResults);
                 usersTotal.addAll(usersPaging);
 
-                pagingStart = pagingEnd + 1;
-                pagingEnd = pagingEnd + PAGING_OFFSET;
+                firstResult = maxResults + 1;
+                maxResults = maxResults + PAGING_OFFSET;
             } while (!usersPaging.isEmpty() || usersPaging.size() != expectedUsersCount);
 
             getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(usersTotal.size())));
