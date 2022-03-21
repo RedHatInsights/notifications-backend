@@ -32,8 +32,6 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class RbacRecipientUsersProvider {
 
-    private static final int PAGING_OFFSET = 1000;
-
     private static final Logger LOGGER = Logger.getLogger(RbacRecipientUsersProvider.class);
 
     @Inject
@@ -44,6 +42,9 @@ public class RbacRecipientUsersProvider {
 
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     Integer rbacElementsPerPage;
+
+    @ConfigProperty(name = "recipient-provider.it.max-results", defaultValue = "1000")
+    int maxResults;
 
     @ConfigProperty(name = "rbac.retry.max-attempts", defaultValue = "3")
     int maxRetryAttempts;
@@ -92,16 +93,14 @@ public class RbacRecipientUsersProvider {
             List<ITUserResponse> usersTotal = new LinkedList<>();
 
             int firstResult = 0;
-            int maxResults = 10000;
-            int expectedUsersCount = firstResult + maxResults;
 
             do {
+                // TODO Add retries
                 usersPaging = itUserService.getUsers(accountId, adminsOnly, firstResult, maxResults);
                 usersTotal.addAll(usersPaging);
 
-                firstResult = maxResults + 1;
-                maxResults = maxResults + PAGING_OFFSET;
-            } while (!usersPaging.isEmpty() || usersPaging.size() != expectedUsersCount);
+                firstResult += maxResults;
+            } while (usersPaging.size() == maxResults);
 
             getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(usersTotal.size())));
 
