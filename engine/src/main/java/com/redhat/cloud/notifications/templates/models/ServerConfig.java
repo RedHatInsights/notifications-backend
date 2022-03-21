@@ -15,7 +15,7 @@ public class ServerConfig {
     }
 
     public String url(String path) {
-        String base = "";
+        final String base;
 
         switch (environment) {
             case "prod":
@@ -24,6 +24,8 @@ public class ServerConfig {
             case "stage":
                 base = "https://console.stage.redhat.com";
                 break;
+            default:
+                base = "";
         }
 
         return base + path;
