@@ -389,6 +389,7 @@ public class InternalServiceTest extends DbIsolatedTest {
         assertTrue(responseBody.matches("^[0-9a-f]{7}$"));
     }
 
+    @Test
     void appUserAccessTest() {
         String appRole = "app-admin";
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);
@@ -398,6 +399,8 @@ public class InternalServiceTest extends DbIsolatedTest {
         String bundleName = "admin-bundle";
         String app1Name = "admin-app-1";
         String app2Name = "admin-app-2";
+        String app3NameToDelete = "admin-app-3";
+
         String event1Name = "admin-event-1";
         String event2Name = "admin-event-1";
 
@@ -405,12 +408,14 @@ public class InternalServiceTest extends DbIsolatedTest {
         String defaultBGId = createDefaultBehaviorGroup(adminIdentity, NOT_USED, bundleId, OK).get();
         String app1Id = createApp(adminIdentity, bundleId, app1Name, NOT_USED, OK).get();
         String app2Id = createApp(adminIdentity, bundleId, app2Name, NOT_USED, OK).get();
+        String app3IdToDelete = createApp(adminIdentity, bundleId, app3NameToDelete, NOT_USED, OK).get();
 
         createEventType(adminIdentity, app1Id, event1Name, NOT_USED, NOT_USED, OK);
         String eventType2Id = createEventType(adminIdentity, app2Id, event2Name, NOT_USED, NOT_USED, OK).get();
 
-        // Gives access to `appIdentity` to `app1`
+        // Gives access to `appIdentity` to `app1` and `app3IdToDelete` (spoilers: it will be deleted later)
         createInternalRoleAccess(adminIdentity, appRole, app1Id, OK);
+        createInternalRoleAccess(adminIdentity, appRole, app3IdToDelete, OK);
 
         // free for all internal users
         getBundle(appIdentity, bundleId, bundleName, NOT_USED, OK);
@@ -424,7 +429,6 @@ public class InternalServiceTest extends DbIsolatedTest {
         deleteBundle(appIdentity, bundleId, null, FORBIDDEN);
 
         createApp(appIdentity, bundleId, "app-user-app", NOT_USED, FORBIDDEN);
-        deleteApp(appIdentity, app1Id, null, FORBIDDEN);
 
         createDefaultBehaviorGroup(appIdentity, NOT_USED, bundleId, FORBIDDEN);
         updateDefaultBehaviorGroup(appIdentity, defaultBGId, NOT_USED, bundleId, null, FORBIDDEN);
@@ -435,6 +439,9 @@ public class InternalServiceTest extends DbIsolatedTest {
         updateApp(appIdentity, bundleId, app2Id, "new-name", NOT_USED, FORBIDDEN);
         updateApp(otherAppIdentity, bundleId, app2Id, "new-name", NOT_USED, FORBIDDEN);
         updateApp(otherAppIdentity, bundleId, app2Id, "new-name", NOT_USED, FORBIDDEN);
+
+        deleteApp(appIdentity, app2Id, null, FORBIDDEN);
+        deleteApp(appIdentity, app3IdToDelete, null, OK);
 
         String newEventTypeId = createEventType(appIdentity, app1Id, "new-name-1", NOT_USED, NOT_USED, OK).get();
         createEventType(appIdentity, app2Id, "new-name-2", NOT_USED, NOT_USED, FORBIDDEN);

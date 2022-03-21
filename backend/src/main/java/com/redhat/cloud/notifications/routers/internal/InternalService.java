@@ -248,8 +248,9 @@ public class InternalService {
     @Path("/applications/{appId}")
     @Produces(APPLICATION_JSON)
     @Transactional
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public boolean deleteApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId) {
+        securityContextUtil.hasPermissionForApplication(sec, appId);
         return appResources.deleteApplication(appId);
     }
 
