@@ -1,0 +1,1 @@
+{action.timestamp.toUtcFormat()} - {#if action.events[0].payload.platform_default == "true"}Platform default g{#else}G{/if}roup is {#if action.events[0].payload.system == "true"} {action.events[0].payload.operation}{/if}.
