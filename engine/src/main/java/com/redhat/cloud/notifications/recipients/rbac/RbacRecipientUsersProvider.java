@@ -147,7 +147,7 @@ public class RbacRecipientUsersProvider {
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
     public List<User> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
-        RbacGroup rbacGroup = retryOnError(rbacRetryPolicy,() -> rbacServiceToService.getGroup(accountId, groupId));
+        RbacGroup rbacGroup = retryOnError(rbacRetryPolicy, () -> rbacServiceToService.getGroup(accountId, groupId));
         List<User> users;
         if (rbacGroup.isPlatformDefault()) {
             users = getUsers(accountId, adminOnly);
