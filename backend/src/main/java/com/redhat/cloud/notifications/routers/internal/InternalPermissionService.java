@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.db.InternalRoleAccessResources;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.routers.internal.models.AddAccessRequest;
+import com.redhat.cloud.notifications.routers.internal.models.InternalApplicationUserPermission;
 import com.redhat.cloud.notifications.routers.internal.models.InternalUserPermissions;
 import io.quarkus.security.identity.SecurityIdentity;
 
@@ -22,6 +23,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -78,8 +80,21 @@ public class InternalPermissionService {
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<InternalRoleAccess> getAccessList() {
-        return internalRoleAccessResources.getAll();
+    public List<InternalApplicationUserPermission> getAccessList() {
+        List<InternalRoleAccess> accessList = internalRoleAccessResources.getAll();
+        Set<UUID> applicationIds = accessList.stream().map(InternalRoleAccess::getApplicationId).collect(Collectors.toSet());
+        Map<UUID, String> applications = applicationResources
+                .getApplications(applicationIds)
+                .stream()
+                .collect(Collectors.toMap(Application::getId, Application::getDisplayName));
+
+        return accessList.stream().map(access -> {
+            InternalApplicationUserPermission permission = new InternalApplicationUserPermission();
+            permission.applicationDisplayName = applications.get(access.getApplicationId());
+            permission.applicationId = access.getApplicationId().toString();
+            permission.role =  access.getRole();
+            return permission;
+        }).collect(Collectors.toList());
     }
 
     @POST

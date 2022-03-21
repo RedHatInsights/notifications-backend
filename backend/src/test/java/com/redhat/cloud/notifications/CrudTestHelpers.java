@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.routers.internal.models.AddAccessRequest;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
+import com.redhat.cloud.notifications.routers.internal.models.InternalApplicationUserPermission;
 import io.restassured.http.Header;
 import io.restassured.response.ValidatableResponse;
 import io.vertx.core.json.JsonArray;
@@ -500,6 +501,31 @@ public abstract class CrudTestHelpers {
 
             return bg;
         }).collect(Collectors.toList());
+    }
+
+    public static Optional<List<InternalApplicationUserPermission>> getAccessList(Header identity, int expected) {
+        String responseBody = given()
+                .header(identity)
+                .when()
+                .get("internal/access")
+                .then()
+                .statusCode(expected)
+                .extract().asString();
+
+        if (familyOf(expected) == Response.Status.Family.SUCCESSFUL) {
+            JsonArray json = new JsonArray(responseBody);
+            List<InternalApplicationUserPermission> accessList = json.stream().map(o -> {
+                JsonObject jsonObject = (JsonObject) o;
+                assertNotNull(jsonObject.getString("application_id"));
+                assertNotNull(jsonObject.getString("application_display_name"));
+                assertNotNull(jsonObject.getString("role"));
+
+                return jsonObject.mapTo(InternalApplicationUserPermission.class);
+            }).collect(Collectors.toList());
+            return Optional.of(accessList);
+        }
+
+        return Optional.empty();
     }
 
     public static Optional<String> createInternalRoleAccess(Header identity, String role, String appId, int expected) {
