@@ -49,6 +49,15 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "rbac.retry.max-attempts", defaultValue = "3")
     int maxRetryAttempts;
 
+    @ConfigProperty(name = "it.retry.max-attempts", defaultValue = "3")
+    int maxRetryAttemptsIt;
+
+    @ConfigProperty(name = "it.retry.back-off.initial-value", defaultValue = "0.1S")
+    Duration initialBackOffIt;
+
+    @ConfigProperty(name = "it.retry.back-off.max-value", defaultValue = "1S")
+    Duration maxBackOffIt;
+
     @ConfigProperty(name = "rbac.retry.back-off.initial-value", defaultValue = "0.1S")
     Duration initialBackOff;
 
@@ -60,8 +69,11 @@ public class RbacRecipientUsersProvider {
 
     MeterRegistry meterRegistry;
 
-    private Counter failuresCounter;
-    private RetryPolicy<Object> retryPolicy;
+    private Counter rbacFailuresCounter;
+    private RetryPolicy<Object> rbacRetryPolicy;
+
+    private Counter itFailuresCounter;
+    private RetryPolicy<Object> itRetryPolicy;
 
     public RbacRecipientUsersProvider(ITUserServiceWrapper itUserService, MeterRegistry meterRegistry) {
         this.itUserService = itUserService;
@@ -70,15 +82,27 @@ public class RbacRecipientUsersProvider {
 
     @PostConstruct
     public void initCounters() {
-        failuresCounter = meterRegistry.counter("rbac.failures");
-        retryPolicy = RetryPolicy.builder()
-                .onRetry(event -> failuresCounter.increment())
+        rbacFailuresCounter = meterRegistry.counter("rbac.failures");
+        rbacRetryPolicy = RetryPolicy.builder()
+                .onRetry(event -> rbacFailuresCounter.increment())
                 .handle(IOException.class, ConnectTimeoutException.class)
                 .withBackoff(initialBackOff, maxBackOff)
                 .withMaxAttempts(maxRetryAttempts)
                 .onRetriesExceeded(event -> {
                     // All retry attempts failed, let's log a warning about the failure.
                     LOGGER.warnf("RBAC S2S call failed", event.getException().getMessage());
+                })
+                .build();
+
+        itFailuresCounter = meterRegistry.counter("it.failures");
+        itRetryPolicy = RetryPolicy.builder()
+                .onRetry(event -> itFailuresCounter.increment())
+                .handle(IOException.class, ConnectTimeoutException.class)
+                .withBackoff(initialBackOffIt, maxBackOffIt)
+                .withMaxAttempts(maxRetryAttemptsIt)
+                .onRetriesExceeded(event -> {
+                    // All retry attempts failed, let's log a warning about the failure.
+                    LOGGER.warnf("IT User Service call failed", event.getException().getMessage());
                 })
                 .build();
     }
@@ -95,8 +119,8 @@ public class RbacRecipientUsersProvider {
             int firstResult = 0;
 
             do {
-                // TODO Add retries
-                usersPaging = itUserService.getUsers(accountId, adminsOnly, firstResult, maxResultsPerPage);
+                int finalFirstResult = firstResult;
+                usersPaging = retryOnError(itRetryPolicy, () -> itUserService.getUsers(accountId, adminsOnly, finalFirstResult, maxResultsPerPage));
                 usersTotal.addAll(usersPaging);
 
                 firstResult += maxResultsPerPage;
@@ -109,7 +133,7 @@ public class RbacRecipientUsersProvider {
             users = getWithPagination(
                 page -> {
                     Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                    Page<RbacUser> rbacUsers = retryOnError(() ->
+                    Page<RbacUser> rbacUsers = retryOnError(rbacRetryPolicy, () ->
                             rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
                     getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
                     return rbacUsers;
@@ -123,14 +147,14 @@ public class RbacRecipientUsersProvider {
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
     public List<User> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
-        RbacGroup rbacGroup = retryOnError(() -> rbacServiceToService.getGroup(accountId, groupId));
+        RbacGroup rbacGroup = retryOnError(rbacRetryPolicy,() -> rbacServiceToService.getGroup(accountId, groupId));
         List<User> users;
         if (rbacGroup.isPlatformDefault()) {
             users = getUsers(accountId, adminOnly);
         } else {
             users = getWithPagination(page -> {
                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
-                Page<RbacUser> rbacUsers = retryOnError(() ->
+                Page<RbacUser> rbacUsers = retryOnError(rbacRetryPolicy, () ->
                         rbacServiceToService.getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage));
                 getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "accountId", accountId));
                 return rbacUsers;
@@ -144,8 +168,8 @@ public class RbacRecipientUsersProvider {
         return users;
     }
 
-    private <T> T retryOnError(CheckedSupplier<T> rbacCall) {
-        return Failsafe.with(retryPolicy).get(rbacCall);
+    private <T> T retryOnError(RetryPolicy<Object> policy, CheckedSupplier<T> rbacCall) {
+        return Failsafe.with(policy).get(rbacCall);
     }
 
     private List<User> getWithPagination(Function<Integer, Page<RbacUser>> fetcher) {
