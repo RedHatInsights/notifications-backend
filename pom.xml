@@ -51,7 +51,7 @@
         <mockserver-client-java.version>5.5.4</mockserver-client-java.version>
 
         <insights-notification-schemas-java.version>0.6</insights-notification-schemas-java.version>
-        <clowder-quarkus-config-source.version>0.5.3</clowder-quarkus-config-source.version>
+        <clowder-quarkus-config-source.version>1.0.0</clowder-quarkus-config-source.version>
 
         <cloudwatch.version>4.1.1</cloudwatch.version>
 
