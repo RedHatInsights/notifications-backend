@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
+import com.redhat.cloud.notifications.routers.internal.models.ServerInfo;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.templates.TemplateEngineClient;
@@ -110,6 +111,19 @@ public class InternalService {
             LOGGER.infof("Git commit hash not found: %s", gitProperties);
             return "Git commit hash not found";
         }
+    }
+
+    @GET
+    @Path("/serverInfo")
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
+    public ServerInfo getServerInfo() {
+        ServerInfo info = new ServerInfo();
+        String environmentName = System.getenv("ENV_NAME");
+
+        info.environment = ServerInfo.Environment.valueOf(environmentName == null ? "LOCAL_SERVER" : environmentName.toUpperCase());
+
+        return info;
     }
 
     @GET
