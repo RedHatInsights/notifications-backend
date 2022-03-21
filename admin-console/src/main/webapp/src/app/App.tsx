@@ -7,7 +7,9 @@ import React, { useMemo } from 'react';
 import { Routes } from '../Routes';
 import { useBundles } from '../services/EventTypes/GetBundles';
 import { useServerInfo } from '../services/ServerInfo';
+import { usePermissions } from '../services/Permissions';
 import { Navigation } from './Navigation';
+import { PermissionContext } from './PermissionContext';
 import logo from './redhat-logo.svg';
 
 type Message = {
@@ -47,6 +49,7 @@ export const App: React.FunctionComponent<unknown> = () => {
             content: 'Could not load the current environment. Please verify the URL before making any change.'
         };
     }, [ serverInfo.payload ]);
+    const permissionQuery = usePermissions();
 
     const appHeader = <PageHeader
         showNavToggle
@@ -56,7 +59,29 @@ export const App: React.FunctionComponent<unknown> = () => {
         onNavToggle={ onNavToggle }
     />;
 
-    if (bundles.isLoading || serverInfo.loading) {
+    const permission = React.useMemo<PermissionContext>(() => {
+        const payload = permissionQuery.payload;
+        if (payload?.status === 200) {
+            return {
+                isAdmin: payload.value.is_admin,
+                applications: payload.value.applications.map(a => ({
+                    id: a.id,
+                    displayName: a.display_name
+                })),
+                roles: payload.value.roles,
+                refresh: permissionQuery.query
+            };
+        }
+
+        return {
+            isAdmin: false,
+            applications: [],
+            roles: [],
+            refresh: permissionQuery.query
+        };
+    }, [ permissionQuery.payload, permissionQuery.query ]);
+
+    if (bundles.isLoading || serverInfo.loading || permissionQuery.loading) {
         return (
             <Page
                 header={ appHeader }
@@ -71,15 +96,17 @@ export const App: React.FunctionComponent<unknown> = () => {
     const appSidebar = <PageSidebar nav={ <Navigation bundles={ bundles.bundles } /> } isNavOpen={ isNavOpen } />;
 
     return (
-        <Page
-            sidebar={ appSidebar }
-            header={ appHeader }>
-            { message.show && (
-                <PageSection>
-                    <Alert variant={ AlertVariant.warning } title={ message.content } />
-                </PageSection>
-            )}
-            <Routes />
-        </Page>
+        <PermissionContext.Provider value={ permission }>
+            <Page
+                sidebar={ appSidebar }
+                header={ appHeader }>
+                { message.show && (
+                    <PageSection>
+                        <Alert variant={ AlertVariant.warning } title={ message.content } />
+                    </PageSection>
+                )}
+                <Routes />
+            </Page>
+        </PermissionContext.Provider>
     );
 };

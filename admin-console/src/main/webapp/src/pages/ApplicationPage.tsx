@@ -11,6 +11,7 @@ import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
+import { useUserPermissions } from '../app/PermissionContext';
 import { CreateEditModal } from '../components/CreateEditModal';
 import { DeleteModal } from '../components/DeleteModal';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
@@ -25,6 +26,7 @@ type ApplicationPageParams = {
 }
 
 export const ApplicationPage: React.FunctionComponent = () => {
+    const { hasPermission } = useUserPermissions();
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
@@ -152,6 +154,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             <ToolbarContent>
                                 <ToolbarItem>
                                     <Button variant='primary' type='button'
+                                        isDisabled={ !application || !hasPermission(application?.id) }
                                         onClick={ createEventType }> Create Event Type </Button>
                                     <CreateEditModal
                                         isEdit={ isEdit }
@@ -193,9 +196,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <Td>{ e.id }</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
+                                        isDisabled={ !application || !hasPermission(application?.id) }
                                         onClick={ () => editEventType(e) }> { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
+                                        isDisabled={ !application || !hasPermission(application?.id) }
                                         onClick={ () => deleteEventTypeModal(e) }>{ <TrashIcon /> } </Button></Td>
                             </Tr>
                         ))}

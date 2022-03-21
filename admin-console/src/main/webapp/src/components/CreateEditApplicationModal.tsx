@@ -1,7 +1,19 @@
-import { ActionGroup, Button, Form, FormGroup, HelperText, HelperTextItem, Modal, ModalVariant, TextInput } from '@patternfly/react-core';
+import {
+    ActionGroup,
+    Button,
+    Form,
+    FormGroup,
+    FormSelect, FormSelectOption,
+    HelperText,
+    HelperTextItem,
+    Modal,
+    ModalVariant,
+    TextInput
+} from '@patternfly/react-core';
 import React from 'react';
 
-import { Application } from '../types/Notifications';
+import { useUserPermissions } from '../app/PermissionContext';
+import { Application, RoleOwnedApplication } from '../types/Notifications';
 
 interface CreateEditApplicationModalProps {
     isEdit: boolean;
@@ -11,14 +23,19 @@ interface CreateEditApplicationModalProps {
     initialApplication?: Partial<Application>;
     isLoading: boolean;
     onClose: () => void;
-    onSubmit: (application: Partial<Application>) => void;
+    onSubmit: (application: Partial<RoleOwnedApplication>) => void;
 }
 
 export const CreateEditApplicationModal: React.FunctionComponent<CreateEditApplicationModalProps> = (props) => {
 
-    const [ application, setApplication ] = React.useState<Partial<Application>>(props.initialApplication ?? {});
+    const permissions = useUserPermissions();
+    const [ application, setApplication ] = React.useState<Partial<RoleOwnedApplication>>({
+        ...props.initialApplication
+    });
 
-    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
+    const handleChange = (
+        value: string,
+        event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement> | React.FormEvent<HTMLSelectElement>) => {
         const target = event.target as HTMLInputElement;
         setApplication(prev => ({ ...prev, [target.name]: target.value }));
     };
@@ -28,8 +45,22 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
     }, [ application, props ]);
 
     React.useEffect(() => {
-        setApplication(props.initialApplication ?? {});
-    }, [ props.initialApplication ]);
+        if (props.initialApplication) {
+            setApplication({
+                ...application,
+                ...props.initialApplication
+            });
+        }
+    }, [ props.initialApplication, application ]);
+
+    React.useEffect(() => {
+        if (application.ownerRole === undefined && permissions.roles.length > 0) {
+            setApplication(prev => ({
+                ...prev,
+                ownerRole: permissions.roles[0]
+            }));
+        }
+    }, [ permissions.roles, application.ownerRole ]);
 
     return (
         <React.Fragment>
@@ -59,6 +90,31 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
                             id='display-name'
                             name="displayName"
                         /></FormGroup>
+                    { !props.isEdit && <FormGroup
+                        fieldId="role-name"
+                        label="Role admin"
+                        isRequired
+                        helperText="Role of users who will manage the application"
+                    >
+                        { permissions.isAdmin ? (
+                            <TextInput
+                                type='text'
+                                onChange={ handleChange }
+                                value={ application.ownerRole }
+                                id='owner-role'
+                                name="ownerRole"
+                            />
+                        ) : (
+                            <FormSelect
+                                value={ application.ownerRole }
+                                onChange={ handleChange }
+                                id='owner-role'
+                                name="ownerRole"
+                            >
+                                { permissions.roles.map(r => <FormSelectOption key={ r } label={ r } value={ r } />) }
+                            </FormSelect>
+                        )}
+                    </FormGroup>}
                     <ActionGroup>
                         <Button variant='primary' type='submit'
                             isLoading={ props.isLoading } isDisabled={ props.isLoading }
