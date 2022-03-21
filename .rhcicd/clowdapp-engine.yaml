@@ -134,8 +134,8 @@ objects:
             secretKeyRef:
               name: rbac-psks
               key: psks.json
-        - name: RECIPIENT_PROVIDER_IT_MAX_RESULTS
-          value: ${RECIPIENT_PROVIDER_IT_MAX_RESULTS}
+        - name: RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE
+          value: ${RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE}
         - name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
           value: ${RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE}
         - name: RECIPIENT_PROVIDER_USE_IT_IMPL
@@ -267,7 +267,7 @@ parameters:
 - name: RBAC_USERS_RETENTION_DELAY
   description: RBAC users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT10M
-- name: RECIPIENT_PROVIDER_IT_MAX_RESULTS
+- name: RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE
   description: Limit value sent as a query param to the IT API while querying users.
   value: "1000"
 - name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE

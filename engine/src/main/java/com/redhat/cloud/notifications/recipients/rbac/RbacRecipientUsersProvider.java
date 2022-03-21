@@ -43,8 +43,8 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     Integer rbacElementsPerPage;
 
-    @ConfigProperty(name = "recipient-provider.it.max-results", defaultValue = "1000")
-    int maxResults;
+    @ConfigProperty(name = "recipient-provider.it.max-results-per-page", defaultValue = "1000")
+    int maxResultsPerPage;
 
     @ConfigProperty(name = "rbac.retry.max-attempts", defaultValue = "3")
     int maxRetryAttempts;
@@ -96,11 +96,11 @@ public class RbacRecipientUsersProvider {
 
             do {
                 // TODO Add retries
-                usersPaging = itUserService.getUsers(accountId, adminsOnly, firstResult, maxResults);
+                usersPaging = itUserService.getUsers(accountId, adminsOnly, firstResult, maxResultsPerPage);
                 usersTotal.addAll(usersPaging);
 
-                firstResult += maxResults;
-            } while (usersPaging.size() == maxResults);
+                firstResult += maxResultsPerPage;
+            } while (usersPaging.size() == maxResultsPerPage);
 
             getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(usersTotal.size())));
 
