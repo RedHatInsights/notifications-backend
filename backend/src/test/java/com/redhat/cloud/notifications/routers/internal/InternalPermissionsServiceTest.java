@@ -224,7 +224,6 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         assertEquals(appDisplayName, filtered.get(0).applicationDisplayName);
         assertEquals(appRole, filtered.get(0).role);
 
-
         // Adding other role to the same app
         CrudTestHelpers.createInternalRoleAccess(turnpikeAdminHeader, otherRole, appId, OK);
         accessList = CrudTestHelpers.getAccessList(turnpikeAdminHeader, OK).get();
