@@ -39,7 +39,7 @@ public class TestHelpers {
         return new String(Base64.getEncoder().encode(header.encode().getBytes(UTF_8)), UTF_8);
     }
 
-    public static String encodeTurnpikeIdentityInfo(String username, String group) {
+    public static String encodeTurnpikeIdentityInfo(String username, String... groups) {
         JsonObject identity = new JsonObject();
         JsonObject associate = new JsonObject();
         JsonArray roles = new JsonArray();
@@ -49,7 +49,9 @@ public class TestHelpers {
         identity.put("associate", associate);
         associate.put("email", username);
         associate.put("Role", roles);
-        roles.add(group);
+        for (String group: groups) {
+            roles.add(group);
+        }
 
         JsonObject header = new JsonObject();
         header.put("identity", identity);
@@ -61,7 +63,7 @@ public class TestHelpers {
         return new Header(X_RH_IDENTITY_HEADER, encodeRHIdentityInfo(tenant, username));
     }
 
-    public static Header createTurnpikeIdentityHeader(String username, String role) {
+    public static Header createTurnpikeIdentityHeader(String username, String... role) {
         return new Header(X_RH_IDENTITY_HEADER, encodeTurnpikeIdentityInfo(username, role));
     }
 
