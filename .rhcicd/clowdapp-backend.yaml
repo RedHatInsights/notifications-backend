@@ -121,10 +121,12 @@ objects:
               name: notifications-ephemeral-data
               key: ephemeral_data.json
               optional: true
-        - name: RBAC_AUTHENTICATION_MP_REST_READTIMEOUT
+        - name: QUARKUS_REST_CLIENT_RBAC_AUTHENTICATION_READ_TIMEOUT
           value: ${RBAC_AUTHENTICATION_READ_TIMEOUT}
         - name: INTERNAL_RBAC_ENABLED
           value: ${INTERNAL_RBAC_ENABLED}
+        - name: INTERNAL_ADMIN_ROLE
+          value: ${INTERNAL_RBAC_ADMIN}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -151,9 +153,9 @@ objects:
           value: ${OB_TOKEN_USER}
         - name: OB_TOKEN_PASS
           value: ${OB_TOKEN_PASS}
-        - name: OB_MP_REST_URL
+        - name: QUARKUS_REST_CLIENT_OB_URL
           value: ${OB_MP_REST_URL}
-        - name: OB_KC_REST_URL
+        - name: QUARKUS_REST_CLIENT_KC_URL
           value: ${OB_KC_REST_URL}
 - apiVersion: v1
   kind: ConfigMap
@@ -321,6 +323,9 @@ parameters:
 - name: INTERNAL_RBAC_ENABLED
   description: Enable Internal RBAC
   value: "false"
+- name: INTERNAL_RBAC_ADMIN
+  description: Internal admin group
+  value: "crc-notifications-team"
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
