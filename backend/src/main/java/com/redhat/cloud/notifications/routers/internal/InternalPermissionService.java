@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.db.InternalRoleAccessResources;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.routers.internal.models.AddAccessRequest;
+import com.redhat.cloud.notifications.routers.internal.models.InternalApplicationUserPermission;
 import com.redhat.cloud.notifications.routers.internal.models.InternalUserPermissions;
 import io.quarkus.security.identity.SecurityIdentity;
 
@@ -61,15 +62,10 @@ public class InternalPermissionService {
                 .map(s -> s.substring(privateRolePrefix.length()))
                 .collect(Collectors.toSet());
 
-        List<InternalRoleAccess> access = internalRoleAccessResources.getByRoles(roles);
-        Set<UUID> applicationIds = access.stream()
-                .map(InternalRoleAccess::getApplicationId)
-                .collect(Collectors.toSet());
+        List<InternalRoleAccess> accessList = internalRoleAccessResources.getByRoles(roles);
 
-        List<Application> applications = applicationResources.getApplications(applicationIds);
-
-        for (Application app : applications) {
-            permissions.addApplication(app.getId().toString(), app.getDisplayName());
+        for (InternalRoleAccess access : accessList) {
+            permissions.addApplication(access.getApplicationId(), access.getApplication().getDisplayName());
         }
 
         return permissions;
@@ -78,8 +74,16 @@ public class InternalPermissionService {
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<InternalRoleAccess> getAccessList() {
-        return internalRoleAccessResources.getAll();
+    public List<InternalApplicationUserPermission> getAccessList() {
+        List<InternalRoleAccess> accessList = internalRoleAccessResources.getAll();
+
+        return accessList.stream().map(access -> {
+            InternalApplicationUserPermission permission = new InternalApplicationUserPermission();
+            permission.applicationDisplayName = access.getApplication().getDisplayName();
+            permission.applicationId = access.getApplicationId();
+            permission.role =  access.getRole();
+            return permission;
+        }).collect(Collectors.toList());
     }
 
     @POST
@@ -88,9 +92,10 @@ public class InternalPermissionService {
     @Produces(MediaType.APPLICATION_JSON)
     public InternalRoleAccess addAccess(@Valid AddAccessRequest addAccessRequest) {
         InternalRoleAccess access = new InternalRoleAccess();
+        Application application = applicationResources.getApplication(addAccessRequest.applicationId);
         access.setApplicationId(addAccessRequest.applicationId);
         access.setRole(addAccessRequest.role);
-
+        access.setApplication(application);
         return internalRoleAccessResources.addAccess(access);
     }
 
