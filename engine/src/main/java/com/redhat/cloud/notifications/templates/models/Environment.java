@@ -5,13 +5,17 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class ServerConfig {
+public class Environment {
 
     @ConfigProperty(name = "env.name", defaultValue = "local-dev")
     String environment;
 
-    public String environment() {
+    public String name() {
         return this.environment;
+    }
+
+    public String url() {
+        return url("/");
     }
 
     public String url(String path) {
