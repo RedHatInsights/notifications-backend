@@ -7,7 +7,7 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class ServerConfig {
 
-    @ConfigProperty(name = "env", defaultValue = "local-dev")
+    @ConfigProperty(name = "env.name", defaultValue = "local-dev")
     String environment;
 
     public String environment() {
@@ -26,6 +26,7 @@ public class ServerConfig {
                 break;
             default:
                 base = "";
+                break;
         }
 
         return base + path;
