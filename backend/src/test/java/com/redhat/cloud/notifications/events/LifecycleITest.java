@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
@@ -277,17 +278,17 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private String createApp(Header header, String bundleId) {
-        Application app = new Application();
-        app.setBundleId(UUID.fromString(bundleId));
-        app.setName(APP_NAME);
-        app.setDisplayName("The best app in the life");
+        AddApplicationRequest request = new AddApplicationRequest();
+        request.bundleId = UUID.fromString(bundleId);
+        request.name = APP_NAME;
+        request.displayName = "The best app in the life";
 
         String responseBody = given()
                 .when()
                 .basePath(API_INTERNAL)
                 .header(header)
                 .contentType(JSON)
-                .body(Json.encode(app))
+                .body(Json.encode(request))
                 .post("/applications")
                 .then()
                 .statusCode(200)
@@ -297,9 +298,9 @@ public class LifecycleITest extends DbIsolatedTest {
         JsonObject jsonApp = new JsonObject(responseBody);
         jsonApp.mapTo(Application.class);
         assertNotNull(jsonApp.getString("id"));
-        assertEquals(app.getName(), jsonApp.getString("name"));
-        assertEquals(app.getDisplayName(), jsonApp.getString("display_name"));
-        assertEquals(app.getBundleId().toString(), jsonApp.getString("bundle_id"));
+        assertEquals(request.name, jsonApp.getString("name"));
+        assertEquals(request.displayName, jsonApp.getString("display_name"));
+        assertEquals(request.bundleId.toString(), jsonApp.getString("bundle_id"));
         assertNotNull(jsonApp.getString("created"));
 
         return jsonApp.getString("id");
