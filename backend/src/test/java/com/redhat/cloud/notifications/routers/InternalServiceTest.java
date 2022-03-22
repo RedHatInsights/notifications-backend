@@ -389,6 +389,7 @@ public class InternalServiceTest extends DbIsolatedTest {
         assertTrue(responseBody.matches("^[0-9a-f]{7}$"));
     }
 
+    @Test
     void appUserAccessTest() {
         String appRole = "app-admin";
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);
