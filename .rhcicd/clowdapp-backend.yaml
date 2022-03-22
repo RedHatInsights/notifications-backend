@@ -121,12 +121,10 @@ objects:
               name: notifications-ephemeral-data
               key: ephemeral_data.json
               optional: true
-        - name: QUARKUS_REST_CLIENT_RBAC_AUTHENTICATION_READ_TIMEOUT
+        - name: RBAC_AUTHENTICATION_MP_REST_READTIMEOUT
           value: ${RBAC_AUTHENTICATION_READ_TIMEOUT}
         - name: INTERNAL_RBAC_ENABLED
           value: ${INTERNAL_RBAC_ENABLED}
-        - name: INTERNAL_ADMIN_ROLE
-          value: ${INTERNAL_RBAC_ADMIN}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -153,9 +151,9 @@ objects:
           value: ${OB_TOKEN_USER}
         - name: OB_TOKEN_PASS
           value: ${OB_TOKEN_PASS}
-        - name: QUARKUS_REST_CLIENT_OB_URL
+        - name: OB_MP_REST_URL
           value: ${OB_MP_REST_URL}
-        - name: QUARKUS_REST_CLIENT_KC_URL
+        - name: OB_KC_REST_URL
           value: ${OB_KC_REST_URL}
 - apiVersion: v1
   kind: ConfigMap
@@ -240,6 +238,12 @@ objects:
           FROM "applications" 
           INNER JOIN "endpoint_email_subscriptions" ON "applications"."id"="endpoint_email_subscriptions"."application_id" 
           GROUP BY "applications"."id" HAVING COUNT("applications"."id") > 1;
+      - prefix: insights/notifications/accounts
+        query: >-
+          SELECT
+          COUNT(distinct account_id) 
+          FROM "endpoints"
+          WHERE "endpoint_type" != 3;
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -317,9 +321,6 @@ parameters:
 - name: INTERNAL_RBAC_ENABLED
   description: Enable Internal RBAC
   value: "false"
-- name: INTERNAL_RBAC_ADMIN
-  description: Internal admin group
-  value: "crc-notifications-team"
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
