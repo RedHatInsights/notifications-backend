@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import org.jboss.logging.Logger;
 
+import javax.annotation.Nullable;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -79,11 +81,11 @@ public class EndpointResources {
         return endpoint;
     }
 
-    public List<Endpoint> getEndpointsPerCompositeType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
+    public List<Endpoint> getEndpointsPerCompositeType(String accountId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
 
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
-        List<Endpoint> endpoints = EndpointResources.queryBuilderEndpointsPerType(accountId, type, activeOnly)
+        List<Endpoint> endpoints = EndpointResources.queryBuilderEndpointsPerType(accountId, name, type, activeOnly)
                 .limit(limit)
                 .sort(sort)
                 .build(entityManager::createQuery)
@@ -106,7 +108,7 @@ public class EndpointResources {
 
     @Transactional
     public Endpoint getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties) {
-        List<Endpoint> emailEndpoints = getEndpointsPerCompositeType(accountId, Set.of(new CompositeEndpointType(EndpointType.EMAIL_SUBSCRIPTION)), null, null);
+        List<Endpoint> emailEndpoints = getEndpointsPerCompositeType(accountId, null, Set.of(new CompositeEndpointType(EndpointType.EMAIL_SUBSCRIPTION)), null, null);
         loadProperties(emailEndpoints);
         Optional<Endpoint> endpointOptional = emailEndpoints
                 .stream()
@@ -126,24 +128,33 @@ public class EndpointResources {
         return createEndpoint(endpoint);
     }
 
-    public Long getEndpointsCountPerCompositeType(String tenant, Set<CompositeEndpointType> type, Boolean activeOnly) {
-        return EndpointResources.queryBuilderEndpointsPerType(tenant, type, activeOnly)
+    public Long getEndpointsCountPerCompositeType(String tenant, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
+        return EndpointResources.queryBuilderEndpointsPerType(tenant, name, type, activeOnly)
                 .buildCount(entityManager::createQuery)
                 .getSingleResult();
     }
 
-    public List<Endpoint> getEndpoints(String tenant, Query limiter) {
+    public QueryBuilder<Endpoint> getEndpointsQuery(String tenant, @Nullable String name) {
+        return QueryBuilder.builder(Endpoint.class)
+                .alias("e")
+                .where(
+                        WhereBuilder.builder()
+                                .and("e.accountId = :accountId", "accountId", tenant)
+                                .ifAnd(
+                                        name != null && !name.isEmpty(),
+                                        "LOWER(e.name) LIKE :name",
+                                        "name", (Supplier<String>) () -> "%" + name.toLowerCase() + "%"
+                                )
+                );
+    }
+
+    public List<Endpoint> getEndpoints(String tenant, @Nullable String name, Query limiter) {
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
 
         // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
         //      or should I just create a new method for it?
-        List<Endpoint> endpoints = QueryBuilder.builder(Endpoint.class)
-                .alias("e")
-                .where(
-                        WhereBuilder.builder()
-                                .and("e.accountId = :accountId", "accountId", tenant)
-                )
+        List<Endpoint> endpoints = getEndpointsQuery(tenant, name)
                 .limit(limit)
                 .sort(sort)
                 .build(entityManager::createQuery)
@@ -152,10 +163,9 @@ public class EndpointResources {
         return endpoints;
     }
 
-    public Long getEndpointsCount(String tenant) {
-        String query = "SELECT COUNT(*) FROM Endpoint WHERE accountId = :accountId";
-        return entityManager.createQuery(query, Long.class)
-                .setParameter("accountId", tenant)
+    public Long getEndpointsCount(String tenant, @Nullable String name) {
+        return getEndpointsQuery(tenant, name)
+                .buildCount(entityManager::createQuery)
                 .getSingleResult();
     }
 
@@ -296,7 +306,7 @@ public class EndpointResources {
         }
     }
 
-    static QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String accountId, Set<CompositeEndpointType> type, Boolean activeOnly) {
+    static QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String accountId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
         Set<EndpointType> basicTypes = type.stream().filter(c -> c.getSubType() == null).map(CompositeEndpointType::getType).collect(Collectors.toSet());
         Set<CompositeEndpointType> compositeTypes = type.stream().filter(c -> c.getSubType() != null).collect(Collectors.toSet());
         return QueryBuilder
@@ -315,6 +325,11 @@ public class EndpointResources {
                                             .ifOr(compositeTypes.size() > 0, "e.compositeType IN (:compositeTypes)", "compositeTypes", compositeTypes)
                             )
                             .ifAnd(activeOnly != null, "e.enabled = :enabled", "enabled", activeOnly)
+                            .ifAnd(
+                                    name != null && !name.isEmpty(),
+                                    "LOWER(e.name) LIKE :name",
+                                    "name", (Supplier<String>) () -> "%" + name.toLowerCase() + "%"
+                            )
                 );
     }
 

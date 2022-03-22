@@ -580,37 +580,7 @@ public class EndpointServiceTest extends DbIsolatedTest {
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
-
-        for (int i = 0; i < 29; i++) {
-            // Add new endpoints
-            WebhookProperties properties = new WebhookProperties();
-            properties.setMethod(HttpType.POST);
-            properties.setDisableSslVerification(false);
-            properties.setSecretToken("my-super-secret-token");
-            properties.setUrl(String.format("https://%s/%d", mockServerConfig.getRunningAddress(), i));
-
-            Endpoint ep = new Endpoint();
-            ep.setType(EndpointType.WEBHOOK);
-            ep.setName(String.format("Endpoint %d", i));
-            ep.setDescription("Try to find me!");
-            ep.setEnabled(true);
-            ep.setProperties(properties);
-
-            Response response = given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(JSON)
-                    .body(Json.encode(ep))
-                    .post("/endpoints")
-                    .then()
-                    .statusCode(200)
-                    .contentType(JSON)
-                    .extract().response();
-
-            JsonObject responsePoint = new JsonObject(response.getBody().asString());
-            responsePoint.mapTo(Endpoint.class);
-            assertNotNull(responsePoint.getString("id"));
-        }
+        addEndpoints(29, identityHeader);
 
         // Fetch the list, page 1
         Response response = given()
@@ -1157,11 +1127,132 @@ public class EndpointServiceTest extends DbIsolatedTest {
         }
     }
 
+    @Test
+    void testSearch() {
+        String tenant = "search";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        addEndpoints(10, identityHeader);
+        Response response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .queryParam("limit", "20")
+                .queryParam("offset", "0")
+                .queryParam("name", "2")
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        assertEquals(1, endpointPage.getMeta().getCount());
+        assertEquals(1, endpointPage.getData().size());
+        assertEquals("Endpoint 2", endpointPage.getData().get(0).getName());
+
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .queryParam("limit", "20")
+                .queryParam("offset", "0")
+                .queryParam("name", "foo")
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        assertEquals(0, endpointPage.getMeta().getCount());
+        assertEquals(0, endpointPage.getData().size());
+    }
+
+    @Test
+    void testSearchWithType() {
+        String tenant = "search-type";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        addEndpoints(10, identityHeader);
+        Response response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .queryParam("limit", "20")
+                .queryParam("offset", "0")
+                .queryParam("name", "2")
+                .queryParam("type", "WEBHOOK")
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        assertEquals(1, endpointPage.getMeta().getCount());
+        assertEquals(1, endpointPage.getData().size());
+        assertEquals("Endpoint 2", endpointPage.getData().get(0).getName());
+
+        response = given()
+                // Set header to x-rh-identity
+                .header(identityHeader)
+                .queryParam("limit", "20")
+                .queryParam("offset", "0")
+                .queryParam("name", "foo")
+                .queryParam("type", "WEBHOOK")
+                .when().get("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        assertEquals(0, endpointPage.getMeta().getCount());
+        assertEquals(0, endpointPage.getData().size());
+    }
+
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
         assertTrue(message.contains(String.format(
                 "Is not possible to create or alter endpoint with type %s, check API for alternatives",
                 endpointType
         )));
+    }
+
+    private void addEndpoints(int count, Header identityHeader) {
+        for (int i = 0; i < count; i++) {
+            // Add new endpoints
+            WebhookProperties properties = new WebhookProperties();
+            properties.setMethod(HttpType.POST);
+            properties.setDisableSslVerification(false);
+            properties.setSecretToken("my-super-secret-token");
+            properties.setUrl(String.format("https://%s/%d", mockServerConfig.getRunningAddress(), i));
+
+            Endpoint ep = new Endpoint();
+            ep.setType(EndpointType.WEBHOOK);
+            ep.setName(String.format("Endpoint %d", i));
+            ep.setDescription("Try to find me!");
+            ep.setEnabled(true);
+            ep.setProperties(properties);
+
+            Response response = given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(ep))
+                    .post("/endpoints")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().response();
+
+            JsonObject responsePoint = new JsonObject(response.getBody().asString());
+            responsePoint.mapTo(Endpoint.class);
+            assertNotNull(responsePoint.getString("id"));
+        }
     }
 
 }
