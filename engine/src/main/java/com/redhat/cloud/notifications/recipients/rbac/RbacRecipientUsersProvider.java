@@ -120,7 +120,7 @@ public class RbacRecipientUsersProvider {
 
             do {
                 int finalFirstResult = firstResult;
-                usersPaging = retryOnError(itRetryPolicy, () -> itUserService.getUsers(accountId, adminsOnly, finalFirstResult, maxResultsPerPage));
+                usersPaging = retryOnItError(() -> itUserService.getUsers(accountId, adminsOnly, finalFirstResult, maxResultsPerPage));
                 usersTotal.addAll(usersPaging);
 
                 firstResult += maxResultsPerPage;
@@ -133,7 +133,7 @@ public class RbacRecipientUsersProvider {
             users = getWithPagination(
                 page -> {
                     Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                    Page<RbacUser> rbacUsers = retryOnError(rbacRetryPolicy, () ->
+                    Page<RbacUser> rbacUsers = retryOnRbacError(() ->
                             rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
                     getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
                     return rbacUsers;
@@ -147,14 +147,14 @@ public class RbacRecipientUsersProvider {
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
     public List<User> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
-        RbacGroup rbacGroup = retryOnError(rbacRetryPolicy, () -> rbacServiceToService.getGroup(accountId, groupId));
+        RbacGroup rbacGroup = retryOnRbacError(() -> rbacServiceToService.getGroup(accountId, groupId));
         List<User> users;
         if (rbacGroup.isPlatformDefault()) {
             users = getUsers(accountId, adminOnly);
         } else {
             users = getWithPagination(page -> {
                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
-                Page<RbacUser> rbacUsers = retryOnError(rbacRetryPolicy, () ->
+                Page<RbacUser> rbacUsers = retryOnRbacError(() ->
                         rbacServiceToService.getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage));
                 getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "accountId", accountId));
                 return rbacUsers;
@@ -168,8 +168,12 @@ public class RbacRecipientUsersProvider {
         return users;
     }
 
-    private <T> T retryOnError(RetryPolicy<Object> policy, CheckedSupplier<T> rbacCall) {
-        return Failsafe.with(policy).get(rbacCall);
+    private <T> T retryOnRbacError(CheckedSupplier<T> rbacCall) {
+        return Failsafe.with(rbacRetryPolicy).get(rbacCall);
+    }
+
+    private <T> T retryOnItError(CheckedSupplier<T> rbacCall) {
+        return Failsafe.with(itRetryPolicy).get(rbacCall);
     }
 
     private List<User> getWithPagination(Function<Integer, Page<RbacUser>> fetcher) {
