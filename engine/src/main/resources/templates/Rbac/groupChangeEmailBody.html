@@ -37,7 +37,7 @@
                         <br>
                         {#if action.events[0].payload.platform_default == "true"}Platform default g{#else}G{/if}roup is {#if action.events[0].payload.system == "true"} {action.events[0].payload.operation}{/if}.
                         <br>
-                        {#if action.events[0].payload.operation != "delete"} Check the group <a class="rh-url" href="https://console.redhat.com/api/rbac/v1/groups/{action.events[0].payload.uuid}/"><b>{action.events[0].payload.name}</b></a>{/if}
+                        {#if action.events[0].payload.operation != "delete"} Check the group <a class="rh-url" href="https://console.redhat.com/settings/rbac/groups/detail/{action.events[0].payload.uuid}/"><b>{action.events[0].payload.name}</b></a>{/if}
                     </p>
                     {#if action.events[0].payload.operation == "update" and action.events[0].payload.platform_default == "true"}
                     <p>
