@@ -13,6 +13,10 @@ public class ServerConfigTest {
         config.environment = "prod";
         assertEquals("https://console.redhat.com/foobar", config.url("/foobar"));
 
+        // Adds slash if path does not start with it
+        config.environment = "prod";
+        assertEquals("https://console.redhat.com/foobar", config.url("foobar"));
+
         config.environment = "stage";
         assertEquals("https://console.stage.redhat.com/blabla/etc", config.url("/blabla/etc"));
 
@@ -21,5 +25,8 @@ public class ServerConfigTest {
 
         config.environment = "anything-else";
         assertEquals("/anything-else", config.url("/anything-else"));
+
+        config.environment = "anything-else";
+        assertEquals("/anything-else", config.url("anything-else"));
     }
 }

@@ -29,6 +29,10 @@ public class ServerConfig {
                 break;
         }
 
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+
         return base + path;
     }
 }
