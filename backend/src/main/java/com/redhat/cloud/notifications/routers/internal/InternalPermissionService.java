@@ -23,7 +23,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -77,16 +76,11 @@ public class InternalPermissionService {
     @Produces(MediaType.APPLICATION_JSON)
     public List<InternalApplicationUserPermission> getAccessList() {
         List<InternalRoleAccess> accessList = internalRoleAccessResources.getAll();
-        Set<UUID> applicationIds = accessList.stream().map(InternalRoleAccess::getApplicationId).collect(Collectors.toSet());
-        Map<UUID, String> applications = applicationResources
-                .getApplications(applicationIds)
-                .stream()
-                .collect(Collectors.toMap(Application::getId, Application::getDisplayName));
 
         return accessList.stream().map(access -> {
             InternalApplicationUserPermission permission = new InternalApplicationUserPermission();
-            permission.applicationDisplayName = applications.get(access.getApplicationId());
-            permission.applicationId = access.getApplicationId().toString();
+            permission.applicationDisplayName = access.getApplication().getDisplayName();
+            permission.applicationId = access.getApplicationId();
             permission.role =  access.getRole();
             return permission;
         }).collect(Collectors.toList());

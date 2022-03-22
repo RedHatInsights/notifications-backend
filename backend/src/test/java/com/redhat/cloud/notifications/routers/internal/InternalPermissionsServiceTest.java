@@ -215,30 +215,30 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         accessList = CrudTestHelpers.getAccessList(turnpikeAdminHeader, OK).get();
 
         // It should be in the list now
-        List<InternalApplicationUserPermission> filtered = accessList.stream().filter(a -> a.applicationId.equals(appId)).collect(Collectors.toList());
+        List<InternalApplicationUserPermission> filtered = accessList.stream().filter(a -> a.applicationId.toString().equals(appId)).collect(Collectors.toList());
         assertEquals(
                 1,
                 filtered.size()
         );
 
-        assertEquals(appId, filtered.get(0).applicationId);
+        assertEquals(appId, filtered.get(0).applicationId.toString());
         assertEquals(appDisplayName, filtered.get(0).applicationDisplayName);
         assertEquals(appRole, filtered.get(0).role);
 
         // Adding other role to the same app
         CrudTestHelpers.createInternalRoleAccess(turnpikeAdminHeader, otherRole, appId, OK);
         accessList = CrudTestHelpers.getAccessList(turnpikeAdminHeader, OK).get();
-        filtered = accessList.stream().filter(a -> a.applicationId.equals(appId)).sorted(Comparator.comparing(t -> t.role)).collect(Collectors.toList());
+        filtered = accessList.stream().filter(a -> a.applicationId.toString().equals(appId)).sorted(Comparator.comparing(t -> t.role)).collect(Collectors.toList());
         assertEquals(
                 2,
                 filtered.size()
         );
 
-        assertEquals(appId, filtered.get(0).applicationId);
+        assertEquals(appId, filtered.get(0).applicationId.toString());
         assertEquals(appDisplayName, filtered.get(0).applicationDisplayName);
         assertEquals(appRole, filtered.get(0).role);
 
-        assertEquals(appId, filtered.get(1).applicationId);
+        assertEquals(appId, filtered.get(1).applicationId.toString());
         assertEquals(appDisplayName, filtered.get(1).applicationDisplayName);
         assertEquals(otherRole, filtered.get(1).role);
     }
