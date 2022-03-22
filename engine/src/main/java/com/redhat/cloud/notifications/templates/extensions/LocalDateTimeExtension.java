@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.templates;
+package com.redhat.cloud.notifications.templates.extensions;
 
 import com.redhat.cloud.notifications.utils.TimeAgoFormatter;
 import io.quarkus.qute.TemplateExtension;

@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.qute.Engine;
 import io.quarkus.qute.TemplateInstance;
 
@@ -14,6 +15,9 @@ public class EmailTemplateService {
     @Inject
     Engine engine;
 
+    @Inject
+    Environment environment;
+
     public TemplateInstance compileTemplate(String template, String name) {
         return engine.parse(template, null, name).instance();
     }
@@ -22,6 +26,7 @@ public class EmailTemplateService {
         return templateInstance
                 .data("action", action)
                 .data("user", user)
+                .data("environment", environment)
                 .render();
     }
 }
