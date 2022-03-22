@@ -29,7 +29,5 @@ public class EnvironmentTest {
         assertEquals("/anything-else", environment.url("/anything-else"));
         assertEquals("/anything-else", environment.url("anything-else"));
         assertEquals("anything-else", environment.name());
-
-
     }
 }
