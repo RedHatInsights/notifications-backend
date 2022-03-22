@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
@@ -71,7 +72,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         permissions = permissions(turnpikeAppDev);
 
         assertFalse(permissions.isAdmin());
-        assertEquals(List.of(new InternalUserPermissions.Application(appId, appDisplayName)), permissions.getApplications());
+        assertEquals(List.of(new InternalUserPermissions.Application(UUID.fromString(appId), appDisplayName)), permissions.getApplications());
 
         // We can create the event type now
         String eventTypeId = CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", 200).get();

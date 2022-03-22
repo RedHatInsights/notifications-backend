@@ -3,26 +3,27 @@ package com.redhat.cloud.notifications.routers.internal.models;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public class InternalUserPermissions {
     public static class Application {
-        private String id;
+        private UUID id;
         private String displayName;
 
         public Application() {
 
         }
 
-        public Application(String id, String displayName) {
+        public Application(UUID id, String displayName) {
             this.id = id;
             this.displayName = displayName;
         }
 
-        public String getId() {
+        public UUID getId() {
             return id;
         }
 
-        public void setId(String id) {
+        public void setId(UUID id) {
             this.id = id;
         }
 
@@ -69,7 +70,7 @@ public class InternalUserPermissions {
         return applications;
     }
 
-    public void addApplication(String id, String displayName) {
+    public void addApplication(UUID id, String displayName) {
         this.applications.add(new Application(id, displayName));
     }
 }

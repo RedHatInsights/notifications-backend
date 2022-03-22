@@ -63,15 +63,10 @@ public class InternalPermissionService {
                 .map(s -> s.substring(privateRolePrefix.length()))
                 .collect(Collectors.toSet());
 
-        List<InternalRoleAccess> access = internalRoleAccessResources.getByRoles(roles);
-        Set<UUID> applicationIds = access.stream()
-                .map(InternalRoleAccess::getApplicationId)
-                .collect(Collectors.toSet());
+        List<InternalRoleAccess> accessList = internalRoleAccessResources.getByRoles(roles);
 
-        List<Application> applications = applicationResources.getApplications(applicationIds);
-
-        for (Application app : applications) {
-            permissions.addApplication(app.getId().toString(), app.getDisplayName());
+        for (InternalRoleAccess access : accessList) {
+            permissions.addApplication(access.getApplicationId(), access.getApplication().getDisplayName());
         }
 
         return permissions;
@@ -103,9 +98,10 @@ public class InternalPermissionService {
     @Produces(MediaType.APPLICATION_JSON)
     public InternalRoleAccess addAccess(@Valid AddAccessRequest addAccessRequest) {
         InternalRoleAccess access = new InternalRoleAccess();
+        Application application = applicationResources.getApplication(addAccessRequest.applicationId);
         access.setApplicationId(addAccessRequest.applicationId);
         access.setRole(addAccessRequest.role);
-
+        access.setApplication(application);
         return internalRoleAccessResources.addAccess(access);
     }
 
