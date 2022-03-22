@@ -230,6 +230,7 @@ public class InternalService {
             InternalRoleAccess access = new InternalRoleAccess();
             access.setRole(request.ownerRole);
             access.setApplicationId(app.getId());
+            access.setApplication(app);
             internalRoleAccessResources.addAccess(access);
         }
 

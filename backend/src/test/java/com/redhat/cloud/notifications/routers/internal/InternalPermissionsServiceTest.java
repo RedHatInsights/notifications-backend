@@ -155,7 +155,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         ).get();
 
         InternalUserPermissions permissions = permissions(turnpikeAppDev);
-        assertEquals(List.of(new InternalUserPermissions.Application(appId, appDisplayName)), permissions.getApplications());
+        assertEquals(List.of(new InternalUserPermissions.Application(UUID.fromString(appId), appDisplayName)), permissions.getApplications());
 
         // admins can create apps without a role
         CrudTestHelpers.createApp(
@@ -208,7 +208,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         // appId is not in the list
         assertEquals(
                 0,
-                accessList.stream().filter(a -> a.applicationId.equals(appId)).count()
+                accessList.stream().filter(a -> a.applicationId.toString().equals(appId)).count()
         );
 
         CrudTestHelpers.createInternalRoleAccess(turnpikeAdminHeader, appRole, appId, OK);
