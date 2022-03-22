@@ -139,7 +139,7 @@ public class EndpointResources {
                 .where(
                         WhereBuilder.builder()
                                 .and("e.accountId = :accountId", "accountId", tenant)
-                                .ifAnd(name != null && !name.equals(""), "e.name LIKE :name", "name", "%" + name + "%")
+                                .ifAnd(name != null && !name.isEmpty(), "LOWER(e.name) LIKE :name", "name", "%" + name.toLowerCase() + "%")
                 );
     }
 
@@ -320,7 +320,7 @@ public class EndpointResources {
                                             .ifOr(compositeTypes.size() > 0, "e.compositeType IN (:compositeTypes)", "compositeTypes", compositeTypes)
                             )
                             .ifAnd(activeOnly != null, "e.enabled = :enabled", "enabled", activeOnly)
-                            .ifAnd(name != null && !name.equals(""), "e.name LIKE :name", "name", "%" + name + "%")
+                            .ifAnd(name != null && !name.isEmpty(), "LOWER(e.name) LIKE :name", "name", "%" + name.toLowerCase() + "%")
                 );
     }
 
