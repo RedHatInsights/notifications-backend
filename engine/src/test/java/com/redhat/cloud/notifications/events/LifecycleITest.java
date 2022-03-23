@@ -492,7 +492,7 @@ public class LifecycleITest {
     private void retry(Supplier<Boolean> checkEndpointHistoryResult) {
         await()
                 .pollInterval(Duration.ofSeconds(1L))
-                .atMost(Duration.ofSeconds(5L))
+                .atMost(Duration.ofSeconds(10L))
                 .until(checkEndpointHistoryResult::get);
     }
 
