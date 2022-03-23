@@ -1,7 +1,8 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.recipients.itservice.ITUserServiceWrapper;
+import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.routers.models.Page;
@@ -38,7 +39,9 @@ public class RbacRecipientUsersProvider {
     @RestClient
     RbacServiceToService rbacServiceToService;
 
-    ITUserServiceWrapper itUserService;
+    @Inject
+    @RestClient
+    ITUserService itUserService;
 
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     Integer rbacElementsPerPage;
@@ -67,6 +70,7 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "recipient-provider.use-it-impl", defaultValue = "false")
     public boolean retrieveUsersFromIt;
 
+    @Inject
     MeterRegistry meterRegistry;
 
     private Counter rbacFailuresCounter;
@@ -74,11 +78,6 @@ public class RbacRecipientUsersProvider {
 
     private Counter itFailuresCounter;
     private RetryPolicy<Object> itRetryPolicy;
-
-    public RbacRecipientUsersProvider(ITUserServiceWrapper itUserService, MeterRegistry meterRegistry) {
-        this.itUserService = itUserService;
-        this.meterRegistry = meterRegistry;
-    }
 
     @PostConstruct
     public void initCounters() {
@@ -119,14 +118,12 @@ public class RbacRecipientUsersProvider {
             int firstResult = 0;
 
             do {
-                int finalFirstResult = firstResult;
-                usersPaging = retryOnItError(() -> itUserService.getUsers(accountId, adminsOnly, finalFirstResult, maxResultsPerPage));
+                ITUserRequest request = new ITUserRequest(accountId, adminsOnly, firstResult, maxResultsPerPage);
+                usersPaging = retryOnItError(() -> itUserService.getUsers(request));
                 usersTotal.addAll(usersPaging);
 
                 firstResult += maxResultsPerPage;
             } while (usersPaging.size() == maxResultsPerPage);
-
-            getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(usersTotal.size())));
 
             users = transformToUser(usersTotal, adminsOnly);
         } else {
