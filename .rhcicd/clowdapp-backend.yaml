@@ -240,6 +240,12 @@ objects:
           FROM "applications" 
           INNER JOIN "endpoint_email_subscriptions" ON "applications"."id"="endpoint_email_subscriptions"."application_id" 
           GROUP BY "applications"."id" HAVING COUNT("applications"."id") > 1;
+      - prefix: insights/notifications/accounts
+        query: >-
+          SELECT
+          COUNT(distinct account_id) 
+          FROM endpoints
+          WHERE endpoint_type = 3 AND endpoint_sub_type = 'splunk' AND enabled IS FALSE;
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
