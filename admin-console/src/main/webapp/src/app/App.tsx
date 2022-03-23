@@ -6,8 +6,8 @@ import React, { useMemo } from 'react';
 
 import { Routes } from '../Routes';
 import { useBundles } from '../services/EventTypes/GetBundles';
-import { useServerInfo } from '../services/ServerInfo';
 import { usePermissions } from '../services/Permissions';
+import { useServerInfo } from '../services/ServerInfo';
 import { Navigation } from './Navigation';
 import { PermissionContext } from './PermissionContext';
 import logo from './redhat-logo.svg';

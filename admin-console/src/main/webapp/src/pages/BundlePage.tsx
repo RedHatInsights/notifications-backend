@@ -129,10 +129,10 @@ export const BundlePage: React.FunctionComponent = () => {
                             <ToolbarContent>
                                 <ToolbarItem>
                                     <Button variant='primary' type='button' onClick={ createApplication }> Create Application </Button>
-                                    <CreateEditApplicationModal
+                                    {showModal && <CreateEditApplicationModal
                                         isEdit={ isEdit }
                                         bundleName={ bundle?.displayName }
-                                        initialApplication = { application }
+                                        initialApplication={ application }
                                         showModal={ showModal }
                                         applicationName={ application.displayName }
                                         onClose={ onClose }
@@ -140,6 +140,7 @@ export const BundlePage: React.FunctionComponent = () => {
                                         isLoading={ getApplications.loading }
 
                                     />
+                                    }
                                     <React.Fragment>
                                         <DeleteApplicationModal
                                             onDelete={ handleDelete }
@@ -180,7 +181,7 @@ export const BundlePage: React.FunctionComponent = () => {
                                     > { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
-                                        isDisabled={ !hasPermission(a.id) }
+                                        isDisabled={ !isAdmin }
                                         onClick={ () => deleteApplicationModal(a) }
 
                                     >{ <TrashIcon /> } </Button></Td>

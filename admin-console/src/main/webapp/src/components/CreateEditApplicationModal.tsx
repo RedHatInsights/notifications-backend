@@ -45,15 +45,6 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
     }, [ application, props ]);
 
     React.useEffect(() => {
-        if (props.initialApplication) {
-            setApplication({
-                ...application,
-                ...props.initialApplication
-            });
-        }
-    }, [ props.initialApplication, application ]);
-
-    React.useEffect(() => {
         if (application.ownerRole === undefined && permissions.roles.length > 0) {
             setApplication(prev => ({
                 ...prev,

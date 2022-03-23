@@ -39,7 +39,7 @@ export namespace Schemas {
   export const Application1 = zodSchemaApplication1();
   export type Application1 = {
     display_name: string;
-    id: string;
+    id: UUID;
   };
 
   export const BasicAuthentication = zodSchemaBasicAuthentication();
@@ -203,7 +203,7 @@ export namespace Schemas {
     zodSchemaInternalApplicationUserPermission();
   export type InternalApplicationUserPermission = {
     application_display_name: string;
-    application_id: string;
+    application_id: UUID;
     role: string;
   };
 
@@ -362,7 +362,7 @@ export namespace Schemas {
       return z
       .object({
           display_name: z.string(),
-          id: z.string()
+          id: zodSchemaUUID()
       })
       .nonstrict();
   }
@@ -564,7 +564,7 @@ export namespace Schemas {
       return z
       .object({
           application_display_name: z.string(),
-          application_id: z.string(),
+          application_id: zodSchemaUUID(),
           role: z.string()
       })
       .nonstrict();
