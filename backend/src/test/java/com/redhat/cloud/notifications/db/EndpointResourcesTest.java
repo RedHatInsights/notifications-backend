@@ -25,6 +25,7 @@ public class EndpointResourcesTest {
         // types with subtype and without it
         EndpointResources.queryBuilderEndpointsPerType(
                 null,
+                null,
                 Set.of(
                         new CompositeEndpointType(EndpointType.WEBHOOK),
                         new CompositeEndpointType(EndpointType.CAMEL, "splunk")
@@ -42,6 +43,7 @@ public class EndpointResourcesTest {
         // without sub-types
         EndpointResources.queryBuilderEndpointsPerType(
                 null,
+                null,
                 Set.of(
                         new CompositeEndpointType(EndpointType.WEBHOOK)
                 ),
@@ -57,6 +59,7 @@ public class EndpointResourcesTest {
 
         // with sub-types
         EndpointResources.queryBuilderEndpointsPerType(
+                null,
                 null,
                 Set.of(
                         new CompositeEndpointType(EndpointType.CAMEL, "splunk")

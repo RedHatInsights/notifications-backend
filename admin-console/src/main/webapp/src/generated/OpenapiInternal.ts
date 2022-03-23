@@ -12,6 +12,12 @@ import { Action } from 'react-fetching-library';
 import * as z from 'zod';
 
 export namespace Schemas {
+  export const AddAccessRequest = zodSchemaAddAccessRequest();
+  export type AddAccessRequest = {
+    application_id?: UUID | undefined | null;
+    role?: string | undefined | null;
+  };
+
   export const Application = zodSchemaApplication();
   export type Application = {
     bundle_id: UUID;
@@ -20,6 +26,12 @@ export namespace Schemas {
     id?: UUID | undefined | null;
     name: string;
     updated?: string | undefined | null;
+  };
+
+  export const Application1 = zodSchemaApplication1();
+  export type Application1 = {
+    displayName?: string | undefined | null;
+    id?: string | undefined | null;
   };
 
   export const BasicAuthentication = zodSchemaBasicAuthentication();
@@ -34,6 +46,7 @@ export namespace Schemas {
     bundle?: Bundle | undefined | null;
     bundle_id: UUID;
     created?: string | undefined | null;
+    default_behavior?: boolean | undefined | null;
     display_name: string;
     id?: UUID | undefined | null;
     updated?: string | undefined | null;
@@ -105,6 +118,7 @@ export namespace Schemas {
       | (WebhookProperties | EmailSubscriptionProperties | CamelProperties)
       | undefined
       | null;
+    sub_type?: string | undefined | null;
     type: EndpointType;
     updated?: string | undefined | null;
   };
@@ -128,6 +142,9 @@ export namespace Schemas {
     | 'default'
     | 'camel';
 
+  export const Environment = zodSchemaEnvironment();
+  export type Environment = 'EPHEMERAL' | 'LOCAL_SERVER' | 'PROD' | 'STAGE';
+
   export const EventLogEntry = zodSchemaEventLogEntry();
   export type EventLogEntry = {
     actions: Array<EventLogEntryAction>;
@@ -136,6 +153,7 @@ export namespace Schemas {
     created: string;
     event_type: string;
     id: UUID;
+    payload?: string | undefined | null;
   };
 
   export const EventLogEntryAction = zodSchemaEventLogEntryAction();
@@ -146,6 +164,8 @@ export namespace Schemas {
         }
       | undefined
       | null;
+    endpoint_id?: UUID | undefined | null;
+    endpoint_sub_type?: string | undefined | null;
     endpoint_type: EndpointType;
     id: UUID;
     invocation_result: boolean;
@@ -170,6 +190,20 @@ export namespace Schemas {
 
   export const HttpType = zodSchemaHttpType();
   export type HttpType = 'GET' | 'POST' | 'PUT';
+
+  export const InternalRoleAccess = zodSchemaInternalRoleAccess();
+  export type InternalRoleAccess = {
+    application_id: UUID;
+    id?: UUID | undefined | null;
+    role: string;
+  };
+
+  export const InternalUserPermissions = zodSchemaInternalUserPermissions();
+  export type InternalUserPermissions = {
+    admin?: boolean | undefined | null;
+    applications?: Array<Application1> | undefined | null;
+    isAdmin?: boolean | undefined | null;
+  };
 
   export const Meta = zodSchemaMeta();
   export type Meta = {
@@ -200,6 +234,15 @@ export namespace Schemas {
     meta: Meta;
   };
 
+  export const PageEventType = zodSchemaPageEventType();
+  export type PageEventType = {
+    data: Array<EventType>;
+    links: {
+      [x: string]: string;
+    };
+    meta: Meta;
+  };
+
   export const RenderEmailTemplateRequest =
     zodSchemaRenderEmailTemplateRequest();
   export type RenderEmailTemplateRequest = {
@@ -208,10 +251,22 @@ export namespace Schemas {
     subject_template: string;
   };
 
+  export const RequestDefaultBehaviorGroupPropertyList =
+    zodSchemaRequestDefaultBehaviorGroupPropertyList();
+  export type RequestDefaultBehaviorGroupPropertyList = {
+    ignore_preferences: boolean;
+    only_admins: boolean;
+  };
+
   export const RequestEmailSubscriptionProperties =
     zodSchemaRequestEmailSubscriptionProperties();
   export type RequestEmailSubscriptionProperties = {
     only_admins: boolean;
+  };
+
+  export const ServerInfo = zodSchemaServerInfo();
+  export type ServerInfo = {
+    environment?: Environment | undefined | null;
   };
 
   export const Status = zodSchemaStatus();
@@ -232,6 +287,15 @@ export namespace Schemas {
   export const __Empty = zodSchema__Empty();
   export type __Empty = string | undefined;
 
+  function zodSchemaAddAccessRequest() {
+      return z
+      .object({
+          application_id: zodSchemaUUID().optional().nullable(),
+          role: z.string().optional().nullable()
+      })
+      .nonstrict();
+  }
+
   function zodSchemaApplication() {
       return z
       .object({
@@ -241,6 +305,15 @@ export namespace Schemas {
           id: zodSchemaUUID().optional().nullable(),
           name: z.string(),
           updated: z.string().optional().nullable()
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaApplication1() {
+      return z
+      .object({
+          displayName: z.string().optional().nullable(),
+          id: z.string().optional().nullable()
       })
       .nonstrict();
   }
@@ -261,6 +334,7 @@ export namespace Schemas {
           bundle: zodSchemaBundle().optional().nullable(),
           bundle_id: zodSchemaUUID(),
           created: z.string().optional().nullable(),
+          default_behavior: z.boolean().optional().nullable(),
           display_name: z.string(),
           id: zodSchemaUUID().optional().nullable(),
           updated: z.string().optional().nullable()
@@ -354,6 +428,7 @@ export namespace Schemas {
           ])
           .optional()
           .nullable(),
+          sub_type: z.string().optional().nullable(),
           type: zodSchemaEndpointType(),
           updated: z.string().optional().nullable()
       })
@@ -378,6 +453,10 @@ export namespace Schemas {
       return z.enum([ 'webhook', 'email_subscription', 'default', 'camel' ]);
   }
 
+  function zodSchemaEnvironment() {
+      return z.enum([ 'EPHEMERAL', 'LOCAL_SERVER', 'PROD', 'STAGE' ]);
+  }
+
   function zodSchemaEventLogEntry() {
       return z
       .object({
@@ -386,7 +465,8 @@ export namespace Schemas {
           bundle: z.string(),
           created: z.string(),
           event_type: z.string(),
-          id: zodSchemaUUID()
+          id: zodSchemaUUID(),
+          payload: z.string().optional().nullable()
       })
       .nonstrict();
   }
@@ -395,6 +475,8 @@ export namespace Schemas {
       return z
       .object({
           details: z.record(z.unknown()).optional().nullable(),
+          endpoint_id: zodSchemaUUID().optional().nullable(),
+          endpoint_sub_type: z.string().optional().nullable(),
           endpoint_type: zodSchemaEndpointType(),
           id: zodSchemaUUID(),
           invocation_result: z.boolean()
@@ -429,6 +511,26 @@ export namespace Schemas {
       return z.enum([ 'GET', 'POST', 'PUT' ]);
   }
 
+  function zodSchemaInternalRoleAccess() {
+      return z
+      .object({
+          application_id: zodSchemaUUID(),
+          id: zodSchemaUUID().optional().nullable(),
+          role: z.string()
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaInternalUserPermissions() {
+      return z
+      .object({
+          admin: z.boolean().optional().nullable(),
+          applications: z.array(zodSchemaApplication1()).optional().nullable(),
+          isAdmin: z.boolean().optional().nullable()
+      })
+      .nonstrict();
+  }
+
   function zodSchemaMeta() {
       return z
       .object({
@@ -460,6 +562,16 @@ export namespace Schemas {
       .nonstrict();
   }
 
+  function zodSchemaPageEventType() {
+      return z
+      .object({
+          data: z.array(zodSchemaEventType()),
+          links: z.record(z.string()),
+          meta: zodSchemaMeta()
+      })
+      .nonstrict();
+  }
+
   function zodSchemaRenderEmailTemplateRequest() {
       return z
       .object({
@@ -470,10 +582,27 @@ export namespace Schemas {
       .nonstrict();
   }
 
+  function zodSchemaRequestDefaultBehaviorGroupPropertyList() {
+      return z
+      .object({
+          ignore_preferences: z.boolean(),
+          only_admins: z.boolean()
+      })
+      .nonstrict();
+  }
+
   function zodSchemaRequestEmailSubscriptionProperties() {
       return z
       .object({
           only_admins: z.boolean()
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaServerInfo() {
+      return z
+      .object({
+          environment: zodSchemaEnvironment().optional().nullable()
       })
       .nonstrict();
   }
@@ -510,6 +639,8 @@ export namespace Operations {
   export namespace InternalServiceHttpRoot {
     export type Payload =
       | ValidatedResponse<'__Empty', 204, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (): ActionCreator => {
@@ -518,7 +649,129 @@ export namespace Operations {
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 204) ]
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 204),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // GET /access
+  export namespace InternalPermissionServiceGetAccessList {
+    const Response200 = z.array(Schemas.InternalRoleAccess);
+    type Response200 = Array<Schemas.InternalRoleAccess>;
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './access';
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // POST /access
+  export namespace InternalPermissionServiceAddAccess {
+    export interface Params {
+      body: Schemas.AddAccessRequest;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'InternalRoleAccess', 200, Schemas.InternalRoleAccess>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './access';
+        const query = {} as Record<string, any>;
+        return actionBuilder('POST', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(
+                    Schemas.InternalRoleAccess,
+                    'InternalRoleAccess',
+                    200
+                ),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // GET /access/me
+  export namespace InternalPermissionServiceGetPermissions {
+    export type Payload =
+      | ValidatedResponse<
+          'InternalUserPermissions',
+          200,
+          Schemas.InternalUserPermissions
+        >
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './access/me';
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(
+                    Schemas.InternalUserPermissions,
+                    'InternalUserPermissions',
+                    200
+                ),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // DELETE /access/{internalRoleAccessId}
+  export namespace InternalPermissionServiceDeleteAccess {
+    export interface Params {
+      internalRoleAccessId: Schemas.UUID;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'__Empty', 204, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './access/{internalRoleAccessId}'.replace(
+            '{internalRoleAccessId}',
+            params.internalRoleAccessId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('DELETE', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 204),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -533,6 +786,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -545,7 +800,11 @@ export namespace Operations {
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -560,6 +819,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -572,7 +833,11 @@ export namespace Operations {
         return actionBuilder('POST', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -585,6 +850,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'Application', 200, Schemas.Application>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -594,7 +861,11 @@ export namespace Operations {
         .queryParams(query)
         .data(params.body)
         .config({
-            rules: [ new ValidateRule(Schemas.Application, 'Application', 200) ]
+            rules: [
+                new ValidateRule(Schemas.Application, 'Application', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -607,6 +878,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'Application', 200, Schemas.Application>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -618,7 +891,11 @@ export namespace Operations {
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Schemas.Application, 'Application', 200) ]
+            rules: [
+                new ValidateRule(Schemas.Application, 'Application', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -632,6 +909,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -644,7 +923,11 @@ export namespace Operations {
         .queryParams(query)
         .data(params.body)
         .config({
-            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -659,6 +942,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -670,7 +955,11 @@ export namespace Operations {
         return actionBuilder('DELETE', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Response200, 'unknown', 200) ]
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -685,6 +974,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -696,7 +987,237 @@ export namespace Operations {
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Response200, 'unknown', 200) ]
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // GET /behaviorGroups/default
+  export namespace InternalServiceGetDefaultBehaviorGroups {
+    const Response200 = z.array(Schemas.BehaviorGroup);
+    type Response200 = Array<Schemas.BehaviorGroup>;
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './behaviorGroups/default';
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // POST /behaviorGroups/default
+  export namespace InternalServiceCreateDefaultBehaviorGroup {
+    export interface Params {
+      body: Schemas.BehaviorGroup;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'BehaviorGroup', 200, Schemas.BehaviorGroup>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './behaviorGroups/default';
+        const query = {} as Record<string, any>;
+        return actionBuilder('POST', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.BehaviorGroup, 'BehaviorGroup', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // PUT /behaviorGroups/default/{behaviorGroupId}/actions
+  // Update the list of actions of a default behavior group.
+  export namespace InternalServiceUpdateDefaultBehaviorGroupActions {
+    const Body = z.array(Schemas.RequestDefaultBehaviorGroupPropertyList);
+    type Body = Array<Schemas.RequestDefaultBehaviorGroupPropertyList>;
+    const Response200 = z.string();
+    type Response200 = string;
+    export interface Params {
+      behaviorGroupId: Schemas.UUID;
+      body: Body;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './behaviorGroups/default/{behaviorGroupId}/actions'.replace(
+            '{behaviorGroupId}',
+            params.behaviorGroupId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('PUT', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // PUT /behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}
+  // Links the default behavior group to the event type.
+  export namespace InternalServiceLinkDefaultBehaviorToEventType {
+    const Response200 = z.string();
+    type Response200 = string;
+    export interface Params {
+      behaviorGroupId: Schemas.UUID;
+      eventTypeId: Schemas.UUID;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path =
+        './behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}'
+        .replace('{behaviorGroupId}', params.behaviorGroupId.toString())
+        .replace('{eventTypeId}', params.eventTypeId.toString());
+        const query = {} as Record<string, any>;
+        return actionBuilder('PUT', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // DELETE /behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}
+  // Unlinks the default behavior group from the event type.
+  export namespace InternalServiceUnlinkDefaultBehaviorToEventType {
+    const Response200 = z.string();
+    type Response200 = string;
+    export interface Params {
+      behaviorGroupId: Schemas.UUID;
+      eventTypeId: Schemas.UUID;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path =
+        './behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}'
+        .replace('{behaviorGroupId}', params.behaviorGroupId.toString())
+        .replace('{eventTypeId}', params.eventTypeId.toString());
+        const query = {} as Record<string, any>;
+        return actionBuilder('DELETE', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // PUT /behaviorGroups/default/{id}
+  // Update a default behavior group.
+  export namespace InternalServiceUpdateDefaultBehaviorGroup {
+    const Response200 = z.boolean();
+    type Response200 = boolean;
+    export interface Params {
+      id: Schemas.UUID;
+      body: Schemas.BehaviorGroup;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './behaviorGroups/default/{id}'.replace(
+            '{id}',
+            params.id.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('PUT', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // DELETE /behaviorGroups/default/{id}
+  // Deletes a default behavior group.
+  export namespace InternalServiceDeleteDefaultBehaviorGroup {
+    const Response200 = z.boolean();
+    type Response200 = boolean;
+    export interface Params {
+      id: Schemas.UUID;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './behaviorGroups/default/{id}'.replace(
+            '{id}',
+            params.id.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('DELETE', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -707,6 +1228,8 @@ export namespace Operations {
     type Response200 = Array<Schemas.Bundle>;
     export type Payload =
       | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (): ActionCreator => {
@@ -715,7 +1238,11 @@ export namespace Operations {
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Response200, 'unknown', 200) ]
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -728,6 +1255,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'Bundle', 200, Schemas.Bundle>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -737,7 +1266,11 @@ export namespace Operations {
         .queryParams(query)
         .data(params.body)
         .config({
-            rules: [ new ValidateRule(Schemas.Bundle, 'Bundle', 200) ]
+            rules: [
+                new ValidateRule(Schemas.Bundle, 'Bundle', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -750,6 +1283,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'Bundle', 200, Schemas.Bundle>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -761,7 +1296,11 @@ export namespace Operations {
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Schemas.Bundle, 'Bundle', 200) ]
+            rules: [
+                new ValidateRule(Schemas.Bundle, 'Bundle', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -775,6 +1314,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -787,7 +1328,11 @@ export namespace Operations {
         .queryParams(query)
         .data(params.body)
         .config({
-            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -802,6 +1347,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -813,7 +1360,11 @@ export namespace Operations {
         return actionBuilder('DELETE', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Response200, 'unknown', 200) ]
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -828,6 +1379,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -839,7 +1392,11 @@ export namespace Operations {
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Response200, 'unknown', 200) ]
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -852,6 +1409,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'EventType', 200, Schemas.EventType>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -861,7 +1420,11 @@ export namespace Operations {
         .queryParams(query)
         .data(params.body)
         .config({
-            rules: [ new ValidateRule(Schemas.EventType, 'EventType', 200) ]
+            rules: [
+                new ValidateRule(Schemas.EventType, 'EventType', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -875,6 +1438,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -887,7 +1452,11 @@ export namespace Operations {
         .queryParams(query)
         .data(params.body)
         .config({
-            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -902,6 +1471,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -913,7 +1484,34 @@ export namespace Operations {
         return actionBuilder('DELETE', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Response200, 'unknown', 200) ]
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // GET /serverInfo
+  export namespace InternalServiceGetServerInfo {
+    export type Payload =
+      | ValidatedResponse<'ServerInfo', 200, Schemas.ServerInfo>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './serverInfo';
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.ServerInfo, 'ServerInfo', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -926,6 +1524,8 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'__Empty', 204, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -935,7 +1535,11 @@ export namespace Operations {
         .queryParams(query)
         .data(params.body)
         .config({
-            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 204) ]
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 204),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
@@ -967,6 +1571,8 @@ export namespace Operations {
     export type Payload =
       | ValidatedResponse<'unknown', 200, Response200>
       | ValidatedResponse<'unknown', 400, Response400>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -978,7 +1584,75 @@ export namespace Operations {
         .config({
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
-                new ValidateRule(Response400, 'unknown', 400)
+                new ValidateRule(Response400, 'unknown', 400),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // GET /validation/baet
+  export namespace ValidationEndpointValidate {
+    const Application = z.string();
+    type Application = string;
+    const Bundle = z.string();
+    type Bundle = string;
+    const EventType = z.string();
+    type EventType = string;
+    export interface Params {
+      application?: Application;
+      bundle?: Bundle;
+      eventType?: EventType;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './validation/baet';
+        const query = {} as Record<string, any>;
+        if (params.application !== undefined) {
+            query.application = params.application;
+        }
+
+        if (params.bundle !== undefined) {
+            query.bundle = params.bundle;
+        }
+
+        if (params.eventType !== undefined) {
+            query.eventType = params.eventType;
+        }
+
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
+        })
+        .build();
+    };
+  }
+  // GET /version
+  export namespace InternalServiceGetVersion {
+    const Response200 = z.string();
+    type Response200 = string;
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './version';
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
             ]
         })
         .build();

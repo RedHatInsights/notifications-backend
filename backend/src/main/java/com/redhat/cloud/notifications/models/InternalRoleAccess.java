@@ -1,11 +1,16 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
@@ -30,7 +35,13 @@ public class InternalRoleAccess {
     private String role;
 
     @NotNull
+    @Transient
     private UUID applicationId;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "application_id")
+    @JsonIgnore
+    private Application application;
 
     public UUID getId() {
         return id;
@@ -49,13 +60,25 @@ public class InternalRoleAccess {
     }
 
     public UUID getApplicationId() {
+        if (applicationId == null && application != null) {
+            applicationId = application.getId();
+        }
         return applicationId;
+    }
+
+    public void setApplication(Application application) {
+        this.application = application;
+    }
+
+    public Application getApplication() {
+        return this.application;
     }
 
     public void setApplicationId(UUID applicationId) {
         this.applicationId = applicationId;
     }
 
+    @JsonIgnore
     public String getInternalRole() {
         return InternalRoleAccess.getInternalRole(this.role);
     }

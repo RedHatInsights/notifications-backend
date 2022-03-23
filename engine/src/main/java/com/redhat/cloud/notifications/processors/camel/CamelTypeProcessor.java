@@ -188,13 +188,14 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                 id.toString(), extras.get(PROCESSORNAME), extras.get("processorId"));
 
         body.remove(NOTIF_METADATA_KEY); // Not needed on OB
-        ce.put("data", body.getMap());
+        ce.put("data", body);
 
         BridgeEventService evtSvc = RestClientBuilder.newBuilder()
                 .baseUri(URI.create(bridge.getEventsEndpoint()))
                 .build(BridgeEventService.class);
 
-        evtSvc.sendEvent(ce, bridgeAuth.getToken());
+        JsonObject payload = JsonObject.mapFrom(ce);
+        evtSvc.sendEvent(payload, bridgeAuth.getToken());
     }
 
 

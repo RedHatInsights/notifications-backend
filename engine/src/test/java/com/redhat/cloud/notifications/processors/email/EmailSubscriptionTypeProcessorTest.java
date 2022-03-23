@@ -10,7 +10,7 @@ import com.redhat.cloud.notifications.templates.Blank;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-import io.smallrye.reactive.messaging.connectors.InMemoryConnector;
+import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import org.junit.jupiter.api.Test;
 
 import javax.enterprise.inject.Any;

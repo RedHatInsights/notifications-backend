@@ -1,13 +1,21 @@
 import '@patternfly/react-core/dist/styles/base.css';
 import './app.css';
 
-import { Brand, Page, PageHeader, PageSection, PageSidebar, Spinner } from '@patternfly/react-core';
-import React from 'react';
+import { Alert, AlertVariant, Brand, Page, PageHeader, PageSection, PageSidebar, Spinner } from '@patternfly/react-core';
+import React, { useMemo } from 'react';
 
 import { Routes } from '../Routes';
 import { useBundles } from '../services/EventTypes/GetBundles';
+import { useServerInfo } from '../services/ServerInfo';
 import { Navigation } from './Navigation';
 import logo from './redhat-logo.svg';
+
+type Message = {
+    show: false;
+} | {
+    show: true;
+    content: string;
+}
 
 export const App: React.FunctionComponent<unknown> = () => {
 
@@ -16,6 +24,29 @@ export const App: React.FunctionComponent<unknown> = () => {
     const onNavToggle = React.useCallback(() => setNavOpen(prev => !prev), [ setNavOpen ]);
 
     const bundles = useBundles();
+    const serverInfo = useServerInfo();
+
+    const message = useMemo<Message>(() => {
+        const payload = serverInfo.payload;
+        if (payload?.status === 200) {
+            if (payload.value.environment === 'PROD') {
+                return {
+                    show: true,
+                    content: 'You are viewing the production environment - '
+                    + 'Any change you make here will be applied immediately and could disrupt the service.'
+                };
+            }
+
+            return {
+                show: false
+            };
+        }
+
+        return {
+            show: true,
+            content: 'Could not load the current environment. Please verify the URL before making any change.'
+        };
+    }, [ serverInfo.payload ]);
 
     const appHeader = <PageHeader
         showNavToggle
@@ -25,7 +56,7 @@ export const App: React.FunctionComponent<unknown> = () => {
         onNavToggle={ onNavToggle }
     />;
 
-    if (bundles.isLoading) {
+    if (bundles.isLoading || serverInfo.loading) {
         return (
             <Page
                 header={ appHeader }
@@ -43,6 +74,11 @@ export const App: React.FunctionComponent<unknown> = () => {
         <Page
             sidebar={ appSidebar }
             header={ appHeader }>
+            { message.show && (
+                <PageSection>
+                    <Alert variant={ AlertVariant.warning } title={ message.content } />
+                </PageSection>
+            )}
             <Routes />
         </Page>
     );

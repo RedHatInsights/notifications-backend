@@ -17,7 +17,7 @@ public class InternalRoleAccessResources {
     EntityManager entityManager;
 
     public List<InternalRoleAccess> getByApplication(UUID applicationId) {
-        final String query = "FROM InternalRoleAccess WHERE applicationId = :applicationId ORDER BY id DESC";
+        final String query = "FROM InternalRoleAccess WHERE application.id = :applicationId ORDER BY id DESC";
         return entityManager.createQuery(query, InternalRoleAccess.class)
                 .setParameter("applicationId", applicationId)
                 .getResultList();

@@ -27,6 +27,16 @@ public class SecurityContextUtil {
         return principal.getAccount();
     }
 
+    public void hasPermissionForRole(SecurityContext securityContext, String role) {
+        if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
+            return;
+        }
+
+        if (role == null || !securityContext.isUserInRole(InternalRoleAccess.getInternalRole(role))) {
+            throw new ForbiddenException("You don't have access to the role: " + role);
+        }
+    }
+
     public void hasPermissionForEventType(SecurityContext securityContext, UUID eventTypeId) {
         if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
             return;

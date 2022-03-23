@@ -15,8 +15,7 @@ public class RunOnBackendStartup {
     void postConstruct() {
         startupUtils.initAccessLogFilter();
         startupUtils.logGitProperties();
-        startupUtils.logExternalServiceUrl("rbac-authentication/mp-rest/url");
-        // TODO Uncomment when Quarkus is bumped to 2.6.4.Final or newer.
-        //startupUtils.disableRestClientContextualErrors();
+        startupUtils.logExternalServiceUrl("quarkus.rest-client.rbac-authentication.url");
+        startupUtils.disableRestClientContextualErrors();
     }
 }

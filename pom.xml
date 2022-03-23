@@ -38,6 +38,7 @@
 
         <surefire-plugin.version>2.22.2</surefire-plugin.version>
         <checkstyle-plugin.version>3.1.2</checkstyle-plugin.version>
+        <jacoco-plugin.version>0.8.7</jacoco-plugin.version>
         <checkstyle.version>8.44</checkstyle.version>
 
         <testcontainers.version>1.16.3</testcontainers.version>
@@ -46,17 +47,16 @@
         <failsafe.version>3.2.3</failsafe.version>
 
         <!-- Keep the version synced with TestLifecycleManager -->
-        <!-- Be careful with bumps, version 5.11.2 caused tests instability so we had to rollback to 5.5.4 -->
-        <mockserver-client-java.version>5.5.4</mockserver-client-java.version>
+        <mockserver-client-java.version>5.13.0</mockserver-client-java.version>
 
         <insights-notification-schemas-java.version>0.6</insights-notification-schemas-java.version>
-        <clowder-quarkus-config-source.version>0.5.3</clowder-quarkus-config-source.version>
+        <clowder-quarkus-config-source.version>1.0.0</clowder-quarkus-config-source.version>
 
-        <cloudwatch.version>4.1.1</cloudwatch.version>
+        <cloudwatch.version>4.2.0</cloudwatch.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>2.3.1.Final</quarkus.platform.version>
+        <quarkus.platform.version>2.7.5.Final</quarkus.platform.version>
     </properties>
 
     <dependencyManagement>
@@ -118,6 +118,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>default-prepare-agent</id>

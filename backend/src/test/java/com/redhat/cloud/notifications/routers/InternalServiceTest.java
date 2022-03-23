@@ -84,7 +84,7 @@ public class InternalServiceTest extends DbIsolatedTest {
     @Test
     void testCreateNullApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        createApp(identity, null, BAD_REQUEST);
+        createApp(identity, null, null, BAD_REQUEST);
     }
 
     @Test
@@ -105,17 +105,17 @@ public class InternalServiceTest extends DbIsolatedTest {
     void testCreateInvalidApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
-        createApp(identity, buildApp(null, "i-am-valid", "I am valid"), BAD_REQUEST);
-        createApp(identity, buildApp(bundleId, null, "I am valid"), BAD_REQUEST);
-        createApp(identity, buildApp(bundleId, "i-am-valid", null), BAD_REQUEST);
-        createApp(identity, buildApp(bundleId, "I violate the @Pattern constraint", "I am valid"), BAD_REQUEST);
+        createApp(identity, buildApp(null, "i-am-valid", "I am valid"), null, BAD_REQUEST);
+        createApp(identity, buildApp(bundleId, null, "I am valid"), null, BAD_REQUEST);
+        createApp(identity, buildApp(bundleId, "i-am-valid", null), null, BAD_REQUEST);
+        createApp(identity, buildApp(bundleId, "I violate the @Pattern constraint", "I am valid"), null, BAD_REQUEST);
     }
 
     @Test
     void testCreateInvalidEventType() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
-        String appId = createApp(identity, bundleId, "app-name", "App", OK).get();
+        String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
         createEventType(identity, buildEventType(null, "i-am-valid", "I am valid", NOT_USED), BAD_REQUEST);
         createEventType(identity, buildEventType(appId, null, "I am valid", NOT_USED), BAD_REQUEST);
         createEventType(identity, buildEventType(appId, "i-am-valid", null, NOT_USED), BAD_REQUEST);
@@ -140,10 +140,10 @@ public class InternalServiceTest extends DbIsolatedTest {
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
         // Double app creation with the same name.
         String nonUniqueAppName = "app-1-name";
-        createApp(identity, bundleId, nonUniqueAppName, NOT_USED, OK);
-        createApp(identity, bundleId, nonUniqueAppName, NOT_USED, INTERNAL_SERVER_ERROR);
+        createApp(identity, bundleId, nonUniqueAppName, NOT_USED, null, OK);
+        createApp(identity, bundleId, nonUniqueAppName, NOT_USED, null, INTERNAL_SERVER_ERROR);
         // We create an app with an available name and then rename it to an unavailable name.
-        String appId = createApp(identity, bundleId, "app-2-name", NOT_USED, OK).get();
+        String appId = createApp(identity, bundleId, "app-2-name", NOT_USED, null, OK).get();
         updateApp(identity, bundleId, appId, nonUniqueAppName, NOT_USED, INTERNAL_SERVER_ERROR);
     }
 
@@ -151,7 +151,7 @@ public class InternalServiceTest extends DbIsolatedTest {
     void testEventTypeNameUniqueSqlConstraint() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
-        String appId = createApp(identity, bundleId, "app-name", "App", OK).get();
+        String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
         // Double event type creation with the same name.
         String nonUniqueEventTypeName = "event-type-name";
         createEventType(identity, appId, nonUniqueEventTypeName, NOT_USED, NOT_USED, OK);
@@ -183,7 +183,7 @@ public class InternalServiceTest extends DbIsolatedTest {
     void testUpdateNullApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
-        String appId = createApp(identity, bundleId, "app-name", "App", OK).get();
+        String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
         updateApp(identity, appId, null, BAD_REQUEST);
     }
 
@@ -206,7 +206,7 @@ public class InternalServiceTest extends DbIsolatedTest {
     void testAddAppToUnknownBundle() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
-        createApp(identity, unknownBundleId, NOT_USED, NOT_USED, NOT_FOUND);
+        createApp(identity, unknownBundleId, NOT_USED, NOT_USED, null, NOT_FOUND);
     }
 
     @Test
@@ -256,8 +256,8 @@ public class InternalServiceTest extends DbIsolatedTest {
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
 
         // First, we create two apps with different names. Only the second one will be used after that.
-        createApp(identity, bundleId, "app-1-name", "App 1", OK);
-        String appId = createApp(identity, bundleId, "app-2-name", "App 2", OK).get();
+        createApp(identity, bundleId, "app-1-name", "App 1", null, OK);
+        String appId = createApp(identity, bundleId, "app-2-name", "App 2", null, OK).get();
 
         // The bundle should contain two apps.
         getApps(identity, bundleId, OK, 2);
@@ -282,7 +282,7 @@ public class InternalServiceTest extends DbIsolatedTest {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle and an app for this test.
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
-        String appId = createApp(identity, bundleId, "app-name", "App", OK).get();
+        String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
 
         // First, we create two event types with different names. Only the second one will be used after that.
         createEventType(identity, appId, "event-type-1-name", "Event type 1", "Description 1", OK);
@@ -389,6 +389,7 @@ public class InternalServiceTest extends DbIsolatedTest {
         assertTrue(responseBody.matches("^[0-9a-f]{7}$"));
     }
 
+    @Test
     void appUserAccessTest() {
         String appRole = "app-admin";
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);
@@ -403,8 +404,8 @@ public class InternalServiceTest extends DbIsolatedTest {
 
         String bundleId = createBundle(adminIdentity, bundleName, NOT_USED, OK).get();
         String defaultBGId = createDefaultBehaviorGroup(adminIdentity, NOT_USED, bundleId, OK).get();
-        String app1Id = createApp(adminIdentity, bundleId, app1Name, NOT_USED, OK).get();
-        String app2Id = createApp(adminIdentity, bundleId, app2Name, NOT_USED, OK).get();
+        String app1Id = createApp(adminIdentity, bundleId, app1Name, NOT_USED, null, OK).get();
+        String app2Id = createApp(adminIdentity, bundleId, app2Name, NOT_USED, null, OK).get();
 
         createEventType(adminIdentity, app1Id, event1Name, NOT_USED, NOT_USED, OK);
         String eventType2Id = createEventType(adminIdentity, app2Id, event2Name, NOT_USED, NOT_USED, OK).get();
@@ -423,7 +424,7 @@ public class InternalServiceTest extends DbIsolatedTest {
         updateBundle(appIdentity, bundleId, "new-name", NOT_USED, FORBIDDEN);
         deleteBundle(appIdentity, bundleId, null, FORBIDDEN);
 
-        createApp(appIdentity, bundleId, "app-user-app", NOT_USED, FORBIDDEN);
+        createApp(appIdentity, bundleId, "app-user-app", NOT_USED, null, FORBIDDEN);
         deleteApp(appIdentity, app1Id, null, FORBIDDEN);
 
         createDefaultBehaviorGroup(appIdentity, NOT_USED, bundleId, FORBIDDEN);

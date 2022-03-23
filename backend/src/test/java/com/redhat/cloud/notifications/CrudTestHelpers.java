@@ -6,11 +6,14 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.routers.internal.models.AddAccessRequest;
+import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
+import com.redhat.cloud.notifications.routers.internal.models.InternalApplicationUserPermission;
 import io.restassured.http.Header;
 import io.restassured.response.ValidatableResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +32,7 @@ import static org.hamcrest.Matchers.is;
 import static org.jboss.resteasy.reactive.RestResponse.StatusCode.OK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public abstract class CrudTestHelpers {
@@ -146,16 +150,26 @@ public abstract class CrudTestHelpers {
         return app;
     }
 
-    public static Optional<String> createApp(Header identity, String bundleId, String name, String displayName, int expectedStatusCode) {
+    public static Optional<String> createApp(Header identity, String bundleId, String name, String displayName, @Nullable String ownerRole, int expectedStatusCode) {
         Application app = buildApp(bundleId, name, displayName);
-        return createApp(identity, app, expectedStatusCode);
+        return createApp(identity, app, ownerRole, expectedStatusCode);
     }
 
-    public static Optional<String> createApp(Header identity, Application app, int expectedStatusCode) {
+    public static Optional<String> createApp(Header identity, @Nullable Application app, @Nullable String ownerRole, int expectedStatusCode) {
+        AddApplicationRequest request = null;
+
+        if (app != null) {
+            request = new AddApplicationRequest();
+            request.bundleId = app.getBundleId();
+            request.displayName = app.getDisplayName();
+            request.name = app.getName();
+            request.ownerRole = ownerRole;
+        }
+
         String responseBody = given()
                 .contentType(JSON)
                 .header(identity)
-                .body(Json.encode(app))
+                .body(Json.encode(request))
                 .when()
                 .post("/internal/applications")
                 .then()
@@ -489,6 +503,31 @@ public abstract class CrudTestHelpers {
         }).collect(Collectors.toList());
     }
 
+    public static Optional<List<InternalApplicationUserPermission>> getAccessList(Header identity, int expected) {
+        String responseBody = given()
+                .header(identity)
+                .when()
+                .get("internal/access")
+                .then()
+                .statusCode(expected)
+                .extract().asString();
+
+        if (familyOf(expected) == Response.Status.Family.SUCCESSFUL) {
+            JsonArray json = new JsonArray(responseBody);
+            List<InternalApplicationUserPermission> accessList = json.stream().map(o -> {
+                JsonObject jsonObject = (JsonObject) o;
+                assertNotNull(jsonObject.getString("application_id"));
+                assertNotNull(jsonObject.getString("application_display_name"));
+                assertNotNull(jsonObject.getString("role"));
+
+                return jsonObject.mapTo(InternalApplicationUserPermission.class);
+            }).collect(Collectors.toList());
+            return Optional.of(accessList);
+        }
+
+        return Optional.empty();
+    }
+
     public static Optional<String> createInternalRoleAccess(Header identity, String role, String appId, int expected) {
 
         AddAccessRequest request = new AddAccessRequest();
@@ -511,6 +550,7 @@ public abstract class CrudTestHelpers {
             assertNotNull(jsonInternalRoleAccess.getString("id"));
             assertEquals(appId, jsonInternalRoleAccess.getString("application_id"));
             assertEquals(role, jsonInternalRoleAccess.getString("role"));
+            assertNull(jsonInternalRoleAccess.getString("internal_role"));
             return Optional.of(jsonInternalRoleAccess.getString("id"));
         }
 
