@@ -63,8 +63,8 @@ public class TestHelpers {
         return new Header(X_RH_IDENTITY_HEADER, encodeRHIdentityInfo(tenant, username));
     }
 
-    public static Header createTurnpikeIdentityHeader(String username, String... role) {
-        return new Header(X_RH_IDENTITY_HEADER, encodeTurnpikeIdentityInfo(username, role));
+    public static Header createTurnpikeIdentityHeader(String username, String... roles) {
+        return new Header(X_RH_IDENTITY_HEADER, encodeTurnpikeIdentityInfo(username, roles));
     }
 
     public static Header createRHIdentityHeader(String encodedIdentityHeader) {
