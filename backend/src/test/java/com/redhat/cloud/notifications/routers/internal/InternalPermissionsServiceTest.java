@@ -76,6 +76,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
 
         assertFalse(permissions.isAdmin());
         assertEquals(List.of(new InternalUserPermissions.Application(UUID.fromString(appId), appDisplayName)), permissions.getApplications());
+        assertEquals(List.of(appRole, otherRole), permissions.getRoles());
 
         // We can create the event type now
         String eventTypeId = CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", 200).get();

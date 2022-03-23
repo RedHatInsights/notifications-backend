@@ -20,9 +20,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.SecurityContext;
 
 import java.util.List;
 import java.util.Set;
@@ -48,7 +46,7 @@ public class InternalPermissionService {
     @Path("/me")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER) // Overrides admin permission
-    public InternalUserPermissions getPermissions(@Context SecurityContext sec) {
+    public InternalUserPermissions getPermissions() {
         InternalUserPermissions permissions = new InternalUserPermissions();
         if (securityIdentity.hasRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
             permissions.setAdmin(true);
