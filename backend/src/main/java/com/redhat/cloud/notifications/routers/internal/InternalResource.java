@@ -2,12 +2,12 @@ package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.StartupUtils;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
-import com.redhat.cloud.notifications.db.ApplicationResources;
-import com.redhat.cloud.notifications.db.BehaviorGroupResources;
-import com.redhat.cloud.notifications.db.BundleResources;
-import com.redhat.cloud.notifications.db.EndpointResources;
-import com.redhat.cloud.notifications.db.InternalRoleAccessResources;
-import com.redhat.cloud.notifications.db.StatusResources;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
+import com.redhat.cloud.notifications.db.repositories.BundleRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
+import com.redhat.cloud.notifications.db.repositories.StatusRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -68,28 +68,28 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL)
-public class InternalService {
+public class InternalResource {
 
-    private static final Logger LOGGER = Logger.getLogger(InternalService.class);
+    private static final Logger LOGGER = Logger.getLogger(InternalResource.class);
     private static final Pattern GIT_COMMIT_ID_PATTERN = Pattern.compile("git.commit.id.abbrev=([0-9a-f]{7})");
 
     @Inject
-    BundleResources bundleResources;
+    BundleRepository bundleRepository;
 
     @Inject
-    ApplicationResources appResources;
+    ApplicationRepository applicationRepository;
 
     @Inject
-    BehaviorGroupResources behaviorGroupResources;
+    BehaviorGroupRepository behaviorGroupRepository;
 
     @Inject
-    EndpointResources endpointResources;
+    EndpointRepository endpointRepository;
 
     @Inject
-    StatusResources statusResources;
+    StatusRepository statusRepository;
 
     @Inject
-    InternalRoleAccessResources internalRoleAccessResources;
+    InternalRoleAccessRepository internalRoleAccessRepository;
 
     @Inject
     OApiFilter oApiFilter;
@@ -154,7 +154,7 @@ public class InternalService {
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public Bundle createBundle(@NotNull @Valid Bundle bundle) {
-        return bundleResources.createBundle(bundle);
+        return bundleRepository.createBundle(bundle);
     }
 
     @GET
@@ -163,7 +163,7 @@ public class InternalService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<Bundle> getBundles() {
         // Return configured with types?
-        return bundleResources.getBundles();
+        return bundleRepository.getBundles();
     }
 
     @GET
@@ -171,7 +171,7 @@ public class InternalService {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Bundle getBundle(@PathParam("bundleId") UUID bundleId) {
-        Bundle bundle = bundleResources.getBundle(bundleId);
+        Bundle bundle = bundleRepository.getBundle(bundleId);
         if (bundle == null) {
             throw new NotFoundException();
         } else {
@@ -186,7 +186,7 @@ public class InternalService {
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public Response updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
-        int rowCount = bundleResources.updateBundle(bundleId, bundle);
+        int rowCount = bundleRepository.updateBundle(bundleId, bundle);
         if (rowCount == 0) {
             return Response.status(Response.Status.NOT_FOUND).build();
         } else {
@@ -200,7 +200,7 @@ public class InternalService {
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean deleteBundle(@PathParam("bundleId") UUID bundleId) {
-        return bundleResources.deleteBundle(bundleId);
+        return bundleRepository.deleteBundle(bundleId);
     }
 
     @GET
@@ -208,7 +208,7 @@ public class InternalService {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<Application> getApplications(@PathParam("bundleId") UUID bundleId) {
-        return bundleResources.getApplications(bundleId);
+        return bundleRepository.getApplications(bundleId);
     }
 
     @POST
@@ -224,14 +224,14 @@ public class InternalService {
         app.setBundleId(request.bundleId);
         app.setDisplayName(request.displayName);
         app.setName(request.name);
-        app = appResources.createApp(app);
+        app = applicationRepository.createApp(app);
 
         if (request.ownerRole != null) {
             InternalRoleAccess access = new InternalRoleAccess();
             access.setRole(request.ownerRole);
             access.setApplicationId(app.getId());
             access.setApplication(app);
-            internalRoleAccessResources.addAccess(access);
+            internalRoleAccessRepository.addAccess(access);
         }
 
         return app;
@@ -242,7 +242,7 @@ public class InternalService {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Application getApplication(@PathParam("appId") UUID appId) {
-        Application app = appResources.getApplication(appId);
+        Application app = applicationRepository.getApplication(appId);
         if (app == null) {
             throw new NotFoundException();
         } else {
@@ -258,7 +258,7 @@ public class InternalService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response updateApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId, @NotNull @Valid Application app) {
         securityContextUtil.hasPermissionForApplication(sec, appId);
-        int rowCount = appResources.updateApplication(appId, app);
+        int rowCount = applicationRepository.updateApplication(appId, app);
         if (rowCount == 0) {
             return Response.status(Response.Status.NOT_FOUND).build();
         } else {
@@ -272,7 +272,7 @@ public class InternalService {
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean deleteApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId) {
-        return appResources.deleteApplication(appId);
+        return applicationRepository.deleteApplication(appId);
     }
 
     @GET
@@ -280,7 +280,7 @@ public class InternalService {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<EventType> getEventTypes(@PathParam("appId") UUID appId) {
-        return appResources.getEventTypes(appId);
+        return applicationRepository.getEventTypes(appId);
     }
 
     @POST
@@ -291,7 +291,7 @@ public class InternalService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public EventType createEventType(@Context SecurityContext sec, @NotNull @Valid EventType eventType) {
         securityContextUtil.hasPermissionForApplication(sec, eventType.getApplicationId());
-        return appResources.createEventType(eventType);
+        return applicationRepository.createEventType(eventType);
     }
 
     @PUT
@@ -302,7 +302,7 @@ public class InternalService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response updateEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
         securityContextUtil.hasPermissionForApplication(sec, eventType.getApplicationId());
-        int rowCount = appResources.updateEventType(eventTypeId, eventType);
+        int rowCount = applicationRepository.updateEventType(eventTypeId, eventType);
         if (rowCount == 0) {
             return Response.status(Response.Status.NOT_FOUND).build();
         } else {
@@ -317,7 +317,7 @@ public class InternalService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public boolean deleteEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId) {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
-        return appResources.deleteEventTypeById(eventTypeId);
+        return applicationRepository.deleteEventTypeById(eventTypeId);
     }
 
     @PUT
@@ -326,7 +326,7 @@ public class InternalService {
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public void setCurrentStatus(@NotNull @Valid CurrentStatus status) {
-        statusResources.setCurrentStatus(status);
+        statusRepository.setCurrentStatus(status);
     }
 
     @POST
@@ -356,7 +356,7 @@ public class InternalService {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<BehaviorGroup> getDefaultBehaviorGroups() {
-        return behaviorGroupResources.findDefaults();
+        return behaviorGroupRepository.findDefaults();
     }
 
     @POST
@@ -366,7 +366,7 @@ public class InternalService {
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public BehaviorGroup createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
-        return behaviorGroupResources.createDefault(behaviorGroup);
+        return behaviorGroupRepository.createDefault(behaviorGroup);
     }
 
     @PUT
@@ -378,7 +378,7 @@ public class InternalService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean updateDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         behaviorGroup.setId(id);
-        return behaviorGroupResources.updateDefault(behaviorGroup);
+        return behaviorGroupRepository.updateDefault(behaviorGroup);
     }
 
     @DELETE
@@ -388,7 +388,7 @@ public class InternalService {
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean deleteDefaultBehaviorGroup(@PathParam("id") UUID id) {
-        return behaviorGroupResources.deleteDefault(id);
+        return behaviorGroupRepository.deleteDefault(id);
     }
 
     @PUT
@@ -412,9 +412,9 @@ public class InternalService {
             EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
             properties.setOnlyAdmins(p.isOnlyAdmins());
             properties.setIgnorePreferences(p.isIgnorePreferences());
-            return endpointResources.getOrCreateEmailSubscriptionEndpoint(null, properties);
+            return endpointRepository.getOrCreateEmailSubscriptionEndpoint(null, properties);
         }).collect(Collectors.toList());
-        Response.Status status = behaviorGroupResources.updateDefaultBehaviorGroupActions(
+        Response.Status status = behaviorGroupRepository.updateDefaultBehaviorGroupActions(
                 behaviorGroupId,
                 endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
         );
@@ -430,7 +430,7 @@ public class InternalService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response linkDefaultBehaviorToEventType(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
-        boolean isSuccess = behaviorGroupResources.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
+        boolean isSuccess = behaviorGroupRepository.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
         if (isSuccess) {
             return Response.ok().build();
         } else {
@@ -447,7 +447,7 @@ public class InternalService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response unlinkDefaultBehaviorToEventType(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
-        boolean isSuccess = behaviorGroupResources.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
+        boolean isSuccess = behaviorGroupRepository.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
         if (isSuccess) {
             return Response.ok().build();
         } else {

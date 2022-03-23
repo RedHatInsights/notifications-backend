@@ -3,11 +3,11 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
-import com.redhat.cloud.notifications.db.ApplicationResources;
-import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
-import com.redhat.cloud.notifications.db.EndpointResources;
-import com.redhat.cloud.notifications.db.NotificationResources;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
@@ -62,14 +62,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.redhat.cloud.notifications.db.NotificationResources.MAX_NOTIFICATION_HISTORY_RESULTS;
+import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
 @Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
 // Email endpoints are not added at this point
 // TODO Needs documentation annotations
-public class EndpointService {
+public class EndpointResource {
 
     public static final String OB_PROCESSOR_ID = "processorId";
     public static final String OB_PROCESSOR_NAME = "processorname"; // Must be all lower for the filter.
@@ -81,16 +81,16 @@ public class EndpointService {
     );
 
     @Inject
-    EndpointResources resources;
+    EndpointRepository endpointRepository;
 
     @Inject
-    NotificationResources notifResources;
+    NotificationRepository notificationRepository;
 
     @Inject
-    EndpointEmailSubscriptionResources emailSubscriptionResources;
+    EmailSubscriptionRepository emailSubscriptionRepository;
 
     @Inject
-    ApplicationResources applicationResources;
+    ApplicationRepository applicationRepository;
 
     @ConfigProperty(name = "ob.enabled", defaultValue = "false")
     boolean obEnabled;
@@ -147,12 +147,12 @@ public class EndpointService {
                     throw new BadRequestException("Unknown endpoint type: [" + s + "]", e);
                 }
             }).collect(Collectors.toSet());
-            endpoints = resources
+            endpoints = endpointRepository
                     .getEndpointsPerCompositeType(principal.getAccount(), name, compositeType, activeOnly, query);
-            count = resources.getEndpointsCountPerCompositeType(principal.getAccount(), name, compositeType, activeOnly);
+            count = endpointRepository.getEndpointsCountPerCompositeType(principal.getAccount(), name, compositeType, activeOnly);
         } else {
-            endpoints = resources.getEndpoints(principal.getAccount(), name, query);
-            count = resources.getEndpointsCount(principal.getAccount(), name);
+            endpoints = endpointRepository.getEndpoints(principal.getAccount(), name, query);
+            count = endpointRepository.getEndpointsCount(principal.getAccount(), name);
         }
 
         return new EndpointPage(endpoints, new HashMap<>(), new Meta(count));
@@ -191,7 +191,7 @@ public class EndpointService {
             }
         }
 
-        return resources.createEndpoint(endpoint);
+        return endpointRepository.createEndpoint(endpoint);
     }
 
     @POST
@@ -207,7 +207,7 @@ public class EndpointService {
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
         properties.setOnlyAdmins(requestProps.isOnlyAdmins());
 
-        return resources.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties);
+        return endpointRepository.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties);
     }
 
     @GET
@@ -216,7 +216,7 @@ public class EndpointService {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     public Endpoint getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        Endpoint endpoint = resources.getEndpoint(principal.getAccount(), id);
+        Endpoint endpoint = endpointRepository.getEndpoint(principal.getAccount(), id);
         if (endpoint == null) {
             throw new NotFoundException();
         } else {
@@ -231,11 +231,11 @@ public class EndpointService {
     @Transactional
     public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        EndpointType endpointType = resources.getEndpointTypeById(principal.getAccount(), id);
+        EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
         checkSystemEndpoint(endpointType);
 
         if (obEnabled) {
-            Endpoint e = resources.getEndpoint(principal.getAccount(), id);
+            Endpoint e = endpointRepository.getEndpoint(principal.getAccount(), id);
             if (e != null) {
                 EndpointProperties properties = e.getProperties();
                 if (properties instanceof CamelProperties) {
@@ -249,7 +249,7 @@ public class EndpointService {
             }
         }
 
-        resources.deleteEndpoint(principal.getAccount(), id);
+        endpointRepository.deleteEndpoint(principal.getAccount(), id);
 
         return Response.noContent().build();
     }
@@ -262,9 +262,9 @@ public class EndpointService {
     @Transactional
     public Response enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        EndpointType endpointType = resources.getEndpointTypeById(principal.getAccount(), id);
+        EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
         checkSystemEndpoint(endpointType);
-        resources.enableEndpoint(principal.getAccount(), id);
+        endpointRepository.enableEndpoint(principal.getAccount(), id);
         return Response.ok().build();
     }
 
@@ -275,9 +275,9 @@ public class EndpointService {
     @Transactional
     public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        EndpointType endpointType = resources.getEndpointTypeById(principal.getAccount(), id);
+        EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
         checkSystemEndpoint(endpointType);
-        resources.disableEndpoint(principal.getAccount(), id);
+        endpointRepository.disableEndpoint(principal.getAccount(), id);
         return Response.noContent().build();
     }
 
@@ -295,10 +295,10 @@ public class EndpointService {
         endpoint.setAccountId(principal.getAccount());
         endpoint.setId(id);
 
-        EndpointType endpointType = resources.getEndpointTypeById(principal.getAccount(), id);
+        EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
         // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
         checkSystemEndpoint(endpointType);
-        resources.updateEndpoint(endpoint);
+        endpointRepository.updateEndpoint(endpoint);
         return Response.ok().build();
     }
 
@@ -330,7 +330,7 @@ public class EndpointService {
         // TODO We need globally limitations (Paging support and limits etc)
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         boolean doDetail = includeDetail != null && includeDetail;
-        return notifResources.getNotificationHistory(principal.getAccount(), id, doDetail, query);
+        return notificationRepository.getNotificationHistory(principal.getAccount(), id, doDetail, query);
     }
 
     @GET
@@ -340,7 +340,7 @@ public class EndpointService {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Response getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        JsonObject json = notifResources.getNotificationDetails(principal.getAccount(), endpointId, historyId);
+        JsonObject json = notificationRepository.getNotificationDetails(principal.getAccount(), endpointId, historyId);
         if (json == null) {
             // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
             throw new NotFoundException();
@@ -362,11 +362,11 @@ public class EndpointService {
             @PathParam("type") EmailSubscriptionType type) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        Application app = applicationResources.getApplication(bundleName, applicationName);
+        Application app = applicationRepository.getApplication(bundleName, applicationName);
         if (app == null) {
             throw new NotFoundException();
         } else {
-            return emailSubscriptionResources.subscribe(
+            return emailSubscriptionRepository.subscribe(
                     principal.getAccount(),
                     principal.getName(),
                     bundleName,
@@ -386,11 +386,11 @@ public class EndpointService {
             @PathParam("type") EmailSubscriptionType type) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
-        Application app = applicationResources.getApplication(bundleName, applicationName);
+        Application app = applicationRepository.getApplication(bundleName, applicationName);
         if (app == null) {
             throw new NotFoundException();
         } else {
-            return emailSubscriptionResources.unsubscribe(
+            return emailSubscriptionRepository.unsubscribe(
                     principal.getAccount(),
                     principal.getName(),
                     bundleName,

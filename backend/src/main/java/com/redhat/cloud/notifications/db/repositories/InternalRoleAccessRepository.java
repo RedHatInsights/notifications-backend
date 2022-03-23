@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 @ApplicationScoped
-public class InternalRoleAccessResources {
+public class InternalRoleAccessRepository {
 
     @Inject
     EntityManager entityManager;

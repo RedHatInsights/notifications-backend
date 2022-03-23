@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
-import com.redhat.cloud.notifications.db.ApplicationResources;
-import com.redhat.cloud.notifications.db.InternalRoleAccessResources;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.routers.internal.models.AddAccessRequest;
@@ -31,13 +31,13 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL + "/access")
-public class InternalPermissionService {
+public class InternalPermissionResource {
 
     @Inject
-    InternalRoleAccessResources internalRoleAccessResources;
+    InternalRoleAccessRepository internalRoleAccessRepository;
 
     @Inject
-    ApplicationResources applicationResources;
+    ApplicationRepository applicationRepository;
 
     @Inject
     SecurityIdentity securityIdentity;
@@ -63,7 +63,7 @@ public class InternalPermissionService {
                 .collect(Collectors.toSet());
         permissions.getRoles().addAll(roles);
 
-        List<InternalRoleAccess> accessList = internalRoleAccessResources.getByRoles(roles);
+        List<InternalRoleAccess> accessList = internalRoleAccessRepository.getByRoles(roles);
 
         for (InternalRoleAccess access : accessList) {
             permissions.addApplication(access.getApplicationId(), access.getApplication().getDisplayName());
@@ -76,7 +76,7 @@ public class InternalPermissionService {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     public List<InternalApplicationUserPermission> getAccessList() {
-        List<InternalRoleAccess> accessList = internalRoleAccessResources.getAll();
+        List<InternalRoleAccess> accessList = internalRoleAccessRepository.getAll();
 
         return accessList.stream().map(access -> {
             InternalApplicationUserPermission permission = new InternalApplicationUserPermission();
@@ -93,17 +93,17 @@ public class InternalPermissionService {
     @Produces(MediaType.APPLICATION_JSON)
     public InternalRoleAccess addAccess(@Valid AddAccessRequest addAccessRequest) {
         InternalRoleAccess access = new InternalRoleAccess();
-        Application application = applicationResources.getApplication(addAccessRequest.applicationId);
+        Application application = applicationRepository.getApplication(addAccessRequest.applicationId);
         access.setApplicationId(addAccessRequest.applicationId);
         access.setRole(addAccessRequest.role);
         access.setApplication(application);
-        return internalRoleAccessResources.addAccess(access);
+        return internalRoleAccessRepository.addAccess(access);
     }
 
     @DELETE
     @Path("/{internalRoleAccessId}")
     public void deleteAccess(@Valid @PathParam("internalRoleAccessId") UUID internalRoleAccessId) {
-        internalRoleAccessResources.removeAccess(internalRoleAccessId);
+        internalRoleAccessRepository.removeAccess(internalRoleAccessId);
     }
 
 }

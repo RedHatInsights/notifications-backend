@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.db.EventResources;
+import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
@@ -31,19 +31,19 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS;
-import static com.redhat.cloud.notifications.routers.EventService.PATH;
+import static com.redhat.cloud.notifications.routers.EventResource.PATH;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path(PATH)
-public class EventService {
+public class EventResource {
 
     public static final String PATH = API_NOTIFICATIONS_V_1_0 + "/notifications/events";
     public static final Pattern SORT_BY_PATTERN = Pattern.compile("^([a-z0-9_-]+):(asc|desc)$", CASE_INSENSITIVE);
 
     @Inject
-    EventResources eventResources;
+    EventRepository eventRepository;
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -61,7 +61,7 @@ public class EventService {
             throw new BadRequestException("Invalid 'sortBy' query parameter");
         }
         String accountId = getAccountId(securityContext);
-        List<Event> events = eventResources.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, includeActions, limit, offset, sortBy);
+        List<Event> events = eventRepository.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, includeActions, limit, offset, sortBy);
         List<EventLogEntry> eventLogEntries = events.stream().map(event -> {
             List<EventLogEntryAction> actions;
             if (!includeActions) {
@@ -93,7 +93,7 @@ public class EventService {
             }
             return entry;
         }).collect(Collectors.toList());
-        Long count = eventResources.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+        Long count = eventRepository.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
 
         Meta meta = new Meta();
         meta.setCount(count);

@@ -26,7 +26,7 @@ import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
  */
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL + "/admin")
-public class AdminService {
+public class AdminResource {
 
     @Inject
     @RestClient

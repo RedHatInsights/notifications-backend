@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class InternalServiceTest extends DbIsolatedTest {
+public class InternalResourceTest extends DbIsolatedTest {
 
     /*
      * In the tests below, most JSON responses are verified using JsonObject/JsonArray instead of deserializing these

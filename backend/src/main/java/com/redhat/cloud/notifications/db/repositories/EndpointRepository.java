@@ -1,5 +1,6 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.db.builder.WhereBuilder;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -30,9 +31,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class EndpointResources {
+public class EndpointRepository {
 
-    private static final Logger LOGGER = Logger.getLogger(EndpointResources.class);
+    private static final Logger LOGGER = Logger.getLogger(EndpointRepository.class);
 
     @Inject
     EntityManager entityManager;
@@ -85,7 +86,7 @@ public class EndpointResources {
 
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
-        List<Endpoint> endpoints = EndpointResources.queryBuilderEndpointsPerType(accountId, name, type, activeOnly)
+        List<Endpoint> endpoints = EndpointRepository.queryBuilderEndpointsPerType(accountId, name, type, activeOnly)
                 .limit(limit)
                 .sort(sort)
                 .build(entityManager::createQuery)
@@ -129,7 +130,7 @@ public class EndpointResources {
     }
 
     public Long getEndpointsCountPerCompositeType(String tenant, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
-        return EndpointResources.queryBuilderEndpointsPerType(tenant, name, type, activeOnly)
+        return EndpointRepository.queryBuilderEndpointsPerType(tenant, name, type, activeOnly)
                 .buildCount(entityManager::createQuery)
                 .getSingleResult();
     }

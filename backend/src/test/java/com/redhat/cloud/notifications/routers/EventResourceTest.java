@@ -5,8 +5,8 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.EndpointResources;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -43,7 +43,7 @@ import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.N
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
-import static com.redhat.cloud.notifications.routers.EventService.PATH;
+import static com.redhat.cloud.notifications.routers.EventResource.PATH;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static java.lang.Boolean.FALSE;
@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class EventServiceTest extends DbIsolatedTest {
+public class EventResourceTest extends DbIsolatedTest {
 
     private static final String OTHER_ACCOUNT_ID = "other-account-id";
     private static final LocalDateTime NOW = LocalDateTime.now(UTC);
@@ -69,7 +69,7 @@ public class EventServiceTest extends DbIsolatedTest {
     ResourceHelpers resourceHelpers;
 
     @Inject
-    EndpointResources endpointResources;
+    EndpointRepository endpointRepository;
 
     @MockServerConfig
     MockServerClientConfig mockServerConfig;
@@ -111,8 +111,8 @@ public class EventServiceTest extends DbIsolatedTest {
         NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, FALSE);
         NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, TRUE);
         NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, TRUE);
-        endpointResources.deleteEndpoint(DEFAULT_ACCOUNT_ID, endpoint1.getId());
-        endpointResources.deleteEndpoint(DEFAULT_ACCOUNT_ID, endpoint2.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ACCOUNT_ID, endpoint1.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ACCOUNT_ID, endpoint2.getId());
 
         /*
          * Test #1

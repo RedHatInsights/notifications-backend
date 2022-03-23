@@ -7,7 +7,7 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.EndpointEmailSubscriptionResources;
+import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm.Field;
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class UserConfigServiceTest extends DbIsolatedTest {
+public class UserConfigResourceTest extends DbIsolatedTest {
 
     @BeforeEach
     void beforeEach() {
@@ -51,7 +51,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
     MockServerClientConfig mockServerConfig;
 
     @Inject
-    EndpointEmailSubscriptionResources subscriptionResources;
+    EmailSubscriptionRepository emailSubscriptionRepository;
 
     @InjectMock
     TemplateEngineClient templateEngineClient;
@@ -255,7 +255,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
         assertEquals(true, preferences.getInstantEmail());
 
         // does not fail if we have unknown apps in our bundle's settings
-        subscriptionResources.subscribe(tenant, username, bundle, "not-found-app", DAILY);
+        emailSubscriptionRepository.subscribe(tenant, username, bundle, "not-found-app", DAILY);
 
         given()
                 .header(identityHeader)
@@ -266,7 +266,7 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .statusCode(200)
                 .contentType(JSON);
 
-        subscriptionResources.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", DAILY);
+        emailSubscriptionRepository.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", DAILY);
 
         // Fails if we don't specify the bundleName
         given()
@@ -288,8 +288,8 @@ public class UserConfigServiceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(200)
                 .contentType(TEXT);
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", DAILY));
-        assertNull(subscriptionResources.getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", INSTANT));
 
         // Does not add event type if is not supported by the templates
         when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(FALSE);

@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.routers.filters;
 
-import com.redhat.cloud.notifications.db.StatusResources;
+import com.redhat.cloud.notifications.db.repositories.StatusRepository;
 import io.quarkus.cache.CacheResult;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.ServerRequestFilter;
@@ -33,7 +33,7 @@ public class MaintenanceModeRequestFilter {
     private static final Response MAINTENANCE_IN_PROGRESS = Response.status(SERVICE_UNAVAILABLE).entity("Maintenance in progress").build();
 
     @Inject
-    StatusResources statusResources;
+    StatusRepository statusRepository;
 
     @ServerRequestFilter
     public Response filter(ContainerRequestContext requestContext) {
@@ -71,6 +71,6 @@ public class MaintenanceModeRequestFilter {
 
     @CacheResult(cacheName = "maintenance")
     public Boolean isMaintenance() {
-        return statusResources.getCurrentStatus().status == MAINTENANCE;
+        return statusRepository.getCurrentStatus().status == MAINTENANCE;
     }
 }

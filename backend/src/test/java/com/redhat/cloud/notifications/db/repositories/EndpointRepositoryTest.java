@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -16,14 +16,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class EndpointResourcesTest {
+public class EndpointRepositoryTest {
 
     @Test
     public void queryBuilderTest() {
         TypedQuery<Endpoint> query = mock(TypedQuery.class);
 
         // types with subtype and without it
-        EndpointResources.queryBuilderEndpointsPerType(
+        EndpointRepository.queryBuilderEndpointsPerType(
                 null,
                 null,
                 Set.of(
@@ -41,7 +41,7 @@ public class EndpointResourcesTest {
         clearInvocations(query);
 
         // without sub-types
-        EndpointResources.queryBuilderEndpointsPerType(
+        EndpointRepository.queryBuilderEndpointsPerType(
                 null,
                 null,
                 Set.of(
@@ -58,7 +58,7 @@ public class EndpointResourcesTest {
         clearInvocations(query);
 
         // with sub-types
-        EndpointResources.queryBuilderEndpointsPerType(
+        EndpointRepository.queryBuilderEndpointsPerType(
                 null,
                 null,
                 Set.of(

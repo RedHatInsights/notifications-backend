@@ -1,5 +1,6 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.vertx.core.json.JsonObject;
 import org.jboss.logging.Logger;
@@ -14,11 +15,11 @@ import java.util.Map;
 import java.util.UUID;
 
 @ApplicationScoped
-public class NotificationResources {
+public class NotificationRepository {
 
     public static final int MAX_NOTIFICATION_HISTORY_RESULTS = 500;
 
-    private static final Logger LOGGER = Logger.getLogger(NotificationResources.class);
+    private static final Logger LOGGER = Logger.getLogger(NotificationRepository.class);
 
     @Inject
     EntityManager entityManager;
