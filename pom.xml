@@ -52,7 +52,7 @@
         <insights-notification-schemas-java.version>0.6</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>1.0.0</clowder-quarkus-config-source.version>
 
-        <cloudwatch.version>4.1.1</cloudwatch.version>
+        <cloudwatch.version>4.2.0</cloudwatch.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
