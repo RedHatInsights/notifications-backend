@@ -61,6 +61,7 @@ public class InternalPermissionService {
                 .filter(s -> s.startsWith(privateRolePrefix))
                 .map(s -> s.substring(privateRolePrefix.length()))
                 .collect(Collectors.toSet());
+        permissions.getRoles().addAll(roles);
 
         List<InternalRoleAccess> accessList = internalRoleAccessResources.getByRoles(roles);
 

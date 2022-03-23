@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.auth;
 
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
+import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -15,6 +16,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
@@ -27,8 +29,15 @@ import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 @ApplicationScoped
 public class ConsoleAuthMechanism implements HttpAuthenticationMechanism {
 
-    @ConfigProperty(name = "internal-rbac.enabled", defaultValue = "true")
+    @ConfigProperty(name = "internal-rbac.enabled")
     boolean isInternalRbacEnabled;
+
+    /**
+     * Mocks the application id this user has permission to.
+     * This property is only used if the internal-rbac is disabled.
+     */
+    @ConfigProperty(name = "internal-rbac.dev.app-role")
+    Optional<String> devAppRole;
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {
@@ -36,6 +45,18 @@ public class ConsoleAuthMechanism implements HttpAuthenticationMechanism {
         String path = routingContext.normalizedPath();
 
         if (path.startsWith(API_INTERNAL) && !isInternalRbacEnabled) {
+
+            if (devAppRole.isPresent()) {
+                return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
+                        .setPrincipal(ConsolePrincipal.noIdentity())
+                        .addRole(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
+                        .addRole(InternalRoleAccess.getInternalRole(devAppRole.get()))
+                        .addRole(InternalRoleAccess.getInternalRole("test-role-01"))
+                        .addRole(InternalRoleAccess.getInternalRole("test-role-02"))
+                        .build()
+                );
+            }
+
             // Disable internal auth - could be useful for ephemeral environments
             return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
                     .setPrincipal(ConsolePrincipal.noIdentity())

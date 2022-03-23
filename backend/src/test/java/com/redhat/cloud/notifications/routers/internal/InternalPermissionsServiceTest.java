@@ -37,24 +37,27 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
     @Test
     void userAccess() {
         String appRole = "crc-app-team";
+        String otherRole = "other-role";
         Header turnpikeAdminHeader = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);
-        Header turnpikeAppDev = TestHelpers.createTurnpikeIdentityHeader("app-admin", appRole);
+        Header turnpikeAppDev = TestHelpers.createTurnpikeIdentityHeader("app-admin", appRole, otherRole);
 
         String bundleId = CrudTestHelpers.createBundle(turnpikeAdminHeader, "test-permission-bundle", "Test permissions Bundle", 200).get();
         String appDisplayName = "Test permissions App";
         String appId = CrudTestHelpers.createApp(turnpikeAdminHeader, bundleId, "test-permission-app", appDisplayName, null, 200).get();
 
-        // admin - Has admin access and no applicationIds
+        // admin - Has admin access and no applicationIds and no roles.
         InternalUserPermissions permissions = permissions(turnpikeAdminHeader);
 
         assertTrue(permissions.isAdmin());
         assertTrue(permissions.getApplications().isEmpty());
+        assertTrue(permissions.getRoles().isEmpty());
 
-        // App admin - no permissions are set yet, no admin and no applicationIds
+        // App admin - no permissions are set yet, no admin, no applicationIds but has roles
         permissions = permissions(turnpikeAppDev);
 
         assertFalse(permissions.isAdmin());
         assertTrue(permissions.getApplications().isEmpty());
+        assertEquals(List.of(appRole, otherRole), permissions.getRoles());
 
         // Can't create an event type without the permission
         CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", 403);
@@ -68,11 +71,12 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         // Non admins can't create a role - even if they have permissions to an app
         CrudTestHelpers.createInternalRoleAccess(turnpikeAppDev, appRole, appId, 403);
 
-        // App admin - no admin and applicationIds is [ appId ]
+        // App admin - no admin, applicationIds is [ appId ] and has roles
         permissions = permissions(turnpikeAppDev);
 
         assertFalse(permissions.isAdmin());
         assertEquals(List.of(new InternalUserPermissions.Application(UUID.fromString(appId), appDisplayName)), permissions.getApplications());
+        assertEquals(List.of(appRole, otherRole), permissions.getRoles());
 
         // We can create the event type now
         String eventTypeId = CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", 200).get();
