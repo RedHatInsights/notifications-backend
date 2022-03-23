@@ -244,8 +244,8 @@ objects:
         query: >-
           SELECT
           COUNT(distinct account_id) 
-          FROM "endpoints"
-          WHERE "endpoint_type" != 3;
+          FROM endpoints
+          WHERE endpoint_type = 3 AND endpoint_sub_type = 'splunk' AND enabled IS FALSE;
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
