@@ -11,19 +11,29 @@ public class Rbac implements EmailTemplate {
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         switch (eventType) {
             case "rh-new-role-available":
+                return Templates.systemRoleAvailableEmailTitle();
             case "rh-platform-default-role-updated":
+                return Templates.platformRoleUpdatedEmailTitle();
             case "rh-non-platform-default-role-updated":
+                return Templates.nonPlatformRoleUpdatedEmailTitle();
             case "custom-role-created":
+                return Templates.customRoleCreatedEmailTitle();
             case "custom-role-updated":
+                return Templates.customRoleUpdatedEmailTitle();
             case "custom-role-deleted":
-                return Templates.roleChangeEmailTitle();
+                return Templates.customRoleDeletedEmailTitle();
             case "rh-new-role-added-to-default-access":
+                return Templates.roleAddedToPlatformGroupEmailTitle();
             case "rh-role-removed-from-default-access":
+                return Templates.roleRemovedFromPlatformGroupEmailTitle();
             case "custom-default-access-updated":
+                return Templates.customPlatformGroupUpdatedEmailTitle();
             case "group-created":
+                return Templates.customGroupCreatedEmailTitle()
             case "group-updated":
+                return Templates.customGroupUpdatedEmailTitle()
             case "group-deleted":
-                return Templates.groupChangeEmailTitle();
+                return Templates.customGroupDeletedEmailTitle();
             case "platform-default-group-turned-into-custom":
                 return Templates.platformGroup2CustomEmailTitle();
             default:
@@ -38,19 +48,29 @@ public class Rbac implements EmailTemplate {
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         switch (eventType) {
             case "rh-new-role-available":
+                return Templates.systemRoleAvailableEmailBody();
             case "rh-platform-default-role-updated":
+                return Templates.platformRoleUpdatedEmailBody();
             case "rh-non-platform-default-role-updated":
+                return Templates.nonPlatformRoleUpdatedEmailBody();
             case "custom-role-created":
+                return Templates.customRoleCreatedEmailBody();
             case "custom-role-updated":
+                return Templates.customRoleUpdatedEmailBody();
             case "custom-role-deleted":
-                return Templates.roleChangeEmailBody();
+                return Templates.customRoleDeletedEmailBody();
             case "rh-new-role-added-to-default-access":
+                return Templates.roleAddedToPlatformGroupEmailBody();
             case "rh-role-removed-from-default-access":
+                return Templates.roleRemovedFromPlatformGroupEmailBody();
             case "custom-default-access-updated":
+                return Templates.customPlatformGroupUpdatedEmailBody();
             case "group-created":
+                return Templates.customGroupCreatedEmailBody()
             case "group-updated":
+                return Templates.customGroupUpdatedEmailBody()
             case "group-deleted":
-                return Templates.groupChangeEmailBody();
+                return Templates.customGroupDeletedEmailBody();
             case "platform-default-group-turned-into-custom":
                 return Templates.platformGroup2CustomEmailBody();
             default:
@@ -74,17 +94,57 @@ public class Rbac implements EmailTemplate {
     @CheckedTemplate(requireTypeSafeExpressions = false)
     public static class Templates {
 
-        public static native TemplateInstance roleChangeEmailTitle();
+        public static native TemplateInstance systemRoleAvailableEmailTitle();
 
-        public static native TemplateInstance roleChangeEmailBody();
+        public static native TemplateInstance systemRoleAvailableEmailBody();
 
-        public static native TemplateInstance groupChangeEmailTitle();
+        public static native TemplateInstance platformRoleUpdatedEmailTitle();
 
-        public static native TemplateInstance groupChangeEmailBody();
+        public static native TemplateInstance platformRoleUpdatedEmailBody();
 
-        public static native TemplateInstance platformGroup2CustomEmailTitle();
+        pubilc static native TemplateInstance nonPlatformRoleUpdatedEmailTitle();
 
-        public static native TemplateInstance platformGroup2CustomEmailBody();
+        pubilc static native TemplateInstance nonPlatformRoleUpdatedEmailBody();
+
+        pubilc static native TemplateInstance customRoleCreatedEmailTitle();
+        
+        pubilc static native TemplateInstance customRoleCreatedEmailBody();
+
+        pubilc static native TemplateInstance customRoleUpdatedEmailTitle();
+
+        pubilc static native TemplateInstance customRoleUpdatedEmailBody();
+
+        pubilc static native TemplateInstance customRoleDeletedEmailTitle();
+
+        pubilc static native TemplateInstance customRoleDeletedEmailBody();
+
+        pubilc static native TemplateInstance roleRemovedFromPlatformGroupEmailTitle();
+
+        pubilc static native TemplateInstance roleRemovedFromPlatformGroupEmailBody();
+
+        pubilc static native TemplateInstance roleAddedToPlatformGroupEmailTitle();
+
+        pubilc static native TemplateInstance roleAddedToPlatformGroupEmailBody();
+
+        pubilc static native TemplateInstance customPlatformGroupUpdatedEmailTitle();
+
+        pubilc static native TemplateInstance customPlatformGroupUpdatedEmailBody();
+
+        pubilc static native TemplateInstance customGroupCreatedEmailTitle();
+
+        pubilc static native TemplateInstance customGroupCreatedEmailBody();
+
+        pubilc static native TemplateInstance customGroupDeletedEmailTitle();
+
+        pubilc static native TemplateInstance customGroupDeletedEmailBody();
+
+        pubilc static native TemplateInstance customGroupUpdatedEmailTitle();
+
+        pubilc static native TemplateInstance customGroupUpdatedEmailBody();
+
+        public static native TemplateInstance platformGroupToCustomEmailTitle();
+
+        public static native TemplateInstance platformGroupToCustomEmailBody();
     }
 
 }

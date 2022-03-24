@@ -1,5 +1,5 @@
 {#include Rbac/insightsEmailBody}
-{#content-title}Rbac platform group Notification - {action.timestamp.toStringFormat()}{/content-title}
+{#content-title}Platform default access group change Notification - {action.timestamp.toStringFormat()}{/content-title}
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
@@ -35,9 +35,7 @@
                         Hi,
                         <br>
                         <br>
-                        Platform default group is modified and the user is responsible for managing it from now on.
-                        <br>
-                        Check the custom platform default group here: <a class="rh-url" href="https://console.redhat.com/settings/rbac/groups/detail/{action.events[0].payload.uuid}/"><b>{action.events[0].payload.name}</b></a>
+                        Red Hat added a role <a class="rh-url" href="{environment.url('/settings/rbac/roles/detail/' + action.events[0].payload.role.uuid)}"><b>{action.events[0].payload.role.name}</b></a> to platform default access group.
                     </p>
                 </td>
             </tr>

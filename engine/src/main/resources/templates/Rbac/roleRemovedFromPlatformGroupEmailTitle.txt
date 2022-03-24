@@ -1,0 +1,1 @@
+{action.timestamp.toUtcFormat()} - Red Hat removed a role {action.events[0].payload.role.name} from platform default access group.
