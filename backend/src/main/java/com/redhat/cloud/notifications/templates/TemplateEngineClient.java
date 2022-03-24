@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.reactive.RestQuery;
@@ -26,11 +27,13 @@ public interface TemplateEngineClient {
     @GET
     @Path("/subscription_type_supported")
     @Produces(APPLICATION_JSON)
+    @Operation(hidden = true)
     Boolean isSubscriptionTypeSupported(@NotNull @RestQuery String bundleName, @NotNull @RestQuery String applicationName, @NotNull @RestQuery EmailSubscriptionType subscriptionType);
 
     @PUT
     @Path("/render")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @Operation(hidden = true)
     Response render(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest);
 }
