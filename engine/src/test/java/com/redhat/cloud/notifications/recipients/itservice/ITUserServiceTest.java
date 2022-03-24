@@ -1,31 +1,42 @@
 package com.redhat.cloud.notifications.recipients.itservice;
 
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authentication;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import javax.inject.Inject;
 import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 public class ITUserServiceTest {
 
+    @Inject
+    RbacRecipientUsersProvider rbacRecipientUsersProvider;
+
+    @InjectMock
+    @RestClient
+    ITUserService itUserService;
+
     @Test
     void shouldPickPrimaryEMailAsUsersEmail() {
-        final ITUserServiceWrapper itUserServiceWrapper = Mockito.mock(ITUserServiceWrapper.class);
-
         ITUserResponse itUserResponse = new ITUserResponse();
 
         final PersonalInformation personalInformation = new PersonalInformation();
@@ -34,7 +45,7 @@ public class ITUserServiceTest {
         itUserResponse.personalInformation = personalInformation;
 
         Authentication authentication = new Authentication();
-        authentication.principal = "myPrincilal";
+        authentication.principal = "myPrincipal";
         authentication.providerName = "myProviderName";
         itUserResponse.authentications = new LinkedList<>();
         itUserResponse.authentications.add(authentication);
@@ -56,10 +67,11 @@ public class ITUserServiceTest {
         itUserResponse.accountRelationships.add(accountRelationship);
         List<ITUserResponse> itUserResponses = List.of(itUserResponse);
 
-        RbacRecipientUsersProvider rbacRecipientUsersProvider = new RbacRecipientUsersProvider(itUserServiceWrapper, new SimpleMeterRegistry());
-        Mockito.when(itUserServiceWrapper.getUsers(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(itUserResponses);
+        when(itUserService.getUsers(any(ITUserRequest.class))).thenReturn(itUserResponses);
+
         // TODO NOTIF-381 Remove this when the recipients retrieval from RBAC is removed.
         rbacRecipientUsersProvider.retrieveUsersFromIt = true;
+
         final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", true);
         assertTrue(someAccountId.get(0).isActive());
         assertTrue(someAccountId.get(0).isAdmin());
@@ -73,7 +85,7 @@ public class ITUserServiceTest {
         User mockedUser = createNonAdminMockedUser();
         List<User> mockedUsers = List.of(mockedUser);
 
-        Mockito.when(mock.getUsers(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(mockedUsers);
+        when(mock.getUsers(Mockito.anyString(), anyBoolean())).thenReturn(mockedUsers);
         final List<User> users = mock.getUsers("someAccountId", false);
 
         final User user = users.get(0);

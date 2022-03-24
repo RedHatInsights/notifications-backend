@@ -8,7 +8,7 @@ public class ITUserRequest {
     public ITUserRequestBy by;
     public Include include;
 
-    public ITUserRequest(String accountId, boolean adminsOnly) {
+    public ITUserRequest(String accountId, boolean adminsOnly, int firstResult, int maxResults) {
         final ITUserRequestBy by = new ITUserRequestBy();
         AllOf allOf = new AllOf();
         allOf.status = "enabled";
@@ -23,6 +23,9 @@ public class ITUserRequest {
         by.allOf = allOf;
 
         this.by = by;
+        this.by.withPaging = new WithPaging();
+        this.by.withPaging.firstResultIndex = firstResult;
+        this.by.withPaging.maxResults = maxResults;
 
         Include include = new Include();
 
