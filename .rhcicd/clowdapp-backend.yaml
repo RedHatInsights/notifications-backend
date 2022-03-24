@@ -154,9 +154,9 @@ objects:
         - name: OB_TOKEN_PASS
           value: ${OB_TOKEN_PASS}
         - name: QUARKUS_REST_CLIENT_OB_URL
-          value: ${OB_MP_REST_URL}
+          value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
-          value: ${OB_KC_REST_URL}
+          value: ${QUARKUS_REST_CLIENT_KC_URL}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -311,10 +311,10 @@ parameters:
 - name: OB_TOKEN_PASS
   description: Password to get a token from SSO
   value: ob.token.pass
-- name: OB_MP_REST_URL
+- name: QUARKUS_REST_CLIENT_OB_URL
   description: URL of the OpenBridge fleet manager
   value: "http://addMe"
-- name: OB_KC_REST_URL
+- name: QUARKUS_REST_CLIENT_KC_URL
   description: URL of the SSO server
   value: "https://addMe"
 - name: RBAC_AUTHENTICATION_READ_TIMEOUT
