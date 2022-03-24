@@ -175,7 +175,16 @@ public class EndpointResource {
 
         if (obEnabled) {
             // TODO NOTIF-429 - see similar in EndpointResources#createEndpoint
-            String endpointSubType = endpoint.getSubType() != null ? endpoint.getSubType() : endpoint.getProperties(CamelProperties.class).getSubType();
+            String endpointSubType;
+            if (endpoint.getSubType() != null) {
+                endpointSubType = endpoint.getSubType();
+            } else {
+                if (endpoint.getType() == EndpointType.CAMEL) {
+                    endpointSubType = endpoint.getProperties(CamelProperties.class).getSubType();
+                } else {
+                    endpointSubType = "not-defined"; // No Camel endpoint, so we can skip
+                }
+            }
 
             if (endpointSubType.equals("slack")) {
                 CamelProperties properties = endpoint.getProperties(CamelProperties.class);
