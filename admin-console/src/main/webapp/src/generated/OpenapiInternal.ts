@@ -18,6 +18,14 @@ export namespace Schemas {
     role?: string | undefined | null;
   };
 
+  export const AddApplicationRequest = zodSchemaAddApplicationRequest();
+  export type AddApplicationRequest = {
+    bundle_id: UUID;
+    display_name: string;
+    name: string;
+    owner_role?: string | undefined | null;
+  };
+
   export const Application = zodSchemaApplication();
   export type Application = {
     bundle_id: UUID;
@@ -30,8 +38,8 @@ export namespace Schemas {
 
   export const Application1 = zodSchemaApplication1();
   export type Application1 = {
-    displayName?: string | undefined | null;
-    id?: string | undefined | null;
+    display_name: string;
+    id: UUID;
   };
 
   export const BasicAuthentication = zodSchemaBasicAuthentication();
@@ -105,7 +113,7 @@ export namespace Schemas {
   };
 
   export const EmailSubscriptionType = zodSchemaEmailSubscriptionType();
-  export type EmailSubscriptionType = 'DAILY' | 'INSTANT';
+  export type EmailSubscriptionType = 'INSTANT' | 'DAILY';
 
   export const Endpoint = zodSchemaEndpoint();
   export type Endpoint = {
@@ -143,7 +151,7 @@ export namespace Schemas {
     | 'camel';
 
   export const Environment = zodSchemaEnvironment();
-  export type Environment = 'EPHEMERAL' | 'LOCAL_SERVER' | 'PROD' | 'STAGE';
+  export type Environment = 'PROD' | 'STAGE' | 'EPHEMERAL' | 'LOCAL_SERVER';
 
   export const EventLogEntry = zodSchemaEventLogEntry();
   export type EventLogEntry = {
@@ -191,6 +199,14 @@ export namespace Schemas {
   export const HttpType = zodSchemaHttpType();
   export type HttpType = 'GET' | 'POST' | 'PUT';
 
+  export const InternalApplicationUserPermission =
+    zodSchemaInternalApplicationUserPermission();
+  export type InternalApplicationUserPermission = {
+    application_display_name: string;
+    application_id: UUID;
+    role: string;
+  };
+
   export const InternalRoleAccess = zodSchemaInternalRoleAccess();
   export type InternalRoleAccess = {
     application_id: UUID;
@@ -200,9 +216,9 @@ export namespace Schemas {
 
   export const InternalUserPermissions = zodSchemaInternalUserPermissions();
   export type InternalUserPermissions = {
-    admin?: boolean | undefined | null;
-    applications?: Array<Application1> | undefined | null;
-    isAdmin?: boolean | undefined | null;
+    applications: Array<Application1>;
+    is_admin: boolean;
+    roles: Array<string>;
   };
 
   export const Meta = zodSchemaMeta();
@@ -243,6 +259,28 @@ export namespace Schemas {
     meta: Meta;
   };
 
+  export const RbacRaw = zodSchemaRbacRaw();
+  export type RbacRaw = {
+    data?:
+      | Array<{
+          [x: string]: unknown;
+        }>
+      | undefined
+      | null;
+    links?:
+      | {
+          [x: string]: string;
+        }
+      | undefined
+      | null;
+    meta?:
+      | {
+          [x: string]: number;
+        }
+      | undefined
+      | null;
+  };
+
   export const RenderEmailTemplateRequest =
     zodSchemaRenderEmailTemplateRequest();
   export type RenderEmailTemplateRequest = {
@@ -270,7 +308,7 @@ export namespace Schemas {
   };
 
   export const Status = zodSchemaStatus();
-  export type Status = 'MAINTENANCE' | 'UP';
+  export type Status = 'UP' | 'MAINTENANCE';
 
   export const UUID = zodSchemaUUID();
   export type UUID = string;
@@ -296,6 +334,17 @@ export namespace Schemas {
       .nonstrict();
   }
 
+  function zodSchemaAddApplicationRequest() {
+      return z
+      .object({
+          bundle_id: zodSchemaUUID(),
+          display_name: z.string(),
+          name: z.string(),
+          owner_role: z.string().optional().nullable()
+      })
+      .nonstrict();
+  }
+
   function zodSchemaApplication() {
       return z
       .object({
@@ -312,8 +361,8 @@ export namespace Schemas {
   function zodSchemaApplication1() {
       return z
       .object({
-          displayName: z.string().optional().nullable(),
-          id: z.string().optional().nullable()
+          display_name: z.string(),
+          id: zodSchemaUUID()
       })
       .nonstrict();
   }
@@ -409,7 +458,7 @@ export namespace Schemas {
   }
 
   function zodSchemaEmailSubscriptionType() {
-      return z.enum([ 'DAILY', 'INSTANT' ]);
+      return z.enum([ 'INSTANT', 'DAILY' ]);
   }
 
   function zodSchemaEndpoint() {
@@ -454,7 +503,7 @@ export namespace Schemas {
   }
 
   function zodSchemaEnvironment() {
-      return z.enum([ 'EPHEMERAL', 'LOCAL_SERVER', 'PROD', 'STAGE' ]);
+      return z.enum([ 'PROD', 'STAGE', 'EPHEMERAL', 'LOCAL_SERVER' ]);
   }
 
   function zodSchemaEventLogEntry() {
@@ -511,6 +560,16 @@ export namespace Schemas {
       return z.enum([ 'GET', 'POST', 'PUT' ]);
   }
 
+  function zodSchemaInternalApplicationUserPermission() {
+      return z
+      .object({
+          application_display_name: z.string(),
+          application_id: zodSchemaUUID(),
+          role: z.string()
+      })
+      .nonstrict();
+  }
+
   function zodSchemaInternalRoleAccess() {
       return z
       .object({
@@ -524,9 +583,9 @@ export namespace Schemas {
   function zodSchemaInternalUserPermissions() {
       return z
       .object({
-          admin: z.boolean().optional().nullable(),
-          applications: z.array(zodSchemaApplication1()).optional().nullable(),
-          isAdmin: z.boolean().optional().nullable()
+          applications: z.array(zodSchemaApplication1()),
+          is_admin: z.boolean(),
+          roles: z.array(z.string())
       })
       .nonstrict();
   }
@@ -572,6 +631,16 @@ export namespace Schemas {
       .nonstrict();
   }
 
+  function zodSchemaRbacRaw() {
+      return z
+      .object({
+          data: z.array(z.record(z.unknown())).optional().nullable(),
+          links: z.record(z.string()).optional().nullable(),
+          meta: z.record(z.number().int()).optional().nullable()
+      })
+      .nonstrict();
+  }
+
   function zodSchemaRenderEmailTemplateRequest() {
       return z
       .object({
@@ -608,7 +677,7 @@ export namespace Schemas {
   }
 
   function zodSchemaStatus() {
-      return z.enum([ 'MAINTENANCE', 'UP' ]);
+      return z.enum([ 'UP', 'MAINTENANCE' ]);
   }
 
   function zodSchemaUUID() {
@@ -660,8 +729,8 @@ export namespace Operations {
   }
   // GET /access
   export namespace InternalPermissionServiceGetAccessList {
-    const Response200 = z.array(Schemas.InternalRoleAccess);
-    type Response200 = Array<Schemas.InternalRoleAccess>;
+    const Response200 = z.array(Schemas.InternalApplicationUserPermission);
+    type Response200 = Array<Schemas.InternalApplicationUserPermission>;
     export type Payload =
       | ValidatedResponse<'unknown', 200, Response200>
       | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
@@ -845,7 +914,7 @@ export namespace Operations {
   // POST /applications
   export namespace InternalServiceCreateApplication {
     export interface Params {
-      body: Schemas.Application;
+      body: Schemas.AddApplicationRequest;
     }
 
     export type Payload =
@@ -1540,6 +1609,71 @@ export namespace Operations {
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
                 new ValidateRule(Schemas.__Empty, '__Empty', 403)
             ]
+        })
+        .build();
+    };
+  }
+  // PUT /template-engine/render
+  export namespace TemplateEngineClient$$cdiWrapperRender {
+    export interface Params {
+      body: Schemas.RenderEmailTemplateRequest;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './template-engine/render';
+        const query = {} as Record<string, any>;
+        return actionBuilder('PUT', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
+        })
+        .build();
+    };
+  }
+  // GET /template-engine/subscription_type_supported
+  export namespace TemplateEngineClient$$cdiWrapperIsSubscriptionTypeSupported {
+    const ApplicationName = z.string();
+    type ApplicationName = string;
+    const BundleName = z.string();
+    type BundleName = string;
+    const SubscriptionType = Schemas.EmailSubscriptionType;
+    type SubscriptionType = Schemas.EmailSubscriptionType;
+    const Response200 = z.boolean();
+    type Response200 = boolean;
+    export interface Params {
+      applicationName: ApplicationName;
+      bundleName: BundleName;
+      subscriptionType: SubscriptionType;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './template-engine/subscription_type_supported';
+        const query = {} as Record<string, any>;
+        if (params.applicationName !== undefined) {
+            query.applicationName = params.applicationName;
+        }
+
+        if (params.bundleName !== undefined) {
+            query.bundleName = params.bundleName;
+        }
+
+        if (params.subscriptionType !== undefined) {
+            query.subscriptionType = params.subscriptionType;
+        }
+
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [ new ValidateRule(Response200, 'unknown', 200) ]
         })
         .build();
     };
