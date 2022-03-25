@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -117,6 +118,9 @@ public class LifecycleITest {
     @Inject
     StatelessSessionFactory statelessSessionFactory;
 
+    @Inject
+    ResourceHelpers resourceHelpers;
+
     @Test
     void test() {
         final String accountId = "tenant";
@@ -124,9 +128,9 @@ public class LifecycleITest {
         setupEmailMock(accountId, username);
 
         // First, we need a bundle, an app and an event type. Let's create them!
-        Bundle bundle = createBundle();
-        Application app = createApp(bundle);
-        EventType eventType = createEventType(app);
+        Bundle bundle = resourceHelpers.createBundle(BUNDLE_NAME);
+        Application app = resourceHelpers.createApp(bundle.getId(), APP_NAME);
+        EventType eventType = resourceHelpers.createEventType(app.getId(), EVENT_TYPE_NAME);
 
         // We also need behavior groups.
         BehaviorGroup behaviorGroup1 = createBehaviorGroup(accountId, bundle);
@@ -232,36 +236,6 @@ public class LifecycleITest {
 
         // We'll finish with a bundle removal.
         deleteBundle(bundle);
-    }
-
-    @Transactional
-    Bundle createBundle() {
-        Bundle bundle = new Bundle(BUNDLE_NAME, "A bundle");
-        entityManager.persist(bundle);
-        return bundle;
-    }
-
-    @Transactional
-    Application createApp(Bundle bundle) {
-        Application app = new Application();
-        app.setBundle(bundle);
-        app.setBundleId(bundle.getId());
-        app.setName(APP_NAME);
-        app.setDisplayName("The best app in the life");
-        entityManager.persist(app);
-        return app;
-    }
-
-    @Transactional
-    EventType createEventType(Application app) {
-        EventType eventType = new EventType();
-        eventType.setApplication(app);
-        eventType.setApplicationId(app.getId());
-        eventType.setName(EVENT_TYPE_NAME);
-        eventType.setDisplayName("Policies will take care of the rules");
-        eventType.setDescription("Policies is super cool, you should use it");
-        entityManager.persist(eventType);
-        return eventType;
     }
 
     @Transactional
