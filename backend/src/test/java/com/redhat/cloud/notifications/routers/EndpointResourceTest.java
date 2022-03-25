@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.openbridge.Bridge;
+import com.redhat.cloud.notifications.openbridge.BridgeHelper;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -83,6 +84,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Inject
     EndpointResource endpointResource;
+
+    @Inject BridgeHelper
+    bridgeHelper;
 
     @Test
     void testEndpointAdding() {
@@ -437,6 +441,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(cAttr);
 
         endpointResource.obEnabled = true;
+        bridgeHelper.setObEnabled(true);
 
         // First we try with bogus values for the OB endpoint
         given()
@@ -456,6 +461,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         processor.put("id", "p-my-id");
 
         mockServerConfig.addOpenBridgeEndpoints(auth, bridge, processor);
+        bridgeHelper.setOurBridge("321");
 
         String responseBody = given()
                 .header(identityHeader)
@@ -495,6 +501,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         }
 
         mockServerConfig.clearOpenBridgeEndpoints(bridge);
+        bridgeHelper.setObEnabled(false);
+        endpointResource.obEnabled = false;
     }
 
     @Test

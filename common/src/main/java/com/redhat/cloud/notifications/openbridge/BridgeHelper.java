@@ -113,4 +113,11 @@ public class BridgeHelper {
         return "Basic " + encoded;
     }
 
+    public void setObEnabled(boolean obEnabled) {
+        this.obEnabled = obEnabled;
+    }
+
+    public void setOurBridge(String id) {
+        ourBridge = id;
+    }
 }
