@@ -45,7 +45,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             return applicationTypesQuery.payload.value.bundleId;
         }
 
-        return 'bundle';
+        return undefined;
     }, [ applicationTypesQuery.payload ]);
 
     const bundleNameQuery = useParameterizedQuery(getBundleAction);
@@ -140,7 +140,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 <Title headingLevel="h1">
                     <Breadcrumb>
                         <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
-                        <BreadcrumbLinkItem to={ linkTo.bundle(getBundleId) }>
+                        <BreadcrumbLinkItem to={ linkTo.bundle(getBundleId ?? '') }>
                             { bundle ? bundle.display_name : <Spinner /> }
                         </BreadcrumbLinkItem>
                         <BreadcrumbItem to='#' isActive> { (applicationTypesQuery.loading
