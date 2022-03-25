@@ -108,6 +108,9 @@ objects:
   kind: CronJob
   metadata:
     name: notifications-db-cleaner-cronjob
+  annotations: 
+    ignore-check.kube-linter.io/no-liveness-probe
+    ignore-check.kube-linter.io/no-readiness-probe
   spec:
     schedule: ${DB_CLEANER_SCHEDULE}
     suspend: ${{DISABLE_DB_CLEANER}}
@@ -125,26 +128,6 @@ objects:
             - name: notifications-db-cleaner
               image: quay.io/cloudservices/postgresql-rds:12-1
               restartPolicy: Never
-              readinessProbe:
-                httpGet:
-                  path: /health/ready
-                  port: 8000
-                  scheme: HTTP
-                initialDelaySeconds: 40
-                periodSeconds: 10
-                timeoutSeconds: 1
-                successThreshold: 1
-                failureThreshold: 3
-              livenessProbe:
-                httpGet:
-                  path: /health/live
-                  port: 8000
-                  scheme: HTTP
-                initialDelaySeconds: 40
-                periodSeconds: 10
-                timeoutSeconds: 1
-                successThreshold: 1
-                failureThreshold: 3
               resources:
                 requests:
                   cpu: 100m

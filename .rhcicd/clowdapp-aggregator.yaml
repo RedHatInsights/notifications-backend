@@ -29,6 +29,9 @@ objects:
       failedJobsHistoryLimit: 7
       concurrencyPolicy: Forbid
       restartPolicy: OnFailure
+      annotations: 
+        ignore-check.kube-linter.io/ignore-liveness-probe
+        ignore-check.kube-linter.io/ignore-readiness-probe
       podSpec:
         image: ${IMAGE}:${IMAGE_TAG}
         resources:
@@ -44,26 +47,6 @@ objects:
         volumeMounts:
         - name: rds-client-ca
           mountPath: /tmp
-        readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: 8000
-            scheme: HTTP
-          initialDelaySeconds: 40
-          periodSeconds: 10
-          timeoutSeconds: 1
-          successThreshold: 1
-          failureThreshold: 3
-        livenessProbe:
-          httpGet:
-            path: /health/live
-            port: 8000
-            scheme: HTTP
-          initialDelaySeconds: 40
-          periodSeconds: 10
-          timeoutSeconds: 1
-          successThreshold: 1
-          failureThreshold: 3
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
