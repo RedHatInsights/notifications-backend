@@ -33,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -44,6 +45,7 @@ import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -75,6 +77,7 @@ public class EndpointResource {
     public static final String OB_PROCESSOR_NAME = "processorname"; // Must be all lower for the filter.
     public static final String SLACK = "Slack";
 
+    private static final Logger LOGGER = Logger.getLogger(EndpointResource.class);
 
     private static final List<EndpointType> systemEndpointType = List.of(
             EndpointType.EMAIL_SUBSCRIPTION
@@ -186,11 +189,17 @@ public class EndpointResource {
                 }
             }
 
-            if (endpointSubType.equals("slack")) {
+            if (endpointSubType != null && endpointSubType.equals("slack")) {
                 CamelProperties properties = endpoint.getProperties(CamelProperties.class);
                 String processorName = "p-" + endpoint.getAccountId() + "-" + UUID.randomUUID();
                 properties.getExtras().put(OB_PROCESSOR_NAME, processorName);
-                String processorId = setupOpenBridgeProcessor(endpoint, properties, processorName);
+                String processorId = null;
+                try {
+                    processorId = setupOpenBridgeProcessor(endpoint, properties, processorName);
+                } catch (Exception e) {
+                    LOGGER.warn("Processor setup failed: " + e.getMessage());
+                    throw new InternalServerErrorException(e.getMessage());
+                }
 
                 // TODO find a better place for these, that should not be
                 //       visible to users / OB actions
@@ -252,7 +261,14 @@ public class EndpointResource {
                     // Special case wrt OpenBridge
                     if (e.getSubType().equals("slack")) {
                         String processorId = cp.getExtras().get(OB_PROCESSOR_ID);
-                        bridgeApiService.deleteProcessor(bridge.getId(), processorId, bridgeAuth.getToken());
+                        if (processorId != null) { // Should not be null under normal operations.
+                            try {
+                                bridgeApiService.deleteProcessor(bridge.getId(), processorId, bridgeAuth.getToken());
+                            } catch (Exception ex) {
+                                LOGGER.warn("Removal of OB processor failed:" + ex.getMessage());
+                                // Nothing more we can do
+                            }
+                        }
                     }
                 }
             }
@@ -464,7 +480,5 @@ public class EndpointResource {
         out.put("value", value);
         return out;
     }
-
-
 
 }

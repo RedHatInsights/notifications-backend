@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -79,6 +80,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Inject
     EmailSubscriptionRepository emailSubscriptionRepository;
+
+    @Inject
+    EndpointResource endpointResource;
 
     @Test
     void testEndpointAdding() {
@@ -356,6 +360,141 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     .statusCode(204)
                     .extract().body().asString();
         }
+    }
+
+    @Test
+    void addBogusCamelEndpoint() {
+
+        String tenant = "empty";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        CamelProperties cAttr = new CamelProperties();
+        cAttr.setDisableSslVerification(false);
+        cAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+        cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
+        Map<String, String> extras = new HashMap<>();
+        extras.put("template", "11");
+        cAttr.setExtras(extras);
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.CAMEL);
+        ep.setName("Push the camel through the needle's ear");
+        ep.setDescription("How many humps has a camel?");
+        ep.setEnabled(true);
+        ep.setProperties(cAttr);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(400);
+
+        endpointResource.obEnabled = true;
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(400);
+
+        endpointResource.obEnabled = false;
+
+    }
+
+    @Test
+    void addOpenBridgeEndpoint() {
+
+        String tenant = "empty";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+
+        CamelProperties cAttr = new CamelProperties();
+        cAttr.setDisableSslVerification(false);
+        cAttr.setUrl(String.format("https://%s", mockServerConfig.getRunningAddress()));
+        Map<String, String> extras = new HashMap<>();
+        extras.put("channel", "#notifications");
+        cAttr.setExtras(extras);
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.CAMEL);
+        ep.setSubType("slack");
+        ep.setName("Push the camel through the needle's ear");
+        ep.setDescription("I guess the camel is slacking");
+        ep.setEnabled(true);
+        ep.setProperties(cAttr);
+
+        endpointResource.obEnabled = true;
+
+        // First we try with bogus values for the OB endpoint
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(500);
+
+        // Now set up some mock OB endpoints
+        Bridge bridge = new Bridge("321", "http://some.events/", "my bridge");
+        Map<String, String> auth = new HashMap<>();
+        auth.put("access_token", "li-la-lu-token");
+        Map<String, String> processor = new HashMap<>();
+        processor.put("id", "p-my-id");
+
+        mockServerConfig.addOpenBridgeEndpoints(auth, bridge, processor);
+
+        String responseBody = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().asString();
+
+        JsonObject responsePoint = new JsonObject(responseBody);
+        responsePoint.mapTo(Endpoint.class);
+        String id = responsePoint.getString("id");
+        assertNotNull(id);
+
+        try {
+            JsonObject endpoint = fetchSingle(id, identityHeader);
+            JsonObject properties = responsePoint.getJsonObject("properties");
+            assertNotNull(properties);
+            assertTrue(endpoint.getBoolean("enabled"));
+            assertEquals("slack", endpoint.getString("sub_type"));
+            JsonObject extrasObject = properties.getJsonObject("extras");
+            assertNotNull(extrasObject);
+            String channel  = extrasObject.getString("channel");
+            assertEquals("#notifications", channel);
+
+        } finally {
+
+            given()
+                    .header(identityHeader)
+                    .when().delete("/endpoints/" + id)
+                    .then()
+                    .statusCode(204)
+                    .extract().body().asString();
+        }
+
+        mockServerConfig.clearOpenBridgeEndpoints(bridge);
     }
 
     @Test

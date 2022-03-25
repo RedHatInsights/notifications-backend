@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications;
 
+import com.redhat.cloud.notifications.openbridge.Bridge;
 import org.apache.commons.io.IOUtils;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.ClearType;
@@ -7,6 +8,7 @@ import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 
 import java.io.InputStream;
+import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -65,6 +67,64 @@ public class MockServerClientConfig {
                 .withPath("/api/rbac/v1/access/"),
                 ClearType.EXPECTATIONS
         );
+    }
+
+    public void addOpenBridgeEndpoints(Map<String, String> auth, Bridge bridge, Map<String, String> processor) {
+        String authString = Json.encode(auth);
+        String bridgeString = Json.encode(bridge);
+        String processorString = Json.encode(processor);
+
+        this.mockServerClient
+                .when(request()
+                        .withPath("/auth/realms/event-bridge-fm/protocol/openid-connect/token"))
+                .respond(response()
+                        .withStatusCode(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(authString));
+
+        this.mockServerClient
+                .when(request()
+                        .withPath("/api/v1/bridges/.*")
+                        .withMethod("GET")
+                )
+                .respond(response()
+                        .withStatusCode(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(bridgeString));
+
+        this.mockServerClient
+                .when(request()
+                        .withPath("/api/v1/bridges/.*/processors")
+                        .withMethod("POST")
+                )
+                .respond(response()
+                        .withStatusCode(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(processorString));
+
+        this.mockServerClient
+                .when(request()
+                        .withPath("/api/v1/bridges/.*/processors/" + processor.get("id"))
+                        .withMethod("DELETE")
+                )
+                .respond(response()
+                        .withStatusCode(202));
+
+    }
+
+
+    public void clearOpenBridgeEndpoints(Bridge bridge) {
+        this.mockServerClient.clear(request()
+                .withPath("/auth/realms/event-bridge-fm/protocol/openid-connect/token"),
+                ClearType.EXPECTATIONS);
+
+        this.mockServerClient.clear(request()
+                .withPath("/api/v1/bridges/" + bridge.getId()),
+                ClearType.EXPECTATIONS);
+
+        this.mockServerClient.clear(request()
+                .withPath("/api/v1/bridges/" + bridge.getId() + "/processors"),
+                ClearType.EXPECTATIONS);
     }
 
     public void removeHttpTestEndpoint(HttpRequest request) {
