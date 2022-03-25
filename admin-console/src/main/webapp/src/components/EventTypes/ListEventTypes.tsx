@@ -1,7 +1,7 @@
 import { Chip, ChipGroup, Spinner } from '@patternfly/react-core';
 import * as React from 'react';
 
-import { useEventTypes } from '../services/EventTypes/GetEventTypes';
+import { useEventTypes } from '../../services/EventTypes/GetEventTypes';
 
 type EventTypeListProps = {
     appId: string;

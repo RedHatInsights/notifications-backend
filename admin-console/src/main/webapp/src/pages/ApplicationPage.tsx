@@ -12,8 +12,8 @@ import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
 import { useUserPermissions } from '../app/PermissionContext';
-import { CreateEditModal } from '../components/CreateEditModal';
-import { DeleteModal } from '../components/DeleteModal';
+import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
+import { DeleteModal } from '../components/EventTypes/DeleteModal';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';

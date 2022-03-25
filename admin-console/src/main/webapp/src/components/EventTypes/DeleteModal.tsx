@@ -1,9 +1,10 @@
 import { ActionGroup, Button, Modal, ModalVariant, Spinner, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
-import { EventType } from '../types/Notifications';
+import { EventType } from '../../types/Notifications';
 
-interface DeleteApplicationModalProps {
+interface DeleteModalProps {
+    eventTypeName?: string;
     onDelete: (eventType?: EventType) => Promise<boolean>;
     bundleName?: string;
     applicationName?: string;
@@ -11,7 +12,7 @@ interface DeleteApplicationModalProps {
     onClose: () => void;
 
 }
-export const DeleteApplicationModal: React.FunctionComponent<DeleteApplicationModalProps> = (props) => {
+export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) => {
     const [ errors, setErrors ] = React.useState(true);
 
     const onDelete = React.useCallback(async () => {
@@ -20,15 +21,15 @@ export const DeleteApplicationModal: React.FunctionComponent<DeleteApplicationMo
         if (response) {
             props.onClose();
         } else {
-            alert('Could not delete application, please try again.');
+            alert('Could not delete event type, please try again.');
         }
     }, [ props ]);
 
     const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
         const target = event.target as HTMLInputElement;
-        if (target.value !== props.applicationName) {
+        if (target.value !== props.eventTypeName) {
             return setErrors(true);
-        } else if (target.value === props.applicationName) {
+        } else if (target.value === props.eventTypeName) {
             return setErrors(false);
         }
     };
@@ -37,13 +38,13 @@ export const DeleteApplicationModal: React.FunctionComponent<DeleteApplicationMo
         <React.Fragment>
             <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ props.isOpen }
                 onClose={ props.onClose }
-                title={ `Permanently delete ${ props.applicationName }` }>
-                { <b>{ props.applicationName }</b> } {`from ${ props.bundleName ? props.bundleName :
+                title={ `Permanently delete ${ props.eventTypeName }` }>
+                { <b>{ props.eventTypeName }</b> } {`from  ${ props.applicationName }/${ props.bundleName ? props.bundleName :
                     <Spinner /> } will be deleted. 
-                        By deleting this application all associated event types will be deleted and no longer processed. `}
+                        If an application is currently sending this event, it will no longer be processed.`}
                 <br />
                 <br />
-                        Type <b>{ props.applicationName }</b> to confirm:
+                        Type <b>{ props.eventTypeName }</b> to confirm:
                 <br />
                 <TextInput type='text' onChange={ handleDeleteChange } id='name' name="name" isRequired />
                 <br />

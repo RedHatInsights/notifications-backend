@@ -4,6 +4,7 @@ import { Redirect, Route, Switch } from 'react-router';
 import { AggregationPage } from './pages/AggregationPage';
 import { ApplicationPage } from './pages/ApplicationPage';
 import { BundlePage } from './pages/BundlePage';
+import { EmailTemplatePage } from './pages/EmailTemplatePage';
 import { RenderEmailPage } from './pages/RenderEmailPage';
 
 interface Path {
@@ -15,7 +16,8 @@ export const linkTo = {
     bundle: (bundleId: string) => `/bundle/${bundleId}`,
     application: (applicationId: string) => `/application/${applicationId}`,
     aggregation: () => '/aggregation',
-    email: () => '/email'
+    email: () => '/email',
+    emailTemplates: (applicationId: string) => `/application/${applicationId}/emailTemplates`
 };
 
 const pathRoutes: Path[] = [
@@ -34,6 +36,10 @@ const pathRoutes: Path[] = [
     {
         path: linkTo.email(),
         component: RenderEmailPage
+    },
+    {
+        path: linkTo.emailTemplates(':applicationId'),
+        component: EmailTemplatePage
     }
 ];
 
