@@ -20,10 +20,7 @@ public class Compliance implements EmailTemplate {
             }
         }
 
-        throw new UnsupportedOperationException(String.format(
-                "No email title template for Compliance event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
+        return Templates.dailyEmailTitle();
     }
 
     @Override
@@ -36,20 +33,17 @@ public class Compliance implements EmailTemplate {
             }
         }
 
-        throw new UnsupportedOperationException(String.format(
-                "No email body template for Compliance event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
+        return Templates.dailyEmailBody();
     }
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return (eventType.equals(COMPLIANCE_BELOW_THRESHOLD) || eventType.equals(REPORT_UPLOAD_FAILED)) && type == EmailSubscriptionType.INSTANT;
+        return true;
     }
 
     @Override
     public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
-        return type == EmailSubscriptionType.INSTANT;
+        return true;
     }
 
     @CheckedTemplate(requireTypeSafeExpressions = false)
@@ -62,6 +56,10 @@ public class Compliance implements EmailTemplate {
         public static native TemplateInstance complianceBelowThresholdEmailBody();
 
         public static native TemplateInstance reportUploadFailedEmailBody();
+
+        public static native TemplateInstance dailyEmailTitle();
+
+        public static native TemplateInstance dailyEmailBody();
     }
 
 }
