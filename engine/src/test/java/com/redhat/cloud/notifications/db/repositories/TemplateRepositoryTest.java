@@ -56,8 +56,8 @@ public class TemplateRepositoryTest {
         app2 = resourceHelpers.createApp(bundle.getId(), "app-2-" + UUID.randomUUID());
         eventType2 = resourceHelpers.createEventType(app2.getId(), "event-type-2-" + UUID.randomUUID());
 
-        subjectTemplate = resourceHelpers.createTemplate("subject-template", "You have a notification!");
-        bodyTemplate = resourceHelpers.createTemplate("body-template", "Something happened!");
+        subjectTemplate = resourceHelpers.createTemplate("subject-template", "Subject template", "You have a notification!");
+        bodyTemplate = resourceHelpers.createTemplate("body-template", "Body template", "Something happened!");
     }
 
     @Test
@@ -67,7 +67,7 @@ public class TemplateRepositoryTest {
             assertIsEmailSubscriptionSupported(false, false, false, false, false, false);
 
             // Then we link an instant email template with event-type-1 (which is a child entity of app-1).
-            resourceHelpers.createInstantEmailTemplate(eventType1.getId(), subjectTemplate.getId(), bodyTemplate.getId());
+            resourceHelpers.createInstantEmailTemplate(eventType1.getId(), subjectTemplate.getId(), bodyTemplate.getId(), true);
 
             /*
              * Expectations:
@@ -77,7 +77,7 @@ public class TemplateRepositoryTest {
             assertIsEmailSubscriptionSupported(true, false, false, false, false, false);
 
             // Then we link an aggregation (DAILY) email template with event-type2 (which is a child entity of app-2).
-            resourceHelpers.createAggregationEmailTemplate(app2.getId(), subjectTemplate.getId(), bodyTemplate.getId());
+            resourceHelpers.createAggregationEmailTemplate(app2.getId(), subjectTemplate.getId(), bodyTemplate.getId(), true);
 
             /*
              * Expectations:
@@ -114,7 +114,7 @@ public class TemplateRepositoryTest {
             assertIsEmailAggregationSupported(false, false);
 
             // Then we link an aggregation (DAILY) email template with app-1.
-            resourceHelpers.createAggregationEmailTemplate(app1.getId(), subjectTemplate.getId(), bodyTemplate.getId());
+            resourceHelpers.createAggregationEmailTemplate(app1.getId(), subjectTemplate.getId(), bodyTemplate.getId(), true);
 
             /*
              * Expectations:
@@ -140,13 +140,14 @@ public class TemplateRepositoryTest {
             assertTrue(templateRepository.findInstantEmailTemplate(eventType2.getId()).isEmpty());
 
             // Then we link an instant email template with event-type-1...
-            resourceHelpers.createInstantEmailTemplate(eventType1.getId(), subjectTemplate.getId(), bodyTemplate.getId());
+            resourceHelpers.createInstantEmailTemplate(eventType1.getId(), subjectTemplate.getId(), bodyTemplate.getId(), true);
             // ... and retrieve it from the DB using the repository.
             Optional<InstantEmailTemplate> instantTemplate = templateRepository.findInstantEmailTemplate(eventType1.getId());
 
             // The retrieved instant email template should contain the subject/body templates that were created with the helper.
             assertEquals(subjectTemplate, instantTemplate.get().getSubjectTemplate());
             assertEquals(bodyTemplate, instantTemplate.get().getBodyTemplate());
+            assertTrue(instantTemplate.get().isEnabled());
 
             // event-type-2 should still not be linked to any instant email template.
             assertTrue(templateRepository.findInstantEmailTemplate(eventType2.getId()).isEmpty());
@@ -163,13 +164,14 @@ public class TemplateRepositoryTest {
             assertTrue(templateRepository.findAggregationEmailTemplate(bundle.getName(), app2.getName(), DAILY).isEmpty());
 
             // Then we link an aggregation email template with app-1...
-            resourceHelpers.createAggregationEmailTemplate(app1.getId(), subjectTemplate.getId(), bodyTemplate.getId());
+            resourceHelpers.createAggregationEmailTemplate(app1.getId(), subjectTemplate.getId(), bodyTemplate.getId(), true);
             // ... and retrieve it from the DB using the repository.
             Optional<AggregationEmailTemplate> aggregationTemplate = templateRepository.findAggregationEmailTemplate(bundle.getName(), app1.getName(), DAILY);
 
             // The retrieved aggregation email template should contain the subject/body templates that were created with the helper.
             assertEquals(subjectTemplate, aggregationTemplate.get().getSubjectTemplate());
             assertEquals(bodyTemplate, aggregationTemplate.get().getBodyTemplate());
+            assertTrue(aggregationTemplate.get().isEnabled());
 
             // app-2 should still not be linked to any aggregation email template.
             assertTrue(templateRepository.findAggregationEmailTemplate(bundle.getName(), app2.getName(), DAILY).isEmpty());

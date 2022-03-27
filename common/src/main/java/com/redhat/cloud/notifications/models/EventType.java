@@ -67,6 +67,10 @@ public class EventType {
     @JsonIgnore
     private Set<EventTypeBehavior> behaviors;
 
+    @OneToMany(mappedBy = "eventType", cascade = CascadeType.REMOVE)
+    @JsonIgnore
+    private Set<InstantEmailTemplate> instantEmailTemplates;
+
     public UUID getId() {
         return id;
     }
@@ -133,6 +137,14 @@ public class EventType {
 
     public void setBehaviors(Set<EventTypeBehavior> behaviors) {
         this.behaviors = behaviors;
+    }
+
+    public Set<InstantEmailTemplate> getInstantEmailTemplates() {
+        return instantEmailTemplates;
+    }
+
+    public void setInstantEmailTemplates(Set<InstantEmailTemplate> instantEmailTemplates) {
+        this.instantEmailTemplates = instantEmailTemplates;
     }
 
     @Override

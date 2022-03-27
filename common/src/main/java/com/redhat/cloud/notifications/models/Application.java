@@ -55,6 +55,10 @@ public class Application extends CreationUpdateTimestamped {
     @JsonIgnore
     private Set<EventType> eventTypes;
 
+    @OneToMany(mappedBy = "application", cascade = CascadeType.REMOVE)
+    @JsonIgnore
+    private Set<AggregationEmailTemplate> aggregationEmailTemplates;
+
     public UUID getId() {
         return id;
     }
@@ -104,6 +108,14 @@ public class Application extends CreationUpdateTimestamped {
 
     public void setEventTypes(Set<EventType> eventTypes) {
         this.eventTypes = eventTypes;
+    }
+
+    public Set<AggregationEmailTemplate> getAggregationEmailTemplates() {
+        return aggregationEmailTemplates;
+    }
+
+    public void setAggregationEmailTemplates(Set<AggregationEmailTemplate> aggregationEmailTemplates) {
+        this.aggregationEmailTemplates = aggregationEmailTemplates;
     }
 
     @Override
