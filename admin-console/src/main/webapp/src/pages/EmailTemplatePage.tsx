@@ -10,43 +10,38 @@ import * as React from 'react';
 import { useUserPermissions } from '../app/PermissionContext';
 
 export const EmailTemplatePage: React.FunctionComponent = () => {
-    const { hasPermission, refresh, isAdmin } = useUserPermissions();
+    const { isAdmin } = useUserPermissions();
 
     return (
-        <>
-            <PageSection>
+        <>{ isAdmin &&
+            <><PageSection>
                 <Split>
                     <SplitItem isFilled>
-                        <Title headingLevel="h1" >Create an Email Template</Title>
+                        <Title headingLevel="h1">Create an Email Template</Title>
                     </SplitItem>
                 </Split>
-            </PageSection>
-            <PageSection>
+            </PageSection><PageSection>
                 <Title headingLevel="h2">Subject template</Title>
                 <CodeEditor
                     isLineNumbersVisible
                     isMinimapVisible={ false }
-                    height="100px"
-                />
-            </PageSection>
-            <PageSection>
+                    height="100px" />
+            </PageSection><PageSection>
                 <Title headingLevel="h2">Body template</Title>
                 <CodeEditor
                     isLineNumbersVisible
                     isMinimapVisible={ false }
-                    height="300px"
-                />
-            </PageSection>
-            <PageSection>
+                    height="300px" />
+            </PageSection><PageSection>
                 <Title headingLevel="h2">Payload</Title>
                 <CodeEditor
                     isLineNumbersVisible
                     isMinimapVisible={ false }
                     height="200px"
                     isLanguageLabelVisible
-                    language={ Language.json }
-                />
-            </PageSection>
+                    language={ Language.json } />
+            </PageSection></>
+        }
         </>
     );
 };
