@@ -7,7 +7,10 @@ import {
 } from '@patternfly/react-core';
 import * as React from 'react';
 
+import { useUserPermissions } from '../app/PermissionContext';
+
 export const EmailTemplatePage: React.FunctionComponent = () => {
+    const { hasPermission, refresh, isAdmin } = useUserPermissions();
 
     return (
         <>
