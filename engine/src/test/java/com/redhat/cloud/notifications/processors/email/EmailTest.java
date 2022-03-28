@@ -35,7 +35,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -320,13 +319,13 @@ public class EmailTest {
             for (int i = 0; i < expectedElements; ++i) {
                 ITUserResponse user = new ITUserResponse();
 
-                user.authentications = new LinkedList<>();
+                user.authentications = new ArrayList<>();
                 user.authentications.add(new Authentication());
                 user.authentications.get(0).principal = String.format("username-%d", i);
 
                 com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email email = new com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email();
                 email.address = String.format("username-%d@foobardotcom", i);
-                user.accountRelationships = new LinkedList<>();
+                user.accountRelationships = new ArrayList<>();
                 user.accountRelationships.add(new AccountRelationship());
                 user.accountRelationships.get(0).emails = List.of(email);
 
