@@ -121,11 +121,15 @@ public class RbacRecipientUsersProvider {
             int firstResult = 0;
 
             do {
+                Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
+
                 ITUserRequest request = new ITUserRequest(accountId, adminsOnly, firstResult, maxResultsPerPage);
                 usersPaging = retryOnItError(() -> itUserService.getUsers(request));
                 usersTotal.addAll(usersPaging);
 
                 firstResult += maxResultsPerPage;
+
+                getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
             } while (usersPaging.size() == maxResultsPerPage);
 
             users = transformToUser(usersTotal);
