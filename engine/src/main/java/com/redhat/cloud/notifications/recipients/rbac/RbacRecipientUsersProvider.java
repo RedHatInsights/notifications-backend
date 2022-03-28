@@ -132,11 +132,8 @@ public class RbacRecipientUsersProvider {
         } else {
             users = getWithPagination(
                 page -> {
-                    Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                    Page<RbacUser> rbacUsers = retryOnRbacError(() ->
+                    return retryOnRbacError(() ->
                             rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
-                    getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
-                    return rbacUsers;
                 }
             );
         }
