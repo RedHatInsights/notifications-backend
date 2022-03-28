@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -47,7 +48,7 @@ public class ITUserServiceTest {
         Authentication authentication = new Authentication();
         authentication.principal = "myPrincipal";
         authentication.providerName = "myProviderName";
-        itUserResponse.authentications = new LinkedList<>();
+        itUserResponse.authentications = new ArrayList<>();
         itUserResponse.authentications.add(authentication);
 
         final AccountRelationship accountRelationship = new AccountRelationship();
@@ -60,10 +61,10 @@ public class ITUserServiceTest {
         nonPrimaryEmail.isPrimary = false;
         nonPrimaryEmail.address = "second_adress@trashmail.org";
 
-        accountRelationship.emails = new LinkedList<>();
+        accountRelationship.emails = new ArrayList<>();
         accountRelationship.emails.add(nonPrimaryEmail);
         accountRelationship.emails.add(primaryEmail);
-        itUserResponse.accountRelationships = new LinkedList<>();
+        itUserResponse.accountRelationships = new ArrayList<>();
         itUserResponse.accountRelationships.add(accountRelationship);
         itUserResponse.accountRelationships.get(0).permissions = List.of();
         List<ITUserResponse> itUserResponses = List.of(itUserResponse);

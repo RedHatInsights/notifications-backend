@@ -75,26 +75,26 @@ public class RbacRecipientUsersProviderTest {
     }
 
     private List<ITUserResponse> createTestResponse(String permissionCode) {
-        List<ITUserResponse> itUserResponses = new LinkedList<>();
+        List<ITUserResponse> itUserResponses = new ArrayList<>();
 
         ITUserResponse itUserResponse = new ITUserResponse();
 
         final AccountRelationship accountRelationship = new AccountRelationship();
-        accountRelationship.permissions = new LinkedList<>();
+        accountRelationship.permissions = new ArrayList<>();
         Permission permission = new Permission();
         permission.permissionCode = permissionCode;
         accountRelationship.permissions.add(permission);
 
-        itUserResponse.authentications = new LinkedList<>();
+        itUserResponse.authentications = new ArrayList<>();
         final Authentication authentication = new Authentication();
         authentication.principal = "somePrincipal";
         authentication.providerName = "someProviderName";
         itUserResponse.authentications.add(authentication);
 
-        itUserResponse.accountRelationships = new LinkedList<>();
+        itUserResponse.accountRelationships = new ArrayList<>();
         itUserResponse.accountRelationships.add(accountRelationship);
 
-        accountRelationship.emails = new LinkedList<>();
+        accountRelationship.emails = new ArrayList<>();
 
         itUserResponse.personalInformation = new PersonalInformation();
         itUserResponse.personalInformation.firstName = "someFirstName";
@@ -237,13 +237,13 @@ public class RbacRecipientUsersProviderTest {
 
                 ITUserResponse user = new ITUserResponse();
 
-                user.authentications = new LinkedList<>();
+                user.authentications = new ArrayList<>();
                 user.authentications.add(new Authentication());
                 user.authentications.get(0).principal = String.format("username-%d", i);
 
                 Email email = new Email();
                 email.address = String.format("username-%d@foobardotcom", i);
-                user.accountRelationships = new LinkedList<>();
+                user.accountRelationships = new ArrayList<>();
                 user.accountRelationships.add(new AccountRelationship());
                 user.accountRelationships.get(0).emails = List.of(email);
 

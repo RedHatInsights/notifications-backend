@@ -320,13 +320,13 @@ public class EmailTest {
             for (int i = 0; i < expectedElements; ++i) {
                 ITUserResponse user = new ITUserResponse();
 
-                user.authentications = new LinkedList<>();
+                user.authentications = new ArrayList<>();
                 user.authentications.add(new Authentication());
                 user.authentications.get(0).principal = String.format("username-%d", i);
 
                 com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email email = new com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email();
                 email.address = String.format("username-%d@foobardotcom", i);
-                user.accountRelationships = new LinkedList<>();
+                user.accountRelationships = new ArrayList<>();
                 user.accountRelationships.add(new AccountRelationship());
                 user.accountRelationships.get(0).emails = List.of(email);
 
