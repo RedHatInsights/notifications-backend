@@ -65,6 +65,7 @@ public class ITUserServiceTest {
         accountRelationship.emails.add(primaryEmail);
         itUserResponse.accountRelationships = new LinkedList<>();
         itUserResponse.accountRelationships.add(accountRelationship);
+        itUserResponse.accountRelationships.get(0).permissions = List.of();
         List<ITUserResponse> itUserResponses = List.of(itUserResponse);
 
         when(itUserService.getUsers(any(ITUserRequest.class))).thenReturn(itUserResponses);
@@ -74,7 +75,6 @@ public class ITUserServiceTest {
 
         final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", true);
         assertTrue(someAccountId.get(0).isActive());
-        assertTrue(someAccountId.get(0).isAdmin());
 
         assertEquals(someAccountId.get(0).getEmail(), "first_adress@trashmail.org");
     }

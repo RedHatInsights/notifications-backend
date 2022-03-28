@@ -125,7 +125,7 @@ public class RbacRecipientUsersProvider {
                 firstResult += maxResultsPerPage;
             } while (usersPaging.size() == maxResultsPerPage);
 
-            users = transformToUser(usersTotal, adminsOnly);
+            users = transformToUser(usersTotal);
         } else {
             users = getWithPagination(
                 page -> {
@@ -193,7 +193,7 @@ public class RbacRecipientUsersProvider {
         return users;
     }
 
-    private List<User> transformToUser(List<ITUserResponse> itUserResponses, boolean adminsOnly) {
+    List<User> transformToUser(List<ITUserResponse> itUserResponses) {
         List<User> users = new ArrayList<>();
         for (ITUserResponse itUserResponse : itUserResponses) {
             User user = new User();
@@ -207,7 +207,7 @@ public class RbacRecipientUsersProvider {
                 }
             }
 
-            user.setAdmin(adminsOnly);
+            user.setAdmin(itUserResponse.accountRelationships.stream().anyMatch(permission -> permission.permissions.stream().anyMatch(permission1 -> permission1.permissionCode.equals("admin:org:all"))));
             user.setActive(true);
 
             user.setFirstName(itUserResponse.personalInformation.firstName);

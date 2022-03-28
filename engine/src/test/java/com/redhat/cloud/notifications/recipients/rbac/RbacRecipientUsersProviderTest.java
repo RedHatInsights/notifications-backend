@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Account
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authentication;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
@@ -27,6 +28,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -48,6 +51,59 @@ public class RbacRecipientUsersProviderTest {
 
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
+
+    @Test
+    void shouldBeAdminWhenResponseContainsAdminPermission() {
+        RbacRecipientUsersProvider testee = new RbacRecipientUsersProvider();
+
+        List<ITUserResponse> itUserResponses = createTestResponse("admin:org:all");
+
+        final List<User> users = testee.transformToUser(itUserResponses);
+
+        assertTrue(users.get(0).isAdmin());
+    }
+
+    @Test
+    void shouldNotBeAdminWhenResponseDoesNotContainAdminPermission() {
+        RbacRecipientUsersProvider testee = new RbacRecipientUsersProvider();
+
+        List<ITUserResponse> itUserResponses = createTestResponse("portal_download");
+
+        final List<User> users = testee.transformToUser(itUserResponses);
+
+        assertFalse(users.get(0).isAdmin());
+    }
+
+    private List<ITUserResponse> createTestResponse(String permissionCode) {
+        List<ITUserResponse> itUserResponses = new LinkedList<>();
+
+        ITUserResponse itUserResponse = new ITUserResponse();
+
+        final AccountRelationship accountRelationship = new AccountRelationship();
+        accountRelationship.permissions = new LinkedList<>();
+        Permission permission = new Permission();
+        permission.permissionCode = permissionCode;
+        accountRelationship.permissions.add(permission);
+
+        itUserResponse.authentications = new LinkedList<>();
+        final Authentication authentication = new Authentication();
+        authentication.principal = "somePrincipal";
+        authentication.providerName = "someProviderName";
+        itUserResponse.authentications.add(authentication);
+
+        itUserResponse.accountRelationships = new LinkedList<>();
+        itUserResponse.accountRelationships.add(accountRelationship);
+
+        accountRelationship.emails = new LinkedList<>();
+
+        itUserResponse.personalInformation = new PersonalInformation();
+        itUserResponse.personalInformation.firstName = "someFirstName";
+        itUserResponse.personalInformation.lastNames = "someLastName";
+
+        itUserResponses.add(itUserResponse);
+
+        return itUserResponses;
+    }
 
     @Test
     public void getAllUsersFromDefaultGroup() {
@@ -190,6 +246,8 @@ public class RbacRecipientUsersProviderTest {
                 user.accountRelationships = new LinkedList<>();
                 user.accountRelationships.add(new AccountRelationship());
                 user.accountRelationships.get(0).emails = List.of(email);
+
+                user.accountRelationships.get(0).permissions = List.of();
 
                 user.personalInformation = new PersonalInformation();
                 user.personalInformation.firstName = "foo";
