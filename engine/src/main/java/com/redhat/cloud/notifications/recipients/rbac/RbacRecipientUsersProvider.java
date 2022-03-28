@@ -35,6 +35,8 @@ public class RbacRecipientUsersProvider {
 
     private static final Logger LOGGER = Logger.getLogger(RbacRecipientUsersProvider.class);
 
+    public static final String ORG_ADMIN_PERMISSION = "admin:org:all";
+
     @Inject
     @RestClient
     RbacServiceToService rbacServiceToService;
@@ -207,7 +209,7 @@ public class RbacRecipientUsersProvider {
                 }
             }
 
-            user.setAdmin(itUserResponse.accountRelationships.stream().anyMatch(permission -> permission.permissions.stream().anyMatch(permission1 -> permission1.permissionCode.equals("admin:org:all"))));
+            user.setAdmin(itUserResponse.accountRelationships.stream().anyMatch(permission -> permission.permissions.stream().anyMatch(specificPermission -> ORG_ADMIN_PERMISSION.equals(specificPermission.permissionCode))));
             user.setActive(true);
 
             user.setFirstName(itUserResponse.personalInformation.firstName);

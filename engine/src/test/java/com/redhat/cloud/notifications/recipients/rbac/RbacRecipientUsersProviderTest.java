@@ -56,7 +56,7 @@ public class RbacRecipientUsersProviderTest {
     void shouldBeAdminWhenResponseContainsAdminPermission() {
         RbacRecipientUsersProvider testee = new RbacRecipientUsersProvider();
 
-        List<ITUserResponse> itUserResponses = createTestResponse("admin:org:all");
+        List<ITUserResponse> itUserResponses = createTestResponse(RbacRecipientUsersProvider.ORG_ADMIN_PERMISSION);
 
         final List<User> users = testee.transformToUser(itUserResponses);
 

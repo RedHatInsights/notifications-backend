@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.request;
 
+import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -16,7 +18,7 @@ public class ITUserRequest {
 
         if (adminsOnly) {
             PermissionCode permissionCode = new PermissionCode();
-            permissionCode.value = "admin:org:all";
+            permissionCode.value = RbacRecipientUsersProvider.ORG_ADMIN_PERMISSION;
             permissionCode.operand = "eq";
             allOf.permissionCode = permissionCode;
         }
