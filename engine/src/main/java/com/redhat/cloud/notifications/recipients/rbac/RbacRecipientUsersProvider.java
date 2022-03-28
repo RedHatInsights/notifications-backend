@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -208,7 +209,7 @@ public class RbacRecipientUsersProvider {
                 }
             }
 
-            user.setAdmin(itUserResponse.accountRelationships.stream().anyMatch(relationship -> relationship.permissions.stream().anyMatch(permission -> ORG_ADMIN_PERMISSION.equals(permission.permissionCode))));
+            user.setAdmin(itUserResponse.accountRelationships.stream().filter(Objects::nonNull).anyMatch(relationship -> relationship.permissions.stream().filter(Objects::nonNull).anyMatch(permission -> ORG_ADMIN_PERMISSION.equals(permission.permissionCode))));
             user.setActive(true);
 
             user.setFirstName(itUserResponse.personalInformation.firstName);
