@@ -1,21 +1,21 @@
 {
   "files": {
     "main.css": "./static/css/main.ebdcbaff.chunk.css",
-    "main.js": "./static/js/main.ceee5215.chunk.js",
-    "main.js.map": "./static/js/main.ceee5215.chunk.js.map",
-    "runtime-main.js": "./static/js/runtime-main.119ae624.js",
-    "runtime-main.js.map": "./static/js/runtime-main.119ae624.js.map",
+    "main.js": "./static/js/main.ef8cc59c.chunk.js",
+    "main.js.map": "./static/js/main.ef8cc59c.chunk.js.map",
+    "runtime-main.js": "./static/js/runtime-main.0b8fb0d8.js",
+    "runtime-main.js.map": "./static/js/runtime-main.0b8fb0d8.js.map",
     "static/css/2.10282f44.chunk.css": "./static/css/2.10282f44.chunk.css",
-    "static/js/2.fe62f60c.chunk.js": "./static/js/2.fe62f60c.chunk.js",
-    "static/js/2.fe62f60c.chunk.js.map": "./static/js/2.fe62f60c.chunk.js.map",
-    "static/js/3.d302bf14.chunk.js": "./static/js/3.d302bf14.chunk.js",
-    "static/js/3.d302bf14.chunk.js.map": "./static/js/3.d302bf14.chunk.js.map",
+    "static/js/2.638cc5c1.chunk.js": "./static/js/2.638cc5c1.chunk.js",
+    "static/js/2.638cc5c1.chunk.js.map": "./static/js/2.638cc5c1.chunk.js.map",
+    "static/js/3.e2fe5b44.chunk.js": "./static/js/3.e2fe5b44.chunk.js",
+    "static/js/3.e2fe5b44.chunk.js.map": "./static/js/3.e2fe5b44.chunk.js.map",
     "editor.worker.js": "./editor.worker.js",
     "editor.worker.js.map": "./editor.worker.js.map",
     "index.html": "./index.html",
     "static/css/2.10282f44.chunk.css.map": "./static/css/2.10282f44.chunk.css.map",
     "static/css/main.ebdcbaff.chunk.css.map": "./static/css/main.ebdcbaff.chunk.css.map",
-    "static/js/2.fe62f60c.chunk.js.LICENSE.txt": "./static/js/2.fe62f60c.chunk.js.LICENSE.txt",
+    "static/js/2.638cc5c1.chunk.js.LICENSE.txt": "./static/js/2.638cc5c1.chunk.js.LICENSE.txt",
     "static/media/base.css": "./static/media/pficon.a32f4243.woff",
     "static/media/codicon.css": "./static/media/codicon.68664da4.ttf",
     "static/media/background-image.css": "./static/media/pfbg_768@2x.eea28e73.jpg",
@@ -23,10 +23,10 @@
     "static/media/redhat-logo.f7405300.svg": "./static/media/redhat-logo.f7405300.svg"
   },
   "entrypoints": [
-    "static/js/runtime-main.119ae624.js",
+    "static/js/runtime-main.0b8fb0d8.js",
     "static/css/2.10282f44.chunk.css",
-    "static/js/2.fe62f60c.chunk.js",
+    "static/js/2.638cc5c1.chunk.js",
     "static/css/main.ebdcbaff.chunk.css",
-    "static/js/main.ceee5215.chunk.js"
+    "static/js/main.ef8cc59c.chunk.js"
   ]
 }
