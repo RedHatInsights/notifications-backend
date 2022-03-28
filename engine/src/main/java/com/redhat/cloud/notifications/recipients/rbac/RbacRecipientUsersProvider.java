@@ -3,8 +3,10 @@ package com.redhat.cloud.notifications.recipients.rbac;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.routers.models.Page;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
@@ -24,7 +26,6 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
@@ -34,6 +35,8 @@ import java.util.stream.Collectors;
 public class RbacRecipientUsersProvider {
 
     private static final Logger LOGGER = Logger.getLogger(RbacRecipientUsersProvider.class);
+
+    public static final String ORG_ADMIN_PERMISSION = "admin:org:all";
 
     @Inject
     @RestClient
@@ -113,19 +116,23 @@ public class RbacRecipientUsersProvider {
         List<User> users;
         if (retrieveUsersFromIt) {
             List<ITUserResponse> usersPaging;
-            List<ITUserResponse> usersTotal = new LinkedList<>();
+            List<ITUserResponse> usersTotal = new ArrayList<>();
 
             int firstResult = 0;
 
             do {
+                Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
+
                 ITUserRequest request = new ITUserRequest(accountId, adminsOnly, firstResult, maxResultsPerPage);
                 usersPaging = retryOnItError(() -> itUserService.getUsers(request));
                 usersTotal.addAll(usersPaging);
 
                 firstResult += maxResultsPerPage;
+
+                getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
             } while (usersPaging.size() == maxResultsPerPage);
 
-            users = transformToUser(usersTotal, adminsOnly);
+            users = transformToUser(usersTotal);
         } else {
             users = getWithPagination(
                 page -> {
@@ -193,7 +200,7 @@ public class RbacRecipientUsersProvider {
         return users;
     }
 
-    private List<User> transformToUser(List<ITUserResponse> itUserResponses, boolean adminsOnly) {
+    List<User> transformToUser(List<ITUserResponse> itUserResponses) {
         List<User> users = new ArrayList<>();
         for (ITUserResponse itUserResponse : itUserResponses) {
             User user = new User();
@@ -207,7 +214,19 @@ public class RbacRecipientUsersProvider {
                 }
             }
 
-            user.setAdmin(adminsOnly);
+            user.setAdmin(false);
+            if (itUserResponse.accountRelationships != null) {
+                for (AccountRelationship accountRelationship : itUserResponse.accountRelationships) {
+                    if (accountRelationship.permissions != null) {
+                        for (Permission permission : accountRelationship.permissions) {
+                            if (ORG_ADMIN_PERMISSION.equals(permission.permissionCode)) {
+                                user.setAdmin(true);
+                            }
+                        }
+                    }
+                }
+            }
+
             user.setActive(true);
 
             user.setFirstName(itUserResponse.personalInformation.firstName);

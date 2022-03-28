@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.request;
 
+import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -13,7 +14,7 @@ class ITUserRequestTest {
     @Test
     void shouldSetPermissionCodeWhenAdminsOnly() {
         assertEquals("eq", testee.by.allOf.permissionCode.operand);
-        assertEquals("admin:org:all", testee.by.allOf.permissionCode.value);
+        assertEquals(RbacRecipientUsersProvider.ORG_ADMIN_PERMISSION, testee.by.allOf.permissionCode.value);
     }
 
     @Test

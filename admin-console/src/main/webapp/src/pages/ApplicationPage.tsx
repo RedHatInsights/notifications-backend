@@ -12,6 +12,7 @@ import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
 import { useUserPermissions } from '../app/PermissionContext';
+
 import { EmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
 import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
@@ -141,11 +142,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 <Title headingLevel="h1">
                     <Breadcrumb>
                         <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
-                        <BreadcrumbItem target='#'>{ bundle ? bundle.display_name : <Spinner /> }
+                        <BreadcrumbLinkItem to={ linkTo.bundle(getBundleId ?? '') }>
+                            { bundle ? bundle.display_name : <Spinner /> }
+                        </BreadcrumbLinkItem>
+                        <BreadcrumbItem to='#' isActive> { (applicationTypesQuery.loading
+                        || applicationTypesQuery.payload?.status !== 200) ? <Spinner /> : applicationTypesQuery.payload.value.displayName }
                         </BreadcrumbItem>
-
-                        <BreadcrumbItem target='#'> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
-                            <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
                     </Breadcrumb></Title>
                 <TableComposable
                     aria-label="Event types table"

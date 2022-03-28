@@ -9,7 +9,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.webclient.BopWebClient;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.templates.EmailTemplateService;
+import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.utils.LineBreakCleaner;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -65,7 +65,7 @@ public class EmailSender {
     EndpointRepository endpointRepository;
 
     @Inject
-    EmailTemplateService emailTemplateService;
+    TemplateService templateService;
 
     @Inject
     MeterRegistry registry;
@@ -123,8 +123,8 @@ public class EmailSender {
         String renderedSubject;
         String renderedBody;
         try {
-            renderedSubject = emailTemplateService.renderTemplate(user, action, subject);
-            renderedBody = emailTemplateService.renderTemplate(user, action, body);
+            renderedSubject = templateService.renderTemplate(user, action, subject);
+            renderedBody = templateService.renderTemplate(user, action, body);
         } catch (Exception e) {
             logger.warnf(e,
                     "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",

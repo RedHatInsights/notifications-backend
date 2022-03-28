@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.request;
 
-import java.util.LinkedList;
+import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class ITUserRequest {
@@ -16,7 +18,7 @@ public class ITUserRequest {
 
         if (adminsOnly) {
             PermissionCode permissionCode = new PermissionCode();
-            permissionCode.value = "admin:org:all";
+            permissionCode.value = RbacRecipientUsersProvider.ORG_ADMIN_PERMISSION;
             permissionCode.operand = "eq";
             allOf.permissionCode = permissionCode;
         }
@@ -30,7 +32,7 @@ public class ITUserRequest {
         Include include = new Include();
 
         include.allOf = List.of("authentications", "personal_information");
-        List<AccountRelationship> accountRelationships = new LinkedList<>();
+        List<AccountRelationship> accountRelationships = new ArrayList<>();
         AccountRelationship accountRelationship1 = new AccountRelationship();
         accountRelationship1.allOf = List.of("primary_email");
 
