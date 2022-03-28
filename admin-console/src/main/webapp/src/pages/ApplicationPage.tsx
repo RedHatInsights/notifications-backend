@@ -14,6 +14,8 @@ import { useParams } from 'react-router';
 import { useUserPermissions } from '../app/PermissionContext';
 import { CreateEditModal } from '../components/CreateEditModal';
 import { DeleteModal } from '../components/DeleteModal';
+import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
+import { linkTo } from '../Routes';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
@@ -140,11 +142,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 <Title headingLevel="h1">
                     <Breadcrumb>
                         <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
-                        <BreadcrumbItem target='#'>{ bundle ? bundle.display_name : <Spinner /> }
+                        <BreadcrumbLinkItem to={ linkTo.bundle(getBundleId ?? '') }>
+                            { bundle ? bundle.display_name : <Spinner /> }
+                        </BreadcrumbLinkItem>
+                        <BreadcrumbItem to='#' isActive> { (applicationTypesQuery.loading
+                        || applicationTypesQuery.payload?.status !== 200) ? <Spinner /> : applicationTypesQuery.payload.value.displayName }
                         </BreadcrumbItem>
-
-                        <BreadcrumbItem target='#'> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
-                            <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
                     </Breadcrumb></Title>
                 <TableComposable
                     aria-label="Event types table"
