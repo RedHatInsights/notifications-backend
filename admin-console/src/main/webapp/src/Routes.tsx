@@ -17,7 +17,7 @@ export const linkTo = {
     application: (applicationId: string) => `/application/${applicationId}`,
     aggregation: () => '/aggregation',
     email: () => '/email',
-    emailTemplates: (applicationId: string) => `/application/${applicationId}/emailTemplates`
+    emailTemplates: () => `/emailTemplates`
 };
 
 const pathRoutes: Path[] = [
@@ -38,7 +38,7 @@ const pathRoutes: Path[] = [
         component: RenderEmailPage
     },
     {
-        path: linkTo.emailTemplates(':applicationId'),
+        path: linkTo.emailTemplates(),
         component: EmailTemplatePage
     }
 ];

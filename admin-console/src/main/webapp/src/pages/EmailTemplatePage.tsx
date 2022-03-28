@@ -3,8 +3,6 @@ import {
     PageSection,
     Split,
     SplitItem,
-    Stack,
-    StackItem,
     Title
 } from '@patternfly/react-core';
 import * as React from 'react';
@@ -16,23 +14,16 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
             <PageSection>
                 <Split>
                     <SplitItem isFilled>
-                        <Title headingLevel="h1" >Email templates</Title>
+                        <Title headingLevel="h1" >Create an Email Template</Title>
                     </SplitItem>
                 </Split>
-            </PageSection>
-            <PageSection>
-                <Stack>
-                    <StackItem>
-                        <Title headingLevel="h2">Result</Title>
-                    </StackItem>
-                </Stack>
             </PageSection>
             <PageSection>
                 <Title headingLevel="h2">Subject template</Title>
                 <CodeEditor
                     isLineNumbersVisible
                     isMinimapVisible={ false }
-                    height="50px"
+                    height="100px"
                 />
             </PageSection>
             <PageSection>
@@ -48,7 +39,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                 <CodeEditor
                     isLineNumbersVisible
                     isMinimapVisible={ false }
-                    height="300px"
+                    height="200px"
                     isLanguageLabelVisible
                     language={ Language.json }
                 />

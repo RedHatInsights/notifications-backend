@@ -1,46 +1,83 @@
 import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar,
     ToolbarContent, ToolbarItem } from '@patternfly/react-core';
-import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
+import { EyeIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
     TableComposable,
     Tbody,
     Td,  Th,   Thead,
     Tr } from '@patternfly/react-table';
 import * as React from 'react';
-import { useMemo } from 'react';
-import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
+import { Link } from 'react-router-dom';
 
-import { useUserPermissions } from '../app/PermissionContext';
+import { linkTo } from '../../Routes';
+import { useApplicationTypes } from '../../services/EventTypes/GetApplication';
+import { ViewTemplateModal } from './VIewTemplateModal';
 
 type ApplicationPageParams = {
     applicationId: string;
 }
 
-export const ApplicationPage: React.FunctionComponent = () => {
-    const { hasPermission } = useUserPermissions();
+export const EmailTemplateTable: React.FunctionComponent = () => {
+    const { applicationId } = useParams<ApplicationPageParams>();
+    const applicationTypesQuery = useApplicationTypes(applicationId);
 
-    const columns = [ 'Email Template'];
+    const [ showViewModal, setShowViewModal ] = React.useState(false);
+    const viewModal = () => {
+        setShowViewModal(true);
+    };
+
+    const onClose = () => {
+        setShowViewModal(false);
+    };
+
+    const application = React.useMemo(() => {
+        if (applicationTypesQuery.payload?.status === 200) {
+            return applicationTypesQuery.payload.value;
+        }
+
+        return undefined;
+    }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
+
+    const columns = [ 'Email Template', 'Id' ];
+    const rows = [
+        {
+            displayName: 'i',
+            id: 1
+        },
+        {
+            displayName: 'am',
+            id: 2
+        },
+        {
+            displayName: 'a',
+            id: 3
+        },
+        {
+            displayName: 'list',
+            id: 4
+        }
+    ];
 
     return (
         <React.Fragment>
             <PageSection>
                 <Title headingLevel="h1">
                     <Breadcrumb>
-                        <BreadcrumbItem target='#'> Email Templates for { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
-                            <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
+                        <BreadcrumbItem target='#'> Email Template for { application?.displayName ?? '' }</BreadcrumbItem>
                     </Breadcrumb></Title>
-                <TableComposable
-                    aria-label="Event types table"
-                >
+                <TableComposable aria-label="Email Template table">
                     <Thead>
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button variant='primary' type='button'
-                                        isDisabled={ !application || !hasPermission(application?.id) }
-                                        onClick={ createEventType }> Create Event Type </Button>
-                                    </React.Fragment>
+                                    <Button variant="primary" component={ (props: any) =>
+                                        <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Email Template</Button>
+                                    <ViewTemplateModal
+                                        showModal={ showViewModal }
+                                        applicationName={ application?.displayName ?? '' }
+                                        onClose={ onClose }
+                                    />
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
@@ -50,23 +87,22 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             ))}
                         </Tr>
                     </Thead>
-                    <Tbody>{ (eventTypesQuery.payload.value.length === 0 ? 'There are no event types found for this application' : '') }</Tbody>
                     <Tbody>
-                        { eventTypesQuery.payload.value.map(e => (
-                            <Tr key={ e.id }>
-                                <Td>{ e.displayName }</Td>
-                                <Td>{ e.name }</Td>
-                                <Td>{ e.description }</Td>
-                                <Td>{ e.id }</Td>
+                        { rows.map(r => (
+                            <Tr key={ r.id }>
+                                <Td>{r.displayName}</Td>
+                                <Td>{r.id}</Td>
+                                <Td>
+                                    <Button className='view' type='button' variant='plain' onClick={ viewModal }
+                                    > { <EyeIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
-                                        isDisabled={ !application || !hasPermission(application?.id) }
-                                        onClick={ () => editEventType(e) }> { <PencilAltIcon /> } </Button></Td>
+                                        isDisabled> { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
-                                        isDisabled={ !application || !hasPermission(application?.id) }
-                                        onClick={ () => deleteEventTypeModal(e) }>{ <TrashIcon /> } </Button></Td>
+                                        isDisabled>{ <TrashIcon /> } </Button></Td>
                             </Tr>
+
                         ))}
                     </Tbody>
                 </TableComposable>
