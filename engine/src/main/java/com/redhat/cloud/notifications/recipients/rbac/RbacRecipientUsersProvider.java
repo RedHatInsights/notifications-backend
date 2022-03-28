@@ -209,7 +209,7 @@ public class RbacRecipientUsersProvider {
                 }
             }
 
-            user.setAdmin(itUserResponse.accountRelationships.stream().anyMatch(permission -> permission.permissions.stream().anyMatch(specificPermission -> ORG_ADMIN_PERMISSION.equals(specificPermission.permissionCode))));
+            user.setAdmin(itUserResponse.accountRelationships.stream().anyMatch(relationship -> relationship.permissions.stream().anyMatch(permission -> ORG_ADMIN_PERMISSION.equals(permission.permissionCode))));
             user.setActive(true);
 
             user.setFirstName(itUserResponse.personalInformation.firstName);
