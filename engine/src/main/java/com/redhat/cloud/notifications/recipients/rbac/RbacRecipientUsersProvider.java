@@ -24,7 +24,6 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
@@ -115,7 +114,7 @@ public class RbacRecipientUsersProvider {
         List<User> users;
         if (retrieveUsersFromIt) {
             List<ITUserResponse> usersPaging;
-            List<ITUserResponse> usersTotal = new LinkedList<>();
+            List<ITUserResponse> usersTotal = new ArrayList<>();
 
             int firstResult = 0;
 

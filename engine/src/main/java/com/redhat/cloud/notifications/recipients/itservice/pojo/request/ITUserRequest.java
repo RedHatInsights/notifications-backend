@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.recipients.itservice.pojo.request;
 
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ITUserRequest {
@@ -32,7 +32,7 @@ public class ITUserRequest {
         Include include = new Include();
 
         include.allOf = List.of("authentications", "personal_information");
-        List<AccountRelationship> accountRelationships = new LinkedList<>();
+        List<AccountRelationship> accountRelationships = new ArrayList<>();
         AccountRelationship accountRelationship1 = new AccountRelationship();
         accountRelationship1.allOf = List.of("primary_email");
 
