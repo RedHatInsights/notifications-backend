@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.openbridge;
 import io.quarkus.cache.CacheResult;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
@@ -41,6 +42,7 @@ public class BridgeHelper {
 
     private Bridge bridgeInstance;
 
+    private static final Logger LOGGER = Logger.getLogger(BridgeHelper.class);
 
     @ApplicationScoped
     @Produces
@@ -60,6 +62,9 @@ public class BridgeHelper {
 
         String bid = bridgeMap.get("id");
         String ep = bridgeMap.get("endpoint");
+        if (ep.endsWith("/events")) {
+            ep = ep.substring(0, ep.lastIndexOf("/")); // OB is tacking that on at some point in the future, be prepared for the transition period.
+        }
         String name = bridgeMap.get("name");
 
         Bridge bridge = new Bridge(bid, ep, name);
@@ -75,7 +80,13 @@ public class BridgeHelper {
             return new BridgeAuth("- OB not enabled token -");
         }
 
-        BridgeAuth ba = new BridgeAuth(getAuthTokenInternal());
+        BridgeAuth ba = null;
+        try {
+            ba = new BridgeAuth(getAuthTokenInternal());
+        } catch (Exception e) {
+            LOGGER.warn("Failed to get an auth token: " + e.getMessage());
+            ba = new BridgeAuth("- No token - obtained -");
+        }
         return ba;
     }
 
@@ -102,4 +113,11 @@ public class BridgeHelper {
         return "Basic " + encoded;
     }
 
+    public void setObEnabled(boolean obEnabled) {
+        this.obEnabled = obEnabled;
+    }
+
+    public void setOurBridge(String id) {
+        ourBridge = id;
+    }
 }

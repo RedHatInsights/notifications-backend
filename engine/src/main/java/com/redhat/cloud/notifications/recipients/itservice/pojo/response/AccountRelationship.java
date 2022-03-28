@@ -12,4 +12,5 @@ public class AccountRelationship {
     public String startDate;
     public String id;
     public Boolean isPrimary;
+    public List<Permission> permissions;
 }

@@ -139,14 +139,29 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         CamelProperties camelProperties = item.getEndpoint().getProperties(CamelProperties.class);
 
         if (subType.equals("slack")) { // OpenBridge
-            callOpenBridge(payload, historyId, accountId, camelProperties);
+            long endTime;
+            NotificationHistory history = getHistoryStub(item.getEndpoint(), item.getEvent(), 0L, historyId);
+            try {
+                callOpenBridge(payload, historyId, accountId, camelProperties);
+                history.setInvocationResult(true);
+            } catch (Exception e) {
+                history.setInvocationResult(false);
+                Map<String, Object> details = new HashMap<>();
+                details.put("failure", e.getMessage());
+                history.setDetails(details);
+            } finally {
+                endTime = System.currentTimeMillis();
+            }
+            history.setInvocationTime(endTime - startTime);
+            return history;
+
         } else {
             reallyCallCamel(payload, historyId, accountId, subType);
+            final long endTime = System.currentTimeMillis();
+            // We only create a basic stub. The FromCamel filler will update it later
+            NotificationHistory history = getHistoryStub(item.getEndpoint(), item.getEvent(), endTime - startTime, historyId);
+            return history;
         }
-        final long endTime = System.currentTimeMillis();
-        // We only create a basic stub. The FromCamel filler will update it later
-        NotificationHistory history = getHistoryStub(item.getEndpoint(), item.getEvent(), endTime - startTime, historyId);
-        return history;
     }
 
     public void reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
@@ -191,7 +206,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         ce.put("data", body);
 
         BridgeEventService evtSvc = RestClientBuilder.newBuilder()
-                .baseUri(URI.create(bridge.getEventsEndpoint()))
+                .baseUri(URI.create(bridge.getEndpoint()))
                 .build(BridgeEventService.class);
 
         JsonObject payload = JsonObject.mapFrom(ce);

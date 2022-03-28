@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Account
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authentication;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
@@ -22,11 +23,12 @@ import org.mockito.Mockito;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -48,6 +50,59 @@ public class RbacRecipientUsersProviderTest {
 
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
+
+    @Test
+    void shouldBeAdminWhenResponseContainsAdminPermission() {
+        RbacRecipientUsersProvider testee = new RbacRecipientUsersProvider();
+
+        List<ITUserResponse> itUserResponses = createTestResponse(RbacRecipientUsersProvider.ORG_ADMIN_PERMISSION);
+
+        final List<User> users = testee.transformToUser(itUserResponses);
+
+        assertTrue(users.get(0).isAdmin());
+    }
+
+    @Test
+    void shouldNotBeAdminWhenResponseDoesNotContainAdminPermission() {
+        RbacRecipientUsersProvider testee = new RbacRecipientUsersProvider();
+
+        List<ITUserResponse> itUserResponses = createTestResponse("portal_download");
+
+        final List<User> users = testee.transformToUser(itUserResponses);
+
+        assertFalse(users.get(0).isAdmin());
+    }
+
+    private List<ITUserResponse> createTestResponse(String permissionCode) {
+        List<ITUserResponse> itUserResponses = new ArrayList<>();
+
+        ITUserResponse itUserResponse = new ITUserResponse();
+
+        final AccountRelationship accountRelationship = new AccountRelationship();
+        accountRelationship.permissions = new ArrayList<>();
+        Permission permission = new Permission();
+        permission.permissionCode = permissionCode;
+        accountRelationship.permissions.add(permission);
+
+        itUserResponse.authentications = new ArrayList<>();
+        final Authentication authentication = new Authentication();
+        authentication.principal = "somePrincipal";
+        authentication.providerName = "someProviderName";
+        itUserResponse.authentications.add(authentication);
+
+        itUserResponse.accountRelationships = new ArrayList<>();
+        itUserResponse.accountRelationships.add(accountRelationship);
+
+        accountRelationship.emails = new ArrayList<>();
+
+        itUserResponse.personalInformation = new PersonalInformation();
+        itUserResponse.personalInformation.firstName = "someFirstName";
+        itUserResponse.personalInformation.lastNames = "someLastName";
+
+        itUserResponses.add(itUserResponse);
+
+        return itUserResponses;
+    }
 
     @Test
     public void getAllUsersFromDefaultGroup() {
@@ -181,15 +236,17 @@ public class RbacRecipientUsersProviderTest {
 
                 ITUserResponse user = new ITUserResponse();
 
-                user.authentications = new LinkedList<>();
+                user.authentications = new ArrayList<>();
                 user.authentications.add(new Authentication());
                 user.authentications.get(0).principal = String.format("username-%d", i);
 
                 Email email = new Email();
                 email.address = String.format("username-%d@foobardotcom", i);
-                user.accountRelationships = new LinkedList<>();
+                user.accountRelationships = new ArrayList<>();
                 user.accountRelationships.add(new AccountRelationship());
                 user.accountRelationships.get(0).emails = List.of(email);
+
+                user.accountRelationships.get(0).permissions = List.of();
 
                 user.personalInformation = new PersonalInformation();
                 user.personalInformation.firstName = "foo";
