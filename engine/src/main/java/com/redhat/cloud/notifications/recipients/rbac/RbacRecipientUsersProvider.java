@@ -3,8 +3,10 @@ package com.redhat.cloud.notifications.recipients.rbac;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.routers.models.Page;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
@@ -25,7 +27,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -209,7 +210,19 @@ public class RbacRecipientUsersProvider {
                 }
             }
 
-            user.setAdmin(itUserResponse.accountRelationships.stream().filter(Objects::nonNull).anyMatch(relationship -> relationship.permissions.stream().filter(Objects::nonNull).anyMatch(permission -> ORG_ADMIN_PERMISSION.equals(permission.permissionCode))));
+            user.setAdmin(false);
+            if (itUserResponse.accountRelationships != null) {
+                for (AccountRelationship accountRelationship : itUserResponse.accountRelationships) {
+                    if (accountRelationship.permissions != null) {
+                        for (Permission permission : accountRelationship.permissions) {
+                            if (ORG_ADMIN_PERMISSION.equals(permission.permissionCode)) {
+                                user.setAdmin(true);
+                            }
+                        }
+                    }
+                }
+            }
+
             user.setActive(true);
 
             user.setFirstName(itUserResponse.personalInformation.firstName);
