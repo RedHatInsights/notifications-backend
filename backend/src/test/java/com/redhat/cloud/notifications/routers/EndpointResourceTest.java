@@ -384,6 +384,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         extras.put("template", "11");
         cAttr.setExtras(extras);
 
+        // This is bogus because it has no sub_type
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.CAMEL);
         ep.setName("Push the camel through the needle's ear");
@@ -443,7 +444,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpointResource.obEnabled = true;
         bridgeHelper.setObEnabled(true);
 
-        // First we try with bogus values for the OB endpoint
+        // First we try with bogus values for the OB endpoint itself (no valid bridge)
         given()
                 .header(identityHeader)
                 .when()
@@ -453,7 +454,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(500);
 
-        // Now set up some mock OB endpoints
+        // Now set up some mock OB endpoints (simulate valid bridge)
         Bridge bridge = new Bridge("321", "http://some.events/", "my bridge");
         Map<String, String> auth = new HashMap<>();
         auth.put("access_token", "li-la-lu-token");
@@ -496,8 +497,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     .header(identityHeader)
                     .when().delete("/endpoints/" + id)
                     .then()
-                    .statusCode(204)
-                    .extract().body().asString();
+                    .statusCode(204);
         }
 
         mockServerConfig.clearOpenBridgeEndpoints(bridge);

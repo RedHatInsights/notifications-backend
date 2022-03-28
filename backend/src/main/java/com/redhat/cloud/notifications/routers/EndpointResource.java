@@ -198,7 +198,7 @@ public class EndpointResource {
                     processorId = setupOpenBridgeProcessor(endpoint, properties, processorName);
                 } catch (Exception e) {
                     LOGGER.warn("Processor setup failed: " + e.getMessage());
-                    throw new InternalServerErrorException(e.getMessage());
+                    throw new InternalServerErrorException("Can't set up the endpoint");
                 }
 
                 // TODO find a better place for these, that should not be
@@ -268,6 +268,8 @@ public class EndpointResource {
                                 LOGGER.warn("Removal of OB processor failed:" + ex.getMessage());
                                 // Nothing more we can do
                             }
+                        } else {
+                            LOGGER.warn("ProcessorId was null for endpoint " + id.toString());
                         }
                     }
                 }

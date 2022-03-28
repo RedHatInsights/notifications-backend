@@ -11,9 +11,9 @@ public class Bridge {
     /* The name of the bridge. */
     private String name;
 
-    public Bridge(String id, String eventsEndpoint, String name) {
+    public Bridge(String id, String endpoint, String name) {
         this.id = id;
-        this.endpoint = eventsEndpoint;
+        this.endpoint = endpoint;
         this.name = name;
     }
 
@@ -30,7 +30,7 @@ public class Bridge {
         final StringBuilder sb = new StringBuilder("Bridge{");
         sb.append("id='").append(id).append('\'');
         sb.append(", name='").append(name).append('\'');
-        sb.append(", eventsEndpoint='").append(endpoint).append('\'');
+        sb.append(", endpoint='").append(endpoint).append('\'');
         sb.append('}');
         return sb.toString();
     }
