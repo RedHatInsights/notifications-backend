@@ -3068,7 +3068,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 2,
+      "version": 3,
       "weekStart": ""
     }
 kind: ConfigMap
