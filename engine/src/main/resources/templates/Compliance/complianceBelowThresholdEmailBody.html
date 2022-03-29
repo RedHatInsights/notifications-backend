@@ -35,10 +35,10 @@
                         <!-- Hi {{user.first_name}},
                         <br>
                         <br> -->
-                        Your system, <a class="rh-url" href="{environment.url('/insights/compliance/systems/' + action.events[0].payload.host_id)}"><b>{action.events[0].payload.host_name}</b></a>, assigned to policy <a class="rh-url" href="{environment.url('/insights/compliance/scappolicies/' + action.events[0].payload.policy_id)}"><b>{action.events[0].payload.policy_name}</b></a>, has been marked as non-compliant because its compliance score {action.events[0].payload.compliance_score}% dropped below the configured compliance threshold of {action.events[0].payload.policy_threshold}% for this policy.
+                        Your system, <a class="rh-url" href="{environment.url('/insights/compliance/systems/')}{action.events[0].payload.host_id}"><b>{action.events[0].payload.host_name}</b></a>, assigned to policy <a class="rh-url" href="{environment.url('/insights/compliance/scappolicies/')}{action.events[0].payload.policy_id}"><b>{action.events[0].payload.policy_name}</b></a>, has been marked as non-compliant because its compliance score {action.events[0].payload.compliance_score}% dropped below the configured compliance threshold of {action.events[0].payload.policy_threshold}% for this policy.
                     </p>
                     <p>
-                        Please review the <a class="rh-url" href="{environment.url('/insights/compliance/reports/' + action.events[0].payload.policy_id)}">detailed policy report for this system</a> and take the appropriate steps to bring this system into compliance. For additional details on how to  remediate compliance issues, learn more <a class="rh-url" href="https://access.redhat.com/documentation/en-us/red_hat_insights/2021/html/remediating_security-policy_compliance_issues_using_ansible_playbooks/index"><b>here</b></a>.
+                        Please review the <a class="rh-url" href="{environment.url('/insights/compliance/reports/')}{action.events[0].payload.policy_id}">detailed policy report for this system</a> and take the appropriate steps to bring this system into compliance. For additional details on how to  remediate compliance issues, learn more <a class="rh-url" href="https://access.redhat.com/documentation/en-us/red_hat_insights/2021/html/remediating_security-policy_compliance_issues_using_ansible_playbooks/index"><b>here</b></a>.
                     </p>
                 </td>
             </tr>
