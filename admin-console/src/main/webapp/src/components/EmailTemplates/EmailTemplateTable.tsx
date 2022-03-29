@@ -14,7 +14,7 @@ import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
 import { useApplicationTypes } from '../../services/EventTypes/GetApplication';
 import { ListEventTypes } from '../EventTypes/ListEventTypes';
-import { ViewTemplateModal } from './ViewTemplateModal';
+import { ViewTemplateModal } from './ViewEmailTemplateModal';
 
 type ApplicationPageParams = {
     applicationId: string;
