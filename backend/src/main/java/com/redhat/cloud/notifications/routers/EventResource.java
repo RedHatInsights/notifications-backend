@@ -17,10 +17,12 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +64,41 @@ public class EventResource {
         }
         String accountId = getAccountId(securityContext);
         List<Event> events = eventRepository.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, includeActions, limit, offset, sortBy);
+        List<EventLogEntry> eventLogEntries = getEntriesForEvents(events, includeActions, includeDetails, includePayload);
+        Long count = eventRepository.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+
+        Meta meta = new Meta();
+        meta.setCount(count);
+
+        Map<String, String> links = PageLinksBuilder.build(PATH, count, limit, offset);
+
+        Page<EventLogEntry> page = new Page<>();
+        page.setData(eventLogEntries);
+        page.setMeta(meta);
+        page.setLinks(links);
+        return page;
+    }
+
+    @GET
+    @Path("/{id}")
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed(RBAC_READ_NOTIFICATIONS_EVENTS)
+    @Operation(summary = "Retrieve the event log for one event")
+    public List<EventLogEntry> getEventLogById(@Context SecurityContext securityContext, @PathParam("id") UUID id) {
+
+        List<Event> events = new ArrayList<>();
+        Event dummy = eventRepository.getEventById(id, true);
+        events.add(dummy);
+
+        boolean includeActions = true;
+        boolean includeDetails = true;
+        boolean includePayload = true;
+        List<EventLogEntry> entries = getEntriesForEvents(events, includeActions, includeDetails, includePayload);
+
+        return entries;
+    }
+
+    private List<EventLogEntry> getEntriesForEvents(List<Event> events, boolean includeActions, boolean includeDetails, boolean includePayload) {
         List<EventLogEntry> eventLogEntries = events.stream().map(event -> {
             List<EventLogEntryAction> actions;
             if (!includeActions) {
@@ -93,17 +130,9 @@ public class EventResource {
             }
             return entry;
         }).collect(Collectors.toList());
-        Long count = eventRepository.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
 
-        Meta meta = new Meta();
-        meta.setCount(count);
-
-        Map<String, String> links = PageLinksBuilder.build(PATH, count, limit, offset);
-
-        Page<EventLogEntry> page = new Page<>();
-        page.setData(eventLogEntries);
-        page.setMeta(meta);
-        page.setLinks(links);
-        return page;
+        return eventLogEntries;
     }
+
+
 }

@@ -58,6 +58,21 @@ public class EventRepository {
         return query.getSingleResult();
     }
 
+    public Event getEventById(UUID eventId, boolean fetchNotificationHistory) {
+
+        String hql;
+
+        if (fetchNotificationHistory) {
+            hql = "SELECT DISTINCT e FROM Event e LEFT JOIN FETCH e.historyEntries he WHERE e.id = :eventId ";
+        } else {
+            hql = "FROM Event e WHERE e.id = :eventId";
+        }
+
+        return entityManager.createQuery(hql, Event.class)
+                .setParameter("eventId", eventId)
+                .getSingleResult();
+    }
+
     private Optional<String> getOrderByCondition(String sortBy) {
         if (sortBy == null) {
             return Optional.of(" ORDER BY e.created DESC");
