@@ -151,7 +151,7 @@ public class RbacRecipientUsersProvider {
                 }
             );
         }
-        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId));
+        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
         rbacUsers.set(users.size());
 
         return users;
