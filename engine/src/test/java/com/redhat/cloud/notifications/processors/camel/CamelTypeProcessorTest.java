@@ -169,6 +169,7 @@ public class CamelTypeProcessorTest {
 
         // Now set up some mock OB endpoints (simulate valid bridge)
         String eventsEndpoint = MockServerLifecycleManager.getContainerUrl() + "/events";
+        System.out.println("==> Setting events endpoint to " + eventsEndpoint);
         Bridge bridge = new Bridge("321", eventsEndpoint, "my bridge");
         Map<String, String> auth = new HashMap<>();
         auth.put("access_token", "li-la-lu-token");
