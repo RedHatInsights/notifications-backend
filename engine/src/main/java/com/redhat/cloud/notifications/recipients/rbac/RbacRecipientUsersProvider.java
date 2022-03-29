@@ -28,6 +28,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -77,6 +78,9 @@ public class RbacRecipientUsersProvider {
     MeterRegistry meterRegistry;
 
     private Counter rbacFailuresCounter;
+
+    private AtomicInteger rbacUsers = new AtomicInteger(0);
+
     private RetryPolicy<Object> rbacRetryPolicy;
 
     private Counter itFailuresCounter;
@@ -85,6 +89,9 @@ public class RbacRecipientUsersProvider {
     @PostConstruct
     public void initCounters() {
         rbacFailuresCounter = meterRegistry.counter("rbac.failures");
+
+        meterRegistry.gauge("rbac.users", rbacUsers);
+
         rbacRetryPolicy = RetryPolicy.builder()
                 .onRetry(event -> rbacFailuresCounter.increment())
                 .handle(IOException.class, ConnectTimeoutException.class)
@@ -145,6 +152,8 @@ public class RbacRecipientUsersProvider {
             );
         }
         getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
+        rbacUsers.set(users.size());
+
         return users;
     }
 
