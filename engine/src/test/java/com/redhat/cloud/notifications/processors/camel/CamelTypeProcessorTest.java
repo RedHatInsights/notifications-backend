@@ -179,6 +179,9 @@ public class CamelTypeProcessorTest {
         MockserverConfig.addOpenBridgeEndpoints(auth, bridge, obProcessor);
         bridgeHelper.setOurBridge("321");
 
+        System.out.println("==> Auth token " + bridgeHelper.getAuthToken());
+        System.out.println("==> The bridge " + bridgeHelper.getBridgeIfNeeded());
+
         // Process again
         result = processor.process(event, List.of(endpoint));
 
