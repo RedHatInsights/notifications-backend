@@ -24,7 +24,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "iteration": 1648553254119,
+      "iteration": 1648561613889,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -742,7 +742,7 @@ data:
           ],
           "thresholds": [],
           "timeRegions": [],
-          "title": "RBAC - User fetching time spent by account",
+          "title": "Users fetched by account",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -3068,7 +3068,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 35,
+      "version": 36,
       "weekStart": ""
     }
 kind: ConfigMap
