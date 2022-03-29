@@ -742,7 +742,7 @@ data:
           ],
           "thresholds": [],
           "timeRegions": [],
-          "title": "RBAC - Users fetched by account",
+          "title": "Users fetched by account",
           "tooltip": {
             "shared": true,
             "sort": 0,
