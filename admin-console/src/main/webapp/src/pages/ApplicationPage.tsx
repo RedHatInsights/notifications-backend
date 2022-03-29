@@ -29,7 +29,7 @@ type ApplicationPageParams = {
 }
 
 export const ApplicationPage: React.FunctionComponent = () => {
-    const { hasPermission } = useUserPermissions();
+    const { hasPermission, isAdmin } = useUserPermissions();
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
@@ -211,7 +211,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     </Tbody>
                 </TableComposable>
             </PageSection>
-            <EmailTemplateTable />
+            { isAdmin && <EmailTemplateTable /> }
         </React.Fragment>
 
     );
