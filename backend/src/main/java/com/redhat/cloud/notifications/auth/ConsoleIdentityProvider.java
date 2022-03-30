@@ -171,6 +171,8 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
 
     private static ConsoleIdentity getRhIdentityFromString(String xRhIdHeader) {
         String xRhDecoded = new String(Base64.getDecoder().decode(xRhIdHeader.getBytes(UTF_8)), UTF_8);
-        return Json.decodeValue(xRhDecoded, ConsoleIdentityWrapper.class).getIdentity();
+        ConsoleIdentity identity = Json.decodeValue(xRhDecoded, ConsoleIdentityWrapper.class).getIdentity();
+        identity.rawIdentity = xRhIdHeader;
+        return identity;
     }
 }

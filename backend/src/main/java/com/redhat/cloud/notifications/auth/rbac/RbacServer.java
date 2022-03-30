@@ -9,8 +9,12 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Response;
+
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 
@@ -29,4 +33,9 @@ public interface RbacServer {
                              @HeaderParam(X_RH_IDENTITY_HEADER) String rhIdentity
 
     );
+
+    @GET
+    @Path("/groups/{groupID}/") // trailing slash is required by api
+    @Produces("application/json")
+    Uni<Response> getGroup(@PathParam("groupID") UUID groupId, @HeaderParam(X_RH_IDENTITY_HEADER) String rhIdentity);
 }

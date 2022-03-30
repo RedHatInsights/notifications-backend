@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
+import com.redhat.cloud.notifications.auth.rbac.RbacGroup;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
@@ -94,6 +95,9 @@ public class EndpointResource {
 
     @Inject
     ApplicationRepository applicationRepository;
+
+    @Inject
+    RbacGroup rbacGroup;
 
     @ConfigProperty(name = "ob.enabled", defaultValue = "false")
     boolean obEnabled;
@@ -221,9 +225,17 @@ public class EndpointResource {
     public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid RequestEmailSubscriptionProperties requestProps) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
+        if (requestProps.getGroupId() != null) {
+            boolean isValid = rbacGroup.validate(requestProps.getGroupId(), principal.getIdentity().rawIdentity);
+            if (!isValid) {
+                throw new BadRequestException(String.format("Invalid RBAC group identified with id %s", requestProps.getGroupId()));
+            }
+        }
+
         // Prevent from creating not public facing properties
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
         properties.setOnlyAdmins(requestProps.isOnlyAdmins());
+        properties.setGroupId(requestProps.getGroupId());
 
         return endpointRepository.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties);
     }
