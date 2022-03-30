@@ -85,6 +85,8 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: MP_MESSAGING_INCOMING_AGGREGATION_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS
+          value: ${MP_MESSAGING_INCOMING_AGGREGATION_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
           value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
@@ -174,7 +176,6 @@ objects:
           value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
           value: ${QUARKUS_REST_CLIENT_KC_URL}
-
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -216,6 +217,9 @@ parameters:
   value: 250Mi
 - name: MIN_REPLICAS
   value: "1"
+- name: MP_MESSAGING_INCOMING_AGGREGATION_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS
+  description: Max age in milliseconds that an unprocessed message can be before the connector is marked as unhealthy
+  value: "60000"
 - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
   description: Maximum delay between invocations of poll()
   value: "300000"
