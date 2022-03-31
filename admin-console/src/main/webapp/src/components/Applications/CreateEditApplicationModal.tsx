@@ -12,8 +12,8 @@ import {
 } from '@patternfly/react-core';
 import React from 'react';
 
-import { useUserPermissions } from '../app/PermissionContext';
-import { Application, RoleOwnedApplication } from '../types/Notifications';
+import { useUserPermissions } from '../../app/PermissionContext';
+import { Application, RoleOwnedApplication } from '../../types/Notifications';
 
 interface CreateEditApplicationModalProps {
     isEdit: boolean;

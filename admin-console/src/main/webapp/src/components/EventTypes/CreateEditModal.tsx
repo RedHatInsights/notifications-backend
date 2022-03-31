@@ -1,7 +1,7 @@
 import { ActionGroup, Button, Form, FormGroup, HelperText, HelperTextItem, Modal, ModalVariant, TextArea, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
-import { EventType } from '../types/Notifications';
+import { EventType } from '../../types/Notifications';
 
 interface CreateEditModalProps {
     isEdit: boolean;
