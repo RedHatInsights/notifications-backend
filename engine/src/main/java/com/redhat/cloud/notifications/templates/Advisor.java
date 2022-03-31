@@ -14,6 +14,8 @@ public class Advisor implements EmailTemplate {
                 return Templates.newRecommendationInstantEmailTitle();
             } else if (eventType.equals("resolved-recommendation")) {
                 return Templates.resolvedRecommendationInstantEmailTitle();
+            } else if (eventType.equals("deactivated-recommendation")) {
+                return Templates.deactivatedRecommendationInstantEmailTitle();
             }
         }
 
@@ -30,6 +32,8 @@ public class Advisor implements EmailTemplate {
                 return Templates.newRecommendationInstantEmailBody();
             } else if (eventType.equals("resolved-recommendation")) {
                 return Templates.resolvedRecommendationInstantEmailBody();
+            } else if (eventType.equals("deactivated-recommendation")) {
+                return Templates.deactivatedRecommendationInstantEmailBody();
             }
         }
 
@@ -41,7 +45,7 @@ public class Advisor implements EmailTemplate {
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return (eventType.equals("new-recommendation") || eventType.equals("resolved-recommendation")) && type == EmailSubscriptionType.INSTANT;
+        return (eventType.equals("new-recommendation") || eventType.equals("resolved-recommendation") || eventType.equals("deactivated-recommendation")) && type == EmailSubscriptionType.INSTANT;
     }
 
     @Override
@@ -59,6 +63,10 @@ public class Advisor implements EmailTemplate {
         public static native TemplateInstance resolvedRecommendationInstantEmailTitle();
 
         public static native TemplateInstance resolvedRecommendationInstantEmailBody();
+
+        public static native TemplateInstance deactivatedRecommendationInstantEmailTitle();
+
+        public static native TemplateInstance deactivatedRecommendationInstantEmailBody();
     }
 
 }
