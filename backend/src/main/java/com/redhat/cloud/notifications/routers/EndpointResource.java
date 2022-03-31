@@ -225,6 +225,10 @@ public class EndpointResource {
     public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid RequestEmailSubscriptionProperties requestProps) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
+        if (requestProps.getGroupId() != null && requestProps.isOnlyAdmins()) {
+            throw new BadRequestException(String.format("Cannot use RBAC groups and only admins in the same endpoint"));
+        }
+
         if (requestProps.getGroupId() != null) {
             boolean isValid = rbacGroup.validate(requestProps.getGroupId(), principal.getIdentity().rawIdentity);
             if (!isValid) {
