@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.auth.rbac;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import javax.enterprise.context.ApplicationScoped;

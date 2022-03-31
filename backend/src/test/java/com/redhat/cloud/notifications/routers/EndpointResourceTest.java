@@ -43,7 +43,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
@@ -58,8 +57,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
