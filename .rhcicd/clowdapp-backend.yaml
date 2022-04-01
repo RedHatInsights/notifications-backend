@@ -175,6 +175,9 @@ objects:
   kind: CronJob
   metadata:
     name: notifications-db-cleaner-cronjob
+  annotations: 
+    ignore-check.kube-linter.io/no-liveness-probe
+    ignore-check.kube-linter.io/no-readiness-probe
   spec:
     schedule: ${DB_CLEANER_SCHEDULE}
     suspend: ${{DISABLE_DB_CLEANER}}
