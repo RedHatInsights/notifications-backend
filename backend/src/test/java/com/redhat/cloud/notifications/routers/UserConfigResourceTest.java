@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Json;
-import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -46,9 +45,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
     }
-
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
 
     @Inject
     EmailSubscriptionRepository emailSubscriptionRepository;
@@ -99,7 +95,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         String username = "user";
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
         String bundle = "rhel";
         String application = "policies";

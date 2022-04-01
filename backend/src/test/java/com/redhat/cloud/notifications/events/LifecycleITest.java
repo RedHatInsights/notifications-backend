@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.Json;
-import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
@@ -40,7 +40,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
+import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
@@ -72,18 +72,15 @@ public class LifecycleITest extends DbIsolatedTest {
     private static final String WEBHOOK_MOCK_PATH = "/test/lifecycle";
     private static final String SECRET_TOKEN = "super-secret-token";
 
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
-
     @Inject
     EntityManager entityManager;
 
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
-    private Header initRbacMock(String tenant, String username, MockServerClientConfig.RbacAccess access) {
+    private Header initRbacMock(String tenant, String username, MockServerConfig.RbacAccess access) {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, access);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
 
@@ -456,7 +453,7 @@ public class LifecycleITest extends DbIsolatedTest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(true);
         properties.setSecretToken(secretToken);
-        properties.setUrl("http://" + mockServerConfig.getRunningAddress() + WEBHOOK_MOCK_PATH);
+        properties.setUrl(MockServerLifecycleManager.getContainerUrl() + WEBHOOK_MOCK_PATH);
 
         Endpoint endpoint = new Endpoint();
         endpoint.setType(EndpointType.WEBHOOK);

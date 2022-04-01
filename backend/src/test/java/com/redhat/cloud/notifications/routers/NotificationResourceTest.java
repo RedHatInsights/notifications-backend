@@ -1,9 +1,8 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Json;
-import com.redhat.cloud.notifications.MockServerClientConfig;
-import com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -32,9 +31,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NO_ACCESS;
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.READ_ACCESS;
+import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
+import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
+import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_ACCESS;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME_2;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME;
 import static io.restassured.RestAssured.given;
@@ -57,9 +56,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
     private static final String TENANT = "NotificationServiceTest";
     private static final String USERNAME = "user";
 
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
-
     @Inject
     ResourceHelpers helpers;
 
@@ -72,12 +68,12 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
-        mockServerConfig.clearRbac();
+        MockServerConfig.clearRbac();
     }
 
     private Header initRbacMock(String tenant, String username, RbacAccess access) {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, access);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
 

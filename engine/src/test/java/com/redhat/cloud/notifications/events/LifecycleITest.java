@@ -1,8 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
-import com.redhat.cloud.notifications.MockServerClientConfig;
-import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
@@ -88,9 +87,6 @@ public class LifecycleITest {
     private static final String WEBHOOK_MOCK_PATH = "/test/lifecycle";
     private static final String EMAIL_SENDER_MOCK_PATH = "/test-email-sender/lifecycle";
     private static final String SECRET_TOKEN = "super-secret-token";
-
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
 
     @Inject
     @Any
@@ -265,7 +261,7 @@ public class LifecycleITest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(true);
         properties.setSecretToken(secretToken);
-        properties.setUrl("http://" + mockServerConfig.getRunningAddress() + WEBHOOK_MOCK_PATH);
+        properties.setUrl(MockServerLifecycleManager.getContainerUrl() + WEBHOOK_MOCK_PATH);
         return createEndpoint(accountId, WEBHOOK, "endpoint", "Endpoint", properties);
     }
 
@@ -356,7 +352,7 @@ public class LifecycleITest {
                 } catch (InterruptedException ex) {
                     throw new RuntimeException(ex);
                 }
-                mockServerConfig.getMockServerClient().clear(request);
+                MockServerLifecycleManager.getClient().clear(request);
             }
         };
     }
@@ -401,7 +397,7 @@ public class LifecycleITest {
         updateField(
                 emailSender,
                 "bopUrl",
-                "http://" + mockServerConfig.getRunningAddress() + EMAIL_SENDER_MOCK_PATH,
+                MockServerLifecycleManager.getContainerUrl() + EMAIL_SENDER_MOCK_PATH,
                 EmailSender.class
         );
     }
@@ -411,7 +407,7 @@ public class LifecycleITest {
                 .withPath(EMAIL_SENDER_MOCK_PATH)
                 .withMethod("POST");
 
-        mockServerConfig.getMockServerClient()
+        MockServerLifecycleManager.getClient()
                 .withSecure(false)
                 .when(expectedRequestPattern)
                 .respond(request -> {
@@ -427,7 +423,7 @@ public class LifecycleITest {
                 .withPath(WEBHOOK_MOCK_PATH)
                 .withMethod("POST");
 
-        mockServerConfig.getMockServerClient()
+        MockServerLifecycleManager.getClient()
                 .withSecure(false)
                 .when(expectedRequestPattern)
                 .respond(request -> {
