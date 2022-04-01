@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import org.apache.commons.io.IOUtils;
-import org.mockserver.client.MockServerClient;
 import org.mockserver.model.ClearType;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -11,14 +10,13 @@ import java.io.InputStream;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
-public class MockServerClientConfig {
-
-    private final MockServerClient mockServerClient;
+public class MockServerConfig {
 
     public enum RbacAccess {
         FULL_ACCESS(getFileAsString("rbac-examples/rbac_example_full_access.json")),
@@ -38,12 +36,8 @@ public class MockServerClientConfig {
         }
     }
 
-    public MockServerClientConfig(String containerIpAddress, Integer serverPort) {
-        mockServerClient = new MockServerClient(containerIpAddress, serverPort);
-    }
-
-    public void addMockRbacAccess(String xRhIdentity, RbacAccess access) {
-        this.mockServerClient
+    public static void addMockRbacAccess(String xRhIdentity, RbacAccess access) {
+        getClient()
                 .when(request()
                         .withPath("/api/rbac/v1/access/")
                         .withQueryStringParameter("application", "notifications,integrations")
@@ -55,26 +49,26 @@ public class MockServerClientConfig {
                         .withBody(access.getPayload()));
     }
 
-    public void addHttpTestEndpoint(HttpRequest request, HttpResponse response, boolean secure) {
-        this.mockServerClient
+    public static void addHttpTestEndpoint(HttpRequest request, HttpResponse response, boolean secure) {
+        getClient()
                 .withSecure(secure)
                 .when(request)
                 .respond(response);
     }
 
-    public void clearRbac() {
-        this.mockServerClient.clear(request()
+    public static void clearRbac() {
+        getClient().clear(request()
                 .withPath("/api/rbac/v1/access/"),
                 ClearType.EXPECTATIONS
         );
     }
 
-    public void addOpenBridgeEndpoints(Map<String, String> auth, Bridge bridge, Map<String, String> processor) {
+    public static void addOpenBridgeEndpoints(Map<String, String> auth, Bridge bridge, Map<String, String> processor) {
         String authString = Json.encode(auth);
         String bridgeString = Json.encode(bridge);
         String processorString = Json.encode(processor);
 
-        this.mockServerClient
+        getClient()
                 .when(request()
                         .withPath("/auth/realms/event-bridge-fm/protocol/openid-connect/token"))
                 .respond(response()
@@ -82,7 +76,7 @@ public class MockServerClientConfig {
                         .withHeader("Content-Type", "application/json")
                         .withBody(authString));
 
-        this.mockServerClient
+        getClient()
                 .when(request()
                         .withPath("/api/v1/bridges/.*")
                         .withMethod("GET")
@@ -92,7 +86,7 @@ public class MockServerClientConfig {
                         .withHeader("Content-Type", "application/json")
                         .withBody(bridgeString));
 
-        this.mockServerClient
+        getClient()
                 .when(request()
                         .withPath("/api/v1/bridges/.*/processors")
                         .withMethod("POST")
@@ -102,7 +96,7 @@ public class MockServerClientConfig {
                         .withHeader("Content-Type", "application/json")
                         .withBody(processorString));
 
-        this.mockServerClient
+        getClient()
                 .when(request()
                         .withPath("/api/v1/bridges/.*/processors/" + processor.get("id"))
                         .withMethod("DELETE")
@@ -112,36 +106,27 @@ public class MockServerClientConfig {
 
     }
 
-
-    public void clearOpenBridgeEndpoints(Bridge bridge) {
-        this.mockServerClient.clear(request()
+    public static void clearOpenBridgeEndpoints(Bridge bridge) {
+        getClient().clear(request()
                 .withPath("/auth/realms/event-bridge-fm/protocol/openid-connect/token"),
                 ClearType.EXPECTATIONS);
 
-        this.mockServerClient.clear(request()
+        getClient().clear(request()
                 .withPath("/api/v1/bridges/" + bridge.getId()),
                 ClearType.EXPECTATIONS);
 
-        this.mockServerClient.clear(request()
+        getClient().clear(request()
                 .withPath("/api/v1/bridges/" + bridge.getId() + "/processors"),
                 ClearType.EXPECTATIONS);
     }
 
-    public void removeHttpTestEndpoint(HttpRequest request) {
-        this.mockServerClient.clear(request);
-    }
-
-    public MockServerClient getMockServerClient() {
-        return mockServerClient;
-    }
-
-    public String getRunningAddress() {
-        return String.format("%s:%d", mockServerClient.remoteAddress().getHostName(), mockServerClient.remoteAddress().getPort());
+    public static void removeHttpTestEndpoint(HttpRequest request) {
+        getClient().clear(request);
     }
 
     private static String getFileAsString(String filename) {
         try {
-            InputStream is = MockServerClientConfig.class.getClassLoader().getResourceAsStream(filename);
+            InputStream is = MockServerConfig.class.getClassLoader().getResourceAsStream(filename);
             return IOUtils.toString(is, UTF_8);
         } catch (Exception e) {
             fail("Failed to read rhid example file: " + e.getMessage());

@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.MockServerClientConfig;
-import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -51,9 +50,6 @@ import static org.mockserver.model.HttpResponse.response;
 //@QuarkusTestResource(TestLifecycleManager.class)
 public class EmailTest {
 
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
-
     @Inject
     EmailSubscriptionTypeProcessor emailProcessor;
 
@@ -89,7 +85,7 @@ public class EmailTest {
         HttpRequest postReq = new HttpRequest()
                 .withPath("/v1/sendEmails")
                 .withMethod("POST");
-        mockServerConfig.getMockServerClient()
+        MockServerLifecycleManager.getClient()
                 .withSecure(false)
                 .when(postReq)
                 .respond(verifyEmptyRequest);
@@ -179,7 +175,7 @@ public class EmailTest {
             fail(e);
         } finally {
             // Remove expectations
-            mockServerConfig.getMockServerClient().clear(postReq);
+            MockServerLifecycleManager.getClient().clear(postReq);
         }
         clearSubscriptions();
     }
@@ -259,7 +255,7 @@ public class EmailTest {
             fail(e);
         } finally {
             // Remove expectations
-            mockServerConfig.getMockServerClient().clear(postReq);
+            MockServerLifecycleManager.getClient().clear(postReq);
         }
         clearSubscriptions();
     }
