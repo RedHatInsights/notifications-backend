@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.models;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
@@ -14,6 +15,7 @@ public class Facet {
     @NotNull
     private final String displayName;
 
+    @Valid
     private final List<Facet> children;
 
     // Makes jackson happy (default constructor)
@@ -24,14 +26,14 @@ public class Facet {
         this.children = null;
     }
 
-    public Facet(@NotNull String id, @NotNull String name, @NotNull String displayName, List<Facet> children) {
+    public Facet(String id, String name, String displayName, List<Facet> children) {
         this.id = id;
         this.name = name;
         this.displayName = displayName;
         this.children = children;
     }
 
-    public Facet(@NotNull String id, @NotNull String name, @NotNull String displayName) {
+    public Facet(String id, String name, String displayName) {
         this(id, name, displayName, null);
     }
 
