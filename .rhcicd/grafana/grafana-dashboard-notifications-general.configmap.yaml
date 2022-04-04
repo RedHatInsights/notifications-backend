@@ -24,7 +24,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "iteration": 1648561613889,
+      "iteration": 1649055259649,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -598,6 +598,7 @@ data:
           "dashLength": 10,
           "dashes": false,
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
           "fill": 1,
@@ -636,24 +637,21 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "pKSsqZB7k"
+              },
               "exemplar": true,
               "expr": "sum(increase(rbac_get_users_total_seconds_max{service=\"notifications-engine-service\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "total",
               "refId": "A"
-            },
-            {
-              "exemplar": true,
-              "expr": "sum(increase(rbac_get_users_page_seconds_count{service=\"notifications-engine-service\"}[5m]))",
-              "interval": "",
-              "legendFormat": "page",
-              "refId": "B"
             }
           ],
           "thresholds": [],
           "timeRegions": [],
-          "title": "RBAC - Maximum time spent by account",
+          "title": "Maximum time spent fetching users by account",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -778,6 +776,7 @@ data:
           "dashLength": 10,
           "dashes": false,
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
           "fill": 1,
@@ -816,6 +815,11 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "skSy3ZB7k"
+              },
+              "exemplar": true,
               "expr": "sum(increase(rbac_failures_total[5m]))",
               "hide": false,
               "interval": "",
@@ -3008,7 +3012,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "stage",
               "value": "crcs02ue1-prometheus"
             },
@@ -3037,7 +3041,7 @@ data:
         ]
       },
       "time": {
-        "from": "now-3h",
+        "from": "now-30d",
         "to": "now"
       },
       "timepicker": {
@@ -3068,7 +3072,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 36,
+      "version": 37,
       "weekStart": ""
     }
 kind: ConfigMap
