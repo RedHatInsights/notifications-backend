@@ -14,6 +14,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.NotFoundException;
 import java.util.Collection;
 import java.util.List;
@@ -74,6 +75,13 @@ public class ApplicationRepository {
             eventType.filterOutApplication();
             return eventType;
         }
+    }
+
+    public List<Application> getApplications(@NotNull UUID bundleId) {
+        String sql = "FROM Application WHERE bundle.id = :bundleId";
+        return entityManager.createQuery(sql, Application.class)
+                .setParameter("bundleId", bundleId)
+                .getResultList();
     }
 
     public List<Application> getApplications(String bundleName) {

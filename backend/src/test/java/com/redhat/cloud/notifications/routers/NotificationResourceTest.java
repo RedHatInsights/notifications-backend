@@ -40,6 +40,7 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -353,6 +354,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testGetBundlesFacets() {
+        // no children by default
         Header identityHeader = initRbacMock("test", "user", READ_ACCESS);
         List<Facet> bundles = given()
                 .header(identityHeader)
@@ -366,6 +368,27 @@ public class NotificationResourceTest extends DbIsolatedTest {
         Optional<Facet> rhel = bundles.stream().filter(facet -> facet.getName().equals("rhel")).findFirst();
         assertTrue(rhel.isPresent());
         assertEquals("Red Hat Enterprise Linux", rhel.get().getDisplayName());
+        assertNull(rhel.get().getChildren());
+
+        // with children
+        bundles = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .queryParam("includeApplications", "true")
+                .get("/notifications/facets/bundles")
+                .then()
+                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
+
+        assertTrue(bundles.size() > 0);
+        rhel = bundles.stream().filter(facet -> facet.getName().equals("rhel")).findFirst();
+        assertTrue(rhel.isPresent());
+        assertEquals("Red Hat Enterprise Linux", rhel.get().getDisplayName());
+        assertNotNull(rhel.get().getChildren());
+
+        Optional<Facet> policies = rhel.get().getChildren().stream().filter(facet -> facet.getName().equals("policies")).findFirst();
+        assertTrue(policies.isPresent());
+        assertEquals("Policies", policies.get().getDisplayName());
     }
 
     @Test

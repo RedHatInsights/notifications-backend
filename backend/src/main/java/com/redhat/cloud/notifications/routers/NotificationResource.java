@@ -149,10 +149,19 @@ public class NotificationResource {
     @Path("/facets/bundles")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Return a thin list of configured bundles. This can be used to configure a filter in the UI")
-    public List<Facet> getBundleFacets(@Context SecurityContext sec) {
+    public List<Facet> getBundleFacets(@Context SecurityContext sec, @QueryParam("includeApplications") boolean includeApplications) {
         return bundleRepository.getBundles()
                 .stream()
-                .map(b -> new Facet(b.getId().toString(), b.getName(), b.getDisplayName()))
+                .map(b -> {
+                    List<Facet> applications = null;
+                    if (includeApplications) {
+                        applications = applicationRepository.getApplications(b.getId()).stream()
+                                .map(a -> new Facet(a.getId().toString(), a.getName(), a.getDisplayName()))
+                                .collect(Collectors.toList());
+                    }
+
+                    return new Facet(b.getId().toString(), b.getName(), b.getDisplayName(), applications);
+                })
                 .collect(Collectors.toList());
     }
 
