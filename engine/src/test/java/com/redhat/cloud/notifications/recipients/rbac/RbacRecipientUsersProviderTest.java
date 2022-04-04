@@ -16,6 +16,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -122,6 +123,16 @@ public class RbacRecipientUsersProviderTest {
         }
     }
 
+
+    @Test
+    public void getUsersFromNonExistentGroupResultsInNoUsers() {
+        UUID nonExistentGroup = UUID.randomUUID();
+        mockNotFoundGroup(nonExistentGroup);
+
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, nonExistentGroup);
+        assertEquals(0, users.size());
+    }
+
     @Test
     public void getAllUsersCache() {
         int initialSize = 1095;
@@ -185,6 +196,13 @@ public class RbacRecipientUsersProviderTest {
                 Mockito.eq(accountId),
                 Mockito.eq(group.getUuid())
         )).thenReturn(group);
+    }
+
+    private void mockNotFoundGroup(UUID groupId) {
+        when(rbacServiceToService.getGroup(
+                Mockito.eq(accountId),
+                Mockito.eq(groupId)
+        )).thenThrow(new ClientWebApplicationException(404));
     }
 
     private void mockGetGroupUsers(int elements, UUID groupId) {
