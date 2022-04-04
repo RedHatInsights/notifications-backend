@@ -141,7 +141,7 @@ public class RbacRecipientUsersProvider {
 
         // Micrometer doesn't like when tags are null and throws a NPE.
         String accountIdTag = accountId == null ? "" : accountId;
-        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountIdTag, "users", String.valueOf(users.size())));
+        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountIdTag));
         rbacUsers.set(users.size());
 
         return users;
