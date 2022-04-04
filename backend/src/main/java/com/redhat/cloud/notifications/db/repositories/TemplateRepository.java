@@ -100,7 +100,7 @@ public class TemplateRepository {
     }
 
     public List<InstantEmailTemplate> findInstantEmailTemplatesByEventType(UUID eventTypeId) {
-        String hql = "FROM InstantEmailTemplate WHERE eventType.id = :eventTypeId";
+        String hql = "FROM InstantEmailTemplate t JOIN FETCH t.eventType et WHERE et.id = :eventTypeId";
         List<InstantEmailTemplate> instantEmailTemplates = entityManager.createQuery(hql, InstantEmailTemplate.class)
                 .setParameter("eventTypeId", eventTypeId)
                 .getResultList();
@@ -114,7 +114,8 @@ public class TemplateRepository {
     }
 
     public InstantEmailTemplate findInstantEmailTemplateById(UUID id) {
-        String hql = "FROM InstantEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate WHERE t.id = :id";
+        String hql = "FROM InstantEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate " +
+                "LEFT JOIN FETCH t.eventType WHERE t.id = :id";
         try {
             InstantEmailTemplate template = entityManager.createQuery(hql, InstantEmailTemplate.class)
                     .setParameter("id", id)
@@ -205,7 +206,7 @@ public class TemplateRepository {
     }
 
     public List<AggregationEmailTemplate> findAggregationEmailTemplatesByApplication(UUID appId) {
-        String hql = "FROM AggregationEmailTemplate WHERE application.id = :appId";
+        String hql = "FROM AggregationEmailTemplate t JOIN FETCH t.application a WHERE a.id = :appId";
         List<AggregationEmailTemplate> aggregationEmailTemplates = entityManager.createQuery(hql, AggregationEmailTemplate.class)
                 .setParameter("appId", appId)
                 .getResultList();
@@ -219,7 +220,8 @@ public class TemplateRepository {
     }
 
     public AggregationEmailTemplate findAggregationEmailTemplateById(UUID id) {
-        String hql = "FROM AggregationEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate WHERE t.id = :id";
+        String hql = "FROM AggregationEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate " +
+                "LEFT JOIN FETCH t.application WHERE t.id = :id";
         try {
             AggregationEmailTemplate template = entityManager.createQuery(hql, AggregationEmailTemplate.class)
                     .setParameter("id", id)
