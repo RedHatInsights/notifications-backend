@@ -46,7 +46,7 @@
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <failsafe.version>3.2.3</failsafe.version>
 
-        <!-- Keep the version synced with TestLifecycleManager -->
+        <!-- Keep the version synced with MockServerLifecycleManager -->
         <mockserver-client-java.version>5.13.1</mockserver-client-java.version>
 
         <insights-notification-schemas-java.version>0.6</insights-notification-schemas-java.version>
