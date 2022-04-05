@@ -13,7 +13,6 @@
     </parent>
 
     <properties>
-        <surefire-plugin.version>3.0.0-M6</surefire-plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <pushgateway.version>0.15.0</pushgateway.version>
