@@ -7,7 +7,6 @@ import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
-import java.time.Duration;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -23,9 +22,7 @@ public class RbacGroupValidator {
     public boolean validate(UUID groupId, String rhIdentity) {
         if (isRbacEnabled) {
             try {
-                Response response = rbacServer.getGroup(groupId, rhIdentity)
-                        .await()
-                        .atMost(Duration.ofSeconds(2L));
+                Response response = rbacServer.getGroup(groupId, rhIdentity);
                 return response.getStatus() == 200;
             } catch (ClientWebApplicationException errorException) {
                 if (errorException.getResponse().getStatus() == 404) {

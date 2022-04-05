@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
-import com.redhat.cloud.notifications.auth.rbac.RbacGroup;
+import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
@@ -97,7 +97,7 @@ public class EndpointResource {
     ApplicationRepository applicationRepository;
 
     @Inject
-    RbacGroup rbacGroup;
+    RbacGroupValidator rbacGroupValidator;
 
     @ConfigProperty(name = "ob.enabled", defaultValue = "false")
     boolean obEnabled;
@@ -230,7 +230,7 @@ public class EndpointResource {
         }
 
         if (requestProps.getGroupId() != null) {
-            boolean isValid = rbacGroup.validate(requestProps.getGroupId(), principal.getIdentity().rawIdentity);
+            boolean isValid = rbacGroupValidator.validate(requestProps.getGroupId(), principal.getIdentity().rawIdentity);
             if (!isValid) {
                 throw new BadRequestException(String.format("Invalid RBAC group identified with id %s", requestProps.getGroupId()));
             }
