@@ -50,7 +50,7 @@
         <dependency>
             <groupId>io.quarkiverse.loggingsentry</groupId>
             <artifactId>quarkus-logging-sentry</artifactId>
-            <version>${sentry.version}</version>
+            <version>${quarkus-logging-sentry.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
