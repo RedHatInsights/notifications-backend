@@ -70,12 +70,10 @@ public class EmailSender {
     @Inject
     MeterRegistry registry;
 
-    private Counter.Builder processedCount;
     private Timer processTime;
 
     @PostConstruct
     public void init() {
-        processedCount = Counter.builder("processor.email.processed");
         processTime = registry.timer("processor.email.process-time");
         /*
          * The token value we receive contains a line break because of the standard mime encryption. Gabor Burges tried
@@ -106,8 +104,7 @@ public class EmailSender {
                     bopRequest,
                     getPayload(user, action, subject, body));
 
-            processedCount.tags("bundle", action.getBundle(), "application", action.getApplication());
-            processedCount.register(registry).increment();
+            registry.counter("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication());
 
             processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
 
