@@ -123,9 +123,8 @@ public class RbacRecipientUsersProviderTest {
         }
     }
 
-
     @Test
-    public void getUsersFromNonExistentGroupResultsInNoUsers() {
+    public void shouldReturnNoUsersWhenGroupNotFound() {
         UUID nonExistentGroup = UUID.randomUUID();
         mockNotFoundGroup(nonExistentGroup);
 

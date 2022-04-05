@@ -24,6 +24,7 @@ import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -166,7 +167,7 @@ public class RbacRecipientUsersProvider {
             rbacGroup = retryOnRbacError(() -> rbacServiceToService.getGroup(accountId, groupId));
         } catch (ClientWebApplicationException exception) {
             // The group does not exist (or no longer exists - ignore)
-            if (exception.getResponse().getStatus() == 404) {
+            if (exception.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
                 return List.of();
             }
 
