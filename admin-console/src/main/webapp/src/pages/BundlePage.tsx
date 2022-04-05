@@ -9,6 +9,7 @@ import { useUserPermissions } from '../app/PermissionContext';
 import { CreateEditApplicationModal } from '../components/CreateEditApplicationModal';
 import { DeleteApplicationModal } from '../components/DeleteApplicationModal';
 import { ListEventTypes } from '../components/ListEventTypes';
+import { BehaviorGroupsTable } from '../components/SystemBehaviorGroups/BehaviorGroupTable';
 import { linkTo } from '../Routes';
 import { useCreateApplication } from '../services/Applications/CreateApplication';
 import { useDeleteApplication } from '../services/Applications/DeleteApplication';
@@ -190,6 +191,7 @@ export const BundlePage: React.FunctionComponent = () => {
                     </Tbody>
                 </TableComposable>
             </PageSection>
+            <BehaviorGroupsTable />
         </React.Fragment>
 
     );

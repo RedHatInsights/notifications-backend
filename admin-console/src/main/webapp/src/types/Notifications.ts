@@ -1,3 +1,5 @@
+import { Schemas } from '../generated/OpenapiInternal';
+
 export interface Bundle {
     id: string;
     displayName: string;
@@ -13,6 +15,35 @@ export interface Application {
 
 export interface RoleOwnedApplication extends Application {
     ownerRole?: string;
+}
+
+export type UUID = Schemas.UUID;
+
+export type BehaviorGroupAction = {
+    created?: string | undefined | null;
+    id?: BehaviorGroupActionId | undefined | null;
+  };
+
+export type BehaviorGroupActionId = {
+    behaviorGroupId: UUID;
+    endpointId: UUID;
+  };
+
+export type BehaviorGroup = {
+    actions?: Array<BehaviorGroupAction> | undefined | null;
+    bundle?: Bundle | undefined | null;
+    bundleId: UUID;
+    isDefault?: boolean | undefined | null;
+    displayName: string;
+    id?: UUID | undefined | null;
+  };
+
+export enum NotificationType {
+    EMAIL_SUBSCRIPTION = 'EMAIL_SUBSCRIPTION'
+}
+
+export interface ActionBase {
+    type: NotificationType;
 }
 
 export interface EventType {
