@@ -22,12 +22,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.templates.TemplateService.USE_TEMPLATES_FROM_DB_KEY;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path(API_INTERNAL + "/template-engine")
 public class TemplateEngineResource {
 
-    @ConfigProperty(name = "notifications.use-templates-from-db", defaultValue = "false")
+    @ConfigProperty(name = USE_TEMPLATES_FROM_DB_KEY)
     boolean useTemplatesFromDb;
 
     @Inject
