@@ -11,14 +11,14 @@ import java.time.Duration;
 import java.util.UUID;
 
 @ApplicationScoped
-public class RbacGroup {
+public class RbacGroupValidator {
 
     @Inject
     @RestClient
     RbacServer rbacServer;
 
     @ConfigProperty(name = "rbac.enabled", defaultValue = "true")
-    Boolean isRbacEnabled;
+    boolean isRbacEnabled;
 
     public boolean validate(UUID groupId, String rhIdentity) {
         if (isRbacEnabled) {

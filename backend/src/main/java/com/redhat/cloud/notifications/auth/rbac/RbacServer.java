@@ -37,5 +37,5 @@ public interface RbacServer {
     @GET
     @Path("/groups/{groupID}/") // trailing slash is required by api
     @Produces("application/json")
-    Uni<Response> getGroup(@PathParam("groupID") UUID groupId, @HeaderParam(X_RH_IDENTITY_HEADER) String rhIdentity);
+    Response getGroup(@PathParam("groupID") UUID groupId, @HeaderParam(X_RH_IDENTITY_HEADER) String rhIdentity);
 }
