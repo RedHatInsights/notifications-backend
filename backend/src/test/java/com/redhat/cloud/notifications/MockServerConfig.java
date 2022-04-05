@@ -52,7 +52,7 @@ public class MockServerConfig {
     public static void addGroupResponse(String xRhIdentity, String groupId, int statusCode) {
         getClient()
             .when(request()
-                    .withPath(String.format("/api/rbac/v1/groups/%s", groupId))
+                    .withPath(String.format("/api/rbac/v1/groups/%s/", groupId))
                     .withHeader(X_RH_IDENTITY_HEADER, xRhIdentity)
             )
             .respond(response()
