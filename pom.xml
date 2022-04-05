@@ -53,7 +53,7 @@
         <clowder-quarkus-config-source.version>1.0.0</clowder-quarkus-config-source.version>
 
         <cloudwatch.version>4.2.0</cloudwatch.version>
-        <sentry.version>1.1.0</sentry.version>
+        <quarkus-logging-sentry.version>1.1.0</quarkus-logging-sentry.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
