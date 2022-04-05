@@ -64,8 +64,9 @@
             <artifactId>quarkus-smallrye-health</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.quarkus</groupId>
+            <groupId>io.quarkiverse.loggingsentry</groupId>
             <artifactId>quarkus-logging-sentry</artifactId>
+            <version>${sentry.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
