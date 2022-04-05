@@ -49,24 +49,24 @@ public class MockServerConfig {
                         .withBody(access.getPayload()));
     }
 
-    public void addGroupResponse(String xRhIdentity, String groupId, int statusCode) {
+    public static void addGroupResponse(String xRhIdentity, String groupId, int statusCode) {
         getClient()
-                .when(request()
-                        .withPath(String.format("/api/rbac/v1/groups/%s", groupId))
-                        .withHeader(X_RH_IDENTITY_HEADER, xRhIdentity)
-                )
-                .respond(response()
-                        .withStatusCode(statusCode)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{}")
-                );
+            .when(request()
+                    .withPath(String.format("/api/rbac/v1/groups/%s", groupId))
+                    .withHeader(X_RH_IDENTITY_HEADER, xRhIdentity)
+            )
+            .respond(response()
+                    .withStatusCode(statusCode)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{}")
+            );
     }
 
     public void addHttpTestEndpoint(HttpRequest request, HttpResponse response, boolean secure) {
-            getClient()
-                .withSecure(secure)
-                .when(request)
-                .respond(response);
+        getClient()
+            .withSecure(secure)
+            .when(request)
+            .respond(response);
     }
 
     public static void clearRbac() {

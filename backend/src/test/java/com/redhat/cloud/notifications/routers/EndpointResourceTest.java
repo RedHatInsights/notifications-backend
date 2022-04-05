@@ -1054,9 +1054,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
-        mockServerConfig.addGroupResponse(identityHeaderValue, validGroupId, 200);
-        mockServerConfig.addGroupResponse(identityHeaderValue, unknownGroupId, 404);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        MockServerConfig.addGroupResponse(identityHeaderValue, validGroupId, 200);
+        MockServerConfig.addGroupResponse(identityHeaderValue, unknownGroupId, 404);
 
         // valid group id
         RequestEmailSubscriptionProperties requestProps = new RequestEmailSubscriptionProperties();
