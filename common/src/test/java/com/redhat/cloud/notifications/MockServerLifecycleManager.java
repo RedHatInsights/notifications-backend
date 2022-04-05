@@ -7,7 +7,7 @@ import org.testcontainers.utility.DockerImageName;
 public class MockServerLifecycleManager {
 
     // Keep the version synced with pom.xml.
-    private static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("jamesdbloom/mockserver").withTag("mockserver-5.5.4");
+    private static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("mockserver/mockserver").withTag("mockserver-5.5.4");
 
     private static MockServerContainer container;
     private static String containerUrl;
