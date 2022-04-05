@@ -19,10 +19,12 @@ import io.quarkus.cache.CacheResult;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -160,7 +162,18 @@ public class RbacRecipientUsersProvider {
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
     public List<User> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
-        RbacGroup rbacGroup = retryOnRbacError(() -> rbacServiceToService.getGroup(accountId, groupId));
+        RbacGroup rbacGroup;
+        try {
+            rbacGroup = retryOnRbacError(() -> rbacServiceToService.getGroup(accountId, groupId));
+        } catch (ClientWebApplicationException exception) {
+            // The group does not exist (or no longer exists - ignore)
+            if (exception.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+                return List.of();
+            }
+
+            throw exception;
+        }
+
         List<User> users;
         if (rbacGroup.isPlatformDefault()) {
             users = getUsers(accountId, adminOnly);
