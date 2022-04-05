@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.processors.webhook;
 
-import com.redhat.cloud.notifications.MockServerClientConfig;
-import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -39,9 +38,6 @@ public class WebhookTest {
 
     private static final long MAX_RETRY_ATTEMPTS = 4L;
 
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
-
     @Inject
     WebhookTypeProcessor webhookTypeProcessor;
 
@@ -49,7 +45,7 @@ public class WebhookTest {
         HttpRequest postReq = new HttpRequest()
                 .withPath("/foobar")
                 .withMethod("POST");
-        mockServerConfig.getMockServerClient()
+        MockServerLifecycleManager.getClient()
                 .withSecure(false)
                 .when(postReq)
                 .respond(verifyEmptyRequest);
@@ -58,7 +54,7 @@ public class WebhookTest {
 
     @Test
     void testWebhook() {
-        String url = String.format("http://%s/foobar", mockServerConfig.getRunningAddress());
+        String url = MockServerLifecycleManager.getContainerUrl() + "/foobar";
 
         final List<String> bodyRequests = new ArrayList<>();
         ExpectationResponseCallback verifyEmptyRequest = req -> {
@@ -82,7 +78,7 @@ public class WebhookTest {
             fail(e);
         } finally {
             // Remove expectations
-            mockServerConfig.getMockServerClient().clear(postReq);
+            MockServerLifecycleManager.getClient().clear(postReq);
         }
 
         assertEquals(1, bodyRequests.size());
@@ -119,7 +115,7 @@ public class WebhookTest {
     }
 
     private void testRetry(boolean shouldSucceedEventually) {
-        String url = String.format("http://%s/foobar", mockServerConfig.getRunningAddress());
+        String url = MockServerLifecycleManager.getContainerUrl() + "/foobar";
 
         AtomicInteger callsCounter = new AtomicInteger();
         ExpectationResponseCallback expectationResponseCallback = request -> {
@@ -143,7 +139,7 @@ public class WebhookTest {
             assertEquals(MAX_RETRY_ATTEMPTS, callsCounter.get());
         } finally {
             // Remove expectations
-            mockServerConfig.getMockServerClient().clear(mockServerRequest);
+            MockServerLifecycleManager.getClient().clear(mockServerRequest);
         }
     }
 

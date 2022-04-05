@@ -1,2 +1,2 @@
 paths-ignore:
-  - 'backend/src/main/resources/META-INF/resources/**'
+  - 'backend/src/main/resources/META-INF/resources/'

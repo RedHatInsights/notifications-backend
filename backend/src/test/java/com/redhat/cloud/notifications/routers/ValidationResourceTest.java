@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -13,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import javax.persistence.NoResultException;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
+import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
@@ -21,9 +20,6 @@ import static org.mockito.Mockito.when;
 
 @QuarkusTest
 class ValidationResourceTest {
-
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
 
     @InjectMock
     ApplicationRepository applicationRepository;
@@ -35,7 +31,7 @@ class ValidationResourceTest {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         final String response = given()
                 .header(identityHeader)
@@ -59,7 +55,7 @@ class ValidationResourceTest {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         given()
                 .header(identityHeader)
