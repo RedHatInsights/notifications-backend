@@ -13,6 +13,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
@@ -35,7 +36,7 @@ public class AggregationEmailTemplate extends CreationUpdateTimestamped {
     @JsonProperty(access = READ_ONLY)
     private UUID id;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "application_id")
     private Application application;
 
@@ -63,8 +64,6 @@ public class AggregationEmailTemplate extends CreationUpdateTimestamped {
     @NotNull
     @Transient
     private UUID bodyTemplateId;
-
-    private boolean enabled;
 
     @Transient
     @JsonIgnore
@@ -145,14 +144,6 @@ public class AggregationEmailTemplate extends CreationUpdateTimestamped {
 
     public void setBodyTemplateId(UUID bodyTemplateId) {
         this.bodyTemplateId = bodyTemplateId;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
     }
 
     public boolean isFilterOutApplication() {

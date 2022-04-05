@@ -147,7 +147,6 @@ public class TemplateRepositoryTest {
             // The retrieved instant email template should contain the subject/body templates that were created with the helper.
             assertEquals(subjectTemplate, instantTemplate.get().getSubjectTemplate());
             assertEquals(bodyTemplate, instantTemplate.get().getBodyTemplate());
-            assertTrue(instantTemplate.get().isEnabled());
 
             // event-type-2 should still not be linked to any instant email template.
             assertTrue(templateRepository.findInstantEmailTemplate(eventType2.getId()).isEmpty());
@@ -171,7 +170,6 @@ public class TemplateRepositoryTest {
             // The retrieved aggregation email template should contain the subject/body templates that were created with the helper.
             assertEquals(subjectTemplate, aggregationTemplate.get().getSubjectTemplate());
             assertEquals(bodyTemplate, aggregationTemplate.get().getBodyTemplate());
-            assertTrue(aggregationTemplate.get().isEnabled());
 
             // app-2 should still not be linked to any aggregation email template.
             assertTrue(templateRepository.findAggregationEmailTemplate(bundle.getName(), app2.getName(), DAILY).isEmpty());

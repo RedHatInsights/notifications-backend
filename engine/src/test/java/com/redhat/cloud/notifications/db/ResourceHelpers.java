@@ -86,7 +86,6 @@ public class ResourceHelpers {
         instantEmailTemplate.setSubjectTemplateId(subjectTemplateId);
         instantEmailTemplate.setBodyTemplate(entityManager.find(Template.class, bodyTemplateId));
         instantEmailTemplate.setBodyTemplateId(bodyTemplateId);
-        instantEmailTemplate.setEnabled(enabled);
         entityManager.persist(instantEmailTemplate);
         return instantEmailTemplate;
     }
@@ -101,7 +100,6 @@ public class ResourceHelpers {
         aggregationEmailTemplate.setBodyTemplate(entityManager.find(Template.class, bodyTemplateId));
         aggregationEmailTemplate.setBodyTemplateId(bodyTemplateId);
         aggregationEmailTemplate.setSubscriptionType(DAILY);
-        aggregationEmailTemplate.setEnabled(enabled);
         entityManager.persist(aggregationEmailTemplate);
         return aggregationEmailTemplate;
     }

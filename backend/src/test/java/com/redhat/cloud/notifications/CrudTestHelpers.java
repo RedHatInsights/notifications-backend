@@ -677,7 +677,6 @@ public abstract class CrudTestHelpers {
             JsonObject jsonEmailTemplate = new JsonObject(responseBody);
             jsonEmailTemplate.mapTo(InstantEmailTemplate.class);
             assertNotNull(jsonEmailTemplate.getString("id"));
-            assertEquals(emailTemplate.isEnabled(), jsonEmailTemplate.getBoolean("enabled"));
 
             // The response should NOT contain the full event type.
             assertNull(jsonEmailTemplate.getJsonObject("event_type"));
@@ -718,7 +717,6 @@ public abstract class CrudTestHelpers {
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
             JsonObject jsonEmailTemplate = new JsonObject(responseBody);
             jsonEmailTemplate.mapTo(InstantEmailTemplate.class);
-            assertEquals(expectedEmailTemplate.isEnabled(), jsonEmailTemplate.getBoolean("enabled"));
 
             // The response should NOT contain the full event type.
             assertNull(jsonEmailTemplate.getJsonObject("event_type"));
@@ -815,46 +813,6 @@ public abstract class CrudTestHelpers {
         getInstantEmailTemplate(header, templateId, updatedEmailTemplate, 200);
     }
 
-    public static void enableInstantEmailTemplate(Header header, String templateId) {
-        given()
-                .basePath(API_INTERNAL)
-                .header(header)
-                .pathParam("templateId", templateId)
-                .when().put("/templates/email/instant/{templateId}/enable")
-                .then()
-                .contentType(TEXT)
-                .statusCode(200);
-
-        checkInstantEmailTemplateEnabled(header, templateId, true);
-    }
-
-    public static void disableInstantEmailTemplate(Header header, String templateId) {
-        given()
-                .basePath(API_INTERNAL)
-                .header(header)
-                .pathParam("templateId", templateId)
-                .when().put("/templates/email/instant/{templateId}/disable")
-                .then()
-                .contentType(TEXT)
-                .statusCode(200);
-
-        checkInstantEmailTemplateEnabled(header, templateId, false);
-    }
-
-    private static void checkInstantEmailTemplateEnabled(Header header, String templateId, boolean expectedEnabledStatus) {
-        String responseBody = given()
-                .basePath(API_INTERNAL)
-                .header(header)
-                .pathParam("templateId", templateId)
-                .get("/templates/email/instant/{templateId}")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
-
-        assertEquals(expectedEnabledStatus, new JsonObject(responseBody).getBoolean("enabled"));
-    }
-
     public static Optional<JsonObject> createAggregationEmailTemplate(Header header, AggregationEmailTemplate emailTemplate, int expectedStatusCode) {
         String responseBody = given()
                 .basePath(API_INTERNAL)
@@ -871,7 +829,6 @@ public abstract class CrudTestHelpers {
             JsonObject jsonEmailTemplate = new JsonObject(responseBody);
             jsonEmailTemplate.mapTo(InstantEmailTemplate.class);
             assertNotNull(jsonEmailTemplate.getString("id"));
-            assertEquals(emailTemplate.isEnabled(), jsonEmailTemplate.getBoolean("enabled"));
 
             // The response should NOT contain the full application.
             assertNull(jsonEmailTemplate.getJsonObject("application"));
@@ -912,7 +869,6 @@ public abstract class CrudTestHelpers {
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
             JsonObject jsonEmailTemplate = new JsonObject(responseBody);
             jsonEmailTemplate.mapTo(InstantEmailTemplate.class);
-            assertEquals(expectedEmailTemplate.isEnabled(), jsonEmailTemplate.getBoolean("enabled"));
 
             // The response should NOT contain the full application.
             assertNull(jsonEmailTemplate.getJsonObject("application"));
@@ -1004,45 +960,5 @@ public abstract class CrudTestHelpers {
 
         // Let's check that the aggregation email template fields have been correctly updated.
         getAggregationEmailTemplate(header, templateId, updatedEmailTemplate, 200);
-    }
-
-    public static void enableAggregationEmailTemplate(Header header, String templateId) {
-        given()
-                .basePath(API_INTERNAL)
-                .header(header)
-                .pathParam("templateId", templateId)
-                .when().put("/templates/email/aggregation/{templateId}/enable")
-                .then()
-                .contentType(TEXT)
-                .statusCode(200);
-
-        checkAggregationEmailTemplateEnabled(header, templateId, true);
-    }
-
-    public static void disableAggregationEmailTemplate(Header header, String templateId) {
-        given()
-                .basePath(API_INTERNAL)
-                .header(header)
-                .pathParam("templateId", templateId)
-                .when().put("/templates/email/aggregation/{templateId}/disable")
-                .then()
-                .contentType(TEXT)
-                .statusCode(200);
-
-        checkAggregationEmailTemplateEnabled(header, templateId, false);
-    }
-
-    private static void checkAggregationEmailTemplateEnabled(Header header, String templateId, boolean expectedEnabledStatus) {
-        String responseBody = given()
-                .basePath(API_INTERNAL)
-                .header(header)
-                .pathParam("templateId", templateId)
-                .get("/templates/email/aggregation/{templateId}")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
-
-        assertEquals(expectedEnabledStatus, new JsonObject(responseBody).getBoolean("enabled"));
     }
 }

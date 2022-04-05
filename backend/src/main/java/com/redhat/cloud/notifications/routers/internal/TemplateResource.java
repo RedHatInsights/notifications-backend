@@ -146,22 +146,6 @@ public class TemplateResource {
         }
     }
 
-    @PUT
-    @Path("/email/instant/{templateId}/enable")
-    @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
-    public boolean enableInstantEmailTemplate(@RestPath UUID templateId) {
-        return templateRepository.enableOrDisableInstantEmailTemplate(templateId, true);
-    }
-
-    @PUT
-    @Path("/email/instant/{templateId}/disable")
-    @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
-    public boolean disableInstantEmailTemplate(@RestPath UUID templateId) {
-        return templateRepository.enableOrDisableInstantEmailTemplate(templateId, false);
-    }
-
     @DELETE
     @Path("/email/instant/{templateId}")
     @Transactional
@@ -217,22 +201,6 @@ public class TemplateResource {
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-    }
-
-    @PUT
-    @Path("/email/aggregation/{templateId}/enable")
-    @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
-    public boolean enableAggregationEmailTemplate(@RestPath UUID templateId) {
-        return templateRepository.enableOrDisableAggregationEmailTemplate(templateId, true);
-    }
-
-    @PUT
-    @Path("/email/aggregation/{templateId}/disable")
-    @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
-    public boolean disableAggregationEmailTemplate(@RestPath UUID templateId) {
-        return templateRepository.enableOrDisableAggregationEmailTemplate(templateId, false);
     }
 
     @DELETE

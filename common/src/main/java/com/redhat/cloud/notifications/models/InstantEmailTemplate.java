@@ -11,6 +11,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
@@ -33,7 +34,7 @@ public class InstantEmailTemplate extends CreationUpdateTimestamped {
     @JsonProperty(access = READ_ONLY)
     private UUID id;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "event_type_id")
     private EventType eventType;
 
@@ -57,8 +58,6 @@ public class InstantEmailTemplate extends CreationUpdateTimestamped {
     @NotNull
     @Transient
     private UUID bodyTemplateId;
-
-    private boolean enabled;
 
     @Transient
     @JsonIgnore
@@ -131,14 +130,6 @@ public class InstantEmailTemplate extends CreationUpdateTimestamped {
 
     public void setBodyTemplateId(UUID bodyTemplateId) {
         this.bodyTemplateId = bodyTemplateId;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
     }
 
     public boolean isFilterOutEventType() {

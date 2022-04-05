@@ -33,10 +33,6 @@ import static com.redhat.cloud.notifications.CrudTestHelpers.createTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteAggregationEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteInstantEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteTemplate;
-import static com.redhat.cloud.notifications.CrudTestHelpers.disableAggregationEmailTemplate;
-import static com.redhat.cloud.notifications.CrudTestHelpers.disableInstantEmailTemplate;
-import static com.redhat.cloud.notifications.CrudTestHelpers.enableAggregationEmailTemplate;
-import static com.redhat.cloud.notifications.CrudTestHelpers.enableInstantEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.getAggregationEmailTemplatesByApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.getAllAggregationEmailTemplates;
 import static com.redhat.cloud.notifications.CrudTestHelpers.getAllInstantEmailTemplates;
@@ -150,11 +146,6 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertEquals(1, jsonEmailTemplates.size());
         jsonEmailTemplates.getJsonObject(0).mapTo(InstantEmailTemplate.class);
         assertEquals(jsonEmailTemplate.getString("id"), jsonEmailTemplates.getJsonObject(0).getString("id"));
-
-        // Now, we'll enable the instant email template and check that the change was correctly saved in the DB.
-        enableInstantEmailTemplate(adminIdentity, jsonEmailTemplate.getString("id"));
-        // Same test, but the template is disabled this time.
-        disableInstantEmailTemplate(adminIdentity, jsonEmailTemplate.getString("id"));
     }
 
     @Test
@@ -211,11 +202,6 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertEquals(1, jsonEmailTemplates.size());
         jsonEmailTemplates.getJsonObject(0).mapTo(AggregationEmailTemplate.class);
         assertEquals(jsonEmailTemplate.getString("id"), jsonEmailTemplates.getJsonObject(0).getString("id"));
-
-        // Now, we'll enable the aggregation email template and check that the change was correctly saved in the DB.
-        enableAggregationEmailTemplate(adminIdentity, jsonEmailTemplate.getString("id"));
-        // Same test, but the template is disabled this time.
-        disableAggregationEmailTemplate(adminIdentity, jsonEmailTemplate.getString("id"));
     }
 
     @Test
@@ -281,18 +267,6 @@ public class TemplateResourceTest extends DbIsolatedTest {
         given()
                 .basePath(API_INTERNAL)
                 .pathParam("templateId", notUsed)
-                .when().put("/templates/email/instant/{templateId}/enable")
-                .then().statusCode(401);
-
-        given()
-                .basePath(API_INTERNAL)
-                .pathParam("templateId", notUsed)
-                .when().put("/templates/email/instant/{templateId}/disable")
-                .then().statusCode(401);
-
-        given()
-                .basePath(API_INTERNAL)
-                .pathParam("templateId", notUsed)
                 .when().delete("/templates/email/instant/{templateId}")
                 .then().statusCode(401);
 
@@ -322,18 +296,6 @@ public class TemplateResourceTest extends DbIsolatedTest {
                 .basePath(API_INTERNAL)
                 .pathParam("templateId", notUsed)
                 .when().put("/templates/email/aggregation/{templateId}")
-                .then().statusCode(401);
-
-        given()
-                .basePath(API_INTERNAL)
-                .pathParam("templateId", notUsed)
-                .when().put("/templates/email/aggregation/{templateId}/enable")
-                .then().statusCode(401);
-
-        given()
-                .basePath(API_INTERNAL)
-                .pathParam("templateId", notUsed)
-                .when().put("/templates/email/aggregation/{templateId}/disable")
                 .then().statusCode(401);
 
         given()

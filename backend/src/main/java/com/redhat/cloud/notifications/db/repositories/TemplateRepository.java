@@ -152,25 +152,6 @@ public class TemplateRepository {
     }
 
     @Transactional
-    public boolean enableOrDisableInstantEmailTemplate(UUID id, boolean enabled) {
-        if (enabled) {
-            InstantEmailTemplate emailTemplate = findInstantEmailTemplate(id);
-            String disableHql = "UPDATE InstantEmailTemplate SET enabled = FALSE " +
-                    "WHERE enabled IS TRUE AND id != :id AND eventType = :eventType";
-            entityManager.createQuery(disableHql)
-                    .setParameter("id", id)
-                    .setParameter("eventType", emailTemplate.getEventType())
-                    .executeUpdate();
-        }
-        String hql = "UPDATE InstantEmailTemplate SET enabled = :enabled WHERE id = :id";
-        int rowCount = entityManager.createQuery(hql)
-                .setParameter("enabled", enabled)
-                .setParameter("id", id)
-                .executeUpdate();
-        return rowCount > 0;
-    }
-
-    @Transactional
     public boolean deleteInstantEmailTemplate(UUID id) {
         String hql = "DELETE FROM InstantEmailTemplate WHERE id = :id";
         int rowCount = entityManager.createQuery(hql)
@@ -268,26 +249,6 @@ public class TemplateRepository {
     }
 
     @Transactional
-    public boolean enableOrDisableAggregationEmailTemplate(UUID id, boolean enabled) {
-        if (enabled) {
-            AggregationEmailTemplate emailTemplate = findAggregationEmailTemplate(id);
-            String disableHql = "UPDATE AggregationEmailTemplate SET enabled = FALSE WHERE enabled IS TRUE " +
-                    "AND id != :id AND application = :application AND subscriptionType = :subscriptionType";
-            entityManager.createQuery(disableHql)
-                    .setParameter("id", id)
-                    .setParameter("application", emailTemplate.getApplication())
-                    .setParameter("subscriptionType", emailTemplate.getSubscriptionType())
-                    .executeUpdate();
-        }
-        String hql = "UPDATE AggregationEmailTemplate SET enabled = :enabled WHERE id = :id";
-        int rowCount = entityManager.createQuery(hql)
-                .setParameter("enabled", enabled)
-                .setParameter("id", id)
-                .executeUpdate();
-        return rowCount > 0;
-    }
-
-    @Transactional
     public boolean deleteAggregationEmailTemplate(UUID id) {
         String hql = "DELETE FROM AggregationEmailTemplate WHERE id = :id";
         int rowCount = entityManager.createQuery(hql)
@@ -318,21 +279,5 @@ public class TemplateRepository {
             throw new NotFoundException(notFoundMessage);
         }
         return template;
-    }
-
-    private InstantEmailTemplate findInstantEmailTemplate(UUID id) {
-        InstantEmailTemplate emailTemplate = entityManager.find(InstantEmailTemplate.class, id);
-        if (emailTemplate == null) {
-            throw new NotFoundException("Instant email template not found");
-        }
-        return emailTemplate;
-    }
-
-    private AggregationEmailTemplate findAggregationEmailTemplate(UUID id) {
-        AggregationEmailTemplate emailTemplate = entityManager.find(AggregationEmailTemplate.class, id);
-        if (emailTemplate == null) {
-            throw new NotFoundException("Aggregation email template not found");
-        }
-        return emailTemplate;
     }
 }
