@@ -97,6 +97,7 @@ public class DbQuteEngineTest {
     Template createTemplate(String name, String data) {
         Template template = new Template();
         template.setName(name);
+        template.setDescription("The best template ever created");
         template.setData(data);
         entityManager.persist(template);
         return template;
