@@ -54,7 +54,7 @@
         <dependency>
             <groupId>io.quarkiverse.logging.cloudwatch</groupId>
             <artifactId>quarkus-logging-cloudwatch</artifactId>
-            <version>${quarkkus-logging-cloudwatch.version}</version>
+            <version>${quarkus-logging-cloudwatch.version}</version>
         </dependency>
 
         <!-- Insights -->
