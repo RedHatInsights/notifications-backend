@@ -38,8 +38,6 @@ public class EndpointRepository {
     @Inject
     EntityManager entityManager;
 
-
-
     @Transactional
     public Endpoint createEndpoint(Endpoint endpoint) {
         // Todo: NOTIF-429 backward compatibility change - Remove soon.
@@ -205,7 +203,7 @@ public class EndpointRepository {
     }
 
     @Transactional
-    private boolean modifyEndpointStatus(String tenant, UUID id, boolean enabled) {
+    boolean modifyEndpointStatus(String tenant, UUID id, boolean enabled) {
         String query = "UPDATE Endpoint SET enabled = :enabled WHERE accountId = :accountId AND id = :id";
         int rowCount = entityManager.createQuery(query)
                 .setParameter("id", id)
