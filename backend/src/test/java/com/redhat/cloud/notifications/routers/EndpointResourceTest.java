@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1041,6 +1042,84 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .statusCode(400)
                 .extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
+    }
+
+    @Test
+    void testAddEndpointEmailSubscriptionRbac() {
+        String tenant = "adding-email-subscription";
+        String userName = "user";
+        String validGroupId = "f85517d0-063b-4eed-a501-e79ffc1f5ad3";
+        String unknownGroupId = "f44f50d5-acab-482c-a3cf-087faf2c709c";
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        MockServerConfig.addGroupResponse(identityHeaderValue, validGroupId, 200);
+        MockServerConfig.addGroupResponse(identityHeaderValue, unknownGroupId, 404);
+
+        // valid group id
+        RequestEmailSubscriptionProperties requestProps = new RequestEmailSubscriptionProperties();
+        requestProps.setGroupId(UUID.fromString(validGroupId));
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        String endpointId = responsePoint.getString("id");
+        assertNotNull(endpointId);
+
+        // Same group again yields the same endpoint id
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertEquals(endpointId, responsePoint.getString("id"));
+
+        // Invalid group is a bad request (i.e. group does not exist)
+        requestProps.setGroupId(UUID.fromString(unknownGroupId));
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(400)
+                .contentType(JSON)
+                .extract().response();
+
+        // Can't specify admin and group - bad request
+        requestProps.setGroupId(UUID.fromString(validGroupId));
+        requestProps.setOnlyAdmins(true);
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(400)
+                .contentType(JSON)
+                .extract().response();
     }
 
     @Test
