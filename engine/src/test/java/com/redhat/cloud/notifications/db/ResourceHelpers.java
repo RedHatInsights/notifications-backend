@@ -68,31 +68,38 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public Template createTemplate(String name, String data) {
+    public Template createTemplate(String name, String description, String data) {
         Template template = new Template();
         template.setName(name);
+        template.setDescription(description);
         template.setData(data);
         entityManager.persist(template);
         return template;
     }
 
     @Transactional
-    public InstantEmailTemplate createInstantEmailTemplate(UUID eventTypeId, UUID subjectTemplateId, UUID bodyTemplateId) {
+    public InstantEmailTemplate createInstantEmailTemplate(UUID eventTypeId, UUID subjectTemplateId, UUID bodyTemplateId, boolean enabled) {
         InstantEmailTemplate instantEmailTemplate = new InstantEmailTemplate();
         instantEmailTemplate.setEventType(entityManager.find(EventType.class, eventTypeId));
+        instantEmailTemplate.setEventTypeId(eventTypeId);
         instantEmailTemplate.setSubjectTemplate(entityManager.find(Template.class, subjectTemplateId));
+        instantEmailTemplate.setSubjectTemplateId(subjectTemplateId);
         instantEmailTemplate.setBodyTemplate(entityManager.find(Template.class, bodyTemplateId));
+        instantEmailTemplate.setBodyTemplateId(bodyTemplateId);
         entityManager.persist(instantEmailTemplate);
         return instantEmailTemplate;
     }
 
     @Transactional
-    public AggregationEmailTemplate createAggregationEmailTemplate(UUID appId, UUID subjectTemplateId, UUID bodyTemplateId) {
+    public AggregationEmailTemplate createAggregationEmailTemplate(UUID appId, UUID subjectTemplateId, UUID bodyTemplateId, boolean enabled) {
         AggregationEmailTemplate aggregationEmailTemplate = new AggregationEmailTemplate();
         aggregationEmailTemplate.setApplication(entityManager.find(Application.class, appId));
+        aggregationEmailTemplate.setApplicationId(appId);
         aggregationEmailTemplate.setSubjectTemplate(entityManager.find(Template.class, subjectTemplateId));
+        aggregationEmailTemplate.setSubjectTemplateId(subjectTemplateId);
         aggregationEmailTemplate.setBodyTemplate(entityManager.find(Template.class, bodyTemplateId));
-        aggregationEmailTemplate.getId().subscriptionType = DAILY;
+        aggregationEmailTemplate.setBodyTemplateId(bodyTemplateId);
+        aggregationEmailTemplate.setSubscriptionType(DAILY);
         entityManager.persist(aggregationEmailTemplate);
         return aggregationEmailTemplate;
     }
