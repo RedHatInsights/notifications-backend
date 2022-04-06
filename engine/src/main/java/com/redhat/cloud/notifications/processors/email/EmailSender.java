@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.utils.LineBreakCleaner;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.qute.TemplateInstance;
@@ -29,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @ApplicationScoped
 public class EmailSender {
@@ -69,10 +71,12 @@ public class EmailSender {
     @Inject
     MeterRegistry registry;
 
+    private Counter.Builder processedCount;
     private Timer processTime;
 
     @PostConstruct
     public void init() {
+        processedCount = Counter.builder("processor.email.processed");
         processTime = registry.timer("processor.email.process-time");
         /*
          * The token value we receive contains a line break because of the standard mime encryption. Gabor Burges tried
@@ -80,6 +84,10 @@ public class EmailSender {
          * HTTP headers.
          */
         bopApiToken = LineBreakCleaner.clean(bopApiToken);
+    }
+
+    public void exposeMetric() {
+        processedCount.tags("bundle", "someBundleName" + UUID.randomUUID(), "application", "application").register(registry).increment();
     }
 
     public Optional<NotificationHistory> sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body) {
@@ -103,7 +111,7 @@ public class EmailSender {
                     bopRequest,
                     getPayload(user, action, subject, body));
 
-            registry.counter("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication());
+            processedCount.tags("bundle", action.getBundle(), "application", action.getApplication()).register(registry).increment(1337.0);
 
             processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
 
