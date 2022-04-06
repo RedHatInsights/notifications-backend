@@ -50,6 +50,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.redhat.cloud.notifications.templates.TemplateService.USE_TEMPLATES_FROM_DB_KEY;
+
 @ApplicationScoped
 public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
@@ -64,7 +66,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
             .collect(Collectors.toList());
 
-    @ConfigProperty(name = "notifications.use-templates-from-db", defaultValue = "false")
+    @ConfigProperty(name = USE_TEMPLATES_FROM_DB_KEY)
     boolean useTemplatesFromDb;
 
     @Inject

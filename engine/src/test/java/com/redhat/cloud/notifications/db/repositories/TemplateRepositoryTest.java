@@ -56,8 +56,8 @@ public class TemplateRepositoryTest {
         app2 = resourceHelpers.createApp(bundle.getId(), "app-2-" + UUID.randomUUID());
         eventType2 = resourceHelpers.createEventType(app2.getId(), "event-type-2-" + UUID.randomUUID());
 
-        subjectTemplate = resourceHelpers.createTemplate("subject-template", "Subject template", "You have a notification!");
-        bodyTemplate = resourceHelpers.createTemplate("body-template", "Body template", "Something happened!");
+        subjectTemplate = resourceHelpers.createTemplate("subject-template-" + UUID.randomUUID(), "Subject template", "You have a notification!");
+        bodyTemplate = resourceHelpers.createTemplate("body-template-" + UUID.randomUUID(), "Body template", "Something happened!");
     }
 
     @Test
