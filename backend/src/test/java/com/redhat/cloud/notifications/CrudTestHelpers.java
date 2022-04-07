@@ -647,18 +647,20 @@ public abstract class CrudTestHelpers {
         getTemplate(header, templateId, updatedTemplate, 200);
     }
 
-    public static void deleteTemplate(Header header, String templateId) {
+    public static void deleteTemplate(Header header, String templateId, int expectedStatusCode) {
         given()
                 .basePath(API_INTERNAL)
                 .header(header)
                 .pathParam("templateId", templateId)
                 .when().delete("/templates/{templateId}")
                 .then()
-                .statusCode(200)
+                .statusCode(expectedStatusCode)
                 .contentType(TEXT);
 
-        // Let's check that the template no longer exists.
-        getTemplate(header, templateId, /* Not used */ null, 404);
+        if (familyOf(expectedStatusCode) == SUCCESSFUL) {
+            // Let's check that the template no longer exists.
+            getTemplate(header, templateId, /* Not used */ null, 404);
+        }
     }
 
     public static Optional<JsonObject> createInstantEmailTemplate(Header header, InstantEmailTemplate emailTemplate, int expectedStatusCode) {
