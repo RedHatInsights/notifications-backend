@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.processors.camel;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -10,6 +12,8 @@ import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.openbridge.Bridge;
+import com.redhat.cloud.notifications.openbridge.BridgeHelper;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.TracingMetadata;
@@ -47,6 +51,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -61,6 +67,9 @@ public class CamelTypeProcessorTest {
 
     @Inject
     CamelTypeProcessor processor;
+
+    @Inject
+    BridgeHelper bridgeHelper;
 
     @BeforeEach
     void beforeEach() {
@@ -126,6 +135,92 @@ public class CamelTypeProcessorTest {
         checkKafkaMetadata(message, historyId, endpoint1.getSubType());
         checkCloudEventMetadata(message, historyId, endpoint1.getAccountId(), endpoint1.getSubType());
         checkTracingMetadata(message);
+    }
+
+    @Test
+    void testOBEndpointProcessing() {
+
+        // We need input data for the test.
+        Event event = buildEvent();
+        event.setAccountId("rhid123");
+        Endpoint endpoint = buildCamelEndpoint(event.getAction().getAccountId());
+        endpoint.setSubType("slack");
+
+        processor.obEnabled = true;
+        bridgeHelper.setObEnabled(true);
+
+        // Let's trigger the processing.
+        // First with 'random OB endpoints', so we expect this to fail
+        List<NotificationHistory> result = processor.process(event, List.of(endpoint));
+
+        // One endpoint should have been processed.
+        assertEquals(1, result.size());
+        // Metrics should report the same thing.
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 1);
+
+        // Let's have a look at the first result entry fields.
+        NotificationHistory historyItem = result.get(0);
+        assertEquals(event, historyItem.getEvent());
+        assertEquals(endpoint, historyItem.getEndpoint());
+        assertEquals(CAMEL, historyItem.getEndpointType());
+        assertEquals("slack", historyItem.getEndpointSubType());
+        assertEquals(1, historyItem.getDetails().size());
+        Map<String, Object> details = historyItem.getDetails();
+        assertTrue(details.containsKey("failure"));
+
+        // Now set up some mock OB endpoints (simulate valid bridge)
+        String eventsEndpoint = MockServerLifecycleManager.getContainerUrl() + "/events";
+        System.out.println("==> Setting events endpoint to " + eventsEndpoint);
+        Bridge bridge = new Bridge("321", eventsEndpoint, "my bridge");
+        Map<String, String> auth = new HashMap<>();
+        auth.put("access_token", "li-la-lu-token");
+        Map<String, String> obProcessor = new HashMap<>();
+        obProcessor.put("id", "p-my-id");
+
+        MockServerConfig.addOpenBridgeEndpoints(auth, bridge);
+        bridgeHelper.setOurBridge("321");
+
+        System.out.println("==> Auth token " + bridgeHelper.getAuthToken());
+        System.out.println("==> The bridge " + bridgeHelper.getBridgeIfNeeded());
+
+        // Process again
+        result = processor.process(event, List.of(endpoint));
+
+        // One endpoint should have been processed.
+        assertEquals(1, result.size());
+        // Metrics should report the same thing.
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2);
+
+        // Let's have a look at the first result entry fields.
+        historyItem = result.get(0);
+        assertEquals(event, historyItem.getEvent());
+        assertEquals(endpoint, historyItem.getEndpoint());
+        assertEquals(CAMEL, historyItem.getEndpointType());
+        assertEquals("slack", historyItem.getEndpointSubType());
+        assertNull(historyItem.getDetails());
+
+        // Now try again, but the remote throws an error
+        event.getAction().setAccountId("something-random");
+        result = processor.process(event, List.of(endpoint));
+        assertEquals(1, result.size());
+        // Metrics should report the same thing.
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 3);
+
+        // Let's have a look at the first result entry fields.
+        historyItem = result.get(0);
+        assertEquals(event, historyItem.getEvent());
+        assertEquals(1, historyItem.getDetails().size());
+        details = historyItem.getDetails();
+        assertTrue(details.containsKey("failure"));
+
+        assertNotNull(historyItem.getInvocationTime());
+        // The invocation will be complete when the response from Camel has been received.
+        assertFalse(historyItem.isInvocationResult());
+
+        MockServerConfig.clearOpenBridgeEndpoints(bridge);
+        processor.obEnabled = false;
+        bridgeHelper.setObEnabled(false);
+
     }
 
     private static Event buildEvent() {

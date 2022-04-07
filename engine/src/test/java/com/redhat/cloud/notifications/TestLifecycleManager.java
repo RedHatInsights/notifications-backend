@@ -84,5 +84,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         MockServerLifecycleManager.start();
         props.put("quarkus.rest-client.rbac-s2s.url", MockServerLifecycleManager.getContainerUrl());
         props.put("quarkus.rest-client.it-s2s.url", MockServerLifecycleManager.getContainerUrl());
+        props.put("quarkus.rest-client.ob.url", MockServerLifecycleManager.getContainerUrl());
+        props.put("quarkus.rest-client.kc.url", MockServerLifecycleManager.getContainerUrl());
     }
 }
