@@ -10,7 +10,7 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.RegexBody.regex;
 
-public class MockserverConfig {
+public class MockServerConfig {
 
     public static void addOpenBridgeEndpoints(Map<String, String> auth, Bridge bridge, Map<String, String> processor) {
         String authString = Json.encode(auth);
