@@ -12,7 +12,7 @@ import static org.mockserver.model.RegexBody.regex;
 
 public class MockServerConfig {
 
-    public static void addOpenBridgeEndpoints(Map<String, String> auth, Bridge bridge, Map<String, String> processor) {
+    public static void addOpenBridgeEndpoints(Map<String, String> auth, Bridge bridge) {
         String authString = Json.encode(auth);
         String bridgeString = Json.encode(bridge);
 

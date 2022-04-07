@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.processors.camel;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
-import com.redhat.cloud.notifications.MockserverConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -177,7 +177,7 @@ public class CamelTypeProcessorTest {
         Map<String, String> obProcessor = new HashMap<>();
         obProcessor.put("id", "p-my-id");
 
-        MockserverConfig.addOpenBridgeEndpoints(auth, bridge, obProcessor);
+        MockServerConfig.addOpenBridgeEndpoints(auth, bridge);
         bridgeHelper.setOurBridge("321");
 
         System.out.println("==> Auth token " + bridgeHelper.getAuthToken());
@@ -217,7 +217,7 @@ public class CamelTypeProcessorTest {
         // The invocation will be complete when the response from Camel has been received.
         assertFalse(historyItem.isInvocationResult());
 
-        MockserverConfig.clearOpenBridgeEndpoints(bridge);
+        MockServerConfig.clearOpenBridgeEndpoints(bridge);
         processor.obEnabled = false;
         bridgeHelper.setObEnabled(false);
 
