@@ -15,7 +15,6 @@ public class MockServerConfig {
     public static void addOpenBridgeEndpoints(Map<String, String> auth, Bridge bridge, Map<String, String> processor) {
         String authString = Json.encode(auth);
         String bridgeString = Json.encode(bridge);
-        String processorString = Json.encode(processor);
 
         getClient()
                 .when(request()
