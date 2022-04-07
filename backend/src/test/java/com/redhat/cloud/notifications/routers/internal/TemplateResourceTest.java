@@ -64,7 +64,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     void testAllTemplateEndpoints() {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
-        Template template = buildTemplate("template-name");
+        Template template = buildTemplate("template-name", "template-data");
 
         // Before we start, the DB shouldn't contain any template.
         assertTrue(getAllTemplates(adminIdentity).isEmpty());
@@ -85,7 +85,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
         updateTemplate(adminIdentity, jsonTemplate.getString("id"), template);
 
         // Now we'll delete the template and check that it no longer exists with the following line.
-        deleteTemplate(adminIdentity, jsonTemplate.getString("id"));
+        deleteTemplate(adminIdentity, jsonTemplate.getString("id"), 200);
 
         // We already know the template is gone, but let's check one more time.
         assertTrue(getAllTemplates(adminIdentity).isEmpty());
@@ -101,9 +101,9 @@ public class TemplateResourceTest extends DbIsolatedTest {
         String eventTypeId = createEventType(adminIdentity, appId, "event-type-name", "Event type", "Event type description", OK).get();
 
         // We also need templates that will be linked with the instant email template tested below.
-        Template subjectTemplate = buildTemplate("subject-template-name");
+        Template subjectTemplate = buildTemplate("subject-template-name", "template-data");
         JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
-        Template bodyTemplate = buildTemplate("body-template-name");
+        Template bodyTemplate = buildTemplate("body-template-name", "template-data");
         JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
 
         // Before we start, the DB shouldn't contain any instant email template.
@@ -131,9 +131,9 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertTrue(jsonEmailTemplates.isEmpty());
 
         // Let's update the instant email template and check that the new fields values are correctly persisted.
-        Template newSubjectTemplate = buildTemplate("new-subject-template-name");
+        Template newSubjectTemplate = buildTemplate("new-subject-template-name", "template-data");
         JsonObject newSubjectJsonTemplate = createTemplate(adminIdentity, newSubjectTemplate, 200).get();
-        Template newBodyTemplate = buildTemplate("new-body-template-name");
+        Template newBodyTemplate = buildTemplate("new-body-template-name", "template-data");
         JsonObject newBodyJsonTemplate = createTemplate(adminIdentity, newBodyTemplate, 200).get();
         emailTemplate.setEventTypeId(UUID.fromString(eventTypeId));
         emailTemplate.setSubjectTemplateId(UUID.fromString(newSubjectJsonTemplate.getString("id")));
@@ -157,9 +157,9 @@ public class TemplateResourceTest extends DbIsolatedTest {
         String appId = createApp(adminIdentity, bundleId, "app-name", "App", null, OK).get();
 
         // We also need templates that will be linked with the aggregation email template tested below.
-        Template subjectTemplate = buildTemplate("subject-template-name");
+        Template subjectTemplate = buildTemplate("subject-template-name", "template-data");
         JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
-        Template bodyTemplate = buildTemplate("body-template-name");
+        Template bodyTemplate = buildTemplate("body-template-name", "template-data");
         JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
 
         // Before we start, the DB shouldn't contain any aggregation email template.
@@ -187,9 +187,9 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertTrue(jsonEmailTemplates.isEmpty());
 
         // Let's update the aggregation email template and check that the new fields values are correctly persisted.
-        Template newSubjectTemplate = buildTemplate("new-subject-template-name");
+        Template newSubjectTemplate = buildTemplate("new-subject-template-name", "template-data");
         JsonObject newSubjectJsonTemplate = createTemplate(adminIdentity, newSubjectTemplate, 200).get();
-        Template newBodyTemplate = buildTemplate("new-body-template-name");
+        Template newBodyTemplate = buildTemplate("new-body-template-name", "template-data");
         JsonObject newBodyJsonTemplate = createTemplate(adminIdentity, newBodyTemplate, 200).get();
         emailTemplate.setApplicationId(UUID.fromString(appId));
         emailTemplate.setSubjectTemplateId(UUID.fromString(newSubjectJsonTemplate.getString("id")));
@@ -202,6 +202,38 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertEquals(1, jsonEmailTemplates.size());
         jsonEmailTemplates.getJsonObject(0).mapTo(AggregationEmailTemplate.class);
         assertEquals(jsonEmailTemplate.getString("id"), jsonEmailTemplates.getJsonObject(0).getString("id"));
+    }
+
+    @Test
+    void testTemplateIncludeCheckBeforeDelete() {
+        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+
+        // First, let's make sure the DB does not contain any template.
+        assertTrue(getAllTemplates(adminIdentity).isEmpty());
+
+        // Then, we'll persist an outer template, which includes another template.
+        Template helloTemplate = buildTemplate("hello-template", "Hello, {#include world-template /}");
+        JsonObject jsonHelloTemplate = createTemplate(adminIdentity, helloTemplate, 200).get();
+
+        // We also need to persist the included template.
+        Template worldTemplate = buildTemplate("world-template", "World!");
+        JsonObject jsonWorldTemplate = createTemplate(adminIdentity, worldTemplate, 200).get();
+
+        // At this point, the DB should contain two templates.
+        assertEquals(2, getAllTemplates(adminIdentity).size());
+
+        // If we try to delete the included template, it should fail.
+        deleteTemplate(adminIdentity, jsonWorldTemplate.getString("id"), 400);
+
+        // The DB still contains two templates.
+        assertEquals(2, getAllTemplates(adminIdentity).size());
+
+        // If we delete the outer template before deleting the included template, both REST calls should be successful.
+        deleteTemplate(adminIdentity, jsonHelloTemplate.getString("id"), 200);
+        deleteTemplate(adminIdentity, jsonWorldTemplate.getString("id"), 200);
+
+        // We deleted everything, the DB should not contain any template.
+        assertTrue(getAllTemplates(adminIdentity).isEmpty());
     }
 
     @Test
@@ -338,11 +370,11 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertEquals("Action parsing failed for payload: I am invalid!", new JsonObject(responseBody).getString("message"));
     }
 
-    private static Template buildTemplate(String name) {
+    private static Template buildTemplate(String name, String data) {
         Template template = new Template();
         template.setName(name);
         template.setDescription("My template");
-        template.setData("template-data");
+        template.setData(data);
         return template;
     }
 

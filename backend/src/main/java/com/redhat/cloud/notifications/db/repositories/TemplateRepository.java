@@ -11,6 +11,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.UUID;
@@ -54,11 +55,25 @@ public class TemplateRepository {
 
     @Transactional
     public boolean deleteTemplate(UUID id) {
-        String hql = "DELETE FROM Template WHERE id = :id";
-        int rowCount = entityManager.createQuery(hql)
-                .setParameter("id", id)
-                .executeUpdate();
-        return rowCount > 0;
+        Template template = entityManager.find(Template.class, id);
+        if (template == null) {
+            throw new NotFoundException("Template not found");
+        } else {
+            String checkHql = "SELECT COUNT(*) FROM Template WHERE id != :id AND data LIKE :include";
+            long count = entityManager.createQuery(checkHql, Long.class)
+                    .setParameter("id", id)
+                    .setParameter("include", "%{#include " + template.getName() + "%")
+                    .getSingleResult();
+            if (count > 0) {
+                throw new BadRequestException("Included templates can't be deleted, remove the inclusion or delete the outer template first");
+            } else {
+                String deleteHql = "DELETE FROM Template WHERE id = :id";
+                int rowCount = entityManager.createQuery(deleteHql)
+                        .setParameter("id", id)
+                        .executeUpdate();
+                return rowCount > 0;
+            }
+        }
     }
 
     @Transactional
