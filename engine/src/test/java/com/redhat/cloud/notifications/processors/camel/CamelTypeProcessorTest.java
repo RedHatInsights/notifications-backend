@@ -197,7 +197,7 @@ public class CamelTypeProcessorTest {
         assertEquals(endpoint, historyItem.getEndpoint());
         assertEquals(CAMEL, historyItem.getEndpointType());
         assertEquals("slack", historyItem.getEndpointSubType());
-        assertEquals(null, historyItem.getDetails());
+        assertNull(historyItem.getDetails());
 
         // Now try again, but the remote throws an error
         event.getAction().setAccountId("something-random");
