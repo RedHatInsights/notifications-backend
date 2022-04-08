@@ -10,7 +10,9 @@ const validateResponse = validationResponseTransformer(
         if (payload.status === 200) {
             const systemBehaviorGroups: ReadonlyArray<BehaviorGroup> = payload.value.map(value => ({
                 bundleId: value.bundle_id,
-                displayName: value.display_name
+                displayName: value.display_name,
+                actions: value.actions,
+                id: value.id
             }));
 
             return validatedResponse(
