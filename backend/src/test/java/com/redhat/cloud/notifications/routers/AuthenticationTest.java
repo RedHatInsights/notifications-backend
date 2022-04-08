@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -24,9 +23,6 @@ public class AuthenticationTest {
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
     }
-
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
 
     @CacheName("rbac-cache")
     Cache cache;
@@ -58,7 +54,7 @@ public class AuthenticationTest {
         cache.invalidateAll().await().indefinitely();
 
         // Fetch endpoint with no access - Rbac succeed returns 403
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.NO_ACCESS);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.NO_ACCESS);
 
         given()
                 // Set header to x-rh-identity

@@ -36,7 +36,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <surefire-plugin.version>2.22.2</surefire-plugin.version>
+        <surefire-plugin.version>3.0.0-M6</surefire-plugin.version>
         <checkstyle-plugin.version>3.1.2</checkstyle-plugin.version>
         <jacoco-plugin.version>0.8.7</jacoco-plugin.version>
         <checkstyle.version>8.44</checkstyle.version>
@@ -46,13 +46,14 @@
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <failsafe.version>3.2.3</failsafe.version>
 
-        <!-- Keep the version synced with TestLifecycleManager -->
-        <mockserver-client-java.version>5.13.0</mockserver-client-java.version>
+        <!-- Keep the version synced with MockServerLifecycleManager -->
+        <mockserver-client-java.version>5.5.4</mockserver-client-java.version>
 
         <insights-notification-schemas-java.version>0.6</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>1.0.0</clowder-quarkus-config-source.version>
 
         <cloudwatch.version>4.2.0</cloudwatch.version>
+        <quarkus-logging-sentry.version>1.1.0</quarkus-logging-sentry.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>

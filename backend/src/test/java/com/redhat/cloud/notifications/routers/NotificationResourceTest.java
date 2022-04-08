@@ -1,9 +1,8 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Json;
-import com.redhat.cloud.notifications.MockServerClientConfig;
-import com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -32,15 +31,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.FULL_ACCESS;
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.NO_ACCESS;
-import static com.redhat.cloud.notifications.MockServerClientConfig.RbacAccess.READ_ACCESS;
+import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
+import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
+import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_ACCESS;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME_2;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -57,9 +57,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
     private static final String TENANT = "NotificationServiceTest";
     private static final String USERNAME = "user";
 
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
-
     @Inject
     ResourceHelpers helpers;
 
@@ -72,12 +69,12 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
-        mockServerConfig.clearRbac();
+        MockServerConfig.clearRbac();
     }
 
     private Header initRbacMock(String tenant, String username, RbacAccess access) {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, access);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
 
@@ -357,6 +354,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testGetBundlesFacets() {
+        // no children by default
         Header identityHeader = initRbacMock("test", "user", READ_ACCESS);
         List<Facet> bundles = given()
                 .header(identityHeader)
@@ -370,6 +368,27 @@ public class NotificationResourceTest extends DbIsolatedTest {
         Optional<Facet> rhel = bundles.stream().filter(facet -> facet.getName().equals("rhel")).findFirst();
         assertTrue(rhel.isPresent());
         assertEquals("Red Hat Enterprise Linux", rhel.get().getDisplayName());
+        assertNull(rhel.get().getChildren());
+
+        // with children
+        bundles = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .queryParam("includeApplications", "true")
+                .get("/notifications/facets/bundles")
+                .then()
+                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
+
+        assertTrue(bundles.size() > 0);
+        rhel = bundles.stream().filter(facet -> facet.getName().equals("rhel")).findFirst();
+        assertTrue(rhel.isPresent());
+        assertEquals("Red Hat Enterprise Linux", rhel.get().getDisplayName());
+        assertNotNull(rhel.get().getChildren());
+
+        Optional<Facet> policies = rhel.get().getChildren().stream().filter(facet -> facet.getName().equals("policies")).findFirst();
+        assertTrue(policies.isPresent());
+        assertEquals("Policies", policies.get().getDisplayName());
     }
 
     @Test

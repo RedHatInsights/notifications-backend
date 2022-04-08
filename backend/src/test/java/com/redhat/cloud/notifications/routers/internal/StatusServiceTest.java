@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.Json;
-import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -34,9 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class StatusServiceTest extends DbIsolatedTest {
 
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
-
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
@@ -44,7 +40,7 @@ public class StatusServiceTest extends DbIsolatedTest {
     public void testValidCurrentStatus() {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("tenant", "username");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.FULL_ACCESS);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
         // The test must not be run with a cached status from another test.
         clearCachedStatus();
