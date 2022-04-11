@@ -87,6 +87,9 @@ public class EmailSender {
         LocalDateTime start = LocalDateTime.now(UTC);
 
         Action action = event.getAction();
+
+        Timer.Sample consumedTimer = Timer.start(registry);
+
         // uses canonical EmailSubscription
         try {
             Endpoint endpoint = endpointRepository.getOrCreateDefaultEmailSubscription(action.getAccountId());
@@ -103,7 +106,7 @@ public class EmailSender {
                     bopRequest,
                     getPayload(user, action, subject, body));
 
-            registry.counter("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication());
+            consumedTimer.stop(registry.timer("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication()));
 
             processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
 
