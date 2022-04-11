@@ -88,7 +88,7 @@ public class EmailSender {
 
         Action action = event.getAction();
 
-        Timer.Sample consumedTimer = Timer.start(registry);
+        Timer.Sample processedTimer = Timer.start(registry);
 
         // uses canonical EmailSubscription
         try {
@@ -106,7 +106,7 @@ public class EmailSender {
                     bopRequest,
                     getPayload(user, action, subject, body));
 
-            consumedTimer.stop(registry.timer("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication()));
+            processedTimer.stop(registry.timer("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication()));
 
             processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
 
