@@ -13,4 +13,15 @@ public class BridgeAuth {
     public String getToken() {
         return token;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("BridgeAuth{");
+        sb.append("token='");
+        sb.append(token.substring(0, 10));
+        sb.append("...").append(token.substring(token.length() - 10))
+                        .append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
 }

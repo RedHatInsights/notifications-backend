@@ -83,7 +83,7 @@ public class MockServerConfig {
 
         getClient()
                 .when(request()
-                        .withPath("/auth/realms/event-bridge-fm/protocol/openid-connect/token"))
+                        .withPath("/auth/realms/redhat-external/protocol/openid-connect/token"))
                 .respond(response()
                         .withStatusCode(200)
                         .withHeader("Content-Type", "application/json")
