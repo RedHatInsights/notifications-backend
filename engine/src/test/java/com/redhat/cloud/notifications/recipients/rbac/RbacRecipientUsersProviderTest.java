@@ -1,13 +1,22 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authentication;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Permission;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -19,21 +28,82 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 public class RbacRecipientUsersProviderTest {
 
-    private final String accountId = "test-account-id";
+    @ConfigProperty(name = "recipient-provider.it.max-results-per-page", defaultValue = "1000")
+    int maxResultsPerPage;
 
-    @ConfigProperty(name = "recipient-provider.rbac.elements-per-page")
-    Integer rbacElementsPerPage;
+    private final String accountId = "test-account-id";
 
     @InjectMock
     @RestClient
     RbacServiceToService rbacServiceToService;
 
+    @InjectMock
+    @RestClient
+    ITUserService itUserService;
+
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
+
+    @Test
+    void shouldBeAdminWhenResponseContainsAdminPermission() {
+        RbacRecipientUsersProvider testee = new RbacRecipientUsersProvider();
+
+        List<ITUserResponse> itUserResponses = createTestResponse(RbacRecipientUsersProvider.ORG_ADMIN_PERMISSION);
+
+        final List<User> users = testee.transformToUser(itUserResponses);
+
+        assertTrue(users.get(0).isAdmin());
+    }
+
+    @Test
+    void shouldNotBeAdminWhenResponseDoesNotContainAdminPermission() {
+        RbacRecipientUsersProvider testee = new RbacRecipientUsersProvider();
+
+        List<ITUserResponse> itUserResponses = createTestResponse("portal_download");
+
+        final List<User> users = testee.transformToUser(itUserResponses);
+
+        assertFalse(users.get(0).isAdmin());
+    }
+
+    private List<ITUserResponse> createTestResponse(String permissionCode) {
+        List<ITUserResponse> itUserResponses = new ArrayList<>();
+
+        ITUserResponse itUserResponse = new ITUserResponse();
+
+        final AccountRelationship accountRelationship = new AccountRelationship();
+        accountRelationship.permissions = new ArrayList<>();
+        Permission permission = new Permission();
+        permission.permissionCode = permissionCode;
+        accountRelationship.permissions.add(permission);
+
+        itUserResponse.authentications = new ArrayList<>();
+        final Authentication authentication = new Authentication();
+        authentication.principal = "somePrincipal";
+        authentication.providerName = "someProviderName";
+        itUserResponse.authentications.add(authentication);
+
+        itUserResponse.accountRelationships = new ArrayList<>();
+        itUserResponse.accountRelationships.add(accountRelationship);
+
+        accountRelationship.emails = new ArrayList<>();
+
+        itUserResponse.personalInformation = new PersonalInformation();
+        itUserResponse.personalInformation.firstName = "someFirstName";
+        itUserResponse.personalInformation.lastNames = "someLastName";
+
+        itUserResponses.add(itUserResponse);
+
+        return itUserResponses;
+    }
 
     @Test
     public void getAllUsersFromDefaultGroup() {
@@ -46,14 +116,20 @@ public class RbacRecipientUsersProviderTest {
         mockGetGroup(defaultGroup);
         mockGetUsers(elements, false);
 
-        rbacRecipientUsersProvider.getGroupUsers(accountId, false, defaultGroup.getUuid())
-                .invoke(users -> {
-                    assertEquals(elements, users.size());
-                    for (int i = 0; i < elements; ++i) {
-                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-                    }
-                })
-                .await().indefinitely();
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, defaultGroup.getUuid());
+        assertEquals(elements, users.size());
+        for (int i = 0; i < elements; ++i) {
+            assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+        }
+    }
+
+    @Test
+    public void shouldReturnNoUsersWhenGroupNotFound() {
+        UUID nonExistentGroup = UUID.randomUUID();
+        mockNotFoundGroup(nonExistentGroup);
+
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, nonExistentGroup);
+        assertEquals(0, users.size());
     }
 
     @Test
@@ -62,23 +138,21 @@ public class RbacRecipientUsersProviderTest {
         int updatedSize = 1323;
         mockGetUsers(initialSize, false);
 
-        rbacRecipientUsersProvider.getUsers(accountId, false)
-                .invoke(users -> {
-                    assertEquals(initialSize, users.size());
-                    for (int i = 0; i < initialSize; ++i) {
-                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-                    }
-                    mockGetUsers(updatedSize, false);
-                })
-                .chain(() -> rbacRecipientUsersProvider.getUsers(accountId, false))
-                .invoke(users -> {
-                    // Should still have the initial size because of the cache
-                    assertEquals(initialSize, users.size());
-                    clearCached();
-                })
-                .chain(() -> rbacRecipientUsersProvider.getUsers(accountId, false))
-                .invoke(users -> assertEquals(updatedSize, users.size()))
-                .await().indefinitely();
+        List<User> users = rbacRecipientUsersProvider.getUsers(accountId, false);
+        assertEquals(initialSize, users.size());
+        for (int i = 0; i < initialSize; ++i) {
+            assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+        }
+
+        mockGetUsers(updatedSize, false);
+
+        users = rbacRecipientUsersProvider.getUsers(accountId, false);
+        // Should still have the initial size because of the cache
+        assertEquals(initialSize, users.size());
+        clearCached();
+
+        users = rbacRecipientUsersProvider.getUsers(accountId, false);
+        assertEquals(updatedSize, users.size());
     }
 
     @Test
@@ -93,59 +167,52 @@ public class RbacRecipientUsersProviderTest {
         mockGetGroup(group);
         mockGetGroupUsers(initialSize, group.getUuid());
 
-        rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid())
-                .invoke(users -> {
-                    assertEquals(initialSize, users.size());
-                    for (int i = 0; i < initialSize; ++i) {
-                        assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-                    }
-                    mockGetGroupUsers(updatedSize, group.getUuid());
-                })
-                .chain(() -> rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()))
-                .invoke(users -> {
-                    // Should still have the initial size because of the cache
-                    assertEquals(initialSize, users.size());
-                    clearCached();
-                })
-                .chain(() -> rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid()))
-                .invoke(users -> assertEquals(updatedSize, users.size()))
-                .await().indefinitely();
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid());
+        assertEquals(initialSize, users.size());
+        for (int i = 0; i < initialSize; ++i) {
+            assertEquals(String.format("username-%d", i), users.get(i).getUsername());
+        }
+
+        mockGetGroupUsers(updatedSize, group.getUuid());
+
+        users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid());
+        // Should still have the initial size because of the cache
+        assertEquals(initialSize, users.size());
+        clearCached();
+
+        users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid());
+        assertEquals(updatedSize, users.size());
     }
 
     private void mockGetUsers(int elements, boolean adminsOnly) {
         MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
-        Mockito.when(rbacServiceToService.getUsers(
-                Mockito.eq(accountId),
-                Mockito.eq(adminsOnly),
-                Mockito.anyInt(),
-                Mockito.anyInt()
-        )).then(invocationOnMock -> answer.mockedUserAnswer(
-                invocationOnMock.getArgument(2, Integer.class),
-                invocationOnMock.getArgument(3, Integer.class),
-                invocationOnMock.getArgument(1, Boolean.class)
-        ));
+        when(itUserService.getUsers(any(ITUserRequest.class)))
+                .then(invocationOnMock -> answer.mockedUserAnswer(invocationOnMock.getArgument(0, ITUserRequest.class)));
     }
 
     private void mockGetGroup(RbacGroup group) {
-        Mockito.when(rbacServiceToService.getGroup(
+        when(rbacServiceToService.getGroup(
                 Mockito.eq(accountId),
                 Mockito.eq(group.getUuid())
-        )).thenReturn(Uni.createFrom().item(group));
+        )).thenReturn(group);
+    }
+
+    private void mockNotFoundGroup(UUID groupId) {
+        when(rbacServiceToService.getGroup(
+                Mockito.eq(accountId),
+                Mockito.eq(groupId)
+        )).thenThrow(new ClientWebApplicationException(404));
     }
 
     private void mockGetGroupUsers(int elements, UUID groupId) {
-        Mockito.when(rbacServiceToService.getGroupUsers(
+        when(rbacServiceToService.getGroupUsers(
                 Mockito.eq(accountId),
                 Mockito.eq(groupId),
                 Mockito.anyInt(),
                 Mockito.anyInt()
         )).then(invocationOnMock -> {
-            MockedUserAnswer answer = new MockedUserAnswer(elements, false);
-            return answer.mockedUserAnswer(
-                    invocationOnMock.getArgument(2, Integer.class),
-                    invocationOnMock.getArgument(3, Integer.class),
-                    false
-            );
+            OldMockedUserAnswer answer = new OldMockedUserAnswer(elements, false);
+            return answer.mockedUserAnswer(false);
         });
     }
 
@@ -171,15 +238,58 @@ public class RbacRecipientUsersProviderTest {
             this.expectedAdminsOnly = expectedAdminsOnly;
         }
 
-        Uni<Page<RbacUser>> mockedUserAnswer(int offset, int limit, boolean adminsOnly) {
+        List<ITUserResponse> mockedUserAnswer(ITUserRequest request) {
+            boolean adminsOnly = request.by.allOf.permissionCode != null;
+            int firstResult = request.by.withPaging.firstResultIndex;
+            int maxResults = request.by.withPaging.maxResults;
 
-            assertEquals(rbacElementsPerPage.intValue(), limit);
+            assertEquals(maxResultsPerPage, maxResults);
             assertEquals(expectedAdminsOnly, adminsOnly);
 
-            int bound = Math.min(offset + limit, expectedElements);
+            int bound = Math.min(firstResult + maxResults, expectedElements);
+
+            List<ITUserResponse> users = new ArrayList<>();
+            for (int i = firstResult; i < bound; i++) {
+
+                ITUserResponse user = new ITUserResponse();
+
+                user.authentications = new ArrayList<>();
+                user.authentications.add(new Authentication());
+                user.authentications.get(0).principal = String.format("username-%d", i);
+
+                Email email = new Email();
+                email.address = String.format("username-%d@foobardotcom", i);
+                user.accountRelationships = new ArrayList<>();
+                user.accountRelationships.add(new AccountRelationship());
+                user.accountRelationships.get(0).emails = List.of(email);
+
+                user.accountRelationships.get(0).permissions = List.of();
+
+                user.personalInformation = new PersonalInformation();
+                user.personalInformation.firstName = "foo";
+                user.personalInformation.lastNames = "bar";
+
+                users.add(user);
+            }
+            return users;
+        }
+    }
+
+    static class OldMockedUserAnswer {
+
+        private final int expectedElements;
+        private final boolean expectedAdminsOnly;
+
+        OldMockedUserAnswer(int expectedElements, boolean expectedAdminsOnly) {
+            this.expectedElements = expectedElements;
+            this.expectedAdminsOnly = expectedAdminsOnly;
+        }
+
+        Page<RbacUser> mockedUserAnswer(boolean adminsOnly) {
+            assertEquals(expectedAdminsOnly, adminsOnly);
 
             List<RbacUser> users = new ArrayList<>();
-            for (int i = offset; i < bound; ++i) {
+            for (int i = 0; i < expectedElements; i++) {
                 RbacUser user = new RbacUser();
                 user.setActive(true);
                 user.setUsername(String.format("username-%d", i));
@@ -195,7 +305,7 @@ public class RbacRecipientUsersProviderTest {
             usersPage.setLinks(new HashMap<>());
             usersPage.setData(users);
 
-            return Uni.createFrom().item(usersPage);
+            return usersPage;
         }
     }
 }

@@ -5,7 +5,9 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.GET;
@@ -13,6 +15,7 @@ import javax.ws.rs.Path;
 
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -21,9 +24,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class ApiResponseFilterTest {
 
+    @ConfigProperty(name = "internal.admin-role")
+    String adminRole;
+
+    private Header turnpikeIdentityHeader() {
+        return createTurnpikeIdentityHeader("admin", adminRole);
+    }
+
     @Test
     void testActiveFilter() {
         String responseBody = given()
+                .header(turnpikeIdentityHeader())
                 .when().get("/internal/event-types/filtered")
                 .then().statusCode(200)
                 .extract().asString();
@@ -35,6 +46,7 @@ public class ApiResponseFilterTest {
     @Test
     void testInactiveFilter() {
         String responseBody = given()
+                .header(turnpikeIdentityHeader())
                 .when().get("/internal/event-types/unfiltered")
                 .then().statusCode(200)
                 .extract().asString();

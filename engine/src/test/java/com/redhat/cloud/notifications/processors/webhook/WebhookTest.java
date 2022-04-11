@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.processors.webhook;
 
-import com.redhat.cloud.notifications.MockServerClientConfig;
-import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -14,7 +13,6 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.smallrye.mutiny.Multi;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
@@ -40,9 +38,6 @@ public class WebhookTest {
 
     private static final long MAX_RETRY_ATTEMPTS = 4L;
 
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
-
     @Inject
     WebhookTypeProcessor webhookTypeProcessor;
 
@@ -50,7 +45,7 @@ public class WebhookTest {
         HttpRequest postReq = new HttpRequest()
                 .withPath("/foobar")
                 .withMethod("POST");
-        mockServerConfig.getMockServerClient()
+        MockServerLifecycleManager.getClient()
                 .withSecure(false)
                 .when(postReq)
                 .respond(verifyEmptyRequest);
@@ -59,7 +54,7 @@ public class WebhookTest {
 
     @Test
     void testWebhook() {
-        String url = String.format("http://%s/foobar", mockServerConfig.getRunningAddress());
+        String url = MockServerLifecycleManager.getContainerUrl() + "/foobar";
 
         final List<String> bodyRequests = new ArrayList<>();
         ExpectationResponseCallback verifyEmptyRequest = req -> {
@@ -75,15 +70,15 @@ public class WebhookTest {
         Endpoint ep = buildWebhookEndpoint(url);
 
         try {
-            Multi<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
-            NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
+            List<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
+            NotificationHistory history = process.get(0);
             assertTrue(history.isInvocationResult());
         } catch (Exception e) {
             e.printStackTrace();
             fail(e);
         } finally {
             // Remove expectations
-            mockServerConfig.getMockServerClient().clear(postReq);
+            MockServerLifecycleManager.getClient().clear(postReq);
         }
 
         assertEquals(1, bodyRequests.size());
@@ -120,7 +115,7 @@ public class WebhookTest {
     }
 
     private void testRetry(boolean shouldSucceedEventually) {
-        String url = String.format("http://%s/foobar", mockServerConfig.getRunningAddress());
+        String url = MockServerLifecycleManager.getContainerUrl() + "/foobar";
 
         AtomicInteger callsCounter = new AtomicInteger();
         ExpectationResponseCallback expectationResponseCallback = request -> {
@@ -137,14 +132,14 @@ public class WebhookTest {
             Event event = new Event();
             event.setAction(action);
             Endpoint ep = buildWebhookEndpoint(url);
-            Multi<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
-            NotificationHistory history = process.collect().asList().await().indefinitely().get(0);
+            List<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
+            NotificationHistory history = process.get(0);
 
             assertEquals(shouldSucceedEventually, history.isInvocationResult());
             assertEquals(MAX_RETRY_ATTEMPTS, callsCounter.get());
         } finally {
             // Remove expectations
-            mockServerConfig.getMockServerClient().clear(mockServerRequest);
+            MockServerLifecycleManager.getClient().clear(mockServerRequest);
         }
     }
 

@@ -1,1 +1,1 @@
-{action.timestamp.toUtcFormat()} - Failed to upload report of Policy '{action.events[0].payload.policy_name}' from system '{action.events[0].payload.host_name}'
+{action.timestamp.toUtcFormat()} - Failed to upload report from system '{action.events[0].payload.host_name}'

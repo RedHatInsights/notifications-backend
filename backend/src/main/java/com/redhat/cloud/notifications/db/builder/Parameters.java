@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.db.builder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 class Parameters {
 
@@ -43,6 +44,11 @@ class Parameters {
         if (parameters.containsKey(key)) {
             throw new IllegalArgumentException(String.format("Parameter [%s] already exists", key));
         }
+
+        if (value instanceof Supplier) {
+            value = ((Supplier<?>) value).get();
+        }
+
         parameters.put(key, value);
     }
 

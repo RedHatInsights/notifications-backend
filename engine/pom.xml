@@ -37,7 +37,7 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-hibernate-reactive</artifactId>
+            <artifactId>quarkus-hibernate-orm</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -48,16 +48,13 @@
             <artifactId>quarkus-jdbc-postgresql</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.quarkus</groupId>
+            <groupId>io.quarkiverse.loggingsentry</groupId>
             <artifactId>quarkus-logging-sentry</artifactId>
+            <version>${quarkus-logging-sentry.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-reactive-pg-client</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -69,7 +66,7 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-resteasy-reactive-qute</artifactId>
+            <artifactId>quarkus-qute</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -101,7 +98,14 @@
         <dependency>
             <groupId>io.quarkiverse.logging.cloudwatch</groupId>
             <artifactId>quarkus-logging-cloudwatch</artifactId>
-            <version>${cloudwatch.version}</version>
+            <version>${quarkus-logging-cloudwatch.version}</version>
+        </dependency>
+
+        <!-- Retries -->
+        <dependency>
+            <groupId>dev.failsafe</groupId>
+            <artifactId>failsafe</artifactId>
+            <version>${failsafe.version}</version>
         </dependency>
 
         <!-- Test -->
@@ -183,7 +187,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <debug>5007</debug>
+                    <debug>5008</debug>
                     <suspend>false</suspend>
                 </configuration>
             </plugin>

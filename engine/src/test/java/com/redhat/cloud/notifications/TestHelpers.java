@@ -77,7 +77,7 @@ public class TestHelpers {
 
         emailActionMessage.setAccountId(tenant);
 
-        JsonObject payload = baseTransformer.transform(emailActionMessage).await().indefinitely();
+        JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);
 
         return aggregation;
@@ -137,64 +137,91 @@ public class TestHelpers {
         emailActionMessage.setEventType(eventType);
         emailActionMessage.setAccountId(accountId);
 
-        emailActionMessage.setContext(Map.of(
-                "inventory_id", "host-01",
-                "hostname", "my-host",
-                "display_name", "My Host",
-                "rhel_version", "8.3",
-                "host_url", "this-is-my-host-url"
-        ));
-        emailActionMessage.setEvents(List.of(
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "rule_id", "rule-id-low-001",
-                                "rule_description", "nice rule with low risk",
-                                "total_risk", "1",
-                                "publish_date", "2020-08-03T15:22:42.199046",
-                                "report_url", "http://the-report-for-rule-id-low-001",
-                                "rule_url", "http://the-rule-id-low-001"
-                        ))
-                        .build(),
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "rule_id", "rule-id-moderate-001",
-                                "rule_description", "nice rule with moderate risk",
-                                "total_risk", "2",
-                                "publish_date", "2020-08-03T15:22:42.199046",
-                                "report_url", "http://the-report-for-rule-id-moderate-001",
-                                "rule_url", "http://the-rule-id-moderate-001"
-                        ))
-                        .build(),
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "rule_id", "rule-id-important-001",
-                                "rule_description", "nice rule with important risk",
-                                "total_risk", "3",
-                                "publish_date", "2020-08-03T15:22:42.199046",
-                                "report_url", "http://the-report-for-rule-id-important-001",
-                                "rule_url", "http://the-rule-id-important-001"
-                        ))
-                        .build(),
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "rule_id", "rule-id-critical-001",
-                                "rule_description", "nice rule with critical risk",
-                                "total_risk", "4",
-                                "publish_date", "2020-08-03T15:22:42.199046",
-                                "report_url", "http://the-report-for-rule-id-critical-001",
-                                "rule_url", "http://the-rule-id-critical-001"
-                        ))
-                        .build()
-        ));
-
+        if (eventType == "deactivated-recommendation") {
+            emailActionMessage.setContext(Map.of());
+            emailActionMessage.setEvents(List.of(
+                    Event
+                            .newBuilder()
+                            .setMetadataBuilder(Metadata.newBuilder())
+                            .setPayload(Map.of(
+                                    "rule_id", "retire-rule1",
+                                    "rule_description", "Rule being deactivated for retirement",
+                                    "total_risk", "1",
+                                    "affected_systems", "1",
+                                    "deactivation_reason", "Retirement"
+                            ))
+                            .build(),
+                    Event
+                            .newBuilder()
+                            .setMetadataBuilder(Metadata.newBuilder())
+                            .setPayload(Map.of(
+                                    "rule_id", "enhance-rule2",
+                                    "rule_description", "Rule being deactivated for enhancement",
+                                    "total_risk", "2",
+                                    "affected_systems", "2",
+                                    "deactivation_reason", "Enhancement"
+                            ))
+                            .build()
+            ));
+        } else {
+            emailActionMessage.setContext(Map.of(
+                    "inventory_id", "host-01",
+                    "hostname", "my-host",
+                    "display_name", "My Host",
+                    "rhel_version", "8.3",
+                    "host_url", "this-is-my-host-url"
+            ));
+            emailActionMessage.setEvents(List.of(
+                    Event
+                            .newBuilder()
+                            .setMetadataBuilder(Metadata.newBuilder())
+                            .setPayload(Map.of(
+                                    "rule_id", "rule-id-low-001",
+                                    "rule_description", "nice rule with low risk",
+                                    "total_risk", "1",
+                                    "publish_date", "2020-08-03T15:22:42.199046",
+                                    "report_url", "http://the-report-for-rule-id-low-001",
+                                    "rule_url", "http://the-rule-id-low-001"
+                            ))
+                            .build(),
+                    Event
+                            .newBuilder()
+                            .setMetadataBuilder(Metadata.newBuilder())
+                            .setPayload(Map.of(
+                                    "rule_id", "rule-id-moderate-001",
+                                    "rule_description", "nice rule with moderate risk",
+                                    "total_risk", "2",
+                                    "publish_date", "2020-08-03T15:22:42.199046",
+                                    "report_url", "http://the-report-for-rule-id-moderate-001",
+                                    "rule_url", "http://the-rule-id-moderate-001"
+                            ))
+                            .build(),
+                    Event
+                            .newBuilder()
+                            .setMetadataBuilder(Metadata.newBuilder())
+                            .setPayload(Map.of(
+                                    "rule_id", "rule-id-important-001",
+                                    "rule_description", "nice rule with important risk",
+                                    "total_risk", "3",
+                                    "publish_date", "2020-08-03T15:22:42.199046",
+                                    "report_url", "http://the-report-for-rule-id-important-001",
+                                    "rule_url", "http://the-rule-id-important-001"
+                            ))
+                            .build(),
+                    Event
+                            .newBuilder()
+                            .setMetadataBuilder(Metadata.newBuilder())
+                            .setPayload(Map.of(
+                                    "rule_id", "rule-id-critical-001",
+                                    "rule_description", "nice rule with critical risk",
+                                    "total_risk", "4",
+                                    "publish_date", "2020-08-03T15:22:42.199046",
+                                    "report_url", "http://the-report-for-rule-id-critical-001",
+                                    "rule_url", "http://the-rule-id-critical-001"
+                            ))
+                            .build()
+            ));
+        }
         return emailActionMessage;
     }
 

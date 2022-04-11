@@ -11,9 +11,9 @@ import javax.ws.rs.ext.Provider;
  */
 @Provider
 public class JaxRsExceptionMapper implements ExceptionMapper<WebApplicationException> {
+
     @Override
     public Response toResponse(WebApplicationException exception) {
-
         if (exception instanceof BadRequestException) {
             return Response.status(Response.Status.BAD_REQUEST).entity(exception.getMessage()).build();
         }

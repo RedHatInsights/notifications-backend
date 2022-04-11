@@ -1,21 +1,30 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
+import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.routers.models.Page;
+import dev.failsafe.Failsafe;
+import dev.failsafe.RetryPolicy;
+import dev.failsafe.function.CheckedSupplier;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.cache.CacheResult;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -30,15 +39,33 @@ public class RbacRecipientUsersProvider {
 
     private static final Logger LOGGER = Logger.getLogger(RbacRecipientUsersProvider.class);
 
+    public static final String ORG_ADMIN_PERMISSION = "admin:org:all";
+
     @Inject
     @RestClient
     RbacServiceToService rbacServiceToService;
 
+    @Inject
+    @RestClient
+    ITUserService itUserService;
+
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     Integer rbacElementsPerPage;
 
+    @ConfigProperty(name = "recipient-provider.it.max-results-per-page", defaultValue = "1000")
+    int maxResultsPerPage;
+
     @ConfigProperty(name = "rbac.retry.max-attempts", defaultValue = "3")
-    long maxRetryAttempts;
+    int maxRetryAttempts;
+
+    @ConfigProperty(name = "it.retry.max-attempts", defaultValue = "3")
+    int maxRetryAttemptsIt;
+
+    @ConfigProperty(name = "it.retry.back-off.initial-value", defaultValue = "0.1S")
+    Duration initialBackOffIt;
+
+    @ConfigProperty(name = "it.retry.back-off.max-value", defaultValue = "1S")
+    Duration maxBackOffIt;
 
     @ConfigProperty(name = "rbac.retry.back-off.initial-value", defaultValue = "0.1S")
     Duration initialBackOff;
@@ -46,90 +73,189 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
     Duration maxBackOff;
 
+    @ConfigProperty(name = "recipient-provider.use-it-impl", defaultValue = "false")
+    public boolean retrieveUsersFromIt;
+
     @Inject
     MeterRegistry meterRegistry;
 
-    private Counter failuresCounter;
+    private Counter rbacFailuresCounter;
+
+    private AtomicInteger rbacUsers = new AtomicInteger(0);
+
+    private RetryPolicy<Object> rbacRetryPolicy;
+
+    private Counter itFailuresCounter;
+    private RetryPolicy<Object> itRetryPolicy;
 
     @PostConstruct
     public void initCounters() {
-        failuresCounter = meterRegistry.counter("rbac.failures");
+        rbacFailuresCounter = meterRegistry.counter("rbac.failures");
+
+        meterRegistry.gauge("rbac.users", rbacUsers);
+
+        rbacRetryPolicy = RetryPolicy.builder()
+                .onRetry(event -> rbacFailuresCounter.increment())
+                .handle(IOException.class, ConnectTimeoutException.class)
+                .withBackoff(initialBackOff, maxBackOff)
+                .withMaxAttempts(maxRetryAttempts)
+                .onRetriesExceeded(event -> {
+                    // All retry attempts failed, let's log a warning about the failure.
+                    LOGGER.warnf("RBAC S2S call failed", event.getException().getMessage());
+                })
+                .build();
+
+        itFailuresCounter = meterRegistry.counter("it.failures");
+        itRetryPolicy = RetryPolicy.builder()
+                .onRetry(event -> itFailuresCounter.increment())
+                .handle(IOException.class, ConnectTimeoutException.class)
+                .withBackoff(initialBackOffIt, maxBackOffIt)
+                .withMaxAttempts(maxRetryAttemptsIt)
+                .onRetriesExceeded(event -> {
+                    // All retry attempts failed, let's log a warning about the failure.
+                    LOGGER.warnf("IT User Service call failed", event.getException().getMessage());
+                })
+                .build();
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
-    public Uni<List<User>> getUsers(String accountId, boolean adminsOnly) {
+    public List<User> getUsers(String accountId, boolean adminsOnly) {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
-        return getWithPagination(
-            page -> {
+
+        List<User> users;
+        if (retrieveUsersFromIt) {
+            List<ITUserResponse> usersPaging;
+            List<ITUserResponse> usersTotal = new ArrayList<>();
+
+            int firstResult = 0;
+
+            do {
                 Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                return retryOnError(
-                        rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)
-                )
-                .onItem().invoke(() -> getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId)));
-            }
-        )
-        .onItem().invoke(users -> getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size()))));
+
+                ITUserRequest request = new ITUserRequest(accountId, adminsOnly, firstResult, maxResultsPerPage);
+                usersPaging = retryOnItError(() -> itUserService.getUsers(request));
+                usersTotal.addAll(usersPaging);
+
+                firstResult += maxResultsPerPage;
+
+                getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
+            } while (usersPaging.size() == maxResultsPerPage);
+
+            users = transformToUser(usersTotal);
+        } else {
+            users = getWithPagination(
+                page -> {
+                    Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
+                    Page<RbacUser> rbacUsers = retryOnRbacError(() ->
+                            rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
+                    getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
+                    return rbacUsers;
+                }
+            );
+        }
+        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
+        rbacUsers.set(users.size());
+
+        return users;
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
-    public Uni<List<User>> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
+    public List<User> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
-        return retryOnError(rbacServiceToService.getGroup(accountId, groupId))
-                .onItem().transformToUni(rbacGroup -> {
-                    if (rbacGroup.isPlatformDefault()) {
-                        return getUsers(accountId, adminOnly);
-                    } else {
-                        return getWithPagination(
-                            page -> {
-                                Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
-                                return retryOnError(
-                                        rbacServiceToService.getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage)
-                                )
-                                .onItem().invoke(() -> getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "accountId", accountId)));
-                            }
-                        )
-                        // getGroupUsers doesn't have an adminOnly param.
-                        .onItem().transform(users -> {
-                            if (adminOnly) {
-                                return users.stream().filter(User::isAdmin).collect(Collectors.toList());
-                            }
+        RbacGroup rbacGroup;
+        try {
+            rbacGroup = retryOnRbacError(() -> rbacServiceToService.getGroup(accountId, groupId));
+        } catch (ClientWebApplicationException exception) {
+            // The group does not exist (or no longer exists - ignore)
+            if (exception.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+                return List.of();
+            }
 
-                            return users;
-                        });
+            throw exception;
+        }
+
+        List<User> users;
+        if (rbacGroup.isPlatformDefault()) {
+            users = getUsers(accountId, adminOnly);
+        } else {
+            users = getWithPagination(page -> {
+                Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
+                Page<RbacUser> rbacUsers = retryOnRbacError(() ->
+                        rbacServiceToService.getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage));
+                getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "accountId", accountId));
+                return rbacUsers;
+            });
+            // getGroupUsers doesn't have an adminOnly param.
+            if (adminOnly) {
+                users = users.stream().filter(User::isAdmin).collect(Collectors.toList());
+            }
+        }
+        getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
+        return users;
+    }
+
+    private <T> T retryOnRbacError(CheckedSupplier<T> rbacCall) {
+        return Failsafe.with(rbacRetryPolicy).get(rbacCall);
+    }
+
+    private <T> T retryOnItError(CheckedSupplier<T> rbacCall) {
+        return Failsafe.with(itRetryPolicy).get(rbacCall);
+    }
+
+    private List<User> getWithPagination(Function<Integer, Page<RbacUser>> fetcher) {
+        List<User> users = new ArrayList<>();
+        int page = 0;
+        Page<RbacUser> rbacUsers;
+        do {
+            rbacUsers = fetcher.apply(page++);
+            for (RbacUser rbacUser : rbacUsers.getData()) {
+                User user = new User();
+                user.setUsername(rbacUser.getUsername());
+                user.setEmail(rbacUser.getEmail());
+                user.setAdmin(rbacUser.getOrgAdmin());
+                user.setActive(rbacUser.getActive());
+                user.setFirstName(rbacUser.getFirstName());
+                user.setLastName(rbacUser.getLastName());
+                users.add(user);
+            }
+        } while (rbacUsers.getData().size() == rbacElementsPerPage);
+        return users;
+    }
+
+    List<User> transformToUser(List<ITUserResponse> itUserResponses) {
+        List<User> users = new ArrayList<>();
+        for (ITUserResponse itUserResponse : itUserResponses) {
+            User user = new User();
+            user.setUsername(itUserResponse.authentications.get(0).principal);
+
+            final List<Email> emails = itUserResponse.accountRelationships.get(0).emails;
+            for (Email email : emails) {
+                if (email != null && email.isPrimary != null && email.isPrimary) {
+                    String address = email.address;
+                    user.setEmail(address);
+                }
+            }
+
+            user.setAdmin(false);
+            if (itUserResponse.accountRelationships != null) {
+                for (AccountRelationship accountRelationship : itUserResponse.accountRelationships) {
+                    if (accountRelationship.permissions != null) {
+                        for (Permission permission : accountRelationship.permissions) {
+                            if (ORG_ADMIN_PERMISSION.equals(permission.permissionCode)) {
+                                user.setAdmin(true);
+                            }
+                        }
                     }
-                })
-                .onItem().invoke(users -> getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountId, "users", String.valueOf(users.size()))));
-    }
+                }
+            }
 
-    private <T> Uni<T> retryOnError(Uni<T> uni) {
-        return uni
-                .onFailure(failure -> {
-                    failuresCounter.increment();
-                    return failure.getClass() == IOException.class || failure.getClass() == ConnectTimeoutException.class;
-                })
-                .retry()
-                .withBackOff(initialBackOff, maxBackOff)
-                .atMost(maxRetryAttempts)
-                // All retry attempts failed, let's log a warning about the failure.
-                .onFailure().invoke(failure -> LOGGER.warnf("RBAC S2S call failed: %s", failure.getMessage()));
-    }
+            user.setActive(true);
 
-    private Uni<List<User>> getWithPagination(Function<Integer, Uni<Page<RbacUser>>> fetcher) {
-        return Multi.createBy().repeating()
-                .uni(
-                    AtomicInteger::new,
-                    state -> fetcher.apply(state.getAndIncrement())
-                )
-                .whilst(page -> page.getData().size() == rbacElementsPerPage)
-                .onItem().transform(page -> page.getData().stream().map(rbacUser -> {
-                    User user = new User();
-                    user.setUsername(rbacUser.getUsername());
-                    user.setEmail(rbacUser.getEmail());
-                    user.setAdmin(rbacUser.getOrgAdmin());
-                    user.setActive(rbacUser.getActive());
-                    user.setFirstName(rbacUser.getFirstName());
-                    user.setLastName(rbacUser.getLastName());
-                    return user;
-                }).collect(Collectors.toList())).collect().in(ArrayList::new, List::addAll);
+            user.setFirstName(itUserResponse.personalInformation.firstName);
+            user.setLastName(itUserResponse.personalInformation.lastNames);
+
+            users.add(user);
+        }
+        return users;
     }
 }

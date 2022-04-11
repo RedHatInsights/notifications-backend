@@ -46,7 +46,7 @@ public class DriftTestHelpers {
 
         emailActionMessage.setAccountId(tenant);
 
-        JsonObject payload = baseTransformer.transform(emailActionMessage).await().indefinitely();
+        JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);
 
         return aggregation;

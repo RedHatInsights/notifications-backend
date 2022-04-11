@@ -5,21 +5,23 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import { CreateEditApplicationModal } from '../components/CreateEditApplicationModal';
-import { DeleteApplicationModal } from '../components/DeleteApplicationModal';
-import { ListEventTypes } from '../components/ListEventTypes';
+import { useUserPermissions } from '../app/PermissionContext';
+import { CreateEditApplicationModal } from '../components/Applications/CreateEditApplicationModal';
+import { DeleteApplicationModal } from '../components/Applications/DeleteApplicationModal';
+import { ListEventTypes } from '../components/EventTypes/ListEventTypes';
 import { linkTo } from '../Routes';
 import { useCreateApplication } from '../services/Applications/CreateApplication';
 import { useDeleteApplication } from '../services/Applications/DeleteApplication';
 import { useApplications } from '../services/Applications/GetApplicationById';
 import { useBundleTypes } from '../services/Applications/GetBundleById';
-import { Application } from '../types/Notifications';
+import { Application, RoleOwnedApplication } from '../types/Notifications';
 
 type BundlePageParams = {
     bundleId: string;
 }
 
 export const BundlePage: React.FunctionComponent = () => {
+    const { hasPermission, refresh, isAdmin } = useUserPermissions();
     const { bundleId } = useParams<BundlePageParams>();
     const getBundles = useBundleTypes(bundleId);
     const getApplications = useApplications(bundleId);
@@ -54,22 +56,30 @@ export const BundlePage: React.FunctionComponent = () => {
 
     };
 
-    const handleSubmit = React.useCallback((eventType) => {
+    const handleSubmit = React.useCallback((application: Partial<RoleOwnedApplication>) => {
         setShowModal(false);
         const mutate = newApplication.mutate;
         mutate({
-            id: eventType.id,
-            displayName: eventType.displayName ?? '',
-            name: eventType.name ?? '',
-            bundleId
-
+            id: application.id,
+            displayName: application.displayName ?? '',
+            name: application.name ?? '',
+            bundleId,
+            ownerRole: application.ownerRole
         })
-        .then (getApplications.query);
+        .then(r => {
+            if (r.payload?.status === 200 && !isAdmin) {
+                refresh();
+            }
 
-    }, [ bundleId, getApplications.query, newApplication.mutate ]);
+            return r;
+        })
+        .then(getApplications.query);
+
+    }, [ bundleId, getApplications.query, newApplication.mutate, isAdmin, refresh ]);
 
     const onClose = () => {
         setShowModal(false);
+        setApplication({});
         getApplications.query();
     };
 
@@ -119,10 +129,10 @@ export const BundlePage: React.FunctionComponent = () => {
                             <ToolbarContent>
                                 <ToolbarItem>
                                     <Button variant='primary' type='button' onClick={ createApplication }> Create Application </Button>
-                                    <CreateEditApplicationModal
+                                    {showModal && <CreateEditApplicationModal
                                         isEdit={ isEdit }
                                         bundleName={ bundle?.displayName }
-                                        initialApplication = { application }
+                                        initialApplication={ application }
                                         showModal={ showModal }
                                         applicationName={ application.displayName }
                                         onClose={ onClose }
@@ -130,6 +140,7 @@ export const BundlePage: React.FunctionComponent = () => {
                                         isLoading={ getApplications.loading }
 
                                     />
+                                    }
                                     <React.Fragment>
                                         <DeleteApplicationModal
                                             onDelete={ handleDelete }
@@ -165,10 +176,12 @@ export const BundlePage: React.FunctionComponent = () => {
                                 <Td>{ a.id }</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
+                                        isDisabled={ !hasPermission(a.id) }
                                         onClick={ () => editApplication(a) }
                                     > { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
+                                        isDisabled={ !isAdmin }
                                         onClick={ () => deleteApplicationModal(a) }
 
                                     >{ <TrashIcon /> } </Button></Td>

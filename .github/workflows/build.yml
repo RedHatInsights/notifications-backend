@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
       - name: Prepare cache key
@@ -16,19 +16,19 @@ jobs:
         shell: bash
         run: echo "::set-output name=date::$(/bin/date -u "+%Y-%m")"
       - name: Cache Maven dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           # The cache key is changed every month to prevent unlimited growth.
           key: maven-cache-${{ steps.cache-key.outputs.date }}
       - name: Cache Yarn dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cache/yarn
           # The cache key is changed every month to prevent unlimited growth.
           key: yarn-cache-${{ steps.cache-key.outputs.date }}
       - name: Set up JDK 11
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: adopt
           java-version: 11
@@ -45,22 +45,24 @@ jobs:
         run: bash .github/scripts/push-admin-console.sh
       - name: Build with Maven
         run: ./mvnw clean verify --no-transfer-progress
-      - uses: actions/upload-artifact@v2
+      - name: Pushes coverage
+        run: bash <(curl -s https://codecov.io/bash)
+      - uses: actions/upload-artifact@v3
         name: Upload notifications openapi.json
         with:
           name: openapi.notifications.json
           path: backend/target/openapi.notifications.json
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Upload integrations openapi.json
         with:
           name: openapi.integrations.json
           path: backend/target/openapi.integrations.json
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Upload private openapi.json
         with:
           name: openapi.private.json
           path: backend/target/openapi.private.json
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Upload internal openapi.json
         with:
           name: openapi.internal.json

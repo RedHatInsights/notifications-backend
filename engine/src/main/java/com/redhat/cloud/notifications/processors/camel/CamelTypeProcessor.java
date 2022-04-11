@@ -7,31 +7,36 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.openbridge.Bridge;
+import com.redhat.cloud.notifications.openbridge.BridgeAuth;
+import com.redhat.cloud.notifications.openbridge.BridgeEventService;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.context.Context;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.TracingMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.net.URI;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
@@ -47,6 +52,10 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     public static final String CLOUD_EVENT_ACCOUNT_EXTENSION_KEY = "rh-account";
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     public static final String CAMEL_SUBTYPE_HEADER = "CAMEL_SUBTYPE";
+    public static final String PROCESSORNAME = "processorname";
+
+    @ConfigProperty(name = "ob.enabled", defaultValue = "false")
+    boolean obEnabled;
 
     @Inject
     BaseTransformer transformer;
@@ -60,6 +69,12 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     @Inject
     MeterRegistry registry;
 
+    @Inject
+    Bridge bridge;
+
+    @Inject
+    BridgeAuth bridgeAuth;
+
     private Counter processedCount;
 
     @PostConstruct
@@ -68,15 +83,16 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     }
 
     @Override
-    public Multi<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
-        return Multi.createFrom().iterable(endpoints)
-                .onItem().transformToUniAndConcatenate(endpoint -> {
+    public List<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
+        return endpoints.stream()
+                .map(endpoint -> {
                     Notification notification = new Notification(event, endpoint);
                     return process(notification);
-                });
+                })
+                .collect(Collectors.toList());
     }
 
-    private Uni<NotificationHistory> process(Notification item) {
+    private NotificationHistory process(Notification item) {
         processedCount.increment();
         Endpoint endpoint = item.getEndpoint();
         CamelProperties properties = (CamelProperties) endpoint.getProperties();
@@ -93,7 +109,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         }
 
         BasicAuthentication basicAuthentication = properties.getBasicAuthentication();
-        if (basicAuthentication != null) {
+        if (basicAuthentication != null && basicAuthentication.getUsername() != null && basicAuthentication.getPassword() != null) {
             StringBuilder sb = new StringBuilder(basicAuthentication.getUsername());
             sb.append(":");
             sb.append(basicAuthentication.getPassword());
@@ -103,39 +119,52 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         metaData.put("extras", new MapConverter().convertToDatabaseColumn(properties.getExtras()));
 
-        Uni<JsonObject> payload = transformer.transform(item.getEvent().getAction());
+        JsonObject payload = transformer.transform(item.getEvent().getAction());
         UUID historyId = UUID.randomUUID();
 
-        payload = payload.onItem().transform(json -> {
-            JsonObject metadataAsJson = new JsonObject();
-            json.put(NOTIF_METADATA_KEY, metadataAsJson);
-            metaData.forEach(metadataAsJson::put);
-            return json;
-        });
+        JsonObject metadataAsJson = new JsonObject();
+        payload.put(NOTIF_METADATA_KEY, metadataAsJson);
+        metaData.forEach(metadataAsJson::put);
+
         return callCamel(item, historyId, payload);
     }
 
-    public Uni<NotificationHistory> callCamel(Notification item, UUID historyId, Uni<JsonObject> payload) {
+    public NotificationHistory callCamel(Notification item, UUID historyId, JsonObject payload) {
 
         final long startTime = System.currentTimeMillis();
 
         String accountId = item.getEndpoint().getAccountId();
         // the next could give a CCE, but we only come here when it is a camel endpoint anyway
         String subType = item.getEndpoint().getSubType();
+        CamelProperties camelProperties = item.getEndpoint().getProperties(CamelProperties.class);
 
-        return payload.onItem()
+        if (subType.equals("slack")) { // OpenBridge
+            long endTime;
+            NotificationHistory history = getHistoryStub(item.getEndpoint(), item.getEvent(), 0L, historyId);
+            try {
+                callOpenBridge(payload, historyId, accountId, camelProperties);
+                history.setInvocationResult(true);
+            } catch (Exception e) {
+                history.setInvocationResult(false);
+                Map<String, Object> details = new HashMap<>();
+                details.put("failure", e.getMessage());
+                history.setDetails(details);
+            } finally {
+                endTime = System.currentTimeMillis();
+            }
+            history.setInvocationTime(endTime - startTime);
+            return history;
 
-                .transformToUni(json -> reallyCallCamel(json, historyId, accountId, subType)
-                        .onItem().transform(resp -> {
-                            final long endTime = System.currentTimeMillis();
-                            // We only create a basic stub. The FromCamel filler will update it later
-                            NotificationHistory history = getHistoryStub(item.getEndpoint(), item.getEvent(), endTime - startTime, historyId);
-                            return history;
-                        })
-                );
+        } else {
+            reallyCallCamel(payload, historyId, accountId, subType);
+            final long endTime = System.currentTimeMillis();
+            // We only create a basic stub. The FromCamel filler will update it later
+            NotificationHistory history = getHistoryStub(item.getEndpoint(), item.getEvent(), endTime - startTime, historyId);
+            return history;
+        }
     }
 
-    public Uni<Boolean> reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
+    public void reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType) {
 
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
         Message<String> msg = Message.of(body.encode());
@@ -152,12 +181,37 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         );
         msg = msg.addMetadata(tracingMetadata);
         LOGGER.infof("Sending for account %s and history id %s", accountId, historyId);
-        Message<String> finalMsg = msg;
-        return Uni.createFrom().item(() -> {
-            emitter.send(finalMsg);
-            return true;
-        });
+        emitter.send(msg);
 
     }
+
+    private void callOpenBridge(JsonObject body, UUID id, String accountId, CamelProperties camelProperties) {
+
+        Map<String, String> extras = camelProperties.getExtras();
+
+        Map<String, Object> ce = new HashMap<>();
+
+        ce.put("id", id);
+        ce.put("source", "notifications"); // Source of original event?
+        ce.put("specversion", "1.0");
+        ce.put("type", "myType"); // Type of original event?
+        ce.put("rhaccount", accountId);
+        ce.put(PROCESSORNAME, extras.get(PROCESSORNAME));
+        // TODO add dataschema
+
+        LOGGER.infof("Sending Event with id(%s) for processor with name %s and id=%s",
+                id.toString(), extras.get(PROCESSORNAME), extras.get("processorId"));
+
+        body.remove(NOTIF_METADATA_KEY); // Not needed on OB
+        ce.put("data", body);
+
+        BridgeEventService evtSvc = RestClientBuilder.newBuilder()
+                .baseUri(URI.create(bridge.getEndpoint()))
+                .build(BridgeEventService.class);
+
+        JsonObject payload = JsonObject.mapFrom(ce);
+        evtSvc.sendEvent(payload, bridgeAuth.getToken());
+    }
+
 
 }

@@ -20,6 +20,57 @@ objects:
       version: 12
     testing:
       iqePlugin: notifications
+    jobs:
+    - name: floorist
+      schedule: ${FLOORIST_SCHEDULE}
+      suspend: ${{FLOORIST_SUSPEND}}
+      concurrencyPolicy: Forbid
+      podSpec:
+        image: ${FLOORIST_IMAGE}:${FLOORIST_IMAGE_TAG}
+        env:
+          - name: AWS_BUCKET
+            valueFrom:
+              secretKeyRef:
+                name: ${FLOORIST_BUCKET_SECRET_NAME}
+                key: bucket
+          - name: AWS_REGION
+            valueFrom:
+              secretKeyRef:
+                name: ${FLOORIST_BUCKET_SECRET_NAME}
+                key: aws_region
+          - name: AWS_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: ${FLOORIST_BUCKET_SECRET_NAME}
+                key: endpoint
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: ${FLOORIST_BUCKET_SECRET_NAME}
+                key: aws_access_key_id
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: ${FLOORIST_BUCKET_SECRET_NAME}
+                key: aws_secret_access_key
+          - name: FLOORPLAN_FILE
+            value: "/tmp/floorplan/floorplan.yaml"
+          - name: LOGLEVEL
+            value: ${FLOORIST_LOGLEVEL}
+        volumeMounts:
+          - name: floorplan-volume
+            mountPath: "/tmp/floorplan"
+        volumes:
+          - name: floorplan-volume
+            configMap:
+              name: floorplan
+      resources:
+        limits:
+          cpu: "${CPU_LIMIT_FLOO}"
+          memory: "${MEMORY_LIMIT_FLOO}"
+        requests:
+          cpu: "${CPU_REQUEST_FLOO}"
+          memory: "${MEMORY_REQUEST_FLOO}"
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
@@ -70,12 +121,12 @@ objects:
               name: notifications-ephemeral-data
               key: ephemeral_data.json
               optional: true
-        - name: NOTIFICATIONS_EVENT_SERVICE_LEGACY_MODE
-          value: ${NOTIFICATIONS_EVENT_SERVICE_LEGACY_MODE}
-        - name: NOTIFICATIONS_EVENT_SERVICE_USE_DENORMALIZED_EVENTS
-          value: ${NOTIFICATIONS_EVENT_SERVICE_USE_DENORMALIZED_EVENTS}
-        - name: RBAC_AUTHENTICATION_MP_REST_READTIMEOUT
+        - name: QUARKUS_REST_CLIENT_RBAC_AUTHENTICATION_READ_TIMEOUT
           value: ${RBAC_AUTHENTICATION_READ_TIMEOUT}
+        - name: INTERNAL_RBAC_ENABLED
+          value: ${INTERNAL_RBAC_ENABLED}
+        - name: INTERNAL_ADMIN_ROLE
+          value: ${INTERNAL_RBAC_ADMIN}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -90,6 +141,22 @@ objects:
           value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: OB_ENABLED
+          value: ${OB_ENABLED}
+        - name: OB_BRIDGE_UUID
+          value: ${OB_BRIDGE_UUID}
+        - name: OB_KCUSER
+          value: ${OB_KCUSER}
+        - name: OB_KCPASS
+          value: ${OB_KCPASS}
+        - name: OB_TOKEN_USER
+          value: ${OB_TOKEN_USER}
+        - name: OB_TOKEN_PASS
+          value: ${OB_TOKEN_PASS}
+        - name: QUARKUS_REST_CLIENT_OB_URL
+          value: ${QUARKUS_REST_CLIENT_OB_URL}
+        - name: QUARKUS_REST_CLIENT_KC_URL
+          value: ${QUARKUS_REST_CLIENT_KC_URL}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -108,6 +175,9 @@ objects:
   kind: CronJob
   metadata:
     name: notifications-db-cleaner-cronjob
+  annotations: 
+    ignore-check.kube-linter.io/no-liveness-probe
+    ignore-check.kube-linter.io/no-readiness-probe
   spec:
     schedule: ${DB_CLEANER_SCHEDULE}
     suspend: ${{DISABLE_DB_CLEANER}}
@@ -154,6 +224,31 @@ objects:
                   secretKeyRef:
                     name: notifications-backend-db
                     key: ${DB_SECRET_PASSWORD_KEY}
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: floorplan
+  data:
+    floorplan.yaml: |
+      - prefix: insights/notifications/splunk
+        query: >-
+          SELECT 
+            DISTINCT "account_id" 
+            FROM "endpoints"
+            WHERE "endpoint_type"=3 AND "endpoint_sub_type"='splunk';
+      - prefix: insights/notifications/accounts
+        query: >-
+          SELECT
+          "applications"."id", "applications"."name", COUNT("applications"."id") AS "applications_count" 
+          FROM "applications" 
+          INNER JOIN "endpoint_email_subscriptions" ON "applications"."id"="endpoint_email_subscriptions"."application_id" 
+          GROUP BY "applications"."id" HAVING COUNT("applications"."id") > 1;
+      - prefix: insights/notifications/accounts
+        query: >-
+          SELECT
+          COUNT(distinct account_id) 
+          FROM endpoints
+          WHERE endpoint_type = 3 AND endpoint_sub_type = 'splunk' AND enabled IS FALSE;
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -198,18 +293,63 @@ parameters:
   value: 250Mi
 - name: MIN_REPLICAS
   value: "1"
-- name: NOTIFICATIONS_EVENT_SERVICE_LEGACY_MODE
-  description: Temp param used to test an /events response time improvement attempt on stage
-  value: "true"
-- name: NOTIFICATIONS_EVENT_SERVICE_USE_DENORMALIZED_EVENTS
-  description: Temp param used to test another /events response time improvement attempt on stage
-  value: "false"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
+- name: OB_ENABLED
+  description: Is the OpenBridge integration enabled
+  value: "false"
+- name: OB_BRIDGE_UUID
+  description: The uuid of the bridge to use. Must be pre-provisioned
+  value: "00000000-0000-0000-0000-000000000000"
+- name: OB_KCUSER
+  description: User name to talk to the SSO server
+  value: ob.kcUser
+- name: OB_KCPASS
+  description: Password to talk to the SSO server
+  value: ob.kcPass
+- name: OB_TOKEN_USER
+  description: User to get a token from SSO
+  value: ob.token.user
+- name: OB_TOKEN_PASS
+  description: Password to get a token from SSO
+  value: ob.token.pass
+- name: QUARKUS_REST_CLIENT_OB_URL
+  description: URL of the OpenBridge fleet manager
+  value: "http://addMe"
+- name: QUARKUS_REST_CLIENT_KC_URL
+  description: URL of the SSO server
+  value: "https://addMe"
 - name: RBAC_AUTHENTICATION_READ_TIMEOUT
   description: Delay in milliseconds before an RBAC authentication query is interrupted
   value: "2000"
+- name: INTERNAL_RBAC_ENABLED
+  description: Enable Internal RBAC
+  value: "false"
+- name: INTERNAL_RBAC_ADMIN
+  description: Internal admin group
+  value: "crc-notifications-team"
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
+- name: FLOORIST_SCHEDULE
+  description: Cronjob schedule definition
+  required: true
+- name: FLOORIST_SUSPEND
+  description: Disable Floorist cronjob execution
+  required: true
+  value: 'true'
+- description: Floorist image name
+  name: FLOORIST_IMAGE
+  value: quay.io/cloudservices/floorist
+- description: Floorist Image tag
+  name: FLOORIST_IMAGE_TAG
+  required: true
+  value: latest
+- description: bucket secret name
+  name: FLOORIST_BUCKET_SECRET_NAME
+  required: true
+  value: dummy-secret
+- name: FLOORIST_LOGLEVEL
+  description: Floorist loglevel config
+  value: 'INFO'

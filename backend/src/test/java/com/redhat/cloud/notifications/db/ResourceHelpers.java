@@ -1,9 +1,12 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
+import com.redhat.cloud.notifications.db.repositories.BundleRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -12,15 +15,13 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
-import org.hibernate.reactive.mutiny.Mutiny;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.IntStream;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -28,6 +29,7 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
 @ApplicationScoped
+@Transactional
 public class ResourceHelpers {
 
     public static final String TEST_APP_NAME = "tester";
@@ -36,102 +38,93 @@ public class ResourceHelpers {
     public static final String TEST_BUNDLE_NAME = "testbundle";
 
     @Inject
-    EndpointResources endpointResources;
+    EndpointRepository endpointRepository;
 
     @Inject
-    ApplicationResources appResources;
+    ApplicationRepository applicationRepository;
 
     @Inject
-    BundleResources bundleResources;
+    BundleRepository bundleRepository;
 
     @Inject
-    BehaviorGroupResources behaviorGroupResources;
+    BehaviorGroupRepository behaviorGroupRepository;
 
     @Inject
-    Mutiny.SessionFactory sessionFactory;
+    EntityManager entityManager;
 
-    public Uni<Bundle> createBundle() {
+    public Bundle createBundle() {
         return createBundle("name", "displayName");
     }
 
-    public Uni<Bundle> createBundle(String name, String displayName) {
+    public Bundle createBundle(String name, String displayName) {
         Bundle bundle = new Bundle(name, displayName);
-        return bundleResources.createBundle(bundle);
+        return bundleRepository.createBundle(bundle);
     }
 
-    public Uni<UUID> getBundleId(String bundleName) {
-        return bundleResources.getBundle(bundleName)
-                .onItem().transform(Bundle::getId);
+    public UUID getBundleId(String bundleName) {
+        return bundleRepository.getBundle(bundleName)
+                .getId();
     }
 
-    public Uni<Application> createApplication(UUID bundleId) {
+    public Application createApplication(UUID bundleId) {
         return createApplication(bundleId, "name", "displayName");
     }
 
-    public Uni<Application> createApplication(UUID bundleId, String name, String displayName) {
+    public Application createApplication(UUID bundleId, String name, String displayName) {
         Application app = new Application();
         app.setBundleId(bundleId);
         app.setName(name);
         app.setDisplayName(displayName);
-        return appResources.createApp(app);
+        return applicationRepository.createApp(app);
     }
 
-    public Uni<UUID> createEventType(String bundleName, String applicationName, String eventTypeName) {
-        return appResources.getApplication(bundleName, applicationName)
-                .onItem().transformToUni(app -> createEventType(app.getId(), eventTypeName, eventTypeName, "new event type"))
-                .onItem().transform(EventType::getId);
+    public UUID createEventType(String bundleName, String applicationName, String eventTypeName) {
+        Application app = applicationRepository.getApplication(bundleName, applicationName);
+        return createEventType(app.getId(), eventTypeName, eventTypeName, "new event type")
+                .getId();
     }
 
-    public Uni<EventType> createEventType(UUID applicationId, String name, String displayName, String description) {
+    public EventType createEventType(UUID applicationId, String name, String displayName, String description) {
         EventType eventType = new EventType();
         eventType.setName(name);
         eventType.setDisplayName(displayName);
         eventType.setDescription(description);
         eventType.setApplicationId(applicationId);
-        return appResources.createEventType(eventType);
+        return applicationRepository.createEventType(eventType);
     }
 
-    public Uni<UUID> createTestAppAndEventTypes() {
-        return sessionFactory.withSession(session -> createBundle(TEST_BUNDLE_NAME, "...")
-                .call(bundle -> createApplication(bundle.getId(), TEST_APP_NAME, "...")
-                        .call(app -> Multi.createFrom().items(() -> IntStream.range(0, 100).boxed())
-                                .onItem().transformToUniAndConcatenate(i -> {
-                                    String name = String.format(TEST_EVENT_TYPE_FORMAT, i);
-                                    String displayName = "... -> " + i;
-                                    String description = "Desc .. --> " + i;
-                                    return createEventType(app.getId(), name, displayName, description);
-                                })
-                                .onItem().ignoreAsUni()
-                        )
-                )
-                .call(bundle -> createApplication(bundle.getId(), TEST_APP_NAME_2, "...")
-                        .call(app -> Multi.createFrom().items(() -> IntStream.range(0, 100).boxed())
-                                .onItem().transformToUniAndConcatenate(i -> {
-                                    String name = String.format(TEST_EVENT_TYPE_FORMAT, i);
-                                    String displayName = "... -> " + i;
-                                    return createEventType(app.getId(), name, displayName, null);
-                                })
-                                .onItem().ignoreAsUni()
-                        )
-                )
-                .onItem().transform(Bundle::getId)
-        );
+    public UUID createTestAppAndEventTypes() {
+        Bundle bundle = createBundle(TEST_BUNDLE_NAME, "...");
+        Application app1 = createApplication(bundle.getId(), TEST_APP_NAME, "...");
+        for (int i = 0; i < 100; i++) {
+            String name = String.format(TEST_EVENT_TYPE_FORMAT, i);
+            String displayName = "... -> " + i;
+            String description = "Desc .. --> " + i;
+            createEventType(app1.getId(), name, displayName, description);
+        }
+        Application app2 = createApplication(bundle.getId(), TEST_APP_NAME_2, "...");
+        for (int i = 0; i < 100; i++) {
+            String name = String.format(TEST_EVENT_TYPE_FORMAT, i);
+            String displayName = "... -> " + i;
+            createEventType(app2.getId(), name, displayName, null);
+        }
+        return bundle.getId();
     }
 
-    public Uni<Endpoint> createEndpoint(String accountId, EndpointType type) {
+    public Endpoint createEndpoint(String accountId, EndpointType type) {
         return createEndpoint(accountId, type, "name", "description", null, FALSE);
     }
 
-    public Uni<UUID> createWebhookEndpoint(String accountId) {
+    public UUID createWebhookEndpoint(String accountId) {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
         properties.setUrl("https://localhost");
         String name = "Endpoint " + UUID.randomUUID();
         return createEndpoint(accountId, WEBHOOK, name, "Automatically generated", properties, TRUE)
-                .onItem().transform(Endpoint::getId);
+                .getId();
     }
 
-    public Uni<Endpoint> createEndpoint(String accountId, EndpointType type, String name, String description, EndpointProperties properties, Boolean enabled) {
+    public Endpoint createEndpoint(String accountId, EndpointType type, String name, String description, EndpointProperties properties, Boolean enabled) {
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
         endpoint.setType(type);
@@ -139,41 +132,39 @@ public class ResourceHelpers {
         endpoint.setDescription(description);
         endpoint.setProperties(properties);
         endpoint.setEnabled(enabled);
-        return endpointResources.createEndpoint(endpoint, false);
+        return endpointRepository.createEndpoint(endpoint);
     }
 
-    public Uni<int[]> createTestEndpoints(String tenant, int count) {
+    public int[] createTestEndpoints(String tenant, int count) {
         int[] statsValues = new int[3];
         statsValues[0] = count;
-        return Multi.createFrom().items(() -> IntStream.range(0, count).boxed())
-                .onItem().transformToUniAndConcatenate(i -> {
-                    // Add new endpoints
-                    WebhookProperties properties = new WebhookProperties();
-                    properties.setMethod(HttpType.POST);
-                    properties.setUrl("https://localhost");
+        for (int i = 0; i < count; i++) {
+            // Add new endpoints
+            WebhookProperties properties = new WebhookProperties();
+            properties.setMethod(HttpType.POST);
+            properties.setUrl("https://localhost");
 
-                    Endpoint ep = new Endpoint();
-                    ep.setType(WEBHOOK);
-                    ep.setName(String.format("Endpoint %d", count - i));
-                    ep.setDescription("Automatically generated");
-                    boolean enabled = (i % (count / 5)) != 0;
-                    if (!enabled) {
-                        statsValues[1]++;
-                    }
-                    ep.setEnabled(enabled);
-                    if (i > 0) {
-                        statsValues[2]++;
-                        ep.setProperties(properties);
-                    }
+            Endpoint ep = new Endpoint();
+            ep.setType(WEBHOOK);
+            ep.setName(String.format("Endpoint %d", count - i));
+            ep.setDescription("Automatically generated");
+            boolean enabled = (i % (count / 5)) != 0;
+            if (!enabled) {
+                statsValues[1]++;
+            }
+            ep.setEnabled(enabled);
+            if (i > 0) {
+                statsValues[2]++;
+                ep.setProperties(properties);
+            }
 
-                    ep.setAccountId(tenant);
-                    return endpointResources.createEndpoint(ep, false);
-                })
-                .onItem().ignoreAsUni()
-                .replaceWith(statsValues);
+            ep.setAccountId(tenant);
+            endpointRepository.createEndpoint(ep);
+        }
+        return statsValues;
     }
 
-    public Uni<NotificationHistory> createNotificationHistory(Event event, Endpoint endpoint, Boolean invocationResult) {
+    public NotificationHistory createNotificationHistory(Event event, Endpoint endpoint, Boolean invocationResult) {
         NotificationHistory history = new NotificationHistory();
         history.setId(UUID.randomUUID());
         history.setInvocationTime(1L);
@@ -182,56 +173,49 @@ public class ResourceHelpers {
         history.setEndpoint(endpoint);
         history.setEndpointType(endpoint.getType());
         history.prePersist();
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.insert(history)
-                    .replaceWith(history);
-        });
+        entityManager.persist(history);
+        return history;
     }
 
-    public Uni<UUID> emailSubscriptionEndpointId(String accountId, EmailSubscriptionProperties properties) {
-        return endpointResources.getOrCreateEmailSubscriptionEndpoint(accountId, properties, false)
-                .onItem().transform(Endpoint::getId);
-    }
-
-    public Uni<BehaviorGroup> createBehaviorGroup(String accountId, String displayName, UUID bundleId) {
+    public BehaviorGroup createBehaviorGroup(String accountId, String displayName, UUID bundleId) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupResources.create(accountId, behaviorGroup);
+        return behaviorGroupRepository.create(accountId, behaviorGroup);
     }
 
-    public Uni<BehaviorGroup> createDefaultBehaviorGroup(String displayName, UUID bundleId) {
+    public BehaviorGroup createDefaultBehaviorGroup(String displayName, UUID bundleId) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupResources.createDefault(behaviorGroup);
+        return behaviorGroupRepository.createDefault(behaviorGroup);
     }
 
-    public Uni<List<EventType>> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
-        return behaviorGroupResources.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, behaviorGroupId);
+    public List<EventType> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
+        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, behaviorGroupId);
     }
 
-    public Uni<List<BehaviorGroup>> findBehaviorGroupsByEventTypeId(UUID eventTypeId) {
-        return behaviorGroupResources.findBehaviorGroupsByEventTypeId(DEFAULT_ACCOUNT_ID, eventTypeId, new Query());
+    public List<BehaviorGroup> findBehaviorGroupsByEventTypeId(UUID eventTypeId) {
+        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ACCOUNT_ID, eventTypeId, new Query());
     }
 
-    public Uni<List<BehaviorGroup>> findBehaviorGroupsByEndpointId(UUID endpointId) {
-        return behaviorGroupResources.findBehaviorGroupsByEndpointId(DEFAULT_ACCOUNT_ID, endpointId);
+    public List<BehaviorGroup> findBehaviorGroupsByEndpointId(UUID endpointId) {
+        return behaviorGroupRepository.findBehaviorGroupsByEndpointId(DEFAULT_ACCOUNT_ID, endpointId);
     }
 
-    public Uni<Boolean> updateBehaviorGroup(BehaviorGroup behaviorGroup) {
-        return behaviorGroupResources.update(DEFAULT_ACCOUNT_ID, behaviorGroup);
+    public Boolean updateBehaviorGroup(BehaviorGroup behaviorGroup) {
+        return behaviorGroupRepository.update(DEFAULT_ACCOUNT_ID, behaviorGroup);
     }
 
-    public Uni<Boolean> deleteBehaviorGroup(UUID behaviorGroupId) {
-        return behaviorGroupResources.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
+    public Boolean deleteBehaviorGroup(UUID behaviorGroupId) {
+        return behaviorGroupRepository.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
     }
 
-    public Uni<Boolean> updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
-        return behaviorGroupResources.updateDefault(behaviorGroup);
+    public Boolean updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
+        return behaviorGroupRepository.updateDefault(behaviorGroup);
     }
 
-    public Uni<Boolean> deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
-        return behaviorGroupResources.deleteDefault(behaviorGroupId);
+    public Boolean deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
+        return behaviorGroupRepository.deleteDefault(behaviorGroupId);
     }
 }

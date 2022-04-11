@@ -2,23 +2,24 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
-import org.hibernate.reactive.mutiny.Mutiny;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -33,7 +34,10 @@ public class EmailAggregationRepositoryTest {
     private static final JsonObject PAYLOAD2 = new JsonObject("{\"hello\":\"world\"}");
 
     @Inject
-    Mutiny.SessionFactory sessionFactory;
+    EntityManager entityManager;
+
+    @Inject
+    StatelessSessionFactory statelessSessionFactory;
 
     @Inject
     ResourceHelpers resourceHelpers;
@@ -43,71 +47,62 @@ public class EmailAggregationRepositoryTest {
 
     @Test
     void testAllMethods() {
-
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
         EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, BUNDLE_NAME, APP_NAME);
 
-        sessionFactory.withStatelessSession(statelessSession -> clearEmailAggregations()
-                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1))
-                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2))
-                .chain(() -> resourceHelpers.addEmailAggregation("other-account", BUNDLE_NAME, APP_NAME, PAYLOAD2))
-                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2))
-                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2))
-                .chain(() -> emailAggregationRepository.getEmailAggregation(key, start, end))
-                .invoke(aggregations -> {
-                    assertEquals(2, aggregations.size());
-                    assertTrue(aggregations.stream().map(EmailAggregation::getAccountId).allMatch(ACCOUNT_ID::equals));
-                    assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
-                    assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
-                    assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
-                    assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
-                })
-                .chain(() -> getApplicationsWithPendingAggregation(start, end))
-                .invoke(keys -> {
-                    assertEquals(4, keys.size());
-                    assertEquals(ACCOUNT_ID, keys.get(0).getAccountId());
-                    assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
-                    assertEquals(APP_NAME, keys.get(0).getApplication());
-                })
-                .chain(() -> emailAggregationRepository.purgeOldAggregation(key, end))
-                .invoke(purged -> assertEquals(2, purged))
-                .chain(() -> emailAggregationRepository.getEmailAggregation(key, start, end))
-                .invoke(aggregations -> assertEquals(0, aggregations.size()))
-                .chain(aggregations -> getApplicationsWithPendingAggregation(start, end))
-                .invoke(keys -> assertEquals(3, keys.size()))
-        ).chain(() -> clearEmailAggregations()).await().indefinitely();
+        statelessSessionFactory.withSession(statelessSession -> {
+            clearEmailAggregations();
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation("other-account", BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
+
+            List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end);
+            assertEquals(2, aggregations.size());
+            assertTrue(aggregations.stream().map(EmailAggregation::getAccountId).allMatch(ACCOUNT_ID::equals));
+            assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
+            assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
+            assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
+            assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
+
+            List<EmailAggregationKey> keys = getApplicationsWithPendingAggregation(start, end);
+            assertEquals(4, keys.size());
+            assertEquals(ACCOUNT_ID, keys.get(0).getAccountId());
+            assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
+            assertEquals(APP_NAME, keys.get(0).getApplication());
+
+            assertEquals(2, emailAggregationRepository.purgeOldAggregation(key, end));
+            assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end).size());
+            assertEquals(3, getApplicationsWithPendingAggregation(start, end).size());
+
+            clearEmailAggregations();
+        });
     }
 
     @Test
     void addEmailAggregationWithConstraintViolations() {
-        sessionFactory.withSession(session -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null)
-                .invoke(Assertions::assertFalse)
-                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1))
-                .invoke(Assertions::assertFalse)
-                .chain(() -> resourceHelpers.addEmailAggregation(ACCOUNT_ID, null, APP_NAME, PAYLOAD1))
-                .invoke(Assertions::assertFalse)
-                .chain(() -> resourceHelpers.addEmailAggregation(null, BUNDLE_NAME, APP_NAME, PAYLOAD1))
-                .invoke(Assertions::assertFalse)
-        ).await().indefinitely();
+        statelessSessionFactory.withSession(statelessSession -> {
+            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null));
+            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1));
+            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, null, APP_NAME, PAYLOAD1));
+            assertFalse(resourceHelpers.addEmailAggregation(null, BUNDLE_NAME, APP_NAME, PAYLOAD1));
+        });
     }
 
-    private Uni<List<EmailAggregationKey>> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
+    List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
         String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.EmailAggregationKey(ea.accountId, ea.bundleName, ea.applicationName) " +
                 "FROM EmailAggregation ea WHERE ea.created > :start AND ea.created <= :end";
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery(query, EmailAggregationKey.class)
-                    .setParameter("start", start)
-                    .setParameter("end", end)
-                    .getResultList();
-        });
+        return entityManager.createQuery(query, EmailAggregationKey.class)
+                .setParameter("start", start)
+                .setParameter("end", end)
+                .getResultList();
     }
 
-    private Uni<Void> clearEmailAggregations() {
-        return sessionFactory.withStatelessSession(statelessSession -> {
-            return statelessSession.createQuery("DELETE FROM EmailAggregation")
-                    .executeUpdate()
-                    .replaceWithVoid();
-        });
+    @Transactional
+    void clearEmailAggregations() {
+        entityManager.createQuery("DELETE FROM EmailAggregation")
+                .executeUpdate();
     }
 }

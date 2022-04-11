@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.ingress.Encoder;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import io.restassured.http.Header;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
@@ -25,19 +26,48 @@ public class TestHelpers {
 
     public static final Encoder encoder = new Encoder();
 
-    public static String encodeIdentityInfo(String tenant, String username) {
+    public static String encodeRHIdentityInfo(String tenant, String username) {
         JsonObject identity = new JsonObject();
         JsonObject user = new JsonObject();
         user.put("username", username);
         identity.put("account_number", tenant);
         identity.put("user", user);
+        identity.put("type", "User");
         JsonObject header = new JsonObject();
         header.put("identity", identity);
 
         return new String(Base64.getEncoder().encode(header.encode().getBytes(UTF_8)), UTF_8);
     }
 
-    public static Header createIdentityHeader(String encodedIdentityHeader) {
+    public static String encodeTurnpikeIdentityInfo(String username, String... groups) {
+        JsonObject identity = new JsonObject();
+        JsonObject associate = new JsonObject();
+        JsonArray roles = new JsonArray();
+
+        identity.put("auth_type", "saml-auth");
+        identity.put("type", "Associate");
+        identity.put("associate", associate);
+        associate.put("email", username);
+        associate.put("Role", roles);
+        for (String group: groups) {
+            roles.add(group);
+        }
+
+        JsonObject header = new JsonObject();
+        header.put("identity", identity);
+
+        return new String(Base64.getEncoder().encode(header.encode().getBytes(UTF_8)), UTF_8);
+    }
+
+    public static Header createRHIdentityHeader(String tenant, String username) {
+        return new Header(X_RH_IDENTITY_HEADER, encodeRHIdentityInfo(tenant, username));
+    }
+
+    public static Header createTurnpikeIdentityHeader(String username, String... roles) {
+        return new Header(X_RH_IDENTITY_HEADER, encodeTurnpikeIdentityInfo(username, roles));
+    }
+
+    public static Header createRHIdentityHeader(String encodedIdentityHeader) {
         return new Header(X_RH_IDENTITY_HEADER, encodedIdentityHeader);
     }
 

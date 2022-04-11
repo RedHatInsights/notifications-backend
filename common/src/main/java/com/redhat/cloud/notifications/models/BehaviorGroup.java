@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
-import org.hibernate.jpa.QueryHints;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -31,6 +30,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 import static javax.persistence.FetchType.LAZY;
+import static org.hibernate.jpa.QueryHints.HINT_PASS_DISTINCT_THROUGH;
 
 @Entity
 @Table(name = "behavior_group")
@@ -49,7 +49,7 @@ import static javax.persistence.FetchType.LAZY;
         query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
                 "WHERE (b.accountId = :accountId OR b.accountId IS NULL) AND b.bundle.id = :bundleId " +
                 "ORDER BY b.created DESC, a.position ASC",
-        hints = @QueryHint(name = QueryHints.HINT_PASS_DISTINCT_THROUGH, value = "false")
+        hints = @QueryHint(name = HINT_PASS_DISTINCT_THROUGH, value = "false")
 )
 public class BehaviorGroup extends CreationUpdateTimestamped {
 

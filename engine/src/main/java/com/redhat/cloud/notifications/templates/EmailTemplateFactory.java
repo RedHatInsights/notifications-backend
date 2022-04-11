@@ -18,6 +18,8 @@ public class EmailTemplateFactory {
     private static final String OPENSHIFT = "openshift";
     private static final String CONSOLE = "console";
     private static final String NOTIFICATIONS = "notifications";
+    private static final String RBAC = "rbac";
+    private static final String SOURCES = "sources";
 
     private static final String BUNDLE_ANSIBLE = "ansible";
     private static final String APP_ANSIBLE_REPORTS = "reports";
@@ -51,6 +53,11 @@ public class EmailTemplateFactory {
         } else if (bundle.equalsIgnoreCase(CONSOLE)) {
             if (application.equalsIgnoreCase(NOTIFICATIONS)) {
                 return new ConsoleNotifications();
+            } else if (application.equalsIgnoreCase(SOURCES)) {
+                return new Sources();
+            }
+            if (application.equalsIgnoreCase(RBAC)) {
+                return new Rbac();
             }
         }
         return new EmailTemplateNotSupported();

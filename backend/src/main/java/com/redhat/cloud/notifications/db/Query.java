@@ -1,10 +1,20 @@
 package com.redhat.cloud.notifications.db;
 
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import java.util.function.Function;
+import java.util.regex.Pattern;
+
+import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class Query {
+
+    private static final Pattern SORT_FIELD_PATTERN = Pattern.compile("^[a-z0-9._-]+$", CASE_INSENSITIVE);
+    private static final int DEFAULT_RESULTS_PER_PAGE  = 20;
+
     @QueryParam("limit")
+    @DefaultValue(DEFAULT_RESULTS_PER_PAGE + "")
     private Integer pageSize;
 
     @QueryParam("pageNumber")
@@ -39,17 +49,18 @@ public class Query {
     }
 
     public Limit getLimit() {
-        if (pageSize != null) {
-            // offset takes precedence over pageNumber if both are set
-            if (pageNumber != null && offset == null) {
-                offset = Limit.calculateOffset(pageNumber, pageSize);
-            }
-            if (offset == null) {
-                offset = 0;
-            }
-            return new Limit(pageSize, offset);
+        if (pageSize == null) {
+            pageSize = DEFAULT_RESULTS_PER_PAGE;
         }
-        return new Limit(0, 0);
+
+        // offset takes precedence over pageNumber if both are set
+        if (pageNumber != null && offset == null) {
+            offset = Limit.calculateOffset(pageNumber, pageSize);
+        }
+        if (offset == null) {
+            offset = 0;
+        }
+        return new Limit(pageSize, offset);
     }
 
     public static class Sort {
@@ -102,15 +113,19 @@ public class Query {
         }
 
         String[] sortSplit = sortBy.split(":");
-        Sort sort = new Sort(sortSplit[0]);
-        if (sortSplit.length > 1) {
-            try {
-                Sort.Order order = Sort.Order.valueOf(sortSplit[1].toUpperCase());
-                sort.setSortOrder(order);
-            } catch (IllegalArgumentException | NullPointerException iae) {
+        if (!SORT_FIELD_PATTERN.matcher(sortSplit[0]).matches()) {
+            throw new BadRequestException("Invalid 'sort_by' query parameter");
+        } else {
+            Sort sort = new Sort(sortSplit[0]);
+            if (sortSplit.length > 1) {
+                try {
+                    Sort.Order order = Sort.Order.valueOf(sortSplit[1].toUpperCase());
+                    sort.setSortOrder(order);
+                } catch (IllegalArgumentException | NullPointerException iae) {
+                }
             }
+            return sort;
         }
-        return sort;
     }
 
     public String getModifiedQuery(String basicQuery) {

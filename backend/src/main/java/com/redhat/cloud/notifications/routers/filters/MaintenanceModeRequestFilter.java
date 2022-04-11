@@ -1,8 +1,7 @@
 package com.redhat.cloud.notifications.routers.filters;
 
-import com.redhat.cloud.notifications.db.StatusResources;
+import com.redhat.cloud.notifications.db.repositories.StatusRepository;
 import io.quarkus.cache.CacheResult;
-import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.ServerRequestFilter;
 
@@ -34,41 +33,44 @@ public class MaintenanceModeRequestFilter {
     private static final Response MAINTENANCE_IN_PROGRESS = Response.status(SERVICE_UNAVAILABLE).entity("Maintenance in progress").build();
 
     @Inject
-    StatusResources statusResources;
+    StatusRepository statusRepository;
 
     @ServerRequestFilter
-    public Uni<Response> filter(ContainerRequestContext requestContext) {
+    public Response filter(ContainerRequestContext requestContext) {
         String requestPath = requestContext.getUriInfo().getRequestUri().getPath();
         LOGGER.tracef("Filtering request to %s", requestPath);
 
-        // First, we check if the request path should be affected by the maintenance mode.
-        for (int i = 0; i < NO_MAINTENANCE_REQUEST_PATHS.size(); i++) {
-            if (requestPath.startsWith(NO_MAINTENANCE_REQUEST_PATHS.get(i))) {
-                LOGGER.trace("Request path shouldn't be affected by the maintenance mode, database check will be skipped");
-                // This filter work is done. The request will be processed normally.
-                return null;
-            }
+        if (!isAffectedByMaintenanceMode(requestPath)) {
+            return null;
         }
 
         /*
          * If this point is reached, the current request path can be affected by the maintenance mode.
          * Let's check if maintenance is on in the database.
          */
-        return isMaintenance()
-                .onItem().transform(isMaintenance -> {
-                    if (isMaintenance) {
-                        LOGGER.trace("Maintenance mode is enabled in the database, aborting request and returning HTTP status 503");
-                        return MAINTENANCE_IN_PROGRESS;
-                    } else {
-                        // This filter work is done. The request will be processed normally.
-                        return null;
-                    }
-                });
+        if (isMaintenance()) {
+            LOGGER.trace("Maintenance mode is enabled in the database, aborting request and returning HTTP status 503");
+            return MAINTENANCE_IN_PROGRESS;
+        } else {
+            // This filter work is done. The request will be processed normally.
+            return null;
+        }
+    }
+
+    boolean isAffectedByMaintenanceMode(String requestPath) {
+        // First, we check if the request path should be affected by the maintenance mode.
+        for (String noMaintenanceRequestPath : NO_MAINTENANCE_REQUEST_PATHS) {
+            if (requestPath.startsWith(noMaintenanceRequestPath)) {
+                LOGGER.trace("Request path shouldn't be affected by the maintenance mode, database check will be skipped");
+                // This filter work is done. The request will be processed normally.
+                return false;
+            }
+        }
+        return true;
     }
 
     @CacheResult(cacheName = "maintenance")
-    public Uni<Boolean> isMaintenance() {
-        return statusResources.getCurrentStatus()
-                .onItem().transform(currentStatus -> currentStatus.status == MAINTENANCE);
+    public Boolean isMaintenance() {
+        return statusRepository.getCurrentStatus().status == MAINTENANCE;
     }
 }

@@ -8,41 +8,45 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import static java.time.ZoneOffset.UTC;
 import static javax.persistence.CascadeType.REMOVE;
 import static javax.persistence.FetchType.LAZY;
 
 @Entity
 @Table(name = "event")
-public class Event extends CreationTimestamped {
+public class Event {
 
     @Id
     @GeneratedValue
     private UUID id;
 
+    private Timestamp created;
+
     @NotNull
     @Size(max = 50)
     private String accountId;
 
-    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
+    @NotNull
     private UUID bundleId;
 
-    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
-    // TODO NOTIF-491 Should we update this if the bundle is updated?
+    @NotNull
     private String bundleDisplayName;
 
-    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
+    @NotNull
     private UUID applicationId;
 
-    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
-    // TODO NOTIF-491 Should we update this if the application is updated?
+    @NotNull
     private String applicationDisplayName;
 
     @NotNull
@@ -50,8 +54,7 @@ public class Event extends CreationTimestamped {
     @JoinColumn(name = "event_type_id")
     private EventType eventType;
 
-    // TODO NOTIF-491 Make this field not nullable here and in the DB after the data migration.
-    // TODO NOTIF-491 Should we update this if the event type is updated?
+    @NotNull
     private String eventTypeDisplayName;
 
     @OneToMany(mappedBy = "event", cascade = REMOVE)
@@ -65,10 +68,14 @@ public class Event extends CreationTimestamped {
     public Event() { }
 
     public Event(EventType eventType, String payload, Action action) {
-        this.accountId = action.getAccountId();
-        this.eventType = eventType;
+        this(action.getAccountId(), eventType);
         this.payload = payload;
         this.action = action;
+    }
+
+    public Event(String accountId, EventType eventType) {
+        this.accountId = accountId;
+        this.eventType = eventType;
         bundleId = eventType.getApplication().getBundle().getId();
         bundleDisplayName = eventType.getApplication().getBundle().getDisplayName();
         applicationId = eventType.getApplication().getId();
@@ -82,6 +89,22 @@ public class Event extends CreationTimestamped {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public LocalDateTime getCreated() {
+        return created.toLocalDateTime();
+    }
+
+    public void setCreated(LocalDateTime created) {
+        this.created = Timestamp.valueOf(created);
+    }
+
+    @PrePersist
+    public void prePersist() {
+        // The 'created' field value can be set in tests.
+        if (created == null) {
+            created = Timestamp.valueOf(LocalDateTime.now(UTC));
+        }
     }
 
     public String getAccountId() {

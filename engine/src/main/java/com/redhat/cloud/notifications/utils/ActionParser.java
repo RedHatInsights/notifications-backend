@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.utils;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Decoder;
 import com.redhat.cloud.notifications.ingress.Registry;
-import io.smallrye.mutiny.Uni;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -13,8 +12,11 @@ public class ActionParser {
     private final Registry registry = new Registry();
     private final Decoder decoder = new Decoder(registry);
 
-    public Uni<Action> fromJsonString(String actionJson) {
-        return Uni.createFrom().item(() -> decoder.decode(actionJson))
-                .onFailure().transform(t -> new RuntimeException("Action parsing failed for payload: " + actionJson, t));
+    public Action fromJsonString(String actionJson) {
+        try {
+            return decoder.decode(actionJson);
+        } catch (Exception e) {
+            throw new RuntimeException("Action parsing failed for payload: " + actionJson, e);
+        }
     }
 }

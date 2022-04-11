@@ -9,7 +9,10 @@ export interface Application {
     displayName: string;
     bundleId: string;
     name: string;
+}
 
+export interface RoleOwnedApplication extends Application {
+    ownerRole?: string;
 }
 
 export interface EventType {

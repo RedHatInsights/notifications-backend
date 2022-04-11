@@ -50,4 +50,10 @@ class EmailTemplateFactoryTest {
         final EmailTemplate emailTemplate = testee.get("rhel", "driftZzZ");
         assertTrue(emailTemplate instanceof EmailTemplateNotSupported);
     }
+
+    @Test
+    void shouldReturnRbac() {
+        final EmailTemplate emailTemplate = testee.get("console", "rbac");
+        assertTrue(emailTemplate instanceof Rbac);
+    }
 }

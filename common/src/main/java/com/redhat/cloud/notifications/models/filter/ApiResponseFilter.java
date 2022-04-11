@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.PropertyWriter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import org.jboss.logging.Logger;
 
 /**
@@ -57,6 +59,48 @@ public class ApiResponseFilter extends SimpleBeanPropertyFilter {
                     if (behaviorGroup.isFilterOutBundle()) {
                         logFilterOut(BehaviorGroup.class.getName(), "bundle");
                         // This will prevent the serialization of the property.
+                        return;
+                    }
+                    break;
+                default:
+                    // Do nothing.
+                    break;
+            }
+        } else if (pojo instanceof InstantEmailTemplate) {
+            InstantEmailTemplate instantEmailTemplate = (InstantEmailTemplate) pojo;
+            switch (writer.getName()) {
+                case "event_type":
+                    if (instantEmailTemplate.isFilterOutEventType()) {
+                        logFilterOut(InstantEmailTemplate.class.getName(), "event_type");
+                        return;
+                    }
+                    break;
+                case "subject_template":
+                case "body_template":
+                    if (instantEmailTemplate.isFilterOutTemplates()) {
+                        logFilterOut(InstantEmailTemplate.class.getName(), "subject_template/body_template");
+                        // This will prevent the serialization of the properties.
+                        return;
+                    }
+                    break;
+                default:
+                    // Do nothing.
+                    break;
+            }
+        } else if (pojo instanceof AggregationEmailTemplate) {
+            AggregationEmailTemplate aggregationEmailTemplate = (AggregationEmailTemplate) pojo;
+            switch (writer.getName()) {
+                case "application":
+                    if (aggregationEmailTemplate.isFilterOutApplication()) {
+                        logFilterOut(AggregationEmailTemplate.class.getName(), "application");
+                        return;
+                    }
+                    break;
+                case "subject_template":
+                case "body_template":
+                    if (aggregationEmailTemplate.isFilterOutTemplates()) {
+                        logFilterOut(AggregationEmailTemplate.class.getName(), "subject_template/body_template");
+                        // This will prevent the serialization of the properties.
                         return;
                     }
                     break;

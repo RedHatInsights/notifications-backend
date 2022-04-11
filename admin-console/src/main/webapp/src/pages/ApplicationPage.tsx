@@ -11,8 +11,12 @@ import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
-import { CreateEditModal } from '../components/CreateEditModal';
-import { DeleteModal } from '../components/DeleteModal';
+import { useUserPermissions } from '../app/PermissionContext';
+import { EmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
+import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
+import { DeleteModal } from '../components/EventTypes/DeleteModal';
+import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
+import { linkTo } from '../Routes';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
@@ -25,6 +29,7 @@ type ApplicationPageParams = {
 }
 
 export const ApplicationPage: React.FunctionComponent = () => {
+    const { hasPermission, isAdmin } = useUserPermissions();
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId);
     const applicationTypesQuery = useApplicationTypes(applicationId);
@@ -138,11 +143,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 <Title headingLevel="h1">
                     <Breadcrumb>
                         <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
-                        <BreadcrumbItem target='#'>{ bundle ? bundle.display_name : <Spinner /> }
+                        <BreadcrumbLinkItem to={ linkTo.bundle(getBundleId ?? '') }>
+                            { bundle ? bundle.display_name : <Spinner /> }
+                        </BreadcrumbLinkItem>
+                        <BreadcrumbItem to='#' isActive> { (applicationTypesQuery.loading
+                        || applicationTypesQuery.payload?.status !== 200) ? <Spinner /> : applicationTypesQuery.payload.value.displayName }
                         </BreadcrumbItem>
-
-                        <BreadcrumbItem target='#'> { (applicationTypesQuery.loading || applicationTypesQuery.payload?.status !== 200) ?
-                            <Spinner /> : applicationTypesQuery.payload.value.displayName } </BreadcrumbItem>
                     </Breadcrumb></Title>
                 <TableComposable
                     aria-label="Event types table"
@@ -152,6 +158,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             <ToolbarContent>
                                 <ToolbarItem>
                                     <Button variant='primary' type='button'
+                                        isDisabled={ !application || !hasPermission(application?.id) }
                                         onClick={ createEventType }> Create Event Type </Button>
                                     <CreateEditModal
                                         isEdit={ isEdit }
@@ -193,15 +200,18 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <Td>{ e.id }</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
+                                        isDisabled={ !application || !hasPermission(application?.id) }
                                         onClick={ () => editEventType(e) }> { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
+                                        isDisabled={ !application || !hasPermission(application?.id) }
                                         onClick={ () => deleteEventTypeModal(e) }>{ <TrashIcon /> } </Button></Td>
                             </Tr>
                         ))}
                     </Tbody>
                 </TableComposable>
             </PageSection>
+            { isAdmin && <EmailTemplateTable /> }
         </React.Fragment>
 
     );

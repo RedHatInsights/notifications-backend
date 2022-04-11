@@ -1,13 +1,11 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.MockServerClientConfig;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheName;
-import io.quarkus.cache.runtime.caffeine.CaffeineCache;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -26,9 +24,6 @@ public class AuthenticationTest {
         RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
     }
 
-    @MockServerConfig
-    MockServerClientConfig mockServerConfig;
-
     @CacheName("rbac-cache")
     Cache cache;
 
@@ -36,8 +31,8 @@ public class AuthenticationTest {
     void testEndpointRoles() {
         String tenant = "empty";
         String userName = "testEndpointRoles";
-        String identityHeaderValue = TestHelpers.encodeIdentityInfo(tenant, userName);
-        Header identityHeader = TestHelpers.createIdentityHeader(identityHeaderValue);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         // Fetch endpoint without any Rbac details - errors cause 401 -- unauthorized
         given()
@@ -46,7 +41,7 @@ public class AuthenticationTest {
                 .then()
                 .statusCode(401);
 
-        clearRbacCache();
+        cache.invalidateAll().await().indefinitely();
 
         // Fetch endpoint without any Rbac details - errors cause 401
         given()
@@ -56,10 +51,10 @@ public class AuthenticationTest {
                 .then()
                 .statusCode(401);
 
-        clearRbacCache();
+        cache.invalidateAll().await().indefinitely();
 
         // Fetch endpoint with no access - Rbac succeed returns 403
-        mockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerClientConfig.RbacAccess.NO_ACCESS);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.NO_ACCESS);
 
         given()
                 // Set header to x-rh-identity
@@ -68,7 +63,7 @@ public class AuthenticationTest {
                 .then()
                 .statusCode(403);
 
-        clearRbacCache();
+        cache.invalidateAll().await().indefinitely();
 
         // Test bogus x-rh-identity header that fails Base64 decoding
         given()
@@ -76,13 +71,5 @@ public class AuthenticationTest {
                 .when().get("/endpoints")
                 .then()
                 .statusCode(401);
-    }
-
-    private void clearRbacCache() {
-        /*
-         * TODO Replace with real programmatic API call when it will be available. For now we have to rely on this "hack".
-         * See https://github.com/quarkusio/quarkus/pull/8631
-         */
-        ((CaffeineCache) cache).invalidateAll();
     }
 }

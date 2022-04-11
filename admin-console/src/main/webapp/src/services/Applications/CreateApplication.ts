@@ -7,18 +7,17 @@ export type CreateApplication = {
     displayName: string;
     bundleId: string;
     name: string;
-
+    ownerRole?: string;
 }
 
 const actionCreator =  (params: CreateApplication) => {
     if (params.id === undefined) {
         return Operations.InternalServiceCreateApplication.actionCreator({
             body: {
-                id: params.id,
                 bundle_id: params.bundleId,
                 display_name: params.displayName,
-                name: params.name
-
+                name: params.name,
+                owner_role: params.ownerRole
             }
         });
     }
@@ -30,7 +29,6 @@ const actionCreator =  (params: CreateApplication) => {
             bundle_id: params.bundleId,
             display_name: params.displayName,
             name: params.name
-
         }
     });
 };
