@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.EmailAggregation;
@@ -273,8 +274,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             for (Map.Entry<User, Map<String, Object>> aggregation :
                     emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime).entrySet()) {
 
+                Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
+                aggregation.getValue().forEach(contextBuilder::withAdditionalProperty);
+
                 Action action = new Action();
-                action.setContext(aggregation.getValue());
+                action.setContext(contextBuilder.build());
                 action.setEvents(List.of());
                 action.setAccountId(aggregationKey.getAccountId());
                 action.setApplication(aggregationKey.getApplication());

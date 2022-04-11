@@ -1,7 +1,10 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.templates.extensions.ActionExtension;
 import com.redhat.cloud.notifications.templates.extensions.LocalDateTimeExtension;
 import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.qute.Engine;
@@ -17,6 +20,7 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 @ApplicationScoped
@@ -52,6 +56,8 @@ public class TemplateService {
                 .addValueResolver(buildValueResolver(LocalDateTime.class, "toTimeAgo", LocalDateTimeExtension::toTimeAgo))
                 .addValueResolver(buildValueResolver(String.class, "toTimeAgo", LocalDateTimeExtension::toTimeAgo))
                 .addValueResolver(buildValueResolver(String.class, "fromIsoLocalDateTime", LocalDateTimeExtension::fromIsoLocalDateTime))
+                .addValueResolver(buildBiFunctionValueResolver(Context.class, "*", ActionExtension::getFromContext))
+                .addValueResolver(buildBiFunctionValueResolver(Payload.class, "*", ActionExtension::getFromPayload))
                 .addLocator(dbTemplateLocator)
                 .build();
     }
@@ -96,6 +102,19 @@ public class TemplateService {
                     @Override
                     public Object apply(EvalContext evalContext) {
                         return valueTransformer.apply((T) evalContext.getBase());
+                    }
+                })
+                .build();
+    }
+
+    private static <T, P> ValueResolver buildBiFunctionValueResolver(Class<T> baseClass, String name, BiFunction<T, P, Object> valueTransformer) {
+        return ValueResolver.builder()
+                .applyToBaseClass(baseClass)
+                .applyToName(name)
+                .resolveSync(new Function<EvalContext, Object>() {
+                    @Override
+                    public Object apply(EvalContext evalContext) {
+                        return valueTransformer.apply((T) evalContext.getBase(), (P) evalContext.getParams().get(0).getLiteral());
                     }
                 })
                 .build();

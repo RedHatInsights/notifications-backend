@@ -99,12 +99,12 @@ public class TestAdvisorTemplate {
 
         action.getEvents().forEach(event -> {
             assertTrue(
-                    result.contains(event.getPayload().get("rule_id").toString()),
-                    "Body should contain rule id" + event.getPayload().get("rule_id")
+                    result.contains(event.getPayload().getAdditionalProperties().get("rule_id").toString()),
+                    "Body should contain rule id" + event.getPayload().getAdditionalProperties().get("rule_id")
             );
             assertTrue(
-                    result.contains(event.getPayload().get("rule_description").toString()),
-                    "Body should contain rule description" + event.getPayload().get("rule_description")
+                    result.contains(event.getPayload().getAdditionalProperties().get("rule_description").toString()),
+                    "Body should contain rule description" + event.getPayload().getAdditionalProperties().get("rule_description")
             );
         });
 
@@ -116,7 +116,7 @@ public class TestAdvisorTemplate {
         // Display name
         assertTrue(result.contains("My Host"), "Body should contain the display_name");
 
-        action.setEvents(action.getEvents().stream().filter(event -> event.getPayload().get("total_risk").equals("1")).collect(Collectors.toList()));
+        action.setEvents(action.getEvents().stream().filter(event -> event.getPayload().getAdditionalProperties().get("total_risk").equals("1")).collect(Collectors.toList()));
         String result2 = Advisor.Templates.newRecommendationInstantEmailBody()
                 .data("action", action)
                 .render();
@@ -152,12 +152,12 @@ public class TestAdvisorTemplate {
                 .render();
 
         action.getEvents().forEach(event -> {
-            assertTrue(result.contains(event.getPayload().get("rule_description").toString()),
-                       "Body should contain rule description" + event.getPayload().get("rule_description"));
-            assertTrue(result.contains(event.getPayload().get("affected_systems").toString()),
-                       "Body should contain affected systems" + event.getPayload().get("affected_systems"));
-            assertTrue(result.contains(event.getPayload().get("deactivation_reason").toString()),
-                       "Body should contain deactivation reason" + event.getPayload().get("deactivation_reason"));
+            assertTrue(result.contains(event.getPayload().getAdditionalProperties().get("rule_description").toString()),
+                       "Body should contain rule description" + event.getPayload().getAdditionalProperties().get("rule_description"));
+            assertTrue(result.contains(event.getPayload().getAdditionalProperties().get("affected_systems").toString()),
+                       "Body should contain affected systems" + event.getPayload().getAdditionalProperties().get("affected_systems"));
+            assertTrue(result.contains(event.getPayload().getAdditionalProperties().get("deactivation_reason").toString()),
+                       "Body should contain deactivation reason" + event.getPayload().getAdditionalProperties().get("deactivation_reason"));
         });
 
         assertTrue(result.contains("<span class=\"rh-metric__count\">2</span>"),
