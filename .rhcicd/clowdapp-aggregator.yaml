@@ -11,8 +11,8 @@ objects:
     labels:
       app: notifications-aggregator
   annotations: 
-  ignore-check.kube-linter.io/ignore-liveness-probe
-  ignore-check.kube-linter.io/ignore-readiness-probe
+    ignore-check.kube-linter.io/no-liveness-probe
+    ignore-check.kube-linter.io/no-readiness-probe
   spec:
     envName: ${ENV_NAME}
     dependencies:
