@@ -10,6 +10,9 @@ objects:
     name: notifications-aggregator
     labels:
       app: notifications-aggregator
+  annotations: 
+  ignore-check.kube-linter.io/ignore-liveness-probe
+  ignore-check.kube-linter.io/ignore-readiness-probe
   spec:
     envName: ${ENV_NAME}
     dependencies:
@@ -29,9 +32,6 @@ objects:
       failedJobsHistoryLimit: 7
       concurrencyPolicy: Forbid
       restartPolicy: OnFailure
-      annotations: 
-        ignore-check.kube-linter.io/ignore-liveness-probe
-        ignore-check.kube-linter.io/ignore-readiness-probe
       podSpec:
         image: ${IMAGE}:${IMAGE_TAG}
         resources:
