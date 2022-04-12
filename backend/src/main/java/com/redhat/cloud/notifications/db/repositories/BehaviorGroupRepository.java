@@ -192,7 +192,6 @@ public class BehaviorGroupRepository {
      * Returns false if the event type was not found.
      * If an exception other than NoResultException is thrown during the update, the DB transaction will be rolled back.
      */
-
     @Transactional
     public boolean updateEventTypeBehaviors(String accountId, UUID eventTypeId, Set<UUID> behaviorGroupIds) {
         // First, let's make sure the event type exists.
@@ -201,15 +200,27 @@ public class BehaviorGroupRepository {
             return false;
         } else {
 
+            // An event type should only be linked to behavior groups from the same bundle.
+            String integrityCheckHql = "SELECT id FROM BehaviorGroup WHERE id IN (:behaviorGroupIds) " +
+                    "AND bundle != (SELECT application.bundle FROM EventType WHERE id = :eventTypeId)";
+            List<UUID> differentBundle = entityManager.createQuery(integrityCheckHql, UUID.class)
+                    .setParameter("behaviorGroupIds", behaviorGroupIds)
+                    .setParameter("eventTypeId", eventTypeId)
+                    .getResultList();
+            if (!differentBundle.isEmpty()) {
+                throw new BadRequestException("Some behavior groups can't be linked to the event " +
+                        "type because they belong to a different bundle: " + differentBundle);
+            }
+
             /*
              * All event type behaviors that should no longer exist must be deleted.
              * Deleted event type behaviors must obviously be owned by the current account.
              */
             String deleteQuery = "DELETE FROM EventTypeBehavior b " +
-                    "WHERE eventType.id = :eventTypeId " +
+                    "WHERE b.eventType.id = :eventTypeId " +
                     "AND EXISTS (SELECT 1 FROM BehaviorGroup WHERE accountId = :accountId AND id = b.behaviorGroup.id)";
             if (!behaviorGroupIds.isEmpty()) {
-                deleteQuery += " AND behaviorGroup.id NOT IN (:behaviorGroupIds)";
+                deleteQuery += " AND b.behaviorGroup.id NOT IN (:behaviorGroupIds)";
             }
             javax.persistence.Query q = entityManager.createQuery(deleteQuery)
                     .setParameter("accountId", accountId)
