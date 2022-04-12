@@ -25,7 +25,7 @@ public class Rbac implements EmailTemplate {
             case "group-deleted":
                 return Templates.groupChangeEmailTitle();
             case "platform-default-group-turned-into-custom":
-                return Templates.platformGroup2CustomEmailBody();
+                return Templates.platformGroup2CustomEmailTitle();
             default:
                 throw new UnsupportedOperationException(String.format(
                     "No email title template for RBAC event_type: %s found.",
