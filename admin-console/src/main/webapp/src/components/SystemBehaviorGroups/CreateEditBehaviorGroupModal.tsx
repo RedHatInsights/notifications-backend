@@ -23,15 +23,17 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
         setSelected;
     };
 
-    const toggle = React.useCallback(() => setOpen(prev => !prev), [ setOpen ]);
+    const toggle = React.useCallback((isOpen: boolean) => {
+        setOpen(isOpen);
+    }, [ setOpen ]);
 
     const recipientOption = [
-        { value: 'Users: All' },
-        { value: 'Users: Admin' }
+        <SelectOption key={ 0 } value='Users: All' />,
+        <SelectOption key={ 1 } value='Users: Admin' />
     ];
 
     const actionOption = [
-        { value: 'Send an email' }
+        <SelectOption key={ 0 }value='Send an email' />
     ];
 
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
@@ -74,14 +76,9 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
                             onToggle={ toggle }
                             isOpen={ isOpen }
                             onSelect={ onSelect }
+                            selections={ selected }
                             menuAppendTo={ document.body }>
-                            {actionOption.map((option, index) => (
-                                <SelectOption
-                                    selected={ selected }
-                                    key={ index }
-                                    value={ option.value }
-                                />
-                            ))}
+                            { actionOption }
                         </Select>
                     </FormGroup>
                     <FormGroup label='Recipient' fieldId='actions' isRequired>
@@ -91,15 +88,10 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
                             placeholderText="Select a recipient"
                             onToggle={ toggle }
                             isOpen={ isOpen }
+                            selections={ selected }
                             onSelect={ onSelect }
                             menuAppendTo={ document.body }>
-                            {recipientOption.map((option, index) => (
-                                <SelectOption
-                                    selected={ selected }
-                                    key={ index }
-                                    value={ option.value }
-                                />
-                            ))}
+                            { recipientOption }
                         </Select>
                     </FormGroup>
                     <ActionGroup>

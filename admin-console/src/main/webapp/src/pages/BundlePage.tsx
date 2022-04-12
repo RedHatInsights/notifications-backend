@@ -6,11 +6,10 @@ import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { useUserPermissions } from '../app/PermissionContext';
-import { CreateEditApplicationModal } from '../components/CreateEditApplicationModal';
-import { DeleteApplicationModal } from '../components/DeleteApplicationModal';
-import { ListEventTypes } from '../components/ListEventTypes';
+import { CreateEditApplicationModal } from '../components/Applications/CreateEditApplicationModal';
+import { DeleteApplicationModal } from '../components/Applications/DeleteApplicationModal';
+import { ListEventTypes } from '../components/EventTypes/ListEventTypes';
 import { BehaviorGroupsTable } from '../components/SystemBehaviorGroups/BehaviorGroupTable';
-
 import { linkTo } from '../Routes';
 import { useCreateApplication } from '../services/Applications/CreateApplication';
 import { useDeleteApplication } from '../services/Applications/DeleteApplication';
