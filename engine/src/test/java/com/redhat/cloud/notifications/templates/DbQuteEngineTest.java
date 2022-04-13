@@ -55,7 +55,7 @@ public class DbQuteEngineTest {
         TemplateException e = assertThrows(TemplateException.class, () -> {
             templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
         });
-        assertEquals("Template not found: unknown-inner-template", e.getMessage());
+        assertEquals("Included template [unknown-inner-template] not found in template [other-outer-template] on line 1", e.getMessage());
     }
 
     @Test
