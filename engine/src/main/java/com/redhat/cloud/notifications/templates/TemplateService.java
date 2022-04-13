@@ -56,8 +56,8 @@ public class TemplateService {
                 .addValueResolver(buildValueResolver(LocalDateTime.class, "toTimeAgo", LocalDateTimeExtension::toTimeAgo))
                 .addValueResolver(buildValueResolver(String.class, "toTimeAgo", LocalDateTimeExtension::toTimeAgo))
                 .addValueResolver(buildValueResolver(String.class, "fromIsoLocalDateTime", LocalDateTimeExtension::fromIsoLocalDateTime))
-                .addValueResolver(buildBiFunctionValueResolver(Context.class, "*", ActionExtension::getFromContext))
-                .addValueResolver(buildBiFunctionValueResolver(Payload.class, "*", ActionExtension::getFromPayload))
+                .addValueResolver(buildAnyNameFunctionResolver(Context.class, ActionExtension::getFromContext))
+                .addValueResolver(buildAnyNameFunctionResolver(Payload.class, ActionExtension::getFromPayload))
                 .addLocator(dbTemplateLocator)
                 .build();
     }
@@ -107,14 +107,13 @@ public class TemplateService {
                 .build();
     }
 
-    private static <T, P> ValueResolver buildBiFunctionValueResolver(Class<T> baseClass, String name, BiFunction<T, P, Object> valueTransformer) {
+    private static <T> ValueResolver buildAnyNameFunctionResolver(Class<T> baseClass, BiFunction<T, String, Object> valueTransformer) {
         return ValueResolver.builder()
                 .applyToBaseClass(baseClass)
-                .applyToName(name)
                 .resolveSync(new Function<EvalContext, Object>() {
                     @Override
                     public Object apply(EvalContext evalContext) {
-                        return valueTransformer.apply((T) evalContext.getBase(), (P) evalContext.getParams().get(0).getLiteral());
+                        return valueTransformer.apply((T) evalContext.getBase(), evalContext.getName());
                     }
                 })
                 .build();

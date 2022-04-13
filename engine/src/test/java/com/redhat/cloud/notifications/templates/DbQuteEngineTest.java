@@ -2,6 +2,8 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
+import com.redhat.cloud.notifications.ingress.Context;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.qute.TemplateException;
 import io.quarkus.qute.TemplateInstance;
@@ -17,6 +19,7 @@ import javax.transaction.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.templates.TemplateService.USE_TEMPLATES_FROM_DB_KEY;
@@ -132,6 +135,32 @@ public class DbQuteEngineTest {
         LocalDateTime date = LocalDateTime.of(2022, Month.JANUARY, 1, 0, 0);
         TemplateInstance templateInstance = templateService.compileTemplate(template.getData(), template.getName());
         assertEquals("2022-01-01T00:00", templateInstance.data("date", date.toString()).render());
+    }
+
+    @Test
+    void testActionContextExtension() {
+        Template template = createTemplate("action-context-template", "{context.foo} {context.bar.baz}");
+        Context context = new Context.ContextBuilder()
+                .withAdditionalProperty("foo", "im foo")
+                .withAdditionalProperty("bar", Map.of("baz", "im baz"))
+                .build();
+        TemplateInstance templateInstance = templateService.compileTemplate(template.getData(), template.getName());
+        assertEquals("im foo im baz", templateInstance.data("context", context).render());
+    }
+
+    @Test
+    void testActionPayloadExtension() {
+        Template template = createTemplate("action-payload-template", "{payload.foo} {payload.bar.baz}");
+        Payload payload = new Payload.PayloadBuilder()
+                .withAdditionalProperty("foo", "im foo")
+                .withAdditionalProperty("bar", Map.of("baz", "im baz"))
+                .build();
+        TemplateInstance templateInstance = templateService.compileTemplate(template.getData(), template.getName());
+        assertEquals("im foo im baz",
+                templateInstance
+                .data("payload", payload)
+                .render()
+        );
     }
 
     @Transactional
