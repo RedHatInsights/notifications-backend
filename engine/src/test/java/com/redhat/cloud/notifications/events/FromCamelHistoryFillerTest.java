@@ -55,6 +55,12 @@ public class FromCamelHistoryFillerTest {
     }
 
     @Test
+    void name() {
+        FromCamelHistoryFiller historyFiller = new FromCamelHistoryFiller();
+        historyFiller.decodeItem("Event 11331111-abcd-1337-1337-9f543bf0c3b7 sent successfully");
+    }
+
+    @Test
     void testInvalidPayload() {
         inMemoryConnector.source(FROMCAMEL_CHANNEL).send("I am not valid!");
 

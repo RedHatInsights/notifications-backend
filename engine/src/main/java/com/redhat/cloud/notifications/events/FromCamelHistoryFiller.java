@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -24,6 +25,7 @@ import org.jboss.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
@@ -149,12 +151,13 @@ public class FromCamelHistoryFiller {
         return Message.of(payload).addMetadata(metadata);
     }
 
-
-
-    private Map<String, Object> decodeItem(String s) {
+    Map<String, Object> decodeItem(String payload) {
+        if (!isJSONValid(payload)) {
+            throw new IllegalArgumentException("Payload is not in valid JSON format");
+        }
 
         // 1st step CloudEvent as String -> map
-        Map<String, Object> ceMap = Json.decodeValue(s, Map.class);
+        Map<String, Object> ceMap = Json.decodeValue(payload, Map.class);
 
         // Take the id from the CloudEvent as the historyId
         String id = (String) ceMap.get("id");
@@ -165,4 +168,13 @@ public class FromCamelHistoryFiller {
         return map;
     }
 
+    private boolean isJSONValid(String jsonInString) {
+        try {
+            final ObjectMapper mapper = new ObjectMapper();
+            mapper.readTree(jsonInString);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
 }
