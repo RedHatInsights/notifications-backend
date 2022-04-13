@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar,
+import { Breadcrumb, BreadcrumbItem, Button, Chip, ChipGroup, PageSection, Spinner, Title, Toolbar,
     ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
@@ -22,6 +22,7 @@ import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
 import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
 import { useEventTypes } from '../services/EventTypes/GetEventTypes';
+import { useSystemBehaviorGroups } from '../services/SystemBehaviorGroups/GetBehaviorGroups';
 import { EventType } from '../types/Notifications';
 
 type ApplicationPageParams = {
@@ -35,8 +36,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
+    const getBehaviorGroups = useSystemBehaviorGroups();
 
-    const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
+    const columns = [ 'Event Type', 'Name', 'Behavior', 'Event Type Id' ];
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
     const [ showModal, setShowModal ] = React.useState(false);
@@ -75,6 +77,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
+
+    const systemBehaviorGroups = useMemo(() => {
+        if (getBehaviorGroups.payload?.status === 200) {
+            return getBehaviorGroups.payload.value;
+        }
+
+        return undefined;
+    }, [ getBehaviorGroups.payload?.status, getBehaviorGroups.payload?.value ]);
 
     const createEventType = () => {
         setShowModal(true);
@@ -165,6 +175,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         initialEventType= { eventTypes }
                                         showModal={ showModal }
                                         applicationName={ application?.displayName }
+                                        systemBehaviorGroup={ getBehaviorGroups }
                                         onClose={ onClose }
                                         onSubmit={ handleSubmit }
                                         isLoading={ eventTypesQuery.loading }
@@ -196,7 +207,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             <Tr key={ e.id }>
                                 <Td>{ e.displayName }</Td>
                                 <Td>{ e.name }</Td>
-                                <Td>{ e.description }</Td>
+                                <Td><ChipGroup>
+                                    { systemBehaviorGroups?.map(b =>
+                                        <Chip key={ b.id }isReadOnly>{ b.displayName }</Chip>
+                                    )}
+                                </ChipGroup></Td>
                                 <Td>{ e.id }</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
