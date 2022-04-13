@@ -20,6 +20,7 @@ public class EmailTemplateFactory {
     private static final String NOTIFICATIONS = "notifications";
     private static final String RBAC = "rbac";
     private static final String SOURCES = "sources";
+    private static final String VULNERABILITY = "vulnerability";
 
     private static final String BUNDLE_ANSIBLE = "ansible";
     private static final String APP_ANSIBLE_REPORTS = "reports";
@@ -35,6 +36,8 @@ public class EmailTemplateFactory {
                     return new Compliance();
                 case DRIFT:
                     return new Drift();
+                case VULNERABILITY:
+                    return new Vulnerability();
                 default:
                     break;
             }
