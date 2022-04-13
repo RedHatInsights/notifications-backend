@@ -23,7 +23,8 @@ const actionCreator =  (params: CreateSystemBehaviorGroup) => {
         });
     }
 
-    return Operations.InternalServiceCreateDefaultBehaviorGroup.actionCreator({
+    return Operations.InternalServiceUpdateDefaultBehaviorGroup.actionCreator({
+        id: params.id ?? '',
         body: {
             actions: params.actions,
             bundle_id: params.bundleId,

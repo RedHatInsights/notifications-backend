@@ -7,9 +7,11 @@ import { useParams } from 'react-router';
 
 import { useBundleTypes } from '../../services/Applications/GetBundleById';
 import { useCreateSystemBehaviorGroup } from '../../services/SystemBehaviorGroups/CreateSystemBehaviorGroup';
+import { useDeleteBehaviorGroup } from '../../services/SystemBehaviorGroups/DeleteSystemBehaviorGroup';
 import { useSystemBehaviorGroups } from '../../services/SystemBehaviorGroups/GetBehaviorGroups';
 import { BehaviorGroup } from '../../types/Notifications';
 import { CreateEditBehaviorGroupModal } from './CreateEditBehaviorGroupModal';
+import { DeleteBehaviorGroupModal } from './DeleteBehaviorGroupModal';
 
 type BundlePageParams = {
     bundleId: string;
@@ -20,16 +22,40 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
     const { bundleId } = useParams<BundlePageParams>();
     const getBundles = useBundleTypes(bundleId);
     const newBehaviorGroup = useCreateSystemBehaviorGroup();
+    const deleteBehaviorGroupMutation = useDeleteBehaviorGroup();
 
-    const columns = [ 'System Behavior Group', 'Action', 'Recipient' ];
+    const columns = [ 'System Behavior Group' ];
+
     const [ showModal, setShowModal ] = React.useState(false);
+    const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
+
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ systemBehaviorGroup, setSystemBehaviorGroup ] = React.useState<Partial<BehaviorGroup>>({});
+
+    const bundle = React.useMemo(() => {
+        if (getBundles.payload?.status === 200) {
+            return getBundles.payload.value;
+        }
+
+        return undefined;
+    }, [ getBundles.payload?.status, getBundles.payload?.value ]);
 
     const createBehaviorGroup = () => {
         setShowModal(true);
         setIsEdit(false);
         setSystemBehaviorGroup({});
+    };
+
+    const editSystemBehaviorGroup = (b: BehaviorGroup) => {
+        setShowModal(true);
+        setIsEdit(true);
+        setSystemBehaviorGroup(b);
+
+    };
+
+    const deleteBehaviorGroupModal = (b: BehaviorGroup) => {
+        setShowDeleteModal(true);
+        setSystemBehaviorGroup(b);
     };
 
     const handleSubmit = React.useCallback((systemBehaviorGroup) => {
@@ -39,13 +65,29 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
             id: systemBehaviorGroup.id,
             displayName: systemBehaviorGroup.displayName ?? '',
             bundleId
-        });
+        }).then(getBehaviorGroups.query);
 
-    }, [ bundleId, newBehaviorGroup.mutate ]);
+    }, [ bundleId, getBehaviorGroups.query, newBehaviorGroup.mutate ]);
+
+    const handleDelete = React.useCallback(async () => {
+        setShowDeleteModal(false);
+        const deleteBehaviorGroup = deleteBehaviorGroupMutation.mutate;
+        const response = await deleteBehaviorGroup(systemBehaviorGroup.id);
+        if (response.error) {
+            return false;
+        }
+
+        return true;
+    }, [ deleteBehaviorGroupMutation.mutate, systemBehaviorGroup.id ]);
 
     const onClose = () => {
         setShowModal(false);
-        setSystemBehaviorGroup({});
+        getBehaviorGroups.query;
+    };
+
+    const onDeleteClose = () => {
+        setShowDeleteModal(false);
+        getBehaviorGroups.query;
     };
 
     if (getBehaviorGroups.loading) {
@@ -81,6 +123,13 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
                                         onSubmit={ handleSubmit }
                                         isLoading={ false }
                                     />
+                                    <DeleteBehaviorGroupModal
+                                        onDelete={ handleDelete }
+                                        bundleName={ bundle?.displayName }
+                                        systemBehaviorGroupName={ systemBehaviorGroup.displayName }
+                                        isOpen={ showDeleteModal }
+                                        onClose={ onDeleteClose }
+                                    />
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
@@ -95,12 +144,13 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
                             <Tr key={ b.id }>
                                 <Td>{b.displayName}</Td>
                                 <Td>{b.actions}</Td>
-                                <Td>recipient</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
+                                        onClick={ () => editSystemBehaviorGroup(b) }
                                     > { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
+                                        onClick={ () => deleteBehaviorGroupModal(b) }
                                     >{ <TrashIcon /> } </Button></Td>
                             </Tr>
                         )}

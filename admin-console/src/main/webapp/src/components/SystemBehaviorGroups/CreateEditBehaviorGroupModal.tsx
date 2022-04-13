@@ -23,9 +23,9 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
         setSelected;
     };
 
-    const toggle = React.useCallback((isOpen: boolean) => {
+    const toggle = React.useCallback(() => {
         setOpen(isOpen);
-    }, [ setOpen ]);
+    }, [ isOpen ]);
 
     const recipientOption = [
         <SelectOption key={ 0 } value='Users: All' />,
