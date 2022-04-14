@@ -95,7 +95,7 @@ public class BehaviorGroupResources {
     @Transactional
     boolean update(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehavior) {
         try {
-            getBehaviorGroup(behaviorGroup.getId(), isDefaultBehavior);
+            validateBehaviorGroupDefaultStatus(behaviorGroup.getId(), isDefaultBehavior);
         } catch (NoResultException e) {
             return false;
         }
@@ -129,7 +129,7 @@ public class BehaviorGroupResources {
     @Transactional
     public boolean delete(String accountId, UUID behaviorGroupId, boolean isDefaultBehavior) {
         try {
-            getBehaviorGroup(behaviorGroupId, isDefaultBehavior);
+            validateBehaviorGroupDefaultStatus(behaviorGroupId, isDefaultBehavior);
         } catch (NoResultException e) {
             return false;
         }
@@ -154,7 +154,7 @@ public class BehaviorGroupResources {
     @Transactional
     public boolean linkEventTypeDefaultBehavior(UUID eventTypeId, UUID behaviorGroupId) {
         try {
-            getBehaviorGroup(behaviorGroupId, true);
+            validateBehaviorGroupDefaultStatus(behaviorGroupId, true);
         } catch (NoResultException e) {
             return false;
         }
@@ -172,7 +172,7 @@ public class BehaviorGroupResources {
     @Transactional
     public boolean unlinkEventTypeDefaultBehavior(UUID eventTypeId, UUID behaviorGroupId) {
         try {
-            getBehaviorGroup(behaviorGroupId, true);
+            validateBehaviorGroupDefaultStatus(behaviorGroupId, true);
         } catch (NoResultException e) {
             return false;
         }
@@ -356,7 +356,7 @@ public class BehaviorGroupResources {
         return behaviorGroups;
     }
 
-    private void getBehaviorGroup(UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
+    private void validateBehaviorGroupDefaultStatus(UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
         BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
         if (behaviorGroup == null) {
             throw new NoResultException();

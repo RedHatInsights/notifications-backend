@@ -228,30 +228,30 @@ public class EndpointResources {
             return false;
         } else if (endpoint.getProperties() == null) {
             return true;
-        }
-
-        switch (endpoint.getType()) {
-            case WEBHOOK:
-                WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
-                return entityManager.createQuery(webhookQuery)
-                        .setParameter("url", properties.getUrl())
-                        .setParameter("method", properties.getMethod())
-                        .setParameter("disableSslVerification", properties.getDisableSslVerification())
-                        .setParameter("secretToken", properties.getSecretToken())
-                        .setParameter("endpointId", endpoint.getId())
-                        .executeUpdate() > 0;
-            case CAMEL:
-                CamelProperties cAttr = (CamelProperties) endpoint.getProperties();
-                return entityManager.createQuery(camelQuery)
-                        .setParameter("url", cAttr.getUrl())
-                        .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
-                        .setParameter("secretToken", cAttr.getSecretToken())
-                        .setParameter("endpointId", endpoint.getId())
-                        .setParameter("extras", cAttr.getExtras())
-                        .setParameter("basicAuthentication", cAttr.getBasicAuthentication())
-                        .executeUpdate() > 0;
-            default:
-                return true;
+        } else {
+            switch (endpoint.getType()) {
+                case WEBHOOK:
+                    WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
+                    return entityManager.createQuery(webhookQuery)
+                            .setParameter("url", properties.getUrl())
+                            .setParameter("method", properties.getMethod())
+                            .setParameter("disableSslVerification", properties.getDisableSslVerification())
+                            .setParameter("secretToken", properties.getSecretToken())
+                            .setParameter("endpointId", endpoint.getId())
+                            .executeUpdate() > 0;
+                case CAMEL:
+                    CamelProperties cAttr = (CamelProperties) endpoint.getProperties();
+                    return entityManager.createQuery(camelQuery)
+                            .setParameter("url", cAttr.getUrl())
+                            .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
+                            .setParameter("secretToken", cAttr.getSecretToken())
+                            .setParameter("endpointId", endpoint.getId())
+                            .setParameter("extras", cAttr.getExtras())
+                            .setParameter("basicAuthentication", cAttr.getBasicAuthentication())
+                            .executeUpdate() > 0;
+                default:
+                    return true;
+            }
         }
     }
 
@@ -274,10 +274,10 @@ public class EndpointResources {
                 .filter(e -> e.getType().equals(type))
                 .collect(Collectors.toMap(Endpoint::getId, Function.identity()));
 
-        if (endpointsMap.size() <= 0) {
+        if (endpointsMap.isEmpty()) {
             return;
         }
-        
+
         String query = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:ids)";
         List<T> propList = entityManager.createQuery(query, typedEndpointClass)
                 .setParameter("ids", endpointsMap.keySet())
@@ -316,12 +316,10 @@ public class EndpointResources {
                 );
     }
 
-    public Endpoint loadProperties(Endpoint endpoint) {
+    private void loadProperties(Endpoint endpoint) {
         if (endpoint == null) {
             LOGGER.warn("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
-            return null;
         }
         loadProperties(Collections.singletonList(endpoint));
-        return endpoint;
     }
 }
