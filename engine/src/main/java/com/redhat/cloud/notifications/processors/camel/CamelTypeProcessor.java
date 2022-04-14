@@ -149,6 +149,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                 Map<String, Object> details = new HashMap<>();
                 details.put("failure", e.getMessage());
                 history.setDetails(details);
+                LOGGER.infof("SE: Sending event %s failed: %s ", historyId, e.getMessage());
             } finally {
                 endTime = System.currentTimeMillis();
             }
@@ -180,7 +181,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                 .build()
         );
         msg = msg.addMetadata(tracingMetadata);
-        LOGGER.infof("Sending for account %s and history id %s", accountId, historyId);
+        LOGGER.infof("CA Sending for account %s and history id %s", accountId, historyId);
         emitter.send(msg);
 
     }
@@ -199,7 +200,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         ce.put(PROCESSORNAME, extras.get(PROCESSORNAME));
         // TODO add dataschema
 
-        LOGGER.infof("Sending Event with id(%s) for processor with name %s and id=%s",
+        LOGGER.infof("SE: Sending Event with id(%s) for processor with name %s and id=%s",
                 id.toString(), extras.get(PROCESSORNAME), extras.get("processorId"));
 
         body.remove(NOTIF_METADATA_KEY); // Not needed on OB

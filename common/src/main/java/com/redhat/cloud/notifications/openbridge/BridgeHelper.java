@@ -51,7 +51,14 @@ public class BridgeHelper {
             return bridgeInstance;
         }
 
-        String token = getAuthTokenInternal();
+        String token;
+
+        try {
+            token = getAuthTokenInternal();
+        } catch (Exception e) {
+            LOGGER.errorf("Failed to get an auth token: %s", e.getMessage());
+            throw e;
+        }
 
         Map<String, String> bridgeMap;
         try {
@@ -97,6 +104,8 @@ public class BridgeHelper {
     // We can cache the token for up to 15 minutes
     @CacheResult(cacheName = "kc-cache")
     String getAuthTokenInternal() {
+
+        LOGGER.debug("Fetching a new token from SSO");
 
         String body = "client_id=" + clientId
                     + "&client_secret=" + clientSecret
