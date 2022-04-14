@@ -23,7 +23,7 @@ import { useApplicationTypes } from '../services/EventTypes/GetApplication';
 import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
 import { useEventTypes } from '../services/EventTypes/GetEventTypes';
 import { useSystemBehaviorGroups } from '../services/SystemBehaviorGroups/GetBehaviorGroups';
-import { EventType } from '../types/Notifications';
+import { BehaviorGroup, EventType } from '../types/Notifications';
 
 type ApplicationPageParams = {
     applicationId: string;
@@ -41,6 +41,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const columns = [ 'Event Type', 'Name', 'Behavior', 'Event Type Id' ];
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
+    const [ systemBehaviorGroups, setSystemBehaviorGroups ] = React.useState<Partial<BehaviorGroup>>({});
+
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
@@ -78,7 +80,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
 
-    const systemBehaviorGroups = useMemo(() => {
+    const listSystemBehaviorGroups = useMemo(() => {
         if (getBehaviorGroups.payload?.status === 200) {
             return getBehaviorGroups.payload.value;
         }
@@ -175,7 +177,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         initialEventType= { eventTypes }
                                         showModal={ showModal }
                                         applicationName={ application?.displayName }
-                                        systemBehaviorGroup={ getBehaviorGroups }
+                                        systemBehaviorGroup={ listSystemBehaviorGroups }
                                         onClose={ onClose }
                                         onSubmit={ handleSubmit }
                                         isLoading={ eventTypesQuery.loading }
@@ -208,7 +210,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                 <Td>{ e.displayName }</Td>
                                 <Td>{ e.name }</Td>
                                 <Td><ChipGroup>
-                                    { systemBehaviorGroups?.map(b =>
+                                    { listSystemBehaviorGroups?.map(b =>
                                         <Chip key={ b.id }isReadOnly>{ b.displayName }</Chip>
                                     )}
                                 </ChipGroup></Td>

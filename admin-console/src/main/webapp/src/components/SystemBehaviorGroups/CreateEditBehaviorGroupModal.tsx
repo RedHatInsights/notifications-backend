@@ -27,13 +27,9 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
         setOpen(isOpen);
     }, [ isOpen ]);
 
-    const recipientOption = [
-        <SelectOption key={ 0 } value='Users: All' />,
-        <SelectOption key={ 1 } value='Users: Admin' />
-    ];
-
     const actionOption = [
-        <SelectOption key={ 0 }value='Send an email' />
+        <SelectOption key={ 0 } value='Send an email to Users: All' />,
+        <SelectOption key={ 1 } value='Send an email to Users: Admins' />
     ];
 
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
@@ -79,19 +75,6 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
                             selections={ selected }
                             menuAppendTo={ document.body }>
                             { actionOption }
-                        </Select>
-                    </FormGroup>
-                    <FormGroup label='Recipient' fieldId='actions' isRequired>
-                        <Select
-                            variant={ SelectVariant.single }
-                            aria-label="Select recipiect"
-                            placeholderText="Select a recipient"
-                            onToggle={ toggle }
-                            isOpen={ isOpen }
-                            selections={ selected }
-                            onSelect={ onSelect }
-                            menuAppendTo={ document.body }>
-                            { recipientOption }
                         </Select>
                     </FormGroup>
                     <ActionGroup>

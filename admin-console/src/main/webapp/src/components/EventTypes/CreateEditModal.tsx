@@ -1,6 +1,7 @@
 import { ActionGroup, Button, Form, FormGroup, FormSelect, FormSelectOption,
-    HelperText, HelperTextItem, Modal, ModalVariant, TextInput } from '@patternfly/react-core';
-import React from 'react';
+    HelperText, HelperTextItem, Modal, ModalVariant, TextArea, TextInput } from '@patternfly/react-core';
+import React, { useMemo } from 'react';
+import { useSystemBehaviorGroups } from '../../services/SystemBehaviorGroups/GetBehaviorGroups';
 
 import { BehaviorGroup, EventType } from '../../types/Notifications';
 
@@ -9,7 +10,7 @@ interface CreateEditModalProps {
     showModal: boolean;
     applicationName?: string;
     initialEventType?: Partial<EventType>;
-    systemBehaviorGroup?: string;
+    systemBehaviorGroup?: readonly BehaviorGroup[]
     isLoading: boolean;
     onClose: () => void;
     onSubmit: (eventType: Partial<EventType>) => void;
@@ -19,6 +20,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
 
     const [ eventType, setEventType ] = React.useState<Partial<EventType>>(props.initialEventType ?? {});
     const [ systemBehaviorGroup, setSystemBehaviorGroup ] = React.useState<Partial<BehaviorGroup>>();
+    const getBehaviorGroups = useSystemBehaviorGroups();
 
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
         const target = event.target as HTMLInputElement;
@@ -37,6 +39,18 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
     React.useEffect(() => {
         setEventType(props.initialEventType ?? {});
     }, [ props.initialEventType ]);
+
+    const listSystemBehaviorGroups = useMemo(() => {
+        if (getBehaviorGroups.payload?.status === 200) {
+            return getBehaviorGroups.payload.value;
+        }
+
+        return undefined;
+    }, [ getBehaviorGroups.payload?.status, getBehaviorGroups.payload?.value ]);
+
+    const options = React.useMemo(() => {
+        return listSystemBehaviorGroups?.map(b => (<FormSelectOption key={ b.id } label={ b.displayName } value={ b.id } />));
+    }, [ listSystemBehaviorGroups ]);
 
     return (
         <React.Fragment>
@@ -66,21 +80,25 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                             id='display-name'
                             name="displayName"
                         /></FormGroup>
-                    <FormGroup label='System Behavior Group' fieldId='system behavior group'
-                        helperText='Behavior groups are made up of action/recipient pairings that allow you to configure which
-                        notification actions different users will be able to receive. Once you have created
-                        a behavior group, you can assign it to an event type.'>
+                    <FormGroup label='System Behavior Group' fieldId='system behavior group'>
                         <FormSelect
-                            value={ systemBehaviorGroup?.displayName }
+                            value={ systemBehaviorGroup?.id }
                             onChange={ handleSelect }
                             id='system behavior group'
                             name='system behavior group'
                         >
-                            <FormSelectOption
-                                key={ systemBehaviorGroup?.id }
-                                value={ systemBehaviorGroup?.displayName }
-                                label={ systemBehaviorGroup?.displayName  ?? '' } />
+                            { options }
                         </FormSelect></FormGroup>
+                    <FormGroup label='Description' fieldId='description'
+                        helperText='Optional short description that appears in the UI
+                                                to help admin decide how to notify users.'>
+                        <TextArea
+                            type='text'
+                            value={ eventType.description }
+                            onChange={ handleChange }
+                            id='description'
+                            name="description"
+                        /></FormGroup>
                     <ActionGroup>
                         <Button variant='primary' type='submit'
                             isLoading={ props.isLoading } isDisabled={ props.isLoading }
