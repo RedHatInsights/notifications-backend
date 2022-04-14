@@ -18,6 +18,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import javax.validation.ConstraintViolationException;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
@@ -164,7 +165,7 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     void testAddAndDeleteEventTypeBehavior() {
         Bundle bundle = resourceHelpers.createBundle();
         Application app = resourceHelpers.createApplication(bundle.getId());
-        EventType eventType = createEventType(app.getId());
+        EventType eventType = createEventType(app);
         BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", bundle.getId());
         BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 2", bundle.getId());
         BehaviorGroup behaviorGroup3 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 3", bundle.getId());
@@ -177,10 +178,36 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAddEventTypeBehaviorWithBundleIntegrityCheckFailure() {
+        /*
+         * Bundle 1 objects hierarchy.
+         */
+        Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1");
+        Application app = resourceHelpers.createApplication(bundle1.getId());
+        // 'eventType' is a child of 'bundle1'.
+        EventType eventType = createEventType(app);
+        // 'behaviorGroup1' is a child of 'bundle1'.
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", bundle1.getId());
+
+        /*
+         * Bundle 2 objects hierarchy.
+         */
+        Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2");
+        // 'behaviorGroup2' is a child of 'bundle2'.
+        BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 2", bundle2.getId());
+
+        // 'behaviorGroup2' should not be added to 'eventType' behaviors because it comes from a different bundle.
+        BadRequestException e = assertThrows(BadRequestException.class, () -> {
+            behaviorGroupRepository.updateEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), Set.of(behaviorGroup1.getId(), behaviorGroup2.getId()));
+        });
+        assertTrue(e.getMessage().startsWith("Some behavior groups can't be linked"));
+    }
+
+    @Test
     void testFindEventTypesByBehaviorGroupId() {
         Bundle bundle = resourceHelpers.createBundle();
         Application app = resourceHelpers.createApplication(bundle.getId());
-        EventType eventType = createEventType(app.getId());
+        EventType eventType = createEventType(app);
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
         updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId());
         List<EventType> eventTypes = resourceHelpers.findEventTypesByBehaviorGroupId(behaviorGroup.getId());
@@ -192,7 +219,7 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     void testFindBehaviorGroupsByEventTypeId() {
         Bundle bundle = resourceHelpers.createBundle();
         Application app = resourceHelpers.createApplication(bundle.getId());
-        EventType eventType = createEventType(app.getId());
+        EventType eventType = createEventType(app);
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
         updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId());
         List<BehaviorGroup> behaviorGroups = resourceHelpers.findBehaviorGroupsByEventTypeId(eventType.getId());
@@ -247,9 +274,10 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Transactional
-    EventType createEventType(UUID appID) {
+    EventType createEventType(Application app) {
         EventType eventType = new EventType();
-        eventType.setApplicationId(appID);
+        eventType.setApplication(app);
+        eventType.setApplicationId(app.getId());
         eventType.setName("name");
         eventType.setDisplayName("displayName");
         entityManager.persist(eventType);
