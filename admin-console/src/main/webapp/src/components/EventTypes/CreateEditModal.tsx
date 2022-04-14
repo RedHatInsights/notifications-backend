@@ -1,8 +1,8 @@
 import { ActionGroup, Button, Form, FormGroup, FormSelect, FormSelectOption,
     HelperText, HelperTextItem, Modal, ModalVariant, TextArea, TextInput } from '@patternfly/react-core';
 import React, { useMemo } from 'react';
-import { useSystemBehaviorGroups } from '../../services/SystemBehaviorGroups/GetBehaviorGroups';
 
+import { useSystemBehaviorGroups } from '../../services/SystemBehaviorGroups/GetBehaviorGroups';
 import { BehaviorGroup, EventType } from '../../types/Notifications';
 
 interface CreateEditModalProps {

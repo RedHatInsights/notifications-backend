@@ -23,7 +23,7 @@ import { useApplicationTypes } from '../services/EventTypes/GetApplication';
 import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
 import { useEventTypes } from '../services/EventTypes/GetEventTypes';
 import { useSystemBehaviorGroups } from '../services/SystemBehaviorGroups/GetBehaviorGroups';
-import { BehaviorGroup, EventType } from '../types/Notifications';
+import { EventType } from '../types/Notifications';
 
 type ApplicationPageParams = {
     applicationId: string;
@@ -41,7 +41,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const columns = [ 'Event Type', 'Name', 'Behavior', 'Event Type Id' ];
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
-    const [ systemBehaviorGroups, setSystemBehaviorGroups ] = React.useState<Partial<BehaviorGroup>>({});
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
