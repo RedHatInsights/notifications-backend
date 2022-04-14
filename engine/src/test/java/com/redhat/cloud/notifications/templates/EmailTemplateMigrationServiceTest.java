@@ -26,6 +26,7 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.templates.TemplateService.USE_TEMPLATES_FROM_DB_KEY;
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -147,7 +148,8 @@ public class EmailTemplateMigrationServiceTest {
                 .when()
                 .put("/template-engine/migrate")
                 .then()
-                .statusCode(204);
+                .statusCode(200)
+                .contentType(JSON);
 
         statelessSessionFactory.withSession(statelessSession -> {
 
