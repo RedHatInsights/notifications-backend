@@ -29,9 +29,9 @@ public class Rbac implements EmailTemplate {
             case "custom-default-access-updated":
                 return Templates.customPlatformGroupUpdatedEmailTitle();
             case "group-created":
-                return Templates.customGroupCreatedEmailTitle()
+                return Templates.customGroupCreatedEmailTitle();
             case "group-updated":
-                return Templates.customGroupUpdatedEmailTitle()
+                return Templates.customGroupUpdatedEmailTitle();
             case "group-deleted":
                 return Templates.customGroupDeletedEmailTitle();
             case "platform-default-group-turned-into-custom":
@@ -66,9 +66,9 @@ public class Rbac implements EmailTemplate {
             case "custom-default-access-updated":
                 return Templates.customPlatformGroupUpdatedEmailBody();
             case "group-created":
-                return Templates.customGroupCreatedEmailBody()
+                return Templates.customGroupCreatedEmailBody();
             case "group-updated":
-                return Templates.customGroupUpdatedEmailBody()
+                return Templates.customGroupUpdatedEmailBody();
             case "group-deleted":
                 return Templates.customGroupDeletedEmailBody();
             case "platform-default-group-turned-into-custom":
@@ -102,45 +102,45 @@ public class Rbac implements EmailTemplate {
 
         public static native TemplateInstance platformRoleUpdatedEmailBody();
 
-        pubilc static native TemplateInstance nonPlatformRoleUpdatedEmailTitle();
+        public static native TemplateInstance nonPlatformRoleUpdatedEmailTitle();
 
-        pubilc static native TemplateInstance nonPlatformRoleUpdatedEmailBody();
+        public static native TemplateInstance nonPlatformRoleUpdatedEmailBody();
 
-        pubilc static native TemplateInstance customRoleCreatedEmailTitle();
+        public static native TemplateInstance customRoleCreatedEmailTitle();
         
-        pubilc static native TemplateInstance customRoleCreatedEmailBody();
+        public static native TemplateInstance customRoleCreatedEmailBody();
 
-        pubilc static native TemplateInstance customRoleUpdatedEmailTitle();
+        public static native TemplateInstance customRoleUpdatedEmailTitle();
 
-        pubilc static native TemplateInstance customRoleUpdatedEmailBody();
+        public static native TemplateInstance customRoleUpdatedEmailBody();
 
-        pubilc static native TemplateInstance customRoleDeletedEmailTitle();
+        public static native TemplateInstance customRoleDeletedEmailTitle();
 
-        pubilc static native TemplateInstance customRoleDeletedEmailBody();
+        public static native TemplateInstance customRoleDeletedEmailBody();
 
-        pubilc static native TemplateInstance roleRemovedFromPlatformGroupEmailTitle();
+        public static native TemplateInstance roleRemovedFromPlatformGroupEmailTitle();
 
-        pubilc static native TemplateInstance roleRemovedFromPlatformGroupEmailBody();
+        public static native TemplateInstance roleRemovedFromPlatformGroupEmailBody();
 
-        pubilc static native TemplateInstance roleAddedToPlatformGroupEmailTitle();
+        public static native TemplateInstance roleAddedToPlatformGroupEmailTitle();
 
-        pubilc static native TemplateInstance roleAddedToPlatformGroupEmailBody();
+        public static native TemplateInstance roleAddedToPlatformGroupEmailBody();
 
-        pubilc static native TemplateInstance customPlatformGroupUpdatedEmailTitle();
+        public static native TemplateInstance customPlatformGroupUpdatedEmailTitle();
 
-        pubilc static native TemplateInstance customPlatformGroupUpdatedEmailBody();
+        public static native TemplateInstance customPlatformGroupUpdatedEmailBody();
 
-        pubilc static native TemplateInstance customGroupCreatedEmailTitle();
+        public static native TemplateInstance customGroupCreatedEmailTitle();
 
-        pubilc static native TemplateInstance customGroupCreatedEmailBody();
+        public static native TemplateInstance customGroupCreatedEmailBody();
 
-        pubilc static native TemplateInstance customGroupDeletedEmailTitle();
+        public static native TemplateInstance customGroupDeletedEmailTitle();
 
-        pubilc static native TemplateInstance customGroupDeletedEmailBody();
+        public static native TemplateInstance customGroupDeletedEmailBody();
 
-        pubilc static native TemplateInstance customGroupUpdatedEmailTitle();
+        public static native TemplateInstance customGroupUpdatedEmailTitle();
 
-        pubilc static native TemplateInstance customGroupUpdatedEmailBody();
+        public static native TemplateInstance customGroupUpdatedEmailBody();
 
         public static native TemplateInstance platformGroupToCustomEmailTitle();
 
