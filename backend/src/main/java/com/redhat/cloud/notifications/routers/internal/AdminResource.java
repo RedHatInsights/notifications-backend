@@ -4,12 +4,15 @@ import com.redhat.cloud.notifications.StuffHolder;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.rbac.RbacRaw;
 import com.redhat.cloud.notifications.auth.rbac.RbacServer;
+import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -31,6 +34,10 @@ public class AdminResource {
     @Inject
     @RestClient
     RbacServer rbacServer;
+
+    @Inject
+    @RestClient
+    TemplateEngineClient templateEngine;
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -79,4 +86,17 @@ public class AdminResource {
         return builder.build();
     }
 
+    // TODO NOTIF-484 Remove this method when the templates DB migration is finished.
+    @DELETE
+    @Path("/templates/migrate")
+    public void deleteAllTemplates() {
+        templateEngine.deleteAllTemplates();
+    }
+
+    // TODO NOTIF-484 Remove this method when the templates DB migration is finished.
+    @PUT
+    @Path("/templates/migrate")
+    public void migrate() {
+        templateEngine.migrate();
+    }
 }

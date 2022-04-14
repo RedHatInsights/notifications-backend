@@ -10,6 +10,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -36,4 +37,14 @@ public interface TemplateEngineClient {
     @Produces(APPLICATION_JSON)
     @Operation(hidden = true)
     Response render(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest);
+
+    @DELETE
+    @Path("/migrate")
+    @Operation(hidden = true)
+    void deleteAllTemplates();
+
+    @PUT
+    @Path("/migrate")
+    @Operation(hidden = true)
+    void migrate();
 }
