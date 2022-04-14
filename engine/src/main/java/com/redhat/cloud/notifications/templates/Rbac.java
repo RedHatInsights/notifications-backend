@@ -35,7 +35,7 @@ public class Rbac implements EmailTemplate {
             case "group-deleted":
                 return Templates.customGroupDeletedEmailTitle();
             case "platform-default-group-turned-into-custom":
-                return Templates.platformGroup2CustomEmailTitle();
+                return Templates.platformGroupToCustomEmailTitle();
             default:
                 throw new UnsupportedOperationException(String.format(
                     "No email title template for RBAC event_type: %s found.",
@@ -72,7 +72,7 @@ public class Rbac implements EmailTemplate {
             case "group-deleted":
                 return Templates.customGroupDeletedEmailBody();
             case "platform-default-group-turned-into-custom":
-                return Templates.platformGroup2CustomEmailBody();
+                return Templates.platformGroupToCustomEmailBody();
             default:
                 throw new UnsupportedOperationException(String.format(
                     "No email title template for RBAC event_type: %s found.",
@@ -107,7 +107,7 @@ public class Rbac implements EmailTemplate {
         public static native TemplateInstance nonPlatformRoleUpdatedEmailBody();
 
         public static native TemplateInstance customRoleCreatedEmailTitle();
-        
+
         public static native TemplateInstance customRoleCreatedEmailBody();
 
         public static native TemplateInstance customRoleUpdatedEmailTitle();
