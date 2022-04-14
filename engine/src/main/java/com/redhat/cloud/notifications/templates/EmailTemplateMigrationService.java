@@ -224,7 +224,7 @@ public class EmailTemplateMigrationService {
         createInstantEmailTemplate(
                 "rhel", "vulnerability", List.of("any-cve-known-exploit"),
                 "Vulnerability/anyCveKnownExploitTitle", "txt", "Vulnerability any CVE known exploit email title",
-                "Vulnerability/anyCveKnownExploitBody", "html", "Vulnerability any CVE exploit email body"
+                "Vulnerability/anyCveKnownExploitBody", "html", "Vulnerability any CVE known exploit email body"
         );
         createInstantEmailTemplate(
                 "rhel", "vulnerability", List.of("new-cve-severity"),
