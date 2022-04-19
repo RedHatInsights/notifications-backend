@@ -17,7 +17,7 @@ objects:
     - rbac
     database:
       name: notifications-backend
-      version: 12
+      version: 13
     testing:
       iqePlugin: notifications
     jobs:
