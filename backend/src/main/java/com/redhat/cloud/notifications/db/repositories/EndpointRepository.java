@@ -19,6 +19,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -91,6 +92,18 @@ public class EndpointRepository {
                 .getResultList();
         loadProperties(endpoints);
         return endpoints;
+    }
+
+    public EndpointType getEndpointTypeById(String accountId, UUID endpointId) {
+        String query = "Select e.compositeType.type from Endpoint e WHERE e.accountId = :accountId AND e.id = :endpointId";
+        try {
+            return entityManager.createQuery(query, EndpointType.class)
+                    .setParameter("accountId", accountId)
+                    .setParameter("endpointId", endpointId)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            throw new NotFoundException("Endpoint not found");
+        }
     }
 
     @Transactional
