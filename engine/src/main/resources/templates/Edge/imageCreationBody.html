@@ -1,0 +1,50 @@
+{#include Edge/insightsEmailBody}
+{#content-title}Egde Management Image Notification - {action.timestamp.toStringFormat()}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-body rh-multi-column">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td>
+                    <!-- end 50 col -->
+                    <!--[if (gte mso 9)|(IE)]>
+                    </td>
+                    </tr>
+                    </table>
+                    <![endif]-->
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+<!-- Body section -->
+<tr>
+    <td class="rh-body">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <p>
+                        Hi,
+                        <br>
+                        <br>
+                        A New Image it's being created {action.events[0].payload.ID}.
+                    </p>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+{/content-body}
+{/include}
