@@ -50,7 +50,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
     }, [ getBehaviorGroups.payload?.status, getBehaviorGroups.payload?.value ]);
 
     const options = React.useMemo(() => {
-        return listSystemBehaviorGroups?.filter(b => (<FormSelectOption key={ b.id } label={ b.displayName } value={ b.id } />));
+        return listSystemBehaviorGroups?.map(b => (<FormSelectOption key={ b.id } label={ b.displayName } value={ b.id } />));
     }, [ listSystemBehaviorGroups ]);
 
     return (
