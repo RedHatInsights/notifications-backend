@@ -12,6 +12,7 @@ interface CreateEditModalProps {
     initialEventType?: Partial<EventType>;
     systemBehaviorGroup?: readonly BehaviorGroup[]
     isLoading: boolean;
+    isOpen: boolean;
     onClose: () => void;
     onSubmit: (eventType: Partial<EventType>) => void;
 }
@@ -49,7 +50,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
     }, [ getBehaviorGroups.payload?.status, getBehaviorGroups.payload?.value ]);
 
     const options = React.useMemo(() => {
-        return listSystemBehaviorGroups?.map(b => (<FormSelectOption key={ b.id } label={ b.displayName } value={ b.id } />));
+        return listSystemBehaviorGroups?.filter(b => (<FormSelectOption key={ b.id } label={ b.displayName } value={ b.id } />));
     }, [ listSystemBehaviorGroups ]);
 
     return (
@@ -83,6 +84,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                     <FormGroup label='System Behavior Group' fieldId='system behavior group'>
                         <FormSelect
                             value={ systemBehaviorGroup?.id }
+                            open={ props.isOpen }
                             onChange={ handleSelect }
                             id='system behavior group'
                             name='system behavior group'

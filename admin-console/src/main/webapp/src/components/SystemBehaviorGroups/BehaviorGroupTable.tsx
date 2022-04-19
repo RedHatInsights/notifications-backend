@@ -24,12 +24,14 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
     const newBehaviorGroup = useCreateSystemBehaviorGroup();
     const deleteBehaviorGroupMutation = useDeleteBehaviorGroup();
 
-    const columns = [ 'System Behavior Group' ];
+    const columns = [ 'System Behavior Group', 'Actions' ];
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
     const [ isEdit, setIsEdit ] = React.useState(false);
+    const [ isOpen, setIsOpen ] = React.useState(false);
+
     const [ systemBehaviorGroup, setSystemBehaviorGroup ] = React.useState<Partial<BehaviorGroup>>({});
 
     const bundle = React.useMemo(() => {
@@ -60,6 +62,7 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
 
     const handleSubmit = React.useCallback((systemBehaviorGroup) => {
         setShowModal(false);
+        setIsOpen(true);
         const mutate = newBehaviorGroup.mutate;
         mutate({
             id: systemBehaviorGroup.id,
@@ -117,6 +120,7 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
                                     <Button variant='primary' type='button' onClick={ createBehaviorGroup }> Create new group </Button>
                                     <CreateEditBehaviorGroupModal
                                         isEdit={ isEdit }
+                                        isOpen={ isOpen }
                                         initialSystemBehaviorGroup={ systemBehaviorGroup }
                                         showModal={ showModal }
                                         onClose={ onClose }

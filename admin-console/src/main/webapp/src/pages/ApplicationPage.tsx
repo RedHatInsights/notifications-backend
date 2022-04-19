@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, Chip, ChipGroup, PageSection, Spinner, Title, Toolbar,
+import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar,
     ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
@@ -15,6 +15,7 @@ import { useUserPermissions } from '../app/PermissionContext';
 import { EmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
 import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
+import { ListSystemBehaviorGroups } from '../components/SystemBehaviorGroups/ListSystemBehaviorGroups';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
@@ -45,6 +46,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
+    const [ toggleSelect, setToggleSelect ] = React.useState(false);
 
     const getBundleId = React.useMemo(() => {
         if (applicationTypesQuery.payload?.type === 'Application') {
@@ -95,6 +97,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const handleSubmit = React.useCallback((eventType) => {
         setShowModal(false);
+        setToggleSelect(true);
         const mutate = newEvent.mutate;
         mutate({
             id: eventType.id,
@@ -173,7 +176,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         onClick={ createEventType }> Create Event Type </Button>
                                     <CreateEditModal
                                         isEdit={ isEdit }
-                                        initialEventType= { eventTypes }
+                                        initialEventType={ eventTypes }
+                                        isOpen={ toggleSelect }
                                         showModal={ showModal }
                                         applicationName={ application?.displayName }
                                         systemBehaviorGroup={ listSystemBehaviorGroups }
@@ -208,11 +212,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             <Tr key={ e.id }>
                                 <Td>{ e.displayName }</Td>
                                 <Td>{ e.name }</Td>
-                                <Td><ChipGroup>
-                                    { listSystemBehaviorGroups?.map(b =>
-                                        <Chip key={ b.id }isReadOnly>{ b.displayName }</Chip>
-                                    )}
-                                </ChipGroup></Td>
+                                <Td>
+                                    <ListSystemBehaviorGroups />
+                                </Td>
                                 <Td>{ e.id }</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'

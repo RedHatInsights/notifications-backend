@@ -39,7 +39,7 @@ export const DeleteBehaviorGroupModal: React.FunctionComponent<DeleteBehaviorGro
                 onClose={ props.onClose }
                 title={ `Permanently delete ${ props.systemBehaviorGroupName }` }>
                 { <b>{ props.systemBehaviorGroupName }</b> } {`from ${ props.bundleName ? props.bundleName :
-                    <Spinner /> } will be deleted. Please remove the behavior group from these events in order to continue. `}
+                    <Spinner /> } will be deleted. By deleting this behavior group, it will unlink any currently linked event types. `}
                 <br />
                 <br />
                         Type <b>{ props.systemBehaviorGroupName }</b> to confirm:
