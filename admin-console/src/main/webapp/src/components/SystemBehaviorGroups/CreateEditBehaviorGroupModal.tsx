@@ -20,19 +20,15 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
 
     const [ systemBehaviorGroup, setSystemBehaviorGroup ] = React.useState<Partial<BehaviorGroup>>(props.initialSystemBehaviorGroup ?? {});
 
-    const handleSelect = (value: string, event: React.FormEvent<HTMLSelectElement>) => {
-        const target = event.target as HTMLSelectElement;
-        setSystemBehaviorGroup(prev => ({ ...prev, [target.name]: target.value }));
-    };
-
     const actionOption = [
-        <FormSelectOption key={ systemBehaviorGroup?.id } isPlaceholder label='Choose an action' />,
+        <FormSelectOption key={ 0 } isPlaceholder label='Choose an action' />,
         <FormSelectOption key={ systemBehaviorGroup?.id } label='Send an email to Users: All' value={ systemBehaviorGroup?.id } />,
         <FormSelectOption key={ systemBehaviorGroup?.id } label='Send an email to Users: Admins' value={ systemBehaviorGroup?.id } />
     ];
 
-    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
-        const target = event.target as HTMLInputElement;
+    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>
+        | React.FormEvent<HTMLSelectElement>) => {
+        const target = event.target as HTMLInputElement | HTMLSelectElement;
         setSystemBehaviorGroup(prev => ({ ...prev, [target.name]: target.value }));
     };
 
@@ -67,9 +63,9 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
                         <FormSelect
                             id='actions'
                             name='actions'
-                            value={ systemBehaviorGroup?.id }
+                            value={ systemBehaviorGroup.actions }
                             open={ props.isOpen }
-                            onChange={ handleSelect }
+                            onChange={ handleChange }
                         >
                             { actionOption }
                         </FormSelect>

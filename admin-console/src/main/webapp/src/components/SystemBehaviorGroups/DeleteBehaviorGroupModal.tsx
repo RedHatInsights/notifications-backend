@@ -7,7 +7,6 @@ interface DeleteBehaviorGroupModalProps {
     onDelete: (systemBehaviorGroup?: BehaviorGroup) => Promise<boolean>;
     bundleName?: string;
     systemBehaviorGroupName?: string;
-    eventTypeName: string;
     isOpen: boolean;
     onClose: () => void;
 

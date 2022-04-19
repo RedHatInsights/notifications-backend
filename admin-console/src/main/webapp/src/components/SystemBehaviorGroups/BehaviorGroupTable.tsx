@@ -9,6 +9,7 @@ import { useBundleTypes } from '../../services/Applications/GetBundleById';
 import { useCreateSystemBehaviorGroup } from '../../services/SystemBehaviorGroups/CreateSystemBehaviorGroup';
 import { useDeleteBehaviorGroup } from '../../services/SystemBehaviorGroups/DeleteSystemBehaviorGroup';
 import { useSystemBehaviorGroups } from '../../services/SystemBehaviorGroups/GetBehaviorGroups';
+import { useUpdateBehaviorGroupActionsMutation } from '../../services/SystemBehaviorGroups/UpdateActions';
 import { BehaviorGroup } from '../../types/Notifications';
 import { CreateEditBehaviorGroupModal } from './CreateEditBehaviorGroupModal';
 import { DeleteBehaviorGroupModal } from './DeleteBehaviorGroupModal';
@@ -23,6 +24,7 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
     const getBundles = useBundleTypes(bundleId);
     const newBehaviorGroup = useCreateSystemBehaviorGroup();
     const deleteBehaviorGroupMutation = useDeleteBehaviorGroup();
+    const updateBehaviorGroupActions = useUpdateBehaviorGroupActionsMutation();
 
     const columns = [ 'System Behavior Group', 'Actions' ];
 
@@ -59,6 +61,18 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
         setShowDeleteModal(true);
         setSystemBehaviorGroup(b);
     };
+
+    const handleUpdate = React.useCallback((systemBehaviorGroup) => {
+        setShowModal(false);
+        setIsOpen(true);
+        const update = updateBehaviorGroupActions.mutate;
+        update({
+            behaviorGroupId: systemBehaviorGroup.id,
+            body: systemBehaviorGroup.actions
+        })
+        .then(getBehaviorGroups.query);
+
+    }, [ getBehaviorGroups.query, updateBehaviorGroupActions.mutate ]);
 
     const handleSubmit = React.useCallback((systemBehaviorGroup) => {
         setShowModal(false);
@@ -124,7 +138,7 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
                                         initialSystemBehaviorGroup={ systemBehaviorGroup }
                                         showModal={ showModal }
                                         onClose={ onClose }
-                                        onSubmit={ handleSubmit }
+                                        onSubmit={ isEdit ? handleUpdate : handleSubmit }
                                         isLoading={ false }
                                     />
                                     <DeleteBehaviorGroupModal

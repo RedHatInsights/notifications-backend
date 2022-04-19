@@ -83,7 +83,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                         /></FormGroup>
                     <FormGroup label='System Behavior Group' fieldId='system behavior group'>
                         <FormSelect
-                            value={ systemBehaviorGroup?.id }
+                            value={ systemBehaviorGroup?.actions }
                             open={ props.isOpen }
                             onChange={ handleSelect }
                             id='system behavior group'
