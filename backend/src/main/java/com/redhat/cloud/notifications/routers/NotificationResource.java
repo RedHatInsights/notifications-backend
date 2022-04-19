@@ -234,6 +234,9 @@ public class NotificationResource {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response updateEventTypeBehaviors(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, Set<UUID> behaviorGroupIds) {
+        if (behaviorGroupIds == null) {
+            throw new BadRequestException("The request body must contain a list of behavior groups identifiers");
+        }
         // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
         if (behaviorGroupIds.contains(null)) {
             throw new BadRequestException("The behavior groups identifiers list should not contain empty values");
