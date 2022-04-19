@@ -93,18 +93,6 @@ public class EndpointRepository {
         return endpoints;
     }
 
-    public EndpointType getEndpointTypeById(String accountId, UUID endpointId) {
-        String query = "Select e.compositeType.type from Endpoint e WHERE e.accountId = :accountId AND e.id = :endpointId";
-        try {
-            return entityManager.createQuery(query, EndpointType.class)
-                    .setParameter("accountId", accountId)
-                    .setParameter("endpointId", endpointId)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            return null;
-        }
-    }
-
     @Transactional
     public Endpoint getOrCreateEmailSubscriptionEndpoint(String accountId, EmailSubscriptionProperties properties) {
         List<Endpoint> emailEndpoints = getEndpointsPerCompositeType(accountId, null, Set.of(new CompositeEndpointType(EndpointType.EMAIL_SUBSCRIPTION)), null, null);

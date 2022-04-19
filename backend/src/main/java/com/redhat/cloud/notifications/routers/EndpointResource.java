@@ -265,8 +265,11 @@ public class EndpointResource {
     @Transactional
     public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
-        checkSystemEndpoint(endpointType);
+        Endpoint endpoint = endpointRepository.getEndpoint(principal.getAccount(), id);
+        if (endpoint == null) {
+            throw new NotFoundException("Endpoint not found");
+        }
+        checkSystemEndpoint(endpoint.getType());
 
         if (obEnabled) {
             Endpoint e = endpointRepository.getEndpoint(principal.getAccount(), id);
@@ -305,8 +308,11 @@ public class EndpointResource {
     @Transactional
     public Response enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
-        checkSystemEndpoint(endpointType);
+        Endpoint endpoint = endpointRepository.getEndpoint(principal.getAccount(), id);
+        if (endpoint == null) {
+            throw new NotFoundException("Endpoint not found");
+        }
+        checkSystemEndpoint(endpoint.getType());
         endpointRepository.enableEndpoint(principal.getAccount(), id);
         return Response.ok().build();
     }
@@ -318,8 +324,11 @@ public class EndpointResource {
     @Transactional
     public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
-        checkSystemEndpoint(endpointType);
+        Endpoint endpoint = endpointRepository.getEndpoint(principal.getAccount(), id);
+        if (endpoint == null) {
+            throw new NotFoundException("Endpoint not found");
+        }
+        checkSystemEndpoint(endpoint.getType());
         endpointRepository.disableEndpoint(principal.getAccount(), id);
         return Response.noContent().build();
     }
@@ -338,9 +347,12 @@ public class EndpointResource {
         endpoint.setAccountId(principal.getAccount());
         endpoint.setId(id);
 
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
+        Endpoint ep = endpointRepository.getEndpoint(principal.getAccount(), id);
+        if (ep == null) {
+            throw new NotFoundException("Endpoint not found");
+        }
         // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
-        checkSystemEndpoint(endpointType);
+        checkSystemEndpoint(ep.getType());
         endpointRepository.updateEndpoint(endpoint);
         return Response.ok().build();
     }
