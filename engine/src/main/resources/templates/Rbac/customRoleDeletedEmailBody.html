@@ -1,0 +1,50 @@
+{#include Rbac/insightsEmailBody}
+{#content-title}Rbac role change Notification - {action.timestamp.toStringFormat()}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-body rh-multi-column">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td>
+                    <!-- end 50 col -->
+                    <!--[if (gte mso 9)|(IE)]>
+                    </td>
+                    </tr>
+                    </table>
+                    <![endif]-->
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+<!-- Body section -->
+<tr>
+    <td class="rh-body">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <p>
+                        Hi,
+                        <br>
+                        <br>
+                        Custom role {action.events[0].payload.name} has been deleted by {action.events[0].payload.username} and is not available anymore.
+                    </p>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+{/content-body}
+{/include}

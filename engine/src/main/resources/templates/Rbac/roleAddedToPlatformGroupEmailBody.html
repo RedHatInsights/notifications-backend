@@ -1,5 +1,5 @@
 {#include Rbac/insightsEmailBody}
-{#content-title}Rbac role change Notification - {action.timestamp.toStringFormat()}{/content-title}
+{#content-title}Platform default access group change Notification - {action.timestamp.toStringFormat()}{/content-title}
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
@@ -35,15 +35,8 @@
                         Hi,
                         <br>
                         <br>
-                        {#if action.events[0].payload.system == "true"}Red Hat{#else}Custom{/if} role is {#if action.events[0].payload.system == "true"} {action.events[0].payload.operation}{#else} available{/if}.
-                        <br>
-                        {#if action.events[0].payload.operation != "delete"} Check the role <a class="rh-url" href="https://console.redhat.com/settings/rbac/roles/detail/{action.events[0].payload.uuid}/"><b>{action.events[0].payload.name}</b></a>{/if}
+                        Red Hat added a role <a class="rh-url" href="{environment.url('/settings/rbac/roles/detail/')}{action.events[0].payload.role.uuid}"><b>{action.events[0].payload.role.name}</b></a> to platform default access group.
                     </p>
-                    {#if action.events[0].payload.operation == "update" and action.events[0].payload.system == "true"}
-                    <p>
-                        The updated Red Hat role is {#if action.events[0].payload.platform_default != "true"}not{/if} in platform default access group.
-                    </p>
-                    {/if}
                 </td>
             </tr>
             <!-- end content block -->

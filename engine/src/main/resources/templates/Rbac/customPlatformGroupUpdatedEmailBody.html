@@ -1,0 +1,60 @@
+{#include Rbac/insightsEmailBody}
+{#content-title}Rbac group change Notification - {action.timestamp.toStringFormat()}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-body rh-multi-column">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td>
+                    <!-- end 50 col -->
+                    <!--[if (gte mso 9)|(IE)]>
+                    </td>
+                    </tr>
+                    </table>
+                    <![endif]-->
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+<!-- Body section -->
+<tr>
+    <td class="rh-body">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <p>
+                        Hi,
+                        <br>
+                        <br>
+                        Custom platform default access group has been updated by {action.events[0].payload.username}.
+                        <br>
+                        {#if action.events[0].payload.role}
+                        <p>
+                            The role <a class="rh-url" href="{environment.url('/settings/rbac/groups/detail/')}{action.events[0].payload.role.uuid}"><b>{action.events[0].payload.role.name} has been
+                            {action.events[0].payload.operation} {#if action.events[0].payload.operation == "added"}to{#else}from{/if} 
+                            the group.
+                        </p>
+                        {/if}
+                        <br>
+                        Check the updated group <a class="rh-url" href="{environment.url('/settings/rbac/groups/detail/')}{action.events[0].payload.uuid}"><b>{action.events[0].payload.name}</b></a>
+                    </p>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+{/content-body}
+{/include}
