@@ -7,6 +7,7 @@ interface DeleteBehaviorGroupModalProps {
     onDelete: (systemBehaviorGroup?: BehaviorGroup) => Promise<boolean>;
     bundleName?: string;
     systemBehaviorGroupName?: string;
+    eventTypeName: string;
     isOpen: boolean;
     onClose: () => void;
 
@@ -39,7 +40,8 @@ export const DeleteBehaviorGroupModal: React.FunctionComponent<DeleteBehaviorGro
                 onClose={ props.onClose }
                 title={ `Permanently delete ${ props.systemBehaviorGroupName }` }>
                 { <b>{ props.systemBehaviorGroupName }</b> } {`from ${ props.bundleName ? props.bundleName :
-                    <Spinner /> } will be deleted. By deleting this behavior group, it will unlink any currently linked event types. `}
+                    <Spinner /> } will be deleted. You will no longer be able to assign this system behavior
+                    group to event types. `}
                 <br />
                 <br />
                         Type <b>{ props.systemBehaviorGroupName }</b> to confirm:
