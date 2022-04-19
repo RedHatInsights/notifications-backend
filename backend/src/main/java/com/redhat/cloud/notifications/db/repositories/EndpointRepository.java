@@ -19,6 +19,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -101,7 +102,7 @@ public class EndpointRepository {
                     .setParameter("endpointId", endpointId)
                     .getSingleResult();
         } catch (NoResultException e) {
-            return null;
+            throw new NotFoundException("Endpoint not found");
         }
     }
 
