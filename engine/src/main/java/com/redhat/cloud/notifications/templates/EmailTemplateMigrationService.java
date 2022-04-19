@@ -161,6 +161,8 @@ public class EmailTemplateMigrationService {
          * Former src/main/resources/templates/Rbac folder.
          */
         getOrCreateTemplate(warnings, "Rbac/insightsEmailBody", "html", "Rbac Insights email body");
+        /*
+         TODO Include changes from https://github.com/RedHatInsights/notifications-backend/pull/1173 into this code.
         createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("rh-new-role-available", "rh-platform-default-role-updated", "rh-non-platform-default-role-updated", "custom-role-created", "custom-role-updated", "custom-role-deleted"),
                 "Rbac/roleChangeEmailTitle", "txt", "Rbac role change email title",
@@ -176,6 +178,7 @@ public class EmailTemplateMigrationService {
                 "Rbac/platformGroup2CustomEmailTitle", "txt", "Rbac platform group 2 custom email title",
                 "Rbac/platformGroup2CustomEmailBody", "html", "Rbac platform group 2 custom email body"
         );
+         */
 
         /*
          * Former src/main/resources/templates/Rhosak folder.
