@@ -213,8 +213,6 @@ public class EmailTemplateMigrationServiceTest {
             findAndCompileInstantEmailTemplate(availabilityStatus.getId());
             assertTrue(templateRepository.findAggregationEmailTemplate(console.getName(), sources.getName(), DAILY).isEmpty());
             // App: rbac
-            /*
-             TODO Include changes from https://github.com/RedHatInsights/notifications-backend/pull/1173 into this code.
             findAndCompileInstantEmailTemplate(rhNewRoleAvailable.getId());
             findAndCompileInstantEmailTemplate(rhPlatformDefaultRoleUpdated.getId());
             findAndCompileInstantEmailTemplate(rhNonPlatformDefaultRoleUpdated.getId());
@@ -229,7 +227,6 @@ public class EmailTemplateMigrationServiceTest {
             findAndCompileInstantEmailTemplate(groupDeleted.getId());
             findAndCompileInstantEmailTemplate(platformDefaultGroupTurnedIntoCustom.getId());
             assertTrue(templateRepository.findAggregationEmailTemplate(console.getName(), rbac.getName(), DAILY).isEmpty());
-             */
 
         });
 
