@@ -2,10 +2,10 @@ package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.redhat.cloud.notifications.db.converters.EndpointTypeConverter;
 import com.redhat.cloud.notifications.db.converters.NotificationHistoryDetailsConverter;
 
 import javax.persistence.Convert;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -51,20 +51,13 @@ public class NotificationHistory extends CreationTimestamped {
     private Endpoint endpoint;
 
     /*
-     * This is a duplicate of the Endpoint#type field. We need it to guarantee that the endpoint type will remain
+     * This is a duplicate of the Endpoint#type and Endpoint#subType field. We need it to guarantee that the endpoint type will remain
      * available for the event log even if the endpoint is deleted by an org admin.
      */
     @NotNull
-    @Convert(converter = EndpointTypeConverter.class)
+    @Embedded
     @JsonIgnore
-    private EndpointType endpointType;
-
-    /*
-     * This is a duplicate of the Endpoint#subType field. We need it to guarantee that the endpoint type will remain
-     * available for the event log even if the endpoint is deleted by an org admin.
-     */
-    @JsonIgnore
-    private String endpointSubType;
+    private CompositeEndpointType compositeEndpointType = new CompositeEndpointType();
 
     @Convert(converter = NotificationHistoryDetailsConverter.class)
     private Map<String, Object> details;
@@ -137,19 +130,19 @@ public class NotificationHistory extends CreationTimestamped {
     }
 
     public EndpointType getEndpointType() {
-        return endpointType;
+        return compositeEndpointType.getType();
     }
 
     public void setEndpointType(EndpointType endpointType) {
-        this.endpointType = endpointType;
+        this.compositeEndpointType.setType(endpointType);
     }
 
     public String getEndpointSubType() {
-        return endpointSubType;
+        return this.compositeEndpointType.getSubType();
     }
 
     public void setEndpointSubType(String endpointSubType) {
-        this.endpointSubType = endpointSubType;
+        this.compositeEndpointType.setSubType(endpointSubType);
     }
 
     public Map<String, Object> getDetails() {

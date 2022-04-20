@@ -125,7 +125,7 @@ public class EventRepository {
         if (checkEndpointType || checkInvocationResult) {
             List<String> subQueryConditions = new ArrayList<>();
             if (checkEndpointType) {
-                subQueryConditions.add("nh.endpointType IN (:endpointTypes)");
+                subQueryConditions.add("nh.compositeEndpointType.type IN (:endpointTypes)");
             }
             if (checkInvocationResult) {
                 subQueryConditions.add("nh.invocationResult IN (:invocationResults)");
