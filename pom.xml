@@ -46,8 +46,7 @@
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <failsafe.version>3.2.3</failsafe.version>
 
-        <!-- Keep the version synced with MockServerLifecycleManager -->
-        <mockserver-client-java.version>5.5.4</mockserver-client-java.version>
+        <mockserver-netty-no-dependencies.version>5.13.2</mockserver-netty-no-dependencies.version>
 
         <insights-notification-schemas-java.version>0.6</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>1.0.0</clowder-quarkus-config-source.version>

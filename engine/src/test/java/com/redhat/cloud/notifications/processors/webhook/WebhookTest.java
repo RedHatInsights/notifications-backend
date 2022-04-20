@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -54,7 +55,7 @@ public class WebhookTest {
 
     @Test
     void testWebhook() {
-        String url = MockServerLifecycleManager.getContainerUrl() + "/foobar";
+        String url = getMockServerUrl() + "/foobar";
 
         final List<String> bodyRequests = new ArrayList<>();
         ExpectationResponseCallback verifyEmptyRequest = req -> {
@@ -115,7 +116,7 @@ public class WebhookTest {
     }
 
     private void testRetry(boolean shouldSucceedEventually) {
-        String url = MockServerLifecycleManager.getContainerUrl() + "/foobar";
+        String url = getMockServerUrl() + "/foobar";
 
         AtomicInteger callsCounter = new AtomicInteger();
         ExpectationResponseCallback expectationResponseCallback = request -> {
