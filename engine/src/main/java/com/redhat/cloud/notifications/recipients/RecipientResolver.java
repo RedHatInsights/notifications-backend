@@ -60,7 +60,7 @@ public class RecipientResolver {
             users = filterUsers(users, subscribers);
         }
 
-        usersCount.set(users.size());
+        updateUsersUsedGauge(users.size());
 
         return users;
     }
@@ -73,5 +73,9 @@ public class RecipientResolver {
                             .anyMatch(requested -> requested.equalsIgnoreCase(user.getUsername()))
                 )
                 .collect(Collectors.toSet());
+    }
+
+    private void updateUsersUsedGauge(int users) {
+        usersCount.set(users);
     }
 }
