@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
-import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
@@ -51,7 +51,7 @@ public class EventResource {
     @Operation(summary = "Retrieve the event log entries.")
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
                                               @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
-                                              @RestQuery Set<EndpointType> endpointTypes, @RestQuery Set<Boolean> invocationResults,
+                                              @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                               @RestQuery @DefaultValue("10") int limit, @RestQuery @DefaultValue("0") int offset, @RestQuery String sortBy,
                                               @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
         if (limit < 1 || limit > 200) {
@@ -60,8 +60,21 @@ public class EventResource {
         if (sortBy != null && !SORT_BY_PATTERN.matcher(sortBy).matches()) {
             throw new BadRequestException("Invalid 'sortBy' query parameter");
         }
+
+        Set<CompositeEndpointType> compositeTypes = null;
+
+        if (endpointTypes != null && endpointTypes.size() > 0) {
+            compositeTypes = endpointTypes.stream().map(s -> {
+                try {
+                    return CompositeEndpointType.fromString(s);
+                } catch (IllegalArgumentException e) {
+                    throw new BadRequestException("Unknown endpoint type: [" + s + "]", e);
+                }
+            }).collect(Collectors.toSet());
+        }
+
         String accountId = getAccountId(securityContext);
-        List<Event> events = eventRepository.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, includeActions, limit, offset, sortBy);
+        List<Event> events = eventRepository.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, compositeTypes, invocationResults, includeActions, limit, offset, sortBy);
         List<EventLogEntry> eventLogEntries = events.stream().map(event -> {
             List<EventLogEntryAction> actions;
             if (!includeActions) {
@@ -93,7 +106,7 @@ public class EventResource {
             }
             return entry;
         }).collect(Collectors.toList());
-        Long count = eventRepository.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+        Long count = eventRepository.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, compositeTypes, invocationResults);
 
         Meta meta = new Meta();
         meta.setCount(count);

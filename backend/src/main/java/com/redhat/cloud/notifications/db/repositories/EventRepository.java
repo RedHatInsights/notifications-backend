@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 
@@ -16,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.routers.EventResource.SORT_BY_PATTERN;
 
@@ -26,7 +28,7 @@ public class EventRepository {
     EntityManager entityManager;
 
     public List<Event> getEvents(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                                      LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults,
+                                      LocalDate startDate, LocalDate endDate, Set<CompositeEndpointType> endpointTypes, Set<Boolean> invocationResults,
                                       boolean fetchNotificationHistory, Integer limit, Integer offset, String sortBy) {
         Optional<String> orderByCondition = getOrderByCondition(sortBy);
         List<UUID> eventIds = getEventIds(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, orderByCondition);
@@ -47,7 +49,7 @@ public class EventRepository {
     }
 
     public Long count(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                      LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults) {
+                      LocalDate startDate, LocalDate endDate, Set<CompositeEndpointType> endpointTypes, Set<Boolean> invocationResults) {
         String hql = "SELECT COUNT(*) FROM Event e WHERE e.accountId = :accountId";
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
@@ -78,7 +80,7 @@ public class EventRepository {
     }
 
     private List<UUID> getEventIds(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                                        LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults,
+                                        LocalDate startDate, LocalDate endDate, Set<CompositeEndpointType> endpointTypes, Set<Boolean> invocationResults,
                                         Integer limit, Integer offset, Optional<String> orderByCondition) {
         String hql = "SELECT e.id FROM Event e WHERE e.accountId = :accountId";
 
@@ -102,7 +104,7 @@ public class EventRepository {
     }
 
     private static String addHqlConditions(String hql, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                                           LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults) {
+                                           LocalDate startDate, LocalDate endDate, Set<CompositeEndpointType> endpointTypes, Set<Boolean> invocationResults) {
         if (bundleIds != null && !bundleIds.isEmpty()) {
             hql += " AND e.bundleId IN (:bundleIds)";
         }
@@ -125,7 +127,19 @@ public class EventRepository {
         if (checkEndpointType || checkInvocationResult) {
             List<String> subQueryConditions = new ArrayList<>();
             if (checkEndpointType) {
-                subQueryConditions.add("nh.compositeEndpointType.type IN (:endpointTypes)");
+                List<String> subQueryEndpointTypes = new ArrayList<>();
+                Set<EndpointType> basicTypes = endpointTypes.stream().filter(c -> c.getSubType() == null).map(CompositeEndpointType::getType).collect(Collectors.toSet());
+                Set<CompositeEndpointType> compositeTypes = endpointTypes.stream().filter(c -> c.getSubType() != null).collect(Collectors.toSet());
+
+                if (basicTypes.size() > 0) {
+                    subQueryEndpointTypes.add("nh.compositeEndpointType.type IN (:basicEndpointTypes)");
+                }
+
+                if (compositeTypes.size() > 0) {
+                    subQueryEndpointTypes.add("nh.compositeEndpointType IN (:compositeEndpointTypes)");
+                }
+
+                subQueryConditions.add("(" + String.join(" OR ", subQueryEndpointTypes) + ")");
             }
             if (checkInvocationResult) {
                 subQueryConditions.add("nh.invocationResult IN (:invocationResults)");
@@ -137,7 +151,7 @@ public class EventRepository {
     }
 
     private static void setQueryParams(TypedQuery<?> query, String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
-                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults) {
+                                       LocalDate startDate, LocalDate endDate, Set<CompositeEndpointType> endpointTypes, Set<Boolean> invocationResults) {
         query.setParameter("accountId", accountId);
         if (bundleIds != null && !bundleIds.isEmpty()) {
             query.setParameter("bundleIds", bundleIds);
@@ -155,7 +169,16 @@ public class EventRepository {
             query.setParameter("endDate", Timestamp.valueOf(endDate.atTime(LocalTime.MAX))); // at end of day
         }
         if (endpointTypes != null && !endpointTypes.isEmpty()) {
-            query.setParameter("endpointTypes", endpointTypes);
+            Set<EndpointType> basicTypes = endpointTypes.stream().filter(c -> c.getSubType() == null).map(CompositeEndpointType::getType).collect(Collectors.toSet());
+            Set<CompositeEndpointType> compositeTypes = endpointTypes.stream().filter(c -> c.getSubType() != null).collect(Collectors.toSet());
+
+            if (basicTypes.size() > 0) {
+                query.setParameter("basicEndpointTypes", basicTypes);
+            }
+
+            if (compositeTypes.size() > 0) {
+                query.setParameter("compositeEndpointTypes", compositeTypes);
+            }
         }
         if (invocationResults != null && !invocationResults.isEmpty()) {
             query.setParameter("invocationResults", invocationResults);
