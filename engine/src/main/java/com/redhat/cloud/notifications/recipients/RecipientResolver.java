@@ -68,9 +68,9 @@ public class RecipientResolver {
     private Set<User> filterUsers(Set<User> users, Set<String> target) {
         return users.stream()
                 .filter(
-                        user -> target
-                                .stream()
-                                .anyMatch(requested -> requested.equalsIgnoreCase(user.getUsername()))
+                    user -> target
+                            .stream()
+                            .anyMatch(requested -> requested.equalsIgnoreCase(user.getUsername()))
                 )
                 .collect(Collectors.toSet());
     }
