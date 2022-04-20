@@ -5,6 +5,19 @@
 When using IntelliJ IDEA, use the 'default' style. This is matched by checkstyle,
 which is invoked when running maven.
 
+== Enabling the MockServer log during tests
+
+This project uses link:https://www.mock-server.com[MockServer] to mock external services during the tests execution.
+
+The MockServer log is disabled by default to reduce the noise in the application log.
+It can be enabled by adding the following argument to the Maven build command:
+
+```
+-Dmockserver.logLevel=WARN|INFO|DEBUG|TRACE
+```
+
+Details about each MockServer log level are available in the link:https://www.mock-server.com/mock_server/debugging_issues.html[MockServer documentation].
+
 ## Usage of the Clowder Config Source
 
 This project uses the Clowder Config Source from https://github.com/RedHatInsights/clowder-quarkus-config-source.

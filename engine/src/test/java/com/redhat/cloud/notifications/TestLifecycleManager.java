@@ -11,6 +11,7 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.EGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.FROMCAMEL_CHANNEL;
@@ -82,9 +83,9 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
     void setupMockEngine(Map<String, String> props) {
         MockServerLifecycleManager.start();
-        props.put("quarkus.rest-client.rbac-s2s.url", MockServerLifecycleManager.getContainerUrl());
-        props.put("quarkus.rest-client.it-s2s.url", MockServerLifecycleManager.getContainerUrl());
-        props.put("quarkus.rest-client.ob.url", MockServerLifecycleManager.getContainerUrl());
-        props.put("quarkus.rest-client.kc.url", MockServerLifecycleManager.getContainerUrl());
+        props.put("quarkus.rest-client.rbac-s2s.url", getMockServerUrl());
+        props.put("quarkus.rest-client.it-s2s.url", getMockServerUrl());
+        props.put("quarkus.rest-client.ob.url", getMockServerUrl());
+        props.put("quarkus.rest-client.kc.url", getMockServerUrl());
     }
 }

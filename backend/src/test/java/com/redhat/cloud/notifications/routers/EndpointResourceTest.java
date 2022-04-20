@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
-import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -43,6 +42,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
@@ -110,7 +110,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
@@ -256,7 +256,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        properties.setUrl(getMockServerUrl());
 
         // Test with properties, but without endpoint type
         ep.setProperties(properties);
@@ -303,7 +303,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
-        cAttr.setUrl(MockServerLifecycleManager.getContainerUrl());
+        cAttr.setUrl(getMockServerUrl());
         cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
@@ -376,7 +376,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
-        cAttr.setUrl(MockServerLifecycleManager.getContainerUrl());
+        cAttr.setUrl(getMockServerUrl());
         cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
@@ -426,7 +426,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
-        cAttr.setUrl(MockServerLifecycleManager.getContainerUrl());
+        cAttr.setUrl(getMockServerUrl());
         Map<String, String> extras = new HashMap<>();
         extras.put("channel", "#notifications");
         cAttr.setExtras(extras);
@@ -527,7 +527,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
@@ -628,7 +628,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
@@ -656,7 +656,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         CamelProperties camelProperties = new CamelProperties();
         camelProperties.setDisableSslVerification(false);
         camelProperties.setSecretToken("my-super-secret-token");
-        camelProperties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        camelProperties.setUrl(getMockServerUrl());
         camelProperties.setExtras(new HashMap<>());
 
         Endpoint camelEp = new Endpoint();
@@ -841,7 +841,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
         properties.setBasicAuthentication(new BasicAuthentication("myuser", "mypassword"));
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
@@ -1030,7 +1030,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         webhookProperties.setMethod(HttpType.POST);
         webhookProperties.setDisableSslVerification(false);
         webhookProperties.setSecretToken("my-super-secret-token");
-        webhookProperties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        webhookProperties.setUrl(getMockServerUrl());
         ep.setProperties(webhookProperties);
 
         stringResponse = given()
@@ -1314,7 +1314,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             properties.setMethod(HttpType.POST);
             properties.setDisableSslVerification(false);
             properties.setSecretToken("my-super-secret-token");
-            properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+            properties.setUrl(getMockServerUrl());
 
             Endpoint ep = new Endpoint();
             ep.setType(EndpointType.WEBHOOK);
@@ -1452,7 +1452,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             properties.setMethod(HttpType.POST);
             properties.setDisableSslVerification(false);
             properties.setSecretToken("my-super-secret-token");
-            properties.setUrl(MockServerLifecycleManager.getContainerUrl() + "/" + i);
+            properties.setUrl(getMockServerUrl() + "/" + i);
 
             Endpoint ep = new Endpoint();
             ep.setType(EndpointType.WEBHOOK);
