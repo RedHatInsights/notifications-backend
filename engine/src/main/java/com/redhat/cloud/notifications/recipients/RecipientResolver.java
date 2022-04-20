@@ -1,18 +1,31 @@
 package com.redhat.cloud.notifications.recipients;
 
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
+import io.micrometer.core.instrument.MeterRegistry;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class RecipientResolver {
 
+    private final AtomicInteger usersCount = new AtomicInteger(0);
+
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
+
+    @Inject
+    MeterRegistry meterRegistry;
+
+    @PostConstruct
+    public void init() {
+        meterRegistry.gauge("get-users.used", usersCount);
+    }
 
     public Set<User> recipientUsers(String accountId, Set<RecipientSettings> requests, Set<String> subscribers) {
         return requests.stream()
@@ -47,15 +60,17 @@ public class RecipientResolver {
             users = filterUsers(users, subscribers);
         }
 
+        usersCount.set(users.size());
+
         return users;
     }
 
     private Set<User> filterUsers(Set<User> users, Set<String> target) {
         return users.stream()
                 .filter(
-                    user -> target
-                            .stream()
-                            .anyMatch(requested -> requested.equalsIgnoreCase(user.getUsername()))
+                        user -> target
+                                .stream()
+                                .anyMatch(requested -> requested.equalsIgnoreCase(user.getUsername()))
                 )
                 .collect(Collectors.toSet());
     }
