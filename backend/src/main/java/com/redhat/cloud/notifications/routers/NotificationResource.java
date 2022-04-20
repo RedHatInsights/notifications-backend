@@ -211,7 +211,7 @@ public class NotificationResource {
     @Transactional
     public Response updateBehaviorGroupActions(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<UUID> endpointIds) {
         if (endpointIds == null) {
-            throw new BadRequestException("The request body must contain an endpoints identifiers list");
+            throw new BadRequestException("The request body must contain a list (possibly empty) of endpoints identifiers");
         }
         // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
         if (endpointIds.contains(null)) {
@@ -235,7 +235,7 @@ public class NotificationResource {
     @Transactional
     public Response updateEventTypeBehaviors(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, Set<UUID> behaviorGroupIds) {
         if (behaviorGroupIds == null) {
-            throw new BadRequestException("The request body must contain a list of behavior groups identifiers");
+            throw new BadRequestException("The request body must contain a list (possibly empty) of behavior groups identifiers");
         }
         // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
         if (behaviorGroupIds.contains(null)) {
