@@ -24,7 +24,7 @@ public class RecipientResolver {
 
     @PostConstruct
     public void init() {
-        meterRegistry.gauge("get-users.used", usersCount);
+        meterRegistry.gauge("email-processor.recipients-resolved", usersCount);
     }
 
     public Set<User> recipientUsers(String accountId, Set<RecipientSettings> requests, Set<String> subscribers) {
