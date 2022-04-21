@@ -21,7 +21,6 @@ public class Edge implements EmailTemplate {
             return Templates.imageCreationBody();
         }
         return Templates.updateDeviceBody();
-        
     }
 
     @Override
@@ -38,11 +37,11 @@ public class Edge implements EmailTemplate {
     public static class Templates {
 
         public static native TemplateInstance updateDeviceTitle();
-        
+
         public static native TemplateInstance imageCreationTitle();
 
         public static native TemplateInstance updateDeviceBody();
-        
+
         public static native TemplateInstance imageCreationBody();
 
     }
