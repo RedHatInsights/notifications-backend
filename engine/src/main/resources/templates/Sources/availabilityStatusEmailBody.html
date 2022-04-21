@@ -1,5 +1,5 @@
 {#include Sources/insightsEmailBody}
-{#content-title}Availability Status Change in '{action.context.resource_display_name}' - {action.timestamp.toStringFormat()}{/content-title}
+{#content-title}Availability Status Change - {action.context.resource_display_name}{/content-title}
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
@@ -32,13 +32,12 @@
             <tr>
                 <td class="rh-content__block">
                     <p>
-                        {action.context.resource_display_name}'s availability status was changed for  from <b>{action.context.resource_display_name}</b> to 
-                        <b>{action.context.resource_display_name}<b>.
-
+                        {action.context.resource_display_name}'s availability status was changed from <b>{action.context.previous_availability_status}</b> to 
+                        <b>{action.context.current_availability_status}</b>.
                     </p>
                     <p>
                         {#if action.context.source_id > 0}
-                        For more information please check summary page of <a class="rh-url" href="https://console.stage.redhat.com/settings/sources/detail/{action.context.source_id}"> {action.context.source_name} source</a>.
+                        For more information please check summary page of <a class="rh-url" href="https://console.redhat.com/settings/sources/detail/{action.context.source_id}"> {action.context.source_name} source</a>.
                         {/if}
                     </p>
                 </td>
