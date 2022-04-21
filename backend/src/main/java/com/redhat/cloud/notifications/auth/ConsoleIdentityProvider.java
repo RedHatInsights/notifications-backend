@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.auth;
 
+import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
 import com.redhat.cloud.notifications.auth.principal.ConsoleIdentityWrapper;
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
@@ -25,10 +26,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.Duration;
-import java.util.Base64;
 
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Authorizes the data from the insight's RBAC-server and adds the appropriate roles
@@ -170,7 +169,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
     }
 
     private static ConsoleIdentity getRhIdentityFromString(String xRhIdHeader) {
-        String xRhDecoded = new String(Base64.getDecoder().decode(xRhIdHeader.getBytes(UTF_8)), UTF_8);
+        String xRhDecoded = Base64Utils.decode(xRhIdHeader);
         ConsoleIdentity identity = Json.decodeValue(xRhDecoded, ConsoleIdentityWrapper.class).getIdentity();
         identity.rawIdentity = xRhIdHeader;
         return identity;

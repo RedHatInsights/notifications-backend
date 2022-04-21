@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.camel;
 
+import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -30,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -270,7 +270,7 @@ public class CamelTypeProcessorTest {
 
     private void checkBasicAuthentication(JsonObject notifMetadata, BasicAuthentication expectedBasicAuth) {
         String credentials = expectedBasicAuth.getUsername() + ":" + expectedBasicAuth.getPassword();
-        String expectedBase64Credentials = new String(Base64.getEncoder().encode(credentials.getBytes(UTF_8)), UTF_8);
+        String expectedBase64Credentials = Base64Utils.encode(credentials);
         assertEquals(expectedBase64Credentials, notifMetadata.getString("basicAuth"));
     }
 
