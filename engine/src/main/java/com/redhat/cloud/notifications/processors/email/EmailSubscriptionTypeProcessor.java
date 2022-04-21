@@ -50,6 +50,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.*;
 import static com.redhat.cloud.notifications.templates.TemplateService.USE_TEMPLATES_FROM_DB_KEY;
 
 @ApplicationScoped
@@ -62,8 +63,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
     private static final Logger LOGGER = Logger.getLogger(EmailSubscriptionTypeProcessor.class);
 
-    private static final List<EmailSubscriptionType> NON_INSTANT_SUBSCRIPTION_TYPES = Arrays.stream(EmailSubscriptionType.values())
-            .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
+    private static final List<EmailSubscriptionType> NON_INSTANT_SUBSCRIPTION_TYPES = Arrays.stream(values())
+            .filter(emailSubscriptionType -> emailSubscriptionType != INSTANT)
             .collect(Collectors.toList());
 
     @ConfigProperty(name = USE_TEMPLATES_FROM_DB_KEY)
@@ -153,7 +154,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     private List<NotificationHistory> sendEmail(Event event, Set<Endpoint> endpoints, EmailTemplate emailTemplate) {
-        EmailSubscriptionType emailSubscriptionType = EmailSubscriptionType.INSTANT;
+        final EmailSubscriptionType emailSubscriptionType = INSTANT;
         processedEmailCount.increment();
         Action action = event.getAction();
 
@@ -217,13 +218,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
         try {
             statelessSessionFactory.withSession(statelessSession -> {
-                processAggregateEmailsByAggregationKey(
-                        aggregationCommand.getAggregationKey(),
-                        aggregationCommand.getStart(),
-                        aggregationCommand.getEnd(),
-                        aggregationCommand.getSubscriptionType(),
-                        // Delete on daily
-                        aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY));
+                processAggregateEmailsByAggregationKey(aggregationCommand);
             });
         } catch (Exception e) {
             LOGGER.info("Error while processing aggregation", e);
@@ -231,7 +226,14 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         }
     }
 
-    private void processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
+    private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand) {
+        final EmailAggregationKey aggregationKey = aggregationCommand.getAggregationKey();
+        final LocalDateTime startTime = aggregationCommand.getStart();
+        final LocalDateTime endTime = aggregationCommand.getEnd();
+        final EmailSubscriptionType emailSubscriptionType = aggregationCommand.getSubscriptionType();
+
+        boolean delete = emailSubscriptionType.equals(DAILY);
+
         final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
 
         TemplateInstance subject;
