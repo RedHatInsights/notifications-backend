@@ -13,17 +13,17 @@ public class Edge implements EmailTemplate {
             return Templates.imageCreationTitle();
         }
         
-            return Templates.updateDeviceTitle();
+        return Templates.updateDeviceTitle();
     }
 
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
-          if (eventType.equals('image-creation')) {
+        if (eventType.equals('image-creation')) {
             return Templates.imageCreationBody();
         }
        
-            return Templates.updateDeviceBody();
-        }
+        return Templates.updateDeviceBody();
+        
     }
 
     @Override
