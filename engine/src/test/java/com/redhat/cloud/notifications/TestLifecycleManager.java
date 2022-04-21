@@ -44,8 +44,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(EGRESS_CHANNEL));
 
         properties.put("reinject.enabled", "true");
-        // TODO NOTIF-381 Remove this when the recipients retrieval from RBAC is removed.
-        properties.put("recipient-provider.use-it-impl", "true");
 
         System.out.println(" -- Running with properties: " + properties);
         return properties;

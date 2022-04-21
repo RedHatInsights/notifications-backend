@@ -70,9 +70,6 @@ public class ITUserServiceTest {
 
         when(itUserService.getUsers(any(ITUserRequest.class))).thenReturn(itUserResponses);
 
-        // TODO NOTIF-381 Remove this when the recipients retrieval from RBAC is removed.
-        rbacRecipientUsersProvider.retrieveUsersFromIt = true;
-
         final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", true);
         assertTrue(someAccountId.get(0).isActive());
 
