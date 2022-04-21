@@ -9,10 +9,9 @@ public class Edge implements EmailTemplate {
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
-       if (eventType.equals("image-creation")) {
+        if (eventType.equals("image-creation")) {
             return Templates.imageCreationTitle();
         }
-        
         return Templates.updateDeviceTitle();
     }
 
@@ -21,7 +20,6 @@ public class Edge implements EmailTemplate {
         if (eventType.equals("image-creation")) {
             return Templates.imageCreationBody();
         }
-       
         return Templates.updateDeviceBody();
         
     }
@@ -42,9 +40,9 @@ public class Edge implements EmailTemplate {
         public static native TemplateInstance updateDeviceTitle();
         
         public static native TemplateInstance imageCreationTitle();
-        
-        public static native TemplateInstance updateDeviceBody();
 
+        public static native TemplateInstance updateDeviceBody();
+        
         public static native TemplateInstance imageCreationBody();
 
     }
