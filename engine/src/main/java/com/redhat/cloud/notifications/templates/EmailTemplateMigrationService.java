@@ -161,24 +161,71 @@ public class EmailTemplateMigrationService {
          * Former src/main/resources/templates/Rbac folder.
          */
         getOrCreateTemplate(warnings, "Rbac/insightsEmailBody", "html", "Rbac Insights email body");
-        /*
-         TODO Include changes from https://github.com/RedHatInsights/notifications-backend/pull/1173 into this code.
         createInstantEmailTemplate(
-                warnings, "console", "rbac", List.of("rh-new-role-available", "rh-platform-default-role-updated", "rh-non-platform-default-role-updated", "custom-role-created", "custom-role-updated", "custom-role-deleted"),
-                "Rbac/roleChangeEmailTitle", "txt", "Rbac role change email title",
-                "Rbac/roleChangeEmailBody", "html", "Rbac role change email body"
+                warnings, "console", "rbac", List.of("rh-new-role-available"),
+                "Rbac/systemRoleAvailableEmailTitle", "txt", "Rbac system role available email title",
+                "Rbac/systemRoleAvailableEmailBody", "html", "Rbac system role available email body"
         );
         createInstantEmailTemplate(
-                warnings, "console", "rbac", List.of("rh-new-role-added-to-default-access", "rh-role-removed-from-default-access", "custom-default-access-updated", "group-created", "group-updated", "group-deleted"),
-                "Rbac/groupChangeEmailTitle", "txt", "Rbac group change email title",
-                "Rbac/groupChangeEmailBody", "html", "Rbac group change email body"
+                warnings, "console", "rbac", List.of("rh-platform-default-role-updated"),
+                "Rbac/platformRoleUpdatedEmailTitle", "txt", "Rbac platform role updated email title",
+                "Rbac/platformRoleUpdatedEmailBody", "html", "Rbac platform role updated email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "console", "rbac", List.of("rh-non-platform-default-role-updated"),
+                "Rbac/nonPlatformRoleUpdatedEmailTitle", "txt", "Rbac non platform role updated email title",
+                "Rbac/nonPlatformRoleUpdatedEmailBody", "html", "Rbac non platform role updated email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "console", "rbac", List.of("custom-role-created"),
+                "Rbac/customRoleCreatedEmailTitle", "txt", "Rbac custom role created email title",
+                "Rbac/customRoleCreatedEmailBody", "html", "Rbac custom role created email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "console", "rbac", List.of("custom-role-updated"),
+                "Rbac/customRoleUpdatedEmailTitle", "txt", "Rbac custom role updated email title",
+                "Rbac/customRoleUpdatedEmailBody", "html", "Rbac custom role updated email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "console", "rbac", List.of("custom-role-deleted"),
+                "Rbac/customRoleDeletedEmailTitle", "txt", "Rbac custom role deleted email title",
+                "Rbac/customRoleDeletedEmailBody", "html", "Rbac custom role deleted email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "console", "rbac", List.of("rh-new-role-added-to-default-access"),
+                "Rbac/roleAddedToPlatformGroupEmailTitle", "txt", "Rbac role added to platform group email title",
+                "Rbac/roleAddedToPlatformGroupEmailBody", "html", "Rbac role added to platform group email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "console", "rbac", List.of("rh-role-removed-from-default-access"),
+                "Rbac/roleRemovedFromPlatformGroupEmailTitle", "txt", "Rbac role removed from platform group email title",
+                "Rbac/roleRemovedFromPlatformGroupEmailBody", "html", "Rbac role removed from platform group email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "console", "rbac", List.of("custom-default-access-updated"),
+                "Rbac/customPlatformGroupUpdatedEmailTitle", "txt", "Rbac custom platform group updated email title",
+                "Rbac/customPlatformGroupUpdatedEmailBody", "html", "Rbac custom platform group updated email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "console", "rbac", List.of("group-created"),
+                "Rbac/customGroupCreatedEmailTitle", "txt", "Rbac custom group created email title",
+                "Rbac/customGroupCreatedEmailBody", "html", "Rbac custom group created email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "console", "rbac", List.of("group-updated"),
+                "Rbac/customGroupUpdatedEmailTitle", "txt", "Rbac custom group updated email title",
+                "Rbac/customGroupUpdatedEmailBody", "html", "Rbac custom group updated email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "console", "rbac", List.of("group-deleted"),
+                "Rbac/customGroupDeletedEmailTitle", "txt", "Rbac custom group deleted email title",
+                "Rbac/customGroupDeletedEmailBody", "html", "Rbac custom group deleted email body"
         );
         createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("platform-default-group-turned-into-custom"),
-                "Rbac/platformGroup2CustomEmailTitle", "txt", "Rbac platform group 2 custom email title",
-                "Rbac/platformGroup2CustomEmailBody", "html", "Rbac platform group 2 custom email body"
+                "Rbac/platformGroupToCustomEmailTitle", "txt", "Rbac platform group to custom email title",
+                "Rbac/platformGroupToCustomEmailBody", "html", "Rbac platform group to custom email body"
         );
-         */
 
         /*
          * Former src/main/resources/templates/Rhosak folder.
