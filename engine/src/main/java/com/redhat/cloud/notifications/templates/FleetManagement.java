@@ -35,7 +35,7 @@ public class FleetManagement implements EmailTemplate {
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return ype == EmailSubscriptionType.INSTANT && (eventType.equals("image-creation") || eventType.equals("update-devices"));
+        return type == EmailSubscriptionType.INSTANT && (eventType.equals("image-creation") || eventType.equals("update-devices"));
     }
 
     @Override
