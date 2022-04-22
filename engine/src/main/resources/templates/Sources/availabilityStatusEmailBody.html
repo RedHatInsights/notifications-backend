@@ -37,7 +37,7 @@
                     </p>
                     <p>
                         {#if action.context.source_id > 0}
-                        For more information please check summary page of <a class="rh-url" href="https://console.redhat.com/settings/sources/detail/{action.context.source_id}"> {action.context.source_name} source</a>.
+                        For more information please check summary page of <a class="rh-url" href="{environment.url('/settings/sources/detail/')}{action.context.source_id}">{action.context.source_name} source</a>.
                         {/if}
                     </p>
                 </td>
