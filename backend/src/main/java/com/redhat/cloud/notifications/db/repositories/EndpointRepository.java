@@ -42,7 +42,7 @@ public class EndpointRepository {
     @Transactional
     public Endpoint createEndpoint(Endpoint endpoint) {
         // Todo: NOTIF-429 backward compatibility change - Remove soon.
-        if (endpoint.getType() == EndpointType.CAMEL) {
+        if (endpoint.getType() == EndpointType.CAMEL && endpoint.getProperties() != null) {
             CamelProperties properties = endpoint.getProperties(CamelProperties.class);
 
             if (endpoint.getSubType() == null && properties.getSubType() == null) {

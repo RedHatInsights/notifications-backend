@@ -20,6 +20,15 @@ public class CompositeEndpointType {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String subType;
 
+    public static CompositeEndpointType fromString(String type) {
+        String[] pieces = type.split(":", 2);
+        if (pieces.length == 1) {
+            return new CompositeEndpointType(EndpointType.valueOf(type.toUpperCase()));
+        } else {
+            return new CompositeEndpointType(EndpointType.valueOf(pieces[0].toUpperCase()), pieces[1]);
+        }
+    }
+
     public CompositeEndpointType() {
 
     }
@@ -30,7 +39,7 @@ public class CompositeEndpointType {
 
     public CompositeEndpointType(EndpointType type, String subType) {
         this.type = type;
-        this.subType = subType;
+        this.subType = subType.toLowerCase();
     }
 
     public EndpointType getType() {
@@ -46,7 +55,7 @@ public class CompositeEndpointType {
     }
 
     public void setSubType(String subType) {
-        this.subType = subType;
+        this.subType = subType == null ? null : subType.toLowerCase();
     }
 
 
