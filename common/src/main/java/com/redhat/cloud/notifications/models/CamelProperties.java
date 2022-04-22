@@ -27,8 +27,6 @@ public class CamelProperties extends EndpointProperties {
     @Size(max = 255)
     private String secretToken; // TODO Should be optional
 
-    // TODO we should basic-auth encode this when receiving and then store in encoded form only.
-    //      likewise for the webhooks case.
     @Convert(converter = BasicAuthenticationConverter.class)
     private BasicAuthentication basicAuthentication;
 

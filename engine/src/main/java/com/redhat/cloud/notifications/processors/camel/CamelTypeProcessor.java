@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.camel;
 
+import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -31,7 +32,6 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.URI;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +113,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
             StringBuilder sb = new StringBuilder(basicAuthentication.getUsername());
             sb.append(":");
             sb.append(basicAuthentication.getPassword());
-            String b64 = Base64.getEncoder().encodeToString(sb.toString().getBytes(UTF_8));
+            String b64 = Base64Utils.encode(sb.toString());
             metaData.put("basicAuth", b64);
         }
 
