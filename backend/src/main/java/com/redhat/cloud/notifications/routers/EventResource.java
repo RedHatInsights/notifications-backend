@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
@@ -22,6 +23,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,20 +63,29 @@ public class EventResource {
             throw new BadRequestException("Invalid 'sortBy' query parameter");
         }
 
-        Set<CompositeEndpointType> compositeTypes = null;
+        Set<EndpointType> basicTypes = Collections.emptySet();
+        Set<CompositeEndpointType> compositeTypes = Collections.emptySet();
 
         if (endpointTypes != null && endpointTypes.size() > 0) {
-            compositeTypes = endpointTypes.stream().map(s -> {
+            basicTypes = new HashSet<>();
+            compositeTypes = new HashSet<>();
+
+            for (String stringEndpointType : endpointTypes) {
                 try {
-                    return CompositeEndpointType.fromString(s);
+                    CompositeEndpointType compositeType = CompositeEndpointType.fromString(stringEndpointType);
+                    if (compositeType.getSubType() == null) {
+                        basicTypes.add(compositeType.getType());
+                    } else {
+                        compositeTypes.add(compositeType);
+                    }
                 } catch (IllegalArgumentException e) {
-                    throw new BadRequestException("Unknown endpoint type: [" + s + "]", e);
+                    throw new BadRequestException("Unknown endpoint type: [" + stringEndpointType + "]", e);
                 }
-            }).collect(Collectors.toSet());
+            }
         }
 
         String accountId = getAccountId(securityContext);
-        List<Event> events = eventRepository.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, compositeTypes, invocationResults, includeActions, limit, offset, sortBy);
+        List<Event> events = eventRepository.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, limit, offset, sortBy);
         List<EventLogEntry> eventLogEntries = events.stream().map(event -> {
             List<EventLogEntryAction> actions;
             if (!includeActions) {
@@ -106,7 +117,7 @@ public class EventResource {
             }
             return entry;
         }).collect(Collectors.toList());
-        Long count = eventRepository.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, compositeTypes, invocationResults);
+        Long count = eventRepository.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults);
 
         Meta meta = new Meta();
         meta.setCount(count);
