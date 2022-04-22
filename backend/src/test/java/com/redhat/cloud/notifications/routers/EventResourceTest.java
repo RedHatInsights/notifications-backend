@@ -413,7 +413,7 @@ public class EventResourceTest extends DbIsolatedTest {
         assertLinks(page.getLinks(), "first", "last");
 
         /*
-         * Test #24
+         * Test #25
          * Account: DEFAULT_ACCOUNT_ID
          * Request: CAMEL:SLACK and EMAIL endpoints
          */
