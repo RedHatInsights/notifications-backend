@@ -123,7 +123,7 @@ public class EventRepository {
             hql += " AND e.created <= :endDate";
         }
 
-        boolean checkEndpointType = (endpointTypes != null && !endpointTypes.isEmpty()) || (compositeEndpointTypes != null && !compositeEndpointTypes.isEmpty()) ;
+        boolean checkEndpointType = (endpointTypes != null && !endpointTypes.isEmpty()) || (compositeEndpointTypes != null && !compositeEndpointTypes.isEmpty());
         boolean checkInvocationResult = invocationResults != null && !invocationResults.isEmpty();
         if (checkEndpointType || checkInvocationResult) {
             List<String> subQueryConditions = new ArrayList<>();
