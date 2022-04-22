@@ -11,7 +11,7 @@ public class FleetManagement implements EmailTemplate {
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (eventType.equals("image-creation")) {
             return Templates.imageCreationTitle();
-        } else if (eventType.equals("update-devices") {
+        } else if (eventType.equals("update-devices")) {
             return Templates.updateDeviceTitle();
         }
         throw new UnsupportedOperationException(String.format(
@@ -24,7 +24,7 @@ public class FleetManagement implements EmailTemplate {
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
          if (eventType.equals("image-creation")) {
             return Templates.imageCreationBody();
-        } else if (eventType.equals("update-devices") {
+        } else if (eventType.equals("update-devices")) {
             return Templates.updateDeviceBody();
         }
         throw new UnsupportedOperationException(String.format(
