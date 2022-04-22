@@ -22,7 +22,7 @@ public class FleetManagement implements EmailTemplate {
 
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
-         if (eventType.equals("image-creation")) {
+        if (eventType.equals("image-creation")) {
             return Templates.imageCreationBody();
         } else if (eventType.equals("update-devices")) {
             return Templates.updateDeviceBody();
