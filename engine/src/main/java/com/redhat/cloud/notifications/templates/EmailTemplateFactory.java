@@ -40,7 +40,7 @@ public class EmailTemplateFactory {
                 case VULNERABILITY:
                     return new Vulnerability();
                 case FLEET_MANAGEMENT:
-                    return new FleetManagement();    
+                    return new FleetManagement();
                 default:
                     break;
             }
