@@ -67,6 +67,10 @@ public class Event {
 
     public Event() { }
 
+    public Event(Action action) {
+        this.action = action;
+    }
+
     public Event(EventType eventType, String payload, Action action) {
         this(action.getAccountId(), eventType);
         this.payload = payload;
@@ -181,10 +185,6 @@ public class Event {
 
     public Action getAction() {
         return action;
-    }
-
-    public void setAction(Action action) {
-        this.action = action;
     }
 
     @Override

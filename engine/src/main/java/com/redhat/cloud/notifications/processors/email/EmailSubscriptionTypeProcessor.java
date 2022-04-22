@@ -220,7 +220,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
         try {
             statelessSessionFactory.withSession(statelessSession -> {
-                processAggregateEmailsByAggregationKey(aggregationCommand);
+                processAggregatedEmails(aggregationCommand);
             });
         } catch (Exception e) {
             LOGGER.info("Error while processing aggregation", e);
@@ -228,7 +228,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         }
     }
 
-    private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand) {
+    private void processAggregatedEmails(AggregationCommand aggregationCommand) {
         final EmailAggregationKey aggregationKey = aggregationCommand.getAggregationKey();
         final LocalDateTime startTime = aggregationCommand.getStart();
         final LocalDateTime endTime = aggregationCommand.getEnd();
@@ -277,19 +277,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             for (Map.Entry<User, Map<String, Object>> aggregation :
                     emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime).entrySet()) {
 
-                Action action = new Action();
-                action.setContext(aggregation.getValue());
-                action.setEvents(List.of());
-                action.setAccountId(aggregationKey.getAccountId());
-                action.setApplication(aggregationKey.getApplication());
-                action.setBundle(aggregationKey.getBundle());
+                Action action = createAction(aggregationKey, aggregation);
 
-                // We don't have a eventtype as this aggregates over multiple event types
-                action.setEventType(null);
-                action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
-
-                Event event = new Event();
-                event.setAction(action);
+                Event event = new Event(action);
 
                 emailSender.sendEmail(aggregation.getKey(), event, subject, body);
             }
@@ -298,5 +288,19 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime);
             }
         }
+    }
+
+    private Action createAction(EmailAggregationKey aggregationKey, Map.Entry<User, Map<String, Object>> aggregation) {
+        Action action = new Action();
+        action.setContext(aggregation.getValue());
+        action.setEvents(List.of());
+        action.setAccountId(aggregationKey.getAccountId());
+        action.setApplication(aggregationKey.getApplication());
+        action.setBundle(aggregationKey.getBundle());
+
+        // We don't have a eventtype as this aggregates over multiple event types
+        action.setEventType(null);
+        action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
+        return action;
     }
 }

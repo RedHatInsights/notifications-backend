@@ -120,8 +120,7 @@ public class EmailTest {
 
         Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application, "My test machine");
 
-        Event event = new Event();
-        event.setAction(emailActionMessage);
+        Event event = new Event(emailActionMessage);
 
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
@@ -228,8 +227,7 @@ public class EmailTest {
 
         emailActionMessage.setAccountId(tenant);
 
-        Event event = new Event();
-        event.setAction(emailActionMessage);
+        Event event = new Event(emailActionMessage);
 
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 

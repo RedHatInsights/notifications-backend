@@ -242,10 +242,7 @@ public class CamelTypeProcessorTest {
                                 .build()
                 )
         );
-
-        Event event = new Event();
-        event.setAction(action);
-        return event;
+        return new Event(action);
     }
 
     private static Endpoint buildCamelEndpoint(String accountId) {

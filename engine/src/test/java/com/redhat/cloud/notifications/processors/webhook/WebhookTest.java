@@ -66,8 +66,7 @@ public class WebhookTest {
         HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
 
         Action webhookActionMessage = buildWebhookAction();
-        Event event = new Event();
-        event.setAction(webhookActionMessage);
+        Event event = new Event(webhookActionMessage);
         Endpoint ep = buildWebhookEndpoint(url);
 
         try {
@@ -130,8 +129,7 @@ public class WebhookTest {
         HttpRequest mockServerRequest = getMockHttpRequest(expectationResponseCallback);
         try {
             Action action = buildWebhookAction();
-            Event event = new Event();
-            event.setAction(action);
+            Event event = new Event(action);
             Endpoint ep = buildWebhookEndpoint(url);
             List<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
             NotificationHistory history = process.get(0);
