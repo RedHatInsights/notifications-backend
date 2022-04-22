@@ -1,1 +1,1 @@
-{action.timestamp.toUtcFormat()} - Availability Status Change in '{action.context.resource_display_name}'
+Availability Status Change - {action.context.resource_display_name}
