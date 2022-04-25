@@ -9,12 +9,10 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class TestHelpers {
 
@@ -36,7 +34,7 @@ public class TestHelpers {
         JsonObject header = new JsonObject();
         header.put("identity", identity);
 
-        return new String(Base64.getEncoder().encode(header.encode().getBytes(UTF_8)), UTF_8);
+        return Base64Utils.encode(header.encode());
     }
 
     public static String encodeTurnpikeIdentityInfo(String username, String... groups) {
@@ -56,7 +54,7 @@ public class TestHelpers {
         JsonObject header = new JsonObject();
         header.put("identity", identity);
 
-        return new String(Base64.getEncoder().encode(header.encode().getBytes(UTF_8)), UTF_8);
+        return Base64Utils.encode(header.encode());
     }
 
     public static Header createRHIdentityHeader(String tenant, String username) {

@@ -35,15 +35,10 @@
                         Hi,
                         <br>
                         <br>
-                        {#if action.events[0].payload.system == "true"}Red Hat{#else}Custom{/if} role is {#if action.events[0].payload.system == "true"} {action.events[0].payload.operation}{#else} available{/if}.
+                        A custom role has been updated by {action.events[0].payload.username}.
                         <br>
-                        {#if action.events[0].payload.operation != "delete"} Check the role <a class="rh-url" href="https://console.redhat.com/settings/rbac/roles/detail/{action.events[0].payload.uuid}/"><b>{action.events[0].payload.name}</b></a>{/if}
+                        Check the updated role <a class="rh-url" href="{environment.url('/settings/rbac/roles/detail/')}{action.events[0].payload.uuid}"><b>{action.events[0].payload.name}</b></a>
                     </p>
-                    {#if action.events[0].payload.operation == "update" and action.events[0].payload.system == "true"}
-                    <p>
-                        The updated Red Hat role is {#if action.events[0].payload.platform_default != "true"}not{/if} in platform default access group.
-                    </p>
-                    {/if}
                 </td>
             </tr>
             <!-- end content block -->

@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.qute.TemplateException;
 import io.quarkus.qute.TemplateInstance;
@@ -16,6 +17,7 @@ import javax.transaction.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.templates.TemplateService.USE_TEMPLATES_FROM_DB_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,6 +33,9 @@ public class DbQuteEngineTest {
     @Inject
     TemplateService templateService;
 
+    @Inject
+    StatelessSessionFactory statelessSessionFactory;
+
     @BeforeEach
     void beforeEach() {
         System.setProperty(USE_TEMPLATES_FROM_DB_KEY, "true");
@@ -44,18 +49,54 @@ public class DbQuteEngineTest {
     @Test
     void testIncludeExistingTemplate() {
         Template outerTemplate = createTemplate("outer-template", "Hello, {#include inner-template /}");
-        createTemplate("inner-template", "World!");
-        String renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
-        assertEquals("Hello, World!", renderedOuterTemplate);
+        Template innerTemplate = createTemplate("inner-template", "World!");
+        statelessSessionFactory.withSession(statelessSession -> {
+            String renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
+            assertEquals("Hello, World!", renderedOuterTemplate);
+        });
+
+        /*
+         * Any change to the inner template should be reflected when the outer template is rendered as long as the old
+         * version of the inner template was removed from the Qute internal cache.
+         */
+        updateTemplateData(innerTemplate.getId(), "Red Hat!");
+        statelessSessionFactory.withSession(statelessSession -> {
+            String renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
+            assertEquals("Hello, World!", renderedOuterTemplate);
+        });
+        templateService.clearTemplates();
+        statelessSessionFactory.withSession(statelessSession -> {
+            String renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
+            assertEquals("Hello, Red Hat!", renderedOuterTemplate);
+        });
+
+        /*
+         * If the inner template is deleted, the outer template rendering should fail as long as the old version of the
+         * inner template was removed from the Qute internal cache.
+         */
+        deleteTemplate(innerTemplate.getId());
+        statelessSessionFactory.withSession(statelessSession -> {
+            String renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
+            assertEquals("Hello, Red Hat!", renderedOuterTemplate);
+        });
+        templateService.clearTemplates();
+        TemplateException e = assertThrows(TemplateException.class, () -> {
+            statelessSessionFactory.withSession(statelessSession -> {
+                templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
+            });
+        });
+        assertEquals("Included template [inner-template] not found in template [outer-template] on line 1", e.getMessage());
     }
 
     @Test
     void testIncludeUnknownTemplate() {
         Template outerTemplate = createTemplate("other-outer-template", "Hello, {#include unknown-inner-template /}");
         TemplateException e = assertThrows(TemplateException.class, () -> {
-            templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
+            statelessSessionFactory.withSession(statelessSession -> {
+                templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
+            });
         });
-        assertEquals("Template not found: unknown-inner-template", e.getMessage());
+        assertEquals("Included template [unknown-inner-template] not found in template [other-outer-template] on line 1", e.getMessage());
     }
 
     @Test
@@ -101,5 +142,18 @@ public class DbQuteEngineTest {
         template.setData(data);
         entityManager.persist(template);
         return template;
+    }
+
+    @Transactional
+    void updateTemplateData(UUID id, String data) {
+        Template template = entityManager.find(Template.class, id);
+        template.setData(data);
+    }
+
+    @Transactional
+    void deleteTemplate(UUID id) {
+        entityManager.createQuery("DELETE FROM Template WHERE id = :id")
+                .setParameter("id", id)
+                .executeUpdate();
     }
 }

@@ -56,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.ReflectionHelper.updateField;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_ENDPOINTS_COUNTER_NAME;
@@ -261,7 +262,7 @@ public class LifecycleITest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(true);
         properties.setSecretToken(secretToken);
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl() + WEBHOOK_MOCK_PATH);
+        properties.setUrl(getMockServerUrl() + WEBHOOK_MOCK_PATH);
         return createEndpoint(accountId, WEBHOOK, "endpoint", "Endpoint", properties);
     }
 
@@ -397,7 +398,7 @@ public class LifecycleITest {
         updateField(
                 emailSender,
                 "bopUrl",
-                MockServerLifecycleManager.getContainerUrl() + EMAIL_SENDER_MOCK_PATH,
+                getMockServerUrl() + EMAIL_SENDER_MOCK_PATH,
                 EmailSender.class
         );
     }

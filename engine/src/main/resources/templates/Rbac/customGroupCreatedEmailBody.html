@@ -35,19 +35,10 @@
                         Hi,
                         <br>
                         <br>
-                        {#if action.events[0].payload.platform_default == "true"}Platform default g{#else}G{/if}roup is {#if action.events[0].payload.system == "true"} {action.events[0].payload.operation}{/if}.
+                        A custom group has been created by {action.events[0].payload.username}.
                         <br>
-                        {#if action.events[0].payload.operation != "delete"} Check the group <a class="rh-url" href="https://console.redhat.com/settings/rbac/groups/detail/{action.events[0].payload.uuid}/"><b>{action.events[0].payload.name}</b></a>{/if}
+                        Check the created group <a class="rh-url" href="{environment.url('/settings/rbac/groups/detail/')}{action.events[0].payload.uuid}"><b>{action.events[0].payload.name}</b></a>
                     </p>
-                    {#if action.events[0].payload.operation == "update" and action.events[0].payload.platform_default == "true"}
-                    <p>
-                        The {#if action.events[0].payload.system == "true"}Red Hat{/if} role{#if action.events[0].payload.roles.size() >1}s are{#else} is{/if} 
-                        {action.events[0].payload.role_operation}ed {#if action.events[0].payload.role_operation == "added"}to{#else}from{/if} 
-                        {#if action.events[0].payload.system != "true"}custom{/if} platform default access group.
-                        <br>
-                        And the role list is {#for role in action.events[0].payload.roles}role{/for}.
-                    </p>
-                    {/if}
                 </td>
             </tr>
             <!-- end content block -->

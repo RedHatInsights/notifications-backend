@@ -6,10 +6,10 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import javax.ws.rs.WebApplicationException;
 import java.util.Map;
 
 /**
@@ -21,16 +21,12 @@ public class BridgeHelper {
     @ConfigProperty(name = "ob.enabled", defaultValue = "false")
     boolean obEnabled;
 
-    @ConfigProperty(name = "ob.kcUser")
-    String kcUser;
-    @ConfigProperty(name = "ob.kcPass")
-    String kcPass;
     @ConfigProperty(name = "ob.bridge.uuid")
     String ourBridge;
-    @ConfigProperty(name = "ob.token.user")
-    String tokenUser;
-    @ConfigProperty(name = "ob.token.pass")
-    String tokenPass;
+    @ConfigProperty(name = "ob.token.client.secret")
+    String clientSecret;
+    @ConfigProperty(name = "ob.token.client.id")
+    String clientId;
 
     @Inject
     @RestClient
@@ -56,9 +52,24 @@ public class BridgeHelper {
             return bridgeInstance;
         }
 
-        String token = getAuthTokenInternal();
+        String token;
 
-        Map<String, String> bridgeMap = apiService.getBridgeById(ourBridge, token);
+        try {
+            token = getAuthTokenInternal();
+        } catch (Exception e) {
+            LOGGER.errorf("Failed to get an auth token: %s", e.getMessage());
+            throw e;
+        }
+
+        Map<String, String> bridgeMap;
+        try {
+            bridgeMap = apiService.getBridgeById(ourBridge, token);
+        } catch (WebApplicationException e) {
+            if (e.getResponse().getStatus() == 404) {
+                LOGGER.errorf("Bridge with id %s not found in the OpenBridge instance. Did you create it?", ourBridge);
+            }
+            throw e;
+        }
 
         String bid = bridgeMap.get("id");
         String ep = bridgeMap.get("endpoint");
@@ -73,12 +84,14 @@ public class BridgeHelper {
         return bridge;
     }
 
-    @ApplicationScoped
+    @RequestScoped
     @Produces
     public BridgeAuth getAuthToken() {
         if (!obEnabled) {
             return new BridgeAuth("- OB not enabled token -");
         }
+
+        LOGGER.debug("In getAuthToken()");
 
         BridgeAuth ba = null;
         try {
@@ -91,26 +104,19 @@ public class BridgeHelper {
     }
 
 
-    // We can cache the token for a while. TODO Let's find out how long exactly.
-    //    The answer to the question lies in the returned tokenMap
+    // We can cache the token for up to 15 minutes
     @CacheResult(cacheName = "kc-cache")
     String getAuthTokenInternal() {
-        String auth = getKcAuthHeader();
 
-        String body = "username=" + tokenUser
-                    + "&password=" + tokenPass
-                    + "&grant_type=password";
+        LOGGER.debug("Fetching a new token from SSO");
 
-        Map<String, Object> tokenMap = authService.getTokenStruct(body, auth);
+        String body = "client_id=" + clientId
+                    + "&client_secret=" + clientSecret
+                    + "&grant_type=client_credentials";
+
+        Map<String, Object> tokenMap = authService.getTokenStructWithClientCredentials(body);
         String authToken = (String) tokenMap.get("access_token");
         return "Bearer " + authToken;
-    }
-
-    private String getKcAuthHeader() {
-        String tmp = kcUser + ":" + kcPass;
-        String encoded = new String(Base64.getEncoder().encode(tmp.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
-
-        return "Basic " + encoded;
     }
 
     public void setObEnabled(boolean obEnabled) {

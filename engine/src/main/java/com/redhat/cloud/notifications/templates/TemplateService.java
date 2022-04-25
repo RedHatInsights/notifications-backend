@@ -9,6 +9,7 @@ import io.quarkus.qute.EvalContext;
 import io.quarkus.qute.ReflectionValueResolver;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.ValueResolver;
+import io.quarkus.scheduler.Scheduled;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
@@ -53,6 +54,18 @@ public class TemplateService {
                 .addValueResolver(buildValueResolver(String.class, "fromIsoLocalDateTime", LocalDateTimeExtension::fromIsoLocalDateTime))
                 .addLocator(dbTemplateLocator)
                 .build();
+    }
+
+    /*
+     * When a DB template is modified (edited or deleted), its old version may still be included into another template
+     * because the Qute engine has an internal cache. This scheduled method clears that cache periodically. We may want
+     * to replace this with a better solution based on a Kafka topic and message broadcasting to all engine pods later.
+     */
+    @Scheduled(every = "${notifications.template-service.scheduled-clear.period:5m}", delayed = "${notifications.template-service.scheduled-clear.initial-delay:5m}")
+    public void clearTemplates() {
+        if (ConfigProvider.getConfig().getValue(USE_TEMPLATES_FROM_DB_KEY, Boolean.class)) {
+            dbEngine.clearTemplates();
+        }
     }
 
     public TemplateInstance compileTemplate(String template, String name) {

@@ -24,7 +24,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "iteration": 1648561613889,
+      "iteration": 1650523810830,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -736,8 +736,20 @@ data:
               "expr": "sum(increase(rbac_users{job=\"notifications-engine-service\"}[5m]))",
               "hide": false,
               "interval": "",
-              "legendFormat": "users",
+              "legendFormat": "total",
               "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "skSy3ZB7k"
+              },
+              "exemplar": true,
+              "expr": "sum(increase(email_processor_recipients_resolved{job=\"notifications-engine-service\"}[5m]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "used",
+              "refId": "B"
             }
           ],
           "thresholds": [],
@@ -3008,7 +3020,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "stage",
               "value": "crcs02ue1-prometheus"
             },
@@ -3037,7 +3049,7 @@ data:
         ]
       },
       "time": {
-        "from": "now-3h",
+        "from": "now-15m",
         "to": "now"
       },
       "timepicker": {
@@ -3068,7 +3080,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 36,
+      "version": 37,
       "weekStart": ""
     }
 kind: ConfigMap

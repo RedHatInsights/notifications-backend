@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.camel;
 
+import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -31,7 +32,6 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.URI;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +113,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
             StringBuilder sb = new StringBuilder(basicAuthentication.getUsername());
             sb.append(":");
             sb.append(basicAuthentication.getPassword());
-            String b64 = Base64.getEncoder().encodeToString(sb.toString().getBytes(UTF_8));
+            String b64 = Base64Utils.encode(sb.toString());
             metaData.put("basicAuth", b64);
         }
 
@@ -149,6 +149,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                 Map<String, Object> details = new HashMap<>();
                 details.put("failure", e.getMessage());
                 history.setDetails(details);
+                LOGGER.infof("SE: Sending event %s failed: %s ", historyId, e.getMessage());
             } finally {
                 endTime = System.currentTimeMillis();
             }
@@ -180,7 +181,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                 .build()
         );
         msg = msg.addMetadata(tracingMetadata);
-        LOGGER.infof("Sending for account %s and history id %s", accountId, historyId);
+        LOGGER.infof("CA Sending for account %s and history id %s", accountId, historyId);
         emitter.send(msg);
 
     }
@@ -199,7 +200,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         ce.put(PROCESSORNAME, extras.get(PROCESSORNAME));
         // TODO add dataschema
 
-        LOGGER.infof("Sending Event with id(%s) for processor with name %s and id=%s",
+        LOGGER.infof("SE: Sending Event with id(%s) for processor with name %s and id=%s",
                 id.toString(), extras.get(PROCESSORNAME), extras.get("processorId"));
 
         body.remove(NOTIF_METADATA_KEY); // Not needed on OB

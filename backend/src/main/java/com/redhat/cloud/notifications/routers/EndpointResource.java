@@ -143,13 +143,8 @@ public class EndpointResource {
 
         if (targetType != null && targetType.size() > 0) {
             Set<CompositeEndpointType> compositeType = targetType.stream().map(s -> {
-                String[] pieces = s.split(":", 2);
                 try {
-                    if (pieces.length == 1) {
-                        return new CompositeEndpointType(EndpointType.valueOf(s.toUpperCase()));
-                    } else {
-                        return new CompositeEndpointType(EndpointType.valueOf(pieces[0].toUpperCase()), pieces[1]);
-                    }
+                    return CompositeEndpointType.fromString(s);
                 } catch (IllegalArgumentException e) {
                     throw new BadRequestException("Unknown endpoint type: [" + s + "]", e);
                 }

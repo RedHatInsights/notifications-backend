@@ -73,15 +73,12 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
     Duration maxBackOff;
 
-    @ConfigProperty(name = "recipient-provider.use-it-impl", defaultValue = "false")
-    public boolean retrieveUsersFromIt;
-
     @Inject
     MeterRegistry meterRegistry;
 
     private Counter rbacFailuresCounter;
 
-    private AtomicInteger rbacUsers = new AtomicInteger(0);
+    private final AtomicInteger rbacUsers = new AtomicInteger(0);
 
     private RetryPolicy<Object> rbacRetryPolicy;
 
@@ -89,7 +86,7 @@ public class RbacRecipientUsersProvider {
     private RetryPolicy<Object> itRetryPolicy;
 
     @PostConstruct
-    public void initCounters() {
+    public void init() {
         rbacFailuresCounter = meterRegistry.counter("rbac.failures");
 
         meterRegistry.gauge("rbac.users", rbacUsers);
@@ -106,6 +103,7 @@ public class RbacRecipientUsersProvider {
                 .build();
 
         itFailuresCounter = meterRegistry.counter("it.failures");
+
         itRetryPolicy = RetryPolicy.builder()
                 .onRetry(event -> itFailuresCounter.increment())
                 .handle(IOException.class, ConnectTimeoutException.class)
@@ -123,36 +121,21 @@ public class RbacRecipientUsersProvider {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
-        if (retrieveUsersFromIt) {
-            List<ITUserResponse> usersPaging;
-            List<ITUserResponse> usersTotal = new ArrayList<>();
+        List<ITUserResponse> usersPaging;
+        List<ITUserResponse> usersTotal = new ArrayList<>();
 
-            int firstResult = 0;
+        int firstResult = 0;
 
-            do {
-                Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
+        do {
+            ITUserRequest request = new ITUserRequest(accountId, adminsOnly, firstResult, maxResultsPerPage);
+            usersPaging = retryOnItError(() -> itUserService.getUsers(request));
+            usersTotal.addAll(usersPaging);
 
-                ITUserRequest request = new ITUserRequest(accountId, adminsOnly, firstResult, maxResultsPerPage);
-                usersPaging = retryOnItError(() -> itUserService.getUsers(request));
-                usersTotal.addAll(usersPaging);
+            firstResult += maxResultsPerPage;
+        } while (usersPaging.size() == maxResultsPerPage);
 
-                firstResult += maxResultsPerPage;
+        users = transformToUser(usersTotal);
 
-                getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
-            } while (usersPaging.size() == maxResultsPerPage);
-
-            users = transformToUser(usersTotal);
-        } else {
-            users = getWithPagination(
-                page -> {
-                    Timer.Sample getUsersPageTimer = Timer.start(meterRegistry);
-                    Page<RbacUser> rbacUsers = retryOnRbacError(() ->
-                            rbacServiceToService.getUsers(accountId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage));
-                    getUsersPageTimer.stop(meterRegistry.timer("rbac.get-users.page", "accountId", accountId));
-                    return rbacUsers;
-                }
-            );
-        }
         getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
         rbacUsers.set(users.size());
 

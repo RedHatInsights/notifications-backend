@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.processors.camel;
 
+import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
-import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -31,12 +31,12 @@ import org.junit.jupiter.api.Test;
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CAMEL_SUBTYPE_HEADER;
@@ -169,7 +169,7 @@ public class CamelTypeProcessorTest {
         assertTrue(details.containsKey("failure"));
 
         // Now set up some mock OB endpoints (simulate valid bridge)
-        String eventsEndpoint = MockServerLifecycleManager.getContainerUrl() + "/events";
+        String eventsEndpoint = getMockServerUrl() + "/events";
         System.out.println("==> Setting events endpoint to " + eventsEndpoint);
         Bridge bridge = new Bridge("321", eventsEndpoint, "my bridge");
         Map<String, String> auth = new HashMap<>();
@@ -270,7 +270,7 @@ public class CamelTypeProcessorTest {
 
     private void checkBasicAuthentication(JsonObject notifMetadata, BasicAuthentication expectedBasicAuth) {
         String credentials = expectedBasicAuth.getUsername() + ":" + expectedBasicAuth.getPassword();
-        String expectedBase64Credentials = new String(Base64.getEncoder().encode(credentials.getBytes(UTF_8)), UTF_8);
+        String expectedBase64Credentials = Base64Utils.encode(credentials);
         assertEquals(expectedBase64Credentials, notifMetadata.getString("basicAuth"));
     }
 

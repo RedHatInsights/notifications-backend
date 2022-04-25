@@ -1,39 +1,34 @@
 package com.redhat.cloud.notifications;
 
-import org.mockserver.client.MockServerClient;
-import org.testcontainers.containers.MockServerContainer;
-import org.testcontainers.utility.DockerImageName;
+import org.mockserver.integration.ClientAndServer;
+
+import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 
 public class MockServerLifecycleManager {
 
-    // Keep the version synced with pom.xml.
-    private static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("mockserver/mockserver").withTag("mockserver-5.5.4");
+    private static final String LOG_LEVEL_KEY = "mockserver.logLevel";
 
-    private static MockServerContainer container;
-    private static String containerUrl;
-    private static MockServerClient client;
+    private static ClientAndServer mockServer;
+    private static String mockServerUrl;
 
     public static void start() {
-        container = new MockServerContainer(DOCKER_IMAGE);
-        container.start();
-        containerUrl = "http://" + container.getContainerIpAddress() + ":" + container.getServerPort();
-        client = new MockServerClient(container.getContainerIpAddress(), container.getServerPort());
+        if (System.getProperty(LOG_LEVEL_KEY) == null) {
+            System.setProperty(LOG_LEVEL_KEY, "OFF");
+            System.out.println("MockServer log is disabled. Use '-D" + LOG_LEVEL_KEY + "=WARN|INFO|DEBUG|TRACE' to enable it.");
+        }
+        mockServer = startClientAndServer();
+        mockServerUrl = "http://localhost:" + mockServer.getPort();
     }
 
-    public static String getContainerUrl() {
-        return containerUrl;
+    public static String getMockServerUrl() {
+        return mockServerUrl;
     }
 
-    public static MockServerClient getClient() {
-        return client;
+    public static ClientAndServer getClient() {
+        return mockServer;
     }
 
     public static void stop() {
-        if (client != null) {
-            client.stop();
-        }
-        if (container != null) {
-            container.stop();
-        }
+        mockServer.stop();
     }
 }

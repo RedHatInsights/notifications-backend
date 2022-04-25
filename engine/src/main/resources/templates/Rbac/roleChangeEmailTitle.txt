@@ -1,1 +1,0 @@
-{action.timestamp.toUtcFormat()} - {#if action.events[0].payload.system == "true"}Red Hat{#else}Custom{/if} role is {#if action.events[0].payload.system == "true"} {action.events[0].payload.operation}{#else} available{/if}.

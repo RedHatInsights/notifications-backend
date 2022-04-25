@@ -144,8 +144,8 @@
         </dependency>
         <dependency>
             <groupId>org.mock-server</groupId>
-            <artifactId>mockserver-client-java</artifactId>
-            <version>${mockserver-client-java.version}</version>
+            <artifactId>mockserver-netty-no-dependencies</artifactId>
+            <version>${mockserver-netty-no-dependencies.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
