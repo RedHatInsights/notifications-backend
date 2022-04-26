@@ -440,8 +440,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
         given()
                 .header(readAccessIdentityHeader)
                 .contentType(JSON)
-                // TODO Remove the body when https://github.com/quarkusio/quarkus/issues/16897 is fixed
-                .body(Json.encode(new BehaviorGroup()))
                 .when()
                 .post("/notifications/behaviorGroups")
                 .then()
@@ -451,8 +449,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .header(readAccessIdentityHeader)
                 .contentType(JSON)
                 .pathParam("id", UUID.randomUUID())
-                // TODO Remove the body when https://github.com/quarkusio/quarkus/issues/16897 is fixed
-                .body(Json.encode(new BehaviorGroup()))
                 .when()
                 .put("/notifications/behaviorGroups/{id}")
                 .then()
@@ -483,5 +479,72 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .get("/notifications/bundles/{bundleId}/behaviorGroups")
                 .then()
                 .statusCode(403);
+    }
+
+    @Test
+    void testUpdateUnknownBehaviorGroupId() {
+        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName("Behavior group");
+        behaviorGroup.setBundleId(UUID.randomUUID()); // Only used for @NotNull validation.
+
+        given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .pathParam("id", UUID.randomUUID())
+                .body(Json.encode(behaviorGroup))
+                .when()
+                .put("/notifications/behaviorGroups/{id}")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void testDeleteUnknownBehaviorGroupId() {
+        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+        given()
+                .header(identityHeader)
+                .pathParam("id", UUID.randomUUID())
+                .when()
+                .delete("/notifications/behaviorGroups/{id}")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void testFindBehaviorGroupsByUnknownBundleId() {
+        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+        given()
+                .header(identityHeader)
+                .pathParam("bundleId", UUID.randomUUID())
+                .when()
+                .get("/notifications/bundles/{bundleId}/behaviorGroups")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId() {
+        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+        given()
+                .header(identityHeader)
+                .pathParam("behaviorGroupId", UUID.randomUUID())
+                .when()
+                .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void testFindBehaviorGroupsByUnknownEventTypeId() {
+        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+        given()
+                .header(identityHeader)
+                .pathParam("eventTypeId", UUID.randomUUID())
+                .when()
+                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+                .then()
+                .statusCode(404);
     }
 }

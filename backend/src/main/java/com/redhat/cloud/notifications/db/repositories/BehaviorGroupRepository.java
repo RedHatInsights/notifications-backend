@@ -75,6 +75,11 @@ public class BehaviorGroupRepository {
     }
 
     public List<BehaviorGroup> findByBundleId(String accountId, UUID bundleId) {
+        Bundle bundle = entityManager.find(Bundle.class, bundleId);
+        if (bundle == null) {
+            throw new NotFoundException("Bundle not found");
+        }
+
         List<BehaviorGroup> behaviorGroups = entityManager.createNamedQuery("findByBundleId", BehaviorGroup.class)
                 .setParameter("accountId", accountId)
                 .setParameter("bundleId", bundleId)
@@ -95,11 +100,7 @@ public class BehaviorGroupRepository {
 
     @Transactional
     boolean update(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehavior) {
-        try {
-            getBehaviorGroup(behaviorGroup.getId(), isDefaultBehavior);
-        } catch (NoResultException e) {
-            return false;
-        }
+        checkBehaviorGroup(behaviorGroup.getId(), isDefaultBehavior);
         String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE id = :id";
 
         if (accountId == null) {
@@ -129,11 +130,7 @@ public class BehaviorGroupRepository {
 
     @Transactional
     public boolean delete(String accountId, UUID behaviorGroupId, boolean isDefaultBehavior) {
-        try {
-            getBehaviorGroup(behaviorGroupId, isDefaultBehavior);
-        } catch (NoResultException e) {
-            return false;
-        }
+        checkBehaviorGroup(behaviorGroupId, isDefaultBehavior);
         String query = "DELETE FROM BehaviorGroup WHERE id = :id";
 
         if (accountId == null) {
@@ -154,11 +151,7 @@ public class BehaviorGroupRepository {
 
     @Transactional
     public boolean linkEventTypeDefaultBehavior(UUID eventTypeId, UUID behaviorGroupId) {
-        try {
-            getBehaviorGroup(behaviorGroupId, true);
-        } catch (NoResultException e) {
-            return false;
-        }
+        checkBehaviorGroup(behaviorGroupId, true);
         String insertQuery = "INSERT INTO event_type_behavior (event_type_id, behavior_group_id, created) " +
                 "VALUES (:eventTypeId, :behaviorGroupId, :created) " +
                 "ON CONFLICT (event_type_id, behavior_group_id) DO NOTHING";
@@ -172,11 +165,7 @@ public class BehaviorGroupRepository {
 
     @Transactional
     public boolean unlinkEventTypeDefaultBehavior(UUID eventTypeId, UUID behaviorGroupId) {
-        try {
-            getBehaviorGroup(behaviorGroupId, true);
-        } catch (NoResultException e) {
-            return false;
-        }
+        checkBehaviorGroup(behaviorGroupId, true);
         String deleteQuery = "DELETE FROM EventTypeBehavior b " +
                 "WHERE eventType.id = :eventTypeId " +
                 "AND id.behaviorGroupId = :behaviorGroupId";
@@ -251,6 +240,11 @@ public class BehaviorGroupRepository {
     }
 
     public List<EventType> findEventTypesByBehaviorGroupId(String accountId, UUID behaviorGroupId) {
+        BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
+        if (behaviorGroup == null) {
+            throw new NotFoundException("Behavior group not found");
+        }
+
         String query = "SELECT e FROM EventType e LEFT JOIN FETCH e.application JOIN e.behaviors b " +
                 "WHERE (b.behaviorGroup.accountId = :accountId OR b.behaviorGroup.accountId IS NULL) AND b.behaviorGroup.id = :behaviorGroupId";
         return entityManager.createQuery(query, EventType.class)
@@ -260,6 +254,11 @@ public class BehaviorGroupRepository {
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEventTypeId(String accountId, UUID eventTypeId, Query limiter) {
+        EventType eventType = entityManager.find(EventType.class, eventTypeId);
+        if (eventType == null) {
+            throw new NotFoundException("Event type not found");
+        }
+
         String query = "SELECT bg FROM BehaviorGroup bg JOIN bg.behaviors b WHERE (bg.accountId = :accountId OR bg.accountId IS NULL) AND b.eventType.id = :eventTypeId";
 
         if (limiter != null) {
@@ -368,10 +367,10 @@ public class BehaviorGroupRepository {
         return behaviorGroups;
     }
 
-    private BehaviorGroup getBehaviorGroup(UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
+    private void checkBehaviorGroup(UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
         BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
         if (behaviorGroup == null) {
-            throw new NoResultException();
+            throw new NotFoundException("Behavior group not found");
         } else {
             if (isDefaultBehaviorGroup) {
                 if (behaviorGroup.getAccountId() != null) {
@@ -382,7 +381,6 @@ public class BehaviorGroupRepository {
                     throw new BadRequestException("Only default behavior groups have a null accountId");
                 }
             }
-            return behaviorGroup;
         }
     }
 }
