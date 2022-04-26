@@ -61,12 +61,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Temporary as Quarkus 2.3.1 is pulling Avro 1.10.2, which overrides the one in the schema project -->
-            <dependency>
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro</artifactId>
-                <version>1.11.0</version>
-            </dependency>
             <dependency>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>${quarkus.platform.artifact-id}</artifactId>
