@@ -189,6 +189,23 @@ def create_endpoint(name, xrhid, properties, ep_type="webhook", ep_subtype= None
     return epid
 
 
+def update_endpoint(name, xrhid, properties):
+    """Updates an endpoint"""
+
+    ep = find_endpoint(name, xrhid)
+    eid = ep['id']
+
+    ep['properties']['extras'] = properties['extras']
+
+    h = {"x-rh-identity": xrhid}
+
+    r = requests.put(integrations_prefix + "/endpoints/" + eid, json=ep, headers=h)
+    print(r.status_code)
+    if r.status_code / 100 != 2:
+        print(r.reason)
+        exit(1)
+
+
 def delete_endpoint(name, xrhid):
     """Removes an endpoint"""
 

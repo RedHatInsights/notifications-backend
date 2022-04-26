@@ -9,12 +9,15 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
+import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.IntegrationTemplate;
+import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeHelper;
@@ -34,6 +37,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -83,6 +88,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Inject
     EndpointResource endpointResource;
+
+    @Inject
+    TemplateRepository templateRepository;
+
+    @Inject
+    EntityManager entityManager;
 
     @Inject
     BridgeHelper bridgeHelper;
@@ -427,6 +438,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
+        setupTransformationTemplate();
+
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(getMockServerUrl());
@@ -491,6 +504,20 @@ public class EndpointResourceTest extends DbIsolatedTest {
             String channel  = extrasObject.getString("channel");
             assertEquals("#notifications", channel);
 
+            ep.getProperties(CamelProperties.class).getExtras().put("channel", "#updated");
+            // Now update
+            responseBody = given()
+                    .header(identityHeader)
+                    .contentType(JSON)
+                    .body(Json.encode(ep))
+                    .when()
+                    .put("/endpoints/" + id)
+                    .then()
+                    .statusCode(200)
+                    .extract().asString();
+
+            assertNotNull(responseBody);
+
         } finally {
 
             given()
@@ -502,6 +529,22 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         MockServerConfig.clearOpenBridgeEndpoints(bridge);
         featureFlipper.setObEnabled(false);
+    }
+
+    @Transactional
+    void setupTransformationTemplate() {
+        // Set up the transformationTemplate in the DB
+        Template template = new Template();
+        template.setName("aTemplate");
+        template.setDescription("what's this?");
+        template.setData("Li la lu");
+        entityManager.persist(template);
+
+        IntegrationTemplate gt = new IntegrationTemplate();
+        gt.setTemplateKind(IntegrationTemplate.TemplateKind.DEFAULT);
+        gt.setIntegrationType("slack");
+        gt.setTheTemplate(template);
+        entityManager.persist(gt);
     }
 
     @Test

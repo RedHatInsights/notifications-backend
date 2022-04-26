@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
+import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
@@ -19,10 +20,12 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
+import com.redhat.cloud.notifications.openbridge.Processor;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
@@ -58,12 +61,13 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
@@ -77,11 +81,14 @@ public class EndpointResource {
 
     public static final String OB_PROCESSOR_ID = "processorId";
     public static final String OB_PROCESSOR_NAME = "processorname"; // Must be all lower for the filter.
-    public static final String SLACK = "slack_sink_0.1";
+    public static final String SLACK_ACTION = "slack_sink_0.1";
 
     private static final List<EndpointType> systemEndpointType = List.of(
             EndpointType.EMAIL_SUBSCRIPTION
     );
+    public static final String SLACK_CHANNEL = "slack_channel";
+    public static final String SLACK = "slack";
+    public static final String SLACK_WEBHOOK_URL = "slack_webhook_url";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -97,6 +104,9 @@ public class EndpointResource {
 
     @Inject
     RbacGroupValidator rbacGroupValidator;
+
+    @Inject
+    TemplateRepository templateRepository;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -155,6 +165,15 @@ public class EndpointResource {
             count = endpointRepository.getEndpointsCount(principal.getAccount(), name);
         }
 
+        for (Endpoint endpoint: endpoints) {
+            if (isForOpenBridge(endpoint)) {
+                // Don't return the processor info, it is internal only
+                CamelProperties cp = endpoint.getProperties(CamelProperties.class);
+                cp.getExtras().remove(OB_PROCESSOR_ID);
+                cp.getExtras().remove(OB_PROCESSOR_NAME);
+            }
+        }
+
         return new EndpointPage(endpoints, new HashMap<>(), new Meta(count));
     }
 
@@ -173,39 +192,25 @@ public class EndpointResource {
             throw new BadRequestException("Properties is required");
         }
 
-        if (featureFlipper.isObEnabled()) {
-            // TODO NOTIF-429 - see similar in EndpointResources#createEndpoint
-            String endpointSubType;
-            if (endpoint.getSubType() != null) {
-                endpointSubType = endpoint.getSubType();
-            } else {
-                if (endpoint.getType() == EndpointType.CAMEL) {
-                    endpointSubType = endpoint.getProperties(CamelProperties.class).getSubType();
-                } else {
-                    endpointSubType = "not-defined"; // No Camel endpoint, so we can skip
-                }
-            }
+        if (isForOpenBridge(endpoint)) {
 
-            if (endpointSubType != null && endpointSubType.equals("slack")) {
-                CamelProperties properties = endpoint.getProperties(CamelProperties.class);
+            try {
+                String bridgeId = bridge.getId();
+                String token = bridgeAuth.getToken();
+                CamelProperties cp = endpoint.getProperties(CamelProperties.class);
+
                 String processorName = "p-" + endpoint.getAccountId() + "-" + UUID.randomUUID();
-                properties.getExtras().put(OB_PROCESSOR_NAME, processorName);
-                String processorId = null;
-                try {
-                    processorId = setupOpenBridgeProcessor(endpoint, properties, processorName);
-                    endpoint.setStatus(EndpointStatus.PROVISIONING);
-                } catch (Exception e) {
-                    Log.warn("Processor setup failed: " + e.getMessage());
-                    endpoint.setStatus(EndpointStatus.FAILED);
-                    throw new InternalServerErrorException("Can't set up the endpoint");
-                }
+                cp.getExtras().put(OB_PROCESSOR_NAME, processorName);
 
-                // TODO find a better place for these, that should not be
-                //       visible to users / OB actions
-                //       See also CamelTypeProcessor#callOpenBridge
-                //            and ReadyCheck#execute
-                properties.getExtras().put(OB_PROCESSOR_ID, processorId);
+                UnaryOperator<Processor> execFun = in -> bridgeApiService.addProcessor(bridgeId, token, in);
+                UnaryOperator<Processor> updateFun = in -> { endpoint.setStatus(EndpointStatus.PROVISIONING); return in; };
+                Processor out = executeObAction(endpoint, updateFun, execFun);
+                // We need to record the id of that processor, as we need it later
 
+                cp.getExtras().put(OB_PROCESSOR_ID, out.getId());
+            } catch (Exception e) {
+                Log.error("Adding a processor failed ", e);
+                throw new InternalServerErrorException();
             }
         }
 
@@ -250,6 +255,12 @@ public class EndpointResource {
         if (endpoint == null) {
             throw new NotFoundException();
         } else {
+            if (isForOpenBridge(endpoint)) {
+                // Don't return the processor info, it is internal only
+                CamelProperties cp = endpoint.getProperties(CamelProperties.class);
+                cp.getExtras().remove(OB_PROCESSOR_ID);
+                cp.getExtras().remove(OB_PROCESSOR_NAME);
+            }
             return endpoint;
         }
     }
@@ -264,30 +275,20 @@ public class EndpointResource {
         EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
         checkSystemEndpoint(endpointType);
 
-        if (featureFlipper.isObEnabled()) {
-            Endpoint e = endpointRepository.getEndpoint(principal.getAccount(), id);
-            if (e != null) {
-                EndpointProperties properties = e.getProperties();
-                if (properties instanceof CamelProperties) {
-                    CamelProperties cp = (CamelProperties) properties;
-                    // Special case wrt OpenBridge
-                    if (e.getSubType().equals("slack")) {
-                        String processorId = cp.getExtras().get(OB_PROCESSOR_ID);
-                        if (processorId != null) { // Should not be null under normal operations.
-                            try {
-                                bridgeApiService.deleteProcessor(bridge.getId(), processorId, bridgeAuth.getToken());
-                            } catch (Exception ex) {
-                                Log.warn("Removal of OB processor failed:" + ex.getMessage());
-                                // Nothing more we can do
-                            }
-                        } else {
-                            Log.warn("ProcessorId was null for endpoint " + id.toString());
-                        }
-                    }
-                }
+        Endpoint ep = endpointRepository.getEndpoint(principal.getAccount(), id);
+        if (isForOpenBridge(ep)) {
+
+            try {
+                UnaryOperator<Processor> execFun = in -> {
+                    bridgeApiService.deleteProcessor(bridge.getId(), in.getId(), bridgeAuth.getToken());
+                    return null;
+                };
+                ep.setStatus(EndpointStatus.DELETING);
+                executeObAction(ep, null, execFun);
+            } catch (Exception ex) {
+                Log.warn("Deletion of processor failed: ", ex);
             }
         }
-
         endpointRepository.deleteEndpoint(principal.getAccount(), id);
 
         return Response.noContent().build();
@@ -337,9 +338,98 @@ public class EndpointResource {
         EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
         // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
         checkSystemEndpoint(endpointType);
+
+        Endpoint ep = endpointRepository.getEndpoint(principal.getAccount(), id);
+        if (isForOpenBridge(ep)) {
+
+            // We need to save the processor name and id, as the incoming endpoint can't have them
+            var ref = new Object() {
+                String channel = null;
+                String processorName;
+                String processorId;
+                String url;
+
+            };
+            EndpointProperties properties = ep.getProperties();
+            if (properties instanceof CamelProperties) {
+                CamelProperties cp = (CamelProperties) properties;
+
+                ref.processorId = cp.getExtras().get(OB_PROCESSOR_ID);
+                ref.processorName = cp.getExtras().get(OB_PROCESSOR_NAME);
+                CamelProperties out = endpoint.getProperties(CamelProperties.class);
+                out.getExtras().put(OB_PROCESSOR_NAME, ref.processorName);
+                out.getExtras().put(OB_PROCESSOR_ID, ref.processorId);
+                ref.channel = out.getExtras().get("channel");
+                ref.url = cp.getUrl();
+            }
+
+            try {
+                UnaryOperator<Processor> updateFun = in -> {
+                    in.getAction().getParameters().put(SLACK_CHANNEL, ref.channel);
+                    in.getAction().getParameters().put(SLACK_WEBHOOK_URL, ref.url);
+                    return in;
+                };
+                UnaryOperator<Processor> execFun = in -> bridgeApiService.updateProcessor(bridge.getId(), in.getId(), bridgeAuth.getToken(), in);
+                ep.setStatus(EndpointStatus.PROVISIONING);
+                Processor out = executeObAction(ep, updateFun, execFun);
+                Log.infof("Endpoint updated to processor %s ", out.toString());
+
+            } catch (Exception ex) {
+                Log.error("Update of processor failed: ", ex);
+                return Response.serverError().build();
+            }
+        }
+
         endpointRepository.updateEndpoint(endpoint);
+
         return Response.ok().build();
     }
+
+    /**
+     * Helper that has some boilerplate code when dealing with OpenBridge, which
+     * then in turn calls the provided functions to perform some work.
+     * @param endpoint Endpoint definition to operate on
+     * @param updateFunc A function that modifies the data structure of a created processor. Can be null
+     * @param executeFunc A function that talks with the remote to perform an action
+     * @return
+     */
+    Processor executeObAction(Endpoint endpoint, UnaryOperator<Processor> updateFunc, UnaryOperator<Processor> executeFunc) {
+        if (endpoint != null) {
+            EndpointProperties properties = endpoint.getProperties();
+            if (properties != null && properties instanceof CamelProperties) {
+                CamelProperties cp = (CamelProperties) properties;
+                // Special case wrt OpenBridge
+                if (endpoint.getSubType().equals(SLACK)) {
+                    String processorId = cp.getExtras().get(OB_PROCESSOR_ID);
+                    Processor p = createProcessor(endpoint);
+                    if (processorId != null) {
+                        p.setId(processorId);
+                    }
+
+                    // First apply changed to processor struct
+                    Processor updated;
+                    if (updateFunc != null) {
+                        updated = updateFunc.apply(p);
+                    } else {
+                        updated = p;
+                    }
+
+                    // Then execute the API
+                    Processor out;
+                    if (executeFunc != null) {
+                        out = executeFunc.apply(updated);
+                    } else {
+                        out = updated;
+                    }
+
+                    return out;
+                }
+            }
+        }
+        return null;
+    }
+
+
 
     @GET
     @Path("/{id}/history")
@@ -448,51 +538,67 @@ public class EndpointResource {
         }
     }
 
-    private String setupOpenBridgeProcessor(Endpoint endpoint, CamelProperties properties, String processorName) {
 
-        Map<String, Object> out = new HashMap<>();
-        out.put("name", processorName);
+    /*
+     * Creates a template processor object from the provided
+     * endpoint.
+     */
+    private Processor createProcessor(Endpoint endpoint) {
 
-        List<Object> filters = new ArrayList<>();
-        out.put("filters", filters);
+        CamelProperties properties = endpoint.getProperties(CamelProperties.class);
+        String processorName = properties.getExtras().get(OB_PROCESSOR_NAME);
+        String processorId = properties.getExtras().get(OB_PROCESSOR_ID);
+
+        Processor out = new Processor(processorName);
+
+        if (processorId != null) {
+            out.setId(processorId);
+        }
+
+        List<Processor.Filter> filters = out.getFilters();
         filters.add(mkFilter("StringEquals", "rhaccount", endpoint.getAccountId()));
         filters.add(mkFilter("StringEquals", OB_PROCESSOR_NAME, processorName));
 
-        Map<String, Object> actionMap = new HashMap<>();
-        out.put("action", actionMap);
+        // The next lines are specific per integration type and need to
+        // be changed accordingly for new types like Splunk or Tower or ...
+        Processor.Action action = new Processor.Action(SLACK_ACTION);
+        Map<String, String> props = action.getParameters();
+        props.put(SLACK_CHANNEL, properties.getExtras().getOrDefault("channel", "#general"));
+        props.put(SLACK_WEBHOOK_URL, properties.getUrl());
 
-        actionMap.put("type", SLACK); // needs to be literally like this to the Slack Action
+        out.setAction(action);
 
-        // A qute template we should get it from DB
-        String template = "Hello from *Notifications* via _OpenBridge_ with {data.events.size()} event{#if data.events.size() > 1}s{/} from Application _{data.application}_ in Bundle _{data.bundle}_\n" +
-                "Events: {data.events} \n" +
-                "{#if data.context.size() > 0} Context is:\n" +
-                "{#each data.context}*{it.key}* -> _{it.value}_\n" +
-                "{/each}{/if}\n" +
-                "Brought to you by :redhat:\n";
-        out.put("transformationTemplate", template);
+        // Get a qute template. First ask for an account specific one. This will fall back to the default if needed.
+        Optional<IntegrationTemplate> gTemplate = templateRepository.findIntegrationTemplate(null,
+                endpoint.getAccountId(),
+                IntegrationTemplate.TemplateKind.ORG,
+                SLACK);
 
-        Map<String, String> props = new HashMap<>();
-        props.put("slack_channel", properties.getExtras().getOrDefault("channel", "#general"));
-        props.put("slack_webhook_url", properties.getUrl());
-        actionMap.put("parameters", props);
-
-        String token = bridgeAuth.getToken();
-
-        Map<String, Object> pInfo = bridgeApiService.addProcessor(bridge.getId(), token, out);
-
-        String processorId = (String) pInfo.get("id");
-
-        return processorId;
-
-    }
-
-    private Map<String, String> mkFilter(String type, String key, String value) {
-        Map<String, String> out = new HashMap<>(3);
-        out.put("type", type);
-        out.put("key", key);
-        out.put("value", value);
+        String template;
+        if (gTemplate.isPresent()) {
+            template = gTemplate.get().getTheTemplate().getData();
+        } else {
+            throw new IllegalStateException("No default template defined for integration ");
+        }
+        out.setTransformationTemplate(template);
         return out;
     }
+
+    private Processor.Filter mkFilter(String type, String key, String value) {
+        Processor.Filter out = new Processor.Filter();
+        out.setType(type);
+        out.setKey(key);
+        out.setValue(value);
+        return out;
+    }
+
+    private boolean isForOpenBridge(Endpoint endpoint) {
+        return featureFlipper.isObEnabled() &&
+                endpoint != null &&
+                endpoint.getType().equals(EndpointType.CAMEL) &&
+                endpoint.getSubType() != null &&
+                endpoint.getSubType().equals(SLACK);
+    }
+
 
 }
