@@ -3,6 +3,7 @@ import './app.css';
 
 import { Alert, AlertVariant, Brand, Page, PageHeader, PageSection, PageSidebar, Spinner } from '@patternfly/react-core';
 import React, { useMemo } from 'react';
+import { style } from 'typestyle';
 
 import { Routes } from '../Routes';
 import { useBundles } from '../services/EventTypes/GetBundles';
@@ -11,6 +12,10 @@ import { useServerInfo } from '../services/ServerInfo';
 import { Navigation } from './Navigation';
 import { PermissionContext } from './PermissionContext';
 import logo from './redhat-logo.svg';
+
+const brandClassName = style({
+    width: 150
+});
 
 type Message = {
     show: false;
@@ -53,7 +58,7 @@ export const App: React.FunctionComponent<unknown> = () => {
 
     const appHeader = <PageHeader
         showNavToggle
-        logo={ <Brand width="150px" src={ logo } alt="Red Hat" /> }
+        logo={ <Brand className={ brandClassName } src={ logo } alt="Red Hat" /> }
         logoProps={ { href: '/internal' } }
         isNavOpen={ isNavOpen }
         onNavToggle={ onNavToggle }
