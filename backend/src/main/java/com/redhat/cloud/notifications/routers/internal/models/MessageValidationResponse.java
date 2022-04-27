@@ -6,11 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MessageErrorValidationResponse {
+public class MessageValidationResponse {
     @NotNull
     private Map<String, List<String>> errors = new HashMap<>();
 
-    public MessageErrorValidationResponse() {
+    public MessageValidationResponse() {
     }
 
     public Map<String, List<String>> getErrors() {
