@@ -7,8 +7,10 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
@@ -49,7 +51,6 @@ import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -366,12 +367,12 @@ public class LifecycleITest {
         action.setApplication(APP_NAME);
         action.setEventType(EVENT_TYPE_NAME);
         action.setTimestamp(LocalDateTime.now());
-        action.setContext(Map.of());
+        action.setContext(new Context.ContextBuilder().build());
         action.setRecipients(List.of());
         action.setEvents(List.of(
-                Event.newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of())
+                new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(new Payload.PayloadBuilder().build())
                         .build()
         ));
 

@@ -5,7 +5,9 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
@@ -29,9 +31,7 @@ import javax.inject.Inject;
 import javax.persistence.NoResultException;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
@@ -331,15 +331,19 @@ public class EventConsumerTest {
         action.setRecipients(List.of());
         action.setEvents(
                 List.of(
-                        com.redhat.cloud.notifications.ingress.Event
-                                .newBuilder()
-                                .setMetadataBuilder(Metadata.newBuilder())
-                                .setPayload(Map.of("k", "v", "k2", "v2", "k3", "v"))
+                        new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                                .withMetadata(new Metadata.MetadataBuilder().build())
+                                .withPayload(new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("k", "v")
+                                        .withAdditionalProperty("k2", "v2")
+                                        .withAdditionalProperty("k3", "v")
+                                        .build()
+                                )
                                 .build()
                 )
         );
 
-        action.setContext(new HashMap<>());
+        action.setContext(new Context.ContextBuilder().build());
         return action;
     }
 

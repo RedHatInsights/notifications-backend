@@ -6,7 +6,9 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -232,13 +234,18 @@ public class CamelTypeProcessorTest {
         action.setTimestamp(LocalDateTime.now());
         action.setAccountId("account-id");
         action.setRecipients(List.of());
-        action.setContext(new HashMap<>());
+        action.setContext(new Context.ContextBuilder().build());
         action.setEvents(
                 List.of(
-                        com.redhat.cloud.notifications.ingress.Event
-                                .newBuilder()
-                                .setMetadataBuilder(Metadata.newBuilder())
-                                .setPayload(Map.of("k1", "v1", "k2", "v2", "k3", "v3"))
+                        new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                                .withMetadata(new Metadata.MetadataBuilder().build())
+                                .withPayload(
+                                        new Payload.PayloadBuilder()
+                                                .withAdditionalProperty("k1", "v1")
+                                                .withAdditionalProperty("k2", "v2")
+                                                .withAdditionalProperty("k3", "v3")
+                                                .build()
+                                )
                                 .build()
                 )
         );
