@@ -36,7 +36,13 @@ export const Navigation: React.FunctionComponent<NavigationProps> = props => {
                     { props.bundles.map(b => (
                         <EnhancedNavItem key={ b.id } to={ linkTo.bundle(b.id) }>{ b.displayName }
                         </EnhancedNavItem>
-                    )) }</NavExpandable>
+                    )) }
+                </NavExpandable>
+                <NavExpandable title="Utils" isExpanded>
+                    <EnhancedNavItem to={ linkTo.messageValidator() }>
+                        Message validator
+                    </EnhancedNavItem>
+                </NavExpandable>
                 <EnhancedNavItem to={ linkTo.email() }>
                     Email templates
                 </EnhancedNavItem>

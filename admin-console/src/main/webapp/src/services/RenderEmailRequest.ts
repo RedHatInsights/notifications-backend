@@ -8,7 +8,7 @@ export type RenderEmailRequest = {
     payload: string;
 }
 
-const actionCreator = (params: RenderEmailRequest) => Operations.InternalServiceRenderEmailTemplate.actionCreator({
+const actionCreator = (params: RenderEmailRequest) => Operations.TemplateResourceRenderEmailTemplate.actionCreator({
     body: {
         subject_template: params.subject,
         body_template: params.body,

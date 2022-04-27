@@ -1,6 +1,6 @@
 import produce from 'immer';
 import { useCallback, useEffect, useState } from 'react';
-import { useClient } from 'react-fetching-library';
+import { QueryResponse, useClient } from 'react-fetching-library';
 import { useUnmountPromise } from 'react-use';
 
 import { Operations } from '../../generated/OpenapiInternal';
@@ -18,7 +18,7 @@ export const useBundles = () => {
         const cQuery = client.query;
         setLoading(true);
 
-        const bundleResponse = await cQuery(Operations.InternalServiceGetBundles.actionCreator());
+        const bundleResponse = await cQuery(Operations.InternalResourceGetBundles.actionCreator());
 
         if (bundleResponse.payload?.status === 200) {
 
@@ -28,10 +28,10 @@ export const useBundles = () => {
                 applications: []
             }));
 
-            const applicationsPromises = [];
+            const applicationsPromises: Array<Promise<QueryResponse<Operations.InternalResourceGetApplications.Payload>>> = [];
             for (const bundle of bundleResponse.payload.value) {
                 if (bundle.id) {
-                    applicationsPromises.push(cQuery(Operations.InternalServiceGetApplications.actionCreator({
+                    applicationsPromises.push(cQuery(Operations.InternalResourceGetApplications.actionCreator({
                         bundleId: bundle.id
                     })));
                 }
