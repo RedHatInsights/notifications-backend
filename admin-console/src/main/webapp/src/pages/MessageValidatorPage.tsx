@@ -5,8 +5,7 @@ import {
     List,
     ListItem,
     PageSection,
-    Split,
-    SplitItem,
+    Stack, StackItem,
     Title
 } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
@@ -114,11 +113,14 @@ export const MessageValidatorPage: React.FunctionComponent = () => {
     return  (
         <>
             <PageSection>
-                <Split>
-                    <SplitItem isFilled>
-                        <Title headingLevel="h1" >Message validator</Title>
-                    </SplitItem>
-                </Split>
+                <Stack>
+                    <StackItem isFilled>
+                        <Title headingLevel="h1" >Notification validator</Title>
+                    </StackItem>
+                    <StackItem>
+                        <span>You can use this utility to verify the notification you are sending is valid and tweak as needed.</span>
+                    </StackItem>
+                </Stack>
             </PageSection>
             <PageSection>
                 <Alert isInline title={ validationMessage } variant={ validationStatus }  />

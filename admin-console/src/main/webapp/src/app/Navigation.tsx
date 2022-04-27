@@ -40,7 +40,7 @@ export const Navigation: React.FunctionComponent<NavigationProps> = props => {
                 </NavExpandable>
                 <NavExpandable title="Utils" isExpanded>
                     <EnhancedNavItem to={ linkTo.messageValidator() }>
-                        Message validator
+                        Notification validator
                     </EnhancedNavItem>
                 </NavExpandable>
                 <EnhancedNavItem to={ linkTo.email() }>
