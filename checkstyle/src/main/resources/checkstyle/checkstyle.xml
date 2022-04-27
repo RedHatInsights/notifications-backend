@@ -80,6 +80,7 @@
 
         <module name="IllegalImport">
             <property name="illegalPkgs" value="junit.framework" />
+            <property name="illegalClasses" value="org.junit.Test" />
         </module>
 
         <!-- Modifier Checks -->
