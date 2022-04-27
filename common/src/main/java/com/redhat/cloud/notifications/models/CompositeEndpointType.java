@@ -7,6 +7,7 @@ import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.Objects;
 
 @Embeddable
@@ -18,6 +19,7 @@ public class CompositeEndpointType {
 
     @Column(name = "endpoint_sub_type")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Size(max = 20)
     private String subType;
 
     public static CompositeEndpointType fromString(String type) {
