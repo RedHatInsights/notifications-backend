@@ -172,9 +172,9 @@ objects:
   kind: CronJob
   metadata:
     name: notifications-db-cleaner-cronjob
-  annotations: 
-    ignore-check.kube-linter.io/no-liveness-probe: "short lived cronjob doesn't need probes"
-    ignore-check.kube-linter.io/no-readiness-probe: "short lived cronjob doesn't need probes"
+    annotations: 
+      ignore-check.kube-linter.io/no-liveness-probe: "short lived cronjob doesn't need probes"
+      ignore-check.kube-linter.io/no-readiness-probe: "short lived cronjob doesn't need probes"
   spec:
     schedule: ${DB_CLEANER_SCHEDULE}
     suspend: ${{DISABLE_DB_CLEANER}}
