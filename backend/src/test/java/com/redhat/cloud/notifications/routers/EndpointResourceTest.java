@@ -242,15 +242,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setDescription("Destined to fail");
         ep.setEnabled(true);
 
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .contentType(JSON);
+        expectReturn400(identityHeader, ep);
 
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
@@ -262,33 +254,35 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(properties);
         ep.setType(null);
 
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(400);
+        expectReturn400(identityHeader, ep);
 
         // Test with incorrect webhook properties
         ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint with incorrect webhook properties");
         properties.setMethod(null);
-
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .contentType(JSON);
+        expectReturn400(identityHeader, ep);
 
         // Type and attributes don't match
         properties.setMethod(HttpType.POST);
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        expectReturn400(identityHeader, ep);
+
+        ep.setName("endpoint with subtype too long");
+        ep.setType(EndpointType.CAMEL);
+        ep.setSubType("something-longer-than-20-chars");
+        expectReturn400(identityHeader, ep);
+    }
+
+    private void expectReturn400(Header identityHeader, Endpoint ep) {
+        given()
+                 .header(identityHeader)
+                 .when()
+                 .contentType(JSON)
+                 .body(Json.encode(ep))
+                 .post("/endpoints")
+                 .then()
+                 .statusCode(400)
+                 .contentType(JSON);
     }
 
     @Test

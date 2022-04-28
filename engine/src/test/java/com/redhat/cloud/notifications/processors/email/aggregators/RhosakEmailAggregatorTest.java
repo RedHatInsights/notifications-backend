@@ -1,8 +1,10 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.templates.Rhosak.Templates;
 import io.quarkus.qute.TemplateInstance;
@@ -179,7 +181,10 @@ class RhosakEmailAggregatorTest {
 
         Action emailActionMessage = new Action();
         aggregator.setStartTime(LocalDateTime.now());
-        emailActionMessage.setContext(aggregator.getContext());
+        Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
+        aggregator.getContext().forEach(contextBuilder::withAdditionalProperty);
+
+        emailActionMessage.setContext(contextBuilder.build());
         String title = dailyTittleTemplateInstance.data("action", emailActionMessage).render();
         assertTrue(title.contains("Red Hat OpenShift Streams for Apache Kafka Daily Report"), "Title must contain RHOSAK related digest info");
         String body = dailyBodyTemplateInstance.data("action", emailActionMessage).data("user", Map.of("firstName", "machi1990", "lastName", "Last Name")).render();
@@ -201,17 +206,20 @@ class RhosakEmailAggregatorTest {
         emailActionMessage.setTimestamp(NOW);
         emailActionMessage.setEventType(DISRUPTION);
 
-        emailActionMessage.setContext(Map.of(
-                "impacted_area", impactedArea
-        ));
+        emailActionMessage.setContext(
+                new Context.ContextBuilder()
+                        .withAdditionalProperty("impacted_area", impactedArea)
+                        .build()
+        );
         emailActionMessage.setEvents(List.of(
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "id", kafkaName,
-                                "name", kafkaName
-                        ))
+                new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(
+                                new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("id", kafkaName)
+                                        .withAdditionalProperty("name", kafkaName)
+                                        .build()
+                        )
                         .build()
         ));
 
@@ -235,18 +243,21 @@ class RhosakEmailAggregatorTest {
         emailActionMessage.setTimestamp(NOW);
         emailActionMessage.setEventType(SCHEDULED_UPGRADE);
 
-        emailActionMessage.setContext(Map.of(
-                "kafka_version", kafkaVersion,
-                "upgrade_time", LocalDateTime.now().toString()
-        ));
+        emailActionMessage.setContext(
+                new Context.ContextBuilder()
+                        .withAdditionalProperty("kafka_version", kafkaVersion)
+                        .withAdditionalProperty("upgrade_time", LocalDateTime.now().toString())
+                        .build()
+        );
         emailActionMessage.setEvents(List.of(
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "id", kafkaName,
-                                "name", kafkaName
-                        ))
+                new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(
+                                new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("id", kafkaName)
+                                        .withAdditionalProperty("name", kafkaName)
+                                        .build()
+                        )
                         .build()
         ));
 

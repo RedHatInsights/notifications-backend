@@ -4,7 +4,9 @@ import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -35,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
@@ -211,18 +212,18 @@ public class EmailTest {
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         emailActionMessage.setEventType(TestHelpers.eventType);
         emailActionMessage.setRecipients(List.of());
-        emailActionMessage.setContext(Map.of(
-                "inventory_id-wrong", "host-01",
-                "system_check_in-wrong", "2020-08-03T15:22:42.199046",
-                "display_name-wrong", "My test machine",
-                "tags-what?", List.of()
-        ));
+        emailActionMessage.setContext(
+                new Context.ContextBuilder()
+                        .withAdditionalProperty("inventory_id-wrong", "host-01")
+                        .withAdditionalProperty("system_check_in-wrong", "2020-08-03T15:22:42.199046")
+                        .withAdditionalProperty("display_name-wrong", "My test machine")
+                        .withAdditionalProperty("tags-what?", List.of())
+                        .build()
+        );
         emailActionMessage.setEvents(List.of(
-                com.redhat.cloud.notifications.ingress.Event.newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "foo", "bar"
-                        ))
+                new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(new Payload.PayloadBuilder().withAdditionalProperty("foo", "bar").build())
                         .build()
         ));
 

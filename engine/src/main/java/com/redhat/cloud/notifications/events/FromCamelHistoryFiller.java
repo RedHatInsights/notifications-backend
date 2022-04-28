@@ -3,8 +3,10 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Encoder;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Parser;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.micrometer.core.instrument.Counter;
@@ -27,7 +29,6 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -95,45 +96,46 @@ public class FromCamelHistoryFiller {
         }
     }
 
-    private void reinjectIfNeeded(Map<String, Object> payload) {
-        if (!enableReInject || (payload.containsKey("successful") && ((Boolean) payload.get("successful")))) {
+    private void reinjectIfNeeded(Map<String, Object> payloadMap) {
+        if (!enableReInject || (payloadMap.containsKey("successful") && ((Boolean) payloadMap.get("successful")))) {
             return;
         }
 
-        String historyId = (String) payload.get("historyId");
+        String historyId = (String) payloadMap.get("historyId");
         log.infof("Notification with id %s was not successful, resubmitting for further processing", historyId);
 
         Endpoint ep = notificationHistoryRepository.getEndpointForHistoryId(historyId);
 
         Event event = new Event();
+        Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
+        payloadMap.forEach(payloadBuilder::withAdditionalProperty);
 
         // TODO augment with details from Endpoint and original event
-        event.setPayload(payload);
+        event.setPayload(payloadBuilder.build());
 
         // Save the original id, as we may need it in the future.
-        Map<String, String> context = new HashMap<>();
-        context.put("original-id", historyId);
+        Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
+        contextBuilder.withAdditionalProperty("original-id", historyId);
         if (ep != null) { // TODO For the current tests. EP should not be null in real life
-            context.put("failed-integration", ep.getName());
+            contextBuilder.withAdditionalProperty("failed-integration", ep.getName());
         }
 
-        Action action = Action.newBuilder()
-                .setBundle("console")
-                .setApplication("notifications")
-                .setEventType("integration-failed")
-                .setAccountId(ep != null ? ep.getAccountId() : "")
-                .setContext(context)
-                .setTimestamp(LocalDateTime.now(ZoneOffset.UTC))
-                .setEvents(Collections.singletonList(event))
-                .setVersion("v1.1.0")
-                .setRecipients(Collections.singletonList(
-                        Recipient.newBuilder()
-                                .setOnlyAdmins(true)
-                                .setIgnoreUserPreferences(true)
+        Action action = new Action.ActionBuilder()
+                .withBundle("console")
+                .withApplication("notifications")
+                .withEventType("integration-failed")
+                .withAccountId(ep != null ? ep.getAccountId() : "")
+                .withContext(contextBuilder.build())
+                .withTimestamp(LocalDateTime.now(ZoneOffset.UTC))
+                .withEvents(Collections.singletonList(event))
+                .withRecipients(Collections.singletonList(
+                        new Recipient.RecipientBuilder()
+                                .withOnlyAdmins(true)
+                                .withIgnoreUserPreferences(true)
                                 .build()))
                 .build();
 
-        String ser = new Encoder().encode(action);
+        String ser = Parser.encode(action);
         // Add the message id in Kafka header for the de-duplicator
         Message<String> message = buildMessageWithId(ser);
         emitter.send(message);
