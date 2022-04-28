@@ -10,9 +10,9 @@ objects:
     name: notifications-aggregator
     labels:
       app: notifications-aggregator
-  annotations: 
-    ignore-check.kube-linter.io/no-liveness-probe: "short lived cronjob doesn't need probes"
-    ignore-check.kube-linter.io/no-readiness-probe: "short lived cronjob doesn't need probes"
+    annotations: 
+      ignore-check.kube-linter.io/no-liveness-probe: "short lived cronjob doesn't need probes"
+      ignore-check.kube-linter.io/no-readiness-probe: "short lived cronjob doesn't need probes"
   spec:
     envName: ${ENV_NAME}
     dependencies:
