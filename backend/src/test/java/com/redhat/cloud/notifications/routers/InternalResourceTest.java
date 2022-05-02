@@ -311,7 +311,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         );
 
         // Update displayName of behavior group 1
-        updateDefaultBehaviorGroup(identity, dbgId1, "Group1", bundleId, true);
+        updateDefaultBehaviorGroup(identity, dbgId1, "Group1", bundleId, true, OK);
         assertEquals(
                 Set.of(
                         Pair.of(dbgId1, "Group1"),
@@ -321,19 +321,22 @@ public class InternalResourceTest extends DbIsolatedTest {
         );
 
         // Delete behaviors
-        deleteDefaultBehaviorGroup(identity, dbgId1, true);
+        deleteDefaultBehaviorGroup(identity, dbgId1, true, OK);
         assertEquals(
                 Set.of(dbgId2),
                 getDefaultBehaviorGroups(identity).stream().map(BehaviorGroup::getId).map(UUID::toString).collect(Collectors.toSet())
         );
-        deleteDefaultBehaviorGroup(identity, dbgId2, true);
+        deleteDefaultBehaviorGroup(identity, dbgId2, true, OK);
         assertEquals(
                 Set.of(),
                 getDefaultBehaviorGroups(identity).stream().map(BehaviorGroup::getId).map(UUID::toString).collect(Collectors.toSet())
         );
 
-        // Deleting again yields false
-        deleteDefaultBehaviorGroup(identity, dbgId1, false);
+        // The default behavior group no longer exists, deleting it again will cause a 404 status.
+        deleteDefaultBehaviorGroup(identity, dbgId1, false, NOT_FOUND);
+
+        // Updating an unknown default behavior group will cause a 404 status.
+        updateDefaultBehaviorGroup(identity, UUID.randomUUID().toString(), "Behavior group", bundleId, false, NOT_FOUND);
     }
 
     @Test
@@ -388,8 +391,8 @@ public class InternalResourceTest extends DbIsolatedTest {
         deleteApp(appIdentity, app1Id, null, FORBIDDEN);
 
         createDefaultBehaviorGroup(appIdentity, NOT_USED, bundleId, FORBIDDEN);
-        updateDefaultBehaviorGroup(appIdentity, defaultBGId, NOT_USED, bundleId, null, FORBIDDEN);
-        deleteDefaultBehaviorGroup(appIdentity, defaultBGId, null, FORBIDDEN);
+        updateDefaultBehaviorGroup(appIdentity, defaultBGId, NOT_USED, bundleId, false, FORBIDDEN);
+        deleteDefaultBehaviorGroup(appIdentity, defaultBGId, false, FORBIDDEN);
 
         // Allowed depending the permissions
         updateApp(appIdentity, bundleId, app1Id, "new-name", NOT_USED, OK);

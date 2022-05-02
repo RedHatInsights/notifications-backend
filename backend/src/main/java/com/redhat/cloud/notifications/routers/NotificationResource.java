@@ -198,7 +198,7 @@ public class NotificationResource {
     @Transactional
     public Boolean deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
         String accountId = getAccountId(sec);
-        return behaviorGroupRepository.delete(accountId, behaviorGroupId, false);
+        return behaviorGroupRepository.delete(accountId, behaviorGroupId);
     }
 
     @PUT
