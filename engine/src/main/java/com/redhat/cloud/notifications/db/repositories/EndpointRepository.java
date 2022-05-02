@@ -74,7 +74,7 @@ public class EndpointRepository {
 
     public List<Endpoint> getTargetEndpoints(String tenant, EventType eventType) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled = TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL)";
+                "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL)";
 
         List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
                 .setParameter("eventType", eventType)
@@ -95,7 +95,7 @@ public class EndpointRepository {
 
     public List<Endpoint> getTargetEmailSubscriptionEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled = TRUE AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL) " +
+                "WHERE e.enabled IS TRUE AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL) " +
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
                 "AND e.compositeType.type = :endpointType";
 
