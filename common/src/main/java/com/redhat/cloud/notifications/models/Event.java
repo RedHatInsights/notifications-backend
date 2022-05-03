@@ -37,6 +37,8 @@ public class Event {
     @Size(max = 50)
     private String accountId;
 
+    private String orgId;
+
     @NotNull
     private UUID bundleId;
 
@@ -113,6 +115,14 @@ public class Event {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
     }
 
     public UUID getBundleId() {
