@@ -26,20 +26,34 @@ export namespace Schemas {
     owner_role?: string | undefined | null;
   };
 
+  export const AggregationEmailTemplate = zodSchemaAggregationEmailTemplate();
+  export type AggregationEmailTemplate = {
+    application?: Application1 | undefined | null;
+    application_id?: UUID | undefined | null;
+    body_template?: Template | undefined | null;
+    body_template_id: UUID;
+    created?: string | undefined | null;
+    id?: UUID | undefined | null;
+    subject_template?: Template | undefined | null;
+    subject_template_id: UUID;
+    subscription_type: EmailSubscriptionType;
+    updated?: string | undefined | null;
+  };
+
   export const Application = zodSchemaApplication();
   export type Application = {
+    display_name: string;
+    id: UUID;
+  };
+
+  export const Application1 = zodSchemaApplication1();
+  export type Application1 = {
     bundle_id: UUID;
     created?: string | undefined | null;
     display_name: string;
     id?: UUID | undefined | null;
     name: string;
     updated?: string | undefined | null;
-  };
-
-  export const Application1 = zodSchemaApplication1();
-  export type Application1 = {
-    display_name: string;
-    id: UUID;
   };
 
   export const BasicAuthentication = zodSchemaBasicAuthentication();
@@ -181,7 +195,7 @@ export namespace Schemas {
 
   export const EventType = zodSchemaEventType();
   export type EventType = {
-    application?: Application | undefined | null;
+    application?: Application1 | undefined | null;
     application_id: UUID;
     description?: string | undefined | null;
     display_name: string;
@@ -191,6 +205,7 @@ export namespace Schemas {
 
   export const Facet = zodSchemaFacet();
   export type Facet = {
+    children?: Array<Facet> | undefined | null;
     displayName: string;
     id: string;
     name: string;
@@ -198,6 +213,19 @@ export namespace Schemas {
 
   export const HttpType = zodSchemaHttpType();
   export type HttpType = 'GET' | 'POST' | 'PUT';
+
+  export const InstantEmailTemplate = zodSchemaInstantEmailTemplate();
+  export type InstantEmailTemplate = {
+    body_template?: Template | undefined | null;
+    body_template_id: UUID;
+    created?: string | undefined | null;
+    event_type?: EventType | undefined | null;
+    event_type_id?: UUID | undefined | null;
+    id?: UUID | undefined | null;
+    subject_template?: Template | undefined | null;
+    subject_template_id: UUID;
+    updated?: string | undefined | null;
+  };
 
   export const InternalApplicationUserPermission =
     zodSchemaInternalApplicationUserPermission();
@@ -216,9 +244,17 @@ export namespace Schemas {
 
   export const InternalUserPermissions = zodSchemaInternalUserPermissions();
   export type InternalUserPermissions = {
-    applications: Array<Application1>;
+    applications: Array<Application>;
     is_admin: boolean;
     roles: Array<string>;
+  };
+
+  export const MessageErrorValidationResponse =
+    zodSchemaMessageErrorValidationResponse();
+  export type MessageErrorValidationResponse = {
+    errors: {
+      [x: string]: Array<string>;
+    };
   };
 
   export const Meta = zodSchemaMeta();
@@ -236,6 +272,8 @@ export namespace Schemas {
       | undefined
       | null;
     endpointId?: UUID | undefined | null;
+    endpointSubType?: string | undefined | null;
+    endpointType?: EndpointType | undefined | null;
     id?: UUID | undefined | null;
     invocationResult: boolean;
     invocationTime: number;
@@ -259,28 +297,6 @@ export namespace Schemas {
     meta: Meta;
   };
 
-  export const RbacRaw = zodSchemaRbacRaw();
-  export type RbacRaw = {
-    data?:
-      | Array<{
-          [x: string]: unknown;
-        }>
-      | undefined
-      | null;
-    links?:
-      | {
-          [x: string]: string;
-        }
-      | undefined
-      | null;
-    meta?:
-      | {
-          [x: string]: number;
-        }
-      | undefined
-      | null;
-  };
-
   export const RenderEmailTemplateRequest =
     zodSchemaRenderEmailTemplateRequest();
   export type RenderEmailTemplateRequest = {
@@ -299,6 +315,7 @@ export namespace Schemas {
   export const RequestEmailSubscriptionProperties =
     zodSchemaRequestEmailSubscriptionProperties();
   export type RequestEmailSubscriptionProperties = {
+    group_id?: UUID | undefined | null;
     only_admins: boolean;
   };
 
@@ -309,6 +326,16 @@ export namespace Schemas {
 
   export const Status = zodSchemaStatus();
   export type Status = 'UP' | 'MAINTENANCE';
+
+  export const Template = zodSchemaTemplate();
+  export type Template = {
+    created?: string | undefined | null;
+    data: string;
+    description: string;
+    id?: UUID | undefined | null;
+    name: string;
+    updated?: string | undefined | null;
+  };
 
   export const UUID = zodSchemaUUID();
   export type UUID = string;
@@ -345,7 +372,33 @@ export namespace Schemas {
       .nonstrict();
   }
 
+  function zodSchemaAggregationEmailTemplate() {
+      return z
+      .object({
+          application: zodSchemaApplication1().optional().nullable(),
+          application_id: zodSchemaUUID().optional().nullable(),
+          body_template: zodSchemaTemplate().optional().nullable(),
+          body_template_id: zodSchemaUUID(),
+          created: z.string().optional().nullable(),
+          id: zodSchemaUUID().optional().nullable(),
+          subject_template: zodSchemaTemplate().optional().nullable(),
+          subject_template_id: zodSchemaUUID(),
+          subscription_type: zodSchemaEmailSubscriptionType(),
+          updated: z.string().optional().nullable()
+      })
+      .nonstrict();
+  }
+
   function zodSchemaApplication() {
+      return z
+      .object({
+          display_name: z.string(),
+          id: zodSchemaUUID()
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaApplication1() {
       return z
       .object({
           bundle_id: zodSchemaUUID(),
@@ -354,15 +407,6 @@ export namespace Schemas {
           id: zodSchemaUUID().optional().nullable(),
           name: z.string(),
           updated: z.string().optional().nullable()
-      })
-      .nonstrict();
-  }
-
-  function zodSchemaApplication1() {
-      return z
-      .object({
-          display_name: z.string(),
-          id: zodSchemaUUID()
       })
       .nonstrict();
   }
@@ -536,7 +580,7 @@ export namespace Schemas {
   function zodSchemaEventType() {
       return z
       .object({
-          application: zodSchemaApplication().optional().nullable(),
+          application: zodSchemaApplication1().optional().nullable(),
           application_id: zodSchemaUUID(),
           description: z.string().optional().nullable(),
           display_name: z.string(),
@@ -549,6 +593,10 @@ export namespace Schemas {
   function zodSchemaFacet() {
       return z
       .object({
+          children: z
+          .array(z.lazy(() => zodSchemaFacet()))
+          .optional()
+          .nullable(),
           displayName: z.string(),
           id: z.string(),
           name: z.string()
@@ -558,6 +606,22 @@ export namespace Schemas {
 
   function zodSchemaHttpType() {
       return z.enum([ 'GET', 'POST', 'PUT' ]);
+  }
+
+  function zodSchemaInstantEmailTemplate() {
+      return z
+      .object({
+          body_template: zodSchemaTemplate().optional().nullable(),
+          body_template_id: zodSchemaUUID(),
+          created: z.string().optional().nullable(),
+          event_type: zodSchemaEventType().optional().nullable(),
+          event_type_id: zodSchemaUUID().optional().nullable(),
+          id: zodSchemaUUID().optional().nullable(),
+          subject_template: zodSchemaTemplate().optional().nullable(),
+          subject_template_id: zodSchemaUUID(),
+          updated: z.string().optional().nullable()
+      })
+      .nonstrict();
   }
 
   function zodSchemaInternalApplicationUserPermission() {
@@ -583,9 +647,17 @@ export namespace Schemas {
   function zodSchemaInternalUserPermissions() {
       return z
       .object({
-          applications: z.array(zodSchemaApplication1()),
+          applications: z.array(zodSchemaApplication()),
           is_admin: z.boolean(),
           roles: z.array(z.string())
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaMessageErrorValidationResponse() {
+      return z
+      .object({
+          errors: z.record(z.array(z.string()))
       })
       .nonstrict();
   }
@@ -604,6 +676,8 @@ export namespace Schemas {
           created: z.string().optional().nullable(),
           details: z.record(z.unknown()).optional().nullable(),
           endpointId: zodSchemaUUID().optional().nullable(),
+          endpointSubType: z.string().optional().nullable(),
+          endpointType: zodSchemaEndpointType().optional().nullable(),
           id: zodSchemaUUID().optional().nullable(),
           invocationResult: z.boolean(),
           invocationTime: z.number().int()
@@ -631,16 +705,6 @@ export namespace Schemas {
       .nonstrict();
   }
 
-  function zodSchemaRbacRaw() {
-      return z
-      .object({
-          data: z.array(z.record(z.unknown())).optional().nullable(),
-          links: z.record(z.string()).optional().nullable(),
-          meta: z.record(z.number().int()).optional().nullable()
-      })
-      .nonstrict();
-  }
-
   function zodSchemaRenderEmailTemplateRequest() {
       return z
       .object({
@@ -663,6 +727,7 @@ export namespace Schemas {
   function zodSchemaRequestEmailSubscriptionProperties() {
       return z
       .object({
+          group_id: zodSchemaUUID().optional().nullable(),
           only_admins: z.boolean()
       })
       .nonstrict();
@@ -678,6 +743,19 @@ export namespace Schemas {
 
   function zodSchemaStatus() {
       return z.enum([ 'UP', 'MAINTENANCE' ]);
+  }
+
+  function zodSchemaTemplate() {
+      return z
+      .object({
+          created: z.string().optional().nullable(),
+          data: z.string(),
+          description: z.string(),
+          id: zodSchemaUUID().optional().nullable(),
+          name: z.string(),
+          updated: z.string().optional().nullable()
+      })
+      .nonstrict();
   }
 
   function zodSchemaUUID() {
@@ -705,7 +783,7 @@ export namespace Schemas {
 
 export namespace Operations {
   // GET /
-  export namespace InternalServiceHttpRoot {
+  export namespace InternalResourceHttpRoot {
     export type Payload =
       | ValidatedResponse<'__Empty', 204, Schemas.__Empty>
       | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
@@ -728,7 +806,7 @@ export namespace Operations {
     };
   }
   // GET /access
-  export namespace InternalPermissionServiceGetAccessList {
+  export namespace InternalPermissionResourceGetAccessList {
     const Response200 = z.array(Schemas.InternalApplicationUserPermission);
     type Response200 = Array<Schemas.InternalApplicationUserPermission>;
     export type Payload =
@@ -753,7 +831,7 @@ export namespace Operations {
     };
   }
   // POST /access
-  export namespace InternalPermissionServiceAddAccess {
+  export namespace InternalPermissionResourceAddAccess {
     export interface Params {
       body: Schemas.AddAccessRequest;
     }
@@ -785,7 +863,7 @@ export namespace Operations {
     };
   }
   // GET /access/me
-  export namespace InternalPermissionServiceGetPermissions {
+  export namespace InternalPermissionResourceGetPermissions {
     export type Payload =
       | ValidatedResponse<
           'InternalUserPermissions',
@@ -816,7 +894,7 @@ export namespace Operations {
     };
   }
   // DELETE /access/{internalRoleAccessId}
-  export namespace InternalPermissionServiceDeleteAccess {
+  export namespace InternalPermissionResourceDeleteAccess {
     export interface Params {
       internalRoleAccessId: Schemas.UUID;
     }
@@ -846,7 +924,7 @@ export namespace Operations {
     };
   }
   // GET /admin
-  export namespace AdminServiceDebugRbac {
+  export namespace AdminResourceDebugRbac {
     const Rhid = z.string();
     type Rhid = string;
     export interface Params {
@@ -879,7 +957,7 @@ export namespace Operations {
     };
   }
   // POST /admin/status
-  export namespace AdminServiceSetAdminDown {
+  export namespace AdminResourceSetAdminDown {
     const Status = z.string();
     type Status = string;
     export interface Params {
@@ -911,14 +989,60 @@ export namespace Operations {
         .build();
     };
   }
+  // PUT /admin/templates/migrate
+  export namespace AdminResourceMigrate {
+    export type Payload =
+      | ValidatedResponse<'__Empty', 204, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './admin/templates/migrate';
+        const query = {} as Record<string, any>;
+        return actionBuilder('PUT', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 204),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // DELETE /admin/templates/migrate
+  export namespace AdminResourceDeleteAllTemplates {
+    export type Payload =
+      | ValidatedResponse<'__Empty', 204, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './admin/templates/migrate';
+        const query = {} as Record<string, any>;
+        return actionBuilder('DELETE', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 204),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
   // POST /applications
-  export namespace InternalServiceCreateApplication {
+  export namespace InternalResourceCreateApplication {
     export interface Params {
       body: Schemas.AddApplicationRequest;
     }
 
     export type Payload =
-      | ValidatedResponse<'Application', 200, Schemas.Application>
+      | ValidatedResponse<'Application1', 200, Schemas.Application1>
       | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
       | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
@@ -931,7 +1055,7 @@ export namespace Operations {
         .data(params.body)
         .config({
             rules: [
-                new ValidateRule(Schemas.Application, 'Application', 200),
+                new ValidateRule(Schemas.Application1, 'Application1', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
                 new ValidateRule(Schemas.__Empty, '__Empty', 403)
             ]
@@ -940,13 +1064,13 @@ export namespace Operations {
     };
   }
   // GET /applications/{appId}
-  export namespace InternalServiceGetApplication {
+  export namespace InternalResourceGetApplication {
     export interface Params {
       appId: Schemas.UUID;
     }
 
     export type Payload =
-      | ValidatedResponse<'Application', 200, Schemas.Application>
+      | ValidatedResponse<'Application1', 200, Schemas.Application1>
       | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
       | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
@@ -961,7 +1085,7 @@ export namespace Operations {
         .queryParams(query)
         .config({
             rules: [
-                new ValidateRule(Schemas.Application, 'Application', 200),
+                new ValidateRule(Schemas.Application1, 'Application1', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
                 new ValidateRule(Schemas.__Empty, '__Empty', 403)
             ]
@@ -970,10 +1094,10 @@ export namespace Operations {
     };
   }
   // PUT /applications/{appId}
-  export namespace InternalServiceUpdateApplication {
+  export namespace InternalResourceUpdateApplication {
     export interface Params {
       appId: Schemas.UUID;
-      body: Schemas.Application;
+      body: Schemas.Application1;
     }
 
     export type Payload =
@@ -1002,7 +1126,7 @@ export namespace Operations {
     };
   }
   // DELETE /applications/{appId}
-  export namespace InternalServiceDeleteApplication {
+  export namespace InternalResourceDeleteApplication {
     const Response200 = z.boolean();
     type Response200 = boolean;
     export interface Params {
@@ -1034,7 +1158,7 @@ export namespace Operations {
     };
   }
   // GET /applications/{appId}/eventTypes
-  export namespace InternalServiceGetEventTypes {
+  export namespace InternalResourceGetEventTypes {
     const Response200 = z.array(Schemas.EventType);
     type Response200 = Array<Schemas.EventType>;
     export interface Params {
@@ -1066,7 +1190,7 @@ export namespace Operations {
     };
   }
   // GET /behaviorGroups/default
-  export namespace InternalServiceGetDefaultBehaviorGroups {
+  export namespace InternalResourceGetDefaultBehaviorGroups {
     const Response200 = z.array(Schemas.BehaviorGroup);
     type Response200 = Array<Schemas.BehaviorGroup>;
     export type Payload =
@@ -1091,7 +1215,7 @@ export namespace Operations {
     };
   }
   // POST /behaviorGroups/default
-  export namespace InternalServiceCreateDefaultBehaviorGroup {
+  export namespace InternalResourceCreateDefaultBehaviorGroup {
     export interface Params {
       body: Schemas.BehaviorGroup;
     }
@@ -1120,7 +1244,7 @@ export namespace Operations {
   }
   // PUT /behaviorGroups/default/{behaviorGroupId}/actions
   // Update the list of actions of a default behavior group.
-  export namespace InternalServiceUpdateDefaultBehaviorGroupActions {
+  export namespace InternalResourceUpdateDefaultBehaviorGroupActions {
     const Body = z.array(Schemas.RequestDefaultBehaviorGroupPropertyList);
     type Body = Array<Schemas.RequestDefaultBehaviorGroupPropertyList>;
     const Response200 = z.string();
@@ -1157,7 +1281,7 @@ export namespace Operations {
   }
   // PUT /behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}
   // Links the default behavior group to the event type.
-  export namespace InternalServiceLinkDefaultBehaviorToEventType {
+  export namespace InternalResourceLinkDefaultBehaviorToEventType {
     const Response200 = z.string();
     type Response200 = string;
     export interface Params {
@@ -1191,7 +1315,7 @@ export namespace Operations {
   }
   // DELETE /behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}
   // Unlinks the default behavior group from the event type.
-  export namespace InternalServiceUnlinkDefaultBehaviorToEventType {
+  export namespace InternalResourceUnlinkDefaultBehaviorToEventType {
     const Response200 = z.string();
     type Response200 = string;
     export interface Params {
@@ -1225,7 +1349,7 @@ export namespace Operations {
   }
   // PUT /behaviorGroups/default/{id}
   // Update a default behavior group.
-  export namespace InternalServiceUpdateDefaultBehaviorGroup {
+  export namespace InternalResourceUpdateDefaultBehaviorGroup {
     const Response200 = z.boolean();
     type Response200 = boolean;
     export interface Params {
@@ -1260,7 +1384,7 @@ export namespace Operations {
   }
   // DELETE /behaviorGroups/default/{id}
   // Deletes a default behavior group.
-  export namespace InternalServiceDeleteDefaultBehaviorGroup {
+  export namespace InternalResourceDeleteDefaultBehaviorGroup {
     const Response200 = z.boolean();
     type Response200 = boolean;
     export interface Params {
@@ -1292,7 +1416,7 @@ export namespace Operations {
     };
   }
   // GET /bundles
-  export namespace InternalServiceGetBundles {
+  export namespace InternalResourceGetBundles {
     const Response200 = z.array(Schemas.Bundle);
     type Response200 = Array<Schemas.Bundle>;
     export type Payload =
@@ -1317,7 +1441,7 @@ export namespace Operations {
     };
   }
   // POST /bundles
-  export namespace InternalServiceCreateBundle {
+  export namespace InternalResourceCreateBundle {
     export interface Params {
       body: Schemas.Bundle;
     }
@@ -1345,7 +1469,7 @@ export namespace Operations {
     };
   }
   // GET /bundles/{bundleId}
-  export namespace InternalServiceGetBundle {
+  export namespace InternalResourceGetBundle {
     export interface Params {
       bundleId: Schemas.UUID;
     }
@@ -1375,7 +1499,7 @@ export namespace Operations {
     };
   }
   // PUT /bundles/{bundleId}
-  export namespace InternalServiceUpdateBundle {
+  export namespace InternalResourceUpdateBundle {
     export interface Params {
       bundleId: Schemas.UUID;
       body: Schemas.Bundle;
@@ -1407,7 +1531,7 @@ export namespace Operations {
     };
   }
   // DELETE /bundles/{bundleId}
-  export namespace InternalServiceDeleteBundle {
+  export namespace InternalResourceDeleteBundle {
     const Response200 = z.boolean();
     type Response200 = boolean;
     export interface Params {
@@ -1439,9 +1563,9 @@ export namespace Operations {
     };
   }
   // GET /bundles/{bundleId}/applications
-  export namespace InternalServiceGetApplications {
-    const Response200 = z.array(Schemas.Application);
-    type Response200 = Array<Schemas.Application>;
+  export namespace InternalResourceGetApplications {
+    const Response200 = z.array(Schemas.Application1);
+    type Response200 = Array<Schemas.Application1>;
     export interface Params {
       bundleId: Schemas.UUID;
     }
@@ -1471,7 +1595,7 @@ export namespace Operations {
     };
   }
   // POST /eventTypes
-  export namespace InternalServiceCreateEventType {
+  export namespace InternalResourceCreateEventType {
     export interface Params {
       body: Schemas.EventType;
     }
@@ -1499,7 +1623,7 @@ export namespace Operations {
     };
   }
   // PUT /eventTypes/{eventTypeId}
-  export namespace InternalServiceUpdateEventType {
+  export namespace InternalResourceUpdateEventType {
     export interface Params {
       eventTypeId: Schemas.UUID;
       body: Schemas.EventType;
@@ -1531,7 +1655,7 @@ export namespace Operations {
     };
   }
   // DELETE /eventTypes/{eventTypeId}
-  export namespace InternalServiceDeleteEventType {
+  export namespace InternalResourceDeleteEventType {
     const Response200 = z.boolean();
     type Response200 = boolean;
     export interface Params {
@@ -1563,7 +1687,7 @@ export namespace Operations {
     };
   }
   // GET /serverInfo
-  export namespace InternalServiceGetServerInfo {
+  export namespace InternalResourceGetServerInfo {
     export type Payload =
       | ValidatedResponse<'ServerInfo', 200, Schemas.ServerInfo>
       | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
@@ -1586,7 +1710,7 @@ export namespace Operations {
     };
   }
   // PUT /status
-  export namespace InternalServiceSetCurrentStatus {
+  export namespace InternalResourceSetCurrentStatus {
     export interface Params {
       body: Schemas.CurrentStatus;
     }
@@ -1613,73 +1737,451 @@ export namespace Operations {
         .build();
     };
   }
-  // PUT /template-engine/render
-  export namespace TemplateEngineClient$$cdiWrapperRender {
+  // GET /templates
+  export namespace TemplateResourceGetAllTemplates {
+    const Response200 = z.array(Schemas.Template);
+    type Response200 = Array<Schemas.Template>;
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './templates';
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // POST /templates
+  export namespace TemplateResourceCreateTemplate {
     export interface Params {
-      body: Schemas.RenderEmailTemplateRequest;
+      body: Schemas.Template;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'Template', 200, Schemas.Template>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates';
+        const query = {} as Record<string, any>;
+        return actionBuilder('POST', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.Template, 'Template', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // GET /templates/email/aggregation
+  export namespace TemplateResourceGetAllAggregationEmailTemplates {
+    const Response200 = z.array(Schemas.AggregationEmailTemplate);
+    type Response200 = Array<Schemas.AggregationEmailTemplate>;
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './templates/email/aggregation';
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // POST /templates/email/aggregation
+  export namespace TemplateResourceCreateAggregationEmailTemplate {
+    export interface Params {
+      body: Schemas.AggregationEmailTemplate;
+    }
+
+    export type Payload =
+      | ValidatedResponse<
+          'AggregationEmailTemplate',
+          200,
+          Schemas.AggregationEmailTemplate
+        >
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates/email/aggregation';
+        const query = {} as Record<string, any>;
+        return actionBuilder('POST', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(
+                    Schemas.AggregationEmailTemplate,
+                    'AggregationEmailTemplate',
+                    200
+                ),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // GET /templates/email/aggregation/application/{appId}
+  export namespace TemplateResourceGetAggregationEmailTemplatesByApplication {
+    const Response200 = z.array(Schemas.AggregationEmailTemplate);
+    type Response200 = Array<Schemas.AggregationEmailTemplate>;
+    export interface Params {
+      appId: Schemas.UUID;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates/email/aggregation/application/{appId}'.replace(
+            '{appId}',
+            params.appId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // GET /templates/email/aggregation/{templateId}
+  export namespace TemplateResourceGetAggregationemailTemplate {
+    export interface Params {
+      templateId: Schemas.UUID;
+    }
+
+    export type Payload =
+      | ValidatedResponse<
+          'AggregationEmailTemplate',
+          200,
+          Schemas.AggregationEmailTemplate
+        >
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates/email/aggregation/{templateId}'.replace(
+            '{templateId}',
+            params.templateId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(
+                    Schemas.AggregationEmailTemplate,
+                    'AggregationEmailTemplate',
+                    200
+                ),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // PUT /templates/email/aggregation/{templateId}
+  export namespace TemplateResourceUpdateAggregationEmailTemplate {
+    export interface Params {
+      templateId: Schemas.UUID;
+      body: Schemas.AggregationEmailTemplate;
     }
 
     export type Payload =
       | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = './template-engine/render';
+        const path = './templates/email/aggregation/{templateId}'.replace(
+            '{templateId}',
+            params.templateId.toString()
+        );
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
         .queryParams(query)
         .data(params.body)
         .config({
-            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
   }
-  // GET /template-engine/subscription_type_supported
-  export namespace TemplateEngineClient$$cdiWrapperIsSubscriptionTypeSupported {
-    const ApplicationName = z.string();
-    type ApplicationName = string;
-    const BundleName = z.string();
-    type BundleName = string;
-    const SubscriptionType = Schemas.EmailSubscriptionType;
-    type SubscriptionType = Schemas.EmailSubscriptionType;
+  // DELETE /templates/email/aggregation/{templateId}
+  export namespace TemplateResourceDeleteAggregationEmailTemplate {
     const Response200 = z.boolean();
     type Response200 = boolean;
     export interface Params {
-      applicationName: ApplicationName;
-      bundleName: BundleName;
-      subscriptionType: SubscriptionType;
+      templateId: Schemas.UUID;
     }
 
     export type Payload =
       | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = './template-engine/subscription_type_supported';
+        const path = './templates/email/aggregation/{templateId}'.replace(
+            '{templateId}',
+            params.templateId.toString()
+        );
         const query = {} as Record<string, any>;
-        if (params.applicationName !== undefined) {
-            query.applicationName = params.applicationName;
-        }
-
-        if (params.bundleName !== undefined) {
-            query.bundleName = params.bundleName;
-        }
-
-        if (params.subscriptionType !== undefined) {
-            query.subscriptionType = params.subscriptionType;
-        }
-
+        return actionBuilder('DELETE', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // GET /templates/email/instant
+  export namespace TemplateResourceGetAllInstantEmailTemplates {
+    const Response200 = z.array(Schemas.InstantEmailTemplate);
+    type Response200 = Array<Schemas.InstantEmailTemplate>;
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './templates/email/instant';
+        const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Response200, 'unknown', 200) ]
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // POST /templates/email/instant
+  export namespace TemplateResourceCreateInstantEmailTemplate {
+    export interface Params {
+      body: Schemas.InstantEmailTemplate;
+    }
+
+    export type Payload =
+      | ValidatedResponse<
+          'InstantEmailTemplate',
+          200,
+          Schemas.InstantEmailTemplate
+        >
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates/email/instant';
+        const query = {} as Record<string, any>;
+        return actionBuilder('POST', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(
+                    Schemas.InstantEmailTemplate,
+                    'InstantEmailTemplate',
+                    200
+                ),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // GET /templates/email/instant/eventType/{eventTypeId}
+  export namespace TemplateResourceGetInstantEmailTemplates {
+    const Response200 = z.array(Schemas.InstantEmailTemplate);
+    type Response200 = Array<Schemas.InstantEmailTemplate>;
+    export interface Params {
+      eventTypeId: Schemas.UUID;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates/email/instant/eventType/{eventTypeId}'.replace(
+            '{eventTypeId}',
+            params.eventTypeId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // GET /templates/email/instant/{templateId}
+  export namespace TemplateResourceGetInstantEmailTemplate {
+    export interface Params {
+      templateId: Schemas.UUID;
+    }
+
+    export type Payload =
+      | ValidatedResponse<
+          'InstantEmailTemplate',
+          200,
+          Schemas.InstantEmailTemplate
+        >
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates/email/instant/{templateId}'.replace(
+            '{templateId}',
+            params.templateId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(
+                    Schemas.InstantEmailTemplate,
+                    'InstantEmailTemplate',
+                    200
+                ),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // PUT /templates/email/instant/{templateId}
+  export namespace TemplateResourceUpdateInstantEmailTemplate {
+    export interface Params {
+      templateId: Schemas.UUID;
+      body: Schemas.InstantEmailTemplate;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates/email/instant/{templateId}'.replace(
+            '{templateId}',
+            params.templateId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('PUT', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // DELETE /templates/email/instant/{templateId}
+  export namespace TemplateResourceDeleteInstantEmailTemplate {
+    const Response200 = z.boolean();
+    type Response200 = boolean;
+    export interface Params {
+      templateId: Schemas.UUID;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates/email/instant/{templateId}'.replace(
+            '{templateId}',
+            params.templateId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('DELETE', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
         })
         .build();
     };
   }
   // POST /templates/email/render
-  export namespace InternalServiceRenderEmailTemplate {
+  export namespace TemplateResourceRenderEmailTemplate {
     const Response200 = z
     .object({
         body: z.string().optional().nullable(),
@@ -1726,8 +2228,102 @@ export namespace Operations {
         .build();
     };
   }
+  // GET /templates/{templateId}
+  export namespace TemplateResourceGetTemplate {
+    export interface Params {
+      templateId: Schemas.UUID;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'Template', 200, Schemas.Template>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates/{templateId}'.replace(
+            '{templateId}',
+            params.templateId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.Template, 'Template', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // PUT /templates/{templateId}
+  export namespace TemplateResourceUpdateTemplate {
+    export interface Params {
+      templateId: Schemas.UUID;
+      body: Schemas.Template;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates/{templateId}'.replace(
+            '{templateId}',
+            params.templateId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('PUT', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
+  // DELETE /templates/{templateId}
+  export namespace TemplateResourceDeleteTemplate {
+    const Response200 = z.boolean();
+    type Response200 = boolean;
+    export interface Params {
+      templateId: Schemas.UUID;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './templates/{templateId}'.replace(
+            '{templateId}',
+            params.templateId.toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('DELETE', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+            ]
+        })
+        .build();
+    };
+  }
   // GET /validation/baet
-  export namespace ValidationEndpointValidate {
+  export namespace ValidationResourceValidate {
     const Application = z.string();
     type Application = string;
     const Bundle = z.string();
@@ -1767,8 +2363,44 @@ export namespace Operations {
         .build();
     };
   }
+  // POST /validation/message
+  export namespace ValidationResourceValidateMessage {
+    const Body = z.string();
+    type Body = string;
+    export interface Params {
+      body: Body;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<
+          'MessageErrorValidationResponse',
+          400,
+          Schemas.MessageErrorValidationResponse
+        >
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './validation/message';
+        const query = {} as Record<string, any>;
+        return actionBuilder('POST', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(
+                    Schemas.MessageErrorValidationResponse,
+                    'MessageErrorValidationResponse',
+                    400
+                )
+            ]
+        })
+        .build();
+    };
+  }
   // GET /version
-  export namespace InternalServiceGetVersion {
+  export namespace InternalResourceGetVersion {
     const Response200 = z.string();
     type Response200 = string;
     export type Payload =

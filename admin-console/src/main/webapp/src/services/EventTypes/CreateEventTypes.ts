@@ -13,7 +13,7 @@ export type CreateEventType = {
 
 const actionCreator =  (params: CreateEventType) => {
     if (params.id === undefined) {
-        return Operations.InternalServiceCreateEventType.actionCreator({
+        return Operations.InternalResourceCreateEventType.actionCreator({
             body: {
                 id: params.id,
                 application_id: params.applicationId,
@@ -25,7 +25,7 @@ const actionCreator =  (params: CreateEventType) => {
         });
     }
 
-    return Operations.InternalServiceUpdateEventType.actionCreator({
+    return Operations.InternalResourceUpdateEventType.actionCreator({
         eventTypeId: params.id,
         body: {
             id: params.id,
