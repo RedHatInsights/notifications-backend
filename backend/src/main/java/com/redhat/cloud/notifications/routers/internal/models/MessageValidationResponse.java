@@ -18,7 +18,6 @@ public class MessageValidationResponse {
     }
 
     public void addError(String field, String message) {
-        this.errors.computeIfAbsent(field, s -> new ArrayList<>());
-        this.errors.get(field).add(message);
+        errors.computeIfAbsent(field, s -> new ArrayList<>()).add(message);
     }
 }
