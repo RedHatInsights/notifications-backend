@@ -1,3 +1,2 @@
 ALTER TABLE email_aggregation
-  ADD COLUMN org_id type text;
-
+  ADD COLUMN org_id text;
