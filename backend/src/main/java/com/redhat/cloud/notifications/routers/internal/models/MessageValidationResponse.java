@@ -10,9 +10,6 @@ public class MessageValidationResponse {
     @NotNull
     private Map<String, List<String>> errors = new HashMap<>();
 
-    public MessageValidationResponse() {
-    }
-
     public Map<String, List<String>> getErrors() {
         return errors;
     }
