@@ -70,13 +70,14 @@ public class Event {
     public Event() { }
 
     public Event(EventType eventType, String payload, Action action) {
-        this(action.getAccountId(), eventType);
+        this(action.getAccountId(), action.getOrgId(), eventType);
         this.payload = payload;
         this.action = action;
     }
 
-    public Event(String accountId, EventType eventType) {
+    public Event(String accountId, String orgId, EventType eventType) {
         this.accountId = accountId;
+        this.orgId = orgId;
         this.eventType = eventType;
         bundleId = eventType.getApplication().getBundle().getId();
         bundleDisplayName = eventType.getApplication().getBundle().getDisplayName();
