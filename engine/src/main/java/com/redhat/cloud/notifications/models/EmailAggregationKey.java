@@ -16,6 +16,10 @@ public class EmailAggregationKey {
     @NotNull
     private String application;
 
+    // TODO why the heck do I need this constructor now?
+    public EmailAggregationKey() {
+    }
+
     public EmailAggregationKey(String accountId, String orgId, String bundle, String application) {
         this.accountId = accountId;
         this.orgId = orgId;
@@ -25,6 +29,10 @@ public class EmailAggregationKey {
 
     public String getAccountId() {
         return accountId;
+    }
+
+    public String getOrgId() {
+        return orgId;
     }
 
     public String getBundle() {
