@@ -1,2 +1,2 @@
 ALTER TABLE public.email_aggregation
-  ALTER COLUMN payload TYPE text;
+  ALTER COLUMN org_id TYPE text;
