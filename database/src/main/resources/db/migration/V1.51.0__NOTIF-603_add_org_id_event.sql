@@ -1,2 +1,2 @@
 ALTER TABLE event
-    ADD COLUMN org_id type text;
+  ALTER COLUMN org_id TYPE text;
