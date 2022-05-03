@@ -21,7 +21,7 @@ export const ListSystemBehaviorGroups: React.FunctionComponent = () => {
             </ChipGroup>
             <ChipGroup>
                 { getSystemBehaviorGroups.payload.value.map(g => (
-                    <Chip isReadOnly key={ g.id }>{ g.displayName }</Chip>
+                    <Chip isReadOnly key={ g.bundleId }>{ g.displayName }</Chip>
                 ))}
             </ChipGroup>
         </React.Fragment>
