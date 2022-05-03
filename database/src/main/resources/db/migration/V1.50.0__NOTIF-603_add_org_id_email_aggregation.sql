@@ -1,2 +1,3 @@
-ALTER TABLE public.email_aggregation
-  ALTER COLUMN org_id TYPE text;
+ALTER TABLE email_aggregation
+  ADD COLUMN org_id type text;
+
