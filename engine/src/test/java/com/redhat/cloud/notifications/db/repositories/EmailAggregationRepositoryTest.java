@@ -28,6 +28,7 @@ public class EmailAggregationRepositoryTest {
 
     private static final ZoneId UTC = ZoneId.of("UTC");
     private static final String ACCOUNT_ID = "123456789";
+    private static final String ORG_ID = "someOrgId";
     private static final String BUNDLE_NAME = "best-bundle";
     private static final String APP_NAME = "awesome-app";
     private static final JsonObject PAYLOAD1 = new JsonObject("{\"foo\":\"bar\"}");
@@ -49,15 +50,15 @@ public class EmailAggregationRepositoryTest {
     void testAllMethods() {
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
-        EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, BUNDLE_NAME, APP_NAME);
+        EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME);
 
         statelessSessionFactory.withSession(statelessSession -> {
             clearEmailAggregations();
-            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
-            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
-            resourceHelpers.addEmailAggregation("other-account", BUNDLE_NAME, APP_NAME, PAYLOAD2);
-            resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2);
-            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation("other-account", ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
 
             List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end);
             assertEquals(2, aggregations.size());
@@ -84,15 +85,15 @@ public class EmailAggregationRepositoryTest {
     @Test
     void addEmailAggregationWithConstraintViolations() {
         statelessSessionFactory.withSession(statelessSession -> {
-            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, null));
-            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, null, PAYLOAD1));
-            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, null, APP_NAME, PAYLOAD1));
-            assertFalse(resourceHelpers.addEmailAggregation(null, BUNDLE_NAME, APP_NAME, PAYLOAD1));
+            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME, null));
+            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, null, PAYLOAD1));
+            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, null, APP_NAME, PAYLOAD1));
+            assertFalse(resourceHelpers.addEmailAggregation(null, ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1));
         });
     }
 
     List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
-        String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.EmailAggregationKey(ea.accountId, ea.bundleName, ea.applicationName) " +
+        String query = "SELECT DISTINCT NEW com.redhat.cloud.notifications.models.EmailAggregationKey(ea.accountId, ea.orgId, ea.bundleName, ea.applicationName) " +
                 "FROM EmailAggregation ea WHERE ea.created > :start AND ea.created <= :end";
         return entityManager.createQuery(query, EmailAggregationKey.class)
                 .setParameter("start", start)

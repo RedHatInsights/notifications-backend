@@ -8,14 +8,17 @@ public class EmailAggregationKey {
     @NotNull
     private String accountId;
 
+    private String orgId;
+
     @NotNull
     private String bundle;
 
     @NotNull
     private String application;
 
-    public EmailAggregationKey(String accountId, String bundle, String application) {
+    public EmailAggregationKey(String accountId, String orgId, String bundle, String application) {
         this.accountId = accountId;
+        this.orgId = orgId;
         this.bundle = bundle;
         this.application = application;
     }
@@ -43,18 +46,19 @@ public class EmailAggregationKey {
         }
 
         EmailAggregationKey that = (EmailAggregationKey) o;
-        return Objects.equals(accountId, that.accountId) && Objects.equals(bundle, that.bundle) && Objects.equals(application, that.application);
+        return Objects.equals(accountId, that.accountId) && Objects.equals(bundle, that.bundle) && Objects.equals(application, that.application) && Objects.equals(orgId, that.orgId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(accountId, bundle, application);
+        return Objects.hash(accountId, orgId, bundle, application);
     }
 
     @Override
     public String toString() {
         return "EmailAggregationKey{" +
                 "accountId='" + accountId + '\'' +
+                ", orgId='" + orgId + '\'' +
                 ", bundle='" + bundle + '\'' +
                 ", application='" + application + '\'' +
                 '}';

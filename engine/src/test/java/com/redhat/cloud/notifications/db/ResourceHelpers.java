@@ -28,9 +28,10 @@ public class ResourceHelpers {
     @Inject
     EntityManager entityManager;
 
-    public Boolean addEmailAggregation(String accountId, String bundleName, String applicationName, JsonObject payload) {
+    public Boolean addEmailAggregation(String accountId, String orgId, String bundleName, String applicationName, JsonObject payload) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setAccountId(accountId);
+        aggregation.setOrgId(orgId);
         aggregation.setBundleName(bundleName);
         aggregation.setApplicationName(applicationName);
         aggregation.setPayload(payload);
