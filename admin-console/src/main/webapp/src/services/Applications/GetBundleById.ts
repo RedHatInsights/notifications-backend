@@ -6,7 +6,7 @@ import { Operations } from '../../generated/OpenapiInternal';
 import { Bundle } from '../../types/Notifications';
 
 const validateResponse = validationResponseTransformer(
-    (payload: Operations.InternalServiceGetBundle.Payload) => {
+    (payload: Operations.InternalResourceGetBundle.Payload) => {
         if (payload.status === 200) {
             const bundleTypes: Bundle = {
                 id: payload.value.id ?? '',
@@ -27,7 +27,7 @@ const validateResponse = validationResponseTransformer(
 );
 
 export const useBundleTypes = (bundleId: string) => {
-    const query = useQuery(Operations.InternalServiceGetBundle.actionCreator({
+    const query = useQuery(Operations.InternalResourceGetBundle.actionCreator({
         bundleId
     }));
 
