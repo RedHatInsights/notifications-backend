@@ -147,7 +147,7 @@ public class RbacRecipientUsersProvider {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
         RbacGroup rbacGroup;
         try {
-            rbacGroup = retryOnRbacError(() -> rbacServiceToService.getGroup(accountId, groupId));
+            rbacGroup = retryOnRbacError(() -> rbacServiceToService.getGroup(accountId, orgId, groupId));
         } catch (ClientWebApplicationException exception) {
             // The group does not exist (or no longer exists - ignore)
             if (exception.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
@@ -164,7 +164,7 @@ public class RbacRecipientUsersProvider {
             users = getWithPagination(page -> {
                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
                 Page<RbacUser> rbacUsers = retryOnRbacError(() ->
-                        rbacServiceToService.getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage));
+                        rbacServiceToService.getGroupUsers(accountId, orgId, groupId, page * rbacElementsPerPage, rbacElementsPerPage));
                 getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "accountId", accountId));
                 return rbacUsers;
             });

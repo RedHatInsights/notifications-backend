@@ -194,6 +194,7 @@ public class RbacRecipientUsersProviderTest {
     private void mockGetGroup(RbacGroup group) {
         when(rbacServiceToService.getGroup(
                 Mockito.eq(accountId),
+                Mockito.eq(orgId),
                 Mockito.eq(group.getUuid())
         )).thenReturn(group);
     }
@@ -201,6 +202,7 @@ public class RbacRecipientUsersProviderTest {
     private void mockNotFoundGroup(UUID groupId) {
         when(rbacServiceToService.getGroup(
                 Mockito.eq(accountId),
+                Mockito.eq(orgId),
                 Mockito.eq(groupId)
         )).thenThrow(new ClientWebApplicationException(404));
     }
@@ -208,6 +210,7 @@ public class RbacRecipientUsersProviderTest {
     private void mockGetGroupUsers(int elements, UUID groupId) {
         when(rbacServiceToService.getGroupUsers(
                 Mockito.eq(accountId),
+                Mockito.eq(orgId),
                 Mockito.eq(groupId),
                 Mockito.anyInt(),
                 Mockito.anyInt()
