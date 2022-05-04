@@ -122,8 +122,9 @@ public class LifecycleITest {
     @Test
     void test() {
         final String accountId = "tenant";
+        final String orgId = "org-id";
         final String username = "user";
-        setupEmailMock(accountId, username);
+        setupEmailMock(accountId, orgId, username);
 
         // First, we need a bundle, an app and an event type. Let's create them!
         Bundle bundle = resourceHelpers.createBundle(BUNDLE_NAME);
@@ -362,6 +363,7 @@ public class LifecycleITest {
     private void emitMockedIngressAction() throws IOException {
         Action action = new Action();
         action.setAccountId("tenant");
+        action.setOrgId("org-id");
         action.setVersion("v1.0.0");
         action.setBundle(BUNDLE_NAME);
         action.setApplication(APP_NAME);
@@ -380,7 +382,7 @@ public class LifecycleITest {
         inMemoryConnector.source("ingress").send(serializedAction);
     }
 
-    private void setupEmailMock(String accountId, String username) {
+    private void setupEmailMock(String accountId, String orgId, String username) {
         Mockito.when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
 
         User user = new User();
@@ -393,6 +395,7 @@ public class LifecycleITest {
 
         Mockito.when(rbacRecipientUsersProvider.getUsers(
                 eq(accountId),
+                eq(orgId),
                 eq(true)
         )).thenReturn(List.of(user));
 

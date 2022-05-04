@@ -40,6 +40,7 @@ public class RbacRecipientUsersProviderTest {
     int maxResultsPerPage;
 
     private final String accountId = "test-account-id";
+    private final String orgId = "test-org-id";
 
     @InjectMock
     @RestClient
@@ -116,7 +117,7 @@ public class RbacRecipientUsersProviderTest {
         mockGetGroup(defaultGroup);
         mockGetUsers(elements, false);
 
-        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, defaultGroup.getUuid());
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, orgId, false, defaultGroup.getUuid());
         assertEquals(elements, users.size());
         for (int i = 0; i < elements; ++i) {
             assertEquals(String.format("username-%d", i), users.get(i).getUsername());
@@ -128,7 +129,7 @@ public class RbacRecipientUsersProviderTest {
         UUID nonExistentGroup = UUID.randomUUID();
         mockNotFoundGroup(nonExistentGroup);
 
-        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, nonExistentGroup);
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, orgId, false, nonExistentGroup);
         assertEquals(0, users.size());
     }
 
@@ -138,7 +139,7 @@ public class RbacRecipientUsersProviderTest {
         int updatedSize = 1323;
         mockGetUsers(initialSize, false);
 
-        List<User> users = rbacRecipientUsersProvider.getUsers(accountId, false);
+        List<User> users = rbacRecipientUsersProvider.getUsers(accountId, orgId, false);
         assertEquals(initialSize, users.size());
         for (int i = 0; i < initialSize; ++i) {
             assertEquals(String.format("username-%d", i), users.get(i).getUsername());
@@ -146,12 +147,12 @@ public class RbacRecipientUsersProviderTest {
 
         mockGetUsers(updatedSize, false);
 
-        users = rbacRecipientUsersProvider.getUsers(accountId, false);
+        users = rbacRecipientUsersProvider.getUsers(accountId, orgId, false);
         // Should still have the initial size because of the cache
         assertEquals(initialSize, users.size());
         clearCached();
 
-        users = rbacRecipientUsersProvider.getUsers(accountId, false);
+        users = rbacRecipientUsersProvider.getUsers(accountId, orgId, false);
         assertEquals(updatedSize, users.size());
     }
 
@@ -167,7 +168,7 @@ public class RbacRecipientUsersProviderTest {
         mockGetGroup(group);
         mockGetGroupUsers(initialSize, group.getUuid());
 
-        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid());
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(accountId, orgId, false, group.getUuid());
         assertEquals(initialSize, users.size());
         for (int i = 0; i < initialSize; ++i) {
             assertEquals(String.format("username-%d", i), users.get(i).getUsername());
@@ -175,12 +176,12 @@ public class RbacRecipientUsersProviderTest {
 
         mockGetGroupUsers(updatedSize, group.getUuid());
 
-        users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid());
+        users = rbacRecipientUsersProvider.getGroupUsers(accountId, orgId, false, group.getUuid());
         // Should still have the initial size because of the cache
         assertEquals(initialSize, users.size());
         clearCached();
 
-        users = rbacRecipientUsersProvider.getGroupUsers(accountId, false, group.getUuid());
+        users = rbacRecipientUsersProvider.getGroupUsers(accountId, orgId, false, group.getUuid());
         assertEquals(updatedSize, users.size());
     }
 

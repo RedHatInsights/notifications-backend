@@ -117,7 +117,7 @@ public class RbacRecipientUsersProvider {
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
-    public List<User> getUsers(String accountId, boolean adminsOnly) {
+    public List<User> getUsers(String accountId, String orgId, boolean adminsOnly) {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
@@ -127,7 +127,7 @@ public class RbacRecipientUsersProvider {
         int firstResult = 0;
 
         do {
-            ITUserRequest request = new ITUserRequest(accountId, adminsOnly, firstResult, maxResultsPerPage);
+            ITUserRequest request = new ITUserRequest(accountId, orgId, adminsOnly, firstResult, maxResultsPerPage);
             usersPaging = retryOnItError(() -> itUserService.getUsers(request));
             usersTotal.addAll(usersPaging);
 
@@ -143,7 +143,7 @@ public class RbacRecipientUsersProvider {
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
-    public List<User> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
+    public List<User> getGroupUsers(String accountId, String orgId, boolean adminOnly, UUID groupId) {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
         RbacGroup rbacGroup;
         try {
@@ -159,7 +159,7 @@ public class RbacRecipientUsersProvider {
 
         List<User> users;
         if (rbacGroup.isPlatformDefault()) {
-            users = getUsers(accountId, adminOnly);
+            users = getUsers(accountId, orgId, adminOnly);
         } else {
             users = getWithPagination(page -> {
                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);

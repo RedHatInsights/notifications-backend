@@ -10,7 +10,7 @@ public class ITUserRequest {
     public ITUserRequestBy by;
     public Include include;
 
-    public ITUserRequest(String accountId, boolean adminsOnly, int firstResult, int maxResults) {
+    public ITUserRequest(String accountId, String orgId, boolean adminsOnly, int firstResult, int maxResults) {
         final ITUserRequestBy by = new ITUserRequestBy();
         AllOf allOf = new AllOf();
         allOf.status = "enabled";
