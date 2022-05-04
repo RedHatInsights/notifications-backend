@@ -173,7 +173,7 @@ public class RbacRecipientUsersProvider {
                 users = users.stream().filter(User::isAdmin).collect(Collectors.toList());
             }
         }
-        getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
+        getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountId, "orgId", orgId, "users", String.valueOf(users.size())));
         return users;
     }
 
