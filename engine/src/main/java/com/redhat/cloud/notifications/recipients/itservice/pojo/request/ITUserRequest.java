@@ -14,6 +14,8 @@ public class ITUserRequest {
         final ITUserRequestBy by = new ITUserRequestBy();
         AllOf allOf = new AllOf();
         allOf.status = "enabled";
+
+        // TODO replace the ebsAccountNumber with orgId. Means: replace this query object so it matches the expectec it user service query.
         allOf.ebsAccountNumber = accountId;
 
         if (adminsOnly) {
