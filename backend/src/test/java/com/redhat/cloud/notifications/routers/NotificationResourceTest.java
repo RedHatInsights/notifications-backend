@@ -55,7 +55,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
      */
 
     private static final String TENANT = "NotificationServiceTest";
-    private static final String ORGI_ID = "NotificationServiceTestOrgId";
+    private static final String ORG_ID = "NotificationServiceTestOrgId";
     private static final String USERNAME = "user";
 
     @Inject
@@ -82,7 +82,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Test
     void testEventTypeFetching() {
         helpers.createTestAppAndEventTypes();
-        Header identityHeader = initRbacMock(TENANT, ORGI_ID, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         // no offset
         Response response = given()
@@ -157,7 +157,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myOtherTesterApplicationId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getId();
-        Header identityHeader = initRbacMock(TENANT, ORGI_ID, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
@@ -187,7 +187,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myBundleId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getBundleId();
 
-        Header identityHeader = initRbacMock(TENANT, ORGI_ID, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
@@ -218,7 +218,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
         UUID myOtherTesterApplicationId = app.getId();
         UUID myBundleId = app.getBundleId();
-        Header identityHeader = initRbacMock(TENANT, ORGI_ID, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
