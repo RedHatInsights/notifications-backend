@@ -186,7 +186,7 @@ public class BehaviorGroupRepository {
         // First, let's make sure the event type exists.
         EventType eventType = entityManager.find(EventType.class, eventTypeId);
         if (eventType == null) {
-            return false;
+            throw new NotFoundException("Event type not found");
         } else {
 
             // An event type should only be linked to behavior groups from the same bundle.

@@ -547,4 +547,16 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(404);
     }
+
+    @Test
+    void testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId() {
+        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+        given()
+                .header(identityHeader)
+                .pathParam("endpointId", UUID.randomUUID())
+                .when()
+                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+                .then()
+                .statusCode(404);
+    }
 }
