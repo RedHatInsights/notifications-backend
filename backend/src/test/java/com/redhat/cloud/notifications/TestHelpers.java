@@ -8,11 +8,12 @@ import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 
 public class TestHelpers {
 
-    public static String encodeRHIdentityInfo(String tenant, String username) {
+    public static String encodeRHIdentityInfo(String tenant, String orgId, String username) {
         JsonObject identity = new JsonObject();
         JsonObject user = new JsonObject();
         user.put("username", username);
         identity.put("account_number", tenant);
+        identity.put("org_id", orgId);
         identity.put("user", user);
         identity.put("type", "User");
         JsonObject header = new JsonObject();

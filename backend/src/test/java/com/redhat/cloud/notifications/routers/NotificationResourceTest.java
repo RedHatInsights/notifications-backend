@@ -55,6 +55,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
      */
 
     private static final String TENANT = "NotificationServiceTest";
+    private static final String ORGI_ID = "NotificationServiceTestOrgId";
     private static final String USERNAME = "user";
 
     @Inject
@@ -72,8 +73,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
         MockServerConfig.clearRbac();
     }
 
-    private Header initRbacMock(String tenant, String username, RbacAccess access) {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
+    private Header initRbacMock(String tenant, String orgId, String username, RbacAccess access) {
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
@@ -81,7 +82,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Test
     void testEventTypeFetching() {
         helpers.createTestAppAndEventTypes();
-        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORGI_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         // no offset
         Response response = given()
@@ -156,7 +157,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myOtherTesterApplicationId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getId();
-        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORGI_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
@@ -186,7 +187,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myBundleId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getBundleId();
 
-        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORGI_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
@@ -217,7 +218,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
         UUID myOtherTesterApplicationId = app.getId();
         UUID myBundleId = app.getBundleId();
-        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORGI_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
@@ -246,7 +247,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Test
     void testGetEventTypesAffectedByEndpoint() {
         String tenant = "testGetEventTypesAffectedByEndpoint";
-        Header identityHeader = initRbacMock(tenant, "user", FULL_ACCESS);
+        String orgId = "testGetEventTypesAffectedByEndpointOrgId";
+        Header identityHeader = initRbacMock(tenant, orgId, "user", FULL_ACCESS);
         UUID bundleId = helpers.createTestAppAndEventTypes();
         UUID behaviorGroupId1 = helpers.createBehaviorGroup(tenant, "behavior-group-1", bundleId).getId();
         UUID behaviorGroupId2 = helpers.createBehaviorGroup(tenant, "behavior-group-2", bundleId).getId();
@@ -325,7 +327,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testGetApplicationFacets() {
-        Header identityHeader = initRbacMock("test", "user", READ_ACCESS);
+        Header identityHeader = initRbacMock("test", "test2", "user", READ_ACCESS);
         List<Facet> applications = given()
                 .header(identityHeader)
                 .when()
@@ -355,7 +357,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Test
     void testGetBundlesFacets() {
         // no children by default
-        Header identityHeader = initRbacMock("test", "user", READ_ACCESS);
+        Header identityHeader = initRbacMock("test", "test2", "user", READ_ACCESS);
         List<Facet> bundles = given()
                 .header(identityHeader)
                 .when()
@@ -393,8 +395,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testInsufficientPrivileges() {
-        Header noAccessIdentityHeader = initRbacMock("tenant", "noAccess", NO_ACCESS);
-        Header readAccessIdentityHeader = initRbacMock("tenant", "readAccess", READ_ACCESS);
+        Header noAccessIdentityHeader = initRbacMock("tenant", "orgId", "noAccess", NO_ACCESS);
+        Header readAccessIdentityHeader = initRbacMock("tenant", "orgId", "readAccess", READ_ACCESS);
 
         given()
                 .header(noAccessIdentityHeader)
@@ -483,7 +485,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testUpdateUnknownBehaviorGroupId() {
-        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
 
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName("Behavior group");
@@ -502,7 +504,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testDeleteUnknownBehaviorGroupId() {
-        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
         given()
                 .header(identityHeader)
                 .pathParam("id", UUID.randomUUID())
@@ -514,7 +516,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testFindBehaviorGroupsByUnknownBundleId() {
-        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
         given()
                 .header(identityHeader)
                 .pathParam("bundleId", UUID.randomUUID())
@@ -526,7 +528,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId() {
-        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
         given()
                 .header(identityHeader)
                 .pathParam("behaviorGroupId", UUID.randomUUID())
@@ -538,7 +540,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testFindBehaviorGroupsByUnknownEventTypeId() {
-        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
         given()
                 .header(identityHeader)
                 .pathParam("eventTypeId", UUID.randomUUID())

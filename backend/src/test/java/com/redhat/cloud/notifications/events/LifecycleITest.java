@@ -78,8 +78,8 @@ public class LifecycleITest extends DbIsolatedTest {
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
-    private Header initRbacMock(String tenant, String username, MockServerConfig.RbacAccess access) {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
+    private Header initRbacMock(String tenant, String orgId, String username, RbacAccess access) {
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
@@ -104,9 +104,7 @@ public class LifecycleITest extends DbIsolatedTest {
         RequestEmailSubscriptionProperties userEmailEndpointRequest = new RequestEmailSubscriptionProperties();
 
         // Identity header used for all public APIs calls. Internal APIs calls need a different token.
-        // TODO should I add the orgId here as well?
-        // TODO check the RH Identity header
-        Header identityHeader = initRbacMock(accountId, username, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(accountId, orgId, username, RbacAccess.FULL_ACCESS);
         Header turnpikeIdentityHeader = createTurnpikeIdentityHeader("admin", adminRole);
 
         // First, we need a bundle, an app and an event type. Let's create them!
