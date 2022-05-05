@@ -1296,7 +1296,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(is("Unknown endpoint type: [bar]"));
     }
 
-    //    @Test
+    @Test
     void testConnectionCount() {
         String tenant = "count";
         String orgId = "count2";
