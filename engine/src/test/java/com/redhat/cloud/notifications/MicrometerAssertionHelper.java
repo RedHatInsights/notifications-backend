@@ -33,6 +33,12 @@ public class MicrometerAssertionHelper {
         }
     }
 
+    public void assertCounterIncrement(String counterName, double expectedIncrement, String... tags) {
+        double actualIncrement = registry.counter(counterName, tags).count() - counterValuesBeforeTest.getOrDefault(counterName + tags, 0D);
+        assertEquals(expectedIncrement, actualIncrement);
+    }
+
+
     public void assertCounterIncrement(String counterName, double expectedIncrement) {
         double actualIncrement = registry.counter(counterName).count() - counterValuesBeforeTest.getOrDefault(counterName, 0D);
         assertEquals(expectedIncrement, actualIncrement);
@@ -81,5 +87,9 @@ public class MicrometerAssertionHelper {
      */
     private Collection<Timer> findTimersByNameOnly(String name) {
         return registry.find(name).timers();
+    }
+
+    java.util.List<io.micrometer.core.instrument.Meter> listMeters() {
+        return registry.getMeters();
     }
 }
