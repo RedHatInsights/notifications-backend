@@ -179,7 +179,7 @@ public class EndpointRepository {
             loadProperties(endpoint);
             return endpoint;
         } catch (NoResultException e) {
-            throw new NotFoundException("Endpoint not found");
+            return null;
         }
     }
 
