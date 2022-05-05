@@ -203,7 +203,7 @@ public class ApplicationRepository {
                                 .builder()
                                 .ifAnd(appIds != null && appIds.size() > 0, "e.application.id IN (:appIds)", "appIds", appIds)
                                 .ifAnd(bundleId != null, "e.application.bundle.id = :bundleId", "bundleId", bundleId)
-                                .ifAnd(eventTypeName != null, "LOWER(e.displayName) LIKE :eventTypeName", "eventTypeName", (Supplier<String>) () -> "%" + eventTypeName.toLowerCase() + "%")
+                                .ifAnd(eventTypeName != null, "(LOWER(e.displayName) LIKE :eventTypeName OR LOWER(e.name) LIKE :eventTypeName)", "eventTypeName", (Supplier<String>) () -> "%" + eventTypeName.toLowerCase() + "%")
                 );
     }
 }
