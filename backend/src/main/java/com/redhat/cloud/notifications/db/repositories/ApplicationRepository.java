@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 @ApplicationScoped
 public class ApplicationRepository {
@@ -178,8 +179,8 @@ public class ApplicationRepository {
         return rowCount > 0;
     }
 
-    public List<EventType> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId) {
-        return getEventTypesQueryBuilder(appIds, bundleId)
+    public List<EventType> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId, String eventTypeName) {
+        return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName)
                 .join(JoinBuilder.builder().leftJoinFetch("e.application"))
                 .limit(limiter != null ? limiter.getLimit() : null)
                 .sort(limiter != null ? limiter.getSort() : null)
@@ -187,13 +188,13 @@ public class ApplicationRepository {
                 .getResultList();
     }
 
-    public Long getEventTypesCount(Set<UUID> appIds, UUID bundleId) {
-        return getEventTypesQueryBuilder(appIds, bundleId)
+    public Long getEventTypesCount(Set<UUID> appIds, UUID bundleId, String eventTypeName) {
+        return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName)
                 .buildCount(entityManager::createQuery)
                 .getSingleResult();
     }
 
-    private QueryBuilder<EventType> getEventTypesQueryBuilder(Set<UUID> appIds, UUID bundleId) {
+    private QueryBuilder<EventType> getEventTypesQueryBuilder(Set<UUID> appIds, UUID bundleId, String eventTypeName) {
         return QueryBuilder
                 .builder(EventType.class)
                 .alias("e")
@@ -202,6 +203,7 @@ public class ApplicationRepository {
                                 .builder()
                                 .ifAnd(appIds != null && appIds.size() > 0, "e.application.id IN (:appIds)", "appIds", appIds)
                                 .ifAnd(bundleId != null, "e.application.bundle.id = :bundleId", "bundleId", bundleId)
+                                .ifAnd(eventTypeName != null, "LOWER(e.displayName) LIKE :eventTypeName", "eventTypeName", (Supplier<String>) () -> "%" + eventTypeName.toLowerCase() + "%")
                 );
     }
 }
