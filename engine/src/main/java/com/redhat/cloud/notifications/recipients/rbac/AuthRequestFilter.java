@@ -70,6 +70,8 @@ public class AuthRequestFilter implements ClientRequestFilter {
     public void filter(ClientRequestContext requestContext) throws IOException {
         if (authInfo != null) {
             requestContext.getHeaders().remove("x-rh-rbac-account");
+
+            // TODO do we need to remove the orgId here as well?
             requestContext.getHeaders().putSingle("Authorization", "Basic " + authInfo);
             return;
         }
