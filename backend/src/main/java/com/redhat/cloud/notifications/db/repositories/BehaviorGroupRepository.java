@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -117,7 +118,7 @@ public class BehaviorGroupRepository {
             q = q.setParameter("accountId", accountId);
         }
 
-        return q.executeUpdate()  > 0;
+        return q.executeUpdate() > 0;
     }
 
     public boolean delete(String accountId, UUID behaviorGroupId) {
@@ -186,7 +187,7 @@ public class BehaviorGroupRepository {
         // First, let's make sure the event type exists.
         EventType eventType = entityManager.find(EventType.class, eventTypeId);
         if (eventType == null) {
-            return false;
+            throw new NotFoundException("Event type not found");
         } else {
 
             // An event type should only be linked to behavior groups from the same bundle.
@@ -356,6 +357,11 @@ public class BehaviorGroupRepository {
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEndpointId(String accountId, UUID endpointId) {
+        Endpoint endpoint = entityManager.find(Endpoint.class, endpointId);
+        if (endpoint == null) {
+            throw new NotFoundException("Endpoint not found");
+        }
+
         String query = "SELECT bg FROM BehaviorGroup bg LEFT JOIN FETCH bg.bundle JOIN bg.actions a WHERE bg.accountId = :accountId AND a.endpoint.id = :endpointId";
         List<BehaviorGroup> behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
                 .setParameter("accountId", accountId)
