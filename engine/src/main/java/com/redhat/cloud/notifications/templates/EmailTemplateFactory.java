@@ -65,7 +65,7 @@ public class EmailTemplateFactory {
             }
         } else if (bundle.equalsIgnoreCase(RHEL)) {
             if (application.equalsIgnoreCase(EDGE_MANAGEMENT)) {
-                return new EdgetManagement();
+                return new EdgeManagement();
             }
         }
         return new EmailTemplateNotSupported();
