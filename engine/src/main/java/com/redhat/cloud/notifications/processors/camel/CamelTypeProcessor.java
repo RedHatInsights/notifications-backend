@@ -28,7 +28,6 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.jboss.logging.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.URI;
@@ -74,10 +73,6 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     BridgeAuth bridgeAuth;
-
-    @PostConstruct
-    public void init() {
-    }
 
     @Override
     public List<NotificationHistory> process(Event event, List<Endpoint> endpoints) {

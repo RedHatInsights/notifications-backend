@@ -77,7 +77,7 @@ public class CamelTypeProcessorTest {
 
     @BeforeEach
     void beforeEach() {
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(PROCESSED_COUNTER_NAME);
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
     }
 
     @AfterEach
