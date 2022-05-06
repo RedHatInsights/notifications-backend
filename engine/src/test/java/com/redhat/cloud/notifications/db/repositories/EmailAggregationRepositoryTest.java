@@ -8,6 +8,8 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -17,8 +19,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
+import static com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository.USE_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -45,8 +49,61 @@ public class EmailAggregationRepositoryTest {
     @Inject
     EmailAggregationRepository emailAggregationRepository;
 
+    @BeforeEach
+    void beforeEach() {
+        System.clearProperty(USE_ORG_ID);
+    }
+
+    @AfterEach
+    void afterEach() {
+        System.clearProperty(USE_ORG_ID);
+    }
+
+    // TODO NOTIF-603 Remove when switching to orgId
     @Test
-    void testAllMethods() {
+    void testAllMethodsWithOrgIdDisabled() {
+        LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
+        LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
+        EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME);
+
+        statelessSessionFactory.withSession(statelessSession -> {
+            clearEmailAggregations();
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation("other-account", ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
+
+            List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end);
+            assertEquals(2, aggregations.size());
+
+            assertNull(aggregations.get(0).getOrgId());
+            assertNull(aggregations.get(1).getOrgId());
+            assertTrue(aggregations.stream().map(EmailAggregation::getAccountId).allMatch(ACCOUNT_ID::equals));
+            assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
+            assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
+            assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
+            assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
+
+            List<EmailAggregationKey> keys = getApplicationsWithPendingAggregation(start, end);
+            assertEquals(4, keys.size());
+            assertEquals(ACCOUNT_ID, keys.get(0).getAccountId());
+            assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
+            assertEquals(APP_NAME, keys.get(0).getApplication());
+
+            assertEquals(2, emailAggregationRepository.purgeOldAggregation(key, end));
+            assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end).size());
+            assertEquals(3, getApplicationsWithPendingAggregation(start, end).size());
+
+            clearEmailAggregations();
+        });
+    }
+
+    @Test
+    void testAllMethodsWithOrgIdUsageEnabled() {
+
+        System.setProperty("notifications.use-org-id", "true");
+
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
         EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME);
@@ -69,6 +126,7 @@ public class EmailAggregationRepositoryTest {
 
             List<EmailAggregationKey> keys = getApplicationsWithPendingAggregation(start, end);
             assertEquals(4, keys.size());
+            assertEquals(ORG_ID, aggregations.get(0).getOrgId());
             assertEquals(ACCOUNT_ID, keys.get(0).getAccountId());
             assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
             assertEquals(APP_NAME, keys.get(0).getApplication());
