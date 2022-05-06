@@ -60,12 +60,12 @@ public class EmailTemplateFactory {
             } else if (application.equalsIgnoreCase(SOURCES)) {
                 return new Sources();
             }
-            if (application.equalsIgnoreCase(RHEL)) {
+            if (application.equalsIgnoreCase(RBAC)) {
                 return new Rbac();
             }
-        } else if (bundle.equalsIgnoreCase(EDGE)) {
+        } else if (bundle.equalsIgnoreCase(RHEL)) {
             if (application.equalsIgnoreCase(EDGE_MANAGEMENT)) {
-                return new EdgeManagement();
+                return new EdgetManagement();
             }
         }
         return new EmailTemplateNotSupported();
