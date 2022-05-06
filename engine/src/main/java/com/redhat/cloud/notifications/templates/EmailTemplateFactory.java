@@ -39,8 +39,6 @@ public class EmailTemplateFactory {
                     return new Drift();
                 case VULNERABILITY:
                     return new Vulnerability();
-                case EDGE_MANAGEMENT:
-                    return new EdgeManagement();
                 default:
                     break;
             }
@@ -64,6 +62,10 @@ public class EmailTemplateFactory {
             }
             if (application.equalsIgnoreCase(RBAC)) {
                 return new Rbac();
+            }
+        } else if (bundle.equalsIgnoreCase(EDGE)) {
+            if (application.equalsIgnoreCase(EDGE_MANAGEMENT)) {
+                return new EdgeManagement();
             }
         }
         return new EmailTemplateNotSupported();
