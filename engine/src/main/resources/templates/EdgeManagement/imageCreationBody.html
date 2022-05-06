@@ -1,5 +1,5 @@
-{#include Edge/insightsEmailBody}
-{#content-title}Egde Management Update Device Notification - {action.timestamp.toStringFormat()}{/content-title}
+{#include EdgeManagment/insightsEmailBody}
+{#content-title}Egde Management Image Notification - {action.timestamp.toStringFormat()}{/content-title}
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
@@ -35,7 +35,7 @@
                         Hi,
                         <br>
                         <br>
-                        An Update for the device {action.events[0].payload.ID} started. 
+                        A New Image it's being created {action.events[0].payload.ID}.
                     </p>
                 </td>
             </tr>

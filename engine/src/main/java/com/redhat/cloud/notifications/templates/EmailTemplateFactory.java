@@ -21,7 +21,7 @@ public class EmailTemplateFactory {
     private static final String RBAC = "rbac";
     private static final String SOURCES = "sources";
     private static final String VULNERABILITY = "vulnerability";
-    private static final String FLEET_MANAGEMENT = "fleet_management";
+    private static final String EDGE_MANAGEMENT = "fleet-management"; //Aplication will be rebanding to Edge
 
     private static final String BUNDLE_ANSIBLE = "ansible";
     private static final String APP_ANSIBLE_REPORTS = "reports";
@@ -39,8 +39,8 @@ public class EmailTemplateFactory {
                     return new Drift();
                 case VULNERABILITY:
                     return new Vulnerability();
-                case FLEET_MANAGEMENT:
-                    return new FleetManagement();
+                case EDGE_MANAGEMENT:
+                    return new EdgeManagement();
                 default:
                     break;
             }

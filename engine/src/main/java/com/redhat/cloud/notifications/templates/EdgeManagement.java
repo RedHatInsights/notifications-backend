@@ -4,8 +4,8 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 
-// Name needs to be "FleetManagement" to read templates from resources/templates/Edge
-public class FleetManagement implements EmailTemplate {
+// Name needs to be "EdgeManagement" to read templates from resources/templates/Edge
+public class EdgeManagement implements EmailTemplate {
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
