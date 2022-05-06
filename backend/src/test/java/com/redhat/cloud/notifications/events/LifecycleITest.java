@@ -393,7 +393,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .setParameter("id", UUID.fromString(eventTypeId))
                 .getSingleResult();
 
-        Event event = new Event(accountId, eventType);
+        Event event = new Event(accountId, eventType, UUID.randomUUID());
         entityManager.persist(event);
         return event;
     }
