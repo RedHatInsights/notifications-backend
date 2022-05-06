@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.templates;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EmailTemplateFactoryTest {
 
