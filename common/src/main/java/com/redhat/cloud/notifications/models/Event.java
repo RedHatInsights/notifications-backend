@@ -37,6 +37,7 @@ public class Event {
     @Size(max = 50)
     private String accountId;
 
+    @Size(max = 50)
     private String orgId;
 
     @NotNull

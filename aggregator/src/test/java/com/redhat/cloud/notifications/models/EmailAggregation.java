@@ -30,6 +30,7 @@ public class EmailAggregation extends CreationTimestamped {
     @Size(max = 50)
     private String accountId;
 
+    @Size(max = 50)
     private String orgId;
 
     @NotNull
