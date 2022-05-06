@@ -60,7 +60,7 @@ public class EmailTemplateFactory {
             } else if (application.equalsIgnoreCase(SOURCES)) {
                 return new Sources();
             }
-            if (application.equalsIgnoreCase(RBAC)) {
+            if (application.equalsIgnoreCase(RHEL)) {
                 return new Rbac();
             }
         } else if (bundle.equalsIgnoreCase(EDGE)) {
