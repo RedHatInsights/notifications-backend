@@ -30,6 +30,8 @@ public class EmailAggregation extends CreationTimestamped {
     @Size(max = 50)
     private String accountId;
 
+    private String orgId;
+
     @NotNull
     @Size(max = 255)
     @Column(name = "bundle")
@@ -60,6 +62,14 @@ public class EmailAggregation extends CreationTimestamped {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
     }
 
     public String getBundleName() {
