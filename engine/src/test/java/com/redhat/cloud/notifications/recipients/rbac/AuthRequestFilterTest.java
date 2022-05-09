@@ -82,6 +82,7 @@ public class AuthRequestFilterTest {
 
         // Setting x-rh-rbac-account
         context.getHeaders().putSingle("x-rh-rbac-account", "the-account-id");
+        context.getHeaders().putSingle("x-rh-rbac-org-id", "the-org-id");
 
         rbacAuthRequestFilter.filter(context);
         assertNull(context.getHeaderString("x-rh-rbac-psk"));
@@ -89,11 +90,30 @@ public class AuthRequestFilterTest {
 
         // Account is removed
         assertNull(context.getHeaderString("x-rh-rbac-account"));
+        assertNull(context.getHeaderString("x-rh-rbac-org-id"));
 
         assertEquals(
                 "Basic " + Base64Utils.encode("myuser:p4ssw0rd"),
                 context.getHeaderString("Authorization")
         );
+    }
+
+    @Test
+    void shouldremoveAccoundIdAndOrgIdFromHeaderWhenAuthInfoIsPresent() throws IOException {
+        // given
+        System.setProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_DEV_EXCEPTIONAL_AUTH_KEY, "myuser:p4ssw0rd");
+        ClientRequestContext context = configureContext();
+        AuthRequestFilter rbacAuthRequestFilter = new AuthRequestFilter();
+
+        context.getHeaders().putSingle("x-rh-rbac-account", "the-account-id");
+        context.getHeaders().putSingle("x-rh-rbac-org-id", "the-org-id");
+
+        // when
+        rbacAuthRequestFilter.filter(context);
+
+        // then
+        assertNull(context.getHeaderString("x-rh-rbac-account"));
+        assertNull(context.getHeaderString("x-rh-rbac-org-id"));
     }
 
     private ClientRequestContext configureContext() {
