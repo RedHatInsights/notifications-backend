@@ -49,10 +49,11 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     private Boolean enabled = Boolean.FALSE;
 
+    @Valid
     @NotNull
     @Embedded
     @JsonIgnore
-    private CompositeEndpointType compositeType = new CompositeEndpointType();
+    private final CompositeEndpointType compositeType = new CompositeEndpointType();
 
     @Schema(oneOf = { WebhookProperties.class, EmailSubscriptionProperties.class, CamelProperties.class })
     @JsonTypeInfo(

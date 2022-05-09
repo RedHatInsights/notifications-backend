@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
-import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
@@ -41,6 +40,7 @@ import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
@@ -393,7 +393,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .setParameter("id", UUID.fromString(eventTypeId))
                 .getSingleResult();
 
-        Event event = new Event(accountId, eventType);
+        Event event = new Event(accountId, eventType, UUID.randomUUID());
         entityManager.persist(event);
         return event;
     }
@@ -453,7 +453,7 @@ public class LifecycleITest extends DbIsolatedTest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(true);
         properties.setSecretToken(secretToken);
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl() + WEBHOOK_MOCK_PATH);
+        properties.setUrl(getMockServerUrl() + WEBHOOK_MOCK_PATH);
 
         Endpoint endpoint = new Endpoint();
         endpoint.setType(EndpointType.WEBHOOK);

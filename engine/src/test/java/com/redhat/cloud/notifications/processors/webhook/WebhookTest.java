@@ -3,7 +3,9 @@ package com.redhat.cloud.notifications.processors.webhook;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -22,11 +24,10 @@ import org.mockserver.model.HttpRequest;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -54,7 +55,7 @@ public class WebhookTest {
 
     @Test
     void testWebhook() {
-        String url = MockServerLifecycleManager.getContainerUrl() + "/foobar";
+        String url = getMockServerUrl() + "/foobar";
 
         final List<String> bodyRequests = new ArrayList<>();
         ExpectationResponseCallback verifyEmptyRequest = req -> {
@@ -115,7 +116,7 @@ public class WebhookTest {
     }
 
     private void testRetry(boolean shouldSucceedEventually) {
-        String url = MockServerLifecycleManager.getContainerUrl() + "/foobar";
+        String url = getMockServerUrl() + "/foobar";
 
         AtomicInteger callsCounter = new AtomicInteger();
         ExpectationResponseCallback expectationResponseCallback = request -> {
@@ -151,27 +152,27 @@ public class WebhookTest {
         webhookActionMessage.setEventType("testWebhook");
         webhookActionMessage.setAccountId("tenant");
 
-        Map<String, Object> payload1 = new HashMap<>();
-        payload1.put("any", "thing");
-        payload1.put("we", 1);
-        payload1.put("want", "here");
+        Payload payload1 = new Payload.PayloadBuilder()
+                .withAdditionalProperty("any", "thing")
+                .withAdditionalProperty("we", 1)
+                .withAdditionalProperty("want", "here")
+                .build();
 
-        Map<String, Object> context = new HashMap<>();
-        context.put("free", "more");
-        context.put("format", 1);
-        context.put("here", "stuff");
+        Context context = new Context.ContextBuilder()
+                .withAdditionalProperty("free", "more")
+                .withAdditionalProperty("format", 1)
+                .withAdditionalProperty("here", "stuff")
+                .build();
 
         webhookActionMessage.setEvents(
                 List.of(
-                        com.redhat.cloud.notifications.ingress.Event
-                                .newBuilder()
-                                .setMetadataBuilder(Metadata.newBuilder())
-                                .setPayload(payload1)
+                        new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                                .withMetadata(new Metadata.MetadataBuilder().build())
+                                .withPayload(payload1)
                                 .build(),
-                        com.redhat.cloud.notifications.ingress.Event
-                                .newBuilder()
-                                .setMetadataBuilder(Metadata.newBuilder())
-                                .setPayload(new HashMap())
+                        new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                                .withMetadata(new Metadata.MetadataBuilder().build())
+                                .withPayload(new Payload.PayloadBuilder().build())
                                 .build()
                 )
         );

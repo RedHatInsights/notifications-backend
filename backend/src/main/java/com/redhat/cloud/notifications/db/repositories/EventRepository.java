@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 
@@ -26,10 +27,10 @@ public class EventRepository {
     EntityManager entityManager;
 
     public List<Event> getEvents(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                                      LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults,
-                                      boolean fetchNotificationHistory, Integer limit, Integer offset, String sortBy) {
+                                      LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
+                                      Set<Boolean> invocationResults, boolean fetchNotificationHistory, Integer limit, Integer offset, String sortBy) {
         Optional<String> orderByCondition = getOrderByCondition(sortBy);
-        List<UUID> eventIds = getEventIds(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, limit, offset, orderByCondition);
+        List<UUID> eventIds = getEventIds(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, limit, offset, orderByCondition);
         String hql;
         if (fetchNotificationHistory) {
             hql = "SELECT DISTINCT e FROM Event e LEFT JOIN FETCH e.historyEntries he WHERE e.id IN (:eventIds)";
@@ -47,13 +48,14 @@ public class EventRepository {
     }
 
     public Long count(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                      LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults) {
+                      LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes,
+                      Set<CompositeEndpointType> compositeEndpointTypes, Set<Boolean> invocationResults) {
         String hql = "SELECT COUNT(*) FROM Event e WHERE e.accountId = :accountId";
 
-        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults);
 
         TypedQuery<Long> query = entityManager.createQuery(hql, Long.class);
-        setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+        setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults);
 
         return query.getSingleResult();
     }
@@ -78,18 +80,18 @@ public class EventRepository {
     }
 
     private List<UUID> getEventIds(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                                        LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults,
-                                        Integer limit, Integer offset, Optional<String> orderByCondition) {
+                                        LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
+                                        Set<Boolean> invocationResults, Integer limit, Integer offset, Optional<String> orderByCondition) {
         String hql = "SELECT e.id FROM Event e WHERE e.accountId = :accountId";
 
-        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults);
 
         if (orderByCondition.isPresent()) {
             hql += orderByCondition.get();
         }
 
         TypedQuery<UUID> query = entityManager.createQuery(hql, UUID.class);
-        setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults);
+        setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults);
 
         if (limit != null) {
             query.setMaxResults(limit);
@@ -102,7 +104,8 @@ public class EventRepository {
     }
 
     private static String addHqlConditions(String hql, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                                           LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults) {
+                                           LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes,
+                                           Set<CompositeEndpointType> compositeEndpointTypes, Set<Boolean> invocationResults) {
         if (bundleIds != null && !bundleIds.isEmpty()) {
             hql += " AND e.bundleId IN (:bundleIds)";
         }
@@ -120,12 +123,22 @@ public class EventRepository {
             hql += " AND e.created <= :endDate";
         }
 
-        boolean checkEndpointType = endpointTypes != null && !endpointTypes.isEmpty();
+        boolean checkEndpointType = (endpointTypes != null && !endpointTypes.isEmpty()) || (compositeEndpointTypes != null && !compositeEndpointTypes.isEmpty());
         boolean checkInvocationResult = invocationResults != null && !invocationResults.isEmpty();
         if (checkEndpointType || checkInvocationResult) {
             List<String> subQueryConditions = new ArrayList<>();
             if (checkEndpointType) {
-                subQueryConditions.add("nh.endpointType IN (:endpointTypes)");
+                List<String> subQueryEndpointTypes = new ArrayList<>();
+
+                if (endpointTypes.size() > 0) {
+                    subQueryEndpointTypes.add("nh.compositeEndpointType.type IN (:basicEndpointTypes)");
+                }
+
+                if (compositeEndpointTypes.size() > 0) {
+                    subQueryEndpointTypes.add("nh.compositeEndpointType IN (:compositeEndpointTypes)");
+                }
+
+                subQueryConditions.add("(" + String.join(" OR ", subQueryEndpointTypes) + ")");
             }
             if (checkInvocationResult) {
                 subQueryConditions.add("nh.invocationResult IN (:invocationResults)");
@@ -137,7 +150,8 @@ public class EventRepository {
     }
 
     private static void setQueryParams(TypedQuery<?> query, String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
-                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<Boolean> invocationResults) {
+                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
+                                       Set<Boolean> invocationResults) {
         query.setParameter("accountId", accountId);
         if (bundleIds != null && !bundleIds.isEmpty()) {
             query.setParameter("bundleIds", bundleIds);
@@ -155,7 +169,10 @@ public class EventRepository {
             query.setParameter("endDate", Timestamp.valueOf(endDate.atTime(LocalTime.MAX))); // at end of day
         }
         if (endpointTypes != null && !endpointTypes.isEmpty()) {
-            query.setParameter("endpointTypes", endpointTypes);
+            query.setParameter("basicEndpointTypes", endpointTypes);
+        }
+        if (compositeEndpointTypes != null && !compositeEndpointTypes.isEmpty()) {
+            query.setParameter("compositeEndpointTypes", compositeEndpointTypes);
         }
         if (invocationResults != null && !invocationResults.isEmpty()) {
             query.setParameter("invocationResults", invocationResults);

@@ -6,7 +6,7 @@ import { Operations } from '../../generated/OpenapiInternal';
 import { Application } from '../../types/Notifications';
 
 const validateResponse = validationResponseTransformer(
-    (payload: Operations.InternalServiceGetApplications.Payload) => {
+    (payload: Operations.InternalResourceGetApplications.Payload) => {
         if (payload.status === 200) {
             const applications: ReadonlyArray<Application> = payload.value.map(value => ({
                 id: value.id ?? '',
@@ -28,7 +28,7 @@ const validateResponse = validationResponseTransformer(
 );
 
 export const useApplications = (bundleId: string) => {
-    const query = useQuery(Operations.InternalServiceGetApplications.actionCreator({
+    const query = useQuery(Operations.InternalResourceGetApplications.actionCreator({
         bundleId
     }));
 

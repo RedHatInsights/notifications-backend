@@ -24,7 +24,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "iteration": 1648561613889,
+      "iteration": 1651645397994,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -684,7 +684,10 @@ data:
           }
         },
         {
-          "aliasColors": {},
+          "aliasColors": {
+            "total": "green",
+            "used": "yellow"
+          },
           "bars": true,
           "dashLength": 10,
           "dashes": false,
@@ -736,8 +739,20 @@ data:
               "expr": "sum(increase(rbac_users{job=\"notifications-engine-service\"}[5m]))",
               "hide": false,
               "interval": "",
-              "legendFormat": "users",
+              "legendFormat": "total",
               "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "skSy3ZB7k"
+              },
+              "exemplar": true,
+              "expr": "sum(increase(email_processor_recipients_resolved{job=\"notifications-engine-service\"}[5m]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "used",
+              "refId": "B"
             }
           ],
           "thresholds": [],
@@ -757,6 +772,7 @@ data:
           "yaxes": [
             {
               "$$hashKey": "object:471",
+              "decimals": -1,
               "format": "short",
               "logBase": 1,
               "show": true
@@ -840,6 +856,7 @@ data:
           "yaxes": [
             {
               "$$hashKey": "object:471",
+              "decimals": 0,
               "format": "short",
               "logBase": 1,
               "min": "0",
@@ -875,6 +892,7 @@ data:
           "dashLength": 10,
           "dashes": false,
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
           "description": "In events per min",
@@ -914,6 +932,10 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "skSy3ZB7k"
+              },
               "exemplar": true,
               "expr": "sum(rate(input_consumed_seconds_count{service=\"notifications-engine-service\"}[5m])) by (application,bundle)",
               "interval": "",
@@ -937,11 +959,13 @@ data:
           },
           "yaxes": [
             {
+              "$$hashKey": "object:76",
               "format": "short",
               "logBase": 1,
               "show": true
             },
             {
+              "$$hashKey": "object:77",
               "format": "short",
               "logBase": 1,
               "show": true
@@ -952,11 +976,15 @@ data:
           }
         },
         {
-          "aliasColors": {},
+          "aliasColors": {
+            "processed (per minute) ": "green",
+            "rejected (per minute) ": "red"
+          },
           "bars": true,
           "dashLength": 10,
           "dashes": false,
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
           "description": "",
@@ -1003,6 +1031,10 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "skSy3ZB7k"
+              },
               "exemplar": true,
               "expr": "sum(increase(processor_input_processed_total{service=\"notifications-engine-service\"}[5m]))",
               "format": "time_series",
@@ -1013,10 +1045,15 @@ data:
               "refId": "A"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "skSy3ZB7k"
+              },
               "exemplar": true,
               "expr": "sum(increase(input_rejected_total{service=\"notifications-engine-service\"}[5m]))",
               "format": "time_series",
               "hide": false,
+              "instant": false,
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "rejected (per minute) {{kubernetes_pod_name}}",
@@ -1040,6 +1077,7 @@ data:
           "yaxes": [
             {
               "$$hashKey": "object:107",
+              "decimals": -1,
               "format": "short",
               "logBase": 1,
               "show": true
@@ -1291,7 +1329,8 @@ data:
           "yaxes": [
             {
               "$$hashKey": "object:38",
-              "format": "short",
+              "format": "s",
+              "label": "",
               "logBase": 1,
               "show": true
             },
@@ -1384,6 +1423,7 @@ data:
           "dashLength": 10,
           "dashes": false,
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
           "fill": 1,
@@ -1422,6 +1462,10 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "skSy3ZB7k"
+              },
               "exemplar": true,
               "expr": "sum(rate(http_server_requests_seconds_count{container=\"notifications-backend-service\"}[5m]) * 60) by (status)",
               "hide": false,
@@ -1429,16 +1473,6 @@ data:
               "intervalFactor": 1,
               "legendFormat": "{{status}}",
               "refId": "A"
-            },
-            {
-              "exemplar": true,
-              "expr": "sum(increase(http_server_requests_seconds_count{service=\"notifications-backend-service\"}[1m])) by (status)",
-              "hide": true,
-              "instant": false,
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "{{status}}",
-              "refId": "C"
             }
           ],
           "thresholds": [],
@@ -1458,6 +1492,7 @@ data:
           "yaxes": [
             {
               "$$hashKey": "object:62",
+              "decimals": -1,
               "format": "short",
               "logBase": 1,
               "show": true
@@ -1553,6 +1588,7 @@ data:
           "yaxes": [
             {
               "$$hashKey": "object:62",
+              "decimals": -1,
               "format": "short",
               "logBase": 1,
               "show": true
@@ -1648,6 +1684,7 @@ data:
           "yaxes": [
             {
               "$$hashKey": "object:62",
+              "decimals": -1,
               "format": "short",
               "logBase": 1,
               "show": true
@@ -3008,7 +3045,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "stage",
               "value": "crcs02ue1-prometheus"
             },
@@ -3037,7 +3074,7 @@ data:
         ]
       },
       "time": {
-        "from": "now-3h",
+        "from": "now-24h",
         "to": "now"
       },
       "timepicker": {
@@ -3068,7 +3105,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 36,
+      "version": 38,
       "weekStart": ""
     }
 kind: ConfigMap

@@ -1,21 +1,20 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Encoder;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Parser;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.List;
-import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class TestHelpers {
 
@@ -26,8 +25,6 @@ public class TestHelpers {
     public static final String policyName2 = "Latest foo is installed";
     public static final String eventType = "test-email-subscription-instant";
 
-    public static final Encoder encoder = new Encoder();
-
     public static String encodeIdentityInfo(String tenant, String username) {
         JsonObject identity = new JsonObject();
         JsonObject user = new JsonObject();
@@ -37,7 +34,7 @@ public class TestHelpers {
         JsonObject header = new JsonObject();
         header.put("identity", identity);
 
-        return new String(Base64.getEncoder().encode(header.encode().getBytes(UTF_8)), UTF_8);
+        return Base64Utils.encode(header.encode());
     }
 
     public static Header createIdentityHeader(String encodedIdentityHeader) {
@@ -56,22 +53,25 @@ public class TestHelpers {
         emailActionMessage.setTimestamp(LocalDateTime.now());
         emailActionMessage.setEventType(eventType);
 
-        emailActionMessage.setContext(Map.of(
-                "inventory_id", inventory_id,
-                "system_check_in", "2020-08-03T15:22:42.199046",
-                "display_name", "My test machine",
-                "tags", List.of()
-        ));
+        emailActionMessage.setContext(
+                new Context.ContextBuilder()
+                        .withAdditionalProperty("inventory_id", inventory_id)
+                        .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
+                        .withAdditionalProperty("display_name", "My test machine")
+                        .withAdditionalProperty("tags", List.of())
+                        .build()
+        );
         emailActionMessage.setEvents(List.of(
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "policy_id", policyId,
-                                "policy_name", "not-tested-name",
-                                "policy_description", "not-used-desc",
-                                "policy_condition", "not-used-condition"
-                        ))
+                new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(
+                                new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("policy_id", policyId)
+                                        .withAdditionalProperty("policy_name", "not-tested-name")
+                                        .withAdditionalProperty("policy_description", "not-used-desc")
+                                        .withAdditionalProperty("policy_condition", "not-used-condition")
+                                        .build()
+                        )
                         .build()
         ));
 
@@ -84,7 +84,7 @@ public class TestHelpers {
     }
 
     public static String serializeAction(Action action) {
-        return encoder.encode(action);
+        return Parser.encode(action);
     }
 
     public static Action createPoliciesAction(String accountId, String bundle, String application, String hostDisplayName) {
@@ -95,32 +95,36 @@ public class TestHelpers {
         emailActionMessage.setEventType(eventType);
         emailActionMessage.setRecipients(List.of());
 
-        emailActionMessage.setContext(Map.of(
-                "inventory_id", "host-01",
-                "system_check_in", "2020-08-03T15:22:42.199046",
-                "display_name", hostDisplayName,
-                "tags", List.of()
-        ));
+        emailActionMessage.setContext(
+            new Context.ContextBuilder()
+                    .withAdditionalProperty("inventory_id", "host-01")
+                    .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
+                    .withAdditionalProperty("display_name", hostDisplayName)
+                    .withAdditionalProperty("tags", List.of())
+                    .build()
+        );
         emailActionMessage.setEvents(List.of(
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "policy_id", policyId1,
-                                "policy_name", policyName1,
-                                "policy_description", "not-used-desc",
-                                "policy_condition", "not-used-condition"
-                        ))
+                new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(
+                                new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("policy_id", policyId1)
+                                        .withAdditionalProperty("policy_name", policyName1)
+                                        .withAdditionalProperty("policy_description", "not-used-desc")
+                                        .withAdditionalProperty("policy_condition", "not-used-condition")
+                                        .build()
+                        )
                         .build(),
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "policy_id", policyId2,
-                                "policy_name", policyName2,
-                                "policy_description", "not-used-desc",
-                                "policy_condition", "not-used-condition"
-                        ))
+                new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(
+                                new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("policy_id", policyId2)
+                                        .withAdditionalProperty("policy_name", policyName2)
+                                        .withAdditionalProperty("policy_description", "not-used-desc")
+                                        .withAdditionalProperty("policy_condition", "not-used-condition")
+                                        .build()
+                        )
                         .build()
         ));
 
@@ -138,87 +142,95 @@ public class TestHelpers {
         emailActionMessage.setAccountId(accountId);
 
         if (eventType == "deactivated-recommendation") {
-            emailActionMessage.setContext(Map.of());
+            emailActionMessage.setContext(new Context.ContextBuilder().build());
             emailActionMessage.setEvents(List.of(
-                    Event
-                            .newBuilder()
-                            .setMetadataBuilder(Metadata.newBuilder())
-                            .setPayload(Map.of(
-                                    "rule_id", "retire-rule1",
-                                    "rule_description", "Rule being deactivated for retirement",
-                                    "total_risk", "1",
-                                    "affected_systems", "1",
-                                    "deactivation_reason", "Retirement"
-                            ))
+                    new Event.EventBuilder()
+                            .withMetadata(new Metadata.MetadataBuilder().build())
+                            .withPayload(
+                                    new Payload.PayloadBuilder()
+                                            .withAdditionalProperty("rule_id", "retire-rule1")
+                                            .withAdditionalProperty("rule_description", "Rule being deactivated for retirement")
+                                            .withAdditionalProperty("total_risk", "1")
+                                            .withAdditionalProperty("affected_systems", "1")
+                                            .withAdditionalProperty("deactivation_reason", "Retirement")
+                                            .build()
+                            )
                             .build(),
-                    Event
-                            .newBuilder()
-                            .setMetadataBuilder(Metadata.newBuilder())
-                            .setPayload(Map.of(
-                                    "rule_id", "enhance-rule2",
-                                    "rule_description", "Rule being deactivated for enhancement",
-                                    "total_risk", "2",
-                                    "affected_systems", "2",
-                                    "deactivation_reason", "Enhancement"
-                            ))
+                    new Event.EventBuilder()
+                            .withMetadata(new Metadata.MetadataBuilder().build())
+                            .withPayload(
+                                    new Payload.PayloadBuilder()
+                                            .withAdditionalProperty("rule_id", "enhance-rule2")
+                                            .withAdditionalProperty("rule_description", "Rule being deactivated for enhancement")
+                                            .withAdditionalProperty("total_risk", "2")
+                                            .withAdditionalProperty("affected_systems", "2")
+                                            .withAdditionalProperty("deactivation_reason", "Enhancement")
+                                            .build()
+                            )
                             .build()
             ));
         } else {
-            emailActionMessage.setContext(Map.of(
-                    "inventory_id", "host-01",
-                    "hostname", "my-host",
-                    "display_name", "My Host",
-                    "rhel_version", "8.3",
-                    "host_url", "this-is-my-host-url"
-            ));
+            emailActionMessage.setContext(
+                    new Context.ContextBuilder()
+                            .withAdditionalProperty("inventory_id", "host-01")
+                            .withAdditionalProperty("hostname", "my-host")
+                            .withAdditionalProperty("display_name", "My Host")
+                            .withAdditionalProperty("rhel_version", "8.3")
+                            .withAdditionalProperty("host_url", "this-is-my-host-url")
+                            .build()
+            );
             emailActionMessage.setEvents(List.of(
-                    Event
-                            .newBuilder()
-                            .setMetadataBuilder(Metadata.newBuilder())
-                            .setPayload(Map.of(
-                                    "rule_id", "rule-id-low-001",
-                                    "rule_description", "nice rule with low risk",
-                                    "total_risk", "1",
-                                    "publish_date", "2020-08-03T15:22:42.199046",
-                                    "report_url", "http://the-report-for-rule-id-low-001",
-                                    "rule_url", "http://the-rule-id-low-001"
-                            ))
+                    new Event.EventBuilder()
+                            .withMetadata(new Metadata.MetadataBuilder().build())
+                            .withPayload(
+                                    new Payload.PayloadBuilder()
+                                            .withAdditionalProperty("rule_id", "rule-id-low-001")
+                                            .withAdditionalProperty("rule_description", "nice rule with low risk")
+                                            .withAdditionalProperty("total_risk", "1")
+                                            .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
+                                            .withAdditionalProperty("report_url", "http://the-report-for-rule-id-low-001")
+                                            .withAdditionalProperty("rule_url", "http://the-rule-id-low-001")
+                                            .build()
+                            )
                             .build(),
-                    Event
-                            .newBuilder()
-                            .setMetadataBuilder(Metadata.newBuilder())
-                            .setPayload(Map.of(
-                                    "rule_id", "rule-id-moderate-001",
-                                    "rule_description", "nice rule with moderate risk",
-                                    "total_risk", "2",
-                                    "publish_date", "2020-08-03T15:22:42.199046",
-                                    "report_url", "http://the-report-for-rule-id-moderate-001",
-                                    "rule_url", "http://the-rule-id-moderate-001"
-                            ))
+                    new Event.EventBuilder()
+                            .withMetadata(new Metadata.MetadataBuilder().build())
+                            .withPayload(
+                                    new Payload.PayloadBuilder()
+                                            .withAdditionalProperty("rule_id", "rule-id-moderate-001")
+                                            .withAdditionalProperty("rule_description", "nice rule with moderate risk")
+                                            .withAdditionalProperty("total_risk", "2")
+                                            .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
+                                            .withAdditionalProperty("report_url", "http://the-report-for-rule-id-moderate-001")
+                                            .withAdditionalProperty("rule_url", "http://the-rule-id-moderate-001")
+                                            .build()
+                            )
                             .build(),
-                    Event
-                            .newBuilder()
-                            .setMetadataBuilder(Metadata.newBuilder())
-                            .setPayload(Map.of(
-                                    "rule_id", "rule-id-important-001",
-                                    "rule_description", "nice rule with important risk",
-                                    "total_risk", "3",
-                                    "publish_date", "2020-08-03T15:22:42.199046",
-                                    "report_url", "http://the-report-for-rule-id-important-001",
-                                    "rule_url", "http://the-rule-id-important-001"
-                            ))
+                    new Event.EventBuilder()
+                            .withMetadata(new Metadata.MetadataBuilder().build())
+                            .withPayload(
+                                    new Payload.PayloadBuilder()
+                                            .withAdditionalProperty("rule_id", "rule-id-important-001")
+                                            .withAdditionalProperty("rule_description", "nice rule with important risk")
+                                            .withAdditionalProperty("total_risk", "3")
+                                            .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
+                                            .withAdditionalProperty("report_url", "http://the-report-for-rule-id-important-001")
+                                            .withAdditionalProperty("rule_url", "http://the-rule-id-important-001")
+                                            .build()
+                            )
                             .build(),
-                    Event
-                            .newBuilder()
-                            .setMetadataBuilder(Metadata.newBuilder())
-                            .setPayload(Map.of(
-                                    "rule_id", "rule-id-critical-001",
-                                    "rule_description", "nice rule with critical risk",
-                                    "total_risk", "4",
-                                    "publish_date", "2020-08-03T15:22:42.199046",
-                                    "report_url", "http://the-report-for-rule-id-critical-001",
-                                    "rule_url", "http://the-rule-id-critical-001"
-                            ))
+                    new Event.EventBuilder()
+                            .withMetadata(new Metadata.MetadataBuilder().build())
+                            .withPayload(
+                                    new Payload.PayloadBuilder()
+                                            .withAdditionalProperty("rule_id", "rule-id-critical-001")
+                                            .withAdditionalProperty("rule_description", "nice rule with critical risk")
+                                            .withAdditionalProperty("total_risk", "4")
+                                            .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
+                                            .withAdditionalProperty("report_url", "http://the-report-for-rule-id-critical-001")
+                                            .withAdditionalProperty("rule_url", "http://the-rule-id-critical-001")
+                                            .build()
+                            )
                             .build()
             ));
         }
@@ -234,50 +246,56 @@ public class TestHelpers {
         emailActionMessage.setAccountId(accountId);
 
         if (eventType == "new-recommendation") {
-            emailActionMessage.setContext(Map.of(
-                    "display_name", "some-cluster-name",
-                    "host_url", "some-ocm-url-to-the-cluster"
-            ));
+            emailActionMessage.setContext(
+                    new Context.ContextBuilder()
+                            .withAdditionalProperty("display_name", "some-cluster-name")
+                            .withAdditionalProperty("host_url", "some-ocm-url-to-the-cluster")
+                            .build()
+            );
             emailActionMessage.setEvents(List.of(
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "rule_description", "nice rule with low risk",
-                                "total_risk", "1",
-                                "publish_date", "2020-08-03T15:22:42.199046",
-                                "rule_url", "http://the-rule-id-low-001"
-                        ))
+                    new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(
+                                new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("rule_description", "nice rule with low risk")
+                                        .withAdditionalProperty("total_risk", "1")
+                                        .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
+                                        .withAdditionalProperty("rule_url", "http://the-rule-id-low-001")
+                                        .build()
+                        )
                         .build(),
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "rule_description", "nice rule with moderate risk",
-                                "total_risk", "2",
-                                "publish_date", "2020-08-03T15:22:42.199046",
-                                "rule_url", "http://the-rule-id-moderate-001"
-                        ))
+                    new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(
+                                new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("rule_description", "nice rule with moderate risk")
+                                        .withAdditionalProperty("total_risk", "2")
+                                        .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
+                                        .withAdditionalProperty("rule_url", "http://the-rule-id-moderate-001")
+                                        .build()
+                        )
                         .build(),
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "rule_description", "nice rule with important risk",
-                                "total_risk", "3",
-                                "publish_date", "2020-08-03T15:22:42.199046",
-                                "rule_url", "http://the-rule-id-important-001"
-                        ))
+                    new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(
+                                new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("rule_description", "nice rule with important risk")
+                                        .withAdditionalProperty("total_risk", "3")
+                                        .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
+                                        .withAdditionalProperty("rule_url", "http://the-rule-id-important-001")
+                                        .build()
+                        )
                         .build(),
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "rule_description", "nice rule with critical risk",
-                                "total_risk", "4",
-                                "publish_date", "2020-08-03T15:22:42.199046",
-                                "rule_url", "http://the-rule-id-critical-001"
-                        ))
+                    new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(
+                                new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("rule_description", "nice rule with critical risk")
+                                        .withAdditionalProperty("total_risk", "4")
+                                        .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
+                                        .withAdditionalProperty("rule_url", "http://the-rule-id-critical-001")
+                                        .build()
+                        )
                         .build()
             ));
         }

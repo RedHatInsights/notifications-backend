@@ -151,6 +151,16 @@ public class EventConsumer {
                      * The EventType was found. It's time to create an Event from the current message and persist it.
                      */
                     Event event = new Event(eventType, payload, action);
+                    if (event.getId() == null) {
+                        // NOTIF-499 If there is no ID provided whatsoever we create one.
+                        if (messageId != null) {
+                            event.setId(messageId);
+                        } else {
+                            LOGGER.infof("NOID: Event with %s/%s/%s did not have an incoming id or messageId ",
+                                    bundleName[0], appName[0], eventTypeName);
+                            event.setId(UUID.randomUUID());
+                        }
+                    }
                     eventRepository.create(event);
                     /*
                      * Step 7

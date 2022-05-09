@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.redhat.cloud.notifications.Base64Utils;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,8 +11,6 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
 
 @QuarkusTest
@@ -84,7 +83,7 @@ public class AuthRequestFilterTest {
         // Account is removed
         Assertions.assertNull(context.getHeaderString("x-rh-rbac-account"));
         Assertions.assertEquals(
-                "Basic " + new String(Base64.getEncoder().encode("myuser:p4ssw0rd".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8),
+                "Basic " + Base64Utils.encode("myuser:p4ssw0rd"),
                 context.getHeaderString("Authorization")
         );
     }

@@ -7,7 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestOpenshiftAdvisorTemplate {
@@ -32,16 +33,16 @@ public class TestOpenshiftAdvisorTemplate {
 
         action.getEvents().forEach(event -> {
             assertTrue(
-                    result.contains(event.getPayload().get("rule_description").toString()),
-                    "Body should contain rule description" + event.getPayload().get("rule_description")
+                    result.contains(event.getPayload().getAdditionalProperties().get("rule_description").toString()),
+                    "Body should contain rule description" + event.getPayload().getAdditionalProperties().get("rule_description")
             );
             assertTrue(
-                    result.contains(event.getPayload().get("total_risk").toString()),
-                    "Body should contain total_risk" + event.getPayload().get("total_risk")
+                    result.contains(event.getPayload().getAdditionalProperties().get("total_risk").toString()),
+                    "Body should contain total_risk" + event.getPayload().getAdditionalProperties().get("total_risk")
             );
             assertTrue(
-                    result.contains(event.getPayload().get("rule_url").toString()),
-                    "Body should contain rule_url" + event.getPayload().get("rule_url")
+                    result.contains(event.getPayload().getAdditionalProperties().get("rule_url").toString()),
+                    "Body should contain rule_url" + event.getPayload().getAdditionalProperties().get("rule_url")
             );
         });
 
@@ -53,7 +54,7 @@ public class TestOpenshiftAdvisorTemplate {
         // Display name
         assertTrue(result.contains("some-cluster-name"), "Body should contain the display_name");
 
-        action.setEvents(action.getEvents().stream().filter(event -> event.getPayload().get("total_risk").equals("1")).collect(Collectors.toList()));
+        action.setEvents(action.getEvents().stream().filter(event -> event.getPayload().getAdditionalProperties().get("total_risk").equals("1")).collect(Collectors.toList()));
         String result2 = AdvisorOpenshift.Templates.newRecommendationInstantEmailBody()
                 .data("action", action)
                 .render();
