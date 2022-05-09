@@ -116,6 +116,20 @@ public class AuthRequestFilterTest {
         assertNull(context.getHeaderString("x-rh-rbac-org-id"));
     }
 
+    @Test
+    void shouldNotContainOrgIdHeaderWhenHeaderHasNotBeenSet() throws IOException {
+        // given
+        System.setProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_DEV_EXCEPTIONAL_AUTH_KEY, "myuser:p4ssw0rd");
+        ClientRequestContext context = configureContext();
+        AuthRequestFilter rbacAuthRequestFilter = new AuthRequestFilter();
+
+        // when
+        rbacAuthRequestFilter.filter(context);
+
+        // then
+        assertNull(context.getHeaderString("x-rh-rbac-org-id"));
+    }
+
     private ClientRequestContext configureContext() {
         ClientRequestContext context = Mockito.mock(ClientRequestContext.class);
         MultivaluedMap<String, Object> map = new MultivaluedHashMap<>();
