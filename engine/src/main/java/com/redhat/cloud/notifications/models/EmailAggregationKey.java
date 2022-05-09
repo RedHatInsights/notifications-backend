@@ -65,7 +65,6 @@ public class EmailAggregationKey {
     public String toString() {
         return "EmailAggregationKey{" +
                 "accountId='" + accountId + '\'' +
-                ", orgId='" + orgId + '\'' +
                 ", bundle='" + bundle + '\'' +
                 ", application='" + application + '\'' +
                 '}';
