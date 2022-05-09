@@ -28,7 +28,6 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.jboss.logging.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.URI;
@@ -75,13 +74,6 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     @Inject
     BridgeAuth bridgeAuth;
 
-    private Counter processedCount;
-
-    @PostConstruct
-    public void init() {
-        processedCount = registry.counter(PROCESSED_COUNTER_NAME);
-    }
-
     @Override
     public List<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
         return endpoints.stream()
@@ -93,8 +85,12 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     }
 
     private NotificationHistory process(Notification item) {
-        processedCount.increment();
         Endpoint endpoint = item.getEndpoint();
+        String subType = endpoint.getSubType();
+
+        Counter processedCount = registry.counter(PROCESSED_COUNTER_NAME, "subType", subType);
+        processedCount.increment();
+
         CamelProperties properties = (CamelProperties) endpoint.getProperties();
 
         Map<String, String> metaData = new HashMap<>();
@@ -102,7 +98,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         metaData.put("trustAll", String.valueOf(properties.getDisableSslVerification()));
 
         metaData.put("url", properties.getUrl());
-        metaData.put("type", endpoint.getSubType());
+        metaData.put("type", subType);
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
             metaData.put(TOKEN_HEADER, properties.getSecretToken());

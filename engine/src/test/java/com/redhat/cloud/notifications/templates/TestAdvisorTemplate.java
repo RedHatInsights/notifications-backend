@@ -12,7 +12,10 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestAdvisorTemplate {

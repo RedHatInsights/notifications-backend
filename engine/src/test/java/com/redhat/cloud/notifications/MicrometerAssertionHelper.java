@@ -1,11 +1,14 @@
 package com.redhat.cloud.notifications;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +34,22 @@ public class MicrometerAssertionHelper {
         for (String counterName : counterNames) {
             counterValuesBeforeTest.put(counterName, registry.counter(counterName).count());
         }
+    }
+
+    public void saveCounterValueWithTagsBeforeTest(String counterName, String tagKeys) {
+        Collection<Counter> counters = registry.find(counterName)
+            .tagKeys(tagKeys)
+                    .counters();
+        for (Counter counter : counters) {
+            Meter.Id id = counter.getId();
+            counterValuesBeforeTest.put(counterName, registry.counter(counterName, id.getTags()).count());
+        }
+    }
+
+    public void assertCounterIncrement(String counterName, double expectedIncrement, String... tags) {
+        double actualIncrement = registry.counter(counterName, tags).count() - counterValuesBeforeTest.getOrDefault(
+                counterName + Arrays.toString(tags), 0D);
+        assertEquals(expectedIncrement, actualIncrement);
     }
 
     public void assertCounterIncrement(String counterName, double expectedIncrement) {
@@ -82,4 +101,5 @@ public class MicrometerAssertionHelper {
     private Collection<Timer> findTimersByNameOnly(String name) {
         return registry.find(name).timers();
     }
+
 }

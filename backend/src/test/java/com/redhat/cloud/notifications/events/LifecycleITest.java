@@ -395,7 +395,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .setParameter("id", UUID.fromString(eventTypeId))
                 .getSingleResult();
 
-        Event event = new Event(accountId, orgId, eventType);
+        Event event = new Event(accountId, orgId, eventType, UUID.randomUUID());
         entityManager.persist(event);
         return event;
     }
