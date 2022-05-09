@@ -247,7 +247,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Test
     void testEventTypeFetchingByEventTypeName() {
         helpers.createTestAppAndEventTypes();
-        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
@@ -278,7 +278,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
         UUID myOtherTesterApplicationId = app.getId();
         UUID myBundleId = app.getBundleId();
-        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
@@ -614,7 +614,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId() {
-        Header identityHeader = initRbacMock("tenant", "user", FULL_ACCESS);
+        Header identityHeader = initRbacMock("tenant", "someOrgId", "user", FULL_ACCESS);
         given()
                 .header(identityHeader)
                 .pathParam("endpointId", UUID.randomUUID())
