@@ -15,7 +15,7 @@ public class ITUserRequest {
         AllOf allOf = new AllOf();
         allOf.status = "enabled";
 
-        // TODO replace the ebsAccountNumber with orgId. Means: replace this query object so it matches the expectec it user service query.
+        // TODO NOTIF-603 replace the ebsAccountNumber with orgId. Means: replace this query object so it matches the expectec it user service query.
         allOf.ebsAccountNumber = accountId;
 
         if (adminsOnly) {
