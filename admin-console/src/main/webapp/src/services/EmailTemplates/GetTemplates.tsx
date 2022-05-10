@@ -13,11 +13,11 @@ const validateResponse = validationResponseTransformer(
                 event_type_id: value.event_type_id,
                 id: value.id,
                 subject_template: value.subject_template,
-                body_template: value.body_template
+                body_template: value.body_template!
             }));
 
             return validatedResponse(
-                'unknown',
+                'instantEmailTemplates',
                 200,
                 instantEmailTemplates,
                 payload.errors

@@ -46,15 +46,15 @@ export type UUID = string;
 export type Application1 = {
     bundle_id: UUID;
     display_name: string;
-    id: UUID | undefined | null;
+    id?: UUID | undefined | null;
     name: string;
   };
 
 export interface AggregationTemplate {
-    application: Application1;
+    application: Application1 | null | undefined;
     applicationId: UUID;
     body_template: Template;
-    id: UUID;
+    id?: UUID;
     subject_template: Template;
 
 }
