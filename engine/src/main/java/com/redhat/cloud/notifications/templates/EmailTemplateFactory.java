@@ -21,7 +21,7 @@ public class EmailTemplateFactory {
     private static final String RBAC = "rbac";
     private static final String SOURCES = "sources";
     private static final String VULNERABILITY = "vulnerability";
-    private static final String EDGE_MANAGEMENT = "fleet-management"; //Aplication will be rebanding to Edge
+    private static final String EDGE_MANAGEMENT = "edge-management";
 
     private static final String BUNDLE_ANSIBLE = "ansible";
     private static final String APP_ANSIBLE_REPORTS = "reports";
