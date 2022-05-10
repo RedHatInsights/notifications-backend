@@ -7,4 +7,3 @@ ALTER TABLE event
   ADD COLUMN org_id text;
 
 CREATE INDEX ix_event_org_id ON public.event (org_id);
-
