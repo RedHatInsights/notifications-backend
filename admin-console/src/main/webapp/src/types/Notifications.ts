@@ -1,3 +1,5 @@
+import { Schemas } from '../generated/OpenapiInternal';
+
 export interface Bundle {
     id: string;
     displayName: string;
@@ -21,4 +23,38 @@ export interface EventType {
     name: string;
     description: string;
     applicationId: string;
+}
+
+export interface Template {
+    id: string;
+    name: string;
+    description: string;
+    data: string;
+}
+
+export interface InstantTemplate {
+    body_template: Template;
+    event_type: Schemas.EventType;
+    event_type_id: UUID;
+    id: UUID;
+    subject_template: Template;
+
+}
+
+export type UUID = string;
+
+export type Application1 = {
+    bundle_id: UUID;
+    display_name: string;
+    id: UUID | undefined | null;
+    name: string;
+  };
+
+export interface AggregationTemplate {
+    application: Application1;
+    applicationId: UUID;
+    body_template: Template;
+    id: UUID;
+    subject_template: Template;
+
 }

@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Title, Toolbar,
+import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar,
     ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { EyeIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 
 import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
+import { useGetInstantTemplates } from '../../services/EmailTemplates/GetTemplates';
 import { useApplicationTypes } from '../../services/EventTypes/GetApplication';
 import { ListEventTypes } from '../EventTypes/ListEventTypes';
 import { ViewTemplateModal } from './ViewEmailTemplateModal';
@@ -20,8 +21,9 @@ type ApplicationPageParams = {
     applicationId: string;
 }
 
-export const EmailTemplateTable: React.FunctionComponent = () => {
+export const InstantEmailTemplateTable: React.FunctionComponent = () => {
     const { hasPermission } = useUserPermissions();
+    const templateQuery = useGetInstantTemplates();
 
     const { applicationId } = useParams<ApplicationPageParams>();
     const applicationTypesQuery = useApplicationTypes(applicationId);
@@ -43,38 +45,22 @@ export const EmailTemplateTable: React.FunctionComponent = () => {
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
 
-    const columns = [ 'Email Template', 'Event Types' ];
-    const rows = [
-        {
-            displayName: 'email template 1',
-            id: '1',
-            eventType: 'event Type 1'
-        },
-        {
-            displayName: 'email template 2',
-            id: '2',
-            eventType: 'event Type 2'
+    const columns = [ 'Instant Email Templates', 'Event Types' ];
 
-        },
-        {
-            displayName: 'email template 3',
-            id: '3',
-            eventType: 'event Type 3'
+    if (templateQuery.loading) {
+        return <Spinner />;
+    }
 
-        },
-        {
-            displayName: 'email template 4',
-            id: '4',
-            eventType: 'event Type 4'
-        }
-    ];
+    if (templateQuery.payload?.status !== 200) {
+        return <span>Error while loading templates: {templateQuery.errorObject.toString()}</span>;
+    }
 
     return (
         <React.Fragment>
             <PageSection>
                 <Title headingLevel="h1">
                     <Breadcrumb>
-                        <BreadcrumbItem target='#'> Email Template for { application?.displayName ?? '' }</BreadcrumbItem>
+                        <BreadcrumbItem target='#'>Instant Email Template for { application?.displayName ?? '' }</BreadcrumbItem>
                     </Breadcrumb></Title>
                 <TableComposable aria-label="Email Template table">
                     <Thead>
@@ -83,7 +69,7 @@ export const EmailTemplateTable: React.FunctionComponent = () => {
                                 <ToolbarItem>
                                     <Button variant="primary" isDisabled={ !application || !hasPermission(application?.id) }
                                         component={ (props: any) =>
-                                            <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Email Template</Button>
+                                            <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Instant Email Template</Button>
                                     <ViewTemplateModal
                                         showModal={ showViewModal }
                                         applicationName={ application?.displayName ?? '' }
@@ -99,9 +85,10 @@ export const EmailTemplateTable: React.FunctionComponent = () => {
                         </Tr>
                     </Thead>
                     <Tbody>
-                        { rows.map(r => (
-                            <Tr key={ r.id }>
-                                <Td>{r.displayName}</Td>
+                        { templateQuery.payload.value.map(t => (
+                            <Tr key={ t.id }>
+                                <Td>{ t.subject_template }</Td>
+
                                 <Td>
                                     <ListEventTypes
                                         appId={ application?.id ?? '' }
@@ -117,7 +104,6 @@ export const EmailTemplateTable: React.FunctionComponent = () => {
                                     <Button className='delete' type='button' variant='plain'
                                         isDisabled>{ <TrashIcon /> } </Button></Td>
                             </Tr>
-
                         ))}
                     </Tbody>
                 </TableComposable>
