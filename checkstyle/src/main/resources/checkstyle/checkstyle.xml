@@ -79,7 +79,8 @@
 <!--        </module>-->
 
         <module name="IllegalImport">
-            <property name="illegalPkgs" value="junit.framework" />
+            <property name="illegalPkgs" value="junit\.framework" />
+            <property name="illegalClasses" value="org.junit.Test, org.junit.Before, org.junit.After, org.junit.AfterClass, org.junit.BeforeClass, org.junit.Assert" />
         </module>
 
         <!-- Modifier Checks -->
