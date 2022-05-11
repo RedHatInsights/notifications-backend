@@ -89,8 +89,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testEndpointAdding() {
         String tenant = "empty";
+        String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -229,8 +230,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testEndpointValidation() {
         String tenant = "validation";
+        String orgId = "validation2";
         String userName = "testEndpointValidation";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -289,8 +291,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     void addCamelEndpoint() {
 
         String tenant = "empty";
+        String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -362,8 +365,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     void addBogusCamelEndpoint() {
 
         String tenant = "empty";
+        String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -412,8 +416,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     void addOpenBridgeEndpoint() {
 
         String tenant = "empty";
+        String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -500,8 +505,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testEndpointUpdates() {
         String tenant = "updates";
+        String orgId = "updates2";
         String userName = "testEndpointUpdates";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -611,8 +617,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @MethodSource
     void testEndpointTypeQuery(Set<EndpointType> types) {
         String tenant = "limiter";
+        String orgId = "limiter2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -714,8 +721,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testEndpointLimiter() {
         String tenant = "limiter";
+        String orgId = "limiter2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -759,8 +767,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testSortingOrder() {
         String tenant = "testSortingOrder";
+        String orgId = "testSortingOrder2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -823,8 +832,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testWebhookAttributes() {
         String tenant = "testWebhookAttributes";
+        String orgId = "testWebhookAttributes2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -876,8 +886,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testAddEndpointEmailSubscription() {
         String tenant = "adding-email-subscription";
+        String orgId = "adding-email-subscription2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -1041,11 +1052,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testAddEndpointEmailSubscriptionRbac() {
         String tenant = "adding-email-subscription";
+        String orgId = "adding-email-subscription2";
         String userName = "user";
         String validGroupId = "f85517d0-063b-4eed-a501-e79ffc1f5ad3";
         String unknownGroupId = "f44f50d5-acab-482c-a3cf-087faf2c709c";
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -1119,8 +1131,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testEmailSubscription() {
         String tenant = "test-subscription";
+        String orgId = "test-subscription2";
         String username = "test-user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
@@ -1261,7 +1274,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Test
     void testUnknownEndpointTypes() {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("test-tenant", "test-user");
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("test-tenant", "test-orgid", "test-user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
@@ -1283,11 +1296,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(is("Unknown endpoint type: [bar]"));
     }
 
-    //    @Test
+    @Test
     void testConnectionCount() {
         String tenant = "count";
+        String orgId = "count2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -1347,8 +1361,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testSearch() {
         String tenant = "search";
+        String orgId = "search2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
@@ -1390,8 +1405,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testSearchWithType() {
         String tenant = "search-type";
+        String orgId = "search-type2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 

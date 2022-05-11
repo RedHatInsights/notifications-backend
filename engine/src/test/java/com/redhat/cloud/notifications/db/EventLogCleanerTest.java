@@ -69,7 +69,7 @@ public class EventLogCleanerTest {
     }
 
     private void createEvent(EventType eventType, LocalDateTime created) {
-        Event event = new Event("account-id", eventType, UUID.randomUUID());
+        Event event = new Event("account-id", "org-id", eventType, UUID.randomUUID());
         event.setCreated(created);
         entityManager.persist(event);
     }

@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ITUserRequestTest {
 
-    private final ITUserRequest testee = new ITUserRequest("someAccountId", true, 0, 101);
+    private final ITUserRequest testee = new ITUserRequest("someAccountId", "someOrgId", true, 0, 101);
 
     @Test
     void shouldSetPermissionCodeWhenAdminsOnly() {

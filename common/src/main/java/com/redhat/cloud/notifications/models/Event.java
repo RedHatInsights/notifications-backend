@@ -35,6 +35,9 @@ public class Event {
     @Size(max = 50)
     private String accountId;
 
+    @Size(max = 50)
+    private String orgId;
+
     @NotNull
     private UUID bundleId;
 
@@ -66,13 +69,14 @@ public class Event {
     public Event() { }
 
     public Event(EventType eventType, String payload, Action action) {
-        this(action.getAccountId(), eventType, action.getId());
+        this(action.getAccountId(), action.getOrgId(), eventType, action.getId());
         this.payload = payload;
         this.action = action;
     }
 
-    public Event(String accountId, EventType eventType, UUID eventId) {
+    public Event(String accountId, String orgId, EventType eventType, UUID eventId) {
         this.accountId = accountId;
+        this.orgId = orgId;
         this.eventType = eventType;
         this.id = eventId;
         bundleId = eventType.getApplication().getBundle().getId();
@@ -112,6 +116,14 @@ public class Event {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
     }
 
     public UUID getBundleId() {

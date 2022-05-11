@@ -28,7 +28,7 @@ class ValidationResourceTest {
     void shouldReturnNotFoundWhenTripleIsInvalid() {
         when(applicationRepository.getEventType(eq("blabla"), eq("Notifications"), eq("Any"))).thenThrow(new NoResultException());
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "user");
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "empty", "user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -52,7 +52,7 @@ class ValidationResourceTest {
         EventType eventType = new EventType();
         when(applicationRepository.getEventType(eq("my-bundle"), eq("Policies"), eq("Any"))).thenReturn(eventType);
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "user");
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "empty", "user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);

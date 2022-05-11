@@ -8,13 +8,10 @@ import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
-import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
-import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 
 public class TestHelpers {
 
@@ -24,22 +21,6 @@ public class TestHelpers {
     public static final String policyId2 = "0123-456-789-5721f";
     public static final String policyName2 = "Latest foo is installed";
     public static final String eventType = "test-email-subscription-instant";
-
-    public static String encodeIdentityInfo(String tenant, String username) {
-        JsonObject identity = new JsonObject();
-        JsonObject user = new JsonObject();
-        user.put("username", username);
-        identity.put("account_number", tenant);
-        identity.put("user", user);
-        JsonObject header = new JsonObject();
-        header.put("identity", identity);
-
-        return Base64Utils.encode(header.encode());
-    }
-
-    public static Header createIdentityHeader(String encodedIdentityHeader) {
-        return new Header(X_RH_IDENTITY_HEADER, encodedIdentityHeader);
-    }
 
     public static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String policyId, String inventory_id) {
         EmailAggregation aggregation = new EmailAggregation();
@@ -141,7 +122,7 @@ public class TestHelpers {
         emailActionMessage.setEventType(eventType);
         emailActionMessage.setAccountId(accountId);
 
-        if (eventType == "deactivated-recommendation") {
+        if (eventType.equals("deactivated-recommendation")) {
             emailActionMessage.setContext(new Context.ContextBuilder().build());
             emailActionMessage.setEvents(List.of(
                     new Event.EventBuilder()
@@ -245,7 +226,7 @@ public class TestHelpers {
         emailActionMessage.setEventType(eventType);
         emailActionMessage.setAccountId(accountId);
 
-        if (eventType == "new-recommendation") {
+        if (eventType.equals("new-recommendation")) {
             emailActionMessage.setContext(
                     new Context.ContextBuilder()
                             .withAdditionalProperty("display_name", "some-cluster-name")

@@ -10,6 +10,9 @@ public class RhIdentity extends ConsoleIdentity {
     @JsonProperty("account_number")
     private String accountNumber;
 
+    @JsonProperty("org_id")
+    private String orgId;
+
     private User user;
 
     public String getAccountNumber() {
@@ -18,6 +21,10 @@ public class RhIdentity extends ConsoleIdentity {
 
     public User getUser() {
         return user;
+    }
+
+    public String getOrgId() {
+        return orgId;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
