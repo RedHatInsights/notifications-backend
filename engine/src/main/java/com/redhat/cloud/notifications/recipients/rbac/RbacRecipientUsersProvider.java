@@ -41,6 +41,11 @@ public class RbacRecipientUsersProvider {
 
     public static final String ORG_ADMIN_PERMISSION = "admin:org:all";
 
+    public static final String USE_ORG_ID = "notifications.use-org-id";
+
+    @ConfigProperty(name = USE_ORG_ID, defaultValue = "false")
+    public boolean useOrgId;
+
     @Inject
     @RestClient
     RbacServiceToService rbacServiceToService;
@@ -127,7 +132,7 @@ public class RbacRecipientUsersProvider {
         int firstResult = 0;
 
         do {
-            ITUserRequest request = new ITUserRequest(accountId, orgId, adminsOnly, firstResult, maxResultsPerPage);
+            ITUserRequest request = new ITUserRequest(accountId, orgId, useOrgId, adminsOnly, firstResult, maxResultsPerPage);
             usersPaging = retryOnItError(() -> itUserService.getUsers(request));
             usersTotal.addAll(usersPaging);
 
