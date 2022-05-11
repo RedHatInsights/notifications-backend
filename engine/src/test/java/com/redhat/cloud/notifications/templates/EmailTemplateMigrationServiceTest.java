@@ -77,6 +77,10 @@ public class EmailTemplateMigrationServiceTest {
         // App: drift
         Application drift = resourceHelpers.createApp(rhel.getId(), "drift");
         EventType driftBaselineDetected = resourceHelpers.createEventType(drift.getId(), "drift-baseline-detected");
+        // App: edge-management
+        Application edgeManagement = resourceHelpers.createApp(rhel.getId(), "edge-management");
+        EventType imageCreation = resourceHelpers.createEventType(edgeManagement.getId(), "image-creation");
+        EventType updateDevices = resourceHelpers.createEventType(edgeManagement.getId(), "update-devices");
         // App: policies
         Application policies = findApp("rhel", "policies");
         EventType policyTriggered = findEventType("rhel", "policies", "policy-triggered");
@@ -168,6 +172,9 @@ public class EmailTemplateMigrationServiceTest {
             // App: drift
             findAndCompileInstantEmailTemplate(driftBaselineDetected.getId());
             findAndCompileAggregationEmailTemplate(rhel.getName(), drift.getName(), DAILY);
+            // App: edge-management
+            findAndCompileInstantEmailTemplate(imageCreation.getId());
+            findAndCompileInstantEmailTemplate(updateDevices.getId());
             // App: policies
             findAndCompileInstantEmailTemplate(policyTriggered.getId());
             findAndCompileAggregationEmailTemplate(rhel.getName(), policies.getName(), DAILY);

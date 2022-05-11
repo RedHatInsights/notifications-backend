@@ -143,6 +143,21 @@ public class EmailTemplateMigrationService {
         );
 
         /*
+         * Former src/main/resources/templates/EdgeManagement folder.
+         */
+        getOrCreateTemplate(warnings, "EdgeManagement/insightsEmailBody", "html", "EdgeManagement Insights email body");
+        createInstantEmailTemplate(
+                warnings, "rhel", "edge-management", List.of("image-creation"),
+                "EdgeManagement/imageCreationTitle", "txt", "EdgeManagement image creation email title",
+                "EdgeManagement/imageCreationBody", "html", "EdgeManagement image creation email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "rhel", "edge-management", List.of("update-devices"),
+                "EdgeManagement/updateDeviceTitle", "txt", "EdgeManagement update devices email title",
+                "EdgeManagement/updateDeviceBody", "html", "EdgeManagement update devices email body"
+        );
+
+        /*
          * Former src/main/resources/templates/Policies folder.
          */
         getOrCreateTemplate(warnings, "Policies/insightsEmailBody", "html", "Policies Insights email body");
