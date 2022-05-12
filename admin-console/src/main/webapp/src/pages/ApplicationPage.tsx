@@ -225,7 +225,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             { isAdmin && <AggregationTemplateCard
                 applicationName={ application?.displayName }
                 bundleName={ bundle?.display_name }
-                templateSubject={ aggregationTemplates?.subject_template } /> }
+                templateSubject={ aggregationTemplates?.map(t => t.subject_template) } /> }
             { isAdmin && <InstantEmailTemplateTable /> }
         </React.Fragment>
 

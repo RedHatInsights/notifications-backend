@@ -2,10 +2,12 @@ import { Breadcrumb, BreadcrumbItem, Card, CardBody, CardHeader, PageSection, Ti
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 
+import { Template } from '../../types/Notifications';
+
 interface AggregationEmailCardProps {
     applicationName?: string;
     bundleName?: string;
-    templateSubject: string;
+    templateSubject: Partial<Template>[] | undefined;
 }
 
 export const AggregationTemplateCard: React.FunctionComponent<AggregationEmailCardProps> = (props) => {
