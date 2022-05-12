@@ -425,6 +425,19 @@ public class EventResourceTest extends DbIsolatedTest {
         assertSameEvent(page.getData().get(1), event1, history1, history2);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
+
+        /*
+         * Test #26
+         * Account: DEFAULT_ACCOUNT_ID
+         * Request: Mixing bundle and an app from a different bundle
+         */
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId()), Set.of(app2.getId()), null, null, null, null, null, 10, 0, null, true, true);
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(3, page.getData().size());
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4, history5);
+        assertSameEvent(page.getData().get(2), event1, history1, history2);
+        assertLinks(page.getLinks(), "first", "last");
     }
 
     @Test

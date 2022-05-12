@@ -106,12 +106,20 @@ public class EventRepository {
     private static String addHqlConditions(String hql, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                            LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes,
                                            Set<CompositeEndpointType> compositeEndpointTypes, Set<Boolean> invocationResults) {
+
+        List<String> bundleOrAppsConditions = new ArrayList<>();
+
         if (bundleIds != null && !bundleIds.isEmpty()) {
-            hql += " AND e.bundleId IN (:bundleIds)";
+            bundleOrAppsConditions.add("e.bundleId IN (:bundleIds)");
         }
         if (appIds != null && !appIds.isEmpty()) {
-            hql += " AND e.applicationId IN (:appIds)";
+            bundleOrAppsConditions.add("e.applicationId IN (:appIds)");
         }
+
+        if (bundleOrAppsConditions.size() > 0) {
+            hql += " AND (" + String.join(" OR ", bundleOrAppsConditions) + ")";
+        }
+
         if (eventTypeDisplayName != null) {
             hql += " AND LOWER(e.eventTypeDisplayName) LIKE :eventTypeDisplayName";
         }
