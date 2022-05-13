@@ -6,10 +6,11 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ITUserRequestTest {
 
-    private final ITUserRequest testee = new ITUserRequest("someAccountId", "someOrgId", true, 0, 101);
+    private final ITUserRequest testee = new ITUserRequest("someAccountId", "someOrgId", false, true, 0, 101);
 
     @Test
     void shouldSetPermissionCodeWhenAdminsOnly() {
@@ -35,5 +36,18 @@ class ITUserRequestTest {
     @Test
     void shouldContainAccountIdAsEbsAccountNumber() {
         assertEquals("someAccountId", testee.by.allOf.ebsAccountNumber);
+    }
+
+    @Test
+    void shouldNotContainOrgIdByDefault() {
+        assertNull(testee.by.allOf.accountId);
+    }
+
+    @Test
+    void shouldContainOrgIdWhenOrgIdFlagIsTrue() {
+        ITUserRequest testee = new ITUserRequest("someAccountId", "someOrgId", true, true, 0, 101);
+
+        assertEquals("someOrgId", testee.by.allOf.accountId);
+        assertNull(testee.by.allOf.ebsAccountNumber);
     }
 }

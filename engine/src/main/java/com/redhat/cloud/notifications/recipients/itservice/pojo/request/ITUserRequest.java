@@ -10,13 +10,18 @@ public class ITUserRequest {
     public ITUserRequestBy by;
     public Include include;
 
-    public ITUserRequest(String accountId, String orgId, boolean adminsOnly, int firstResult, int maxResults) {
+    public ITUserRequest(String accountId, String orgId, boolean useOrgId, boolean adminsOnly, int firstResult, int maxResults) {
         final ITUserRequestBy by = new ITUserRequestBy();
         AllOf allOf = new AllOf();
         allOf.status = "enabled";
 
-        // TODO NOTIF-603 replace the ebsAccountNumber with orgId. Means: replace this query object so it matches the expectec it user service query.
-        allOf.ebsAccountNumber = accountId;
+        if (useOrgId) {
+            allOf.ebsAccountNumber = null;
+            allOf.accountId = orgId;
+        } else {
+            allOf.ebsAccountNumber = accountId;
+            allOf.accountId = null;
+        }
 
         if (adminsOnly) {
             PermissionCode permissionCode = new PermissionCode();
