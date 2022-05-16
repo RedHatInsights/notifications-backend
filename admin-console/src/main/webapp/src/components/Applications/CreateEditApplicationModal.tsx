@@ -81,12 +81,13 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
                             id='display-name'
                             name="displayName"
                         /></FormGroup>
-                    <FormGroup
+                    { !props.isEdit && <FormGroup
                         fieldId="role-name"
                         label="Role admin"
+                        isRequired
                         helperText="Role of users who will manage the application"
                     >
-                        { permissions.isAdmin || props.isEdit ? (
+                        { permissions.isAdmin ? (
                             <TextInput
                                 type='text'
                                 onChange={ handleChange }
@@ -96,7 +97,6 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
                             />
                         ) : (
                             <FormSelect
-                                isRequired
                                 value={ application.ownerRole }
                                 onChange={ handleChange }
                                 id='owner-role'
@@ -105,7 +105,7 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
                                 { permissions.roles.map(r => <FormSelectOption key={ r } label={ r } value={ r } />) }
                             </FormSelect>
                         )}
-                    </FormGroup>
+                    </FormGroup>}
                     <ActionGroup>
                         <Button variant='primary' type='submit'
                             isLoading={ props.isLoading } isDisabled={ props.isLoading }
