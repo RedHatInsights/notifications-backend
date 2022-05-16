@@ -72,6 +72,7 @@ public class EmailAggregator {
              */
             Set<User> users = recipientResolver.recipientUsers(
                     aggregationKey.getAccountId(),
+                    aggregationKey.getOrgId(),
                     Stream.concat(
                             endpoints
                                     .stream()

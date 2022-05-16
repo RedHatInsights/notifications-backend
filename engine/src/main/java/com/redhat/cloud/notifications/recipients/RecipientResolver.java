@@ -27,18 +27,18 @@ public class RecipientResolver {
         meterRegistry.gauge("email-processor.recipients-resolved", usersCount);
     }
 
-    public Set<User> recipientUsers(String accountId, Set<RecipientSettings> requests, Set<String> subscribers) {
+    public Set<User> recipientUsers(String accountId, String orgId, Set<RecipientSettings> requests, Set<String> subscribers) {
         return requests.stream()
-                .flatMap(r -> recipientUsers(accountId, r, subscribers).stream())
+                .flatMap(r -> recipientUsers(accountId, orgId, r, subscribers).stream())
                 .collect(Collectors.toSet());
     }
 
-    private Set<User> recipientUsers(String accountId, RecipientSettings request, Set<String> subscribers) {
+    private Set<User> recipientUsers(String accountId, String orgId, RecipientSettings request, Set<String> subscribers) {
         List<User> rbacUsers;
         if (request.getGroupId() == null) {
-            rbacUsers = rbacRecipientUsersProvider.getUsers(accountId, request.isOnlyAdmins());
+            rbacUsers = rbacRecipientUsersProvider.getUsers(accountId, orgId, request.isOnlyAdmins());
         } else {
-            rbacUsers = rbacRecipientUsersProvider.getGroupUsers(accountId, request.isOnlyAdmins(), request.getGroupId());
+            rbacUsers = rbacRecipientUsersProvider.getGroupUsers(accountId, orgId, request.isOnlyAdmins(), request.getGroupId());
         }
 
         // The base list of recipients comes from RBAC.

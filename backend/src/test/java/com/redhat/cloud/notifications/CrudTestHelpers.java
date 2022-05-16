@@ -442,11 +442,7 @@ public abstract class CrudTestHelpers {
         return Optional.empty();
     }
 
-    public static void updateDefaultBehaviorGroup(Header identity, String behaviorGroupId, String displayName, String bundleId, boolean expectedResult) {
-        updateDefaultBehaviorGroup(identity, behaviorGroupId, displayName, bundleId, expectedResult, OK);
-    }
-
-    public static void updateDefaultBehaviorGroup(Header identity, String behaviorGroupId, String displayName, String bundleId, Boolean expectedResult, int expectedStatus) {
+    public static void updateDefaultBehaviorGroup(Header identity, String behaviorGroupId, String displayName, String bundleId, boolean expectedResult, int expectedStatus) {
         BehaviorGroup behaviorGroup = buildDefaultBehaviorGroup(displayName, bundleId);
 
         ValidatableResponse respoonse = given()
@@ -459,17 +455,13 @@ public abstract class CrudTestHelpers {
                 .then()
                 .statusCode(expectedStatus);
 
-        if (expectedResult != null) {
+        if (familyOf(expectedStatus) == SUCCESSFUL) {
             Boolean result = respoonse.extract().as(Boolean.class);
             assertEquals(expectedResult, result);
         }
     }
 
-    public static void deleteDefaultBehaviorGroup(Header identity, String behaviorGroupId, boolean expectedResult) {
-        deleteDefaultBehaviorGroup(identity, behaviorGroupId, expectedResult, OK);
-    }
-
-    public static void deleteDefaultBehaviorGroup(Header identity, String behaviorGroupId, Boolean expectedResult, int expectedStatus) {
+    public static void deleteDefaultBehaviorGroup(Header identity, String behaviorGroupId, boolean expectedResult, int expectedStatus) {
         ValidatableResponse response = given()
                 .header(identity)
                 .basePath(API_INTERNAL)
@@ -478,7 +470,7 @@ public abstract class CrudTestHelpers {
                 .then()
                 .statusCode(expectedStatus);
 
-        if (expectedResult != null) {
+        if (familyOf(expectedStatus) == SUCCESSFUL) {
             Boolean result = response.extract().as(Boolean.class);
             assertEquals(expectedResult, result);
         }

@@ -70,6 +70,8 @@ public class AuthRequestFilter implements ClientRequestFilter {
     public void filter(ClientRequestContext requestContext) throws IOException {
         if (authInfo != null) {
             requestContext.getHeaders().remove("x-rh-rbac-account");
+            requestContext.getHeaders().remove("x-rh-rbac-org-id");
+
             requestContext.getHeaders().putSingle("Authorization", "Basic " + authInfo);
             return;
         }

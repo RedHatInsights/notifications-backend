@@ -1,0 +1,9 @@
+---
+apiVersion: cloud.redhat.com/v1alpha1
+kind: ClowdJobInvocation
+metadata:
+  name: populate-org-id-column
+spec:
+  appName: notifications-backend
+  jobs:
+    - org-id-populator

@@ -15,6 +15,7 @@ import javax.transaction.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -68,7 +69,7 @@ public class EventLogCleanerTest {
     }
 
     private void createEvent(EventType eventType, LocalDateTime created) {
-        Event event = new Event("account-id", eventType);
+        Event event = new Event("account-id", "org-id", eventType, UUID.randomUUID());
         event.setCreated(created);
         entityManager.persist(event);
     }

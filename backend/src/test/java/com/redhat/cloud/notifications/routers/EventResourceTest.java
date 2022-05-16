@@ -39,6 +39,7 @@ import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NOTIFIC
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NOTIFICATIONS_READ_ACCESS_ONLY;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -72,7 +73,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly() {
-        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user2", NOTIFICATIONS_ACCESS_ONLY);
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user2", NOTIFICATIONS_ACCESS_ONLY);
         given()
                 .header(defaultIdentityHeader)
                 .when().get(PATH)
@@ -88,8 +89,8 @@ public class EventResourceTest extends DbIsolatedTest {
          * from the same data.
          */
 
-        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", FULL_ACCESS);
-        Header otherIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, "other-username", FULL_ACCESS);
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
+        Header otherIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, DEFAULT_ORG_ID, "other-username", FULL_ACCESS);
 
         Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1");
         Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2");
@@ -424,11 +425,24 @@ public class EventResourceTest extends DbIsolatedTest {
         assertSameEvent(page.getData().get(1), event1, history1, history2);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
+
+        /*
+         * Test #26
+         * Account: DEFAULT_ACCOUNT_ID
+         * Request: Mixing bundle and an app from a different bundle
+         */
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId()), Set.of(app2.getId()), null, null, null, null, null, 10, 0, null, true, true);
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(3, page.getData().size());
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4, history5);
+        assertSameEvent(page.getData().get(2), event1, history1, history2);
+        assertLinks(page.getLinks(), "first", "last");
     }
 
     @Test
     void testInsufficientPrivileges() {
-        Header noAccessIdentityHeader = mockRbac("tenant", "noAccess", NO_ACCESS);
+        Header noAccessIdentityHeader = mockRbac("tenant", DEFAULT_ORG_ID, "noAccess", NO_ACCESS);
         given()
                 .header(noAccessIdentityHeader)
                 .when().get(PATH)
@@ -438,7 +452,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     void testInvalidSortBy() {
-        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", FULL_ACCESS);
+        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
         given()
                 .header(identityHeader)
                 .param("sortBy", "I am not valid!")
@@ -450,7 +464,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     void testInvalidLimit() {
-        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, "user", FULL_ACCESS);
+        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
         given()
                 .header(identityHeader)
                 .param("limit", 0)
@@ -469,7 +483,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     void shouldBeAllowedToGetEventLogs() {
-        Header readAccessIdentityHeader = mockRbac("tenant", "user-read-access", NOTIFICATIONS_READ_ACCESS_ONLY);
+        Header readAccessIdentityHeader = mockRbac("tenant", DEFAULT_ORG_ID, "user-read-access", NOTIFICATIONS_READ_ACCESS_ONLY);
         given()
                 .header(readAccessIdentityHeader)
                 .when().get(PATH)
@@ -481,6 +495,7 @@ public class EventResourceTest extends DbIsolatedTest {
     @Transactional
     Event createEvent(String accountId, Bundle bundle, Application app, EventType eventType, LocalDateTime created) {
         Event event = new Event();
+        event.setId(UUID.randomUUID());
         event.setAccountId(accountId);
         event.setBundleId(bundle.getId());
         event.setBundleDisplayName(bundle.getDisplayName());
@@ -494,8 +509,8 @@ public class EventResourceTest extends DbIsolatedTest {
         return event;
     }
 
-    private Header mockRbac(String tenant, String username, RbacAccess access) {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
+    private Header mockRbac(String tenant, String orgId, String username, RbacAccess access) {
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }

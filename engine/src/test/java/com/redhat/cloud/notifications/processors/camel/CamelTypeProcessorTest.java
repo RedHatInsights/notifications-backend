@@ -60,6 +60,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class CamelTypeProcessorTest {
 
+    public static final String SUB_TYPE_KEY = "subType";
+    public static final String SUB_TYPE = "sub-type";
     @Inject
     @Any
     InMemoryConnector inMemoryConnector;
@@ -75,7 +77,7 @@ public class CamelTypeProcessorTest {
 
     @BeforeEach
     void beforeEach() {
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(PROCESSED_COUNTER_NAME);
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
     }
 
     @AfterEach
@@ -98,7 +100,9 @@ public class CamelTypeProcessorTest {
         // Two endpoints should have been processed.
         assertEquals(2, result.size());
         // Metrics should report the same thing.
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2, SUB_TYPE_KEY, SUB_TYPE);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, "other-type");
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0);
 
         // Let's have a look at the first result entry fields.
         assertEquals(event, result.get(0).getEvent());
@@ -158,7 +162,10 @@ public class CamelTypeProcessorTest {
         // One endpoint should have been processed.
         assertEquals(1, result.size());
         // Metrics should report the same thing.
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, SUB_TYPE);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 1, SUB_TYPE_KEY, "slack");
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, "other-type");
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0);
 
         // Let's have a look at the first result entry fields.
         NotificationHistory historyItem = result.get(0);
@@ -191,7 +198,7 @@ public class CamelTypeProcessorTest {
         // One endpoint should have been processed.
         assertEquals(1, result.size());
         // Metrics should report the same thing.
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2, SUB_TYPE_KEY, "slack");
 
         // Let's have a look at the first result entry fields.
         historyItem = result.get(0);
@@ -206,7 +213,7 @@ public class CamelTypeProcessorTest {
         result = processor.process(event, List.of(endpoint));
         assertEquals(1, result.size());
         // Metrics should report the same thing.
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 3);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 3, SUB_TYPE_KEY, "slack");
 
         // Let's have a look at the first result entry fields.
         historyItem = result.get(0);
@@ -265,12 +272,12 @@ public class CamelTypeProcessorTest {
         properties.setBasicAuthentication(basicAuth);
         properties.setExtras(Map.of("foo", "bar"));
         // Todo: NOTIF-429 backward compatibility change - Remove soon.
-        properties.setSubType("sub-type");
+        properties.setSubType(SUB_TYPE);
 
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
         endpoint.setType(CAMEL);
-        endpoint.setSubType("sub-type");
+        endpoint.setSubType(SUB_TYPE);
         endpoint.setProperties(properties);
         return endpoint;
     }

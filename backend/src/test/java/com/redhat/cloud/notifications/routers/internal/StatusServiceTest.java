@@ -38,7 +38,7 @@ public class StatusServiceTest extends DbIsolatedTest {
 
     @Test
     public void testValidCurrentStatus() {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("tenant", "username");
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("tenant", "empty", "username");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 

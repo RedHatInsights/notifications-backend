@@ -55,6 +55,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
      */
 
     private static final String TENANT = "NotificationServiceTest";
+    private static final String ORG_ID = "NotificationServiceTestOrgId";
     private static final String USERNAME = "user";
 
     @Inject
@@ -72,8 +73,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
         MockServerConfig.clearRbac();
     }
 
-    private Header initRbacMock(String tenant, String username, RbacAccess access) {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
+    private Header initRbacMock(String tenant, String orgId, String username, RbacAccess access) {
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
@@ -81,7 +82,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Test
     void testEventTypeFetching() {
         helpers.createTestAppAndEventTypes();
-        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         // no offset
         Response response = given()
@@ -156,7 +157,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myOtherTesterApplicationId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getId();
-        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
@@ -186,7 +187,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myBundleId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getBundleId();
 
-        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
@@ -217,7 +218,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
         UUID myOtherTesterApplicationId = app.getId();
         UUID myBundleId = app.getBundleId();
-        Header identityHeader = initRbacMock(TENANT, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         Response response = given()
                 .when()
@@ -244,9 +245,72 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEventTypeFetchingByEventTypeName() {
+        helpers.createTestAppAndEventTypes();
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+
+        Response response = given()
+                .when()
+                .header(identityHeader)
+                .queryParam("eventTypeName", "50")
+                .get("/notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject page = new JsonObject(response.getBody().asString());
+        JsonArray eventTypes = page.getJsonArray("data");
+        for (int i = 0; i < eventTypes.size(); i++) {
+            JsonObject ev = eventTypes.getJsonObject(i);
+            ev.mapTo(EventType.class);
+            assertTrue(ev.getString("display_name").contains("50") || ev.getString("name").contains("50"));
+        }
+
+        assertEquals(2, page.getJsonObject("meta").getInteger("count"));
+        assertEquals(2, eventTypes.size());
+    }
+
+    @Test
+    void testEventTypeFetchingByBundleApplicationAndEventTypeName() {
+        helpers.createTestAppAndEventTypes();
+        List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
+        Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
+        UUID myOtherTesterApplicationId = app.getId();
+        UUID myBundleId = app.getBundleId();
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+
+        Response response = given()
+                .when()
+                .header(identityHeader)
+                .queryParam("bundleId", myBundleId)
+                .queryParam("applicationIds", myOtherTesterApplicationId)
+                .queryParam("eventTypeName", "50")
+                .get("/notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject page = new JsonObject(response.getBody().asString());
+        JsonArray eventTypes = page.getJsonArray("data");
+        for (int i = 0; i < eventTypes.size(); i++) {
+            JsonObject ev = eventTypes.getJsonObject(i);
+            ev.mapTo(EventType.class);
+            assertEquals(myBundleId.toString(), ev.getJsonObject("application").getString("bundle_id"));
+            assertEquals(myOtherTesterApplicationId.toString(), ev.getJsonObject("application").getString("id"));
+            assertTrue(ev.getString("display_name").contains("50") || ev.getString("name").contains("50"));
+        }
+
+        assertEquals(1, page.getJsonObject("meta").getInteger("count"));
+        assertEquals(1, eventTypes.size());
+    }
+
+    @Test
     void testGetEventTypesAffectedByEndpoint() {
         String tenant = "testGetEventTypesAffectedByEndpoint";
-        Header identityHeader = initRbacMock(tenant, "user", FULL_ACCESS);
+        String orgId = "testGetEventTypesAffectedByEndpointOrgId";
+        Header identityHeader = initRbacMock(tenant, orgId, "user", FULL_ACCESS);
         UUID bundleId = helpers.createTestAppAndEventTypes();
         UUID behaviorGroupId1 = helpers.createBehaviorGroup(tenant, "behavior-group-1", bundleId).getId();
         UUID behaviorGroupId2 = helpers.createBehaviorGroup(tenant, "behavior-group-2", bundleId).getId();
@@ -325,7 +389,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testGetApplicationFacets() {
-        Header identityHeader = initRbacMock("test", "user", READ_ACCESS);
+        Header identityHeader = initRbacMock("test", "test2", "user", READ_ACCESS);
         List<Facet> applications = given()
                 .header(identityHeader)
                 .when()
@@ -355,7 +419,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Test
     void testGetBundlesFacets() {
         // no children by default
-        Header identityHeader = initRbacMock("test", "user", READ_ACCESS);
+        Header identityHeader = initRbacMock("test", "test2", "user", READ_ACCESS);
         List<Facet> bundles = given()
                 .header(identityHeader)
                 .when()
@@ -393,8 +457,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testInsufficientPrivileges() {
-        Header noAccessIdentityHeader = initRbacMock("tenant", "noAccess", NO_ACCESS);
-        Header readAccessIdentityHeader = initRbacMock("tenant", "readAccess", READ_ACCESS);
+        Header noAccessIdentityHeader = initRbacMock("tenant", "orgId", "noAccess", NO_ACCESS);
+        Header readAccessIdentityHeader = initRbacMock("tenant", "orgId", "readAccess", READ_ACCESS);
 
         given()
                 .header(noAccessIdentityHeader)
@@ -440,8 +504,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
         given()
                 .header(readAccessIdentityHeader)
                 .contentType(JSON)
-                // TODO Remove the body when https://github.com/quarkusio/quarkus/issues/16897 is fixed
-                .body(Json.encode(new BehaviorGroup()))
                 .when()
                 .post("/notifications/behaviorGroups")
                 .then()
@@ -451,8 +513,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .header(readAccessIdentityHeader)
                 .contentType(JSON)
                 .pathParam("id", UUID.randomUUID())
-                // TODO Remove the body when https://github.com/quarkusio/quarkus/issues/16897 is fixed
-                .body(Json.encode(new BehaviorGroup()))
                 .when()
                 .put("/notifications/behaviorGroups/{id}")
                 .then()
@@ -483,5 +543,84 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .get("/notifications/bundles/{bundleId}/behaviorGroups")
                 .then()
                 .statusCode(403);
+    }
+
+    @Test
+    void testUpdateUnknownBehaviorGroupId() {
+        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName("Behavior group");
+        behaviorGroup.setBundleId(UUID.randomUUID()); // Only used for @NotNull validation.
+
+        given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .pathParam("id", UUID.randomUUID())
+                .body(Json.encode(behaviorGroup))
+                .when()
+                .put("/notifications/behaviorGroups/{id}")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void testDeleteUnknownBehaviorGroupId() {
+        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+        given()
+                .header(identityHeader)
+                .pathParam("id", UUID.randomUUID())
+                .when()
+                .delete("/notifications/behaviorGroups/{id}")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void testFindBehaviorGroupsByUnknownBundleId() {
+        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+        given()
+                .header(identityHeader)
+                .pathParam("bundleId", UUID.randomUUID())
+                .when()
+                .get("/notifications/bundles/{bundleId}/behaviorGroups")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId() {
+        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+        given()
+                .header(identityHeader)
+                .pathParam("behaviorGroupId", UUID.randomUUID())
+                .when()
+                .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void testFindBehaviorGroupsByUnknownEventTypeId() {
+        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+        given()
+                .header(identityHeader)
+                .pathParam("eventTypeId", UUID.randomUUID())
+                .when()
+                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId() {
+        Header identityHeader = initRbacMock("tenant", "someOrgId", "user", FULL_ACCESS);
+        given()
+                .header(identityHeader)
+                .pathParam("endpointId", UUID.randomUUID())
+                .when()
+                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+                .then()
+                .statusCode(404);
     }
 }

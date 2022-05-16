@@ -40,7 +40,9 @@ public class NotificationHistoryRepository {
         }
 
         String outcome = (String) jo.get("outcome");
-        boolean result = outcome != null && outcome.startsWith("Success");
+        // TODO NOTIF-636 Remove oldResult after the Eventing team is done integrating with the new way to determine the success.
+        boolean oldResult = outcome != null && outcome.startsWith("Success");
+        boolean result = oldResult || jo.containsKey("successful") && ((Boolean) jo.get("successful"));
         Map details = (Map) jo.get("details");
         if (!details.containsKey("outcome")) {
             details.put("outcome", outcome);

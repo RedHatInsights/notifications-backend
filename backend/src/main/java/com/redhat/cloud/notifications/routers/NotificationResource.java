@@ -86,9 +86,12 @@ public class NotificationResource {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve all event types. The returned list can be filtered by bundle or application.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Page<EventType> getEventTypes(@Context UriInfo uriInfo, @BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId) {
-        List<EventType> eventTypes = applicationRepository.getEventTypes(query, applicationIds, bundleId);
-        Long count = applicationRepository.getEventTypesCount(applicationIds, bundleId);
+    public Page<EventType> getEventTypes(
+            @Context UriInfo uriInfo, @BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId,
+            @QueryParam("eventTypeName") String eventTypeName
+    ) {
+        List<EventType> eventTypes = applicationRepository.getEventTypes(query, applicationIds, bundleId, eventTypeName);
+        Long count = applicationRepository.getEventTypesCount(applicationIds, bundleId, eventTypeName);
         return new Page<>(
                 eventTypes,
                 PageLinksBuilder.build(uriInfo.getPath(), count, query.getLimit().getLimit(), query.getLimit().getOffset()),
@@ -198,7 +201,7 @@ public class NotificationResource {
     @Transactional
     public Boolean deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
         String accountId = getAccountId(sec);
-        return behaviorGroupRepository.delete(accountId, behaviorGroupId, false);
+        return behaviorGroupRepository.delete(accountId, behaviorGroupId);
     }
 
     @PUT

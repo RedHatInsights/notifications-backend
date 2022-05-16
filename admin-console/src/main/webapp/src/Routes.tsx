@@ -5,6 +5,7 @@ import { AggregationPage } from './pages/AggregationPage';
 import { ApplicationPage } from './pages/ApplicationPage';
 import { BundlePage } from './pages/BundlePage';
 import { EmailTemplatePage } from './pages/EmailTemplatePage';
+import { MessageValidatorPage } from './pages/MessageValidatorPage';
 import { RenderEmailPage } from './pages/RenderEmailPage';
 
 interface Path {
@@ -17,7 +18,8 @@ export const linkTo = {
     application: (applicationId: string) => `/application/${applicationId}`,
     aggregation: () => '/aggregation',
     email: () => '/email',
-    emailTemplates: () => `/emailTemplates`
+    emailTemplates: () => `/emailTemplates`,
+    messageValidator: () => '/utils/message-validator'
 };
 
 const pathRoutes: Path[] = [
@@ -40,6 +42,10 @@ const pathRoutes: Path[] = [
     {
         path: linkTo.emailTemplates(),
         component: EmailTemplatePage
+    },
+    {
+        path: linkTo.messageValidator(),
+        component: MessageValidatorPage
     }
 ];
 

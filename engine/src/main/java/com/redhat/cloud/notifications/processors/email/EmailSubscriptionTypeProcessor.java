@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -191,7 +192,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
                 .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
-        return recipientResolver.recipientUsers(action.getAccountId(), requests, subscribers)
+        return recipientResolver.recipientUsers(action.getAccountId(), action.getOrgId(), requests, subscribers)
                 .stream()
                 .map(user -> emailSender.sendEmail(user, event, subject, body))
                 // The value may be an empty Optional in case of Qute template exception.
@@ -289,6 +290,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 
                 Event event = new Event();
+                event.setId(UUID.randomUUID());
                 event.setAction(action);
 
                 emailSender.sendEmail(aggregation.getKey(), event, subject, body);

@@ -28,9 +28,20 @@ public class ResourceHelpers {
     @Inject
     EntityManager entityManager;
 
-    public Boolean addEmailAggregation(String accountId, String bundleName, String applicationName, JsonObject payload) {
+    // TODO NOTIF-603 Remove when switching to orgId
+    public void addEmailAggregation(String accountId, String bundleName, String applicationName, JsonObject payload) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setAccountId(accountId);
+        aggregation.setBundleName(bundleName);
+        aggregation.setApplicationName(applicationName);
+        aggregation.setPayload(payload);
+        emailAggregationRepository.addEmailAggregation(aggregation);
+    }
+
+    public Boolean addEmailAggregation(String accountId, String orgId, String bundleName, String applicationName, JsonObject payload) {
+        EmailAggregation aggregation = new EmailAggregation();
+        aggregation.setAccountId(accountId);
+        aggregation.setOrgId(orgId);
         aggregation.setBundleName(bundleName);
         aggregation.setApplicationName(applicationName);
         aggregation.setPayload(payload);

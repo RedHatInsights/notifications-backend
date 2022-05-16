@@ -41,6 +41,11 @@ public class RbacRecipientUsersProvider {
 
     public static final String ORG_ADMIN_PERMISSION = "admin:org:all";
 
+    public static final String USE_ORG_ID = "notifications.use-org-id";
+
+    @ConfigProperty(name = USE_ORG_ID, defaultValue = "false")
+    public boolean useOrgId;
+
     @Inject
     @RestClient
     RbacServiceToService rbacServiceToService;
@@ -117,7 +122,7 @@ public class RbacRecipientUsersProvider {
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
-    public List<User> getUsers(String accountId, boolean adminsOnly) {
+    public List<User> getUsers(String accountId, String orgId, boolean adminsOnly) {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
@@ -127,7 +132,7 @@ public class RbacRecipientUsersProvider {
         int firstResult = 0;
 
         do {
-            ITUserRequest request = new ITUserRequest(accountId, adminsOnly, firstResult, maxResultsPerPage);
+            ITUserRequest request = new ITUserRequest(accountId, orgId, useOrgId, adminsOnly, firstResult, maxResultsPerPage);
             usersPaging = retryOnItError(() -> itUserService.getUsers(request));
             usersTotal.addAll(usersPaging);
 
@@ -143,11 +148,11 @@ public class RbacRecipientUsersProvider {
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
-    public List<User> getGroupUsers(String accountId, boolean adminOnly, UUID groupId) {
+    public List<User> getGroupUsers(String accountId, String orgId, boolean adminOnly, UUID groupId) {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
         RbacGroup rbacGroup;
         try {
-            rbacGroup = retryOnRbacError(() -> rbacServiceToService.getGroup(accountId, groupId));
+            rbacGroup = retryOnRbacError(() -> rbacServiceToService.getGroup(accountId, orgId, groupId));
         } catch (ClientWebApplicationException exception) {
             // The group does not exist (or no longer exists - ignore)
             if (exception.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
@@ -159,12 +164,12 @@ public class RbacRecipientUsersProvider {
 
         List<User> users;
         if (rbacGroup.isPlatformDefault()) {
-            users = getUsers(accountId, adminOnly);
+            users = getUsers(accountId, orgId, adminOnly);
         } else {
             users = getWithPagination(page -> {
                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
                 Page<RbacUser> rbacUsers = retryOnRbacError(() ->
-                        rbacServiceToService.getGroupUsers(accountId, groupId, page * rbacElementsPerPage, rbacElementsPerPage));
+                        rbacServiceToService.getGroupUsers(accountId, orgId, groupId, page * rbacElementsPerPage, rbacElementsPerPage));
                 getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "accountId", accountId));
                 return rbacUsers;
             });
@@ -173,7 +178,7 @@ public class RbacRecipientUsersProvider {
                 users = users.stream().filter(User::isAdmin).collect(Collectors.toList());
             }
         }
-        getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
+        getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountId, "orgId", orgId, "users", String.valueOf(users.size())));
         return users;
     }
 
