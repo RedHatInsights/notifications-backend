@@ -1,4 +1,4 @@
-import { Chip, Spinner } from '@patternfly/react-core';
+import { Spinner } from '@patternfly/react-core';
 import * as React from 'react';
 
 import { useInstantEmailTemplates } from '../../services/EmailTemplates/GetInstantTemplates';
