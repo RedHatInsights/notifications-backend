@@ -4,6 +4,6 @@ kind: ClowdJobInvocation
 metadata:
   name: populate-org-id-column
 spec:
-  appName: cloud-connector
+  appName: notifications-backend
   jobs:
     - org-id-populator
