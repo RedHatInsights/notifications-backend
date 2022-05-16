@@ -21,7 +21,7 @@ export const ListInstantTemplates: React.FunctionComponent = () => {
             </div>
             <div>
                 { getInstantTemplates.payload.value.map(e => (
-                    <Chip isReadOnly key={ e.id }>{[ e.subject_template?.name, e.body_template?.name ]}</Chip>
+                    <div key={ e.id }> {[ e.subject_template?.name, e.body_template?.name ]} </div>
                 ))}
             </div>
         </React.Fragment>
