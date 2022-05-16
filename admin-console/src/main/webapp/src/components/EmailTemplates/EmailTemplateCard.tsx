@@ -1,16 +1,26 @@
-import { Breadcrumb, BreadcrumbItem, Card, CardBody, CardHeader, PageSection, Title } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, Card, CardBody, CardHeader, PageSection, Spinner, Title } from '@patternfly/react-core';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 
-import { Template } from '../../types/Notifications';
+import { useAggregatedEmailTemplates } from '../../services/EmailTemplates/GetAggregationTemplates';
 
 interface AggregationEmailCardProps {
     applicationName?: string;
     bundleName?: string;
-    templateSubject: Partial<Template>[] | undefined;
 }
 
 export const AggregationTemplateCard: React.FunctionComponent<AggregationEmailCardProps> = (props) => {
+
+    const getAggregatedTemplates = useAggregatedEmailTemplates();
+
+    if (getAggregatedTemplates.loading) {
+        return <Spinner />;
+    }
+
+    if (getAggregatedTemplates.payload?.status !== 200) {
+        return <span>Error while loading eventtypes: {getAggregatedTemplates.errorObject.toString()}</span>;
+    }
+
     return (
         <PageSection>
             <Title headingLevel="h1">
@@ -24,9 +34,11 @@ export const AggregationTemplateCard: React.FunctionComponent<AggregationEmailCa
                 <CardBody>
                     {`Bundle: ${ props.bundleName }`}
                 </CardBody>
-                <CardBody>
-                    {`Aggregation Template: ${ <Link to=''>{ props.templateSubject }</Link> }`}
-                </CardBody>
+                { getAggregatedTemplates.payload.value.map(a => (
+                    <CardBody key={ a.id }>
+                        {`Aggregation Template: ${ <Link to=''>{a.body_template?.name }</Link> }` }
+                    </CardBody>
+                ))}
             </Card>
         </PageSection>
     );

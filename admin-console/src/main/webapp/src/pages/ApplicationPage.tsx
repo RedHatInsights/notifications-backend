@@ -18,7 +18,6 @@ import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
-import { useGetAggregationsTemplates } from '../services/EmailTemplates/GetAggregationTemplates';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
@@ -37,7 +36,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
-    const getAggregationTemplates = useGetAggregationsTemplates(applicationId);
 
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
@@ -78,14 +76,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
-
-    const aggregationTemplates = React.useMemo(() => {
-        if (getAggregationTemplates.payload?.status === 200) {
-            return getAggregationTemplates.payload?.value;
-        }
-
-        return undefined;
-    }, [ getAggregationTemplates.payload?.status, getAggregationTemplates.payload?.value ]);
 
     const createEventType = () => {
         setShowModal(true);
@@ -222,13 +212,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     </Tbody>
                 </TableComposable>
             </PageSection>
-            { isAdmin && <AggregationTemplateCard
+            <AggregationTemplateCard
                 applicationName={ application?.displayName }
-                bundleName={ bundle?.display_name }
-                templateSubject={ aggregationTemplates?.map(t => t.subject_template) } /> }
+                bundleName={ bundle?.display_name } />
             { isAdmin && <InstantEmailTemplateTable /> }
         </React.Fragment>
 
     );
 };
-

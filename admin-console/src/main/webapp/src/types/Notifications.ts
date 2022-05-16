@@ -26,7 +26,7 @@ export interface EventType {
 }
 
 export interface Template {
-    id: string;
+    id: string | null | undefined;
     name: string;
     description: string;
     data: string;

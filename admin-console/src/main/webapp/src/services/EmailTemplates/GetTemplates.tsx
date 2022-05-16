@@ -3,23 +3,22 @@ import { useMemo } from 'react';
 import { useQuery } from 'react-fetching-library';
 
 import { Operations } from '../../generated/OpenapiInternal';
-import { InstantTemplate } from '../../types/Notifications';
+import { Template } from '../../types/Notifications';
 
 const validateResponse = validationResponseTransformer(
-    (payload: Operations.TemplateResourceGetAllInstantEmailTemplates.Payload) => {
+    (payload: Operations.TemplateResourceGetAllTemplates.Payload) => {
         if (payload.status === 200) {
-            const instantEmailTemplates: ReadonlyArray<InstantTemplate> = payload.value.map(value => ({
-                event_type: value.event_type,
-                event_type_id: value.event_type_id,
+            const emailTemplates: ReadonlyArray<Template> = payload.value.map(value => ({
                 id: value.id,
-                subject_template: value.subject_template,
-                body_template: value.body_template
+                name: value.name,
+                description: value.description,
+                data: value.data
             }));
 
             return validatedResponse(
-                'instantEmailTemplates',
+                'emailTemplates',
                 200,
-                instantEmailTemplates,
+                emailTemplates,
                 payload.errors
             );
         }
@@ -28,8 +27,8 @@ const validateResponse = validationResponseTransformer(
     }
 );
 
-export const useGetInstantTemplates = () => {
-    const query = useQuery(Operations.TemplateResourceGetAllInstantEmailTemplates.actionCreator());
+export const useGetTemplates = () => {
+    const query = useQuery(Operations.TemplateResourceGetAllTemplates.actionCreator());
 
     const queryPayload = useMemo(() => {
         const payload = query.payload;

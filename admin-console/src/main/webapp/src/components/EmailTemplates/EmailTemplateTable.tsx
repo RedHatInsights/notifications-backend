@@ -12,9 +12,10 @@ import { Link } from 'react-router-dom';
 
 import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
-import { useGetInstantTemplates } from '../../services/EmailTemplates/GetTemplates';
+import { useInstantEmailTemplates } from '../../services/EmailTemplates/GetInstantTemplates';
 import { useApplicationTypes } from '../../services/EventTypes/GetApplication';
-import { ListEventTypes } from '../EventTypes/ListEventTypes';
+import { ListAssociatedEventTypes } from './ListAssociatedEventTypes';
+import { ListInstantTemplates } from './ListInstantTemplates';
 import { ViewTemplateModal } from './ViewEmailTemplateModal';
 
 type ApplicationPageParams = {
@@ -23,7 +24,7 @@ type ApplicationPageParams = {
 
 export const InstantEmailTemplateTable: React.FunctionComponent = () => {
     const { hasPermission } = useUserPermissions();
-    const templateQuery = useGetInstantTemplates();
+    const templateQuery = useInstantEmailTemplates();
 
     const { applicationId } = useParams<ApplicationPageParams>();
     const applicationTypesQuery = useApplicationTypes(applicationId);
@@ -85,26 +86,23 @@ export const InstantEmailTemplateTable: React.FunctionComponent = () => {
                         </Tr>
                     </Thead>
                     <Tbody>
-                        { templateQuery.payload.value.map(t => (
-                            <Tr key={ t.id }>
-                                <Td>{ t.subject_template }</Td>
-
-                                <Td>
-                                    <ListEventTypes
-                                        appId={ application?.id ?? '' }
-                                    />
-                                </Td>
-                                <Td>
-                                    <Button className='view' type='button' variant='plain' onClick={ viewModal }
-                                    > { <EyeIcon /> } </Button></Td>
-                                <Td>
-                                    <Button className='edit' type='button' variant='plain'
-                                        isDisabled> { <PencilAltIcon /> } </Button></Td>
-                                <Td>
-                                    <Button className='delete' type='button' variant='plain'
-                                        isDisabled>{ <TrashIcon /> } </Button></Td>
-                            </Tr>
-                        ))}
+                        <Tr>
+                            <Td>
+                                <ListInstantTemplates />
+                            </Td>
+                            <Td>
+                                <ListAssociatedEventTypes />
+                            </Td>
+                            <Td>
+                                <Button className='view' type='button' variant='plain' onClick={ viewModal }
+                                > { <EyeIcon /> } </Button></Td>
+                            <Td>
+                                <Button className='edit' type='button' variant='plain'
+                                    isDisabled> { <PencilAltIcon /> } </Button></Td>
+                            <Td>
+                                <Button className='delete' type='button' variant='plain'
+                                    isDisabled>{ <TrashIcon /> } </Button></Td>
+                        </Tr>
                     </Tbody>
                 </TableComposable>
             </PageSection>
