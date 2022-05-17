@@ -121,7 +121,7 @@ public class EndpointResource {
                 name = "limit",
                 in = ParameterIn.QUERY,
                 description = "Number of items per page. If the value is 0, it will return all elements",
-                schema = @Schema(type = SchemaType.INTEGER, defaultValue = "20")
+                schema = @Schema(type = SchemaType.INTEGER)
             ),
         @Parameter(
                 name = "pageNumber",
