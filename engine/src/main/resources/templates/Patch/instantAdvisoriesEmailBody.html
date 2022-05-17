@@ -1,0 +1,59 @@
+{#include Patch/insightsEmailBody}
+{#content-title}Advisories Instant Notification - {action.timestamp.toUtcFormat()}{/content-title}
+{#content-body}
+<!-- Body section - Empty row to have more padding between content-->
+<tr>
+    <td class="rh-body rh-multi-column">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+<!-- Body section -->
+<tr>
+    <td class="rh-body">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-card__header">
+                    <h2>
+                        New Advisories
+                    </h2>
+                </td>
+            </tr>  
+            <tr>
+                <p>Red Hat Insights has just released new Advisories for your organization. Please review the systems affected and all the details of each errata respectively.</p>
+            </tr>
+            {#if action.events.size() > 0}
+                {#each action.events}
+                    {#if it.payload.advisories.size() > 0}
+                        {#each it.payload.advisories}
+                        <tr>
+                            <td class="rh-content__block">
+                                <p>
+                                    <a class="rh-url" href="https://console.redhat.com/insights/patch/advisories/{it.name}">{it.name}</a><br>
+                                    <span>{it.synopsis}</span>
+                                </p>
+                            </td>
+                        </tr>
+                        {/each}
+                    {/if}
+                {/each}
+            {/if}
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+{/content-body}
+{/include}
