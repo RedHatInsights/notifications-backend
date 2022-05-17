@@ -158,6 +158,16 @@ public class EmailTemplateMigrationService {
         );
 
         /*
+        * Former src/main/resources/templates/Patch folder.
+         */
+        getOrCreateTemplate(warnings, "Patch/insightsEmailBody", "html", "Patch Insights email body");
+        createInstantEmailTemplate(
+                warnings, "rhel", "patch", List.of("instant-advisories"),
+                "Patch/instantAdvisoriesTitle", "txt", "Patch instant advisories email title",
+                "Patch/instantAdvisoriesBody", "html", "Patch instant advisories email body"
+        );
+
+        /*
          * Former src/main/resources/templates/Policies folder.
          */
         getOrCreateTemplate(warnings, "Policies/insightsEmailBody", "html", "Policies Insights email body");
