@@ -6,5 +6,4 @@ metadata:
 spec:
   appName: notifications-backend
   jobs:
-    - org-id-populator
     - org-id-populator-event-table
