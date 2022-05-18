@@ -40,6 +40,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public abstract class CrudTestHelpers {
 
+    private static final String JSON_UTF8 = "application/json;charset=UTF-8";
+
     public static Bundle buildBundle(String name, String displayName) {
         Bundle bundle = new Bundle();
         bundle.setName(name);
@@ -61,7 +63,7 @@ public abstract class CrudTestHelpers {
                 .post("/internal/bundles")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON.toString()) : any(String.class))
+                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON_UTF8) : any(String.class))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -177,7 +179,7 @@ public abstract class CrudTestHelpers {
                 .post("/internal/applications")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON.toString()) : any(String.class))
+                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON_UTF8) : any(String.class))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -307,7 +309,7 @@ public abstract class CrudTestHelpers {
                 .post("/internal/eventTypes")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON.toString()) : any(String.class))
+                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON_UTF8) : any(String.class))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -570,7 +572,7 @@ public abstract class CrudTestHelpers {
                 .when().post("/templates")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON.toString()) : any(String.class))
+                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON_UTF8) : any(String.class))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -664,7 +666,7 @@ public abstract class CrudTestHelpers {
                 .when().post("/templates/email/instant")
                 .then()
                 .statusCode(200)
-                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON.toString()) : any(String.class))
+                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON_UTF8) : any(String.class))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -816,7 +818,7 @@ public abstract class CrudTestHelpers {
                 .when().post("/templates/email/aggregation")
                 .then()
                 .statusCode(200)
-                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON.toString()) : any(String.class))
+                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON_UTF8) : any(String.class))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
