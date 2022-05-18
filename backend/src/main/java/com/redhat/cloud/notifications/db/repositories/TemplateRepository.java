@@ -10,6 +10,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
@@ -99,10 +100,19 @@ public class TemplateRepository {
         return template;
     }
 
-    public List<InstantEmailTemplate> findAllInstantEmailTemplates() {
+    public List<InstantEmailTemplate> findAllInstantEmailTemplates(UUID applicationId) {
         String hql = "FROM InstantEmailTemplate t LEFT JOIN FETCH t.eventType";
-        List<InstantEmailTemplate> instantEmailTemplates = entityManager.createQuery(hql, InstantEmailTemplate.class)
-                .getResultList();
+
+        if (applicationId != null) {
+            hql += " WHERE t.eventType.application.id = :applicationId";
+        }
+
+        TypedQuery<InstantEmailTemplate> query = entityManager.createQuery(hql, InstantEmailTemplate.class);
+        if (applicationId != null) {
+            query.setParameter("applicationId", applicationId);
+        }
+
+        List<InstantEmailTemplate> instantEmailTemplates = query.getResultList();
         for (InstantEmailTemplate instantEmailTemplate : instantEmailTemplates) {
             if (instantEmailTemplate.getEventType() != null) {
                 // We need the event types in the REST response, but not their parent application.

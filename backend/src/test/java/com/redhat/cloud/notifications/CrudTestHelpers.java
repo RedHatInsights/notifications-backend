@@ -749,9 +749,14 @@ public abstract class CrudTestHelpers {
     }
 
     public static JsonArray getAllInstantEmailTemplates(Header header) {
+        return getAllInstantEmailTemplates(header, null);
+    }
+
+    public static JsonArray getAllInstantEmailTemplates(Header header, String appId) {
         String responseBody = given()
                 .basePath(API_INTERNAL)
                 .header(header)
+                .queryParam("application_id", appId)
                 .when().get("/templates/email/instant")
                 .then()
                 .statusCode(200)
