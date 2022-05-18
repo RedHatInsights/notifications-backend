@@ -127,8 +127,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertEquals(jsonEmailTemplate.getString("id"), jsonEmailTemplates.getJsonObject(0).getString("id"));
 
         // Retrieving the instant email templates from the event type ID should return an empty list.
-        jsonEmailTemplates = getInstantEmailTemplatesByEventType(adminIdentity, eventTypeId);
-        assertTrue(jsonEmailTemplates.isEmpty());
+        getInstantEmailTemplatesByEventType(adminIdentity, eventTypeId, false);
 
         // Let's update the instant email template and check that the new fields values are correctly persisted.
         Template newSubjectTemplate = buildTemplate("new-subject-template-name", "template-data");
@@ -142,10 +141,9 @@ public class TemplateResourceTest extends DbIsolatedTest {
 
         // The instant email template is now linked to an event type.
         // It should be returned if we retrieve all instant email templates from the event type ID.
-        jsonEmailTemplates = getInstantEmailTemplatesByEventType(adminIdentity, eventTypeId);
-        assertEquals(1, jsonEmailTemplates.size());
-        jsonEmailTemplates.getJsonObject(0).mapTo(InstantEmailTemplate.class);
-        assertEquals(jsonEmailTemplate.getString("id"), jsonEmailTemplates.getJsonObject(0).getString("id"));
+        JsonObject jsonEmailTemplate2 = getInstantEmailTemplatesByEventType(adminIdentity, eventTypeId, true);
+        jsonEmailTemplate2.mapTo(InstantEmailTemplate.class);
+        assertEquals(jsonEmailTemplate.getString("id"), jsonEmailTemplate2.getString("id"));
     }
 
     @Test

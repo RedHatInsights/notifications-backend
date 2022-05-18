@@ -119,8 +119,8 @@ public class TemplateResource {
     @Path("/email/instant/eventType/{eventTypeId}")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_INTERNAL_USER)
-    public List<InstantEmailTemplate> getInstantEmailTemplates(@RestPath UUID eventTypeId) {
-        return templateRepository.findInstantEmailTemplatesByEventType(eventTypeId);
+    public InstantEmailTemplate getInstantEmailTemplateByEventType(@RestPath UUID eventTypeId) {
+        return templateRepository.findInstantEmailTemplateByEventType(eventTypeId);
     }
 
     @GET

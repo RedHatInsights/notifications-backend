@@ -771,26 +771,27 @@ public abstract class CrudTestHelpers {
         return jsonEmailTemplates;
     }
 
-    public static JsonArray getInstantEmailTemplatesByEventType(Header header, String eventTypeId) {
+    public static JsonObject getInstantEmailTemplatesByEventType(Header header, String eventTypeId, boolean isExpectedToBeFound) {
         String responseBody = given()
                 .basePath(API_INTERNAL)
                 .header(header)
                 .pathParam("eventTypeId", eventTypeId)
                 .when().get("/templates/email/instant/eventType/{eventTypeId}")
                 .then()
-                .statusCode(200)
+                .statusCode(isExpectedToBeFound ? 200 : 404)
                 .contentType(JSON)
                 .extract().asString();
 
-        JsonArray jsonEmailTemplates = new JsonArray(responseBody);
-        for (int i = 0; i < jsonEmailTemplates.size(); i++) {
-            JsonObject jsonEmailTemplate = jsonEmailTemplates.getJsonObject(i);
+        if (isExpectedToBeFound) {
+            JsonObject jsonEmailTemplate = new JsonObject(responseBody);
             assertNull(jsonEmailTemplate.getJsonObject("event_type"));
             assertNull(jsonEmailTemplate.getJsonObject("subject_template"));
             assertNull(jsonEmailTemplate.getJsonObject("body_template"));
+
+            return jsonEmailTemplate;
         }
 
-        return jsonEmailTemplates;
+        return null;
     }
 
     public static void updateInstantEmailTemplate(Header header, String templateId, InstantEmailTemplate updatedEmailTemplate) {
