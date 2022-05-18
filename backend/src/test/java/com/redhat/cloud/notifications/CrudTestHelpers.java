@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequ
 import com.redhat.cloud.notifications.routers.internal.models.InternalApplicationUserPermission;
 import io.restassured.http.Header;
 import io.restassured.response.ValidatableResponse;
+import io.restassured.specification.RequestSpecification;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -753,10 +754,15 @@ public abstract class CrudTestHelpers {
     }
 
     public static JsonArray getAllInstantEmailTemplates(Header header, String appId) {
-        String responseBody = given()
+        RequestSpecification requestSpecification = given()
                 .basePath(API_INTERNAL)
-                .header(header)
-                .queryParam("application_id", appId)
+                .header(header);
+
+        if (appId != null) {
+            requestSpecification = requestSpecification.queryParam("application_id", appId);
+        }
+        String responseBody =
+                requestSpecification
                 .when().get("/templates/email/instant")
                 .then()
                 .statusCode(200)
