@@ -100,6 +100,9 @@ public class TemplateResourceTest extends DbIsolatedTest {
         String appId = createApp(adminIdentity, bundleId, "app-name", "App", null, OK).get();
         String eventTypeId = createEventType(adminIdentity, appId, "event-type-name", "Event type", "Event type description", OK).get();
 
+        String appId2 = createApp(adminIdentity, bundleId, "app-name-2", "App2", null, OK).get();
+        String eventTypeId2 = createEventType(adminIdentity, appId2, "event-type-name-2", "Event type 2", "Event type description", OK).get();
+
         // We also need templates that will be linked with the instant email template tested below.
         Template subjectTemplate = buildTemplate("subject-template-name", "template-data");
         JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
@@ -117,11 +120,28 @@ public class TemplateResourceTest extends DbIsolatedTest {
         InstantEmailTemplate emailTemplateWithEventType = buildInstantEmailTemplate(eventTypeId, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
         JsonObject jsonEmailTemplateWithEventType = createInstantEmailTemplate(adminIdentity, emailTemplateWithEventType, 200).get();
 
+        // Then, we'll do the same with another instant email template that is linked to event type 2.
+        InstantEmailTemplate emailTemplateWithEventType2 = buildInstantEmailTemplate(eventTypeId2, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
+        JsonObject jsonEmailTemplateWithEventType2 = createInstantEmailTemplate(adminIdentity, emailTemplateWithEventType2, 200).get();
+
+        // At this point, the DB should contain 3 instant email template: the one that wasn't linked to the event type and 2 linked to an event type.
+        JsonArray jsonEmailTemplates = getAllInstantEmailTemplates(adminIdentity);
+        assertEquals(3, jsonEmailTemplates.size());
+
+        // Querying for the specific application (appId2) should yield only 1
+        jsonEmailTemplates = getAllInstantEmailTemplates(adminIdentity, appId2);
+        assertEquals(1, jsonEmailTemplates.size());
+        jsonEmailTemplates.getJsonObject(0).mapTo(InstantEmailTemplate.class);
+        assertEquals(jsonEmailTemplateWithEventType2.getString("id"), jsonEmailTemplates.getJsonObject(0).getString("id"));
+
         // Now, we'll delete the second instant email template and check that it no longer exists with the following line.
         deleteInstantEmailTemplate(adminIdentity, jsonEmailTemplateWithEventType.getString("id"));
 
+        // Now, we'll delete the third instant email template and check that it no longer exists with the following line.
+        deleteInstantEmailTemplate(adminIdentity, jsonEmailTemplateWithEventType2.getString("id"));
+
         // At this point, the DB should contain one instant email template: the one that wasn't linked to the event type.
-        JsonArray jsonEmailTemplates = getAllInstantEmailTemplates(adminIdentity);
+        jsonEmailTemplates = getAllInstantEmailTemplates(adminIdentity);
         assertEquals(1, jsonEmailTemplates.size());
         jsonEmailTemplates.getJsonObject(0).mapTo(InstantEmailTemplate.class);
         assertEquals(jsonEmailTemplate.getString("id"), jsonEmailTemplates.getJsonObject(0).getString("id"));
