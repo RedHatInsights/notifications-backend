@@ -124,7 +124,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
         InstantEmailTemplate emailTemplateWithEventType2 = buildInstantEmailTemplate(eventTypeId2, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
         JsonObject jsonEmailTemplateWithEventType2 = createInstantEmailTemplate(adminIdentity, emailTemplateWithEventType2, 200).get();
 
-        // At this point, the DB should 3 one instant email template: the one that wasn't linked to the event type and 2 linked to an event type.
+        // At this point, the DB should contain 3 instant email template: the one that wasn't linked to the event type and 2 linked to an event type.
         JsonArray jsonEmailTemplates = getAllInstantEmailTemplates(adminIdentity);
         assertEquals(3, jsonEmailTemplates.size());
 

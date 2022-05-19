@@ -112,7 +112,7 @@ public class TemplateResource {
     @Path("/email/instant")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_INTERNAL_USER)
-    public List<InstantEmailTemplate> getAllInstantEmailTemplates(@QueryParam("application_id") @Valid UUID applicationId) {
+    public List<InstantEmailTemplate> getAllInstantEmailTemplates(@QueryParam("applicationId") UUID applicationId) {
         return templateRepository.findAllInstantEmailTemplates(applicationId);
     }
 

@@ -759,7 +759,7 @@ public abstract class CrudTestHelpers {
                 .header(header);
 
         if (appId != null) {
-            requestSpecification = requestSpecification.queryParam("application_id", appId);
+            requestSpecification = requestSpecification.queryParam("applicationId", appId);
         }
         String responseBody =
                 requestSpecification
