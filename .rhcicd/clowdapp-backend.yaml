@@ -84,8 +84,9 @@ objects:
           - -t
           - email_aggregation
           - --ean-translator-addr
-          - --db-operation-timeout 10
           - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+          - --db-operation-timeout
+          - 10
         env:
           - name: TENANT_TRANSLATOR_HOST
             value: ${TENANT_TRANSLATOR_HOST}
@@ -115,8 +116,9 @@ objects:
           - -t
           - event
           - --ean-translator-addr
-          - --db-operation-timeout 10
           - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+          - --db-operation-timeout
+          - 10
         env:
           - name: TENANT_TRANSLATOR_HOST
             value: ${TENANT_TRANSLATOR_HOST}
