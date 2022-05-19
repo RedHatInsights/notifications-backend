@@ -32,8 +32,8 @@ export interface Template {
     data: string;
 }
 
-export interface InstantTemplate {
-    body_template: Template;
+export type InstantTemplate = {
+    body_template: Schemas.Template;
     event_type: Schemas.EventType;
     event_type_id: UUID;
     id: UUID;
@@ -50,11 +50,13 @@ export type Application1 = {
     name: string;
   };
 
-export interface AggregationTemplate {
-    application: Application1 | null | undefined;
-    applicationId: UUID;
-    body_template: Template;
-    id?: UUID;
-    subject_template: Template;
+export type AggregationTemplate = {
+    application?: Schemas.Application1 | undefined | null;
+    application_id?: UUID | undefined | null;
+    body_template?: Schemas.Template | undefined | null;
+    body_template_id: UUID;
+    id?: UUID | undefined | null;
+    subject_template?: Schemas.Template | undefined | null;
+    subject_template_id: UUID;
 
 }

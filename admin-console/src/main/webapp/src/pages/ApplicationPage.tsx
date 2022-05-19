@@ -18,6 +18,7 @@ import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
+import { useAggregationTemplates } from '../services/EmailTemplates/GetAggregationTemplates';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
@@ -36,6 +37,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
+    const aggregationTemplates = useAggregationTemplates(applicationId);
 
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
@@ -76,6 +78,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
+
+    const getAggregationEmailTemplates = useMemo(() => {
+        if (aggregationTemplates.payload?.status === 200) {
+            return aggregationTemplates.payload.value;
+        }
+
+        return undefined;
+    }, [ aggregationTemplates.payload?.status, aggregationTemplates.payload?.value ]);
 
     const createEventType = () => {
         setShowModal(true);
@@ -214,7 +224,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
             </PageSection>
             <AggregationTemplateCard
                 applicationName={ application?.displayName }
-                bundleName={ bundle?.display_name } />
+                bundleName={ bundle?.display_name }
+                templateName={ getAggregationEmailTemplates?.map(a => a.body_template?.name) } />
             { isAdmin && <InstantEmailTemplateTable /> }
         </React.Fragment>
 

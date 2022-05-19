@@ -12,10 +12,8 @@ import { Link } from 'react-router-dom';
 
 import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
-import { useInstantEmailTemplates } from '../../services/EmailTemplates/GetInstantTemplates';
+import { useGetTemplates } from '../../services/EmailTemplates/GetTemplates';
 import { useApplicationTypes } from '../../services/EventTypes/GetApplication';
-import { ListAssociatedEventTypes } from './ListAssociatedEventTypes';
-import { ListInstantTemplates } from './ListInstantTemplates';
 import { ViewTemplateModal } from './ViewEmailTemplateModal';
 
 type ApplicationPageParams = {
@@ -24,7 +22,7 @@ type ApplicationPageParams = {
 
 export const InstantEmailTemplateTable: React.FunctionComponent = () => {
     const { hasPermission } = useUserPermissions();
-    const templateQuery = useInstantEmailTemplates();
+    const getAllTemplates = useGetTemplates();
 
     const { applicationId } = useParams<ApplicationPageParams>();
     const applicationTypesQuery = useApplicationTypes(applicationId);
@@ -46,14 +44,14 @@ export const InstantEmailTemplateTable: React.FunctionComponent = () => {
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
 
-    const columns = [ 'Instant Email Templates', 'Event Types' ];
+    const columns = [ 'Email Templates' ];
 
-    if (templateQuery.loading) {
+    if (getAllTemplates.loading) {
         return <Spinner />;
     }
 
-    if (templateQuery.payload?.status !== 200) {
-        return <span>Error while loading templates: {templateQuery.errorObject.toString()}</span>;
+    if (getAllTemplates.payload?.status !== 200) {
+        return <span>Error while loading templates: {getAllTemplates.errorObject.toString()}</span>;
     }
 
     return (
@@ -61,7 +59,7 @@ export const InstantEmailTemplateTable: React.FunctionComponent = () => {
             <PageSection>
                 <Title headingLevel="h1">
                     <Breadcrumb>
-                        <BreadcrumbItem target='#'>Instant Email Template for { application?.displayName ?? '' }</BreadcrumbItem>
+                        <BreadcrumbItem target='#'>Email Templates for { application?.displayName ?? '' }</BreadcrumbItem>
                     </Breadcrumb></Title>
                 <TableComposable aria-label="Email Template table">
                     <Thead>
@@ -70,7 +68,7 @@ export const InstantEmailTemplateTable: React.FunctionComponent = () => {
                                 <ToolbarItem>
                                     <Button variant="primary" isDisabled={ !application || !hasPermission(application?.id) }
                                         component={ (props: any) =>
-                                            <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Instant Email Template</Button>
+                                            <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Email Template</Button>
                                     <ViewTemplateModal
                                         showModal={ showViewModal }
                                         applicationName={ application?.displayName ?? '' }
@@ -86,23 +84,20 @@ export const InstantEmailTemplateTable: React.FunctionComponent = () => {
                         </Tr>
                     </Thead>
                     <Tbody>
-                        <Tr>
-                            <Td>
-                                <ListInstantTemplates />
-                            </Td>
-                            <Td>
-                                <ListAssociatedEventTypes />
-                            </Td>
-                            <Td>
-                                <Button className='view' type='button' variant='plain' onClick={ viewModal }
-                                > { <EyeIcon /> } </Button></Td>
-                            <Td>
-                                <Button className='edit' type='button' variant='plain'
-                                    isDisabled> { <PencilAltIcon /> } </Button></Td>
-                            <Td>
-                                <Button className='delete' type='button' variant='plain'
-                                    isDisabled>{ <TrashIcon /> } </Button></Td>
-                        </Tr>
+                        { getAllTemplates.payload.value.map(e => (
+                            <Tr key={ e.id }>
+                                <Td>{ e.name }</Td>
+                                <Td>
+                                    <Button className='view' type='button' variant='plain' onClick={ viewModal }
+                                    > { <EyeIcon /> } </Button></Td>
+                                <Td>
+                                    <Button className='edit' type='button' variant='plain'
+                                        isDisabled> { <PencilAltIcon /> } </Button></Td>
+                                <Td>
+                                    <Button className='delete' type='button' variant='plain'
+                                        isDisabled>{ <TrashIcon /> } </Button></Td>
+                            </Tr>
+                        ))}
                     </Tbody>
                 </TableComposable>
             </PageSection>
