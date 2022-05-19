@@ -86,7 +86,7 @@ objects:
           - --ean-translator-addr
           - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
           - --db-operation-timeout
-          - 10
+          - "10"
         env:
           - name: TENANT_TRANSLATOR_HOST
             value: ${TENANT_TRANSLATOR_HOST}
@@ -118,7 +118,7 @@ objects:
           - --ean-translator-addr
           - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
           - --db-operation-timeout
-          - 10
+          - "10"
         env:
           - name: TENANT_TRANSLATOR_HOST
             value: ${TENANT_TRANSLATOR_HOST}
