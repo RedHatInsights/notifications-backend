@@ -114,18 +114,21 @@ public class TemplateRepository {
         return instantEmailTemplates;
     }
 
-    public List<InstantEmailTemplate> findInstantEmailTemplatesByEventType(UUID eventTypeId) {
-        String hql = "FROM InstantEmailTemplate t JOIN FETCH t.eventType et WHERE et.id = :eventTypeId";
-        List<InstantEmailTemplate> instantEmailTemplates = entityManager.createQuery(hql, InstantEmailTemplate.class)
-                .setParameter("eventTypeId", eventTypeId)
-                .getResultList();
-        for (InstantEmailTemplate instantEmailTemplate : instantEmailTemplates) {
+    public InstantEmailTemplate findInstantEmailTemplateByEventType(UUID eventTypeId) {
+        try {
+            String hql = "FROM InstantEmailTemplate t JOIN FETCH t.eventType et WHERE et.id = :eventTypeId";
+            InstantEmailTemplate instantEmailTemplate = entityManager.createQuery(hql, InstantEmailTemplate.class)
+                    .setParameter("eventTypeId", eventTypeId)
+                    .getSingleResult();
             // The full event types aren't needed in the REST response.
             instantEmailTemplate.filterOutEventType();
             // The full templates aren't needed in the REST response.
             instantEmailTemplate.filterOutTemplates();
+
+            return instantEmailTemplate;
+        } catch (NoResultException e) {
+            throw new NotFoundException("Instant email template not found");
         }
-        return instantEmailTemplates;
     }
 
     public InstantEmailTemplate findInstantEmailTemplateById(UUID id) {
