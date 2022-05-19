@@ -83,7 +83,7 @@ public class EmailTemplateMigrationServiceTest {
         EventType updateDevices = resourceHelpers.createEventType(edgeManagement.getId(), "update-devices");
         // App: patch
         Application patch = resourceHelpers.createApp(rhel.getId(), "patch");
-        EventType instantAdvisories = resourceHelpers.createEventType(patch.getId(), "instant-advisories");
+        EventType newAdvisories = resourceHelpers.createEventType(patch.getId(), "new-advisories");
         // App: policies
         Application policies = findApp("rhel", "policies");
         EventType policyTriggered = findEventType("rhel", "policies", "policy-triggered");
@@ -179,7 +179,7 @@ public class EmailTemplateMigrationServiceTest {
             findAndCompileInstantEmailTemplate(imageCreation.getId());
             findAndCompileInstantEmailTemplate(updateDevices.getId());
             // App: patch
-            findAndCompileInstantEmailTemplate(instantAdvisories.getId());
+            findAndCompileInstantEmailTemplate(newAdvisories.getId());
             // App: policies
             findAndCompileInstantEmailTemplate(policyTriggered.getId());
             findAndCompileAggregationEmailTemplate(rhel.getName(), policies.getName(), DAILY);
