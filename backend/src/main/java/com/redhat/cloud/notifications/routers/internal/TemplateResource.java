@@ -27,6 +27,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
 import java.util.List;
@@ -111,16 +112,16 @@ public class TemplateResource {
     @Path("/email/instant")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_INTERNAL_USER)
-    public List<InstantEmailTemplate> getAllInstantEmailTemplates() {
-        return templateRepository.findAllInstantEmailTemplates();
+    public List<InstantEmailTemplate> getAllInstantEmailTemplates(@QueryParam("applicationId") UUID applicationId) {
+        return templateRepository.findAllInstantEmailTemplates(applicationId);
     }
 
     @GET
     @Path("/email/instant/eventType/{eventTypeId}")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_INTERNAL_USER)
-    public List<InstantEmailTemplate> getInstantEmailTemplates(@RestPath UUID eventTypeId) {
-        return templateRepository.findInstantEmailTemplatesByEventType(eventTypeId);
+    public InstantEmailTemplate getInstantEmailTemplateByEventType(@RestPath UUID eventTypeId) {
+        return templateRepository.findInstantEmailTemplateByEventType(eventTypeId);
     }
 
     @GET

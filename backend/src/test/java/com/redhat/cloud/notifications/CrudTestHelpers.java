@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequ
 import com.redhat.cloud.notifications.routers.internal.models.InternalApplicationUserPermission;
 import io.restassured.http.Header;
 import io.restassured.response.ValidatableResponse;
+import io.restassured.specification.RequestSpecification;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -749,9 +750,19 @@ public abstract class CrudTestHelpers {
     }
 
     public static JsonArray getAllInstantEmailTemplates(Header header) {
-        String responseBody = given()
+        return getAllInstantEmailTemplates(header, null);
+    }
+
+    public static JsonArray getAllInstantEmailTemplates(Header header, String appId) {
+        RequestSpecification requestSpecification = given()
                 .basePath(API_INTERNAL)
-                .header(header)
+                .header(header);
+
+        if (appId != null) {
+            requestSpecification = requestSpecification.queryParam("applicationId", appId);
+        }
+        String responseBody =
+                requestSpecification
                 .when().get("/templates/email/instant")
                 .then()
                 .statusCode(200)
@@ -771,26 +782,27 @@ public abstract class CrudTestHelpers {
         return jsonEmailTemplates;
     }
 
-    public static JsonArray getInstantEmailTemplatesByEventType(Header header, String eventTypeId) {
+    public static JsonObject getInstantEmailTemplatesByEventType(Header header, String eventTypeId, boolean isExpectedToBeFound) {
         String responseBody = given()
                 .basePath(API_INTERNAL)
                 .header(header)
                 .pathParam("eventTypeId", eventTypeId)
                 .when().get("/templates/email/instant/eventType/{eventTypeId}")
                 .then()
-                .statusCode(200)
+                .statusCode(isExpectedToBeFound ? 200 : 404)
                 .contentType(JSON)
                 .extract().asString();
 
-        JsonArray jsonEmailTemplates = new JsonArray(responseBody);
-        for (int i = 0; i < jsonEmailTemplates.size(); i++) {
-            JsonObject jsonEmailTemplate = jsonEmailTemplates.getJsonObject(i);
+        if (isExpectedToBeFound) {
+            JsonObject jsonEmailTemplate = new JsonObject(responseBody);
             assertNull(jsonEmailTemplate.getJsonObject("event_type"));
             assertNull(jsonEmailTemplate.getJsonObject("subject_template"));
             assertNull(jsonEmailTemplate.getJsonObject("body_template"));
+
+            return jsonEmailTemplate;
         }
 
-        return jsonEmailTemplates;
+        return null;
     }
 
     public static void updateInstantEmailTemplate(Header header, String templateId, InstantEmailTemplate updatedEmailTemplate) {
