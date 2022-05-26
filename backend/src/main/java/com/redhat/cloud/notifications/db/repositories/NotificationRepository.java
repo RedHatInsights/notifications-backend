@@ -63,7 +63,11 @@ public class NotificationRepository {
                     .setParameter("endpointId", endpoint)
                     .setParameter("historyId", historyId)
                     .getSingleResult();
-            return new JsonObject(map);
+            if (map == null) {
+                return null;
+            } else {
+                return new JsonObject(map);
+            }
         } catch (NoResultException e) {
             return null;
         }
