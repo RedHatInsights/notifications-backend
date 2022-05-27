@@ -180,6 +180,7 @@ public class EmailTemplateMigrationServiceTest {
             findAndCompileInstantEmailTemplate(updateDevices.getId());
             // App: patch
             findAndCompileInstantEmailTemplate(newAdvisories.getId());
+            findAndCompileAggregationEmailTemplate(rhel.getName(), patch.getName(), DAILY);
             // App: policies
             findAndCompileInstantEmailTemplate(policyTriggered.getId());
             findAndCompileAggregationEmailTemplate(rhel.getName(), policies.getName(), DAILY);

@@ -16,9 +16,7 @@ public class Patch implements EmailTemplate {
             }
         }
 
-        throw new UnsupportedOperationException(String.format(
-        "No email title template for Patch event_type: %s and EmailSubscription: %s found.",
-        eventType, type));
+        return Templates.dailyEmailTitle();
     }
 
     @Override
@@ -29,9 +27,7 @@ public class Patch implements EmailTemplate {
             }
         }
 
-        throw new UnsupportedOperationException(String.format(
-        "No email body template for Patch event_type: %s and EmailSubscription: %s found.",
-        eventType, type));
+        return Templates.dailyEmailBody();
     }
 
     @Override
@@ -51,5 +47,9 @@ public class Patch implements EmailTemplate {
         public static native TemplateInstance newAdvisoriesInstantEmailTitle();
 
         public static native TemplateInstance newAdvisoriesInstantEmailBody();
+
+        public static native TemplateInstance dailyEmailTitle();
+
+        public static native TemplateInstance dailyEmailBody();
     }
 }

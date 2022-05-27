@@ -166,6 +166,11 @@ public class EmailTemplateMigrationService {
                 "Patch/newAdvisoriesInstantEmailTitle", "txt", "Patch instant advisories email title",
                 "Patch/newAdvisoriesInstantEmailBody", "html", "Patch instant advisories email body"
         );
+        createDailyEmailTemplate(
+                warnings, "rhel", "patch",
+                "Patch/dailyEmailTitle", "txt", "Patch daily email title",
+                "Patch/dailyEmailBody", "html", "Patch daily email body"
+        );
 
         /*
          * Former src/main/resources/templates/Policies folder.
