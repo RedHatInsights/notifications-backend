@@ -206,6 +206,8 @@ objects:
           value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: NOTIFICATIONS_USE_ORG_ID
+          value: ${NOTIFICATIONS_USE_ORG_ID_ENABLED}
         - name: OB_ENABLED
           value: ${OB_ENABLED}
         - name: OB_BRIDGE_UUID
@@ -416,3 +418,5 @@ parameters:
   name: TENANT_TRANSLATOR_PORT
   required: true
   value: '8892'
+- name: NOTIFICATIONS_USE_ORG_ID_ENABLED
+  value: "false"
