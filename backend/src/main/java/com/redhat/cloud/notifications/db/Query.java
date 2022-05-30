@@ -3,6 +3,9 @@ package com.redhat.cloud.notifications.db;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -25,10 +28,18 @@ public class Query {
 
     @QueryParam("sort_by")
     private String sortBy;
+    private Set<String> sortFields;
+
+    public void setSortFields(String[] sortFields) {
+        this.sortFields = new HashSet<>();
+        if (sortFields != null) {
+            this.sortFields.addAll(Arrays.asList(sortFields));
+        }
+    }
 
     public static class Limit {
-        private int limit;
-        private int offset;
+        private final int limit;
+        private final int offset;
 
         public Limit(int limit, int offset) {
             this.limit = limit;
@@ -112,11 +123,18 @@ public class Query {
             return null;
         }
 
+        if (sortFields == null) {
+            throw new IllegalStateException("SortFields not set.");
+        }
+
         String[] sortSplit = sortBy.split(":");
         if (!SORT_FIELD_PATTERN.matcher(sortSplit[0]).matches()) {
             throw new BadRequestException("Invalid 'sort_by' query parameter");
         } else {
             Sort sort = new Sort(sortSplit[0]);
+            if (!sortFields.contains(sort.sortColumn)) {
+                throw new BadRequestException("Unknown sort field " + sort.sortColumn);
+            }
             if (sortSplit.length > 1) {
                 try {
                     Sort.Order order = Sort.Order.valueOf(sortSplit[1].toUpperCase());
