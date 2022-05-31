@@ -9,3 +9,4 @@ spec:
     - org-id-populator
     - org-id-populator-event-table
     - org-id-populator-behaviorgroup-table
+    - org-id-populator-endpoint-email-subscriptions-table
