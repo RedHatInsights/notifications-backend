@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.OrgIdConfig;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -46,6 +47,9 @@ public class EndpointProcessor {
     EmailSubscriptionTypeProcessor emails;
 
     @Inject
+    OrgIdConfig orgIdConfig;
+
+    @Inject
     MeterRegistry registry;
 
     private Counter processedItems;
@@ -59,7 +63,13 @@ public class EndpointProcessor {
 
     public void process(Event event) {
         processedItems.increment();
-        List<Endpoint> endpoints = endpointRepository.getTargetEndpoints(event.getAccountId(), event.getEventType());
+
+        List<Endpoint> endpoints;
+        if (orgIdConfig.isUseOrgId()) {
+            endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
+        } else {
+            endpoints = endpointRepository.getTargetEndpoints(event.getAccountId(), event.getEventType());
+        }
 
         // Target endpoints are grouped by endpoint type.
         endpointTargeted.increment(endpoints.size());
