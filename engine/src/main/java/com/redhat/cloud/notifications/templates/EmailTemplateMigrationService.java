@@ -321,6 +321,11 @@ public class EmailTemplateMigrationService {
                 "Vulnerability/newCveSecurityRuleTitle", "txt", "Vulnerability new CVE security rule email title",
                 "Vulnerability/newCveSecurityRuleBody", "html", "Vulnerability new CVE security rule email body"
         );
+        createDailyEmailTemplate(
+                warnings, "rhel", "vulnerability",
+                "Vulnerability/dailyEmailTitle", "txt", "Vulnerability daily email title",
+                "Vulnerability/dailyEmailBody", "html", "Vulnerability daily email body"
+        );
 
         LOGGER.debug("Migration ended");
 

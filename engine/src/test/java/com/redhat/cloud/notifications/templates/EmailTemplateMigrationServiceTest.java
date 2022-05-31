@@ -188,7 +188,7 @@ public class EmailTemplateMigrationServiceTest {
             findAndCompileInstantEmailTemplate(newCveSecurityRule.getId());
             findAndCompileInstantEmailTemplate(newCveSeverity.getId());
             findAndCompileInstantEmailTemplate(anyCveKnownExploit.getId());
-            assertTrue(templateRepository.findAggregationEmailTemplate(rhel.getName(), vulnerability.getName(), DAILY).isEmpty());
+            findAndCompileAggregationEmailTemplate(rhel.getName(), vulnerability.getName(), DAILY);
 
             /*
              * Bundle: openshift
