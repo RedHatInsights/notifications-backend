@@ -32,14 +32,6 @@ public class EmailSubscription {
         id.accountId = accountId;
     }
 
-    public String getOrgId() {
-        return id.orgId;
-    }
-
-    public void setOrgId(String orgId) {
-        id.orgId = orgId;
-    }
-
     public String getUserId() {
         return id.userId;
     }

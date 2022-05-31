@@ -17,8 +17,3 @@ ALTER TABLE endpoints
   ADD COLUMN org_id text;
 
 CREATE INDEX ix_endpoints_org_id ON public.endpoints (org_id);
-
-ALTER TABLE endpoint_email_subscriptions
-    ADD COLUMN org_id text;
-
-CREATE INDEX ix_endpoint_email_subscriptions_org_id ON public.endpoint_email_subscriptions (org_id);
