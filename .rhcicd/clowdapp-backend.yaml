@@ -135,6 +135,38 @@ objects:
           requests:
             cpu: 50m
             memory: 512Mi
+    - name: org-id-populator-behaviorgroup-table
+      podSpec:
+        image: quay.io/cloudservices/tenant-utils:latest
+        command:
+          - ./org-id-column-populator
+          - -C
+          - -a
+          - account_id
+          - -o
+          - org_id
+          - -t
+          - event
+          - --ean-translator-addr
+          - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+          - --db-operation-timeout
+          - "10"
+        env:
+          - name: TENANT_TRANSLATOR_HOST
+            value: ${TENANT_TRANSLATOR_HOST}
+          - name: TENANT_TRANSLATOR_PORT
+            value: ${TENANT_TRANSLATOR_PORT}
+          - name: LOG_FORMAT
+            value: ${LOG_FORMAT}
+          - name: LOG_BATCH_FREQUENCY
+            value: '1'
+        resources:
+          limits:
+            cpu: 300m
+            memory: 1Gi
+          requests:
+            cpu: 50m
+            memory: 512Mi
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}

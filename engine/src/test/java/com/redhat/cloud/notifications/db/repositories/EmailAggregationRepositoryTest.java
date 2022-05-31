@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository.USE_ORG_ID;
+import static com.redhat.cloud.notifications.OrgIdConfig.USE_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;

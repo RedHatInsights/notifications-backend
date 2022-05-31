@@ -62,6 +62,9 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
     @JsonIgnore
     private String accountId;
 
+    @Size(max = 50)
+    private String orgId;
+
     @NotNull
     @NotBlank
     private String displayName;
@@ -111,6 +114,14 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
     }
 
     public String getDisplayName() {

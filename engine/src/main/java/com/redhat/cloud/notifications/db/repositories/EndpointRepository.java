@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.OrgIdConfig;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -32,6 +33,9 @@ public class EndpointRepository {
 
     @Inject
     StatelessSessionFactory statelessSessionFactory;
+
+    @Inject
+    OrgIdConfig orgIdConfig;
 
     /**
      * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION endpoint with empty properties. This
@@ -73,13 +77,24 @@ public class EndpointRepository {
     }
 
     public List<Endpoint> getTargetEndpoints(String tenant, EventType eventType) {
-        String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL)";
+        List<Endpoint> endpoints;
+        if (orgIdConfig.isUseOrgId()) {
+            String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
+                    "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.orgId = :accountId OR bga.behaviorGroup.orgId IS NULL)";
 
-        List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
-                .setParameter("eventType", eventType)
-                .setParameter("accountId", tenant)
-                .getResultList();
+            endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+                    .setParameter("eventType", eventType)
+                    .setParameter("orgId", tenant)
+                    .getResultList();
+        } else {
+            String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
+                    "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL)";
+
+            endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+                    .setParameter("eventType", eventType)
+                    .setParameter("accountId", tenant)
+                    .getResultList();
+        }
         loadProperties(endpoints);
         for (Endpoint endpoint : endpoints) {
             if (endpoint.getAccountId() == null) {

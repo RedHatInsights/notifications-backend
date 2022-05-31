@@ -8,3 +8,4 @@ spec:
   jobs:
     - org-id-populator
     - org-id-populator-event-table
+    - org-id-populator-behaviorgroup-table
