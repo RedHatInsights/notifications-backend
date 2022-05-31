@@ -29,6 +29,9 @@ public class EmailSubscriptionId implements Serializable {
     @Convert(converter = EmailSubscriptionTypeConverter.class)
     public EmailSubscriptionType subscriptionType;
 
+    @Size(max = 50)
+    public String orgId;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
