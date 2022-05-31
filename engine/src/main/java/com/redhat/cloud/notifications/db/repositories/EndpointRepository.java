@@ -86,6 +86,17 @@ public class EndpointRepository {
                     .setParameter("eventType", eventType)
                     .setParameter("orgId", tenant)
                     .getResultList();
+            loadProperties(endpoints);
+            for (Endpoint endpoint : endpoints) {
+                if (endpoint.getOrgId() == null) {
+                    if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
+                        endpoint.setOrgId(tenant);
+                    } else {
+                        LOGGER.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
+                    }
+                }
+            }
+            return endpoints;
         } else {
             String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                     "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL)";
@@ -94,18 +105,18 @@ public class EndpointRepository {
                     .setParameter("eventType", eventType)
                     .setParameter("accountId", tenant)
                     .getResultList();
-        }
-        loadProperties(endpoints);
-        for (Endpoint endpoint : endpoints) {
-            if (endpoint.getAccountId() == null) {
-                if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
-                    endpoint.setAccountId(tenant);
-                } else {
-                    LOGGER.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
+            loadProperties(endpoints);
+            for (Endpoint endpoint : endpoints) {
+                if (endpoint.getAccountId() == null) {
+                    if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
+                        endpoint.setAccountId(tenant);
+                    } else {
+                        LOGGER.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
+                    }
                 }
             }
+            return endpoints;
         }
-        return endpoints;
     }
 
     public List<Endpoint> getTargetEmailSubscriptionEndpoints(String tenant, String bundleName, String applicationName, String eventTypeName) {

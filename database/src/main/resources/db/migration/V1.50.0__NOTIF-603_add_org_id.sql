@@ -12,3 +12,8 @@ ALTER TABLE behavior_group
   ADD COLUMN org_id text;
 
 CREATE INDEX ix_behavior_group_org_id ON public.behavior_group (org_id);
+
+ALTER TABLE endpoints
+  ADD COLUMN org_id text;
+
+CREATE INDEX ix_endpoints_org_id ON public.endpoints (org_id);
