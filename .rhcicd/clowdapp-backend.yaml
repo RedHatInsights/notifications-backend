@@ -146,7 +146,7 @@ objects:
             - -o
             - org_id
             - -t
-            - event
+            - endpoints
             - --ean-translator-addr
             - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
             - --db-operation-timeout
@@ -178,7 +178,7 @@ objects:
           - -o
           - org_id
           - -t
-          - event
+          - behaviorgroup
           - --ean-translator-addr
           - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
           - --db-operation-timeout
