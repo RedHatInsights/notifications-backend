@@ -16,6 +16,12 @@ public class EmailAggregationKey {
     @NotNull
     private String application;
 
+    public EmailAggregationKey(String accountId, String bundle, String application) {
+        this.accountId = accountId;
+        this.bundle = bundle;
+        this.application = application;
+    }
+
     public EmailAggregationKey(String accountId, String orgId, String bundle, String application) {
         this.accountId = accountId;
         this.orgId = orgId;

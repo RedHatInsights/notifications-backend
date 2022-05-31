@@ -8,8 +8,6 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -19,7 +17,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.OrgIdConfig.USE_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -49,22 +46,12 @@ public class EmailAggregationRepositoryTest {
     @Inject
     EmailAggregationRepository emailAggregationRepository;
 
-    @BeforeEach
-    void beforeEach() {
-        System.clearProperty(USE_ORG_ID);
-    }
-
-    @AfterEach
-    void afterEach() {
-        System.clearProperty(USE_ORG_ID);
-    }
-
     // TODO NOTIF-603 Remove when switching to orgId
     @Test
     void testAllMethodsWithOrgIdDisabled() {
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
-        EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME);
+        EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, BUNDLE_NAME, APP_NAME);
 
         statelessSessionFactory.withSession(statelessSession -> {
             clearEmailAggregations();
