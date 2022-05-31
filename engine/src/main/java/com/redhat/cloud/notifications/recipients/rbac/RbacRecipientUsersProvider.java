@@ -141,7 +141,9 @@ public class RbacRecipientUsersProvider {
 
         users = transformToUser(usersTotal);
 
-        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
+        // Micrometer doesn't like when tags are null and throws a NPE.
+        String accountIdTag = accountId == null ? "" : accountId;
+        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountIdTag, "users", String.valueOf(users.size())));
         rbacUsers.set(users.size());
 
         return users;
@@ -170,7 +172,9 @@ public class RbacRecipientUsersProvider {
                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
                 Page<RbacUser> rbacUsers = retryOnRbacError(() ->
                         rbacServiceToService.getGroupUsers(accountId, orgId, groupId, page * rbacElementsPerPage, rbacElementsPerPage));
-                getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "accountId", accountId));
+                // Micrometer doesn't like when tags are null and throws a NPE.
+                String accountIdTag = accountId == null ? "" : accountId;
+                getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "accountId", accountIdTag));
                 return rbacUsers;
             });
             // getGroupUsers doesn't have an adminOnly param.
@@ -178,7 +182,10 @@ public class RbacRecipientUsersProvider {
                 users = users.stream().filter(User::isAdmin).collect(Collectors.toList());
             }
         }
-        getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountId, "orgId", orgId, "users", String.valueOf(users.size())));
+        // Micrometer doesn't like when tags are null and throws a NPE.
+        String accountIdTag = accountId == null ? "" : accountId;
+        String orgIdTag = orgId == null ? "" : orgId;
+        getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountIdTag, "orgId", orgIdTag, "users", String.valueOf(users.size())));
         return users;
     }
 
