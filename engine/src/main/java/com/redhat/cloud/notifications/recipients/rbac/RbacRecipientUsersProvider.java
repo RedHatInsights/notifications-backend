@@ -139,6 +139,8 @@ public class RbacRecipientUsersProvider {
             firstResult += maxResultsPerPage;
         } while (usersPaging.size() == maxResultsPerPage);
 
+        LOGGER.info("usersTotal: " + usersTotal);
+
         users = transformToUser(usersTotal);
 
         getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountId, "users", String.valueOf(users.size())));
