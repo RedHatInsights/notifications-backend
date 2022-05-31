@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.recipients;
 
-import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.jboss.logging.Logger;
