@@ -80,7 +80,7 @@ public class EndpointRepository {
         List<Endpoint> endpoints;
         if (orgIdConfig.isUseOrgId()) {
             String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                    "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.orgId = :accountId OR bga.behaviorGroup.orgId IS NULL)";
+                    "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL)";
 
             endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
                     .setParameter("eventType", eventType)
