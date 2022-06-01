@@ -26,10 +26,10 @@ export interface EventType {
 }
 
 export interface Template {
-    id: string | null | undefined;
-    name: string;
-    description: string;
     data: string;
+    description: string;
+    id?: UUID | undefined | null;
+    name: string;
 }
 
 export type InstantTemplate = {
