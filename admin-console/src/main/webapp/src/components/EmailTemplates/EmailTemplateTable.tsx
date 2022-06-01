@@ -7,25 +7,21 @@ import {
     Td,  Th,   Thead,
     Tr } from '@patternfly/react-table';
 import * as React from 'react';
-import { useParams } from 'react-router';
 import { Link } from 'react-router-dom';
 
 import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
 import { useGetTemplates } from '../../services/EmailTemplates/GetTemplates';
-import { useApplicationTypes } from '../../services/EventTypes/GetApplication';
+import { Application } from '../../types/Notifications';
 import { ViewTemplateModal } from './ViewEmailTemplateModal';
 
-type ApplicationPageParams = {
-    applicationId: string;
+interface InstantEmailTemplateTableProps {
+    application: Application;
 }
 
-export const InstantEmailTemplateTable: React.FunctionComponent = () => {
+export const InstantEmailTemplateTable: React.FunctionComponent<InstantEmailTemplateTableProps> = props => {
     const { hasPermission } = useUserPermissions();
     const getAllTemplates = useGetTemplates();
-
-    const { applicationId } = useParams<ApplicationPageParams>();
-    const applicationTypesQuery = useApplicationTypes(applicationId);
 
     const [ showViewModal, setShowViewModal ] = React.useState(false);
     const viewModal = () => {
@@ -35,14 +31,6 @@ export const InstantEmailTemplateTable: React.FunctionComponent = () => {
     const onClose = () => {
         setShowViewModal(false);
     };
-
-    const application = React.useMemo(() => {
-        if (applicationTypesQuery.payload?.status === 200) {
-            return applicationTypesQuery.payload.value;
-        }
-
-        return undefined;
-    }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
 
     const columns = [ 'Email Templates' ];
 
@@ -59,19 +47,19 @@ export const InstantEmailTemplateTable: React.FunctionComponent = () => {
             <PageSection>
                 <Title headingLevel="h1">
                     <Breadcrumb>
-                        <BreadcrumbItem target='#'>Email Templates for { application?.displayName ?? '' }</BreadcrumbItem>
+                        <BreadcrumbItem target='#'>Email Templates for { props.application.displayName }</BreadcrumbItem>
                     </Breadcrumb></Title>
                 <TableComposable aria-label="Email Template table">
                     <Thead>
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button variant="primary" isDisabled={ !application || !hasPermission(application?.id) }
+                                    <Button variant="primary" isDisabled={ !hasPermission(props.application.id) }
                                         component={ (props: any) =>
                                             <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Email Template</Button>
                                     <ViewTemplateModal
                                         showModal={ showViewModal }
-                                        applicationName={ application?.displayName ?? '' }
+                                        applicationName={ props.application.displayName }
                                         onClose={ onClose }
                                     />
                                 </ToolbarItem>

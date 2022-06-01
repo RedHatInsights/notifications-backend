@@ -226,7 +226,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 applicationName={ application?.displayName }
                 bundleName={ bundle?.display_name }
                 templateName={ getAggregationEmailTemplates?.map(a => a.body_template?.name) } />
-            { isAdmin && <InstantEmailTemplateTable /> }
+            { isAdmin && application && <InstantEmailTemplateTable application={ application } /> }
         </React.Fragment>
 
     );
