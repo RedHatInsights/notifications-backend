@@ -182,7 +182,8 @@ public class EventConsumer {
             });
         } catch (Exception e) {
             /*
-             * An exception was thrown at some point during the Kafka message processing, it is added to the metrics and logged.
+             * An exception was thrown at some point during the Kafka message processing,
+             * it is logged and added to the exception counter metric.
              */
             processingExceptionCounter.increment();
             LOGGER.infof(e, "Could not process the payload: %s", payload);
