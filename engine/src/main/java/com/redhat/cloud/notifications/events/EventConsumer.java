@@ -32,7 +32,7 @@ public class EventConsumer {
     public static final String INGRESS_CHANNEL = "ingress";
     public static final String REJECTED_COUNTER_NAME = "input.rejected";
     public static final String PROCESSING_ERROR_COUNTER_NAME = "input.processing.error";
-    private static final String PROCESSING_EXCEPTION_COUNTER_NAME = "input.processing.exception";
+    public static final String PROCESSING_EXCEPTION_COUNTER_NAME = "input.processing.exception";
     public static final String DUPLICATE_COUNTER_NAME = "input.duplicate";
     public static final String CONSUMED_TIMER_NAME = "input.consumed";
 
