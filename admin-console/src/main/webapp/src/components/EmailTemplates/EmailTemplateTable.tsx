@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Title, Toolbar,
+import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar,
     ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { EyeIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
@@ -12,16 +12,17 @@ import { Link } from 'react-router-dom';
 
 import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
+import { useGetTemplates } from '../../services/EmailTemplates/GetTemplates';
 import { useApplicationTypes } from '../../services/EventTypes/GetApplication';
-import { ListEventTypes } from '../EventTypes/ListEventTypes';
 import { ViewTemplateModal } from './ViewEmailTemplateModal';
 
 type ApplicationPageParams = {
     applicationId: string;
 }
 
-export const EmailTemplateTable: React.FunctionComponent = () => {
+export const InstantEmailTemplateTable: React.FunctionComponent = () => {
     const { hasPermission } = useUserPermissions();
+    const getAllTemplates = useGetTemplates();
 
     const { applicationId } = useParams<ApplicationPageParams>();
     const applicationTypesQuery = useApplicationTypes(applicationId);
@@ -43,38 +44,22 @@ export const EmailTemplateTable: React.FunctionComponent = () => {
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
 
-    const columns = [ 'Email Template', 'Event Types' ];
-    const rows = [
-        {
-            displayName: 'email template 1',
-            id: '1',
-            eventType: 'event Type 1'
-        },
-        {
-            displayName: 'email template 2',
-            id: '2',
-            eventType: 'event Type 2'
+    const columns = [ 'Email Templates' ];
 
-        },
-        {
-            displayName: 'email template 3',
-            id: '3',
-            eventType: 'event Type 3'
+    if (getAllTemplates.loading) {
+        return <Spinner />;
+    }
 
-        },
-        {
-            displayName: 'email template 4',
-            id: '4',
-            eventType: 'event Type 4'
-        }
-    ];
+    if (getAllTemplates.payload?.status !== 200) {
+        return <span>Error while loading templates: {getAllTemplates.errorObject.toString()}</span>;
+    }
 
     return (
         <React.Fragment>
             <PageSection>
                 <Title headingLevel="h1">
                     <Breadcrumb>
-                        <BreadcrumbItem target='#'> Email Template for { application?.displayName ?? '' }</BreadcrumbItem>
+                        <BreadcrumbItem target='#'>Email Templates for { application?.displayName ?? '' }</BreadcrumbItem>
                     </Breadcrumb></Title>
                 <TableComposable aria-label="Email Template table">
                     <Thead>
@@ -99,14 +84,9 @@ export const EmailTemplateTable: React.FunctionComponent = () => {
                         </Tr>
                     </Thead>
                     <Tbody>
-                        { rows.map(r => (
-                            <Tr key={ r.id }>
-                                <Td>{r.displayName}</Td>
-                                <Td>
-                                    <ListEventTypes
-                                        appId={ application?.id ?? '' }
-                                    />
-                                </Td>
+                        { getAllTemplates.payload.value.map(e => (
+                            <Tr key={ e.id }>
+                                <Td>{ e.name }</Td>
                                 <Td>
                                     <Button className='view' type='button' variant='plain' onClick={ viewModal }
                                     > { <EyeIcon /> } </Button></Td>
@@ -117,7 +97,6 @@ export const EmailTemplateTable: React.FunctionComponent = () => {
                                     <Button className='delete' type='button' variant='plain'
                                         isDisabled>{ <TrashIcon /> } </Button></Td>
                             </Tr>
-
                         ))}
                     </Tbody>
                 </TableComposable>
