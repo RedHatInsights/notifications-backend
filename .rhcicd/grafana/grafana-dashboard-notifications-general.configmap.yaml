@@ -6,7 +6,10 @@ data:
         "list": [
           {
             "builtIn": 1,
-            "datasource": "-- Grafana --",
+            "datasource": {
+              "type": "datasource",
+              "uid": "grafana"
+            },
             "enable": true,
             "hide": true,
             "iconColor": "rgba(0, 211, 255, 1)",
@@ -24,12 +27,16 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "iteration": 1651645397994,
+      "iteration": 1654069298871,
       "links": [],
       "liveNow": false,
       "panels": [
         {
           "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "tuHy3WB7z"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -92,7 +99,7 @@ data:
             "showThresholdMarkers": true,
             "text": {}
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "targets": [
             {
               "exemplar": true,
@@ -158,7 +165,7 @@ data:
             "showThresholdMarkers": true,
             "text": {}
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "targets": [
             {
               "exemplar": true,
@@ -233,7 +240,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "targets": [
             {
               "exemplar": true,
@@ -293,7 +300,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "targets": [
             {
               "exemplar": true,
@@ -369,7 +376,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "targets": [
             {
               "exemplar": true,
@@ -429,7 +436,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "targets": [
             {
               "exemplar": true,
@@ -505,7 +512,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "targets": [
             {
               "exemplar": true,
@@ -565,7 +572,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "targets": [
             {
               "exemplar": true,
@@ -581,6 +588,10 @@ data:
         },
         {
           "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "tuHy3WB7z"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -626,7 +637,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -721,7 +732,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -822,7 +833,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -875,6 +886,10 @@ data:
         },
         {
           "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "tuHy3WB7z"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -922,7 +937,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1021,7 +1036,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -1058,6 +1073,22 @@ data:
               "intervalFactor": 1,
               "legendFormat": "rejected (per minute) {{kubernetes_pod_name}}",
               "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "skSy3ZB7k"
+              },
+              "editorMode": "code",
+              "exemplar": true,
+              "expr": "sum(increase(input_processing_exception_total{service=\"notifications-engine-service\"}[5m]))",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "exceptions (per minute) {{kubernetes_pod_name}}",
+              "refId": "C"
             }
           ],
           "thresholds": [],
@@ -1127,7 +1158,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1211,7 +1242,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1294,7 +1325,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1390,7 +1421,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "targets": [
             {
               "exemplar": true,
@@ -1406,6 +1437,10 @@ data:
         },
         {
           "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "tuHy3WB7z"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -1452,7 +1487,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1542,7 +1577,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1638,7 +1673,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "8.5.2",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1744,8 +1779,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -1799,8 +1833,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -1891,8 +1924,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -1946,8 +1978,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -2038,8 +2069,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -2093,8 +2123,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -2672,6 +2701,10 @@ data:
         },
         {
           "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "tuHy3WB7z"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -3036,7 +3069,7 @@ data:
         }
       ],
       "refresh": "15m",
-      "schemaVersion": 35,
+      "schemaVersion": 36,
       "style": "dark",
       "tags": [
         "notifications"
@@ -3105,7 +3138,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 39,
+      "version": 40,
       "weekStart": ""
     }
 kind: ConfigMap
