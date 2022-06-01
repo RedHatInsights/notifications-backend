@@ -151,7 +151,7 @@ public class LifecycleITest {
         addDefaultBehaviorGroupAction(defaultBehaviorGroup);
 
         // Let's push a first message! It should not trigger any webhook call since we didn't link the event type with any behavior group.
-        pushMessage(0, 0, 0);
+        pushMessage(0, 0, 0, 0);
 
         // Now we'll link the event type with one behavior group.
         addEventTypeBehavior(eventType.getId(), behaviorGroup1.getId());
@@ -162,7 +162,7 @@ public class LifecycleITest {
         });
 
         // Pushing a new message should trigger two webhook calls.
-        pushMessage(2, 0, 0);
+        pushMessage(2, 0, 0, 0);
 
         // Let's check the notifications history.
         retry(() -> checkEndpointHistory(endpoint1, 1, true));
@@ -176,7 +176,7 @@ public class LifecycleITest {
         addEventTypeBehavior(eventType.getId(), behaviorGroup2.getId());
 
         // Pushing a new message should trigger three webhook calls and 1 emails - email is not sent as the user is not subscribed
-        pushMessage(3, 1, 0);
+        pushMessage(3, 1, 0, 0);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(endpoint1, 2, true));
@@ -188,7 +188,7 @@ public class LifecycleITest {
         subscribeUserPreferences(accountId, username, app.getId());
 
         // Pushing a new message should trigger three webhook calls and 1 email
-        pushMessage(3, 1, 1);
+        pushMessage(3, 1, 1, 0);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(endpoint1, 3, true));
@@ -203,7 +203,7 @@ public class LifecycleITest {
         addBehaviorGroupAction(behaviorGroup2.getId(), endpoint2.getId());
 
         // Pushing a new message should trigger three webhook calls.
-        pushMessage(3, 1, 1);
+        pushMessage(3, 1, 1, 0);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(endpoint1, 4, true));
@@ -218,7 +218,7 @@ public class LifecycleITest {
         // Unlinking user behavior group
         clearEventTypeBehaviors(eventType);
 
-        pushMessage(0, 0, 0);
+        pushMessage(0, 0, 0, 0);
 
         // The notifications history should be exactly the same than last time.
         retry(() -> checkEndpointHistory(endpoint1, 4, true));
@@ -228,11 +228,11 @@ public class LifecycleITest {
 
         // Linking the default behavior group again
         addEventTypeBehavior(eventType.getId(), defaultBehaviorGroup.getId());
-        pushMessage(0, 1, 1);
+        pushMessage(0, 1, 1, 0);
 
         // Deleting the default behavior group should unlink it
         deleteBehaviorGroup(defaultBehaviorGroup);
-        pushMessage(0, 0, 0);
+        pushMessage(0, 0, 0, 0);
 
         // We'll finish with a bundle removal.
         deleteBundle(bundle);
@@ -307,8 +307,8 @@ public class LifecycleITest {
      * Pushes a single message to the 'ingress' channel.
      * Depending on the event type, behavior groups and endpoints configuration, it will trigger zero or more webhook calls.
      */
-    private void pushMessage(int expectedWebhookCalls, int expectedEmailEndpoints, int expectedSentEmails) {
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
+    private void pushMessage(int expectedWebhookCalls, int expectedEmailEndpoints, int expectedSentEmails, int expectedExceptionCount) {
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSING_EXCEPTION_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
 
         Runnable waitForWebhooks = setupCountdownCalls(
                 expectedWebhookCalls,
@@ -333,7 +333,7 @@ public class LifecycleITest {
 
         micrometerAssertionHelper.awaitAndAssertCounterIncrement(PROCESSED_MESSAGES_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 0);
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, 0);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, expectedExceptionCount);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_ENDPOINTS_COUNTER_NAME, expectedWebhookCalls + expectedEmailEndpoints);
         micrometerAssertionHelper.clearSavedValues();
     }
