@@ -6,38 +6,34 @@ import io.quarkus.qute.TemplateInstance;
 
 public class Patch implements EmailTemplate {
 
-    private static final String NewAdvisories = "new-advisories";
+    private static final String NewAdvisory = "new-advisory";
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals(Patch.NewAdvisories)) {
+            if (eventType.equals(Patch.NewAdvisory)) {
                 return Templates.newAdvisoriesInstantEmailTitle();
             }
         }
 
-        throw new UnsupportedOperationException(String.format(
-        "No email title template for Patch event_type: %s and EmailSubscription: %s found.",
-        eventType, type));
+        return Templates.dailyEmailTitle();
     }
 
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals(Patch.NewAdvisories)) {
+            if (eventType.equals(Patch.NewAdvisory)) {
                 return Templates.newAdvisoriesInstantEmailBody();
             }
         }
 
-        throw new UnsupportedOperationException(String.format(
-        "No email body template for Patch event_type: %s and EmailSubscription: %s found.",
-        eventType, type));
+        return Templates.dailyEmailBody();
     }
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
         return (type == EmailSubscriptionType.INSTANT &&
-                (eventType.equals(Patch.NewAdvisories)));
+                (eventType.equals(Patch.NewAdvisory)));
     }
 
     @Override
@@ -51,5 +47,9 @@ public class Patch implements EmailTemplate {
         public static native TemplateInstance newAdvisoriesInstantEmailTitle();
 
         public static native TemplateInstance newAdvisoriesInstantEmailBody();
+
+        public static native TemplateInstance dailyEmailTitle();
+
+        public static native TemplateInstance dailyEmailBody();
     }
 }
