@@ -1,11 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar,
-    ToolbarContent, ToolbarItem } from '@patternfly/react-core';
-import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
-import {
-    TableComposable,
-    Tbody,
-    Td,  Th,   Thead,
-    Tr } from '@patternfly/react-table';
+import { Breadcrumb, BreadcrumbItem, PageSection, Spinner, Title } from '@patternfly/react-core';
 import * as React from 'react';
 import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
@@ -16,6 +9,7 @@ import { AggregationTemplateCard } from '../components/EmailTemplates/EmailTempl
 import { InstantEmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
 import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
+import { EventTypeTable } from '../components/EventTypes/EventTypeTable';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
 import { useAggregationTemplates } from '../services/EmailTemplates/GetAggregationTemplates';
@@ -23,8 +17,8 @@ import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
 import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
-import { useEventTypes } from '../services/EventTypes/GetEventTypes';
 import { EventType } from '../types/Notifications';
+import { useEventTypes } from './ApplicationPage/useEventTypes';
 
 type ApplicationPageParams = {
     applicationId: string;
@@ -38,8 +32,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
     const aggregationTemplates = useAggregationTemplates(applicationId);
-
-    const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
     const [ showModal, setShowModal ] = React.useState(false);
@@ -104,9 +96,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
             applicationId
 
         })
-        .then (eventTypesQuery.query);
+        .then (eventTypesQuery.reload);
 
-    }, [ applicationId, eventTypesQuery.query, newEvent.mutate ]);
+    }, [ applicationId, eventTypesQuery.reload, newEvent.mutate ]);
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
@@ -132,20 +124,16 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const onClose = () => {
         setShowModal(false);
-        eventTypesQuery.query();
+        eventTypesQuery.reload();
     };
 
     const onDeleteClose = () => {
         setShowDeleteModal(false);
-        eventTypesQuery.query();
+        eventTypesQuery.reload();
     };
 
-    if (eventTypesQuery.loading) {
-        return <Spinner />;
-    }
-
-    if (eventTypesQuery.payload?.status !== 200) {
-        return <span>Error while loading eventtypes: {eventTypesQuery.errorObject.toString()}</span>;
+    if (eventTypesQuery.error) {
+        return <span>Error while loading eventtypes: {eventTypesQuery.error.toString()}</span>;
     }
 
     return (
@@ -161,72 +149,36 @@ export const ApplicationPage: React.FunctionComponent = () => {
                         || applicationTypesQuery.payload?.status !== 200) ? <Spinner /> : applicationTypesQuery.payload.value.displayName }
                         </BreadcrumbItem>
                     </Breadcrumb></Title>
-                <TableComposable
-                    aria-label="Event types table"
-                >
-                    <Thead>
-                        <Toolbar>
-                            <ToolbarContent>
-                                <ToolbarItem>
-                                    <Button variant='primary' type='button'
-                                        isDisabled={ !application || !hasPermission(application?.id) }
-                                        onClick={ createEventType }> Create Event Type </Button>
-                                    <CreateEditModal
-                                        isEdit={ isEdit }
-                                        initialEventType= { eventTypes }
-                                        showModal={ showModal }
-                                        applicationName={ application?.displayName }
-                                        onClose={ onClose }
-                                        onSubmit={ handleSubmit }
-                                        isLoading={ eventTypesQuery.loading }
-
-                                    />
-                                    <React.Fragment>
-                                        <DeleteModal
-                                            onDelete={ handleDelete }
-                                            isOpen={ showDeleteModal }
-                                            onClose={ onDeleteClose }
-                                            eventTypeName={ eventTypes.name }
-                                            applicationName={ application?.displayName }
-                                            bundleName={ bundle?.display_name }
-
-                                        />
-                                    </React.Fragment>
-                                </ToolbarItem>
-                            </ToolbarContent>
-                        </Toolbar>
-                        <Tr>
-                            {columns.map((column, columnIndex) => (
-                                <Th key={ columnIndex }>{column}</Th>
-                            ))}
-                        </Tr>
-                    </Thead>
-                    <Tbody>{ (eventTypesQuery.payload.value.length === 0 ? 'There are no event types found for this application' : '') }</Tbody>
-                    <Tbody>
-                        { eventTypesQuery.payload.value.map(e => (
-                            <Tr key={ e.id }>
-                                <Td>{ e.displayName }</Td>
-                                <Td>{ e.name }</Td>
-                                <Td>{ e.description }</Td>
-                                <Td>{ e.id }</Td>
-                                <Td>
-                                    <Button className='edit' type='button' variant='plain'
-                                        isDisabled={ !application || !hasPermission(application?.id) }
-                                        onClick={ () => editEventType(e) }> { <PencilAltIcon /> } </Button></Td>
-                                <Td>
-                                    <Button className='delete' type='button' variant='plain'
-                                        isDisabled={ !application || !hasPermission(application?.id) }
-                                        onClick={ () => deleteEventTypeModal(e) }>{ <TrashIcon /> } </Button></Td>
-                            </Tr>
-                        ))}
-                    </Tbody>
-                </TableComposable>
+                <EventTypeTable
+                    hasPermissions={ application ? hasPermission(application.id) : false }
+                    eventTypes={ eventTypesQuery.data }
+                    onCreateEventType={ createEventType }
+                    onEditEventType={ editEventType }
+                    onDeleteEventTypeModal={ deleteEventTypeModal }
+                />
             </PageSection>
             <AggregationTemplateCard
                 applicationName={ application?.displayName }
                 bundleName={ bundle?.display_name }
                 templateName={ getAggregationEmailTemplates?.map(a => a.body_template?.name) } />
             { isAdmin && application && <InstantEmailTemplateTable application={ application } /> }
+            <CreateEditModal
+                isEdit={ isEdit }
+                initialEventType= { eventTypes }
+                showModal={ showModal }
+                applicationName={ application?.displayName }
+                onClose={ onClose }
+                onSubmit={ handleSubmit }
+                isLoading={ eventTypesQuery.loading }
+            />
+            <DeleteModal
+                onDelete={ handleDelete }
+                isOpen={ showDeleteModal }
+                onClose={ onDeleteClose }
+                eventTypeName={ eventTypes.name }
+                applicationName={ application?.displayName }
+                bundleName={ bundle?.display_name }
+            />
         </React.Fragment>
 
     );

@@ -249,9 +249,8 @@ export namespace Schemas {
     roles: Array<string>;
   };
 
-  export const MessageErrorValidationResponse =
-    zodSchemaMessageErrorValidationResponse();
-  export type MessageErrorValidationResponse = {
+  export const MessageValidationResponse = zodSchemaMessageValidationResponse();
+  export type MessageValidationResponse = {
     errors: {
       [x: string]: Array<string>;
     };
@@ -654,7 +653,7 @@ export namespace Schemas {
       .nonstrict();
   }
 
-  function zodSchemaMessageErrorValidationResponse() {
+  function zodSchemaMessageValidationResponse() {
       return z
       .object({
           errors: z.record(z.array(z.string()))
@@ -1989,15 +1988,23 @@ export namespace Operations {
   export namespace TemplateResourceGetAllInstantEmailTemplates {
     const Response200 = z.array(Schemas.InstantEmailTemplate);
     type Response200 = Array<Schemas.InstantEmailTemplate>;
+    export interface Params {
+      applicationId?: Schemas.UUID;
+    }
+
     export type Payload =
       | ValidatedResponse<'unknown', 200, Response200>
       | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
       | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
-    export const actionCreator = (): ActionCreator => {
+    export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/email/instant';
         const query = {} as Record<string, any>;
+        if (params.applicationId !== undefined) {
+            query.applicationId = params.applicationId;
+        }
+
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
@@ -2047,17 +2054,22 @@ export namespace Operations {
     };
   }
   // GET /templates/email/instant/eventType/{eventTypeId}
-  export namespace TemplateResourceGetInstantEmailTemplates {
-    const Response200 = z.array(Schemas.InstantEmailTemplate);
-    type Response200 = Array<Schemas.InstantEmailTemplate>;
+  export namespace TemplateResourceGetInstantEmailTemplateByEventType {
+    const Response404 = z.string();
+    type Response404 = string;
     export interface Params {
       eventTypeId: Schemas.UUID;
     }
 
     export type Payload =
-      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<
+          'InstantEmailTemplate',
+          200,
+          Schemas.InstantEmailTemplate
+        >
       | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
       | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', 404, Response404>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
@@ -2070,9 +2082,14 @@ export namespace Operations {
         .queryParams(query)
         .config({
             rules: [
-                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(
+                    Schemas.InstantEmailTemplate,
+                    'InstantEmailTemplate',
+                    200
+                ),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+                new ValidateRule(Response404, 'unknown', 404)
             ]
         })
         .build();
@@ -2374,9 +2391,9 @@ export namespace Operations {
     export type Payload =
       | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
       | ValidatedResponse<
-          'MessageErrorValidationResponse',
+          'MessageValidationResponse',
           400,
-          Schemas.MessageErrorValidationResponse
+          Schemas.MessageValidationResponse
         >
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
@@ -2390,8 +2407,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 200),
                 new ValidateRule(
-                    Schemas.MessageErrorValidationResponse,
-                    'MessageErrorValidationResponse',
+                    Schemas.MessageValidationResponse,
+                    'MessageValidationResponse',
                     400
                 )
             ]
