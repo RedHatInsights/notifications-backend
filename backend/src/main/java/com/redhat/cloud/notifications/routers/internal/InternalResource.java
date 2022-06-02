@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.StartupUtils;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
+import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepositoryOrgId;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
@@ -77,6 +78,9 @@ public class InternalResource {
 
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
+
+    @Inject
+    BehaviorGroupRepositoryOrgId behaviorGroupRepositoryOrgId;
 
     @Inject
     EndpointRepository endpointRepository;
@@ -330,7 +334,7 @@ public class InternalResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<BehaviorGroup> getDefaultBehaviorGroups() {
         if (orgIdConfig.isUseOrgId()) {
-            return behaviorGroupRepository.findDefaultsWithOrgId();
+            return behaviorGroupRepositoryOrgId.findDefaultsWithOrgId();
         } else {
             return behaviorGroupRepository.findDefaults();
         }

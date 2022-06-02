@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
+import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepositoryOrgId;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
@@ -49,6 +50,9 @@ public class ResourceHelpers {
 
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
+
+    @Inject
+    BehaviorGroupRepositoryOrgId behaviorGroupRepositoryOrgId;
 
     @Inject
     EntityManager entityManager;
@@ -231,7 +235,7 @@ public class ResourceHelpers {
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEndpointIdUsingOrgId(UUID endpointId) {
-        return behaviorGroupRepository.findBehaviorGroupsByEndpointIdOrgId(DEFAULT_ORG_ID, endpointId);
+        return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEndpointIdOrgId(DEFAULT_ORG_ID, endpointId);
     }
 
 
@@ -240,7 +244,7 @@ public class ResourceHelpers {
     }
 
     public Boolean updateBehaviorGroupOrgId(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.updateOrgId(DEFAULT_ORG_ID, behaviorGroup);
+        return behaviorGroupRepositoryOrgId.updateOrgId(DEFAULT_ORG_ID, behaviorGroup);
     }
 
     public Boolean deleteBehaviorGroup(UUID behaviorGroupId) {
@@ -248,7 +252,7 @@ public class ResourceHelpers {
     }
 
     public Boolean deleteBehaviorGroupOrgId(UUID behaviorGroupId) {
-        return behaviorGroupRepository.deleteOrgId(DEFAULT_ORG_ID, behaviorGroupId);
+        return behaviorGroupRepositoryOrgId.deleteOrgId(DEFAULT_ORG_ID, behaviorGroupId);
     }
 
     public Boolean updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
@@ -263,6 +267,14 @@ public class ResourceHelpers {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupRepository.createWithOrgId(orgId, behaviorGroup);
+        return behaviorGroupRepositoryOrgId.createWithOrgId(orgId, behaviorGroup);
+    }
+
+    public List<BehaviorGroup> findBehaviorGroupsByEventTypeIdOrgId(UUID eventTypeId) {
+        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ORG_ID, eventTypeId, new Query());
+    }
+
+    public Boolean updateDefaultBehaviorGroupOrgId(BehaviorGroup behaviorGroup) {
+        return behaviorGroupRepository.updateDefault(behaviorGroup);
     }
 }
