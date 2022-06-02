@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
-import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepositoryOrgId;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -50,9 +48,6 @@ public class ResourceHelpers {
 
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
-
-    @Inject
-    BehaviorGroupRepositoryOrgId behaviorGroupRepositoryOrgId;
 
     @Inject
     EntityManager entityManager;
@@ -109,16 +104,8 @@ public class ResourceHelpers {
         return createEndpoint(accountId, type, null);
     }
 
-    public Endpoint createEndpointOrgId(String orgId, EndpointType type) {
-        return createEndpointOrgId(orgId, type, null);
-    }
-
     public Endpoint createEndpoint(String accountId, EndpointType type, String subType) {
         return createEndpoint(accountId, type, subType, "name", "description", null, FALSE);
-    }
-
-    private Endpoint createEndpointOrgId(String orgId, EndpointType type, String subType) {
-        return createEndpointOrgId(orgId, type, subType, "name", "description", null, FALSE);
     }
 
     public UUID createWebhookEndpoint(String accountId) {
@@ -211,35 +198,16 @@ public class ResourceHelpers {
         return behaviorGroupRepository.createDefault(behaviorGroup);
     }
 
-    public BehaviorGroup createDefaultBehaviorGroupOrgId(String displayName, UUID bundleId) {
-        BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setDisplayName(displayName);
-        behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupRepositoryOrgId.createDefault(behaviorGroup);
-    }
-
     public List<EventType> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
         return behaviorGroupRepository.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, behaviorGroupId);
-    }
-
-    public List<EventType> findEventTypesByBehaviorGroupIdOrgId(UUID behaviorGroupId) {
-        return behaviorGroupRepositoryOrgId.findEventTypesByBehaviorGroupId(DEFAULT_ORG_ID, behaviorGroupId);
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEventTypeId(UUID eventTypeId) {
         return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ACCOUNT_ID, eventTypeId, new Query());
     }
 
-    public List<BehaviorGroup> findBehaviorGroupsByEventTypeIdOrgId(UUID eventTypeId) {
-        return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEventTypeId(DEFAULT_ORG_ID, eventTypeId, new Query());
-    }
-
     public List<BehaviorGroup> findBehaviorGroupsByEndpointId(UUID endpointId) {
         return behaviorGroupRepository.findBehaviorGroupsByEndpointId(DEFAULT_ACCOUNT_ID, endpointId);
-    }
-
-    public List<BehaviorGroup> findBehaviorGroupsByEndpointIdUsingOrgId(UUID endpointId) {
-        return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEndpoint(DEFAULT_ORG_ID, endpointId);
     }
 
 
@@ -247,38 +215,16 @@ public class ResourceHelpers {
         return behaviorGroupRepository.update(DEFAULT_ACCOUNT_ID, behaviorGroup);
     }
 
-    public Boolean updateBehaviorGroupOrgId(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepositoryOrgId.update(DEFAULT_ORG_ID, behaviorGroup);
-    }
-
     public Boolean deleteBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupRepository.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
-    }
-
-    public Boolean deleteBehaviorGroupOrgId(UUID behaviorGroupId) {
-        return behaviorGroupRepositoryOrgId.delete(DEFAULT_ORG_ID, behaviorGroupId);
     }
 
     public Boolean updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
         return behaviorGroupRepository.updateDefault(behaviorGroup);
     }
 
-    public Boolean updateDefaultBehaviorGroupOrgId(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepositoryOrgId.updateDefault(behaviorGroup);
-    }
-
     public Boolean deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupRepository.deleteDefault(behaviorGroupId);
     }
 
-    public Boolean deleteDefaultBehaviorGroupOrgId(UUID behaviorGroupId) {
-        return behaviorGroupRepositoryOrgId.deleteDefault(behaviorGroupId);
-    }
-
-    public BehaviorGroup createBehaviorGroupWithOrgId(String orgId, String displayName, UUID bundleId) {
-        BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setDisplayName(displayName);
-        behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupRepositoryOrgId.create(orgId, behaviorGroup);
-    }
 }
