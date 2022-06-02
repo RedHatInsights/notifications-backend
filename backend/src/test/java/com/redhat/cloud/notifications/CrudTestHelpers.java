@@ -601,7 +601,7 @@ public abstract class CrudTestHelpers {
                 .get("/templates/{templateId}")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(JSON)
+                .contentType(expectedStatusCode == 404 ? TEXT : JSON)
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -708,7 +708,7 @@ public abstract class CrudTestHelpers {
                 .get("/templates/email/instant/{templateId}")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(JSON)
+                .contentType(expectedStatusCode == 404 ? TEXT : JSON)
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -790,7 +790,7 @@ public abstract class CrudTestHelpers {
                 .when().get("/templates/email/instant/eventType/{eventTypeId}")
                 .then()
                 .statusCode(isExpectedToBeFound ? 200 : 404)
-                .contentType(JSON)
+                .contentType(isExpectedToBeFound ? JSON : TEXT)
                 .extract().asString();
 
         if (isExpectedToBeFound) {
@@ -871,7 +871,7 @@ public abstract class CrudTestHelpers {
                 .get("/templates/email/aggregation/{templateId}")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(JSON)
+                .contentType(expectedStatusCode == 404 ? TEXT : JSON)
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
