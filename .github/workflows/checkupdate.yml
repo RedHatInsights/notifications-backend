@@ -1,59 +1,28 @@
 # FILE LOCATION IN REPOSITORY:
 #
-#   .github/workflows/auto-build-on-base-image-change.yml
+#   .github/workflows/checkupdate.yml
 #
 
 name: Regular base image update check
 on:
   schedule:
-    - cron: "5 0 * * *"
+    - cron: "5 * * * *"
   workflow_dispatch:
 
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
-
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-
-      - name: Docker Image Update Checker
-        id: baseupdatecheck
-        uses: mkumatag/container-image-updater-action@v1.0.5
-        with:
-          base-image: registry.access.redhat.com/ubi8/openjdk-11:latest
-          image:  quay.io/cloudservices/notifications-backend 
-      
+      - name: Checkout repository
+        uses: actions/checkout@v3
       - name: Do change
-        uses: actions/checkout@v2
         run: |
           git config user.name 'Update-a-Bot'
           git config user.email 'notifications-team@redhat.com'
-          
-
-
-      # only execute subsequent steps if an update is actually NEEDED.
-      # unfortunately we need to add an if-condition to all steps now
-      # because a clean exit can't be triggered within a job it seems
-      # (a cancellation is NOT the same and triggers a failure email)
-      # see also https://github.com/actions/runner/issues/662
-
-      # - name: Login to DockerHub
-      #   uses: docker/login-action@v1
-      #   with:
-      #     registry: quay.io
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
-      #   if: steps.baseupdatecheck.outputs.needs-updating == 'true'
-
-      # - name: Build and push Docker images
-      #   uses: docker/build-push-action@v2.6.1
-      #   with:
-      #     context: "${{ github.workspace }}"
-      #     push: true
-      #     tags: registry.access.redhat.com/ubi8/openjdk-11:latest # update for your image
-      - name: Create pr
-      
-        if: steps.baseupdatecheck.outputs.needs-updating == 'true'
+          manifest-tool inspect registry.access.redhat.com/ubi8/openjdk-11:latest |grep Digest > .baseimage
+          git add -A
+          git commit -m "Base image digest changed"
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+       
