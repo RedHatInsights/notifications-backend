@@ -23,7 +23,7 @@ jobs:
         with:
           packages: |
             manifest-tool
-        run: python main.py
+      - run: python main.py
       - name: Do change
         run: |
           git config user.name 'Update-a-Bot'
