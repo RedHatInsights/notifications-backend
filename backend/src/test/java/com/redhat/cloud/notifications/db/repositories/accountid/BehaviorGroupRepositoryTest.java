@@ -1,8 +1,7 @@
-package com.redhat.cloud.notifications.db.repositories;
+package com.redhat.cloud.notifications.db.repositories.accountid;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
@@ -46,7 +45,7 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     EntityManager entityManager;
 
     @Inject
-    ResourceHelpers resourceHelpers;
+    AccountIdResourceHelpers resourceHelpers;
 
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;

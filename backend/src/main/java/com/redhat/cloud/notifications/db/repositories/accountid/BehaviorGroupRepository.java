@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db.repositories;
+package com.redhat.cloud.notifications.db.repositories.accountid;
 
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.BehaviorGroup;

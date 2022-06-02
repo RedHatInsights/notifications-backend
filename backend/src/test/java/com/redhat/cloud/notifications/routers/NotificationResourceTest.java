@@ -9,7 +9,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
-import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
+import com.redhat.cloud.notifications.db.repositories.accountid.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.EventType;
@@ -312,8 +312,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
         String orgId = "testGetEventTypesAffectedByEndpointOrgId";
         Header identityHeader = initRbacMock(tenant, orgId, "user", FULL_ACCESS);
         UUID bundleId = helpers.createTestAppAndEventTypes();
-        UUID behaviorGroupId1 = helpers.createBehaviorGroup(tenant, "behavior-group-1", bundleId).getId();
-        UUID behaviorGroupId2 = helpers.createBehaviorGroup(tenant, "behavior-group-2", bundleId).getId();
+        UUID behaviorGroupId1 = createBehaviorGroup(tenant, "behavior-group-1", bundleId).getId();
+        UUID behaviorGroupId2 = createBehaviorGroup(tenant, "behavior-group-2", bundleId).getId();
         UUID appId = applicationRepository.getApplications(TEST_BUNDLE_NAME).stream()
                 .filter(a -> a.getName().equals(TEST_APP_NAME_2))
                 .findFirst().get().getId();
@@ -622,5 +622,12 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
                 .statusCode(404);
+    }
+
+    public BehaviorGroup createBehaviorGroup(String accountId, String displayName, UUID bundleId) {
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName(displayName);
+        behaviorGroup.setBundleId(bundleId);
+        return behaviorGroupRepository.create(accountId, behaviorGroup);
     }
 }

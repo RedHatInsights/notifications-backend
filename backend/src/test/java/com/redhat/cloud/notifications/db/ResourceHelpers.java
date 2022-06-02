@@ -1,11 +1,9 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
-import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
@@ -20,10 +18,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
-import java.util.List;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -47,9 +43,6 @@ public class ResourceHelpers {
     BundleRepository bundleRepository;
 
     @Inject
-    BehaviorGroupRepository behaviorGroupRepository;
-
-    @Inject
     EntityManager entityManager;
 
     public Bundle createBundle() {
@@ -59,10 +52,6 @@ public class ResourceHelpers {
     public Bundle createBundle(String name, String displayName) {
         Bundle bundle = new Bundle(name, displayName);
         return bundleRepository.createBundle(bundle);
-    }
-
-    public Application createApplication(UUID bundleId) {
-        return createApplication(bundleId, "name", "displayName");
     }
 
     public Application createApplication(UUID bundleId, String name, String displayName) {
@@ -117,21 +106,9 @@ public class ResourceHelpers {
                 .getId();
     }
 
-    public Endpoint createEndpoint(String accountId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled) {
+    private Endpoint createEndpoint(String accountId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled) {
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
-        endpoint.setType(type);
-        endpoint.setSubType(subType);
-        endpoint.setName(name);
-        endpoint.setDescription(description);
-        endpoint.setProperties(properties);
-        endpoint.setEnabled(enabled);
-        return endpointRepository.createEndpoint(endpoint);
-    }
-
-    public Endpoint createEndpointOrgId(String orgId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled) {
-        Endpoint endpoint = new Endpoint();
-        endpoint.setOrgId(orgId);
         endpoint.setType(type);
         endpoint.setSubType(subType);
         endpoint.setName(name);
@@ -183,48 +160,4 @@ public class ResourceHelpers {
         entityManager.persist(history);
         return history;
     }
-
-    public BehaviorGroup createBehaviorGroup(String accountId, String displayName, UUID bundleId) {
-        BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setDisplayName(displayName);
-        behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupRepository.create(accountId, behaviorGroup);
-    }
-
-    public BehaviorGroup createDefaultBehaviorGroup(String displayName, UUID bundleId) {
-        BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setDisplayName(displayName);
-        behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupRepository.createDefault(behaviorGroup);
-    }
-
-    public List<EventType> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
-        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, behaviorGroupId);
-    }
-
-    public List<BehaviorGroup> findBehaviorGroupsByEventTypeId(UUID eventTypeId) {
-        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ACCOUNT_ID, eventTypeId, new Query());
-    }
-
-    public List<BehaviorGroup> findBehaviorGroupsByEndpointId(UUID endpointId) {
-        return behaviorGroupRepository.findBehaviorGroupsByEndpointId(DEFAULT_ACCOUNT_ID, endpointId);
-    }
-
-
-    public Boolean updateBehaviorGroup(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.update(DEFAULT_ACCOUNT_ID, behaviorGroup);
-    }
-
-    public Boolean deleteBehaviorGroup(UUID behaviorGroupId) {
-        return behaviorGroupRepository.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
-    }
-
-    public Boolean updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.updateDefault(behaviorGroup);
-    }
-
-    public Boolean deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
-        return behaviorGroupRepository.deleteDefault(behaviorGroupId);
-    }
-
 }
