@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.templates.TemplateEngineClient;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -118,8 +119,11 @@ public class TemplateResource {
 
     @GET
     @Path("/email/instant/eventType/{eventTypeId}")
-    @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_INTERNAL_USER)
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = InstantEmailTemplate.class))),
+            @APIResponse(responseCode = "404", description = "No instant email found for the event type", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)))
+    })
     public InstantEmailTemplate getInstantEmailTemplateByEventType(@RestPath UUID eventTypeId) {
         return templateRepository.findInstantEmailTemplateByEventType(eventTypeId);
     }
