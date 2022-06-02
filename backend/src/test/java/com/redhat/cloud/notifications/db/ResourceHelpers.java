@@ -83,12 +83,6 @@ public class ResourceHelpers {
         return applicationRepository.createApp(app);
     }
 
-    public UUID createEventType(String bundleName, String applicationName, String eventTypeName) {
-        Application app = applicationRepository.getApplication(bundleName, applicationName);
-        return createEventType(app.getId(), eventTypeName, eventTypeName, "new event type")
-                .getId();
-    }
-
     public EventType createEventType(UUID applicationId, String name, String displayName, String description) {
         EventType eventType = new EventType();
         eventType.setName(name);
