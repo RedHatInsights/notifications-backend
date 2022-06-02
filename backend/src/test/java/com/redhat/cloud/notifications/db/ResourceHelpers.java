@@ -66,11 +66,6 @@ public class ResourceHelpers {
         return bundleRepository.createBundle(bundle);
     }
 
-    public UUID getBundleId(String bundleName) {
-        return bundleRepository.getBundle(bundleName)
-                .getId();
-    }
-
     public Application createApplication(UUID bundleId) {
         return createApplication(bundleId, "name", "displayName");
     }
