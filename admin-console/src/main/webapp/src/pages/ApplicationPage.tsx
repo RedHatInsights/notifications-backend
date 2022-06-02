@@ -22,7 +22,6 @@ import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
 import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
 import { useEventTypes } from '../services/EventTypes/GetEventTypes';
-import { useSystemBehaviorGroups } from '../services/SystemBehaviorGroups/GetBehaviorGroups';
 import { EventType } from '../types/Notifications';
 
 type ApplicationPageParams = {
@@ -36,7 +35,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
-    const getBehaviorGroups = useSystemBehaviorGroups();
 
     const columns = [ 'Event Type', 'Name', 'Event Type Id' ];
 
@@ -79,14 +77,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
-
-    const listSystemBehaviorGroups = useMemo(() => {
-        if (getBehaviorGroups.payload?.status === 200) {
-            return getBehaviorGroups.payload.value;
-        }
-
-        return undefined;
-    }, [ getBehaviorGroups.payload?.status, getBehaviorGroups.payload?.value ]);
 
     const createEventType = () => {
         setShowModal(true);
@@ -179,7 +169,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                         isOpen={ toggleSelect }
                                         showModal={ showModal }
                                         applicationName={ application?.displayName }
-                                        systemBehaviorGroup={ listSystemBehaviorGroups }
                                         onClose={ onClose }
                                         onSubmit={ handleSubmit }
                                         isLoading={ eventTypesQuery.loading }

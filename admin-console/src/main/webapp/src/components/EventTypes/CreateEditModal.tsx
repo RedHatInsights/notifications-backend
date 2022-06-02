@@ -10,7 +10,6 @@ interface CreateEditModalProps {
     showModal: boolean;
     applicationName?: string;
     initialEventType?: Partial<EventType>;
-    systemBehaviorGroup?: readonly BehaviorGroup[]
     isLoading: boolean;
     isOpen: boolean;
     onClose: () => void;
