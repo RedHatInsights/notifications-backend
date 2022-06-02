@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.OrgIdConfig;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
@@ -17,6 +18,9 @@ public class EmailAggregationRepository {
     private static final Logger LOGGER = Logger.getLogger(EmailAggregationRepository.class);
 
     @Inject
+    OrgIdConfig orgIdConfig;
+
+    @Inject
     StatelessSessionFactory statelessSessionFactory;
 
     public boolean addEmailAggregation(EmailAggregation aggregation) {
@@ -31,7 +35,7 @@ public class EmailAggregationRepository {
     }
 
     public List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
-        if (key.getOrgId() != null && !key.getOrgId().isEmpty()) {
+        if (orgIdConfig.isUseOrgId() && key.getOrgId() != null && !key.getOrgId().isEmpty()) {
             String query = "FROM EmailAggregation WHERE accountId = :accountId AND orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
             return statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
                     .setParameter("accountId", key.getAccountId())
@@ -55,12 +59,23 @@ public class EmailAggregationRepository {
 
     @Transactional
     public int purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
-        return statelessSessionFactory.getCurrentSession().createQuery(query)
-                .setParameter("accountId", key.getAccountId())
-                .setParameter("bundleName", key.getBundle())
-                .setParameter("applicationName", key.getApplication())
-                .setParameter("created", lastUsedTime)
-                .executeUpdate();
+        if (orgIdConfig.isUseOrgId() && key.getOrgId() != null && !key.getOrgId().isEmpty()) {
+            String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
+            return statelessSessionFactory.getCurrentSession().createQuery(query)
+                    .setParameter("accountId", key.getAccountId())
+                    .setParameter("orgId", key.getOrgId())
+                    .setParameter("bundleName", key.getBundle())
+                    .setParameter("applicationName", key.getApplication())
+                    .setParameter("created", lastUsedTime)
+                    .executeUpdate();
+        } else {
+            String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
+            return statelessSessionFactory.getCurrentSession().createQuery(query)
+                    .setParameter("accountId", key.getAccountId())
+                    .setParameter("bundleName", key.getBundle())
+                    .setParameter("applicationName", key.getApplication())
+                    .setParameter("created", lastUsedTime)
+                    .executeUpdate();
+        }
     }
 }

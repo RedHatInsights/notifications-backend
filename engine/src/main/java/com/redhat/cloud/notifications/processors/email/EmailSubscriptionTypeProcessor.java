@@ -282,6 +282,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 action.setContext(contextBuilder.build());
                 action.setEvents(List.of());
                 action.setAccountId(aggregationKey.getAccountId());
+                action.setOrgId(aggregationKey.getOrgId());
                 action.setApplication(aggregationKey.getApplication());
                 action.setBundle(aggregationKey.getBundle());
 

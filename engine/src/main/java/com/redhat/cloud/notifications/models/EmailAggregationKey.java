@@ -16,6 +16,10 @@ public class EmailAggregationKey {
     @NotNull
     private String application;
 
+    // TODO NOTIF-603 orgId. check this
+    public EmailAggregationKey() {
+    }
+
     public EmailAggregationKey(String accountId, String bundle, String application) {
         this.accountId = accountId;
         this.bundle = bundle;

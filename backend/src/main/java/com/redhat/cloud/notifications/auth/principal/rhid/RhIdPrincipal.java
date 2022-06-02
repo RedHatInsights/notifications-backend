@@ -11,4 +11,8 @@ public class RhIdPrincipal extends ConsolePrincipal<RhIdentity> {
     public String getAccount() {
         return getIdentity().getAccountNumber();
     }
+
+    public String getOrgId() {
+        return getIdentity().getOrgId();
+    }
 }
