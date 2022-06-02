@@ -6,12 +6,12 @@ import io.quarkus.qute.TemplateInstance;
 
 public class Patch implements EmailTemplate {
 
-    private static final String NewAdvisories = "new-advisories";
+    private static final String NewAdvisory = "new-advisory";
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals(Patch.NewAdvisories)) {
+            if (eventType.equals(Patch.NewAdvisory)) {
                 return Templates.newAdvisoriesInstantEmailTitle();
             }
         }
@@ -22,7 +22,7 @@ public class Patch implements EmailTemplate {
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals(Patch.NewAdvisories)) {
+            if (eventType.equals(Patch.NewAdvisory)) {
                 return Templates.newAdvisoriesInstantEmailBody();
             }
         }
@@ -33,7 +33,7 @@ public class Patch implements EmailTemplate {
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
         return (type == EmailSubscriptionType.INSTANT &&
-                (eventType.equals(Patch.NewAdvisories)));
+                (eventType.equals(Patch.NewAdvisory)));
     }
 
     @Override

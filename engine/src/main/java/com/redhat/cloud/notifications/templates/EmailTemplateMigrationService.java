@@ -162,7 +162,7 @@ public class EmailTemplateMigrationService {
          */
         getOrCreateTemplate(warnings, "Patch/insightsEmailBody", "html", "Patch Insights email body");
         createInstantEmailTemplate(
-                warnings, "rhel", "patch", List.of("new-advisories"),
+                warnings, "rhel", "patch", List.of("new-advisory"),
                 "Patch/newAdvisoriesInstantEmailTitle", "txt", "Patch instant advisories email title",
                 "Patch/newAdvisoriesInstantEmailBody", "html", "Patch instant advisories email body"
         );

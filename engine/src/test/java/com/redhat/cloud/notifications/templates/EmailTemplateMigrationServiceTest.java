@@ -83,7 +83,7 @@ public class EmailTemplateMigrationServiceTest {
         EventType updateDevices = resourceHelpers.createEventType(edgeManagement.getId(), "update-devices");
         // App: patch
         Application patch = resourceHelpers.createApp(rhel.getId(), "patch");
-        EventType newAdvisories = resourceHelpers.createEventType(patch.getId(), "new-advisories");
+        EventType newAdvisories = resourceHelpers.createEventType(patch.getId(), "new-advisory");
         // App: policies
         Application policies = findApp("rhel", "policies");
         EventType policyTriggered = findEventType("rhel", "policies", "policy-triggered");
