@@ -12,6 +12,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
+import javax.validation.Valid;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response.Status;
@@ -32,8 +33,16 @@ public class BehaviorGroupRepositoryOrgId {
     @Inject
     EntityManager entityManager;
 
+    public BehaviorGroup create(String orgId, @Valid BehaviorGroup behaviorGroup) {
+        return this.create(orgId, behaviorGroup, false);
+    }
+
+    public BehaviorGroup createDefault(BehaviorGroup behaviorGroup) {
+        return this.create(null, behaviorGroup, true);
+    }
+
     @Transactional
-    BehaviorGroup createBehaviorGroupWithOrgId(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
+    BehaviorGroup create(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
         behaviorGroup.setOrgId(orgId);
         if (isDefaultBehaviorGroup != behaviorGroup.isDefaultBehavior(true)) {
             throw new BadRequestException(String.format(
@@ -53,7 +62,7 @@ public class BehaviorGroupRepositoryOrgId {
         }
     }
 
-    public List<BehaviorGroup> findDefaultsWithOrgId() {
+    public List<BehaviorGroup> findDefaults() {
         final String query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
                 "WHERE b.orgId IS NULL " +
                 "ORDER BY b.created DESC, a.position ASC";
@@ -66,13 +75,33 @@ public class BehaviorGroupRepositoryOrgId {
         return behaviorGroups;
     }
 
-    public boolean updateOrgId(String orgId, BehaviorGroup behaviorGroup) {
-        return this.updateOrgId(orgId, behaviorGroup, false);
+    public List<BehaviorGroup> findByBundleId(String orgId, UUID bundleId) {
+        Bundle bundle = entityManager.find(Bundle.class, bundleId);
+        if (bundle == null) {
+            throw new NotFoundException("Bundle not found");
+        }
+
+        List<BehaviorGroup> behaviorGroups = entityManager.createNamedQuery("findByBundleIdWithOrgId", BehaviorGroup.class)
+                .setParameter("orgId", orgId)
+                .setParameter("bundleId", bundleId)
+                .getResultList();
+        for (BehaviorGroup behaviorGroup : behaviorGroups) {
+            behaviorGroup.filterOutBundle();
+        }
+        return behaviorGroups;
+    }
+
+    public boolean update(String orgId, BehaviorGroup behaviorGroup) {
+        return this.update(orgId, behaviorGroup, false);
+    }
+
+    public boolean updateDefault(BehaviorGroup behaviorGroup) {
+        return this.update(null, behaviorGroup, true);
     }
 
     @Transactional
-    boolean updateOrgId(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehavior) {
-        checkBehaviorGroupOrgId(behaviorGroup.getId(), isDefaultBehavior);
+    boolean update(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehavior) {
+        checkBehavior(behaviorGroup.getId(), isDefaultBehavior);
         String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE id = :id";
 
         if (orgId == null) {
@@ -92,35 +121,17 @@ public class BehaviorGroupRepositoryOrgId {
         return q.executeUpdate() > 0;
     }
 
-    @Transactional
-    boolean updateBehaviorGroupWithOrgId(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehavior) {
-        checkBehaviorGroupOrgId(behaviorGroup.getId(), isDefaultBehavior);
-        String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE id = :id";
-
-        if (orgId == null) {
-            query += " AND orgId IS NULL";
-        } else {
-            query += " AND orgId = :orgId";
-        }
-
-        javax.persistence.Query q = entityManager.createQuery(query)
-                .setParameter("displayName", behaviorGroup.getDisplayName())
-                .setParameter("id", behaviorGroup.getId());
-
-        if (orgId != null) {
-            q = q.setParameter("orgId", orgId);
-        }
-
-        return q.executeUpdate() > 0;
+    public boolean delete(String orgId, UUID behaviorGroupId) {
+        return this.delete(orgId, behaviorGroupId, false);
     }
 
-    public boolean deleteOrgId(String orgId, UUID behaviorGroupId) {
-        return this.deleteOrgId(orgId, behaviorGroupId, false);
+    public boolean deleteDefault(UUID behaviorGroupId) {
+        return this.delete(null, behaviorGroupId, true);
     }
 
     @Transactional
-    public boolean deleteOrgId(String orgId, UUID behaviorGroupId, boolean isDefaultBehavior) {
-        checkBehaviorGroupOrgId(behaviorGroupId, isDefaultBehavior);
+    public boolean delete(String orgId, UUID behaviorGroupId, boolean isDefaultBehavior) {
+        checkBehavior(behaviorGroupId, isDefaultBehavior);
         String query = "DELETE FROM BehaviorGroup WHERE id = :id";
 
         if (orgId == null) {
@@ -140,44 +151,96 @@ public class BehaviorGroupRepositoryOrgId {
     }
 
     @Transactional
-    public boolean deleteBehaviorGroupWithOrgId(String orgId, UUID behaviorGroupId, boolean isDefaultBehavior) {
-        checkBehaviorGroupOrgId(behaviorGroupId, isDefaultBehavior);
-        String query = "DELETE FROM BehaviorGroup WHERE id = :id";
-
-        if (orgId == null) {
-            query += " AND orgId IS NULL";
-        } else {
-            query += " AND orgId = :orgId";
-        }
-
-        javax.persistence.Query q = entityManager.createQuery(query)
-                .setParameter("id", behaviorGroupId);
-
-        if (orgId != null) {
-            q = q.setParameter("orgId", orgId);
-        }
-
-        return q.executeUpdate() > 0;
+    public boolean linkEventTypeDefaultBehavior(UUID eventTypeId, UUID behaviorGroupId) {
+        checkBehavior(behaviorGroupId, true);
+        String insertQuery = "INSERT INTO event_type_behavior (event_type_id, behavior_group_id, created) " +
+                "VALUES (:eventTypeId, :behaviorGroupId, :created) " +
+                "ON CONFLICT (event_type_id, behavior_group_id) DO NOTHING";
+        entityManager.createNativeQuery(insertQuery)
+                .setParameter("eventTypeId", eventTypeId)
+                .setParameter("behaviorGroupId", behaviorGroupId)
+                .setParameter("created", LocalDateTime.now(UTC))
+                .executeUpdate();
+        return true;
     }
 
-    private void checkBehaviorGroupOrgId(UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
-        BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
-        if (behaviorGroup == null) {
-            throw new NotFoundException("Behavior group not found");
+    @Transactional
+    public boolean unlinkEventTypeDefaultBehavior(UUID eventTypeId, UUID behaviorGroupId) {
+        checkBehavior(behaviorGroupId, true);
+        String deleteQuery = "DELETE FROM EventTypeBehavior b " +
+                "WHERE eventType.id = :eventTypeId " +
+                "AND id.behaviorGroupId = :behaviorGroupId";
+        entityManager.createQuery(deleteQuery)
+                .setParameter("eventTypeId", eventTypeId)
+                .setParameter("behaviorGroupId", behaviorGroupId)
+                .executeUpdate();
+        return true;
+    }
+
+    /*
+     * Returns true if the event type was found and successfully updated.
+     * Returns false if the event type was not found.
+     * If an exception other than NoResultException is thrown during the update, the DB transaction will be rolled back.
+     */
+    @Transactional
+    public boolean updateEventTypeBehaviors(String orgId, UUID eventTypeId, Set<UUID> behaviorGroupIds) {
+        // First, let's make sure the event type exists.
+        EventType eventType = entityManager.find(EventType.class, eventTypeId);
+        if (eventType == null) {
+            throw new NotFoundException("Event type not found");
         } else {
-            if (isDefaultBehaviorGroup) {
-                if (behaviorGroup.getOrgId() != null) {
-                    throw new BadRequestException("Default behavior groups must have a null orgId");
-                }
-            } else {
-                if (behaviorGroup.getOrgId() == null) {
-                    throw new BadRequestException("Only default behavior groups have a null orgId");
-                }
+
+            // An event type should only be linked to behavior groups from the same bundle.
+            String integrityCheckHql = "SELECT id FROM BehaviorGroup WHERE id IN (:behaviorGroupIds) " +
+                    "AND bundle != (SELECT application.bundle FROM EventType WHERE id = :eventTypeId)";
+            List<UUID> differentBundle = entityManager.createQuery(integrityCheckHql, UUID.class)
+                    .setParameter("behaviorGroupIds", behaviorGroupIds)
+                    .setParameter("eventTypeId", eventTypeId)
+                    .getResultList();
+            if (!differentBundle.isEmpty()) {
+                throw new BadRequestException("Some behavior groups can't be linked to the event " +
+                        "type because they belong to a different bundle: " + differentBundle);
             }
+
+            /*
+             * All event type behaviors that should no longer exist must be deleted.
+             * Deleted event type behaviors must obviously be owned by the current account.
+             */
+            String deleteQuery = "DELETE FROM EventTypeBehavior b " +
+                    "WHERE b.eventType.id = :eventTypeId " +
+                    "AND EXISTS (SELECT 1 FROM BehaviorGroup WHERE orgId = :orgId AND id = b.behaviorGroup.id)";
+            if (!behaviorGroupIds.isEmpty()) {
+                deleteQuery += " AND b.behaviorGroup.id NOT IN (:behaviorGroupIds)";
+            }
+            javax.persistence.Query q = entityManager.createQuery(deleteQuery)
+                    .setParameter("orgId", orgId)
+                    .setParameter("eventTypeId", eventTypeId);
+            if (!behaviorGroupIds.isEmpty()) {
+                q = q.setParameter("behaviorGroupIds", behaviorGroupIds);
+            }
+            q.executeUpdate();
+
+            for (UUID behaviorGroupId : behaviorGroupIds) {
+                /*
+                 * Then, we'll insert all event type behaviors from the given behaviorGroupIds list.
+                 * If an event type behavior already exists, nothing will happen (no exception will be thrown).
+                 */
+                String insertQuery = "INSERT INTO event_type_behavior (event_type_id, behavior_group_id, created) " +
+                        "SELECT :eventTypeId, :behaviorGroupId, :created " +
+                        "WHERE EXISTS (SELECT 1 FROM behavior_group WHERE org_id = :orgId AND id = :behaviorGroupId) " +
+                        "ON CONFLICT (event_type_id, behavior_group_id) DO NOTHING";
+                entityManager.createNativeQuery(insertQuery)
+                        .setParameter("eventTypeId", eventTypeId)
+                        .setParameter("behaviorGroupId", behaviorGroupId)
+                        .setParameter("created", LocalDateTime.now(UTC))
+                        .setParameter("orgId", orgId)
+                        .executeUpdate();
+            }
+            return true;
         }
     }
 
-    public List<EventType> findEventTypesByBehaviorGroupIdOrgId(String orgId, UUID behaviorGroupId) {
+    public List<EventType> findEventTypesByBehaviorGroup(String orgId, UUID behaviorGroupId) {
         BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
         if (behaviorGroup == null) {
             throw new NotFoundException("Behavior group not found");
@@ -191,24 +254,7 @@ public class BehaviorGroupRepositoryOrgId {
                 .getResultList();
     }
 
-    public List<BehaviorGroup> findBehaviorGroupsByEndpointIdOrgId(String orgId, UUID endpointId) {
-        Endpoint endpoint = entityManager.find(Endpoint.class, endpointId);
-        if (endpoint == null) {
-            throw new NotFoundException("Endpoint not found");
-        }
-
-        String query = "SELECT bg FROM BehaviorGroup bg LEFT JOIN FETCH bg.bundle JOIN bg.actions a WHERE bg.orgId = :orgId AND a.endpoint.id = :endpointId";
-        List<BehaviorGroup> behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
-                .setParameter("orgId", orgId)
-                .setParameter("endpointId", endpointId)
-                .getResultList();
-        for (BehaviorGroup behaviorGroup : behaviorGroups) {
-            behaviorGroup.filterOutActions();
-        }
-        return behaviorGroups;
-    }
-
-    public List<BehaviorGroup> findBehaviorGroupsByEventTypeIdOrgId(String orgId, UUID eventTypeId, Query limiter) {
+    public List<BehaviorGroup> findBehaviorGroupsByEventType(String orgId, UUID eventTypeId, Query limiter) {
         EventType eventType = entityManager.find(EventType.class, eventTypeId);
         if (eventType == null) {
             throw new NotFoundException("Event type not found");
@@ -236,25 +282,13 @@ public class BehaviorGroupRepositoryOrgId {
         return behaviorGroups;
     }
 
-    public BehaviorGroup createWithOrgId(String orgId, BehaviorGroup behaviorGroup) {
-        return this.createBehaviorGroupWithOrgId(orgId, behaviorGroup, false);
-    }
-
-    public Boolean updateWithOrgId(String orgId, BehaviorGroup behaviorGroup) {
-        return this.updateBehaviorGroupWithOrgId(orgId, behaviorGroup, false);
-    }
-
-    public Boolean deleteWithOrgId(String orgId, UUID behaviorGroupId) {
-        return deleteBehaviorGroupWithOrgId(orgId, behaviorGroupId, false);
-    }
-
     /*
      * Returns Status.OK if the behavior group was found and successfully updated.
      * Returns Status.NOT_FOUND if the behavior group was not found.
      * If an exception other than NoResultException is thrown during the update, the DB transaction will be rolled back.
      */
     @Transactional
-    public Status updateBehaviorGroupActionsWithOrgId(String orgId, UUID behaviorGroupId, List<UUID> endpointIds) {
+    public Status updateBehaviorGroupActions(String orgId, UUID behaviorGroupId, List<UUID> endpointIds) {
 
         // First, let's make sure the behavior group exists and is owned by the current account.
         String checkBehaviorGroupQuery = "SELECT 1 FROM BehaviorGroup WHERE id = :id AND orgId ";
@@ -318,82 +352,41 @@ public class BehaviorGroupRepositoryOrgId {
         return OK;
     }
 
-    /*
-     * Returns true if the event type was found and successfully updated.
-     * Returns false if the event type was not found.
-     * If an exception other than NoResultException is thrown during the update, the DB transaction will be rolled back.
-     */
-    @Transactional
-    public boolean updateEventTypeBehaviorsWithOrgId(String orgId, UUID eventTypeId, Set<UUID> behaviorGroupIds) {
-        // First, let's make sure the event type exists.
-        EventType eventType = entityManager.find(EventType.class, eventTypeId);
-        if (eventType == null) {
-            throw new NotFoundException("Event type not found");
-        } else {
-
-            // An event type should only be linked to behavior groups from the same bundle.
-            String integrityCheckHql = "SELECT id FROM BehaviorGroup WHERE id IN (:behaviorGroupIds) " +
-                    "AND bundle != (SELECT application.bundle FROM EventType WHERE id = :eventTypeId)";
-            List<UUID> differentBundle = entityManager.createQuery(integrityCheckHql, UUID.class)
-                    .setParameter("behaviorGroupIds", behaviorGroupIds)
-                    .setParameter("eventTypeId", eventTypeId)
-                    .getResultList();
-            if (!differentBundle.isEmpty()) {
-                throw new BadRequestException("Some behavior groups can't be linked to the event " +
-                        "type because they belong to a different bundle: " + differentBundle);
-            }
-
-            /*
-             * All event type behaviors that should no longer exist must be deleted.
-             * Deleted event type behaviors must obviously be owned by the current account.
-             */
-            String deleteQuery = "DELETE FROM EventTypeBehavior b " +
-                    "WHERE b.eventType.id = :eventTypeId " +
-                    "AND EXISTS (SELECT 1 FROM BehaviorGroup WHERE orgId = :orgId AND id = b.behaviorGroup.id)";
-            if (!behaviorGroupIds.isEmpty()) {
-                deleteQuery += " AND b.behaviorGroup.id NOT IN (:behaviorGroupIds)";
-            }
-            javax.persistence.Query q = entityManager.createQuery(deleteQuery)
-                    .setParameter("orgId", orgId)
-                    .setParameter("eventTypeId", eventTypeId);
-            if (!behaviorGroupIds.isEmpty()) {
-                q = q.setParameter("behaviorGroupIds", behaviorGroupIds);
-            }
-            q.executeUpdate();
-
-            for (UUID behaviorGroupId : behaviorGroupIds) {
-                /*
-                 * Then, we'll insert all event type behaviors from the given behaviorGroupIds list.
-                 * If an event type behavior already exists, nothing will happen (no exception will be thrown).
-                 */
-                String insertQuery = "INSERT INTO event_type_behavior (event_type_id, behavior_group_id, created) " +
-                        "SELECT :eventTypeId, :behaviorGroupId, :created " +
-                        "WHERE EXISTS (SELECT 1 FROM behavior_group WHERE org_id = :orgId AND id = :behaviorGroupId) " +
-                        "ON CONFLICT (event_type_id, behavior_group_id) DO NOTHING";
-                entityManager.createNativeQuery(insertQuery)
-                        .setParameter("eventTypeId", eventTypeId)
-                        .setParameter("behaviorGroupId", behaviorGroupId)
-                        .setParameter("created", LocalDateTime.now(UTC))
-                        .setParameter("orgId", orgId)
-                        .executeUpdate();
-            }
-            return true;
-        }
+    public Status updateDefaultBehaviorGroupActions(UUID behaviorGroupId, List<UUID> endpointIds) {
+        return updateBehaviorGroupActions(null, behaviorGroupId, endpointIds);
     }
 
-    public List<BehaviorGroup> findByBundleIdWithOrgId(String orgId, UUID bundleId) {
-        Bundle bundle = entityManager.find(Bundle.class, bundleId);
-        if (bundle == null) {
-            throw new NotFoundException("Bundle not found");
+    public List<BehaviorGroup> findBehaviorGroupsByEndpoint(String orgId, UUID endpointId) {
+        Endpoint endpoint = entityManager.find(Endpoint.class, endpointId);
+        if (endpoint == null) {
+            throw new NotFoundException("Endpoint not found");
         }
 
-        List<BehaviorGroup> behaviorGroups = entityManager.createNamedQuery("findByBundleIdWithOrgId", BehaviorGroup.class)
+        String query = "SELECT bg FROM BehaviorGroup bg LEFT JOIN FETCH bg.bundle JOIN bg.actions a WHERE bg.orgId = :orgId AND a.endpoint.id = :endpointId";
+        List<BehaviorGroup> behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
                 .setParameter("orgId", orgId)
-                .setParameter("bundleId", bundleId)
+                .setParameter("endpointId", endpointId)
                 .getResultList();
         for (BehaviorGroup behaviorGroup : behaviorGroups) {
-            behaviorGroup.filterOutBundle();
+            behaviorGroup.filterOutActions();
         }
         return behaviorGroups;
+    }
+
+    private void checkBehavior(UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
+        BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
+        if (behaviorGroup == null) {
+            throw new NotFoundException("Behavior group not found");
+        } else {
+            if (isDefaultBehaviorGroup) {
+                if (behaviorGroup.getOrgId() != null) {
+                    throw new BadRequestException("Default behavior groups must have a null orgId");
+                }
+            } else {
+                if (behaviorGroup.getOrgId() == null) {
+                    throw new BadRequestException("Only default behavior groups have a null orgId");
+                }
+            }
+        }
     }
 }

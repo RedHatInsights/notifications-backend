@@ -235,7 +235,7 @@ public class ResourceHelpers {
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEndpointIdUsingOrgId(UUID endpointId) {
-        return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEndpointIdOrgId(DEFAULT_ORG_ID, endpointId);
+        return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEndpoint(DEFAULT_ORG_ID, endpointId);
     }
 
 
@@ -244,7 +244,7 @@ public class ResourceHelpers {
     }
 
     public Boolean updateBehaviorGroupOrgId(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepositoryOrgId.updateOrgId(DEFAULT_ORG_ID, behaviorGroup);
+        return behaviorGroupRepositoryOrgId.update(DEFAULT_ORG_ID, behaviorGroup);
     }
 
     public Boolean deleteBehaviorGroup(UUID behaviorGroupId) {
@@ -252,7 +252,7 @@ public class ResourceHelpers {
     }
 
     public Boolean deleteBehaviorGroupOrgId(UUID behaviorGroupId) {
-        return behaviorGroupRepositoryOrgId.deleteOrgId(DEFAULT_ORG_ID, behaviorGroupId);
+        return behaviorGroupRepositoryOrgId.delete(DEFAULT_ORG_ID, behaviorGroupId);
     }
 
     public Boolean updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
@@ -267,7 +267,7 @@ public class ResourceHelpers {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupRepositoryOrgId.createWithOrgId(orgId, behaviorGroup);
+        return behaviorGroupRepositoryOrgId.create(orgId, behaviorGroup);
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEventTypeIdOrgId(UUID eventTypeId) {

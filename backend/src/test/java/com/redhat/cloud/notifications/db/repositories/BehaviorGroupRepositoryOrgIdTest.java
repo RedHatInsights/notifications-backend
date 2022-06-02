@@ -63,7 +63,7 @@ class BehaviorGroupRepositoryOrgIdTest extends DbIsolatedTest {
 
         // Create behavior group.
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroupWithOrgId(DEFAULT_ORG_ID, "displayName", bundle.getId());
-        List<BehaviorGroup> behaviorGroups = behaviorGroupRepositoryOrgId.findByBundleIdWithOrgId(DEFAULT_ORG_ID, bundle.getId());
+        List<BehaviorGroup> behaviorGroups = behaviorGroupRepositoryOrgId.findByBundleId(DEFAULT_ORG_ID, bundle.getId());
         assertEquals(1, behaviorGroups.size());
         assertEquals(behaviorGroup, behaviorGroups.get(0));
         assertEquals(behaviorGroup.getDisplayName(), behaviorGroups.get(0).getDisplayName());
@@ -96,7 +96,7 @@ class BehaviorGroupRepositoryOrgIdTest extends DbIsolatedTest {
         // Create behavior group.
         BehaviorGroup behaviorGroup = resourceHelpers.createDefaultBehaviorGroup("displayName", bundle.getId());
 
-        List<BehaviorGroup> behaviorGroups = behaviorGroupRepositoryOrgId.findByBundleIdWithOrgId(DEFAULT_ORG_ID, bundle.getId());
+        List<BehaviorGroup> behaviorGroups = behaviorGroupRepositoryOrgId.findByBundleId(DEFAULT_ORG_ID, bundle.getId());
         assertEquals(1, behaviorGroups.size());
         assertEquals(behaviorGroup, behaviorGroups.get(0));
         assertEquals(behaviorGroup.getDisplayName(), behaviorGroups.get(0).getDisplayName());
@@ -107,7 +107,7 @@ class BehaviorGroupRepositoryOrgIdTest extends DbIsolatedTest {
         assertTrue(updateDefaultBehaviorGroup(behaviorGroup.getId(), newDisplayName));
         entityManager.clear(); // We need to clear the session L1 cache before checking the update result.
 
-        behaviorGroups = behaviorGroupRepositoryOrgId.findByBundleIdWithOrgId(DEFAULT_ORG_ID, bundle.getId());
+        behaviorGroups = behaviorGroupRepositoryOrgId.findByBundleId(DEFAULT_ORG_ID, bundle.getId());
         assertEquals(1, behaviorGroups.size());
         assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
         assertEquals(newDisplayName, behaviorGroups.get(0).getDisplayName());
@@ -208,7 +208,7 @@ class BehaviorGroupRepositoryOrgIdTest extends DbIsolatedTest {
 
     @Transactional
     void updateAndCheckBehaviorGroupActions(String orgId, UUID bundleId, UUID behaviorGroupId, Response.Status expectedResult, UUID... endpointIds) {
-        Response.Status status = behaviorGroupRepositoryOrgId.updateBehaviorGroupActionsWithOrgId(orgId, behaviorGroupId, Arrays.asList(endpointIds));
+        Response.Status status = behaviorGroupRepositoryOrgId.updateBehaviorGroupActions(orgId, behaviorGroupId, Arrays.asList(endpointIds));
         // Is the update result the one we expected?
         assertEquals(expectedResult, status);
         if (expectedResult == Response.Status.OK) {
@@ -252,14 +252,14 @@ class BehaviorGroupRepositoryOrgIdTest extends DbIsolatedTest {
     }
 
     private List<BehaviorGroupAction> findBehaviorGroupActions(String orgId, UUID bundleId, UUID behaviorGroupId) {
-        return behaviorGroupRepositoryOrgId.findByBundleIdWithOrgId(orgId, bundleId)
+        return behaviorGroupRepositoryOrgId.findByBundleId(orgId, bundleId)
                 .stream().filter(behaviorGroup -> behaviorGroup.getId().equals(behaviorGroupId))
                 .findFirst().get().getActions();
     }
 
     @Transactional
     void updateAndCheckEventTypeBehaviors(String orgId, UUID eventTypeId, boolean expectedResult, UUID... behaviorGroupIds) {
-        boolean updated = behaviorGroupRepositoryOrgId.updateEventTypeBehaviorsWithOrgId(orgId, eventTypeId, Set.of(behaviorGroupIds));
+        boolean updated = behaviorGroupRepositoryOrgId.updateEventTypeBehaviors(orgId, eventTypeId, Set.of(behaviorGroupIds));
         // Is the update result the one we expected?
         assertEquals(expectedResult, updated);
         if (expectedResult) {
@@ -294,7 +294,7 @@ class BehaviorGroupRepositoryOrgIdTest extends DbIsolatedTest {
 
         // 'behaviorGroup2' should not be added to 'eventType' behaviors because it comes from a different bundle.
         BadRequestException e = assertThrows(BadRequestException.class, () -> {
-            behaviorGroupRepositoryOrgId.updateEventTypeBehaviorsWithOrgId(DEFAULT_ORG_ID, eventType.getId(), Set.of(behaviorGroup1.getId(), behaviorGroup2.getId()));
+            behaviorGroupRepositoryOrgId.updateEventTypeBehaviors(DEFAULT_ORG_ID, eventType.getId(), Set.of(behaviorGroup1.getId(), behaviorGroup2.getId()));
         });
         assertTrue(e.getMessage().startsWith("Some behavior groups can't be linked"));
     }

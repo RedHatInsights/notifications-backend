@@ -124,7 +124,7 @@ public class NotificationResource {
     public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             String orgId = getOrgId(sec);
-            return behaviorGroupRepositoryOrgId.findEventTypesByBehaviorGroupIdOrgId(orgId, behaviorGroupId);
+            return behaviorGroupRepositoryOrgId.findEventTypesByBehaviorGroup(orgId, behaviorGroupId);
         } else {
             String accountId = getAccountId(sec);
             return behaviorGroupRepository.findEventTypesByBehaviorGroupId(accountId, behaviorGroupId);
@@ -143,7 +143,7 @@ public class NotificationResource {
     public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEndpointIdOrgId(orgId, endpointId);
+            return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEndpoint(orgId, endpointId);
         } else {
             String accountId = getAccountId(sec);
             return behaviorGroupRepository.findBehaviorGroupsByEndpointId(accountId, endpointId);
@@ -158,7 +158,7 @@ public class NotificationResource {
     public List<BehaviorGroup> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEventTypeIdOrgId(orgId, eventTypeId, query);
+            return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEventType(orgId, eventTypeId, query);
         } else {
             String accountId = getAccountId(sec);
             return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(accountId, eventTypeId, query);
@@ -206,7 +206,7 @@ public class NotificationResource {
     public BehaviorGroup createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            return behaviorGroupRepositoryOrgId.createWithOrgId(orgId, behaviorGroup);
+            return behaviorGroupRepositoryOrgId.create(orgId, behaviorGroup);
         } else {
             String accountId = getAccountId(sec);
             return behaviorGroupRepository.create(accountId, behaviorGroup);
@@ -225,7 +225,7 @@ public class NotificationResource {
 
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            return behaviorGroupRepositoryOrgId.updateWithOrgId(orgId, behaviorGroup);
+            return behaviorGroupRepositoryOrgId.update(orgId, behaviorGroup);
         } else {
             String accountId = getAccountId(sec);
             return behaviorGroupRepository.update(accountId, behaviorGroup);
@@ -241,7 +241,7 @@ public class NotificationResource {
     public Boolean deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            return behaviorGroupRepositoryOrgId.deleteWithOrgId(orgId, behaviorGroupId);
+            return behaviorGroupRepositoryOrgId.delete(orgId, behaviorGroupId);
         } else {
             String accountId = getAccountId(sec);
             return behaviorGroupRepository.delete(accountId, behaviorGroupId);
@@ -271,7 +271,7 @@ public class NotificationResource {
         Status status;
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            status = behaviorGroupRepositoryOrgId.updateBehaviorGroupActionsWithOrgId(orgId, behaviorGroupId, endpointIds);
+            status = behaviorGroupRepositoryOrgId.updateBehaviorGroupActions(orgId, behaviorGroupId, endpointIds);
         } else {
             String accountId = getAccountId(sec);
             status = behaviorGroupRepository.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds);
@@ -300,7 +300,7 @@ public class NotificationResource {
         boolean updated;
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            updated = behaviorGroupRepositoryOrgId.updateEventTypeBehaviorsWithOrgId(orgId, eventTypeId, behaviorGroupIds);
+            updated = behaviorGroupRepositoryOrgId.updateEventTypeBehaviors(orgId, eventTypeId, behaviorGroupIds);
         } else {
             String accountId = getAccountId(sec);
             updated = behaviorGroupRepository.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds);
@@ -322,7 +322,7 @@ public class NotificationResource {
         List<BehaviorGroup> behaviorGroups;
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            behaviorGroups = behaviorGroupRepositoryOrgId.findByBundleIdWithOrgId(orgId, bundleId);
+            behaviorGroups = behaviorGroupRepositoryOrgId.findByBundleId(orgId, bundleId);
             endpointRepository.loadProperties(
                     behaviorGroups
                             .stream()

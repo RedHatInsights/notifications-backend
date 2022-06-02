@@ -334,7 +334,7 @@ public class InternalResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<BehaviorGroup> getDefaultBehaviorGroups() {
         if (orgIdConfig.isUseOrgId()) {
-            return behaviorGroupRepositoryOrgId.findDefaultsWithOrgId();
+            return behaviorGroupRepositoryOrgId.findDefaults();
         } else {
             return behaviorGroupRepository.findDefaults();
         }
@@ -395,10 +395,19 @@ public class InternalResource {
             properties.setIgnorePreferences(p.isIgnorePreferences());
             return endpointRepository.getOrCreateEmailSubscriptionEndpoint(null, properties);
         }).collect(Collectors.toList());
-        Response.Status status = behaviorGroupRepository.updateDefaultBehaviorGroupActions(
-                behaviorGroupId,
-                endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
-        );
+
+        Response.Status status;
+        if (orgIdConfig.isUseOrgId()) {
+            status = behaviorGroupRepositoryOrgId.updateDefaultBehaviorGroupActions(
+                    behaviorGroupId,
+                    endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
+            );
+        } else {
+            status = behaviorGroupRepository.updateDefaultBehaviorGroupActions(
+                    behaviorGroupId,
+                    endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
+            );
+        }
         return Response.status(status).build();
     }
 
