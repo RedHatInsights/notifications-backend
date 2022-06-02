@@ -38,14 +38,6 @@ export type BehaviorGroup = {
     id?: UUID | undefined | null;
   };
 
-export enum NotificationType {
-    EMAIL_SUBSCRIPTION = 'EMAIL_SUBSCRIPTION'
-}
-
-export interface ActionBase {
-    type: NotificationType;
-}
-
 export interface EventType {
     id: string;
     displayName: string;

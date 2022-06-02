@@ -15,7 +15,6 @@ import { useUserPermissions } from '../app/PermissionContext';
 import { EmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
 import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
-import { ListSystemBehaviorGroups } from '../components/SystemBehaviorGroups/ListSystemBehaviorGroups';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
@@ -39,7 +38,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const newEvent = useCreateEventType();
     const getBehaviorGroups = useSystemBehaviorGroups();
 
-    const columns = [ 'Event Type', 'Name', 'Behavior', 'Event Type Id' ];
+    const columns = [ 'Event Type', 'Name', 'Event Type Id' ];
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
 
@@ -212,9 +211,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             <Tr key={ e.id }>
                                 <Td>{ e.displayName }</Td>
                                 <Td>{ e.name }</Td>
-                                <Td>
-                                    <ListSystemBehaviorGroups />
-                                </Td>
                                 <Td>{ e.id }</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'

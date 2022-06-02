@@ -18,13 +18,13 @@ type BundlePageParams = {
 }
 
 export const BehaviorGroupsTable: React.FunctionComponent = () => {
-    const getBehaviorGroups = useSystemBehaviorGroups();
     const { bundleId } = useParams<BundlePageParams>();
+    const getBehaviorGroups = useSystemBehaviorGroups();
     const getBundles = useBundleTypes(bundleId);
     const newBehaviorGroup = useCreateSystemBehaviorGroup();
     const deleteBehaviorGroupMutation = useDeleteBehaviorGroup();
 
-    const columns = [ 'System Behavior Group', 'Actions' ];
+    const columns = [ 'System Behavior Group', 'Action' ];
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
@@ -67,6 +67,7 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
         mutate({
             id: systemBehaviorGroup.id,
             displayName: systemBehaviorGroup.displayName ?? '',
+            actions: systemBehaviorGroup.actions,
             bundleId
         }).then(getBehaviorGroups.query);
 
@@ -106,6 +107,7 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
             <PageSection>
                 <Title headingLevel='h1'>
                     <Breadcrumb>
+                        <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
                         <BreadcrumbItem target='#' >{ (getBundles.loading || getBundles.payload?.status !== 200)
                             ? <Spinner /> : getBundles.payload.value.displayName }
                         </BreadcrumbItem>
@@ -146,8 +148,8 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
                     <Tbody>
                         { getBehaviorGroups.payload.value.map(b =>
                             <Tr key={ b.id }>
-                                <Td>{b.displayName}</Td>
-                                <Td>{b.actions}</Td>
+                                <Td>{ b.displayName }</Td>
+                                <Td>{ b.actions }</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
                                         onClick={ () => editSystemBehaviorGroup(b) }
