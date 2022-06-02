@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: set up manifest-tool 
-        run: sudo apt-get skopeo
+        run: sudo apt-get install -y skopeo
       - name: Do change
         run: |
           git config user.name 'Update-a-Bot'
