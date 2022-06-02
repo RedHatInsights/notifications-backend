@@ -117,7 +117,7 @@ public class ResourceHelpers {
         return createEndpoint(accountId, type, subType, "name", "description", null, FALSE);
     }
 
-    public Endpoint createEndpointOrgId(String orgId, EndpointType type, String subType) {
+    private Endpoint createEndpointOrgId(String orgId, EndpointType type, String subType) {
         return createEndpointOrgId(orgId, type, subType, "name", "description", null, FALSE);
     }
 
