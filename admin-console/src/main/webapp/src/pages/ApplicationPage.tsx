@@ -12,11 +12,13 @@ import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
 import { useUserPermissions } from '../app/PermissionContext';
-import { EmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
+import { AggregationTemplateCard } from '../components/EmailTemplates/EmailTemplateCard';
+import { InstantEmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
 import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
+import { useAggregationTemplates } from '../services/EmailTemplates/GetAggregationTemplates';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
@@ -35,6 +37,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
+    const aggregationTemplates = useAggregationTemplates(applicationId);
 
     const columns = [ 'Event Type', 'Name', 'Description', 'Event Type Id' ];
 
@@ -60,7 +63,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
         }
     }, [ getBundleId, bundleNameQuery.query ]);
 
-    const bundle = useMemo(() => {
+    const bundle = React.useMemo(() => {
         if (bundleNameQuery.payload?.status === 200) {
             return bundleNameQuery.payload.value;
         }
@@ -75,6 +78,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
+
+    const getAggregationEmailTemplates = useMemo(() => {
+        if (aggregationTemplates.payload?.status === 200) {
+            return aggregationTemplates.payload.value;
+        }
+
+        return undefined;
+    }, [ aggregationTemplates.payload?.status, aggregationTemplates.payload?.value ]);
 
     const createEventType = () => {
         setShowModal(true);
@@ -211,9 +222,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     </Tbody>
                 </TableComposable>
             </PageSection>
-            { isAdmin && <EmailTemplateTable /> }
+            <AggregationTemplateCard
+                applicationName={ application?.displayName }
+                bundleName={ bundle?.display_name }
+                templateName={ getAggregationEmailTemplates?.map(a => a.body_template?.name) } />
+            { isAdmin && application && <InstantEmailTemplateTable application={ application } /> }
         </React.Fragment>
 
     );
 };
-

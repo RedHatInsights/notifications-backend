@@ -11,6 +11,8 @@ public class EmailPayloadAggregatorFactory {
     private static final String DRIFT = "drift";
     private static final String RHOSAK = "rhosak";
     private static final String ANSIBLE = "ansible";
+    private static final String PATCH = "patch";
+    private static final String VULNERABILITY = "vulnerability";
 
     private EmailPayloadAggregatorFactory() {
 
@@ -28,6 +30,12 @@ public class EmailPayloadAggregatorFactory {
         }
         if (bundle.equals(RHEL) && application.equals(DRIFT)) {
             return new DriftEmailPayloadAggregator();
+        }
+        if (bundle.equals(RHEL) && application.equals(PATCH)) {
+            return new PatchEmailPayloadAggregator();
+        }
+        if (bundle.equals(RHEL) && application.equals(VULNERABILITY)) {
+            return new VulnerabilityEmailPayloadAggregator();
         }
         if (bundle.equals(APPLICATION_SERVICES) && application.equalsIgnoreCase(RHOSAK)) {
             return new RhosakEmailAggregator();

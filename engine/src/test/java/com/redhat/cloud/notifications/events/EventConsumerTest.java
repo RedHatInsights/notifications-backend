@@ -40,6 +40,7 @@ import static com.redhat.cloud.notifications.events.EventConsumer.CONSUMED_TIMER
 import static com.redhat.cloud.notifications.events.EventConsumer.DUPLICATE_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_ERROR_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_EXCEPTION_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_INVALID_COUNTER_NAME;
@@ -90,6 +91,7 @@ public class EventConsumerTest {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
+                PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
@@ -119,6 +121,7 @@ public class EventConsumerTest {
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
+                PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME
@@ -140,6 +143,7 @@ public class EventConsumerTest {
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
+                PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME
@@ -156,6 +160,7 @@ public class EventConsumerTest {
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
         assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", "", "application", "").count());
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 PROCESSING_ERROR_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
@@ -178,6 +183,7 @@ public class EventConsumerTest {
         assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 PROCESSING_ERROR_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
@@ -227,6 +233,7 @@ public class EventConsumerTest {
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
+                PROCESSING_EXCEPTION_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME
         );
@@ -248,6 +255,7 @@ public class EventConsumerTest {
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
+                PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME
@@ -270,6 +278,7 @@ public class EventConsumerTest {
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
+                PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME
