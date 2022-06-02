@@ -13,6 +13,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.QueryHint;
@@ -21,6 +22,7 @@ import javax.persistence.Transient;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -44,13 +46,22 @@ import static org.hibernate.jpa.QueryHints.HINT_PASS_DISTINCT_THROUGH;
  * See https://in.relation.to/2016/08/04/introducing-distinct-pass-through-query-hint/ for more details about that hint.
  */
 // TODO Move this query back to BehaviorGroupResources when hints are implemented in Mutiny.Query.
-@NamedQuery(
-        name = "findByBundleId",
-        query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
-                "WHERE (b.accountId = :accountId OR b.accountId IS NULL) AND b.bundle.id = :bundleId " +
-                "ORDER BY b.created DESC, a.position ASC",
-        hints = @QueryHint(name = HINT_PASS_DISTINCT_THROUGH, value = "false")
-)
+@NamedQueries({
+        @NamedQuery(
+                name = "findByBundleId",
+                query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
+                        "WHERE (b.accountId = :accountId OR b.accountId IS NULL) AND b.bundle.id = :bundleId " +
+                        "ORDER BY b.created DESC, a.position ASC",
+                hints = @QueryHint(name = HINT_PASS_DISTINCT_THROUGH, value = "false")
+        ),
+        @NamedQuery(
+                name = "findByBundleIdWithOrgId",
+                query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
+                        "WHERE (b.orgId = :orgId OR b.orgId IS NULL) AND b.bundle.id = :bundleId " +
+                        "ORDER BY b.created DESC, a.position ASC",
+                hints = @QueryHint(name = HINT_PASS_DISTINCT_THROUGH, value = "false")
+        )
+})
 public class BehaviorGroup extends CreationUpdateTimestamped {
 
     @Id
@@ -63,6 +74,7 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
     private String accountId;
 
     @Size(max = 50)
+    @JsonIgnore
     private String orgId;
 
     @NotNull
@@ -96,8 +108,12 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     @JsonInclude
     @JsonProperty(access = READ_ONLY, value = "default_behavior")
-    public boolean isDefaultBehavior() {
-        return accountId == null;
+    public boolean isDefaultBehavior(boolean orgIdUsage) {
+        if (orgIdUsage) {
+            return orgId == null;
+        } else {
+            return accountId == null;
+        }
     }
 
     public UUID getId() {

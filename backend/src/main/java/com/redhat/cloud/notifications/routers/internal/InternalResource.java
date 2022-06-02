@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.internal;
 
+import com.redhat.cloud.notifications.OrgIdConfig;
 import com.redhat.cloud.notifications.StartupUtils;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -94,6 +95,9 @@ public class InternalResource {
 
     @Inject
     StartupUtils startupUtils;
+
+    @Inject
+    OrgIdConfig orgIdConfig;
 
     // This endpoint is used during the IQE tests to determine which version of the code is tested.
     @GET
@@ -325,7 +329,11 @@ public class InternalResource {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<BehaviorGroup> getDefaultBehaviorGroups() {
-        return behaviorGroupRepository.findDefaults();
+        if (orgIdConfig.isUseOrgId()) {
+            return behaviorGroupRepository.findDefaultsWithOrgId();
+        } else {
+            return behaviorGroupRepository.findDefaults();
+        }
     }
 
     @POST

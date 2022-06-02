@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -115,8 +116,16 @@ public class ResourceHelpers {
         return createEndpoint(accountId, type, null);
     }
 
+    public Endpoint createEndpointOrgId(String orgId, EndpointType type) {
+        return createEndpointOrgId(orgId, type, null);
+    }
+
     public Endpoint createEndpoint(String accountId, EndpointType type, String subType) {
         return createEndpoint(accountId, type, subType, "name", "description", null, FALSE);
+    }
+
+    public Endpoint createEndpointOrgId(String orgId, EndpointType type, String subType) {
+        return createEndpointOrgId(orgId, type, subType, "name", "description", null, FALSE);
     }
 
     public UUID createWebhookEndpoint(String accountId) {
@@ -131,6 +140,18 @@ public class ResourceHelpers {
     public Endpoint createEndpoint(String accountId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled) {
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
+        endpoint.setType(type);
+        endpoint.setSubType(subType);
+        endpoint.setName(name);
+        endpoint.setDescription(description);
+        endpoint.setProperties(properties);
+        endpoint.setEnabled(enabled);
+        return endpointRepository.createEndpoint(endpoint);
+    }
+
+    public Endpoint createEndpointOrgId(String orgId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled) {
+        Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(orgId);
         endpoint.setType(type);
         endpoint.setSubType(subType);
         endpoint.setName(name);
@@ -209,12 +230,25 @@ public class ResourceHelpers {
         return behaviorGroupRepository.findBehaviorGroupsByEndpointId(DEFAULT_ACCOUNT_ID, endpointId);
     }
 
+    public List<BehaviorGroup> findBehaviorGroupsByEndpointIdUsingOrgId(UUID endpointId) {
+        return behaviorGroupRepository.findBehaviorGroupsByEndpointIdOrgId(DEFAULT_ORG_ID, endpointId);
+    }
+
+
     public Boolean updateBehaviorGroup(BehaviorGroup behaviorGroup) {
         return behaviorGroupRepository.update(DEFAULT_ACCOUNT_ID, behaviorGroup);
     }
 
+    public Boolean updateBehaviorGroupOrgId(BehaviorGroup behaviorGroup) {
+        return behaviorGroupRepository.updateOrgId(DEFAULT_ORG_ID, behaviorGroup);
+    }
+
     public Boolean deleteBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupRepository.delete(DEFAULT_ACCOUNT_ID, behaviorGroupId);
+    }
+
+    public Boolean deleteBehaviorGroupOrgId(UUID behaviorGroupId) {
+        return behaviorGroupRepository.deleteOrgId(DEFAULT_ORG_ID, behaviorGroupId);
     }
 
     public Boolean updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
@@ -223,5 +257,12 @@ public class ResourceHelpers {
 
     public Boolean deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupRepository.deleteDefault(behaviorGroupId);
+    }
+
+    public BehaviorGroup createBehaviorGroupWithOrgId(String orgId, String displayName, UUID bundleId) {
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName(displayName);
+        behaviorGroup.setBundleId(bundleId);
+        return behaviorGroupRepository.createWithOrgId(orgId, behaviorGroup);
     }
 }
