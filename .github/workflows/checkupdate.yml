@@ -16,8 +16,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Install manifest-tool
-        run: sudo apt-get install -y manifest-tool 
+      - name: set up manifest-tool  
+        uses: actions/setup-python@v1
+        uses: BSFishy/pip-action@v1
+        with:
+          packages: |
+            manifest-tool
+        run: python main.py
       - name: Do change
         run: |
           git config user.name 'Update-a-Bot'
