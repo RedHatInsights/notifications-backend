@@ -15,7 +15,7 @@ public class Environment {
     }
 
     public String url() {
-        return url("/");
+        return url("");
     }
 
     public String url(String path) {

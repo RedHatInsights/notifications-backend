@@ -14,7 +14,8 @@ public class EnvironmentTest {
         assertEquals("https://console.redhat.com/foobar", environment.url("/foobar"));
         // Adds slash if path does not start with it
         assertEquals("https://console.redhat.com/foobar", environment.url("foobar"));
-        assertEquals("https://console.redhat.com/", environment.url());
+        // No slash is added to base
+        assertEquals("https://console.redhat.com", environment.url());
         assertEquals("prod", environment.name());
 
         environment.environment = "stage";
