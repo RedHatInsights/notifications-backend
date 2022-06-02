@@ -17,12 +17,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: set up manifest-tool 
-        run: sudo apt-get manifest-tool
+        run: sudo apt-get skopeo
       - name: Do change
         run: |
           git config user.name 'Update-a-Bot'
           git config user.email 'notifications-team@redhat.com'
-          manifest-tool inspect registry.access.redhat.com/ubi8/openjdk-11:latest |grep Digest > .baseimage
+          skopeo inspect docker://registry.access.redhat.com/ubi8/openjdk-11:latest |grep Digest > .baseimage
           git add -A
           git commit -m "Base image digest changed"
       - name: Create Pull Request
