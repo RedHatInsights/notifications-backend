@@ -240,7 +240,7 @@ public class BehaviorGroupRepositoryOrgId {
         }
     }
 
-    public List<EventType> findEventTypesByBehaviorGroup(String orgId, UUID behaviorGroupId) {
+    public List<EventType> findEventTypesByBehaviorGroupId(String orgId, UUID behaviorGroupId) {
         BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
         if (behaviorGroup == null) {
             throw new NotFoundException("Behavior group not found");
@@ -254,7 +254,7 @@ public class BehaviorGroupRepositoryOrgId {
                 .getResultList();
     }
 
-    public List<BehaviorGroup> findBehaviorGroupsByEventType(String orgId, UUID eventTypeId, Query limiter) {
+    public List<BehaviorGroup> findBehaviorGroupsByEventTypeId(String orgId, UUID eventTypeId, Query limiter) {
         EventType eventType = entityManager.find(EventType.class, eventTypeId);
         if (eventType == null) {
             throw new NotFoundException("Event type not found");

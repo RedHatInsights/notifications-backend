@@ -211,12 +211,27 @@ public class ResourceHelpers {
         return behaviorGroupRepository.createDefault(behaviorGroup);
     }
 
+    public BehaviorGroup createDefaultBehaviorGroupOrgId(String displayName, UUID bundleId) {
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName(displayName);
+        behaviorGroup.setBundleId(bundleId);
+        return behaviorGroupRepositoryOrgId.createDefault(behaviorGroup);
+    }
+
     public List<EventType> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
         return behaviorGroupRepository.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, behaviorGroupId);
     }
 
+    public List<EventType> findEventTypesByBehaviorGroupIdOrgId(UUID behaviorGroupId) {
+        return behaviorGroupRepositoryOrgId.findEventTypesByBehaviorGroupId(DEFAULT_ORG_ID, behaviorGroupId);
+    }
+
     public List<BehaviorGroup> findBehaviorGroupsByEventTypeId(UUID eventTypeId) {
         return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ACCOUNT_ID, eventTypeId, new Query());
+    }
+
+    public List<BehaviorGroup> findBehaviorGroupsByEventTypeIdOrgId(UUID eventTypeId) {
+        return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEventTypeId(DEFAULT_ORG_ID, eventTypeId, new Query());
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEndpointId(UUID endpointId) {
@@ -248,8 +263,16 @@ public class ResourceHelpers {
         return behaviorGroupRepository.updateDefault(behaviorGroup);
     }
 
+    public Boolean updateDefaultBehaviorGroupOrgId(BehaviorGroup behaviorGroup) {
+        return behaviorGroupRepositoryOrgId.updateDefault(behaviorGroup);
+    }
+
     public Boolean deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupRepository.deleteDefault(behaviorGroupId);
+    }
+
+    public Boolean deleteDefaultBehaviorGroupOrgId(UUID behaviorGroupId) {
+        return behaviorGroupRepositoryOrgId.deleteDefault(behaviorGroupId);
     }
 
     public BehaviorGroup createBehaviorGroupWithOrgId(String orgId, String displayName, UUID bundleId) {
@@ -257,13 +280,5 @@ public class ResourceHelpers {
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
         return behaviorGroupRepositoryOrgId.create(orgId, behaviorGroup);
-    }
-
-    public List<BehaviorGroup> findBehaviorGroupsByEventTypeIdOrgId(UUID eventTypeId) {
-        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ORG_ID, eventTypeId, new Query());
-    }
-
-    public Boolean updateDefaultBehaviorGroupOrgId(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.updateDefault(behaviorGroup);
     }
 }

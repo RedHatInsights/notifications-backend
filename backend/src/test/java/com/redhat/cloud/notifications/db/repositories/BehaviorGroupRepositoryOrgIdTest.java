@@ -94,7 +94,7 @@ class BehaviorGroupRepositoryOrgIdTest extends DbIsolatedTest {
         Bundle bundle = resourceHelpers.createBundle();
 
         // Create behavior group.
-        BehaviorGroup behaviorGroup = resourceHelpers.createDefaultBehaviorGroup("displayName", bundle.getId());
+        BehaviorGroup behaviorGroup = resourceHelpers.createDefaultBehaviorGroupOrgId("displayName", bundle.getId());
 
         List<BehaviorGroup> behaviorGroups = behaviorGroupRepositoryOrgId.findByBundleId(DEFAULT_ORG_ID, bundle.getId());
         assertEquals(1, behaviorGroups.size());
@@ -114,7 +114,7 @@ class BehaviorGroupRepositoryOrgIdTest extends DbIsolatedTest {
         assertEquals(bundle.getId(), behaviorGroups.get(0).getBundle().getId());
 
         // Delete behavior group.
-        assertTrue(resourceHelpers.deleteDefaultBehaviorGroup(behaviorGroup.getId()));
+        assertTrue(resourceHelpers.deleteDefaultBehaviorGroupOrgId(behaviorGroup.getId()));
 
         behaviorGroups = behaviorGroupRepository.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
         assertTrue(behaviorGroups.isEmpty());
@@ -306,7 +306,7 @@ class BehaviorGroupRepositoryOrgIdTest extends DbIsolatedTest {
         EventType eventType = createEventType(app);
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroupWithOrgId(DEFAULT_ORG_ID, "displayName", bundle.getId());
         updateAndCheckEventTypeBehaviors(DEFAULT_ORG_ID, eventType.getId(), true, behaviorGroup.getId());
-        List<EventType> eventTypes = resourceHelpers.findEventTypesByBehaviorGroupId(behaviorGroup.getId());
+        List<EventType> eventTypes = resourceHelpers.findEventTypesByBehaviorGroupIdOrgId(behaviorGroup.getId());
         assertEquals(1, eventTypes.size());
         assertEquals(eventType.getId(), eventTypes.get(0).getId());
     }

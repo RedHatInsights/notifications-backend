@@ -124,7 +124,7 @@ public class NotificationResource {
     public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             String orgId = getOrgId(sec);
-            return behaviorGroupRepositoryOrgId.findEventTypesByBehaviorGroup(orgId, behaviorGroupId);
+            return behaviorGroupRepositoryOrgId.findEventTypesByBehaviorGroupId(orgId, behaviorGroupId);
         } else {
             String accountId = getAccountId(sec);
             return behaviorGroupRepository.findEventTypesByBehaviorGroupId(accountId, behaviorGroupId);
@@ -158,7 +158,7 @@ public class NotificationResource {
     public List<BehaviorGroup> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEventType(orgId, eventTypeId, query);
+            return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
         } else {
             String accountId = getAccountId(sec);
             return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(accountId, eventTypeId, query);

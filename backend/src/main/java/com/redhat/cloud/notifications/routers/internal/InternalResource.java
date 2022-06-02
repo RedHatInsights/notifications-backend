@@ -347,7 +347,11 @@ public class InternalResource {
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public BehaviorGroup createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.createDefault(behaviorGroup);
+        if (orgIdConfig.isUseOrgId()) {
+            return behaviorGroupRepositoryOrgId.createDefault(behaviorGroup);
+        } else {
+            return behaviorGroupRepository.createDefault(behaviorGroup);
+        }
     }
 
     @PUT
@@ -359,7 +363,12 @@ public class InternalResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean updateDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         behaviorGroup.setId(id);
-        return behaviorGroupRepository.updateDefault(behaviorGroup);
+
+        if (orgIdConfig.isUseOrgId()) {
+            return behaviorGroupRepositoryOrgId.updateDefault(behaviorGroup);
+        } else {
+            return behaviorGroupRepository.updateDefault(behaviorGroup);
+        }
     }
 
     @DELETE
@@ -420,7 +429,13 @@ public class InternalResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response linkDefaultBehaviorToEventType(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
-        boolean isSuccess = behaviorGroupRepository.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
+
+        boolean isSuccess;
+        if (orgIdConfig.isUseOrgId()) {
+            isSuccess = behaviorGroupRepositoryOrgId.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
+        } else {
+            isSuccess = behaviorGroupRepository.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
+        }
         if (isSuccess) {
             return Response.ok().build();
         } else {
@@ -437,7 +452,14 @@ public class InternalResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response unlinkDefaultBehaviorToEventType(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
-        boolean isSuccess = behaviorGroupRepository.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
+
+        boolean isSuccess;
+        if (orgIdConfig.isUseOrgId()) {
+            isSuccess = behaviorGroupRepositoryOrgId.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
+        } else {
+            isSuccess = behaviorGroupRepository.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
+        }
+
         if (isSuccess) {
             return Response.ok().build();
         } else {
