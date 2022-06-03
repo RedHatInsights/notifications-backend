@@ -182,7 +182,7 @@
               class="rh-button-table">
               <tr>
                 <td class="rh-cta-link" align="center">
-                  <a target="_blank" class="rh-url" href="{environment.url()}/insights/patch/advisories">
+                  <a target="_blank" class="rh-url" href="{environment.url}/insights/patch/advisories">
                     <span>
                       Go to Advisories
                     </span>
@@ -220,7 +220,7 @@
                 {#for advisory in action.context.patch.get(key).get("advisories").keySet()}
                 <tr>
                   <td>
-                    <a class="rh-url" href="{environment.url()}/insights/patch/advisories/{advisory}">{advisory}</a>
+                    <a class="rh-url" href="{environment.url}/insights/patch/advisories/{advisory}">{advisory}</a>
                   </td>
                 </tr>
                 {/for}

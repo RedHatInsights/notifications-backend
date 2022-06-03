@@ -32,12 +32,12 @@
             <tr>
                 <td class="rh-content__block">
                     <p>
-                        {action.context.resource_display_name}'s availability status was changed from <b>{action.context.previous_availability_status}</b> to 
+                        {action.context.resource_display_name}'s availability status was changed from <b>{action.context.previous_availability_status}</b> to
                         <b>{action.context.current_availability_status}</b>.
                     </p>
                     <p>
                         {#if action.context.source_id > 0}
-                        For more information please check summary page of <a class="rh-url" href="{environment.url('/settings/sources/detail/')}{action.context.source_id}">{action.context.source_name} source</a>.
+                        For more information please check summary page of <a class="rh-url" href="{environment.url}/settings/sources/detail/{action.context.source_id}">{action.context.source_name} source</a>.
                         {/if}
                     </p>
                 </td>

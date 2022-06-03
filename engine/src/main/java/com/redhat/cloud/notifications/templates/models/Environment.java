@@ -15,28 +15,14 @@ public class Environment {
     }
 
     public String url() {
-        return url("");
-    }
-
-    public String url(String path) {
-        final String base;
 
         switch (environment) {
             case "prod":
-                base = "https://console.redhat.com";
-                break;
+                return "https://console.redhat.com";
             case "stage":
-                base = "https://console.stage.redhat.com";
-                break;
+                return "https://console.stage.redhat.com";
             default:
-                base = "";
-                break;
+                return "/";
         }
-
-        if (!path.startsWith("/")) {
-            path = "/" + path;
-        }
-
-        return base + path;
     }
 }
