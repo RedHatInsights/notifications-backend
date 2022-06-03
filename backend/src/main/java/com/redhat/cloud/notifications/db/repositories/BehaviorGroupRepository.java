@@ -263,6 +263,7 @@ public class BehaviorGroupRepository {
         String query = "SELECT bg FROM BehaviorGroup bg JOIN bg.behaviors b WHERE (bg.accountId = :accountId OR bg.accountId IS NULL) AND b.eventType.id = :eventTypeId";
 
         if (limiter != null) {
+            limiter.setSortFields(BehaviorGroup.SORT_FIELDS);
             query = limiter.getModifiedQuery(query);
         }
 

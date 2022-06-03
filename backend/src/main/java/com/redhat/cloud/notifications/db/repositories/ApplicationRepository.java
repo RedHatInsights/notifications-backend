@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 @ApplicationScoped
 public class ApplicationRepository {
 
-    private static final String[] EVENT_TYPE_SORT_FIELDS = {"name", "displayName"};
+
     @Inject
     EntityManager entityManager;
 
@@ -181,7 +181,7 @@ public class ApplicationRepository {
     }
 
     public List<EventType> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId, String eventTypeName) {
-        limiter.setSortFields(EVENT_TYPE_SORT_FIELDS);
+        limiter.setSortFields(EventType.SORT_FIELDS);
         return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName)
                 .join(JoinBuilder.builder().leftJoinFetch("e.application"))
                 .limit(limiter != null ? limiter.getLimit() : null)

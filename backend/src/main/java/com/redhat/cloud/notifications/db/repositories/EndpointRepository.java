@@ -36,7 +36,6 @@ public class EndpointRepository {
 
     private static final Logger LOGGER = Logger.getLogger(EndpointRepository.class);
 
-    private static final String[] ENDPOINT_SORT_FIELDS = {"name", "enabled", "endpoint_type"};
 
     @Inject
     EntityManager entityManager;
@@ -152,7 +151,7 @@ public class EndpointRepository {
 
     public List<Endpoint> getEndpoints(String tenant, @Nullable String name, Query limiter) {
 
-        limiter.setSortFields(ENDPOINT_SORT_FIELDS);
+        limiter.setSortFields(Endpoint.SORT_FIELDS);
 
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();

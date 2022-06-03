@@ -53,6 +53,7 @@ import static org.hibernate.jpa.QueryHints.HINT_PASS_DISTINCT_THROUGH;
 )
 public class BehaviorGroup extends CreationUpdateTimestamped {
 
+    public static final String[] SORT_FIELDS = {"displayName"};
     @Id
     @GeneratedValue
     @JsonProperty(access = READ_ONLY)

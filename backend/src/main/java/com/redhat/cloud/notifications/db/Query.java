@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
+import io.quarkus.logging.Log;
+
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
@@ -132,7 +134,8 @@ public class Query {
             throw new BadRequestException("Invalid 'sort_by' query parameter");
         } else {
             Sort sort = new Sort(sortSplit[0]);
-            if (!sortFields.contains(sort.sortColumn)) {
+            if (!sortFields.contains(sort.sortColumn.toLowerCase())) {
+                Log.warnf("Unknown sort field passed: ", sort.sortColumn);
                 throw new BadRequestException("Unknown sort field " + sort.sortColumn);
             }
             if (sortSplit.length > 1) {

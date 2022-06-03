@@ -34,6 +34,8 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @JsonFilter(ApiResponseFilter.NAME)
 public class EventType {
 
+    public static final String[] SORT_FIELDS = {"name", "displayName"};
+
     @Id
     @GeneratedValue
     @JsonProperty(access = READ_ONLY)
