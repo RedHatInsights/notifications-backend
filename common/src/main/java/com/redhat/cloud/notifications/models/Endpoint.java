@@ -33,6 +33,8 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @JsonNaming(SnakeCaseStrategy.class)
 public class Endpoint extends CreationUpdateTimestamped {
 
+    public static final String[] SORT_FIELDS = {"name", "enabled", "endpoint_type"};
+
     @Id
     @GeneratedValue
     @JsonProperty(access = READ_ONLY)

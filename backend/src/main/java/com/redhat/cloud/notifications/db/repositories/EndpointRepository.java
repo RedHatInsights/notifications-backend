@@ -34,7 +34,8 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class EndpointRepository {
     private static final String[] ENDPOINT_SORT_FIELDS = {"name", "enabled", "endpoint_type"};
- @Inject
+
+    @Inject
     EntityManager entityManager;
 
     @Transactional
