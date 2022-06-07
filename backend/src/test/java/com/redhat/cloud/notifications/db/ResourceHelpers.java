@@ -106,9 +106,32 @@ public class ResourceHelpers {
                 .getId();
     }
 
+    // TODO NOTIF-603
+    public UUID createWebhookEndpointOrgId(String orgId) {
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setUrl("https://localhost");
+        String name = "Endpoint " + UUID.randomUUID();
+        return createEndpointOrgId(orgId, WEBHOOK, null, name, "Automatically generated", properties, TRUE)
+                .getId();
+    }
+
     private Endpoint createEndpoint(String accountId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled) {
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
+        endpoint.setType(type);
+        endpoint.setSubType(subType);
+        endpoint.setName(name);
+        endpoint.setDescription(description);
+        endpoint.setProperties(properties);
+        endpoint.setEnabled(enabled);
+        return endpointRepository.createEndpoint(endpoint);
+    }
+
+    // TODO NOTIF-603
+    private Endpoint createEndpointOrgId(String orgId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled) {
+        Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(orgId);
         endpoint.setType(type);
         endpoint.setSubType(subType);
         endpoint.setName(name);

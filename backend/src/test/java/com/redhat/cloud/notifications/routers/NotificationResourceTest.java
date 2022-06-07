@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.accountid.BehaviorGroupRepository;
+import com.redhat.cloud.notifications.db.repositories.orgid.BehaviorGroupRepositoryOrgId;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.EventType;
@@ -23,6 +24,7 @@ import io.restassured.response.Response;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -68,6 +70,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
+
+    @Inject
+    BehaviorGroupRepositoryOrgId behaviorGroupRepositoryOrgId;
 
     @Inject
     OrgIdConfig orgIdConfig;
@@ -429,85 +434,193 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(1, eventTypes.size());
     }
 
-    @Test
-    void testGetEventTypesAffectedByEndpoint() {
-        String tenant = "testGetEventTypesAffectedByEndpoint";
-        String orgId = "testGetEventTypesAffectedByEndpointOrgId";
-        Header identityHeader = initRbacMock(tenant, orgId, "user", FULL_ACCESS);
-        UUID bundleId = helpers.createTestAppAndEventTypes();
-        UUID behaviorGroupId1 = createBehaviorGroup(tenant, "behavior-group-1", bundleId).getId();
-        UUID behaviorGroupId2 = createBehaviorGroup(tenant, "behavior-group-2", bundleId).getId();
-        UUID appId = applicationRepository.getApplications(TEST_BUNDLE_NAME).stream()
-                .filter(a -> a.getName().equals(TEST_APP_NAME_2))
-                .findFirst().get().getId();
-        UUID endpointId1 = helpers.createWebhookEndpoint(tenant);
-        UUID endpointId2 = helpers.createWebhookEndpoint(tenant);
-        List<EventType> eventTypes = applicationRepository.getEventTypes(appId);
-        // ep1 assigned to ev0; ep2 not assigned.
-        behaviorGroupRepository.updateEventTypeBehaviors(tenant, eventTypes.get(0).getId(), Set.of(behaviorGroupId1));
-        behaviorGroupRepository.updateBehaviorGroupActions(tenant, behaviorGroupId1, List.of(endpointId1));
+    @Nested
+    class OrgIdRelated {
 
-        String responseBody = given()
-                .header(identityHeader)
-                .pathParam("endpointId", endpointId1.toString())
-                .when()
-                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+        @Test
+        void testGetEventTypesAffectedByEndpointOrgId() {
+            orgIdConfig.overrideForTest(true);
 
-        JsonArray behaviorGroups = new JsonArray(responseBody);
-        assertEquals(1, behaviorGroups.size());
-        behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
-        assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
+            String tenant = "testGetEventTypesAffectedByEndpoint";
+            String orgId = "testGetEventTypesAffectedByEndpointOrgId";
+            Header identityHeader = initRbacMock(tenant, orgId, "user", FULL_ACCESS);
+            UUID bundleId = helpers.createTestAppAndEventTypes();
 
-        responseBody = given()
-                .header(identityHeader)
-                .pathParam("endpointId", endpointId2.toString())
-                .when()
-                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+            UUID behaviorGroupId1 = createBehaviorGroup(orgId, "behavior-group-1", bundleId).getId();
+            UUID behaviorGroupId2 = createBehaviorGroup(orgId, "behavior-group-2", bundleId).getId();
 
-        behaviorGroups = new JsonArray(responseBody);
-        assertEquals(0, behaviorGroups.size());
+            UUID appId = applicationRepository.getApplications(TEST_BUNDLE_NAME).stream()
+                    .filter(a -> a.getName().equals(TEST_APP_NAME_2))
+                    .findFirst().get().getId();
+            UUID endpointId1 = helpers.createWebhookEndpointOrgId(orgId);
+            UUID endpointId2 = helpers.createWebhookEndpointOrgId(orgId);
 
-        // ep1 assigned to event ev0; ep2 assigned to event ev1
-        behaviorGroupRepository.updateEventTypeBehaviors(tenant, eventTypes.get(0).getId(), Set.of(behaviorGroupId2));
-        behaviorGroupRepository.updateBehaviorGroupActions(tenant, behaviorGroupId2, List.of(endpointId2));
+            List<EventType> eventTypes = applicationRepository.getEventTypes(appId);
+            // ep1 assigned to ev0; ep2 not assigned.
+            behaviorGroupRepositoryOrgId.updateEventTypeBehaviors(orgId, eventTypes.get(0).getId(), Set.of(behaviorGroupId1));
+            behaviorGroupRepositoryOrgId.updateBehaviorGroupActions(orgId, behaviorGroupId1, List.of(endpointId1));
 
-        responseBody = given()
-                .header(identityHeader)
-                .pathParam("endpointId", endpointId1.toString())
-                .when()
-                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+            String responseBody = given()
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId1.toString())
+                    .when()
+                    .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().asString();
 
-        behaviorGroups = new JsonArray(responseBody);
-        assertEquals(1, behaviorGroups.size());
-        behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
-        assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
+            JsonArray behaviorGroups = new JsonArray(responseBody);
+            assertEquals(1, behaviorGroups.size());
+            behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
+            assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
 
-        responseBody = given()
-                .header(identityHeader)
-                .pathParam("endpointId", endpointId2.toString())
-                .when()
-                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+            responseBody = given()
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId2.toString())
+                    .when()
+                    .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().asString();
 
-        behaviorGroups = new JsonArray(responseBody);
-        assertEquals(1, behaviorGroups.size());
-        behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
-        assertEquals(behaviorGroupId2.toString(), behaviorGroups.getJsonObject(0).getString("id"));
+            behaviorGroups = new JsonArray(responseBody);
+            assertEquals(0, behaviorGroups.size());
+
+            // ep1 assigned to event ev0; ep2 assigned to event ev1
+            behaviorGroupRepositoryOrgId.updateEventTypeBehaviors(orgId, eventTypes.get(0).getId(), Set.of(behaviorGroupId2));
+            behaviorGroupRepositoryOrgId.updateBehaviorGroupActions(orgId, behaviorGroupId2, List.of(endpointId2));
+
+            responseBody = given()
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId1.toString())
+                    .when()
+                    .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().asString();
+
+            behaviorGroups = new JsonArray(responseBody);
+            assertEquals(1, behaviorGroups.size());
+            behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
+            assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
+
+            responseBody = given()
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId2.toString())
+                    .when()
+                    .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().asString();
+
+            behaviorGroups = new JsonArray(responseBody);
+            assertEquals(1, behaviorGroups.size());
+            behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
+            assertEquals(behaviorGroupId2.toString(), behaviorGroups.getJsonObject(0).getString("id"));
+        }
+
+        private BehaviorGroup createBehaviorGroup(String orgId, String displayName, UUID bundleId) {
+            BehaviorGroup behaviorGroup = new BehaviorGroup();
+            behaviorGroup.setDisplayName(displayName);
+            behaviorGroup.setBundleId(bundleId);
+            return behaviorGroupRepositoryOrgId.create(orgId, behaviorGroup);
+        }
+    }
+
+    @Nested
+    class AccountIdRelated {
+
+        @Test
+        void testGetEventTypesAffectedByEndpoint() {
+            String tenant = "testGetEventTypesAffectedByEndpoint";
+            String orgId = "testGetEventTypesAffectedByEndpointOrgId";
+            Header identityHeader = initRbacMock(tenant, orgId, "user", FULL_ACCESS);
+            UUID bundleId = helpers.createTestAppAndEventTypes();
+            UUID behaviorGroupId1 = createBehaviorGroup(tenant, "behavior-group-1", bundleId).getId();
+            UUID behaviorGroupId2 = createBehaviorGroup(tenant, "behavior-group-2", bundleId).getId();
+            UUID appId = applicationRepository.getApplications(TEST_BUNDLE_NAME).stream()
+                    .filter(a -> a.getName().equals(TEST_APP_NAME_2))
+                    .findFirst().get().getId();
+            UUID endpointId1 = helpers.createWebhookEndpoint(tenant);
+            UUID endpointId2 = helpers.createWebhookEndpoint(tenant);
+            List<EventType> eventTypes = applicationRepository.getEventTypes(appId);
+            // ep1 assigned to ev0; ep2 not assigned.
+            behaviorGroupRepository.updateEventTypeBehaviors(tenant, eventTypes.get(0).getId(), Set.of(behaviorGroupId1));
+            behaviorGroupRepository.updateBehaviorGroupActions(tenant, behaviorGroupId1, List.of(endpointId1));
+
+            String responseBody = given()
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId1.toString())
+                    .when()
+                    .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().asString();
+
+            JsonArray behaviorGroups = new JsonArray(responseBody);
+            assertEquals(1, behaviorGroups.size());
+            behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
+            assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
+
+            responseBody = given()
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId2.toString())
+                    .when()
+                    .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().asString();
+
+            behaviorGroups = new JsonArray(responseBody);
+            assertEquals(0, behaviorGroups.size());
+
+            // ep1 assigned to event ev0; ep2 assigned to event ev1
+            behaviorGroupRepository.updateEventTypeBehaviors(tenant, eventTypes.get(0).getId(), Set.of(behaviorGroupId2));
+            behaviorGroupRepository.updateBehaviorGroupActions(tenant, behaviorGroupId2, List.of(endpointId2));
+
+            responseBody = given()
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId1.toString())
+                    .when()
+                    .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().asString();
+
+            behaviorGroups = new JsonArray(responseBody);
+            assertEquals(1, behaviorGroups.size());
+            behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
+            assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
+
+            responseBody = given()
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId2.toString())
+                    .when()
+                    .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().asString();
+
+            behaviorGroups = new JsonArray(responseBody);
+            assertEquals(1, behaviorGroups.size());
+            behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
+            assertEquals(behaviorGroupId2.toString(), behaviorGroups.getJsonObject(0).getString("id"));
+        }
+
+        private BehaviorGroup createBehaviorGroup(String accountId, String displayName, UUID bundleId) {
+            BehaviorGroup behaviorGroup = new BehaviorGroup();
+            behaviorGroup.setDisplayName(displayName);
+            behaviorGroup.setBundleId(bundleId);
+            return behaviorGroupRepository.create(accountId, behaviorGroup);
+        }
     }
 
     @Test
@@ -745,12 +858,5 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
                 .statusCode(404);
-    }
-
-    public BehaviorGroup createBehaviorGroup(String accountId, String displayName, UUID bundleId) {
-        BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setDisplayName(displayName);
-        behaviorGroup.setBundleId(bundleId);
-        return behaviorGroupRepository.create(accountId, behaviorGroup);
     }
 }
