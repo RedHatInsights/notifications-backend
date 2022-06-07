@@ -17,4 +17,10 @@ public class OrgIdConfig {
         return useOrgId;
     }
 
+    /**
+     * <b>/!\ WARNING /!\</b> Do not use this method from runtime code.
+     */
+    public void overrideForTest(boolean override) {
+        this.useOrgId = override;
+    }
 }

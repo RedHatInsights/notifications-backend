@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
+import com.redhat.cloud.notifications.OrgIdConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -39,6 +40,7 @@ import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,16 +69,137 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
 
+    @Inject
+    OrgIdConfig orgIdConfig;
+
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
         MockServerConfig.clearRbac();
+
+        orgIdConfig.overrideForTest(false);
     }
 
     private Header initRbacMock(String tenant, String orgId, String username, RbacAccess access) {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
+    }
+
+    private Header initRbacMock(String orgId, String username, RbacAccess access) {
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(orgId, username);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
+        return TestHelpers.createRHIdentityHeader(identityHeaderValue);
+    }
+
+    @Test
+    void shouldContainDefaultBehaviorFieldInResponseWhenAccountIdIsPartOfHeader() {
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+
+        final UUID bundleId = helpers.createBundle("bundle-1", "Bundle 1").getId();
+
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+
+        behaviorGroup.setDisplayName("someDisplayName");
+        behaviorGroup.setBundleId(bundleId);
+
+        final Response response = given()
+                .header(identityHeader)
+                .body(Json.encode(behaviorGroup))
+                .contentType(JSON)
+                .when()
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject page = new JsonObject(response.getBody().asString());
+        assertTrue(page.containsKey("default_behavior"));
+        assertFalse(page.getBoolean("default_behavior"));
+    }
+
+    @Test
+    void shouldContainDefaultBehaviorFieldInResponseWhenOrgIdIsPartOfHeader() {
+        orgIdConfig.overrideForTest(true);
+        Header identityHeader = initRbacMock(ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+
+        final UUID bundleId = helpers.createBundle("bundle-1", "Bundle 1").getId();
+
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName("someDisplayName");
+        behaviorGroup.setBundleId(bundleId);
+
+        final Response response = given()
+                .header(identityHeader)
+                .body(Json.encode(behaviorGroup))
+                .contentType(JSON)
+                .when()
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject page = new JsonObject(response.getBody().asString());
+        assertTrue(page.containsKey("default_behavior"));
+        assertFalse(page.getBoolean("default_behavior"));
+    }
+
+    @Test
+    void shouldContainDefaultBehaviorFieldInResponseWhenOrgIdAndAccountIdArePartOfHeader() {
+        orgIdConfig.overrideForTest(true);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+
+        final UUID bundleId = helpers.createBundle("bundle-1", "Bundle 1").getId();
+
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName("someDisplayName");
+        behaviorGroup.setBundleId(bundleId);
+
+        final Response response = given()
+                .header(identityHeader)
+                .body(Json.encode(behaviorGroup))
+                .contentType(JSON)
+                .when()
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject page = new JsonObject(response.getBody().asString());
+        assertTrue(page.containsKey("default_behavior"));
+        assertFalse(page.getBoolean("default_behavior"));
+    }
+
+    @Test
+    void shouldNotContainDefaultBehaviorFieldInResponseWhen() {
+        orgIdConfig.overrideForTest(true);
+        Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+
+        final UUID bundleId = helpers.createBundle("bundle-1", "Bundle 1").getId();
+
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setOrgId(null);
+        behaviorGroup.setAccountId(null);
+        behaviorGroup.setDisplayName("someDisplayName");
+        behaviorGroup.setBundleId(bundleId);
+
+        final Response response = given()
+                .header(identityHeader)
+                .body(Json.encode(behaviorGroup))
+                .contentType(JSON)
+                .when()
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject page = new JsonObject(response.getBody().asString());
+
+        assertFalse(page.getBoolean("default_behavior"));
     }
 
     @Test

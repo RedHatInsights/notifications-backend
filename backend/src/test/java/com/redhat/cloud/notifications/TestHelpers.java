@@ -22,6 +22,19 @@ public class TestHelpers {
         return Base64Utils.encode(header.encode());
     }
 
+    public static String encodeRHIdentityInfo(String orgId, String username) {
+        JsonObject identity = new JsonObject();
+        JsonObject user = new JsonObject();
+        user.put("username", username);
+        identity.put("org_id", orgId);
+        identity.put("user", user);
+        identity.put("type", "User");
+        JsonObject header = new JsonObject();
+        header.put("identity", identity);
+
+        return Base64Utils.encode(header.encode());
+    }
+
     public static String encodeTurnpikeIdentityInfo(String username, String... groups) {
         JsonObject identity = new JsonObject();
         JsonObject associate = new JsonObject();

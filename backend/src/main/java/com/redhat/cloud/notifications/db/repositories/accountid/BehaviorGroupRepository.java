@@ -44,10 +44,10 @@ public class BehaviorGroupRepository {
     @Transactional
     BehaviorGroup create(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
         behaviorGroup.setAccountId(accountId);
-        if (isDefaultBehaviorGroup != behaviorGroup.isDefaultBehavior(false)) {
+        if (isDefaultBehaviorGroup != behaviorGroup.isDefaultBehavior()) {
             throw new BadRequestException(String.format(
                     "Unexpected default behavior group status: Expected [%s] found: [%s]",
-                    isDefaultBehaviorGroup, behaviorGroup.isDefaultBehavior(false)
+                    isDefaultBehaviorGroup, behaviorGroup.isDefaultBehavior()
             ));
         }
 

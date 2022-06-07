@@ -108,12 +108,8 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     @JsonInclude
     @JsonProperty(access = READ_ONLY, value = "default_behavior")
-    public boolean isDefaultBehavior(boolean orgIdUsage) {
-        if (orgIdUsage) {
-            return orgId == null;
-        } else {
-            return accountId == null;
-        }
+    public boolean isDefaultBehavior() {
+        return accountId == null && orgId == null;
     }
 
     public UUID getId() {
