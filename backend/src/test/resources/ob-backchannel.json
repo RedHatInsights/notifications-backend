@@ -5,7 +5,7 @@
  "type": "myType",
  "deadletteroffset": "1",
  "deadlettertopic": "manstis-brdg-b8a1ac39-cd30-4f5a-b6cf-bd72d7c3ce6e",
- "deadletterreason": »,
+ "deadletterreason": "Filters of processor did not match for event",
  "deadletterpartition": "0",
  "data": {
   "myMessage": "Hello world1",

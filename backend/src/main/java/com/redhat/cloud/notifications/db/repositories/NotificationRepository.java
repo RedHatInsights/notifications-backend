@@ -10,6 +10,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -71,5 +72,39 @@ public class NotificationRepository {
         } catch (NoResultException e) {
             return null;
         }
+    }
+
+    // Similar to what is in engine, copied over to here for the
+    // OB error callback and simplified.
+    // See FromObHistoryFiller#handleCallback()
+    @Transactional
+    public boolean updateHistoryItem(Map<String, Object> jo) {
+
+        String historyId = (String) jo.get("historyId");
+
+        if (historyId == null || historyId.isBlank()) {
+            throw new IllegalArgumentException("History Id is null");
+        }
+
+        boolean result = jo.containsKey("successful") && ((Boolean) jo.get("successful"));
+        Map details = (Map) jo.get("details");
+
+        Integer duration = (Integer) jo.getOrDefault("duration", 0);
+
+        String updateQuery = "UPDATE NotificationHistory SET details = :details, invocationResult = :result, invocationTime= :invocationTime WHERE id = :id";
+        int count = entityManager.createQuery(updateQuery)
+                .setParameter("details", details)
+                .setParameter("result", result)
+                .setParameter("id", UUID.fromString(historyId))
+                .setParameter("invocationTime", (long) duration)
+                .executeUpdate();
+
+        if (count == 0) {
+            throw new NoResultException("Update returned no rows");
+        } else if (count > 1) {
+            throw new IllegalStateException("Update count was " + count);
+        }
+
+        return true;
     }
 }

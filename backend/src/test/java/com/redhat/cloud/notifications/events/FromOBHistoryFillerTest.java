@@ -1,10 +1,15 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.Constants;
+import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
+import io.restassured.http.Header;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javax.json.Json;
@@ -27,34 +32,45 @@ import static org.mockito.Mockito.when;
  */
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class FromOBHistoryFillerTest {
+class FromOBHistoryFillerTest {
 
     private static final String BASE = "src/test/resources/";
     public static final String ORIGINAL_ID = "92c05a9b-237c-4fe5-bb42-afab9fb485b8";
-    private static final String OUTCOME = "Filters of processor did not match for event ";
+    private static final String OUTCOME = "Filters of processor did not match for event";
+    public static final String OB_ERROR_HANDLER = Constants.API_NOTIFICATIONS_V_1_0 + "/ob/errors";
+
+    static Header adminIdentity;
 
     @InjectMock
-    NotificationHistoryRepository repo;
+    NotificationRepository repo;
+
+    @BeforeAll
+    static void init() {
+        String tmp = TestHelpers.encodeRHIdentityInfo("user", "123", "ob-user");
+        MockServerConfig.addMockRbacAccess(tmp, MockServerConfig.RbacAccess.FULL_ACCESS);
+        adminIdentity = TestHelpers.createRHIdentityHeader(tmp);
+    }
 
     @Test
     void testHistoryUpdate() throws Exception {
         JsonObject jo = readValueFromFile("ob-backchannel.json");
         String body = jo.toString();
 
-        Map<String,Object> detailMap = new HashMap<>();
+        Map<String, Object> detailMap = new HashMap<>();
         detailMap.put("historyId", ORIGINAL_ID);
-        detailMap.put("details", new HashMap<>());
         detailMap.put("successful", false);
-        detailMap.put("outcome", OUTCOME);
+        detailMap.put("details", OUTCOME);
+        detailMap.put("duration", 0);
 
         when(repo.updateHistoryItem(anyMap())).thenReturn(true);
 
         given()
                 .body(body)
                 .header("x-rhose-original-event-id", ORIGINAL_ID)
+                .header(adminIdentity)
                 .contentType("application/json")
                 .when()
-                .post("/ob/errorHandler")
+                .post(OB_ERROR_HANDLER)
                 .then()
                 .statusCode(202);
 
@@ -71,25 +87,27 @@ public class FromOBHistoryFillerTest {
         given()
                 .body(body)
                 .header("x-rhose-original-event-id", "b8a1ac39-cd30-4f5a-b6cf-bd72d7c3ce6e")
+                .header(adminIdentity)
                 .contentType("application/json")
                 .when()
-                .post("/ob/errorHandler")
+                .post(OB_ERROR_HANDLER)
                 .then()
                 .statusCode(400);
 
     }
 
     @Test
-    public void testBadOrigId() throws Exception {
+    void testBadOrigId() throws Exception {
         JsonObject jo = readValueFromFile("ob-backchannel.json");
         String body = jo.toString();
 
         given()
                 .body(body)
                 .header("x-rhose-original-event-id", "92c05a9b")
+                .header(adminIdentity)
                 .contentType("application/json")
                 .when()
-                .post("/ob/errorHandler")
+                .post(OB_ERROR_HANDLER)
                 .then()
                 .statusCode(400);
     }
@@ -100,10 +118,11 @@ public class FromOBHistoryFillerTest {
         String body = jo.toString();
 
         given()
+                .header(adminIdentity)
                 .body(body)
                 .contentType("application/json")
                 .when()
-                .post("/ob/errorHandler")
+                .post(OB_ERROR_HANDLER)
                 .then()
                 .statusCode(400);
     }
@@ -113,23 +132,25 @@ public class FromOBHistoryFillerTest {
 
         given()
                 .header("x-rhose-original-event-id", ORIGINAL_ID)
+                .header(adminIdentity)
                 .contentType("application/json")
                 .when()
-                .post("/ob/errorHandler")
+                .post(OB_ERROR_HANDLER)
                 .then()
                 .statusCode(400);
     }
 
     @Test
-    void testBodyNoCE() throws Exception {
+    void testBodyNoCE() {
         String body = "lilalu";
 
         given()
                 .body(body)
                 .header("x-rhose-original-event-id", ORIGINAL_ID)
+                .header(adminIdentity)
                 .contentType("application/json")
                 .when()
-                .post("/ob/errorHandler")
+                .post(OB_ERROR_HANDLER)
                 .then()
                 .statusCode(400);
     }

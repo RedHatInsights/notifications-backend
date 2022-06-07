@@ -1,7 +1,7 @@
-package com.redhat.cloud.notifications.events;
+package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
-import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.Constants;
+import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
@@ -26,7 +26,7 @@ import java.util.UUID;
  * into the notification history.
  */
 @ApplicationScoped
-@Path("/ob/errorHandler")
+@Path(Constants.API_NOTIFICATIONS_V_1_0 + "/ob")
 public class FromOBHistoryFiller {
 
     public static final String MESSAGES_ERROR_COUNTER_NAME = "ob.messages.error";
@@ -34,10 +34,7 @@ public class FromOBHistoryFiller {
 
 
     @Inject
-        NotificationHistoryRepository notificationHistoryRepository;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
+    NotificationRepository notificationHistoryRepository;
 
     private Counter messagesProcessedCounter;
     private Counter messagesErrorCounter;
@@ -46,13 +43,14 @@ public class FromOBHistoryFiller {
     MeterRegistry meterRegistry;
 
     @PostConstruct
-     void init() {
-         messagesProcessedCounter = meterRegistry.counter(MESSAGES_PROCESSED_COUNTER_NAME);
-         messagesErrorCounter = meterRegistry.counter(MESSAGES_ERROR_COUNTER_NAME);
-     }
+    void init() {
+        messagesProcessedCounter = meterRegistry.counter(MESSAGES_PROCESSED_COUNTER_NAME);
+        messagesErrorCounter = meterRegistry.counter(MESSAGES_ERROR_COUNTER_NAME);
+    }
 
 
     @POST
+    @Path("/errors")
     public Response handleCallback(@NotEmpty String payload, @HeaderParam("x-rhose-original-event-id") UUID eventUUId) {
 
         if (eventUUId == null) {
@@ -77,12 +75,10 @@ public class FromOBHistoryFiller {
             historyMap.put("historyId", eventId);
             historyMap.put("successful", false);
             String reason = ce.getString("deadletterreason");
-            historyMap.put("outcome", reason);
-            historyMap.put("details", new HashMap<>());
+            historyMap.put("details", reason);
+            historyMap.put("duration", 0); // OB does not supply this
 
-            statelessSessionFactory.withSession(statelessSession -> {
-                notificationHistoryRepository.updateHistoryItem(historyMap);
-            });
+            notificationHistoryRepository.updateHistoryItem(historyMap);
         } catch (Exception e) {
             messagesErrorCounter.increment();
             Response.ResponseBuilder builder;
