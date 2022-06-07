@@ -73,6 +73,10 @@
             <version>${mockserver-netty-no-dependencies.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+        </dependency>
 
     </dependencies>
 

@@ -60,18 +60,20 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         postgreSQLContainer = new PostgreSQLContainer<>("postgres:11");
         postgreSQLContainer.start();
         // Now that postgres is started, we need to get its URL and tell Quarkus
-        // quarkus.datasource.driver=io.opentracing.contrib.jdbc.TracingDriver
-        // Driver needs a 'tracing' in the middle like jdbc:tracing:postgresql://localhost:5432/postgres
+        // quarkus.datasource.driver=io.opentelemetry.instrumentation.jdbc.OpenTelemetryDriver
+        // Driver needs a 'otel' in the middle like jdbc:otel:postgresql://localhost:5432/postgres
         String jdbcUrl = postgreSQLContainer.getJdbcUrl();
+        jdbcUrl = "jdbc:otel:" + jdbcUrl.substring(5);
         props.put("quarkus.datasource.jdbc.url", jdbcUrl);
         props.put("quarkus.datasource.username", "test");
         props.put("quarkus.datasource.password", "test");
         props.put("quarkus.datasource.db-kind", "postgresql");
 
         // Install the pgcrypto extension
-        // Could perhas be done by a migration with a lower number than the 'live' ones.
+        // Could perhaps be done by a migration with a lower number than the 'live' ones.
         PGSimpleDataSource ds = new PGSimpleDataSource();
-        ds.setURL(jdbcUrl);
+        // We need the simple url, not the otel one, as PG driver does not understand the otel one.
+        ds.setURL(postgreSQLContainer.getJdbcUrl());
         Connection connection = ds.getConnection("test", "test");
         Statement statement = connection.createStatement();
         statement.execute("CREATE EXTENSION pgcrypto;");

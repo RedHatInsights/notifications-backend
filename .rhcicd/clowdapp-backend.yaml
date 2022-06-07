@@ -183,6 +183,10 @@ objects:
           value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: QUARKUS_OPENTELEMETRY_ENABLED
+          value: ${QUARKUS_OPENTELEMETRY_ENABLED}
+        - name: QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT
+          value: ${QUARKUS_OPENTELEMETRY_ENDPOINT}
         - name: OB_ENABLED
           value: ${OB_ENABLED}
         - name: OB_BRIDGE_NAME
@@ -320,6 +324,10 @@ parameters:
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
+- name: QUARKUS_OPENTELEMETRY_ENABLED
+  value: "false"
+- name: QUARKUS_OPENTELEMETRY_ENDPOINT
+  value: "localhost:4317"
 - name: FLOORIST_SCHEDULE
   description: Cronjob schedule definition
   required: true
