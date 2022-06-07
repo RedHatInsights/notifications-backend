@@ -17,7 +17,4 @@ public class OrgIdConfig {
         return useOrgId;
     }
 
-    public void setUseOrgId(boolean useOrgId) {
-        this.useOrgId = useOrgId;
-    }
 }
