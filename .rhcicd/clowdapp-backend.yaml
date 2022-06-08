@@ -71,7 +71,7 @@ objects:
         requests:
           cpu: "${CPU_REQUEST_FLOO}"
           memory: "${MEMORY_REQUEST_FLOO}"
-    - name: org-id-populator
+    - name: org-id-populator-email-aggregation
       podSpec:
         image: quay.io/cloudservices/tenant-utils:latest
         command:
