@@ -1,8 +1,9 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
+import javax.ws.rs.NotFoundException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -40,7 +42,11 @@ import static com.redhat.cloud.notifications.CrudTestHelpers.updateEventType;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -62,6 +68,20 @@ public class InternalResourceTest extends DbIsolatedTest {
 
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
+
+    @Test
+    void shouldThrowNotFoundExceptionWhenApplicationNotFound() {
+        InternalResource testee = new InternalResource();
+
+        final ApplicationRepository applicationRepository = mock(ApplicationRepository.class);
+        testee.setApplicationRepository(applicationRepository);
+
+        when(applicationRepository.getApplication(any())).thenReturn(null);
+
+        NotFoundException thrown = assertThrows(NotFoundException.class, () -> testee.getApplication(UUID.randomUUID()));
+
+        assertEquals("HTTP 404 Not Found", thrown.getMessage());
+    }
 
     @Test
     void testCreateNullBundle() {

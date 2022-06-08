@@ -466,4 +466,8 @@ public class InternalResource {
             return Response.status(BAD_REQUEST).build();
         }
     }
+
+    void setApplicationRepository(ApplicationRepository applicationRepository) {
+        this.applicationRepository = applicationRepository;
+    }
 }
