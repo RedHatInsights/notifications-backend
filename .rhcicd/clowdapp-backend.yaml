@@ -178,7 +178,7 @@ objects:
           - -o
           - org_id
           - -t
-          - behaviorgroup
+          - behavior_group
           - --ean-translator-addr
           - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
           - --db-operation-timeout
