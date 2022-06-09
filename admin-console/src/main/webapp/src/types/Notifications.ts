@@ -25,6 +25,17 @@ export interface EventType {
     applicationId: string;
 }
 
+type InstantEmailTemplateRow = {
+    isLoading: true;
+} | {
+    isLoading: false;
+    id: string | undefined;
+}
+
+export interface EventTypeRow extends EventType {
+    instantEmail: InstantEmailTemplateRow;
+}
+
 export interface Template {
     data: string;
     description: string;
