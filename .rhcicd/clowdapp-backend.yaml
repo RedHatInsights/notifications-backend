@@ -136,25 +136,23 @@ objects:
             cpu: 50m
             memory: 512Mi
     - name: notifications-db-cleaner-cronjob
+      schedule: ${DB_CLEANER_SCHEDULE}
+      suspend: ${{DISABLE_DB_CLEANER}}
+      concurrencyPolicy: Forbid
+      restartPolicy: Never
       podSpec:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 200m
+            memory: 200Mi
         image: quay.io/cloudservices/postgresql-rds:12-1
-        schedule: ${DB_CLEANER_SCHEDULE}
-        suspend: ${{DISABLE_DB_CLEANER}}
-        concurrencyPolicy: Forbid
-        restartPolicy: Never
         volumes:
           - name: notifications-db-cleaner-volume
             configMap:
               name: notifications-db-cleaner-config
-              restartPolicy: Never
-              resources:
-                requests:
-                  cpu: 100m
-                  memory: 100Mi
-                limits:
-                  cpu: 200m
-                  memory: 200Mi
-              volumeMounts:
           - name: notifications-db-cleaner-volume
             mountPath: /notifications-db-cleaner
         command: ['sh', '/notifications-db-cleaner/clean.sh']
