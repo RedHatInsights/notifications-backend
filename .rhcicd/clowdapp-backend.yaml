@@ -135,7 +135,7 @@ objects:
           requests:
             cpu: 50m
             memory: 512Mi
-    - name: notifications-db-cleaner-cronjob
+    - name: db-cleaner-cronjob
       schedule: ${DB_CLEANER_SCHEDULE}
       suspend: ${{DISABLE_DB_CLEANER}}
       concurrencyPolicy: Forbid
@@ -153,6 +153,7 @@ objects:
           - name: notifications-db-cleaner-volume
             configMap:
               name: notifications-db-cleaner-config
+        volumeMounts:
           - name: notifications-db-cleaner-volume
             mountPath: /notifications-db-cleaner
         command: ['sh', '/notifications-db-cleaner/clean.sh']
