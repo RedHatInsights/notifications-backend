@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.routers.internal.models.AddAccessRequest;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.InternalApplicationUserPermission;
+import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
@@ -33,6 +34,7 @@ import static javax.ws.rs.core.Response.Status.Family.familyOf;
 import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.jboss.resteasy.reactive.RestResponse.StatusCode.NOT_FOUND;
 import static org.jboss.resteasy.reactive.RestResponse.StatusCode.OK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -42,6 +44,14 @@ import static org.junit.jupiter.api.Assertions.fail;
 public abstract class CrudTestHelpers {
 
     private static final String JSON_UTF8 = "application/json;charset=UTF-8";
+
+    public static ContentType contentTypeForStatusCode(int statusCode, ContentType defaultContentType) {
+        if (statusCode == NOT_FOUND) {
+            return TEXT;
+        }
+
+        return defaultContentType;
+    }
 
     public static Bundle buildBundle(String name, String displayName) {
         Bundle bundle = new Bundle();
@@ -90,7 +100,7 @@ public abstract class CrudTestHelpers {
                 .get("/internal/bundles/{bundleId}")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(JSON)
+                .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -208,7 +218,7 @@ public abstract class CrudTestHelpers {
                 .get("/internal/bundles/{bundleId}/applications")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(JSON)
+                .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -229,7 +239,7 @@ public abstract class CrudTestHelpers {
                 .get("/internal/applications/{appId}")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(JSON)
+                .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -336,7 +346,7 @@ public abstract class CrudTestHelpers {
                 .get("/internal/applications/{appId}/eventTypes")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(JSON)
+                .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -601,7 +611,7 @@ public abstract class CrudTestHelpers {
                 .get("/templates/{templateId}")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(JSON)
+                .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -708,7 +718,7 @@ public abstract class CrudTestHelpers {
                 .get("/templates/email/instant/{templateId}")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(JSON)
+                .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
@@ -790,7 +800,7 @@ public abstract class CrudTestHelpers {
                 .when().get("/templates/email/instant/eventType/{eventTypeId}")
                 .then()
                 .statusCode(isExpectedToBeFound ? 200 : 404)
-                .contentType(JSON)
+                .contentType(isExpectedToBeFound ? JSON : TEXT)
                 .extract().asString();
 
         if (isExpectedToBeFound) {
@@ -871,7 +881,7 @@ public abstract class CrudTestHelpers {
                 .get("/templates/email/aggregation/{templateId}")
                 .then()
                 .statusCode(expectedStatusCode)
-                .contentType(JSON)
+                .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
                 .extract().asString();
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
