@@ -52,7 +52,7 @@ class FromOBHistoryFillerTest {
     }
 
     @Test
-    void testHistoryUpdate() throws Exception {
+    void goodHistoryUpdate() throws Exception {
         JsonObject jo = readValueFromFile("ob-backchannel.json");
         String body = jo.toString();
 
@@ -78,7 +78,7 @@ class FromOBHistoryFillerTest {
     }
 
     @Test
-    void testUnknownId() throws Exception {
+    void unknownOriginalId() throws Exception {
         JsonObject jo = readValueFromFile("ob-backchannel.json");
         String body = jo.toString();
 
@@ -97,7 +97,7 @@ class FromOBHistoryFillerTest {
     }
 
     @Test
-    void testBadOrigId() throws Exception {
+    void badOriginalId() throws Exception {
         JsonObject jo = readValueFromFile("ob-backchannel.json");
         String body = jo.toString();
 
@@ -113,7 +113,27 @@ class FromOBHistoryFillerTest {
     }
 
     @Test
-    void testNoOrigId() throws Exception {
+    void badCaller() throws Exception {
+        JsonObject jo = readValueFromFile("ob-backchannel.json");
+        String body = jo.toString();
+
+        String tmp = TestHelpers.encodeRHIdentityInfo("user", "123", "someone-else");
+        MockServerConfig.addMockRbacAccess(tmp, MockServerConfig.RbacAccess.FULL_ACCESS);
+        Header someIdentity = TestHelpers.createRHIdentityHeader(tmp);
+
+        given()
+                .body(body)
+                .header("x-rhose-original-event-id", ORIGINAL_ID)
+                .header(someIdentity)
+                .contentType("application/json")
+                .when()
+                .post(OB_ERROR_HANDLER)
+                .then()
+                .statusCode(403);
+    }
+
+    @Test
+    void noOriginalIdPassed() throws Exception {
         JsonObject jo = readValueFromFile("ob-backchannel.json");
         String body = jo.toString();
 
@@ -128,7 +148,7 @@ class FromOBHistoryFillerTest {
     }
 
     @Test
-    void testNoBody() throws Exception {
+    void noBodyPassed() throws Exception {
 
         given()
                 .header("x-rhose-original-event-id", ORIGINAL_ID)
@@ -141,7 +161,7 @@ class FromOBHistoryFillerTest {
     }
 
     @Test
-    void testBodyNoCE() {
+    void bodyIsNoCloudEvent() {
         String body = "lilalu";
 
         given()

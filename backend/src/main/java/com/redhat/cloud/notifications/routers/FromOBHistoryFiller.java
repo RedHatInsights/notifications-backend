@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -16,7 +17,9 @@ import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -32,6 +35,8 @@ public class FromOBHistoryFiller {
     public static final String MESSAGES_ERROR_COUNTER_NAME = "ob.messages.error";
     public static final String MESSAGES_PROCESSED_COUNTER_NAME = "ob.messages.processed";
 
+    @ConfigProperty(name = "ob.backchannel.user", defaultValue = "-none-")
+    String OB_USER;
 
     @Inject
     NotificationRepository notificationHistoryRepository;
@@ -51,7 +56,12 @@ public class FromOBHistoryFiller {
 
     @POST
     @Path("/errors")
-    public Response handleCallback(@NotEmpty String payload, @HeaderParam("x-rhose-original-event-id") UUID eventUUId) {
+    public Response handleCallback(@Context SecurityContext sec, @NotEmpty String payload, @HeaderParam("x-rhose-original-event-id") UUID eventUUId) {
+
+        String callingUser = sec.getUserPrincipal().getName();
+        if (!callingUser.equals(OB_USER)) {
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
 
         if (eventUUId == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("No id passed").build();
