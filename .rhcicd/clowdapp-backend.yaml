@@ -159,23 +159,23 @@ objects:
             mountPath: /notifications-db-cleaner
         command: ['sh', '/notifications-db-cleaner/clean.sh']
         env:
-        - name: PGHOST
-          valueFrom:
-            secretKeyRef:
-              name: notifications-backend-db
-              key: ${DB_SECRET_HOSTNAME_KEY}
-        - name: PGDATABASE
-          value: ${DB_NAME}
-        - name: PGUSER
-          valueFrom:
-            secretKeyRef:
-              name: notifications-backend-db
-              key: ${DB_SECRET_USERNAME_KEY}
-        - name: PGPASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: notifications-backend-db
-              key: ${DB_SECRET_PASSWORD_KEY}
+          - name: PGHOST
+            valueFrom:
+              secretKeyRef:
+                name: notifications-backend-db
+                key: ${DB_SECRET_HOSTNAME_KEY}
+          - name: PGDATABASE
+            value: ${DB_NAME}
+          - name: PGUSER
+            valueFrom:
+              secretKeyRef:
+                name: notifications-backend-db
+                key: ${DB_SECRET_USERNAME_KEY}
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: notifications-backend-db
+                key: ${DB_SECRET_PASSWORD_KEY}
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
