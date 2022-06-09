@@ -35,7 +35,7 @@
                         <!-- Hi {{user.first_name}},
                         <br>
                         <br> -->
-                        Your system <a class="rh-url" href="{environment.url('/insights/compliance/systems/')}{action.events[0].payload.host_id}"><b>{action.events[0].payload.host_name}</b></a> failed to upload a new compliance report. The error message returned by our system for the request <i>{action.events[0].payload.request_id}</i> was:<br>
+                        Your system <a class="rh-url" href="{environment.url}/insights/compliance/systems/{action.events[0].payload.host_id}"><b>{action.events[0].payload.host_name}</b></a> failed to upload a new compliance report. The error message returned by our system for the request <i>{action.events[0].payload.request_id}</i> was:<br>
 
                         <i>{action.events[0].payload.error}</i>
                     </p>
