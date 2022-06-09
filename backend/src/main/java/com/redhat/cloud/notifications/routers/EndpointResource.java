@@ -76,7 +76,7 @@ public class EndpointResource {
 
     public static final String OB_PROCESSOR_ID = "processorId";
     public static final String OB_PROCESSOR_NAME = "processorname"; // Must be all lower for the filter.
-    public static final String SLACK = "Slack";
+    public static final String SLACK = "slack_sink_0.1";
 
     private static final Logger LOGGER = Logger.getLogger(EndpointResource.class);
 
@@ -472,8 +472,8 @@ public class EndpointResource {
         out.put("transformationTemplate", template);
 
         Map<String, String> props = new HashMap<>();
-        props.put("channel", properties.getExtras().getOrDefault("channel", "#general"));
-        props.put("webhookUrl", properties.getUrl());
+        props.put("slack_channel", properties.getExtras().getOrDefault("channel", "#general"));
+        props.put("slack_webhook_url", properties.getUrl());
         actionMap.put("parameters", props);
 
         String token = bridgeAuth.getToken();
