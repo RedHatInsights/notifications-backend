@@ -27,6 +27,8 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         }
         setupMockEngine(properties);
 
+        properties.put("ob.backchannel.user", "ob-user");
+
         System.out.println(" -- Running with properties: " + properties);
         return properties;
     }
