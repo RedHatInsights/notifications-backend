@@ -14,9 +14,13 @@ public class Patch implements EmailTemplate {
             if (eventType.equals(Patch.NewAdvisory)) {
                 return Templates.newAdvisoriesInstantEmailTitle();
             }
+        } else if (type == EmailSubscriptionType.DAILY) {
+            return Templates.dailyEmailTitle();
         }
 
-        return Templates.dailyEmailTitle();
+        throw new UnsupportedOperationException(String.format(
+        "No email title template for Patch event_type: %s and EmailSubscription: %s found.",
+        eventType, type));
     }
 
     @Override
@@ -25,20 +29,25 @@ public class Patch implements EmailTemplate {
             if (eventType.equals(Patch.NewAdvisory)) {
                 return Templates.newAdvisoriesInstantEmailBody();
             }
+        } else if (type == EmailSubscriptionType.DAILY) {
+            return Templates.dailyEmailBody();
         }
 
-        return Templates.dailyEmailBody();
+        throw new UnsupportedOperationException(String.format(
+        "No email body template for Patch event_type: %s and EmailSubscription: %s found.",
+        eventType, type));
     }
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
         return (type == EmailSubscriptionType.INSTANT &&
-                (eventType.equals(Patch.NewAdvisory)));
+                (eventType.equals(Patch.NewAdvisory))) ||
+                type == EmailSubscriptionType.DAILY;
     }
 
     @Override
     public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
-        return type == EmailSubscriptionType.INSTANT;
+        return type == EmailSubscriptionType.INSTANT || type == EmailSubscriptionType.DAILY;
     }
 
     @CheckedTemplate(requireTypeSafeExpressions = false)
