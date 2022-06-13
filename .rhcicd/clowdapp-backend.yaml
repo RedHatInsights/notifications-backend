@@ -135,46 +135,46 @@ objects:
           requests:
             cpu: 50m
             memory: 512Mi
-    # - name: db-cleaner-cronjob
-    #   schedule: ${DB_CLEANER_SCHEDULE}
-    #   suspend: ${{DISABLE_DB_CLEANER}}
-    #   concurrencyPolicy: Forbid
-    #   restartPolicy: Never
-    #   podSpec:
-    #     resources:
-    #       requests:
-    #         cpu: 100m
-    #         memory: 100Mi
-    #       limits:
-    #         cpu: 200m
-    #         memory: 200Mi
-    #     image: quay.io/cloudservices/postgresql-rds:12-1
-    #     volumes:
-    #       - name: notifications-db-cleaner-volume
-    #         configMap:
-    #           name: notifications-db-cleaner-config
-    #     volumeMounts:
-    #       - name: notifications-db-cleaner-volume
-    #         mountPath: /notifications-db-cleaner
-    #     command: ['sh', '/notifications-db-cleaner/clean.sh']
-    #     env:
-    #       - name: PGHOST
-    #         valueFrom:
-    #           secretKeyRef:
-    #             name: notifications-backend-db
-    #             key: ${DB_SECRET_HOSTNAME_KEY}
-    #       - name: PGDATABASE
-    #         value: ${DB_NAME}
-    #       - name: PGUSER
-    #         valueFrom:
-    #           secretKeyRef:
-    #             name: notifications-backend-db
-    #             key: ${DB_SECRET_USERNAME_KEY}
-    #       - name: PGPASSWORD
-    #         valueFrom:
-    #           secretKeyRef:
-    #             name: notifications-backend-db
-    #             key: ${DB_SECRET_PASSWORD_KEY}
+    - name: db-cleaner-cronjob
+      schedule: ${DB_CLEANER_SCHEDULE}
+      suspend: ${{DISABLE_DB_CLEANER}}
+      concurrencyPolicy: Forbid
+      restartPolicy: Never
+      podSpec:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 200m
+            memory: 200Mi
+        image: quay.io/cloudservices/postgresql-rds:12-1
+        volumes:
+          - name: notifications-db-cleaner-volume
+            configMap:
+              name: notifications-db-cleaner-config
+        volumeMounts:
+          - name: notifications-db-cleaner-volume
+            mountPath: /notifications-db-cleaner
+        command: ['sh', '/notifications-db-cleaner/clean.sh']
+        env:
+          - name: PGHOST
+            valueFrom:
+              secretKeyRef:
+                name: notifications-backend-db
+                key: ${DB_SECRET_HOSTNAME_KEY}
+          - name: PGDATABASE
+            value: ${DB_NAME}
+          - name: PGUSER
+            valueFrom:
+              secretKeyRef:
+                name: notifications-backend-db
+                key: ${DB_SECRET_USERNAME_KEY}
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: notifications-backend-db
+                key: ${DB_SECRET_PASSWORD_KEY}
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
@@ -274,59 +274,6 @@ objects:
       VACUUM notification_history;
       CALL cleanKafkaMessagesIds();
       VACUUM kafka_message;
-- apiVersion: batch/v1
-  kind: CronJob
-  metadata:
-    name: notifications-db-cleaner-cronjob
-    annotations: 
-      ignore-check.kube-linter.io/no-liveness-probe: "short lived cronjob doesn't need probes"
-      ignore-check.kube-linter.io/no-readiness-probe: "short lived cronjob doesn't need probes"
-  spec:
-    schedule: ${DB_CLEANER_SCHEDULE}
-    suspend: ${{DISABLE_DB_CLEANER}}
-    concurrencyPolicy: Forbid
-    jobTemplate:
-      spec:
-        template:
-          spec:
-            restartPolicy: Never
-            volumes:
-            - name: notifications-db-cleaner-volume
-              configMap:
-                name: notifications-db-cleaner-config
-            containers:
-            - name: notifications-db-cleaner
-              image: quay.io/cloudservices/postgresql-rds:12-1
-              restartPolicy: Never
-              resources:
-                requests:
-                  cpu: 100m
-                  memory: 100Mi
-                limits:
-                  cpu: 200m
-                  memory: 200Mi
-              volumeMounts:
-              - name: notifications-db-cleaner-volume
-                mountPath: /notifications-db-cleaner
-              command: ['sh', '/notifications-db-cleaner/clean.sh']
-              env:
-              - name: PGHOST
-                valueFrom:
-                  secretKeyRef:
-                    name: notifications-backend-db
-                    key: ${DB_SECRET_HOSTNAME_KEY}
-              - name: PGDATABASE
-                value: ${DB_NAME}
-              - name: PGUSER
-                valueFrom:
-                  secretKeyRef:
-                    name: notifications-backend-db
-                    key: ${DB_SECRET_USERNAME_KEY}
-              - name: PGPASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: notifications-backend-db
-                    key: ${DB_SECRET_PASSWORD_KEY}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
