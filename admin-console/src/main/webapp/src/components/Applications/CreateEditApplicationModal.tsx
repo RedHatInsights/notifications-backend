@@ -81,12 +81,12 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
                             id='display-name'
                             name="displayName"
                         /></FormGroup>
-                    <FormGroup
+                    { !props.isEdit && <FormGroup
                         fieldId="role-name"
                         label="Role admin"
                         helperText="Role of users who will manage the application"
                     >
-                        { permissions.isAdmin || props.isEdit ? (
+                        { permissions.isAdmin ? (
                             <TextInput
                                 type='text'
                                 onChange={ handleChange }
@@ -106,6 +106,7 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
                             </FormSelect>
                         )}
                     </FormGroup>
+                    }
                     <ActionGroup>
                         <Button variant='primary' type='submit'
                             isLoading={ props.isLoading } isDisabled={ props.isLoading }
