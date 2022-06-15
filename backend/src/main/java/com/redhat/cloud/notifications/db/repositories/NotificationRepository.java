@@ -2,8 +2,8 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -19,8 +19,6 @@ import java.util.UUID;
 public class NotificationRepository {
 
     public static final int MAX_NOTIFICATION_HISTORY_RESULTS = 500;
-
-    private static final Logger LOGGER = Logger.getLogger(NotificationRepository.class);
 
     @Inject
     EntityManager entityManager;
@@ -44,7 +42,7 @@ public class NotificationRepository {
 
         if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
             if (limiter.getLimit().getLimit() > MAX_NOTIFICATION_HISTORY_RESULTS) {
-                LOGGER.debugf("Too many notification history entries requested (%d), the default max limit (%d) will be enforced",
+                Log.debugf("Too many notification history entries requested (%d), the default max limit (%d) will be enforced",
                         limiter.getLimit().getLimit(), MAX_NOTIFICATION_HISTORY_RESULTS);
             } else {
                 historyQuery = historyQuery.setMaxResults(limiter.getLimit().getLimit())

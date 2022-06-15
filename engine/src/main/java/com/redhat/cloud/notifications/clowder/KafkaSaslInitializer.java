@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.clowder;
 
+import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.jboss.logging.Logger;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -19,7 +19,6 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 @ApplicationScoped
 public class KafkaSaslInitializer {
 
-    private static final Logger LOGGER = Logger.getLogger(KafkaSaslInitializer.class);
     private static final String KAFKA_SASL_JAAS_CONFIG = "kafka.sasl.jaas.config";
     private static final String KAFKA_SASL_MECHANISM = "kafka.sasl.mechanism";
     private static final String KAFKA_SECURITY_PROTOCOL = "kafka.security.protocol";
@@ -35,7 +34,7 @@ public class KafkaSaslInitializer {
         Optional<String> kafkaSslTruststoreType = config.getOptionalValue(KAFKA_SSL_TRUSTSTORE_TYPE, String.class);
 
         if (kafkaSaslJaasConfig.isPresent() || kafkaSaslMechanism.isPresent() || kafkaSecurityProtocol.isPresent() || kafkaSslTruststoreLocation.isPresent() || kafkaSslTruststoreType.isPresent()) {
-            LOGGER.info("Initializing Kafka SASL configuration...");
+            Log.info("Initializing Kafka SASL configuration...");
             setValue(KAFKA_SASL_JAAS_CONFIG, kafkaSaslJaasConfig);
             setValue(KAFKA_SASL_MECHANISM, kafkaSaslMechanism);
             setValue(KAFKA_SECURITY_PROTOCOL, kafkaSecurityProtocol);
@@ -47,7 +46,7 @@ public class KafkaSaslInitializer {
     private static void setValue(String configKey, Optional<String> configValue) {
         configValue.ifPresent(value -> {
             System.setProperty(configKey, value);
-            LOGGER.infof("%s has been set", configKey);
+            Log.infof("%s has been set", configKey);
         });
     }
 }

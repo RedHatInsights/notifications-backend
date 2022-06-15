@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications;
 
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.BufferedReader;
@@ -17,8 +17,6 @@ public class StartupUtils {
 
     public static final Pattern ACCESS_LOG_FILTER_PATTERN = Pattern.compile(".*(/health(/\\w+)?|/metrics) HTTP/[0-9].[0-9]\" 200.*\\n?");
 
-    private static final Logger LOG = Logger.getLogger(StartupUtils.class);
-
     @ConfigProperty(name = "quarkus.http.access-log.category")
     String accessLogCategory;
 
@@ -30,9 +28,9 @@ public class StartupUtils {
 
     public void logGitProperties() {
         try {
-            LOG.info(readGitProperties());
+            Log.info(readGitProperties());
         } catch (Exception e) {
-            LOG.error("Could not read git.properties", e);
+            Log.error("Could not read git.properties", e);
         }
     }
 
@@ -58,7 +56,7 @@ public class StartupUtils {
     }
 
     public void logExternalServiceUrl(String configKey) {
-        LOG.infof("%s=%s", configKey, ConfigProvider.getConfig().getValue(configKey, String.class));
+        Log.infof("%s=%s", configKey, ConfigProvider.getConfig().getValue(configKey, String.class));
     }
 
     public void disableRestClientContextualErrors() {

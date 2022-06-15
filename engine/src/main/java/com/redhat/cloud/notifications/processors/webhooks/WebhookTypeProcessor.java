@@ -14,6 +14,7 @@ import dev.failsafe.RetryPolicy;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.ConnectTimeoutException;
+import io.quarkus.logging.Log;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
@@ -23,7 +24,6 @@ import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -39,7 +39,6 @@ import static com.redhat.cloud.notifications.models.NotificationHistory.getHisto
 @ApplicationScoped
 public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
-    private static final Logger LOGGER = Logger.getLogger(WebhookTypeProcessor.class);
     private static final String TOKEN_HEADER = "X-Insight-Token";
     private static final String CONNECTION_CLOSED_MSG = "Connection was closed";
 
@@ -136,18 +135,18 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                 boolean serverError = false;
                 if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
                     // Accepted
-                    LOGGER.debugf("Webhook request to %s was successful: %d", reqImpl.host(), resp.statusCode());
+                    Log.debugf("Webhook request to %s was successful: %d", reqImpl.host(), resp.statusCode());
                     history.setInvocationResult(true);
                 } else if (resp.statusCode() >= 500) {
                     // Temporary error, allow retry
                     serverError = true;
-                    LOGGER.debugf("Webhook request to %s failed: %d %s", reqImpl.host(), resp.statusCode(), resp.statusMessage());
+                    Log.debugf("Webhook request to %s failed: %d %s", reqImpl.host(), resp.statusCode(), resp.statusMessage());
                     history.setInvocationResult(false);
                 } else {
                     // Disable the target endpoint, it's not working correctly for us (such as 400)
                     // must be manually re-enabled
                     // Redirects etc should have been followed by the vertx (test this)
-                    LOGGER.debugf("Webhook request to %s failed: %d %s %s", reqImpl.host(), resp.statusCode(), resp.statusMessage(), payload);
+                    Log.debugf("Webhook request to %s failed: %d %s %s", reqImpl.host(), resp.statusCode(), resp.statusMessage(), payload);
                     history.setInvocationResult(false);
                 }
 
@@ -175,7 +174,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
             HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
 
-            LOGGER.debugf("Failed: %s", e.getMessage());
+            Log.debugf("Failed: %s", e.getMessage());
 
             // TODO Duplicate code with the error return code part
             JsonObject details = new JsonObject();

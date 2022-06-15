@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.context.Context;
+import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.TracingMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
@@ -26,7 +27,6 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -62,8 +62,6 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     @Inject
     @Channel(TOCAMEL_CHANNEL)
     Emitter<String> emitter;
-
-    private static final Logger LOGGER = Logger.getLogger(CamelTypeProcessor.class);
 
     @Inject
     MeterRegistry registry;
@@ -152,7 +150,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                 Map<String, Object> details = new HashMap<>();
                 details.put("failure", e.getMessage());
                 history.setDetails(details);
-                LOGGER.infof("SE: Sending event with historyId=%s and originalId=%s failed: %s ",
+                Log.infof("SE: Sending event with historyId=%s and originalId=%s failed: %s ",
                         historyId, originalEventId, e.getMessage());
             } finally {
                 endTime = System.currentTimeMillis();
@@ -185,7 +183,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                 .build()
         );
         msg = msg.addMetadata(tracingMetadata);
-        LOGGER.infof("CA Sending for account=%s, historyId=%s, integration=%s, origId=%s",
+        Log.infof("CA Sending for account=%s, historyId=%s, integration=%s, origId=%s",
                 accountId, historyId, integrationName, originalEventId);
         emitter.send(msg);
 
@@ -206,7 +204,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         ce.put("originaleventid", originalEventId);
         // TODO add dataschema
 
-        LOGGER.infof("SE: Sending Event with historyId=%s, processorName=%s, processorId=%s, integration=%s, origId=%s",
+        Log.infof("SE: Sending Event with historyId=%s, processorName=%s, processorId=%s, integration=%s, origId=%s",
                 id.toString(), extras.get(PROCESSORNAME), extras.get("processorId"), integrationName, originalEventId);
 
         body.remove(NOTIF_METADATA_KEY); // Not needed on OB

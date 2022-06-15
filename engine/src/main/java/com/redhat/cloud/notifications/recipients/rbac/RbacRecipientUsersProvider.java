@@ -16,9 +16,9 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.cache.CacheResult;
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import javax.annotation.PostConstruct;
@@ -36,8 +36,6 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class RbacRecipientUsersProvider {
-
-    private static final Logger LOGGER = Logger.getLogger(RbacRecipientUsersProvider.class);
 
     public static final String ORG_ADMIN_PERMISSION = "admin:org:all";
 
@@ -103,7 +101,7 @@ public class RbacRecipientUsersProvider {
                 .withMaxAttempts(maxRetryAttempts)
                 .onRetriesExceeded(event -> {
                     // All retry attempts failed, let's log a warning about the failure.
-                    LOGGER.warnf("RBAC S2S call failed", event.getException().getMessage());
+                    Log.warnf("RBAC S2S call failed", event.getException().getMessage());
                 })
                 .build();
 
@@ -116,7 +114,7 @@ public class RbacRecipientUsersProvider {
                 .withMaxAttempts(maxRetryAttemptsIt)
                 .onRetriesExceeded(event -> {
                     // All retry attempts failed, let's log a warning about the failure.
-                    LOGGER.warnf("IT User Service call failed", event.getException().getMessage());
+                    Log.warnf("IT User Service call failed", event.getException().getMessage());
                 })
                 .build();
     }
@@ -139,7 +137,7 @@ public class RbacRecipientUsersProvider {
             firstResult += maxResultsPerPage;
         } while (usersPaging.size() == maxResultsPerPage);
 
-        LOGGER.info("usersTotal: " + usersTotal);
+        Log.info("usersTotal: " + usersTotal);
 
         users = transformToUser(usersTotal);
 

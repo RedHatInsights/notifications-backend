@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications;
 
+import io.quarkus.logging.Log;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
-import org.jboss.logging.Logger;
 import javax.inject.Inject;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,14 +12,12 @@ import java.io.InputStreamReader;
 @QuarkusMain
 public class NotificationsApp implements QuarkusApplication {
 
-    private static final Logger LOG = Logger.getLogger(NotificationsApp.class);
-
     @Inject
     DailyEmailAggregationJob dailyEmailAggregationJob;
 
     @Override
     public int run(String... args) {
-        LOG.info(readGitProperties());
+        Log.info(readGitProperties());
 
         dailyEmailAggregationJob.processDailyEmail();
 
@@ -31,7 +29,7 @@ public class NotificationsApp implements QuarkusApplication {
         try (InputStream inputStream = classLoader.getResourceAsStream("git.properties")) {
             return readFromInputStream(inputStream);
         } catch (IOException e) {
-            LOG.error("Could not read git.properties.", e);
+            Log.error("Could not read git.properties.", e);
             return "Version information could not be retrieved";
         }
     }

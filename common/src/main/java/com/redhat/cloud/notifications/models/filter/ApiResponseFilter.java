@@ -8,7 +8,7 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
-import org.jboss.logging.Logger;
+import io.quarkus.logging.Log;
 
 /**
  * This filter can be used to dynamically filter out properties from a REST response at serialization time. Each class
@@ -18,8 +18,6 @@ import org.jboss.logging.Logger;
 public class ApiResponseFilter extends SimpleBeanPropertyFilter {
 
     public static final String NAME = "ApiResponseFilter";
-
-    private static final Logger LOGGER = Logger.getLogger(ApiResponseFilter.class);
 
     @Override
     public void serializeAsField(Object pojo, JsonGenerator jgen, SerializerProvider provider, PropertyWriter writer) throws Exception {
@@ -114,6 +112,6 @@ public class ApiResponseFilter extends SimpleBeanPropertyFilter {
     }
 
     private void logFilterOut(String className, String fieldName) {
-        LOGGER.tracef("Filtering out %s#%s from a JSON response", className, fieldName);
+        Log.tracef("Filtering out %s#%s from a JSON response", className, fieldName);
     }
 }
