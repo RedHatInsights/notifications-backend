@@ -198,7 +198,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when().get("/endpoints/" + responsePoint.getString("id"))
                 .then()
                 .statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
 
         // Fetch all, nothing should be left
         given()
@@ -1144,25 +1144,25 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .delete("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
         given()
                 .header(identityHeader)
                 .when()
                 .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
         given()
                 .header(identityHeader)
                 .when()
                 .put("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
         given()
                 .header(identityHeader)
                 .when()
                 .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
 
         // Unknown bundle/apps give 404
         given()
@@ -1170,13 +1170,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .delete("/endpoints/email/subscription/idontexist/meneither/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
         given()
                 .header(identityHeader)
                 .when()
                 .put("/endpoints/email/subscription/idontexist/meneither/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
 
         // Disable everything as preparation
         // rhel/policies instant and daily

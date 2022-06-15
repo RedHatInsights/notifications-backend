@@ -11,23 +11,19 @@ public class EnvironmentTest {
         Environment environment = new Environment();
 
         environment.environment = "prod";
-        assertEquals("https://console.redhat.com/foobar", environment.url("/foobar"));
-        // Adds slash if path does not start with it
-        assertEquals("https://console.redhat.com/foobar", environment.url("foobar"));
-        assertEquals("https://console.redhat.com/", environment.url());
+        assertEquals("https://console.redhat.com", environment.url());
         assertEquals("prod", environment.name());
 
         environment.environment = "stage";
-        assertEquals("https://console.stage.redhat.com/blabla/etc", environment.url("/blabla/etc"));
+        assertEquals("https://console.stage.redhat.com", environment.url());
         assertEquals("stage", environment.name());
 
         environment.environment = "ephemeral";
-        assertEquals("/nothing-to-see-here", environment.url("/nothing-to-see-here"));
+        assertEquals("/", environment.url());
         assertEquals("ephemeral", environment.name());
 
         environment.environment = "anything-else";
-        assertEquals("/anything-else", environment.url("/anything-else"));
-        assertEquals("/anything-else", environment.url("anything-else"));
+        assertEquals("/", environment.url());
         assertEquals("anything-else", environment.name());
     }
 }

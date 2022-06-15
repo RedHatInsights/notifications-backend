@@ -112,6 +112,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     private Counter processedAggregationCommandCount;
     private Counter failedAggregationCommandCount;
 
+    private static final Logger LOG = Logger.getLogger(EmailSubscriptionTypeProcessor.class);
+
     @PostConstruct
     void postConstruct() {
         processedEmailCount = registry.counter("processor.email.processed");
@@ -192,6 +194,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
                 .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
+
+        LOG.info("sending email for event: " + event);
         return recipientResolver.recipientUsers(action.getAccountId(), action.getOrgId(), requests, subscribers)
                 .stream()
                 .map(user -> emailSender.sendEmail(user, event, subject, body))

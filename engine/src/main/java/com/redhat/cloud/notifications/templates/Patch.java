@@ -6,14 +6,16 @@ import io.quarkus.qute.TemplateInstance;
 
 public class Patch implements EmailTemplate {
 
-    private static final String NewAdvisories = "new-advisories";
+    private static final String NewAdvisory = "new-advisory";
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals(Patch.NewAdvisories)) {
+            if (eventType.equals(Patch.NewAdvisory)) {
                 return Templates.newAdvisoriesInstantEmailTitle();
             }
+        } else if (type == EmailSubscriptionType.DAILY) {
+            return Templates.dailyEmailTitle();
         }
 
         throw new UnsupportedOperationException(String.format(
@@ -24,9 +26,11 @@ public class Patch implements EmailTemplate {
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals(Patch.NewAdvisories)) {
+            if (eventType.equals(Patch.NewAdvisory)) {
                 return Templates.newAdvisoriesInstantEmailBody();
             }
+        } else if (type == EmailSubscriptionType.DAILY) {
+            return Templates.dailyEmailBody();
         }
 
         throw new UnsupportedOperationException(String.format(
@@ -37,12 +41,13 @@ public class Patch implements EmailTemplate {
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
         return (type == EmailSubscriptionType.INSTANT &&
-                (eventType.equals(Patch.NewAdvisories)));
+                (eventType.equals(Patch.NewAdvisory))) ||
+                type == EmailSubscriptionType.DAILY;
     }
 
     @Override
     public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
-        return type == EmailSubscriptionType.INSTANT;
+        return type == EmailSubscriptionType.INSTANT || type == EmailSubscriptionType.DAILY;
     }
 
     @CheckedTemplate(requireTypeSafeExpressions = false)
@@ -51,5 +56,9 @@ public class Patch implements EmailTemplate {
         public static native TemplateInstance newAdvisoriesInstantEmailTitle();
 
         public static native TemplateInstance newAdvisoriesInstantEmailBody();
+
+        public static native TemplateInstance dailyEmailTitle();
+
+        public static native TemplateInstance dailyEmailBody();
     }
 }
