@@ -47,7 +47,7 @@ export const InstantEmailTemplateTable: React.FunctionComponent<InstantEmailTemp
             <PageSection>
                 <Title headingLevel="h1">
                     <Breadcrumb>
-                        <BreadcrumbItem target='#'>Email Templates for { props.application.displayName }</BreadcrumbItem>
+                        <BreadcrumbItem target='#'>Email Templates</BreadcrumbItem>
                     </Breadcrumb></Title>
                 <TableComposable aria-label="Email Template table">
                     <Thead>
