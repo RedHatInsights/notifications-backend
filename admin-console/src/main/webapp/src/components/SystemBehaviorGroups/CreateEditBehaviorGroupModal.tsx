@@ -9,7 +9,6 @@ import { BehaviorGroup } from '../../types/Notifications';
 interface CreateEditModalProps {
     isEdit: boolean;
     showModal: boolean;
-    isOpen: boolean;
     initialSystemBehaviorGroup?: Partial<BehaviorGroup>;
     isLoading: boolean;
     onClose: () => void;
@@ -21,9 +20,9 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
     const [ systemBehaviorGroup, setSystemBehaviorGroup ] = React.useState<Partial<BehaviorGroup>>(props.initialSystemBehaviorGroup ?? {});
 
     const actionOption = [
-        <FormSelectOption key={ 0 } isPlaceholder label='Choose an action' />,
-        <FormSelectOption key={ systemBehaviorGroup?.id } label='Send an email to Users: All' value={ systemBehaviorGroup?.id } />,
-        <FormSelectOption key={ systemBehaviorGroup?.id } label='Send an email to Users: Admins' value={ systemBehaviorGroup?.id } />
+        <FormSelectOption key='choose action' isPlaceholder label='Choose an action' />,
+        <FormSelectOption key='email-all' label='Send an email to Users: All' value='email-all' />,
+        <FormSelectOption key='email-admin' label='Send an email to Users: Admins' value='email-admin' />
     ];
 
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>
@@ -64,7 +63,7 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
                             id='actions'
                             name='actions'
                             value={ systemBehaviorGroup.actions }
-                            open={ props.isOpen }
+                            open={ props.showModal }
                             onChange={ handleChange }
                         >
                             { actionOption }

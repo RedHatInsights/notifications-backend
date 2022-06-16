@@ -10,7 +10,6 @@ interface CreateEditModalProps {
     applicationName?: string;
     initialEventType?: Partial<EventType>;
     isLoading: boolean;
-    isOpen: boolean;
     onClose: () => void;
     onSubmit: (eventType: Partial<EventType>) => void;
 }

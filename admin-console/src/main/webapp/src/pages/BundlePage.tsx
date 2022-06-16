@@ -9,13 +9,13 @@ import { useUserPermissions } from '../app/PermissionContext';
 import { CreateEditApplicationModal } from '../components/Applications/CreateEditApplicationModal';
 import { DeleteApplicationModal } from '../components/Applications/DeleteApplicationModal';
 import { ListEventTypes } from '../components/EventTypes/ListEventTypes';
-import { BehaviorGroupsTable } from '../components/SystemBehaviorGroups/BehaviorGroupTable';
 import { linkTo } from '../Routes';
 import { useCreateApplication } from '../services/Applications/CreateApplication';
 import { useDeleteApplication } from '../services/Applications/DeleteApplication';
 import { useApplications } from '../services/Applications/GetApplicationById';
 import { useBundleTypes } from '../services/Applications/GetBundleById';
 import { Application, RoleOwnedApplication } from '../types/Notifications';
+import { BehaviorGroupsTable } from './BundlePage/BehaviorGroupTable';
 
 type BundlePageParams = {
     bundleId: string;

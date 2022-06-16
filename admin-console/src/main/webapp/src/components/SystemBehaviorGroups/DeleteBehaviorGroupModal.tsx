@@ -5,8 +5,8 @@ import { BehaviorGroup } from '../../types/Notifications';
 
 interface DeleteBehaviorGroupModalProps {
     onDelete: (systemBehaviorGroup?: BehaviorGroup) => Promise<boolean>;
-    bundleName?: string;
-    systemBehaviorGroupName?: string;
+    bundleName: string | undefined;
+    systemBehaviorGroupName: string | undefined;
     isOpen: boolean;
     onClose: () => void;
 
@@ -38,9 +38,9 @@ export const DeleteBehaviorGroupModal: React.FunctionComponent<DeleteBehaviorGro
             <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ props.isOpen }
                 onClose={ props.onClose }
                 title={ `Permanently delete ${ props.systemBehaviorGroupName }` }>
-                { <b>{ props.systemBehaviorGroupName }</b> } {`from ${ props.bundleName ? props.bundleName :
+                { <b>{ props.systemBehaviorGroupName }</b> } from { props.bundleName ? props.bundleName :
                     <Spinner /> } will be deleted. You will no longer be able to assign this system behavior
-                    group to event types. `}
+                    group to event types and any associated event types will stop using this behavior group.
                 <br />
                 <br />
                         Type <b>{ props.systemBehaviorGroupName }</b> to confirm:

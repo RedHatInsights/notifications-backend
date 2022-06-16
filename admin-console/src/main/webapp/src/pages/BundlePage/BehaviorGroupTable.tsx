@@ -5,13 +5,13 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import * as React from 'react';
 import { useParams } from 'react-router';
 
+import { CreateEditBehaviorGroupModal } from '../../components/SystemBehaviorGroups/CreateEditBehaviorGroupModal';
+import { DeleteBehaviorGroupModal } from '../../components/SystemBehaviorGroups/DeleteBehaviorGroupModal';
 import { useBundleTypes } from '../../services/Applications/GetBundleById';
 import { useCreateSystemBehaviorGroup } from '../../services/SystemBehaviorGroups/CreateSystemBehaviorGroup';
 import { useDeleteBehaviorGroup } from '../../services/SystemBehaviorGroups/DeleteSystemBehaviorGroup';
 import { useSystemBehaviorGroups } from '../../services/SystemBehaviorGroups/GetBehaviorGroups';
 import { BehaviorGroup } from '../../types/Notifications';
-import { CreateEditBehaviorGroupModal } from './CreateEditBehaviorGroupModal';
-import { DeleteBehaviorGroupModal } from './DeleteBehaviorGroupModal';
 
 type BundlePageParams = {
     bundleId: string;
@@ -30,7 +30,6 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
     const [ isEdit, setIsEdit ] = React.useState(false);
-    const [ isOpen, setIsOpen ] = React.useState(false);
 
     const [ systemBehaviorGroup, setSystemBehaviorGroup ] = React.useState<Partial<BehaviorGroup>>({});
 
@@ -62,7 +61,6 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
 
     const handleSubmit = React.useCallback((systemBehaviorGroup) => {
         setShowModal(false);
-        setIsOpen(true);
         const mutate = newBehaviorGroup.mutate;
         mutate({
             id: systemBehaviorGroup.id,
@@ -120,22 +118,6 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
                             <ToolbarContent>
                                 <ToolbarItem>
                                     <Button variant='primary' type='button' onClick={ createBehaviorGroup }> Create new group </Button>
-                                    <CreateEditBehaviorGroupModal
-                                        isEdit={ isEdit }
-                                        isOpen={ isOpen }
-                                        initialSystemBehaviorGroup={ systemBehaviorGroup }
-                                        showModal={ showModal }
-                                        onClose={ onClose }
-                                        onSubmit={ handleSubmit }
-                                        isLoading={ false }
-                                    />
-                                    <DeleteBehaviorGroupModal
-                                        onDelete={ handleDelete }
-                                        bundleName={ bundle?.displayName }
-                                        systemBehaviorGroupName={ systemBehaviorGroup.displayName }
-                                        isOpen={ showDeleteModal }
-                                        onClose={ onDeleteClose }
-                                    />
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
@@ -163,6 +145,21 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
                     </Tbody>
                 </TableComposable>
             </PageSection>
+            <CreateEditBehaviorGroupModal
+                isEdit={ isEdit }
+                initialSystemBehaviorGroup={ systemBehaviorGroup }
+                showModal={ showModal }
+                onClose={ onClose }
+                onSubmit={ handleSubmit }
+                isLoading={ false }
+            />
+            <DeleteBehaviorGroupModal
+                onDelete={ handleDelete }
+                bundleName={ bundle?.displayName }
+                systemBehaviorGroupName={ systemBehaviorGroup.displayName }
+                isOpen={ showDeleteModal }
+                onClose={ onDeleteClose }
+            />
         </React.Fragment>
 
     );

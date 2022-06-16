@@ -43,7 +43,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
-    const [ toggleSelect, setToggleSelect ] = React.useState(false);
 
     const getBundleId = React.useMemo(() => {
         if (applicationTypesQuery.payload?.type === 'Application') {
@@ -86,7 +85,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const handleSubmit = React.useCallback((eventType) => {
         setShowModal(false);
-        setToggleSelect(true);
         const mutate = newEvent.mutate;
         mutate({
             id: eventType.id,
@@ -163,28 +161,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
                                     <Button variant='primary' type='button'
                                         isDisabled={ !application || !hasPermission(application?.id) }
                                         onClick={ createEventType }> Create Event Type </Button>
-                                    <CreateEditModal
-                                        isEdit={ isEdit }
-                                        initialEventType={ eventTypes }
-                                        isOpen={ toggleSelect }
-                                        showModal={ showModal }
-                                        applicationName={ application?.displayName }
-                                        onClose={ onClose }
-                                        onSubmit={ handleSubmit }
-                                        isLoading={ eventTypesQuery.loading }
-
-                                    />
-                                    <React.Fragment>
-                                        <DeleteModal
-                                            onDelete={ handleDelete }
-                                            isOpen={ showDeleteModal }
-                                            onClose={ onDeleteClose }
-                                            eventTypeName={ eventTypes.name }
-                                            applicationName={ application?.displayName }
-                                            bundleName={ bundle?.display_name }
-
-                                        />
-                                    </React.Fragment>
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
@@ -215,6 +191,24 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 </TableComposable>
             </PageSection>
             { isAdmin && <EmailTemplateTable /> }
+
+            <CreateEditModal
+                isEdit={ isEdit }
+                initialEventType={ eventTypes }
+                showModal={ showModal }
+                applicationName={ application?.displayName }
+                onClose={ onClose }
+                onSubmit={ handleSubmit }
+                isLoading={ eventTypesQuery.loading }
+            />
+            <DeleteModal
+                onDelete={ handleDelete }
+                isOpen={ showDeleteModal }
+                onClose={ onDeleteClose }
+                eventTypeName={ eventTypes.name }
+                applicationName={ application?.displayName }
+                bundleName={ bundle?.display_name }
+            />
         </React.Fragment>
 
     );
