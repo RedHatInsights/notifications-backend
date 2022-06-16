@@ -24,6 +24,7 @@ import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -34,7 +35,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.jboss.logging.Logger;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -77,8 +77,6 @@ public class EndpointResource {
     public static final String OB_PROCESSOR_ID = "processorId";
     public static final String OB_PROCESSOR_NAME = "processorname"; // Must be all lower for the filter.
     public static final String SLACK = "slack_sink_0.1";
-
-    private static final Logger LOGGER = Logger.getLogger(EndpointResource.class);
 
     private static final List<EndpointType> systemEndpointType = List.of(
             EndpointType.EMAIL_SUBSCRIPTION
@@ -196,7 +194,7 @@ public class EndpointResource {
                 try {
                     processorId = setupOpenBridgeProcessor(endpoint, properties, processorName);
                 } catch (Exception e) {
-                    LOGGER.warn("Processor setup failed: " + e.getMessage());
+                    Log.warn("Processor setup failed: " + e.getMessage());
                     throw new InternalServerErrorException("Can't set up the endpoint");
                 }
 
@@ -276,11 +274,11 @@ public class EndpointResource {
                             try {
                                 bridgeApiService.deleteProcessor(bridge.getId(), processorId, bridgeAuth.getToken());
                             } catch (Exception ex) {
-                                LOGGER.warn("Removal of OB processor failed:" + ex.getMessage());
+                                Log.warn("Removal of OB processor failed:" + ex.getMessage());
                                 // Nothing more we can do
                             }
                         } else {
-                            LOGGER.warn("ProcessorId was null for endpoint " + id.toString());
+                            Log.warn("ProcessorId was null for endpoint " + id.toString());
                         }
                     }
                 }

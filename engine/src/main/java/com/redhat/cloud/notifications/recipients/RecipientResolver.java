@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.recipients;
 
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.jboss.logging.Logger;
+import io.quarkus.logging.Log;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -16,8 +16,6 @@ import java.util.stream.Collectors;
 public class RecipientResolver {
 
     private final AtomicInteger usersCount = new AtomicInteger(0);
-
-    private static final Logger LOG = Logger.getLogger(RecipientResolver.class);
 
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
@@ -43,7 +41,7 @@ public class RecipientResolver {
         } else {
             rbacUsers = rbacRecipientUsersProvider.getGroupUsers(accountId, orgId, request.isOnlyAdmins(), request.getGroupId());
         }
-        LOG.info("recipientUsers: " + rbacUsers);
+        Log.info("recipientUsers: " + rbacUsers);
 
         // The base list of recipients comes from RBAC.
         Set<User> users = Set.copyOf(rbacUsers);

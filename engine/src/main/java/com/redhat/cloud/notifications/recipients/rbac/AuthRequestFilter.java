@@ -5,9 +5,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Base64Utils;
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.jboss.logging.Logger;
 
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
@@ -34,8 +34,6 @@ public class AuthRequestFilter implements ClientRequestFilter {
     private final String secret;
     private final String application;
 
-    private static final Logger log = Logger.getLogger(AuthRequestFilter.class);
-
     AuthRequestFilter() {
         Config config = ConfigProvider.getConfig();
 
@@ -49,13 +47,13 @@ public class AuthRequestFilter implements ClientRequestFilter {
                     new TypeReference<>() { }
             );
         } catch (JsonProcessingException jsonProcessingException) {
-            log.error("Unable to load Rbac service to service secret map, defaulting to empty map", jsonProcessingException);
+            Log.error("Unable to load Rbac service to service secret map, defaulting to empty map", jsonProcessingException);
             rbacServiceToServiceSecretMap = Map.of();
         }
 
         secret = rbacServiceToServiceSecretMap.getOrDefault(application, new Secret()).secret;
         if (secret == null) {
-            log.error("Unable to load Rbac service to service secret key");
+            Log.error("Unable to load Rbac service to service secret key");
         }
 
         String tmp = System.getProperty(RBAC_SERVICE_TO_SERVICE_DEV_EXCEPTIONAL_AUTH_KEY);

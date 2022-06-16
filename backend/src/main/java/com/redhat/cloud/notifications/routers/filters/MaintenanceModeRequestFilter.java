@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.routers.filters;
 
 import com.redhat.cloud.notifications.db.repositories.StatusRepository;
 import io.quarkus.cache.CacheResult;
-import org.jboss.logging.Logger;
+import io.quarkus.logging.Log;
 import org.jboss.resteasy.reactive.server.ServerRequestFilter;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -20,8 +20,6 @@ import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 @ApplicationScoped
 public class MaintenanceModeRequestFilter {
 
-    private static final Logger LOGGER = Logger.getLogger(MaintenanceModeRequestFilter.class);
-
     // This list contains all request paths that should never be affected by the maintenance mode.
     private static final List<String> NO_MAINTENANCE_REQUEST_PATHS = List.of(
             API_INTERNAL,
@@ -38,7 +36,7 @@ public class MaintenanceModeRequestFilter {
     @ServerRequestFilter
     public Response filter(ContainerRequestContext requestContext) {
         String requestPath = requestContext.getUriInfo().getRequestUri().getPath();
-        LOGGER.tracef("Filtering request to %s", requestPath);
+        Log.tracef("Filtering request to %s", requestPath);
 
         if (!isAffectedByMaintenanceMode(requestPath)) {
             return null;
@@ -49,7 +47,7 @@ public class MaintenanceModeRequestFilter {
          * Let's check if maintenance is on in the database.
          */
         if (isMaintenance()) {
-            LOGGER.trace("Maintenance mode is enabled in the database, aborting request and returning HTTP status 503");
+            Log.trace("Maintenance mode is enabled in the database, aborting request and returning HTTP status 503");
             return MAINTENANCE_IN_PROGRESS;
         } else {
             // This filter work is done. The request will be processed normally.
@@ -61,7 +59,7 @@ public class MaintenanceModeRequestFilter {
         // First, we check if the request path should be affected by the maintenance mode.
         for (String noMaintenanceRequestPath : NO_MAINTENANCE_REQUEST_PATHS) {
             if (requestPath.startsWith(noMaintenanceRequestPath)) {
-                LOGGER.trace("Request path shouldn't be affected by the maintenance mode, database check will be skipped");
+                Log.trace("Request path shouldn't be affected by the maintenance mode, database check will be skipped");
                 // This filter work is done. The request will be processed normally.
                 return false;
             }

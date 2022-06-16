@@ -5,7 +5,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
-import org.jboss.logging.Logger;
+import io.quarkus.logging.Log;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -32,8 +32,6 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path(API_INTERNAL + "/template-engine/migrate")
 public class EmailTemplateMigrationService {
 
-    private static final Logger LOGGER = Logger.getLogger(EmailTemplateMigrationService.class);
-
     @Inject
     EntityManager entityManager;
 
@@ -56,7 +54,7 @@ public class EmailTemplateMigrationService {
     public List<String> migrate() {
         List<String> warnings = new ArrayList<>();
 
-        LOGGER.debug("Migration starting");
+        Log.debug("Migration starting");
 
         /*
          * Former src/main/resources/templates/Advisor folder.
@@ -332,7 +330,7 @@ public class EmailTemplateMigrationService {
                 "Vulnerability/dailyEmailBody", "html", "Vulnerability daily email body"
         );
 
-        LOGGER.debug("Migration ended");
+        Log.debug("Migration ended");
 
         return warnings;
     }
@@ -349,7 +347,7 @@ public class EmailTemplateMigrationService {
             warnings.add(String.format("Template found in DB: %s", name));
             return template;
         } catch (NoResultException e) {
-            LOGGER.infof("Creating template: %s", name);
+            Log.infof("Creating template: %s", name);
             Template template = new Template();
             template.setName(name);
             template.setDescription(description);
@@ -391,7 +389,7 @@ public class EmailTemplateMigrationService {
                     Template subjectTemplate = getOrCreateTemplate(warnings, subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription);
                     Template bodyTemplate = getOrCreateTemplate(warnings, bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription);
 
-                    LOGGER.infof("Creating instant email template for event type: %s/%s/%s", bundleName, appName, eventTypeName);
+                    Log.infof("Creating instant email template for event type: %s/%s/%s", bundleName, appName, eventTypeName);
 
                     InstantEmailTemplate emailTemplate = new InstantEmailTemplate();
                     emailTemplate.setEventType(eventType.get());
@@ -448,7 +446,7 @@ public class EmailTemplateMigrationService {
                 Template subjectTemplate = getOrCreateTemplate(warnings, subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription);
                 Template bodyTemplate = getOrCreateTemplate(warnings, bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription);
 
-                LOGGER.infof("Creating daily email template for application: %s/%s", bundleName, appName);
+                Log.infof("Creating daily email template for application: %s/%s", bundleName, appName);
 
                 AggregationEmailTemplate emailTemplate = new AggregationEmailTemplate();
                 emailTemplate.setApplication(app.get());

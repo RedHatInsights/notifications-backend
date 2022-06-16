@@ -10,7 +10,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import org.jboss.logging.Logger;
+import io.quarkus.logging.Log;
 
 import javax.annotation.Nullable;
 import javax.enterprise.context.ApplicationScoped;
@@ -33,8 +33,6 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EndpointRepository {
-
-    private static final Logger LOGGER = Logger.getLogger(EndpointRepository.class);
 
     @Inject
     EntityManager entityManager;
@@ -335,7 +333,7 @@ public class EndpointRepository {
 
     public Endpoint loadProperties(Endpoint endpoint) {
         if (endpoint == null) {
-            LOGGER.warn("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
+            Log.warn("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
             return null;
         }
         loadProperties(Collections.singletonList(endpoint));

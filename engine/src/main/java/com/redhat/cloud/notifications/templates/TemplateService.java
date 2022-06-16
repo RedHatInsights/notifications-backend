@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.extensions.ActionExtension;
 import com.redhat.cloud.notifications.templates.extensions.LocalDateTimeExtension;
 import com.redhat.cloud.notifications.templates.models.Environment;
+import io.quarkus.logging.Log;
 import io.quarkus.qute.Engine;
 import io.quarkus.qute.EvalContext;
 import io.quarkus.qute.ReflectionValueResolver;
@@ -14,7 +15,6 @@ import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.ValueResolver;
 import io.quarkus.scheduler.Scheduled;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -27,8 +27,6 @@ import java.util.function.Function;
 public class TemplateService {
 
     public static final String USE_TEMPLATES_FROM_DB_KEY = "notifications.use-templates-from-db";
-
-    private static final Logger LOGGER = Logger.getLogger(TemplateService.class);
 
     @Inject
     Engine engine;
@@ -44,7 +42,7 @@ public class TemplateService {
     @PostConstruct
     void postConstruct() {
         if (ConfigProvider.getConfig().getValue(USE_TEMPLATES_FROM_DB_KEY, Boolean.class)) {
-            LOGGER.info("Using templates from the database");
+            Log.info("Using templates from the database");
         }
         dbEngine = Engine.builder()
                 .addDefaults()

@@ -3,8 +3,8 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -16,8 +16,6 @@ import java.util.List;
 public class EmailAggregationRepository {
 
     public static final String USE_ORG_ID = "notifications.use-org-id";
-
-    private static final Logger LOGGER = Logger.getLogger(EmailAggregationRepository.class);
 
     @ConfigProperty(name = USE_ORG_ID, defaultValue = "false")
     public boolean useOrgId;
@@ -31,7 +29,7 @@ public class EmailAggregationRepository {
             statelessSessionFactory.getCurrentSession().insert(aggregation);
             return true;
         } catch (Exception e) {
-            LOGGER.warn("Email aggregation persisting failed", e);
+            Log.warn("Email aggregation persisting failed", e);
             return false;
         }
     }
@@ -48,7 +46,7 @@ public class EmailAggregationRepository {
                     .setParameter("end", end)
                     .getResultList();
 
-            LOGGER.info("getEmailAggregation resultlist" + resultList);
+            Log.info("getEmailAggregation resultlist" + resultList);
             return resultList;
         } else {
             String query = "FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";

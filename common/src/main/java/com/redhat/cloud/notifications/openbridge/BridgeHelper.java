@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.openbridge;
 
 import io.quarkus.cache.CacheResult;
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
@@ -38,8 +38,6 @@ public class BridgeHelper {
 
     private Bridge bridgeInstance;
 
-    private static final Logger LOGGER = Logger.getLogger(BridgeHelper.class);
-
     @ApplicationScoped
     @Produces
     public Bridge getBridgeIfNeeded() {
@@ -57,7 +55,7 @@ public class BridgeHelper {
         try {
             token = getAuthTokenInternal();
         } catch (Exception e) {
-            LOGGER.errorf("Failed to get an auth token: %s", e.getMessage());
+            Log.errorf("Failed to get an auth token: %s", e.getMessage());
             throw e;
         }
 
@@ -66,7 +64,7 @@ public class BridgeHelper {
             bridgeMap = apiService.getBridgeById(ourBridge, token);
         } catch (WebApplicationException e) {
             if (e.getResponse().getStatus() == 404) {
-                LOGGER.errorf("Bridge with id %s not found in the OpenBridge instance. Did you create it?", ourBridge);
+                Log.errorf("Bridge with id %s not found in the OpenBridge instance. Did you create it?", ourBridge);
             }
             throw e;
         }
@@ -91,13 +89,13 @@ public class BridgeHelper {
             return new BridgeAuth("- OB not enabled token -");
         }
 
-        LOGGER.debug("In getAuthToken()");
+        Log.debug("In getAuthToken()");
 
         BridgeAuth ba = null;
         try {
             ba = new BridgeAuth(getAuthTokenInternal());
         } catch (Exception e) {
-            LOGGER.warn("Failed to get an auth token: " + e.getMessage());
+            Log.warn("Failed to get an auth token: " + e.getMessage());
             ba = new BridgeAuth("- No token - obtained -");
         }
         return ba;
@@ -108,7 +106,7 @@ public class BridgeHelper {
     @CacheResult(cacheName = "kc-cache")
     String getAuthTokenInternal() {
 
-        LOGGER.debug("Fetching a new token from SSO");
+        Log.debug("Fetching a new token from SSO");
 
         String body = "client_id=" + clientId
                     + "&client_secret=" + clientSecret

@@ -2,9 +2,9 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Template;
+import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateLocator;
 import io.quarkus.qute.Variant;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -16,8 +16,6 @@ import java.util.Optional;
 @ApplicationScoped
 public class DbTemplateLocator implements TemplateLocator {
 
-    private static Logger LOGGER = Logger.getLogger(DbTemplateLocator.class);
-
     @Inject
     StatelessSessionFactory statelessSessionFactory;
 
@@ -28,10 +26,10 @@ public class DbTemplateLocator implements TemplateLocator {
             Template template = statelessSessionFactory.getCurrentSession().createQuery(hql, Template.class)
                     .setParameter("name", name)
                     .getSingleResult();
-            LOGGER.tracef("Template with [name=%s] found in the database", name);
+            Log.tracef("Template with [name=%s] found in the database", name);
             return Optional.of(buildTemplateLocation(template.getData()));
         } catch (NoResultException e) {
-            LOGGER.tracef("Template with [name=%s] not found in the database", name);
+            Log.tracef("Template with [name=%s] not found in the database", name);
             return Optional.empty();
         }
     }

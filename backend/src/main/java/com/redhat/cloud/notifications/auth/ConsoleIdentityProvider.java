@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeSamlIdenti
 import com.redhat.cloud.notifications.auth.rbac.RbacServer;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import io.netty.channel.ConnectTimeoutException;
+import io.quarkus.logging.Log;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.IdentityProvider;
@@ -19,7 +20,6 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.Json;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -49,8 +49,6 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
 
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
-
-    private static final Logger log = Logger.getLogger(ConsoleIdentityProvider.class);
 
     @Inject
     @RestClient
@@ -121,7 +119,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                                                 .atMost(maxRetryAttempts)
                                                 // After we're done retrying, an RBAC server call failure will cause an authentication failure
                                                 .onFailure().transform(failure -> {
-                                                    log.warnf("RBAC authentication call failed: %s", failure.getMessage());
+                                                    Log.warnf("RBAC authentication call failed: %s", failure.getMessage());
                                                     throw new AuthenticationFailedException(failure.getMessage());
                                                 })
                                                 // Otherwise, we can finish building the QuarkusSecurityIdentity and return the result
@@ -156,13 +154,13 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
 
                                         return Uni.createFrom().item(builder.build());
                                     } else {
-                                        log.warnf("Unprocessed identity found. type: %s and name: %s", identity.type, identity.getName());
+                                        Log.warnf("Unprocessed identity found. type: %s and name: %s", identity.type, identity.getName());
                                         return Uni.createFrom().failure(new AuthenticationFailedException());
                                     }
                                 })
                                 // A failure will cause an authentication failure
                                 .onFailure().transform(throwable -> {
-                                    log.error("Error while processing identity", throwable);
+                                    Log.error("Error while processing identity", throwable);
                                     return new AuthenticationFailedException(throwable);
                                 })
                 );
