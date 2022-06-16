@@ -1,6 +1,5 @@
 import { Breadcrumb, BreadcrumbItem, Card, CardBody, CardHeader, PageSection, Title } from '@patternfly/react-core';
 import * as React from 'react';
-import { Link } from 'react-router-dom';
 
 interface AggregationEmailCardProps {
     applicationName?: string;
@@ -24,7 +23,7 @@ export const AggregationTemplateCard: React.FunctionComponent<AggregationEmailCa
                     {`Bundle: ${ props.bundleName }`}
                 </CardBody>
                 <CardBody>
-                    {`Aggregation Template: ${ <Link to=''>{ props.templateName }</Link> }` }
+                    {`Aggregation Template: ${ props.templateName } `}
                 </CardBody>
             </Card>
         </PageSection>
