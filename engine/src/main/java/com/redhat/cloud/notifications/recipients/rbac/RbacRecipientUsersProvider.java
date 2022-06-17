@@ -13,6 +13,7 @@ import dev.failsafe.RetryPolicy;
 import dev.failsafe.function.CheckedSupplier;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.cache.CacheResult;
@@ -29,7 +30,10 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -81,18 +85,16 @@ public class RbacRecipientUsersProvider {
 
     private Counter rbacFailuresCounter;
 
-    private final AtomicInteger rbacUsers = new AtomicInteger(0);
-
     private RetryPolicy<Object> rbacRetryPolicy;
 
     private Counter itFailuresCounter;
     private RetryPolicy<Object> itRetryPolicy;
 
+    private Map</* accountId */ String, AtomicInteger> rbacUsers = new ConcurrentHashMap<>();
+
     @PostConstruct
     public void init() {
         rbacFailuresCounter = meterRegistry.counter("rbac.failures");
-
-        meterRegistry.gauge("rbac.users", rbacUsers);
 
         rbacRetryPolicy = RetryPolicy.builder()
                 .onRetry(event -> rbacFailuresCounter.increment())
@@ -142,9 +144,16 @@ public class RbacRecipientUsersProvider {
         // Micrometer doesn't like when tags are null and throws a NPE.
         String accountIdTag = accountId == null ? "" : accountId;
         getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountIdTag));
-        rbacUsers.set(users.size());
+        getRbacUsersGauge(accountIdTag).set(users.size());
 
         return users;
+    }
+
+    private AtomicInteger getRbacUsersGauge(String accountIdTag) {
+        return rbacUsers.computeIfAbsent(accountIdTag, /* accountIdTag */ key -> {
+            Set<Tag> tags = Set.of(Tag.of("accountId", key));
+            return meterRegistry.gauge("rbac.users", tags, new AtomicInteger());
+        });
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
