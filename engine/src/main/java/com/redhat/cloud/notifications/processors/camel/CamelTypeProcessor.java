@@ -192,7 +192,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     private void callOpenBridge(JsonObject body, UUID id, String accountId, CamelProperties camelProperties, String integrationName, String originalEventId) {
 
         if (!obEnabled) {
-            LOGGER.debug("Ob not enabled, doing nothing");
+            Log.debug("Ob not enabled, doing nothing");
             return;
         }
 

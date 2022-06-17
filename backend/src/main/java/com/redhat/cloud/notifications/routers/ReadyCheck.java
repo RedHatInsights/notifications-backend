@@ -7,18 +7,21 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
+import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import javax.transaction.Transactional;
 import javax.ws.rs.WebApplicationException;
 import java.util.List;
 import java.util.Map;
+
+import static io.quarkus.scheduler.Scheduled.ConcurrentExecution.SKIP;
+import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
+import static org.hibernate.LockOptions.SKIP_LOCKED;
 
 /**
  * Scheduled task to check (OpenBridge) Endpoints
@@ -29,8 +32,6 @@ import java.util.Map;
  */
 @ApplicationScoped
 public class ReadyCheck  {
-
-    private static final Logger LOGGER = Logger.getLogger(ReadyCheck.class);
 
     @Inject
     EntityManager em;
@@ -49,37 +50,37 @@ public class ReadyCheck  {
             "WHERE e.compositeType.type = :type AND e.compositeType.subType IN (:subTypes) " +
             "AND e.status NOT IN (:ready, :failed) ";
 
-    @Scheduled(concurrentExecution = Scheduled.ConcurrentExecution.SKIP, every = "10s")
+    @Scheduled(concurrentExecution = SKIP, every = "${ob.ready-check.period:10s}")
     @Transactional
     public void execute() {
 
-        Query query = em.createQuery(endpointQueryString);
-        query.setParameter("ready", EndpointStatus.READY);
-        query.setParameter("failed", EndpointStatus.FAILED);
-        query.setParameter("type", EndpointType.CAMEL);
-        query.setParameter("subTypes", "slack");
-        List<Endpoint> endpoints = query.getResultList();
-        for (Endpoint ep : endpoints) {
+        List<Endpoint> endpoints = em.createQuery(endpointQueryString, Endpoint.class)
+                .setParameter("ready", EndpointStatus.READY)
+                .setParameter("failed", EndpointStatus.FAILED)
+                .setParameter("type", EndpointType.CAMEL)
+                .setParameter("subTypes", "slack")
+                // DB rows will be locked when they are processed by this scheduled job, preventing other pods from accessing them.
+                .setLockMode(PESSIMISTIC_WRITE)
+                // Postgres will skip the DB rows that were locked by another pod so that this scheduled job will never be waiting for locks.
+                .setHint("javax.persistence.lock.timeout", SKIP_LOCKED)
+                .getResultList();
 
-            if (!ep.getType().equals(EndpointType.CAMEL)) {
-                LOGGER.warn("Not a camel endpoint, ignoring " + ep);
-            } else {
-                CamelProperties cp = em.find(CamelProperties.class, ep.getId()); // TODO Fetch in one go
-                String processorId = cp.getExtras().get("processorId");
-                try {
-                    Map<String, Object> processor = bridgeApiService.getProcessorById(bridge.getId(), processorId, bridgeAuth.getToken());
-                    String status = (String) processor.get("status");
-                    LOGGER.debugf("  Status reported by OB for processor %s : %s", processorId, status);
-                    if (status.equals("ready")) {
-                        ep.setStatus(EndpointStatus.READY);
-                    }
-                    if (status.equals("failed")) {
-                        ep.setStatus(EndpointStatus.FAILED);
-                    }
-                } catch (WebApplicationException wae) {
-                    LOGGER.warn("Getting data from OB failed: " + wae.getMessage());
+        for (Endpoint ep : endpoints) {
+            CamelProperties cp = em.find(CamelProperties.class, ep.getId()); // TODO Fetch in one go
+            String processorId = cp.getExtras().get("processorId");
+            try {
+                Map<String, Object> processor = bridgeApiService.getProcessorById(bridge.getId(), processorId, bridgeAuth.getToken());
+                String status = (String) processor.get("status");
+                Log.debugf("  Status reported by OB for processor %s : %s", processorId, status);
+                if ("ready".equals(status)) {
+                    ep.setStatus(EndpointStatus.READY);
+                }
+                if ("failed".equals(status)) {
                     ep.setStatus(EndpointStatus.FAILED);
                 }
+            } catch (WebApplicationException wae) {
+                Log.warn("Getting data from OB failed", wae);
+                ep.setStatus(EndpointStatus.FAILED);
             }
         }
     }
