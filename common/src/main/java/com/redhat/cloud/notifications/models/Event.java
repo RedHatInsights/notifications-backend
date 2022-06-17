@@ -214,23 +214,4 @@ public class Event {
     public int hashCode() {
         return Objects.hash(id);
     }
-
-    @Override
-    public String toString() {
-        return "Event{" +
-                "id=" + id +
-                ", created=" + created +
-                ", accountId='" + accountId + '\'' +
-                ", orgId='" + orgId + '\'' +
-                ", bundleId=" + bundleId +
-                ", bundleDisplayName='" + bundleDisplayName + '\'' +
-                ", applicationId=" + applicationId +
-                ", applicationDisplayName='" + applicationDisplayName + '\'' +
-                ", eventType=" + eventType +
-                ", eventTypeDisplayName='" + eventTypeDisplayName + '\'' +
-                ", historyEntries=" + historyEntries +
-                ", payload='" + payload + '\'' +
-                ", action=" + action +
-                '}';
-    }
 }

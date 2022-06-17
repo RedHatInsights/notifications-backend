@@ -137,8 +137,6 @@ public class RbacRecipientUsersProvider {
             firstResult += maxResultsPerPage;
         } while (usersPaging.size() == maxResultsPerPage);
 
-        Log.info("usersTotal: " + usersTotal);
-
         users = transformToUser(usersTotal);
 
         // Micrometer doesn't like when tags are null and throws a NPE.
