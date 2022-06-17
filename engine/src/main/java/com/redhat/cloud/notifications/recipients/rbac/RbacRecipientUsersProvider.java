@@ -150,8 +150,8 @@ public class RbacRecipientUsersProvider {
     }
 
     private AtomicInteger getRbacUsersGauge(String accountIdTag) {
-        return rbacUsers.computeIfAbsent(accountIdTag, /* accountIdTag */ key -> {
-            Set<Tag> tags = Set.of(Tag.of("accountId", key));
+        return rbacUsers.computeIfAbsent(accountIdTag, accountId -> {
+            Set<Tag> tags = Set.of(Tag.of("accountId", accountId));
             return meterRegistry.gauge("rbac.users", tags, new AtomicInteger());
         });
     }
