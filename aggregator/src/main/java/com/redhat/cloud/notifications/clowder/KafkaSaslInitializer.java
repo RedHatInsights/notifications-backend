@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.config;
+package com.redhat.cloud.notifications.clowder;
 
 import io.quarkus.runtime.StartupEvent;
 import org.eclipse.microprofile.config.Config;
