@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.recipients;
 
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.quarkus.logging.Log;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -41,7 +40,6 @@ public class RecipientResolver {
         } else {
             rbacUsers = rbacRecipientUsersProvider.getGroupUsers(accountId, orgId, request.isOnlyAdmins(), request.getGroupId());
         }
-        Log.info("recipientUsers: " + rbacUsers);
 
         // The base list of recipients comes from RBAC.
         Set<User> users = Set.copyOf(rbacUsers);

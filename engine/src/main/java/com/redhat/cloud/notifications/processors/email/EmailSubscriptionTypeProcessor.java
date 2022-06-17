@@ -191,7 +191,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
                 .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
 
-        Log.info("sending email for event: " + event);
         return recipientResolver.recipientUsers(action.getAccountId(), action.getOrgId(), requests, subscribers)
                 .stream()
                 .map(user -> emailSender.sendEmail(user, event, subject, body))
