@@ -90,7 +90,7 @@
                   </h2>
                 </div>
                 <div>
-                  <span class="rh-metric__count">{action.context.patch.enhancement.unique_system_count}</span>
+                  <span class="rh-metric__count">{action.context.patch.enhancement.unique_system_count ?: 0}</span>
                 </div>
               </div>
               <div style="display: table-cell; padding-right: 12px"></div>
@@ -101,7 +101,7 @@
                   </h2>
                 </div>
                 <div>
-                  <span class="rh-metric__count">{action.context.patch.security.unique_system_count}</span>
+                  <span class="rh-metric__count">{action.context.patch.security.unique_system_count ?: 0}</span>
                 </div>
               </div>
             </div>
@@ -124,7 +124,7 @@
                   </h2>
                 </div>
                 <div>
-                  <span class="rh-metric__count">{action.context.patch.bugfix.unique_system_count}</span>
+                  <span class="rh-metric__count">{action.context.patch.bugfix.unique_system_count ?: 0}</span>
                 </div>
               </div>
               <div style="display: table-cell; padding-right: 12px"></div>
@@ -136,7 +136,7 @@
                 </div>
                 <div>
                   <p></p>
-                  <span class="rh-metric__count">{action.context.unique_system_count}</span>
+                  <span class="rh-metric__count">{action.context.unique_system_count ?: 0}</span>
                 </div>
               </div>
             </div>

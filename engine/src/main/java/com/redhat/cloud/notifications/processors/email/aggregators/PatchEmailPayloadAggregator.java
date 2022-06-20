@@ -29,7 +29,7 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
     private static final String PATCH_KEY = "patch";
     private static final String ADVISORIES_KEY = "advisories";
 
-    private static final String NEW_ADVISORIES_EVENT = "new-advisories";
+    private static final String NEW_ADVISORIES_EVENT = "new-advisory";
     private static final List<String> EVENT_TYPES = Arrays.asList(NEW_ADVISORIES_EVENT);
 
     private static final String ENHANCEMENT_TYPE = "enhancement";
