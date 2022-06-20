@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.OK;
+import static org.hibernate.jpa.QueryHints.HINT_PASS_DISTINCT_THROUGH;
 
 @ApplicationScoped
 public class BehaviorGroupRepository {
@@ -43,6 +44,8 @@ public class BehaviorGroupRepository {
 
     @Transactional
     BehaviorGroup create(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
+        checkBehaviorGroupDisplayNameDuplicate(accountId, behaviorGroup, isDefaultBehaviorGroup);
+
         behaviorGroup.setAccountId(accountId);
         if (isDefaultBehaviorGroup != behaviorGroup.isDefaultBehavior()) {
             throw new BadRequestException(String.format(
@@ -81,9 +84,20 @@ public class BehaviorGroupRepository {
             throw new NotFoundException("Bundle not found");
         }
 
-        List<BehaviorGroup> behaviorGroups = entityManager.createNamedQuery("findByBundleId", BehaviorGroup.class)
+        /*
+         * When PostgreSQL sorts a BOOLEAN column in DESC order, true comes first. That's not true for all DBMS.
+         *
+         * When QueryHints.HINT_PASS_DISTINCT_THROUGH is set to false, Hibernate returns distinct results without passing the
+         * DISTINCT keyword to the DBMS. This is better for performances.
+         * See https://in.relation.to/2016/08/04/introducing-distinct-pass-through-query-hint/ for more details about that hint.
+         */
+        String query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
+                "WHERE (b.accountId = :accountId OR b.accountId IS NULL) AND b.bundle.id = :bundleId " +
+                "ORDER BY b.created DESC, a.position ASC";
+        List<BehaviorGroup> behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
                 .setParameter("accountId", accountId)
                 .setParameter("bundleId", bundleId)
+                .setHint(HINT_PASS_DISTINCT_THROUGH, false)
                 .getResultList();
         for (BehaviorGroup behaviorGroup : behaviorGroups) {
             behaviorGroup.filterOutBundle();
@@ -101,6 +115,8 @@ public class BehaviorGroupRepository {
 
     @Transactional
     boolean update(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehavior) {
+        checkBehaviorGroupDisplayNameDuplicate(accountId, behaviorGroup, isDefaultBehavior);
+
         checkBehaviorGroup(behaviorGroup.getId(), isDefaultBehavior);
         String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE id = :id";
 
@@ -119,6 +135,30 @@ public class BehaviorGroupRepository {
         }
 
         return q.executeUpdate() > 0;
+    }
+
+    private void checkBehaviorGroupDisplayNameDuplicate(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
+        String hql = "SELECT COUNT(*) FROM BehaviorGroup WHERE displayName = :displayName";
+        if (behaviorGroup.getId() != null) { // The behavior group already exists in the DB, it's being updated.
+            hql += " AND id != :behaviorGroupId";
+        }
+        if (isDefaultBehaviorGroup) {
+            hql += " AND accountId IS NULL";
+        } else {
+            hql += " AND accountId = :accountId";
+        }
+
+        TypedQuery<Long> query = entityManager.createQuery(hql, Long.class)
+                .setParameter("displayName", behaviorGroup.getDisplayName());
+        if (behaviorGroup.getId() != null) {
+            query.setParameter("behaviorGroupId", behaviorGroup.getId());
+        }
+        if (!isDefaultBehaviorGroup) {
+            query.setParameter("accountId", accountId);
+        }
+        if (query.getSingleResult() > 0) {
+            throw new BadRequestException("A behavior group with display name [" + behaviorGroup.getDisplayName() + "] already exists");
+        }
     }
 
     public boolean delete(String accountId, UUID behaviorGroupId) {

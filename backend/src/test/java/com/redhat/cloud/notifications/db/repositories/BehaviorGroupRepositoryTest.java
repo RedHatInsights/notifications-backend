@@ -52,6 +52,99 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     BehaviorGroupRepository behaviorGroupRepository;
 
     @Test
+    void shouldThrowExceptionWhenCreatingWithExistingDisplayNameAndSameAccount() {
+        Bundle bundle = resourceHelpers.createBundle();
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
+
+        BehaviorGroup behaviorGroup2 = new BehaviorGroup();
+        behaviorGroup2.setAccountId(behaviorGroup1.getAccountId());
+        behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
+        behaviorGroup2.setBundleId(bundle.getId());
+
+        BadRequestException e = assertThrows(BadRequestException.class, () -> {
+            behaviorGroupRepository.create(behaviorGroup2.getAccountId(), behaviorGroup2);
+        });
+        assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCreatingDefaultWithExistingDisplayName() {
+        Bundle bundle = resourceHelpers.createBundle();
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createDefaultBehaviorGroup("displayName", bundle.getId());
+
+        BehaviorGroup behaviorGroup2 = new BehaviorGroup();
+        behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
+        behaviorGroup2.setBundleId(bundle.getId());
+
+        BadRequestException e = assertThrows(BadRequestException.class, () -> {
+            behaviorGroupRepository.createDefault(behaviorGroup2);
+        });
+        assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenCreatingWithExistingDisplayNameButDifferentAccount() {
+        Bundle bundle = resourceHelpers.createBundle();
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
+
+        BehaviorGroup behaviorGroup2 = new BehaviorGroup();
+        behaviorGroup2.setAccountId("other-account-id");
+        behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
+        behaviorGroup2.setBundleId(bundle.getId());
+
+        behaviorGroupRepository.create(behaviorGroup2.getAccountId(), behaviorGroup2);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingToExistingDisplayNameAndSameAccount() {
+        Bundle bundle = resourceHelpers.createBundle("name", "displayName");
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName1", bundle.getId());
+        BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(behaviorGroup1.getAccountId(), "displayName2", bundle.getId());
+        behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
+
+        BadRequestException e = assertThrows(BadRequestException.class, () -> {
+            behaviorGroupRepository.update(behaviorGroup2.getAccountId(), behaviorGroup2);
+        });
+        assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingDefaultToExistingDisplayName() {
+        Bundle bundle = resourceHelpers.createBundle("name", "displayName");
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createDefaultBehaviorGroup("displayName1", bundle.getId());
+        BehaviorGroup behaviorGroup2 = resourceHelpers.createDefaultBehaviorGroup("displayName2", bundle.getId());
+        behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
+
+        BadRequestException e = assertThrows(BadRequestException.class, () -> {
+            behaviorGroupRepository.updateDefault(behaviorGroup2);
+        });
+        assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenUpdatingToExistingDisplayNameButDifferentAccount() {
+        Bundle bundle = resourceHelpers.createBundle("name", "displayName");
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName1", bundle.getId());
+        BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup("other-account-id", "displayName2", bundle.getId());
+        behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
+        behaviorGroupRepository.update(behaviorGroup2.getAccountId(), behaviorGroup2);
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenSelfUpdatingWithSameDisplayName() {
+        Bundle bundle = resourceHelpers.createBundle("name", "displayName");
+        BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName1", bundle.getId());
+        behaviorGroupRepository.update(behaviorGroup.getAccountId(), behaviorGroup);
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenSelfUpdatingDefaultWithSameDisplayName() {
+        Bundle bundle = resourceHelpers.createBundle("name", "displayName");
+        BehaviorGroup behaviorGroup = resourceHelpers.createDefaultBehaviorGroup("displayName1", bundle.getId());
+        behaviorGroupRepository.updateDefault(behaviorGroup);
+    }
+
+    @Test
     void testCreateAndUpdateAndDeleteBehaviorGroup() {
         String newDisplayName = "newDisplayName";
 
@@ -150,9 +243,9 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     @Test
     void testfindByBundleIdOrdering() {
         Bundle bundle = resourceHelpers.createBundle();
-        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        BehaviorGroup behaviorGroup3 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName1", bundle.getId());
+        BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName2", bundle.getId());
+        BehaviorGroup behaviorGroup3 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName3", bundle.getId());
         List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findByBundleId(DEFAULT_ACCOUNT_ID, bundle.getId());
         assertEquals(3, behaviorGroups.size());
         // Behavior groups should be sorted on descending creation date.
