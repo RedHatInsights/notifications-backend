@@ -34,7 +34,7 @@ public class PatchTestHelpers {
         emailActionMessage.setBundle(bundle);
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.now());
-        emailActionMessage.setEventType("new-advisories");
+        emailActionMessage.setEventType("new-advisory");
         emailActionMessage.setContext(
                 new Context.ContextBuilder()
                         .withAdditionalProperty("inventory_id", inventory_id)
@@ -70,7 +70,7 @@ public class PatchTestHelpers {
         emailActionMessage.setBundle(bundle);
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.now());
-        emailActionMessage.setEventType("new-advisories");
+        emailActionMessage.setEventType("new-advisory");
         emailActionMessage.setContext(
                 new Context.ContextBuilder()
                         .withAdditionalProperty("inventory_id", "inventory_id")
