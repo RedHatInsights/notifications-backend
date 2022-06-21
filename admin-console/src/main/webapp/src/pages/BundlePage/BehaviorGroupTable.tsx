@@ -3,7 +3,6 @@ import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner,
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
-import { useParams } from 'react-router';
 
 import { CreateEditBehaviorGroupModal } from '../../components/SystemBehaviorGroups/CreateEditBehaviorGroupModal';
 import { DeleteBehaviorGroupModal } from '../../components/SystemBehaviorGroups/DeleteBehaviorGroupModal';
@@ -13,14 +12,14 @@ import { useDeleteBehaviorGroup } from '../../services/SystemBehaviorGroups/Dele
 import { useSystemBehaviorGroups } from '../../services/SystemBehaviorGroups/GetBehaviorGroups';
 import { BehaviorGroup } from '../../types/Notifications';
 
-type BundlePageParams = {
+interface BundlePageProps {
     bundleId: string;
+    bundle: string | undefined;
 }
 
-export const BehaviorGroupsTable: React.FunctionComponent = () => {
-    const { bundleId } = useParams<BundlePageParams>();
+export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (props) => {
     const getBehaviorGroups = useSystemBehaviorGroups();
-    const getBundles = useBundleTypes(bundleId);
+    const getBundles = useBundleTypes(props.bundleId);
     const newBehaviorGroup = useCreateSystemBehaviorGroup();
     const deleteBehaviorGroupMutation = useDeleteBehaviorGroup();
 
@@ -32,14 +31,6 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
     const [ isEdit, setIsEdit ] = React.useState(false);
 
     const [ systemBehaviorGroup, setSystemBehaviorGroup ] = React.useState<Partial<BehaviorGroup>>({});
-
-    const bundle = React.useMemo(() => {
-        if (getBundles.payload?.status === 200) {
-            return getBundles.payload.value;
-        }
-
-        return undefined;
-    }, [ getBundles.payload?.status, getBundles.payload?.value ]);
 
     const createBehaviorGroup = () => {
         setShowModal(true);
@@ -66,10 +57,10 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
             id: systemBehaviorGroup.id,
             displayName: systemBehaviorGroup.displayName ?? '',
             actions: systemBehaviorGroup.actions,
-            bundleId
+            bundleId: systemBehaviorGroup.bundleId
         }).then(getBehaviorGroups.query);
 
-    }, [ bundleId, getBehaviorGroups.query, newBehaviorGroup.mutate ]);
+    }, [ getBehaviorGroups.query, newBehaviorGroup.mutate ]);
 
     const handleDelete = React.useCallback(async () => {
         setShowDeleteModal(false);
@@ -155,7 +146,7 @@ export const BehaviorGroupsTable: React.FunctionComponent = () => {
             />
             <DeleteBehaviorGroupModal
                 onDelete={ handleDelete }
-                bundleName={ bundle?.displayName }
+                bundleName={ props.bundle }
                 systemBehaviorGroupName={ systemBehaviorGroup.displayName }
                 isOpen={ showDeleteModal }
                 onClose={ onDeleteClose }

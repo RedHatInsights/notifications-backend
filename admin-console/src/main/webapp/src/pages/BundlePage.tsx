@@ -191,7 +191,9 @@ export const BundlePage: React.FunctionComponent = () => {
                     </Tbody>
                 </TableComposable>
             </PageSection>
-            <BehaviorGroupsTable />
+            <BehaviorGroupsTable
+                bundleId={ bundleId }
+                bundle={ bundle?.displayName } />
         </React.Fragment>
 
     );
