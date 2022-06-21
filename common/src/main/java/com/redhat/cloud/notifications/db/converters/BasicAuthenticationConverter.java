@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.converters;
 
+import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import io.vertx.core.json.Json;
 
@@ -14,7 +15,8 @@ public class BasicAuthenticationConverter implements AttributeConverter<BasicAut
         if (auth == null) {
             return null;
         } else {
-            return Json.encode(auth);
+            BasicAuthentication encodedAuth = new BasicAuthentication(auth.getUsername(), Base64Utils.encode(auth.getPassword()));
+            return Json.encode(encodedAuth);
         }
     }
 
@@ -23,7 +25,9 @@ public class BasicAuthenticationConverter implements AttributeConverter<BasicAut
         if (json == null) {
             return null;
         } else {
-            return Json.decodeValue(json, BasicAuthentication.class);
+            BasicAuthentication auth = Json.decodeValue(json, BasicAuthentication.class);
+            auth.setPassword(Base64Utils.decode(auth.getPassword()));
+            return auth;
         }
     }
 }

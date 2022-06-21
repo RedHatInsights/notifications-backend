@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
-import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -39,9 +38,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
@@ -88,8 +89,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testEndpointAdding() {
         String tenant = "empty";
+        String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -109,7 +111,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
@@ -196,7 +198,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when().get("/endpoints/" + responsePoint.getString("id"))
                 .then()
                 .statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
 
         // Fetch all, nothing should be left
         given()
@@ -228,8 +230,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testEndpointValidation() {
         String tenant = "validation";
+        String orgId = "validation2";
         String userName = "testEndpointValidation";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -241,68 +244,63 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setDescription("Destined to fail");
         ep.setEnabled(true);
 
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .contentType(JSON);
+        expectReturn400(identityHeader, ep);
 
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        properties.setUrl(getMockServerUrl());
 
         // Test with properties, but without endpoint type
         ep.setProperties(properties);
         ep.setType(null);
 
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(400);
+        expectReturn400(identityHeader, ep);
 
         // Test with incorrect webhook properties
         ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint with incorrect webhook properties");
         properties.setMethod(null);
-
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .contentType(JSON);
+        expectReturn400(identityHeader, ep);
 
         // Type and attributes don't match
         properties.setMethod(HttpType.POST);
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        expectReturn400(identityHeader, ep);
+
+        ep.setName("endpoint with subtype too long");
+        ep.setType(EndpointType.CAMEL);
+        ep.setSubType("something-longer-than-20-chars");
+        expectReturn400(identityHeader, ep);
+    }
+
+    private void expectReturn400(Header identityHeader, Endpoint ep) {
+        given()
+                 .header(identityHeader)
+                 .when()
+                 .contentType(JSON)
+                 .body(Json.encode(ep))
+                 .post("/endpoints")
+                 .then()
+                 .statusCode(400)
+                 .contentType(JSON);
     }
 
     @Test
     void addCamelEndpoint() {
 
         String tenant = "empty";
+        String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
-        cAttr.setUrl(MockServerLifecycleManager.getContainerUrl());
+        cAttr.setUrl(getMockServerUrl());
         cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
@@ -367,15 +365,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
     void addBogusCamelEndpoint() {
 
         String tenant = "empty";
+        String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
-        cAttr.setUrl(MockServerLifecycleManager.getContainerUrl());
+        cAttr.setUrl(getMockServerUrl());
         cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
@@ -417,15 +416,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
     void addOpenBridgeEndpoint() {
 
         String tenant = "empty";
+        String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
-        cAttr.setUrl(MockServerLifecycleManager.getContainerUrl());
+        cAttr.setUrl(getMockServerUrl());
         Map<String, String> extras = new HashMap<>();
         extras.put("channel", "#notifications");
         cAttr.setExtras(extras);
@@ -505,8 +505,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testEndpointUpdates() {
         String tenant = "updates";
+        String orgId = "updates2";
         String userName = "testEndpointUpdates";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -526,7 +527,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
@@ -616,8 +617,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @MethodSource
     void testEndpointTypeQuery(Set<EndpointType> types) {
         String tenant = "limiter";
+        String orgId = "limiter2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -627,7 +629,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
@@ -655,7 +657,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         CamelProperties camelProperties = new CamelProperties();
         camelProperties.setDisableSslVerification(false);
         camelProperties.setSecretToken("my-super-secret-token");
-        camelProperties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        camelProperties.setUrl(getMockServerUrl());
         camelProperties.setExtras(new HashMap<>());
 
         Endpoint camelEp = new Endpoint();
@@ -719,8 +721,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testEndpointLimiter() {
         String tenant = "limiter";
+        String orgId = "limiter2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -764,8 +767,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testSortingOrder() {
         String tenant = "testSortingOrder";
+        String orgId = "testSortingOrder2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -828,8 +832,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testWebhookAttributes() {
         String tenant = "testWebhookAttributes";
+        String orgId = "testWebhookAttributes2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -840,7 +845,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
         properties.setBasicAuthentication(new BasicAuthentication("myuser", "mypassword"));
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.WEBHOOK);
@@ -881,8 +886,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testAddEndpointEmailSubscription() {
         String tenant = "adding-email-subscription";
+        String orgId = "adding-email-subscription2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -1029,7 +1035,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         webhookProperties.setMethod(HttpType.POST);
         webhookProperties.setDisableSslVerification(false);
         webhookProperties.setSecretToken("my-super-secret-token");
-        webhookProperties.setUrl(MockServerLifecycleManager.getContainerUrl());
+        webhookProperties.setUrl(getMockServerUrl());
         ep.setProperties(webhookProperties);
 
         stringResponse = given()
@@ -1044,10 +1050,90 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAddEndpointEmailSubscriptionRbac() {
+        String tenant = "adding-email-subscription";
+        String orgId = "adding-email-subscription2";
+        String userName = "user";
+        String validGroupId = "f85517d0-063b-4eed-a501-e79ffc1f5ad3";
+        String unknownGroupId = "f44f50d5-acab-482c-a3cf-087faf2c709c";
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        MockServerConfig.addGroupResponse(identityHeaderValue, validGroupId, 200);
+        MockServerConfig.addGroupResponse(identityHeaderValue, unknownGroupId, 404);
+
+        // valid group id
+        RequestEmailSubscriptionProperties requestProps = new RequestEmailSubscriptionProperties();
+        requestProps.setGroupId(UUID.fromString(validGroupId));
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        String endpointId = responsePoint.getString("id");
+        assertNotNull(endpointId);
+
+        // Same group again yields the same endpoint id
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertEquals(endpointId, responsePoint.getString("id"));
+
+        // Invalid group is a bad request (i.e. group does not exist)
+        requestProps.setGroupId(UUID.fromString(unknownGroupId));
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(400)
+                .contentType(JSON)
+                .extract().response();
+
+        // Can't specify admin and group - bad request
+        requestProps.setGroupId(UUID.fromString(validGroupId));
+        requestProps.setOnlyAdmins(true);
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(400)
+                .contentType(JSON)
+                .extract().response();
+    }
+
+    @Test
     void testEmailSubscription() {
         String tenant = "test-subscription";
+        String orgId = "test-subscription2";
         String username = "test-user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
@@ -1058,25 +1144,25 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .delete("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
         given()
                 .header(identityHeader)
                 .when()
                 .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
         given()
                 .header(identityHeader)
                 .when()
                 .put("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
         given()
                 .header(identityHeader)
                 .when()
                 .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
 
         // Unknown bundle/apps give 404
         given()
@@ -1084,13 +1170,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .delete("/endpoints/email/subscription/idontexist/meneither/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
         given()
                 .header(identityHeader)
                 .when()
                 .put("/endpoints/email/subscription/idontexist/meneither/instant")
                 .then().statusCode(404)
-                .contentType(JSON);
+                .contentType(TEXT);
 
         // Disable everything as preparation
         // rhel/policies instant and daily
@@ -1188,7 +1274,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Test
     void testUnknownEndpointTypes() {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("test-tenant", "test-user");
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("test-tenant", "test-orgid", "test-user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
@@ -1210,11 +1296,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(is("Unknown endpoint type: [bar]"));
     }
 
-    //    @Test
+    @Test
     void testConnectionCount() {
         String tenant = "count";
+        String orgId = "count2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -1235,7 +1322,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             properties.setMethod(HttpType.POST);
             properties.setDisableSslVerification(false);
             properties.setSecretToken("my-super-secret-token");
-            properties.setUrl(MockServerLifecycleManager.getContainerUrl());
+            properties.setUrl(getMockServerUrl());
 
             Endpoint ep = new Endpoint();
             ep.setType(EndpointType.WEBHOOK);
@@ -1274,8 +1361,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testSearch() {
         String tenant = "search";
+        String orgId = "search2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
@@ -1317,8 +1405,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testSearchWithType() {
         String tenant = "search-type";
+        String orgId = "search-type2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
@@ -1373,7 +1462,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             properties.setMethod(HttpType.POST);
             properties.setDisableSslVerification(false);
             properties.setSecretToken("my-super-secret-token");
-            properties.setUrl(MockServerLifecycleManager.getContainerUrl() + "/" + i);
+            properties.setUrl(getMockServerUrl() + "/" + i);
 
             Endpoint ep = new Endpoint();
             ep.setType(EndpointType.WEBHOOK);

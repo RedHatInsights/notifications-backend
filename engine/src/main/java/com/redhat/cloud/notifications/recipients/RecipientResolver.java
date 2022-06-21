@@ -1,31 +1,44 @@
 package com.redhat.cloud.notifications.recipients;
 
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
+import io.micrometer.core.instrument.MeterRegistry;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class RecipientResolver {
 
+    private final AtomicInteger usersCount = new AtomicInteger(0);
+
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
-    public Set<User> recipientUsers(String accountId, Set<RecipientSettings> requests, Set<String> subscribers) {
+    @Inject
+    MeterRegistry meterRegistry;
+
+    @PostConstruct
+    public void init() {
+        meterRegistry.gauge("email-processor.recipients-resolved", usersCount);
+    }
+
+    public Set<User> recipientUsers(String accountId, String orgId, Set<RecipientSettings> requests, Set<String> subscribers) {
         return requests.stream()
-                .flatMap(r -> recipientUsers(accountId, r, subscribers).stream())
+                .flatMap(r -> recipientUsers(accountId, orgId, r, subscribers).stream())
                 .collect(Collectors.toSet());
     }
 
-    private Set<User> recipientUsers(String accountId, RecipientSettings request, Set<String> subscribers) {
+    private Set<User> recipientUsers(String accountId, String orgId, RecipientSettings request, Set<String> subscribers) {
         List<User> rbacUsers;
         if (request.getGroupId() == null) {
-            rbacUsers = rbacRecipientUsersProvider.getUsers(accountId, request.isOnlyAdmins());
+            rbacUsers = rbacRecipientUsersProvider.getUsers(accountId, orgId, request.isOnlyAdmins());
         } else {
-            rbacUsers = rbacRecipientUsersProvider.getGroupUsers(accountId, request.isOnlyAdmins(), request.getGroupId());
+            rbacUsers = rbacRecipientUsersProvider.getGroupUsers(accountId, orgId, request.isOnlyAdmins(), request.getGroupId());
         }
 
         // The base list of recipients comes from RBAC.
@@ -47,6 +60,8 @@ public class RecipientResolver {
             users = filterUsers(users, subscribers);
         }
 
+        updateUsersUsedGauge(users.size());
+
         return users;
     }
 
@@ -58,5 +73,9 @@ public class RecipientResolver {
                             .anyMatch(requested -> requested.equalsIgnoreCase(user.getUsername()))
                 )
                 .collect(Collectors.toSet());
+    }
+
+    private void updateUsersUsedGauge(int users) {
+        usersCount.set(users);
     }
 }

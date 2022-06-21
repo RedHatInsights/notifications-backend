@@ -10,11 +10,11 @@ import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.annotations.Blocking;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -32,10 +32,10 @@ public class EventConsumer {
     public static final String INGRESS_CHANNEL = "ingress";
     public static final String REJECTED_COUNTER_NAME = "input.rejected";
     public static final String PROCESSING_ERROR_COUNTER_NAME = "input.processing.error";
+    public static final String PROCESSING_EXCEPTION_COUNTER_NAME = "input.processing.exception";
     public static final String DUPLICATE_COUNTER_NAME = "input.duplicate";
     public static final String CONSUMED_TIMER_NAME = "input.consumed";
 
-    private static final Logger LOGGER = Logger.getLogger(EventConsumer.class);
     private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for [bundleName=%s, applicationName=%s, eventTypeName=%s]";
 
     @Inject
@@ -62,11 +62,13 @@ public class EventConsumer {
     private Counter rejectedCounter;
     private Counter processingErrorCounter;
     private Counter duplicateCounter;
+    private Counter processingExceptionCounter;
 
     @PostConstruct
     public void init() {
         rejectedCounter = registry.counter(REJECTED_COUNTER_NAME);
         processingErrorCounter = registry.counter(PROCESSING_ERROR_COUNTER_NAME);
+        processingExceptionCounter = registry.counter(PROCESSING_EXCEPTION_COUNTER_NAME);
         duplicateCounter = registry.counter(DUPLICATE_COUNTER_NAME);
     }
 
@@ -103,7 +105,7 @@ public class EventConsumer {
             bundleName[0] = action.getBundle();
             appName[0] = action.getApplication();
             String eventTypeName = action.getEventType();
-            LOGGER.infof("Processing received action: (%s) %s/%s/%s", action.getAccountId(), bundleName[0], appName[0], eventTypeName);
+            Log.infof("Processing received action: (%s) %s/%s/%s", action.getAccountId(), bundleName[0], appName[0], eventTypeName);
             /*
              * Step 2
              * The message ID is extracted from the Kafka message headers. It can be null for now to give the onboarded
@@ -151,6 +153,16 @@ public class EventConsumer {
                      * The EventType was found. It's time to create an Event from the current message and persist it.
                      */
                     Event event = new Event(eventType, payload, action);
+                    if (event.getId() == null) {
+                        // NOTIF-499 If there is no ID provided whatsoever we create one.
+                        if (messageId != null) {
+                            event.setId(messageId);
+                        } else {
+                            Log.infof("NOID: Event with %s/%s/%s did not have an incoming id or messageId ",
+                                    bundleName[0], appName[0], eventTypeName);
+                            event.setId(UUID.randomUUID());
+                        }
+                    }
                     eventRepository.create(event);
                     /*
                      * Step 7
@@ -169,9 +181,11 @@ public class EventConsumer {
             });
         } catch (Exception e) {
             /*
-             * An exception was thrown at some point during the Kafka message processing, it is logged.
+             * An exception was thrown at some point during the Kafka message processing,
+             * it is logged and added to the exception counter metric.
              */
-            LOGGER.infof(e, "Could not process the payload: %s", payload);
+            processingExceptionCounter.increment();
+            Log.infof(e, "Could not process the payload: %s", payload);
         } finally {
             // bundleName[0] and appName[0] are null when the action parsing failed.
             String bundle = bundleName[0] == null ? "" : bundleName[0];

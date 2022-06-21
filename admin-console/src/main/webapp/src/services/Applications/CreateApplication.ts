@@ -12,7 +12,7 @@ export type CreateApplication = {
 
 const actionCreator =  (params: CreateApplication) => {
     if (params.id === undefined) {
-        return Operations.InternalServiceCreateApplication.actionCreator({
+        return Operations.InternalResourceCreateApplication.actionCreator({
             body: {
                 bundle_id: params.bundleId,
                 display_name: params.displayName,
@@ -22,7 +22,7 @@ const actionCreator =  (params: CreateApplication) => {
         });
     }
 
-    return Operations.InternalServiceUpdateApplication.actionCreator({
+    return Operations.InternalResourceUpdateApplication.actionCreator({
         appId: params.id,
         body: {
             id: params.id,

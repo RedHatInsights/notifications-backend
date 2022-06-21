@@ -8,10 +8,10 @@ import com.redhat.cloud.notifications.models.CronJobRun;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
-import org.jboss.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -25,14 +25,12 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.EmailSubscriptionType.DAILY;
 import static java.time.ZoneOffset.UTC;
-import static java.time.temporal.ChronoUnit.*;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 @ApplicationScoped
 public class DailyEmailAggregationJob {
 
     public static final String AGGREGATION_CHANNEL = "aggregation";
-
-    private static final Logger LOG = Logger.getLogger(DailyEmailAggregationJob.class);
 
     private final EmailAggregationResources emailAggregationResources;
     private final ObjectMapper objectMapper;
@@ -71,14 +69,14 @@ public class DailyEmailAggregationJob {
                     final String payload = objectMapper.writeValueAsString(aggregationCommand);
                     futures.add(emitter.send(payload).toCompletableFuture());
                 } catch (JsonProcessingException e) {
-                    LOG.warn("Could not transform AggregationCommand to JSON object.", e);
+                    Log.warn("Could not transform AggregationCommand to JSON object.", e);
                 }
 
                 // resolve completable futures so the Quarkus main thread doesn't stop before everything has been sent
                 try {
                     CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get();
                 } catch (InterruptedException | ExecutionException ie) {
-                    LOG.error("Writing AggregationCommands failed", ie);
+                    Log.error("Writing AggregationCommands failed", ie);
                 }
             }
 
@@ -96,7 +94,7 @@ public class DailyEmailAggregationJob {
             try {
                 pg.pushAdd(registry, "aggregator_job");
             } catch (IOException e) {
-                LOG.warn("Could not push metrics to Prometheus Pushgateway.", e);
+                Log.warn("Could not push metrics to Prometheus Pushgateway.", e);
             }
         }
     }
@@ -105,7 +103,7 @@ public class DailyEmailAggregationJob {
         final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
         LocalDateTime startTime = lastCronJobRun.getLastRun();
 
-        LOG.infof("Collecting email aggregation for period (%s, %s) and type %s", startTime, endTime, DAILY);
+        Log.infof("Collecting email aggregation for period (%s, %s) and type %s", startTime, endTime, DAILY);
 
         final List<AggregationCommand> pendingAggregationCommands =
                 emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
@@ -113,7 +111,7 @@ public class DailyEmailAggregationJob {
                         .map(aggregationKey -> new AggregationCommand(aggregationKey, startTime, endTime, DAILY))
                         .collect(Collectors.toList());
 
-        LOG.infof(
+        Log.infof(
                 "Finished collecting email aggregations for period (%s, %s) and type %s after %d seconds. %d (accountIds, applications) pairs were processed",
                 startTime,
                 endTime,
