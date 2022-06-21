@@ -1,7 +1,7 @@
 import { ActionGroup, Button, Form, FormGroup,
     FormSelect,
     FormSelectOption,
-    HelperText, HelperTextItem, Modal, ModalVariant, TextInput } from '@patternfly/react-core';
+    Modal, ModalVariant, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
 import { BehaviorGroup } from '../../types/Notifications';
@@ -48,9 +48,7 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
                 onClose={ props.onClose }
             ><Form isHorizontal>
                     <FormGroup label='Group Name' fieldId='displayName' isRequired
-                        helperText={ props.isEdit ? <HelperText><HelperTextItem variant="warning" hasIcon>
-                                                    If this field is modified it may affect exisiting behavior.
-                        </HelperTextItem></HelperText> : 'Enter a name for your group' }>
+                        helperText='Enter a name for your group'>
                         <TextInput
                             type='text'
                             value={ systemBehaviorGroup.displayName }
