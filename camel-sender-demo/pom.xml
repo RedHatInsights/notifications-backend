@@ -14,8 +14,8 @@
 
     <properties>
 
-        <camel-quarkus.version>2.7.1</camel-quarkus.version>
-        <camel-version>3.14.2</camel-version>
+        <camel-quarkus.version>2.9.0</camel-quarkus.version>
+        <camel-version>3.16.0</camel-version>
 
     </properties>
 

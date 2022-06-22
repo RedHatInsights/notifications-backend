@@ -10,7 +10,7 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class Query {
 
-    private static final Pattern SORT_FIELD_PATTERN = Pattern.compile("^[a-z0-9._-]+$", CASE_INSENSITIVE);
+    private static final Pattern SORT_FIELD_PATTERN = Pattern.compile("^[a-z0-9._]+$", CASE_INSENSITIVE);
     private static final int DEFAULT_RESULTS_PER_PAGE  = 20;
 
     @QueryParam("limit")

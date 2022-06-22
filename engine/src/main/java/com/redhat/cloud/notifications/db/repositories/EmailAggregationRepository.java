@@ -3,7 +3,8 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import org.jboss.logging.Logger;
+import io.quarkus.logging.Log;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -14,7 +15,10 @@ import java.util.List;
 @ApplicationScoped
 public class EmailAggregationRepository {
 
-    private static final Logger LOGGER = Logger.getLogger(EmailAggregationRepository.class);
+    public static final String USE_ORG_ID = "notifications.use-org-id";
+
+    @ConfigProperty(name = USE_ORG_ID, defaultValue = "false")
+    public boolean useOrgId;
 
     @Inject
     StatelessSessionFactory statelessSessionFactory;
@@ -25,20 +29,32 @@ public class EmailAggregationRepository {
             statelessSessionFactory.getCurrentSession().insert(aggregation);
             return true;
         } catch (Exception e) {
-            LOGGER.warn("Email aggregation persisting failed", e);
+            Log.warn("Email aggregation persisting failed", e);
             return false;
         }
     }
 
     public List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
-        String query = "FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
-        return statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
-                .setParameter("accountId", key.getAccountId())
-                .setParameter("bundleName", key.getBundle())
-                .setParameter("applicationName", key.getApplication())
-                .setParameter("start", start)
-                .setParameter("end", end)
-                .getResultList();
+        if (useOrgId) {
+            String query = "FROM EmailAggregation WHERE accountId = :accountId AND orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
+            return statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
+                    .setParameter("accountId", key.getAccountId())
+                    .setParameter("orgId", key.getOrgId())
+                    .setParameter("bundleName", key.getBundle())
+                    .setParameter("applicationName", key.getApplication())
+                    .setParameter("start", start)
+                    .setParameter("end", end)
+                    .getResultList();
+        } else {
+            String query = "FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
+            return statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
+                    .setParameter("accountId", key.getAccountId())
+                    .setParameter("bundleName", key.getBundle())
+                    .setParameter("applicationName", key.getApplication())
+                    .setParameter("start", start)
+                    .setParameter("end", end)
+                    .getResultList();
+        }
     }
 
     @Transactional

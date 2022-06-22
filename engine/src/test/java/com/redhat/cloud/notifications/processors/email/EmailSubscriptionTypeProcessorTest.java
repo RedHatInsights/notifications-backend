@@ -66,13 +66,13 @@ class EmailSubscriptionTypeProcessorTest {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
 
         AggregationCommand aggregationCommand1 = new AggregationCommand(
-                new EmailAggregationKey("account-1", "bundle-1", "app-1"),
+                new EmailAggregationKey("account-1", "org-1", "bundle-1", "app-1"),
                 LocalDateTime.now(),
                 LocalDateTime.now().plusDays(1),
                 DAILY
         );
         AggregationCommand aggregationCommand2 = new AggregationCommand(
-                new EmailAggregationKey("account-2", "bundle-2", "app-2"),
+                new EmailAggregationKey("account-2", "org-2", "bundle-2", "app-2"),
                 LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
                 LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
                 DAILY

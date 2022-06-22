@@ -8,6 +8,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+// TODO NOTIF-484 Remove this annotation, it has no effect while using a standalone Qute engine.
 @TemplateExtension
 public class LocalDateTimeExtension {
 

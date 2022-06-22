@@ -13,13 +13,13 @@ import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.utils.LineBreakCleaner;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -32,8 +32,6 @@ import java.util.Set;
 
 @ApplicationScoped
 public class EmailSender {
-
-    private static final Logger logger = Logger.getLogger(EmailSender.class);
 
     static final String BOP_APITOKEN_HEADER = "x-rh-apitoken";
     static final String BOP_CLIENT_ID_HEADER = "x-rh-clientid";
@@ -87,6 +85,9 @@ public class EmailSender {
         LocalDateTime start = LocalDateTime.now(UTC);
 
         Action action = event.getAction();
+
+        Timer.Sample processedTimer = Timer.start(registry);
+
         // uses canonical EmailSubscription
         try {
             Endpoint endpoint = endpointRepository.getOrCreateDefaultEmailSubscription(action.getAccountId());
@@ -103,13 +104,13 @@ public class EmailSender {
                     bopRequest,
                     getPayload(user, action, subject, body));
 
-            registry.counter("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication());
+            processedTimer.stop(registry.timer("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication()));
 
             processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
 
             return Optional.of(history);
         } catch (Exception e) {
-            logger.info("Email sending failed", e);
+            Log.info("Email sending failed", e);
             return Optional.empty();
         }
     }
@@ -122,7 +123,7 @@ public class EmailSender {
             renderedSubject = templateService.renderTemplate(user, action, subject);
             renderedBody = templateService.renderTemplate(user, action, body);
         } catch (Exception e) {
-            logger.warnf(e,
+            Log.warnf(e,
                     "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",
                     action.getBundle(),
                     action.getApplication(),

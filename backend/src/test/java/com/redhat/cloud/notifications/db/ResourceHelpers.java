@@ -112,7 +112,11 @@ public class ResourceHelpers {
     }
 
     public Endpoint createEndpoint(String accountId, EndpointType type) {
-        return createEndpoint(accountId, type, "name", "description", null, FALSE);
+        return createEndpoint(accountId, type, null);
+    }
+
+    public Endpoint createEndpoint(String accountId, EndpointType type, String subType) {
+        return createEndpoint(accountId, type, subType, "name", "description", null, FALSE);
     }
 
     public UUID createWebhookEndpoint(String accountId) {
@@ -120,14 +124,15 @@ public class ResourceHelpers {
         properties.setMethod(HttpType.POST);
         properties.setUrl("https://localhost");
         String name = "Endpoint " + UUID.randomUUID();
-        return createEndpoint(accountId, WEBHOOK, name, "Automatically generated", properties, TRUE)
+        return createEndpoint(accountId, WEBHOOK, null, name, "Automatically generated", properties, TRUE)
                 .getId();
     }
 
-    public Endpoint createEndpoint(String accountId, EndpointType type, String name, String description, EndpointProperties properties, Boolean enabled) {
+    public Endpoint createEndpoint(String accountId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled) {
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
         endpoint.setType(type);
+        endpoint.setSubType(subType);
         endpoint.setName(name);
         endpoint.setDescription(description);
         endpoint.setProperties(properties);
@@ -172,6 +177,7 @@ public class ResourceHelpers {
         history.setEvent(event);
         history.setEndpoint(endpoint);
         history.setEndpointType(endpoint.getType());
+        history.setEndpointSubType(endpoint.getSubType());
         history.prePersist();
         entityManager.persist(history);
         return history;

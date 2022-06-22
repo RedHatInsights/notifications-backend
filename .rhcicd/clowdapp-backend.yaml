@@ -17,7 +17,7 @@ objects:
     - rbac
     database:
       name: notifications-backend
-      version: 12
+      version: 13
     testing:
       iqePlugin: notifications
     jobs:
@@ -71,12 +71,117 @@ objects:
         requests:
           cpu: "${CPU_REQUEST_FLOO}"
           memory: "${MEMORY_REQUEST_FLOO}"
+    - name: org-id-populator
+      podSpec:
+        image: quay.io/cloudservices/tenant-utils:latest
+        command:
+          - ./org-id-column-populator
+          - -C
+          - -a
+          - account_id
+          - -o
+          - org_id
+          - -t
+          - email_aggregation
+          - --ean-translator-addr
+          - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+          - --db-operation-timeout
+          - "10"
+        env:
+          - name: TENANT_TRANSLATOR_HOST
+            value: ${TENANT_TRANSLATOR_HOST}
+          - name: TENANT_TRANSLATOR_PORT
+            value: ${TENANT_TRANSLATOR_PORT}
+          - name: LOG_FORMAT
+            value: ${LOG_FORMAT}
+          - name: LOG_BATCH_FREQUENCY
+            value: '1'
+        resources:
+          limits:
+            cpu: 300m
+            memory: 1Gi
+          requests:
+            cpu: 50m
+            memory: 512Mi
+    - name: org-id-populator-event-table
+      podSpec:
+        image: quay.io/cloudservices/tenant-utils:latest
+        command:
+          - ./org-id-column-populator
+          - -C
+          - -a
+          - account_id
+          - -o
+          - org_id
+          - -t
+          - event
+          - --ean-translator-addr
+          - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+          - --db-operation-timeout
+          - "10"
+        env:
+          - name: TENANT_TRANSLATOR_HOST
+            value: ${TENANT_TRANSLATOR_HOST}
+          - name: TENANT_TRANSLATOR_PORT
+            value: ${TENANT_TRANSLATOR_PORT}
+          - name: LOG_FORMAT
+            value: ${LOG_FORMAT}
+          - name: LOG_BATCH_FREQUENCY
+            value: '1'
+        resources:
+          limits:
+            cpu: 300m
+            memory: 1Gi
+          requests:
+            cpu: 50m
+            memory: 512Mi
+    - name: db-cleaner-cronjob
+      schedule: ${DB_CLEANER_SCHEDULE}
+      suspend: ${{DISABLE_DB_CLEANER}}
+      concurrencyPolicy: Forbid
+      restartPolicy: Never
+      podSpec:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 200m
+            memory: 200Mi
+        image: quay.io/cloudservices/postgresql-rds:12-1
+        volumes:
+          - name: notifications-db-cleaner-volume
+            configMap:
+              name: notifications-db-cleaner-config
+        volumeMounts:
+          - name: notifications-db-cleaner-volume
+            mountPath: /notifications-db-cleaner
+        command: ['sh', '/notifications-db-cleaner/clean.sh']
+        env:
+          - name: PGHOST
+            valueFrom:
+              secretKeyRef:
+                name: notifications-backend-db
+                key: ${DB_SECRET_HOSTNAME_KEY}
+          - name: PGDATABASE
+            value: ${DB_NAME}
+          - name: PGUSER
+            valueFrom:
+              secretKeyRef:
+                name: notifications-backend-db
+                key: ${DB_SECRET_USERNAME_KEY}
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: notifications-backend-db
+                key: ${DB_SECRET_PASSWORD_KEY}
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
       webServices:
         public:
           enabled: true
+          apiPath: notifications
       podSpec:
         image: ${IMAGE}:${IMAGE_TAG}
         resources:
@@ -141,18 +246,16 @@ objects:
           value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: NOTIFICATIONS_USE_ORG_ID
+          value: ${NOTIFICATIONS_USE_ORG_ID}
         - name: OB_ENABLED
           value: ${OB_ENABLED}
         - name: OB_BRIDGE_UUID
           value: ${OB_BRIDGE_UUID}
-        - name: OB_KCUSER
-          value: ${OB_KCUSER}
-        - name: OB_KCPASS
-          value: ${OB_KCPASS}
-        - name: OB_TOKEN_USER
-          value: ${OB_TOKEN_USER}
-        - name: OB_TOKEN_PASS
-          value: ${OB_TOKEN_PASS}
+        - name: OB_TOKEN_CLIENT_ID
+          value: ${OB_TOKEN_CLIENT_ID}
+        - name: OB_TOKEN_CLIENT_SECRET
+          value: ${OB_TOKEN_CLIENT_SECRET}
         - name: QUARKUS_REST_CLIENT_OB_URL
           value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
@@ -171,59 +274,6 @@ objects:
       VACUUM notification_history;
       CALL cleanKafkaMessagesIds();
       VACUUM kafka_message;
-- apiVersion: batch/v1
-  kind: CronJob
-  metadata:
-    name: notifications-db-cleaner-cronjob
-  annotations: 
-    ignore-check.kube-linter.io/no-liveness-probe
-    ignore-check.kube-linter.io/no-readiness-probe
-  spec:
-    schedule: ${DB_CLEANER_SCHEDULE}
-    suspend: ${{DISABLE_DB_CLEANER}}
-    concurrencyPolicy: Forbid
-    jobTemplate:
-      spec:
-        template:
-          spec:
-            restartPolicy: Never
-            volumes:
-            - name: notifications-db-cleaner-volume
-              configMap:
-                name: notifications-db-cleaner-config
-            containers:
-            - name: notifications-db-cleaner
-              image: quay.io/cloudservices/postgresql-rds:12-1
-              restartPolicy: Never
-              resources:
-                requests:
-                  cpu: 100m
-                  memory: 100Mi
-                limits:
-                  cpu: 200m
-                  memory: 200Mi
-              volumeMounts:
-              - name: notifications-db-cleaner-volume
-                mountPath: /notifications-db-cleaner
-              command: ['sh', '/notifications-db-cleaner/clean.sh']
-              env:
-              - name: PGHOST
-                valueFrom:
-                  secretKeyRef:
-                    name: notifications-backend-db
-                    key: ${DB_SECRET_HOSTNAME_KEY}
-              - name: PGDATABASE
-                value: ${DB_NAME}
-              - name: PGUSER
-                valueFrom:
-                  secretKeyRef:
-                    name: notifications-backend-db
-                    key: ${DB_SECRET_USERNAME_KEY}
-              - name: PGPASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: notifications-backend-db
-                    key: ${DB_SECRET_PASSWORD_KEY}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -302,18 +352,12 @@ parameters:
 - name: OB_BRIDGE_UUID
   description: The uuid of the bridge to use. Must be pre-provisioned
   value: "00000000-0000-0000-0000-000000000000"
-- name: OB_KCUSER
-  description: User name to talk to the SSO server
-  value: ob.kcUser
-- name: OB_KCPASS
-  description: Password to talk to the SSO server
-  value: ob.kcPass
-- name: OB_TOKEN_USER
-  description: User to get a token from SSO
-  value: ob.token.user
-- name: OB_TOKEN_PASS
-  description: Password to get a token from SSO
-  value: ob.token.pass
+- name: OB_TOKEN_CLIENT_ID
+  description: Client id to get a token from SSO
+  value: ob.token.client.id
+- name: OB_TOKEN_CLIENT_SECRET
+  description: Client Secret to get a Token from SSO
+  value: ob.token.client.secret
 - name: QUARKUS_REST_CLIENT_OB_URL
   description: URL of the OpenBridge fleet manager
   value: "http://addMe"
@@ -353,3 +397,13 @@ parameters:
 - name: FLOORIST_LOGLEVEL
   description: Floorist loglevel config
   value: 'INFO'
+- description: Host for the EAN to OrgId translator.
+  name: TENANT_TRANSLATOR_HOST
+  required: true
+  value: 'apicast.3scale-dev.svc.cluster.local'
+- description: Port for the EAN to OrgId translator.
+  name: TENANT_TRANSLATOR_PORT
+  required: true
+  value: '8892'
+- name: NOTIFICATIONS_USE_ORG_ID
+  value: "false"

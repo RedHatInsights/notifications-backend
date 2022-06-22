@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.auth.principal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -29,6 +30,9 @@ import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeX509Identi
 public abstract class ConsoleIdentity {
     @JsonProperty(required = true)
     public String type;
+
+    @JsonIgnore
+    public String rawIdentity;
 
     public abstract String getName();
 }

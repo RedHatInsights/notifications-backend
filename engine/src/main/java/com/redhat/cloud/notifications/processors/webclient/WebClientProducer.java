@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.processors.webclient;
 
+import io.quarkus.logging.Log;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
@@ -14,8 +14,6 @@ import java.util.Optional;
 
 @ApplicationScoped
 public class WebClientProducer {
-
-    private static final Logger LOGGER = Logger.getLogger(WebClientProducer.class);
 
     @Inject
     Vertx vertx;
@@ -49,7 +47,7 @@ public class WebClientProducer {
                 .setTrustAll(trustAll)
                 .setConnectTimeout(3000); // TODO Should this be configurable by the system? We need a maximum in any case
         if (maxPoolSize.isPresent()) {
-            LOGGER.debugf("Producing a WebClient with a configured max pool size: %d", maxPoolSize.get());
+            Log.debugf("Producing a WebClient with a configured max pool size: %d", maxPoolSize.get());
             options = options.setMaxPoolSize(maxPoolSize.get());
         }
         return options;

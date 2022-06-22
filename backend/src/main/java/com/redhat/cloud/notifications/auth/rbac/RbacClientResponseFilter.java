@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.auth.rbac;
 
-import org.jboss.logging.Logger;
+import io.quarkus.logging.Log;
 
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientResponseContext;
@@ -14,14 +14,12 @@ import java.io.IOException;
  */
 public class RbacClientResponseFilter implements ClientResponseFilter {
 
-    private static final Logger log = Logger.getLogger(RbacClientResponseFilter.class);
-
     @Override
     public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
         Response.StatusType statusInfo = responseContext.getStatusInfo();
         int status = statusInfo.getStatusCode();
         if (status != 200) {
-            log.warnf("Call to the Rbac server failed with code %d, %s", status, statusInfo.getReasonPhrase());
+            Log.warnf("Call to the Rbac server failed with code %d, %s", status, statusInfo.getReasonPhrase());
         }
     }
 }

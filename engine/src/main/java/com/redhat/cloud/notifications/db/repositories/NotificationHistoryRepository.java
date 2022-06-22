@@ -31,7 +31,7 @@ public class NotificationHistoryRepository {
      * @see com.redhat.cloud.notifications.events.FromCamelHistoryFiller for the source of data
      */
     @Transactional
-    public void updateHistoryItem(Map<String, Object> jo) {
+    public boolean updateHistoryItem(Map<String, Object> jo) {
 
         String historyId = (String) jo.get("historyId");
 
@@ -40,20 +40,31 @@ public class NotificationHistoryRepository {
         }
 
         String outcome = (String) jo.get("outcome");
-        boolean result = outcome != null && outcome.startsWith("Success");
+        // TODO NOTIF-636 Remove oldResult after the Eventing team is done integrating with the new way to determine the success.
+        boolean oldResult = outcome != null && outcome.startsWith("Success");
+        boolean result = oldResult || jo.containsKey("successful") && ((Boolean) jo.get("successful"));
         Map details = (Map) jo.get("details");
         if (!details.containsKey("outcome")) {
             details.put("outcome", outcome);
         }
-        Integer duration = (Integer) jo.get("duration");
+
+        Integer duration = (Integer) jo.getOrDefault("duration", 0);
 
         String updateQuery = "UPDATE NotificationHistory SET details = :details, invocationResult = :result, invocationTime= :invocationTime WHERE id = :id";
-        statelessSessionFactory.getCurrentSession().createQuery(updateQuery)
+        int count = statelessSessionFactory.getCurrentSession().createQuery(updateQuery)
                 .setParameter("details", details)
                 .setParameter("result", result)
                 .setParameter("id", UUID.fromString(historyId))
                 .setParameter("invocationTime", (long) duration)
                 .executeUpdate();
+
+        if (count == 0) {
+            throw new NoResultException("Update returned no rows");
+        } else if (count > 1) {
+            throw new IllegalStateException("Update count was " + count);
+        }
+
+        return true;
     }
 
     public Endpoint getEndpointForHistoryId(String historyId) {

@@ -1,0 +1,84 @@
+{#include Patch/insightsEmailBody}
+{#content-title}Advisories Instant Notification - {action.timestamp.toUtcFormat()}{/content-title}
+{#content-body}
+<!-- Body section - Empty row to have more padding between content-->
+<tr>
+  <td class="rh-body rh-multi-column">
+    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
+      <tbody>
+        <!-- Content block -->
+        <tr>
+          <td>
+          </td>
+        </tr>
+        <!-- end content block -->
+      </tbody>
+    </table>
+  </td>
+</tr>
+<!-- end body section -->
+<!-- Body section -->
+<tr>
+  <td class="rh-body">
+    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0"
+      width="100%">
+      <tbody>
+        <!-- Content block -->
+        <td class="rh-content__block">
+          <p>
+            Hi {user.firstName},
+                            <br>
+                            <br>
+            Red Hat Insights has just released new Advisories for your organization. Please review the
+            systems affected and all the details of each errata below.
+          </p>
+        </td>
+        <!-- end content block -->
+      </tbody>
+    </table>
+  </td>
+</tr>
+<tr>
+  <td class="rh-body">
+    {#if action.events.size() > 0}
+    <table class="rh-content rh-m-plain" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0"
+      width="100%">
+      <tbody>
+        <!-- Content block -->
+        <tr>
+          <td class="rh-content__block">
+            <table width:="" 100%;="" class="rh-data-table rh-m-bordered">
+              <thead>
+                <tr>
+                  <th>Advisory</th>
+                  <th width="70%">Synopsis</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each action.events}
+                {#if it.payload != null}
+                <tr>
+                  <td>
+                    <a class="rh-url"
+                      href="{environment.url}/insights/patch/advisories/{it.payload.advisory_name}">{it.payload.advisory_name}</a>
+                  </td>
+                  <td class="rh-severity">
+                    {it.payload.synopsis}
+                  </td>
+                </tr>
+                {/if}
+                {/each}
+              </tbody>
+            </table>
+          </td>
+        </tr>
+        <!-- end content block -->
+      </tbody>
+    </table>
+    <br>
+    {/if}
+  </td>
+</tr>
+<!-- end body section -->
+{/content-body}
+{/include}

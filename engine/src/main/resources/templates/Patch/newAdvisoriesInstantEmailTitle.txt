@@ -1,0 +1,1 @@
+{action.timestamp.toUtcFormat()} - Red Hat has recently released new advisories affecting your systems.

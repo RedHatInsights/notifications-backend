@@ -36,38 +36,31 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <surefire-plugin.version>3.0.0-M6</surefire-plugin.version>
+        <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
         <checkstyle-plugin.version>3.1.2</checkstyle-plugin.version>
-        <jacoco-plugin.version>0.8.7</jacoco-plugin.version>
+        <jacoco-plugin.version>0.8.8</jacoco-plugin.version>
         <checkstyle.version>8.44</checkstyle.version>
 
-        <testcontainers.version>1.16.3</testcontainers.version>
+        <testcontainers.version>1.17.2</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
-        <failsafe.version>3.2.3</failsafe.version>
+        <failsafe.version>3.2.4</failsafe.version>
 
-        <!-- Keep the version synced with MockServerLifecycleManager -->
-        <mockserver-client-java.version>5.5.4</mockserver-client-java.version>
+        <mockserver-netty-no-dependencies.version>5.13.2</mockserver-netty-no-dependencies.version>
 
-        <insights-notification-schemas-java.version>0.6</insights-notification-schemas-java.version>
-        <clowder-quarkus-config-source.version>1.0.0</clowder-quarkus-config-source.version>
+        <insights-notification-schemas-java.version>0.13</insights-notification-schemas-java.version>
+        <clowder-quarkus-config-source.version>1.0.2</clowder-quarkus-config-source.version>
 
-        <cloudwatch.version>4.2.0</cloudwatch.version>
-        <quarkus-logging-sentry.version>1.1.0</quarkus-logging-sentry.version>
+        <quarkus-logging-cloudwatch.version>4.3.1</quarkus-logging-cloudwatch.version>
+        <quarkus-logging-sentry.version>1.1.1</quarkus-logging-sentry.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
-        <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>2.7.5.Final</quarkus.platform.version>
+        <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+        <quarkus.platform.version>2.9.2.Final</quarkus.platform.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- Temporary as Quarkus 2.3.1 is pulling Avro 1.10.2, which overrides the one in the schema project -->
-            <dependency>
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro</artifactId>
-                <version>1.11.0</version>
-            </dependency>
             <dependency>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>${quarkus.platform.artifact-id}</artifactId>

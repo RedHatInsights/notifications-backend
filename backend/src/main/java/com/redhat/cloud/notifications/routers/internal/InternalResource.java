@@ -21,17 +21,12 @@ import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.internal.models.ServerInfo;
-import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
-import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
-import com.redhat.cloud.notifications.templates.TemplateEngineClient;
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.jboss.logging.Logger;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -70,7 +65,6 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 @Path(API_INTERNAL)
 public class InternalResource {
 
-    private static final Logger LOGGER = Logger.getLogger(InternalResource.class);
     private static final Pattern GIT_COMMIT_ID_PATTERN = Pattern.compile("git.commit.id.abbrev=([0-9a-f]{7})");
 
     @Inject
@@ -98,10 +92,6 @@ public class InternalResource {
     SecurityContextUtil securityContextUtil;
 
     @Inject
-    @RestClient
-    TemplateEngineClient templateEngineClient;
-
-    @Inject
     StartupUtils startupUtils;
 
     // This endpoint is used during the IQE tests to determine which version of the code is tested.
@@ -114,7 +104,7 @@ public class InternalResource {
         if (m.matches()) {
             return m.group(1);
         } else {
-            LOGGER.infof("Git commit hash not found: %s", gitProperties);
+            Log.infof("Git commit hash not found: %s", gitProperties);
             return "Git commit hash not found";
         }
     }
@@ -327,28 +317,6 @@ public class InternalResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public void setCurrentStatus(@NotNull @Valid CurrentStatus status) {
         statusRepository.setCurrentStatus(status);
-    }
-
-    @POST
-    @Path("/templates/email/render")
-    @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
-    @APIResponses(value = {
-            @APIResponse(responseCode = "200", content = {
-                    @Content(schema = @Schema(title = "RenderEmailTemplateResponseSuccess", implementation = RenderEmailTemplateResponse.Success.class))
-            }),
-            @APIResponse(responseCode = "400", content = {
-                    @Content(schema = @Schema(title = "RenderEmailTemplateResponseError", implementation = RenderEmailTemplateResponse.Error.class))
-            })
-    })
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public Response renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {
-        try {
-            return templateEngineClient.render(renderEmailTemplateRequest);
-        } catch (BadRequestException e) {
-            // The following line is required to forward the HTTP 400 error message.
-            return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
-        }
     }
 
     @GET

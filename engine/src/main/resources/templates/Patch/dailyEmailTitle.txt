@@ -1,0 +1,1 @@
+{action.timestamp.toUtcFormat()} - Insights Patch advisories daily summary

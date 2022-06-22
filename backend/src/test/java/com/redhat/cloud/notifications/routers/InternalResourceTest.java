@@ -1,23 +1,16 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
-import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
-import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.http.Header;
-import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
-import javax.ws.rs.BadRequestException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -45,11 +38,9 @@ import static com.redhat.cloud.notifications.CrudTestHelpers.updateBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateDefaultBehaviorGroup;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateEventType;
 import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -68,9 +59,6 @@ public class InternalResourceTest extends DbIsolatedTest {
     private static final int NOT_FOUND = 404;
     private static final int INTERNAL_SERVER_ERROR = 500;
     private static final String NOT_USED = "not-used-in-assertions";
-
-    @InjectMock
-    TemplateEngineClient templateEngineClient;
 
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
@@ -323,7 +311,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         );
 
         // Update displayName of behavior group 1
-        updateDefaultBehaviorGroup(identity, dbgId1, "Group1", bundleId, true);
+        updateDefaultBehaviorGroup(identity, dbgId1, "Group1", bundleId, true, OK);
         assertEquals(
                 Set.of(
                         Pair.of(dbgId1, "Group1"),
@@ -333,47 +321,22 @@ public class InternalResourceTest extends DbIsolatedTest {
         );
 
         // Delete behaviors
-        deleteDefaultBehaviorGroup(identity, dbgId1, true);
+        deleteDefaultBehaviorGroup(identity, dbgId1, true, OK);
         assertEquals(
                 Set.of(dbgId2),
                 getDefaultBehaviorGroups(identity).stream().map(BehaviorGroup::getId).map(UUID::toString).collect(Collectors.toSet())
         );
-        deleteDefaultBehaviorGroup(identity, dbgId2, true);
+        deleteDefaultBehaviorGroup(identity, dbgId2, true, OK);
         assertEquals(
                 Set.of(),
                 getDefaultBehaviorGroups(identity).stream().map(BehaviorGroup::getId).map(UUID::toString).collect(Collectors.toSet())
         );
 
-        // Deleting again yields false
-        deleteDefaultBehaviorGroup(identity, dbgId1, false);
-    }
+        // The default behavior group no longer exists, deleting it again will cause a 404 status.
+        deleteDefaultBehaviorGroup(identity, dbgId1, false, NOT_FOUND);
 
-    @Test
-    void testInvalidEmailTemplateRendering() {
-        Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        RenderEmailTemplateRequest request = new RenderEmailTemplateRequest();
-        request.setPayload("I am invalid!");
-        request.setSubjectTemplate(""); // Not important, won't be used.
-        request.setBodyTemplate(""); // Not important, won't be used.
-
-        JsonObject exceptionMessage = new JsonObject();
-        exceptionMessage.put("message", "Action parsing failed for payload: I am invalid!");
-        BadRequestException badRequest = new BadRequestException(exceptionMessage.toString());
-        when(templateEngineClient.render(Mockito.any(RenderEmailTemplateRequest.class))).thenThrow(badRequest);
-
-        String responseBody = given()
-                .basePath(API_INTERNAL)
-                .header(identity)
-                .contentType(JSON)
-                .body(Json.encode(request))
-                .when()
-                .post("/templates/email/render")
-                .then()
-                .contentType(JSON)
-                .statusCode(400)
-                .extract().asString();
-
-        assertEquals("Action parsing failed for payload: I am invalid!", new JsonObject(responseBody).getString("message"));
+        // Updating an unknown default behavior group will cause a 404 status.
+        updateDefaultBehaviorGroup(identity, UUID.randomUUID().toString(), "Behavior group", bundleId, false, NOT_FOUND);
     }
 
     @Test
@@ -428,8 +391,8 @@ public class InternalResourceTest extends DbIsolatedTest {
         deleteApp(appIdentity, app1Id, null, FORBIDDEN);
 
         createDefaultBehaviorGroup(appIdentity, NOT_USED, bundleId, FORBIDDEN);
-        updateDefaultBehaviorGroup(appIdentity, defaultBGId, NOT_USED, bundleId, null, FORBIDDEN);
-        deleteDefaultBehaviorGroup(appIdentity, defaultBGId, null, FORBIDDEN);
+        updateDefaultBehaviorGroup(appIdentity, defaultBGId, NOT_USED, bundleId, false, FORBIDDEN);
+        deleteDefaultBehaviorGroup(appIdentity, defaultBGId, false, FORBIDDEN);
 
         // Allowed depending the permissions
         updateApp(appIdentity, bundleId, app1Id, "new-name", NOT_USED, OK);

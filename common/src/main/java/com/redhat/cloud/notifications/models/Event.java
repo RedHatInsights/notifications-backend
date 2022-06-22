@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.models;
 import com.redhat.cloud.notifications.ingress.Action;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -28,7 +27,6 @@ import static javax.persistence.FetchType.LAZY;
 public class Event {
 
     @Id
-    @GeneratedValue
     private UUID id;
 
     private Timestamp created;
@@ -36,6 +34,9 @@ public class Event {
     @NotNull
     @Size(max = 50)
     private String accountId;
+
+    @Size(max = 50)
+    private String orgId;
 
     @NotNull
     private UUID bundleId;
@@ -68,14 +69,16 @@ public class Event {
     public Event() { }
 
     public Event(EventType eventType, String payload, Action action) {
-        this(action.getAccountId(), eventType);
+        this(action.getAccountId(), action.getOrgId(), eventType, action.getId());
         this.payload = payload;
         this.action = action;
     }
 
-    public Event(String accountId, EventType eventType) {
+    public Event(String accountId, String orgId, EventType eventType, UUID eventId) {
         this.accountId = accountId;
+        this.orgId = orgId;
         this.eventType = eventType;
+        this.id = eventId;
         bundleId = eventType.getApplication().getBundle().getId();
         bundleDisplayName = eventType.getApplication().getBundle().getDisplayName();
         applicationId = eventType.getApplication().getId();
@@ -113,6 +116,14 @@ public class Event {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
     }
 
     public UUID getBundleId() {

@@ -99,6 +99,8 @@ objects:
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
+        - name: NOTIFICATIONS_USE_ORG_ID
+          value: ${NOTIFICATIONS_USE_ORG_ID}
         - name: PROCESSOR_EMAIL_BOP_APITOKEN
           valueFrom:
             secretKeyRef:
@@ -164,14 +166,10 @@ objects:
           value: ${OB_ENABLED}
         - name: OB_BRIDGE_UUID
           value: ${OB_BRIDGE_UUID}
-        - name: OB_KCUSER
-          value: ${OB_KCUSER}
-        - name: OB_KCPASS
-          value: ${OB_KCPASS}
-        - name: OB_TOKEN_USER
-          value: ${OB_TOKEN_USER}
-        - name: OB_TOKEN_PASS
-          value: ${OB_TOKEN_PASS}
+        - name: OB_TOKEN_CLIENT_ID
+          value: ${OB_TOKEN_CLIENT_ID}
+        - name: OB_TOKEN_CLIENT_SECRET
+          value: ${OB_TOKEN_CLIENT_SECRET}
         - name: QUARKUS_REST_CLIENT_OB_URL
           value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
@@ -238,18 +236,12 @@ parameters:
 - name: OB_BRIDGE_UUID
   description: The uuid of the bridge to use. Must be pre-provisioned
   value: "00000000-0000-0000-0000-000000000000"
-- name: OB_KCUSER
-  description: User name to talk to the SSO server
-  value: ob.kcUser
-- name: OB_KCPASS
-  description: Password to talk to the SSO server
-  value: ob.kcPass
-- name: OB_TOKEN_USER
-  description: User to get a token from SSO
-  value: ob.token.user
-- name: OB_TOKEN_PASS
-  description: Password to get a token from SSO
-  value: ob.token.pass
+- name: OB_TOKEN_CLIENT_ID
+  description: Client id to get a token from SSO
+  value: ob.token.client.id
+- name: OB_TOKEN_CLIENT_SECRET
+  description: Client Secret to get a Token from SSO
+  value: ob.token.client.secret
 - name: QUARKUS_REST_CLIENT_OB_URL
   description: URL of the OpenBridge fleet manager
   value: "http://addMe"
@@ -282,4 +274,6 @@ parameters:
   value: "false"
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
+  value: "false"
+- name: NOTIFICATIONS_USE_ORG_ID
   value: "false"

@@ -35,7 +35,7 @@ public class TemplateRepository {
 
     public boolean isEmailAggregationSupported(String bundleName, String appName, List<EmailSubscriptionType> subscriptionTypes) {
         String hql = "SELECT COUNT(*) FROM AggregationEmailTemplate WHERE application.bundle.name = :bundleName " +
-                "AND application.name = :appName AND id.subscriptionType IN (:subscriptionTypes)";
+                "AND application.name = :appName AND subscriptionType IN (:subscriptionTypes)";
         return statelessSessionFactory.getCurrentSession().createQuery(hql, Long.class)
                 .setParameter("bundleName", bundleName)
                 .setParameter("appName", appName)
@@ -45,7 +45,7 @@ public class TemplateRepository {
 
     public Optional<InstantEmailTemplate> findInstantEmailTemplate(UUID eventTypeId) {
         String hql = "FROM InstantEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate " +
-                "WHERE t.id = :eventTypeId";
+                "WHERE t.eventType.id = :eventTypeId";
         try {
             InstantEmailTemplate emailTemplate = statelessSessionFactory.getCurrentSession().createQuery(hql, InstantEmailTemplate.class)
                     .setParameter("eventTypeId", eventTypeId)
@@ -59,7 +59,7 @@ public class TemplateRepository {
     public Optional<AggregationEmailTemplate> findAggregationEmailTemplate(String bundleName, String appName, EmailSubscriptionType subscriptionType) {
         String hql = "FROM AggregationEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate " +
                 "WHERE t.application.bundle.name = :bundleName AND t.application.name = :appName " +
-                "AND t.id.subscriptionType = :subscriptionType";
+                "AND t.subscriptionType = :subscriptionType";
         try {
             AggregationEmailTemplate emailTemplate = statelessSessionFactory.getCurrentSession().createQuery(hql, AggregationEmailTemplate.class)
                     .setParameter("bundleName", bundleName)

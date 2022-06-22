@@ -49,8 +49,8 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldSentTwoAggregationsToKafkaTopic() {
-        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
-        helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
 
         testee.processDailyEmail();
 
@@ -60,12 +60,14 @@ class DailyEmailAggregationJobTest {
 
         final String firstAggregation = results.received().get(0).getPayload();
         assertTrue(firstAggregation.contains("accountId\":\"tenant"));
+        assertTrue(firstAggregation.contains("orgId\":\"someOrgId"));
         assertTrue(firstAggregation.contains("bundle\":\"rhel"));
         assertTrue(firstAggregation.contains("application\":\"policies"));
         assertTrue(firstAggregation.contains("subscriptionType\":\"DAILY"));
 
         final String secondAggregation = results.received().get(1).getPayload();
         assertTrue(secondAggregation.contains("accountId\":\"tenant"));
+        assertTrue(firstAggregation.contains("orgId\":\"someOrgId"));
         assertTrue(secondAggregation.contains("bundle\":\"rhel"));
         assertTrue(secondAggregation.contains("application\":\"unknown-application"));
         assertTrue(secondAggregation.contains("subscriptionType\":\"DAILY"));
@@ -74,10 +76,10 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldProcessFourPairs() {
-        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
-        helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
-        helpers.addEmailAggregation("tenant", "unknown-bundle", "policies", "somePolicyId", "someHostId");
-        helpers.addEmailAggregation("tenant", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "unknown-bundle", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
 
         testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
         final Gauge pairsProcessed = testee.getPairsProcessed();
@@ -88,10 +90,10 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldProcessFourSubscriptions() {
-        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
-        helpers.addEmailAggregation("tenant", "rhel", "unknown-application", "somePolicyId", "someHostId");
-        helpers.addEmailAggregation("tenant", "unknown-bundle", "policies", "somePolicyId", "someHostId");
-        helpers.addEmailAggregation("tenant", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "unknown-bundle", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
 
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
 
@@ -101,8 +103,8 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldProcessOneSubscriptionOnly() {
-        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
-        helpers.addEmailAggregation("tenant", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tenant", "someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
 
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
 
@@ -110,6 +112,7 @@ class DailyEmailAggregationJobTest {
 
         final AggregationCommand aggregationCommand = emailAggregations.get(0);
         assertEquals("tenant", aggregationCommand.getAggregationKey().getAccountId());
+        assertEquals("someOrgId", aggregationCommand.getAggregationKey().getOrgId());
         assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
         assertEquals("policies", aggregationCommand.getAggregationKey().getApplication());
         assertEquals(DAILY, aggregationCommand.getSubscriptionType());
@@ -118,8 +121,8 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldNotIncreaseAggregationsWhenPolicyIdIsDifferent() {
-        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId1", "someHostId");
-        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "policyId2", "someHostId");
+        helpers.addEmailAggregation("someTenant", "someOrgId", "someRhel", "somePolicies", "policyId1", "someHostId");
+        helpers.addEmailAggregation("someTenant", "someOrgId", "someRhel", "somePolicies", "policyId2", "someHostId");
 
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
 
@@ -129,8 +132,8 @@ class DailyEmailAggregationJobTest {
     @Test
     @TestTransaction
     void shouldNotIncreaseAggregationsWhenHostIdIsDifferent() {
-        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId1");
-        helpers.addEmailAggregation("someTenant", "someRhel", "somePolicies", "somePolicyId", "hostId2");
+        helpers.addEmailAggregation("someTenant", "someOrgId", "someRhel", "somePolicies", "somePolicyId", "hostId1");
+        helpers.addEmailAggregation("someTenant", "someOrgId", "someRhel", "somePolicies", "somePolicyId", "hostId2");
 
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
 
