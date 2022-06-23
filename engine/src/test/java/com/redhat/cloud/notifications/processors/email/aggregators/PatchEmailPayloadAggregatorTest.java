@@ -6,8 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Map;
-import java.util.Set;
 
 public class PatchEmailPayloadAggregatorTest {
 
@@ -41,26 +41,22 @@ public class PatchEmailPayloadAggregatorTest {
         LocalDateTime endTime = LocalDateTime.of(2021, 4, 22, 14, 15, 33);
 
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation(tenant, bundle, application, "advisory_1", security, "host-01"));
-        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(tenant, bundle, application, "advisory_1", security, "host-01"));
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation(tenant, bundle, application, "advisory_2", enhancement, "host-01"));
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation(tenant, bundle, application, "advisory_3", enhancement, "host-02"));
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation(tenant, bundle, application, "advisory_4", bugfix, "host-03"));
-        Assertions.assertEquals(PatchTestHelpers.getUniqueHostForAdvisoryType(aggregator, security), 1);
-        Assertions.assertEquals(PatchTestHelpers.getUniqueHostForAdvisoryType(aggregator, enhancement), 2);
-        Assertions.assertEquals(PatchTestHelpers.getUniqueHostForAdvisoryType(aggregator, bugfix), 1);
-        Assertions.assertEquals(PatchTestHelpers.getUniqueHost(aggregator), 3);
 
-        Set<String> secAdvs = PatchTestHelpers.getAdvisoriesByType(aggregator, security);
-        Assertions.assertEquals(secAdvs.size(), 1);
-        Assertions.assertTrue(secAdvs.iterator().next().equals("advisory_1"));
+        ArrayList<String> secAdvs = PatchTestHelpers.getAdvisoriesByType(aggregator, security);
+        Assertions.assertEquals(1, secAdvs.size());
+        Assertions.assertTrue(secAdvs.get(0).equals("advisory_1"));
 
-        Set<String> enhAdvs = PatchTestHelpers.getAdvisoriesByType(aggregator, enhancement);
-        Assertions.assertEquals(enhAdvs.size(), 2);
-        Assertions.assertTrue(enhAdvs.iterator().next().equals("advisory_2"));
+        ArrayList<String> enhAdvs = PatchTestHelpers.getAdvisoriesByType(aggregator, enhancement);
+        Assertions.assertEquals(2, enhAdvs.size());
+        Assertions.assertTrue(enhAdvs.get(0).equals("advisory_2"));
+        Assertions.assertTrue(enhAdvs.get(1).equals("advisory_3"));
 
-        Set<String> fixAdvs = PatchTestHelpers.getAdvisoriesByType(aggregator, bugfix);
-        Assertions.assertEquals(fixAdvs.size(), 1);
-        Assertions.assertTrue(fixAdvs.iterator().next().equals("advisory_4"));
+        ArrayList<String> fixAdvs = PatchTestHelpers.getAdvisoriesByType(aggregator, bugfix);
+        Assertions.assertEquals(1, fixAdvs.size());
+        Assertions.assertTrue(fixAdvs.get(0).equals("advisory_4"));
 
         Map<String, Object> patch = aggregator.getContext();
         patch.put("start_time", startTime.toString());
@@ -70,9 +66,9 @@ public class PatchEmailPayloadAggregatorTest {
     @Test
     void validatePayloadMultipleEvents() {
         aggregator.aggregate(PatchTestHelpers.createEmailAggregationMultipleEvents(tenant, bundle, application));
-        Set<String> enhAdvs = PatchTestHelpers.getAdvisoriesByType(aggregator, enhancement);
-        Assertions.assertTrue(enhAdvs.iterator().next().equals("RH-1"));
-        Set<String> fixAdvs = PatchTestHelpers.getAdvisoriesByType(aggregator, bugfix);
-        Assertions.assertTrue(fixAdvs.iterator().next().equals("RH-2"));
+        ArrayList<String> enhAdvs = PatchTestHelpers.getAdvisoriesByType(aggregator, enhancement);
+        Assertions.assertTrue(enhAdvs.get(0).equals("RH-1"));
+        ArrayList<String> fixAdvs = PatchTestHelpers.getAdvisoriesByType(aggregator, bugfix);
+        Assertions.assertTrue(fixAdvs.get(0).equals("RH-2"));
     }
 }
