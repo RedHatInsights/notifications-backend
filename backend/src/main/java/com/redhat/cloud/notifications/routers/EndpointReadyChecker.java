@@ -31,7 +31,7 @@ import static org.hibernate.LockOptions.SKIP_LOCKED;
  * good and then set the state accordingly.
  */
 @ApplicationScoped
-public class ReadyCheck  {
+public class EndpointReadyChecker {
 
     @Inject
     EntityManager em;
