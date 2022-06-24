@@ -113,7 +113,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .post(API_NOTIFICATIONS_V_1_0 + "/notifications/behaviorGroups")
                 .then()
                 .statusCode(400)
-                .contentType(JSON)
+                .contentType(TEXT)
                 .extract().asString();
 
         assertEquals("A behavior group with display name [" + behaviorGroup.getDisplayName() + "] already exists", responseBody);
