@@ -1,18 +1,17 @@
-import { Breadcrumb, BreadcrumbItem, PageSection, Spinner, Title } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
+import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
 import { useUserPermissions } from '../app/PermissionContext';
-import { AggregationTemplateCard } from '../components/EmailTemplates/EmailTemplateCard';
-import { InstantEmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
+import { EmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
 import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
-import { EventTypeTable } from '../components/EventTypes/EventTypeTable';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
-import { useAggregationTemplates } from '../services/EmailTemplates/GetAggregationTemplates';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
@@ -72,14 +71,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
-
-    const aggregationEmailTemplates = useMemo(() => {
-        if (aggregationTemplates.payload?.status === 200) {
-            return aggregationTemplates.payload.value;
-        }
-
-        return undefined;
-    }, [ aggregationTemplates.payload?.status, aggregationTemplates.payload?.value ]);
 
     const createEventType = () => {
         setShowModal(true);
@@ -190,7 +181,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     </Tbody>
                 </TableComposable>
             </PageSection>
-            { isAdmin && <EmailTemplateTable /> }
+            { isAdmin && <EmailTemplateTable
+                application={ application?.displayName }
+            /> }
             <CreateEditModal
                 isEdit={ isEdit }
                 initialEventType={ eventTypes }

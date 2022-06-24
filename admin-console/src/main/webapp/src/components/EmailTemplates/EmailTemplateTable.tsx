@@ -12,14 +12,13 @@ import { Link } from 'react-router-dom';
 import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
 import { useGetTemplates } from '../../services/EmailTemplates/GetTemplates';
-import { Application } from '../../types/Notifications';
 import { ViewTemplateModal } from './ViewEmailTemplateModal';
 
-interface InstantEmailTemplateTableProps {
-    application: Application;
+interface EmailTemplateTableProps {
+    application: string;
 }
 
-export const InstantEmailTemplateTable: React.FunctionComponent<InstantEmailTemplateTableProps> = props => {
+export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps> = props => {
     const { hasPermission } = useUserPermissions();
     const getAllTemplates = useGetTemplates();
 
@@ -54,12 +53,12 @@ export const InstantEmailTemplateTable: React.FunctionComponent<InstantEmailTemp
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button variant="primary" isDisabled={ !hasPermission(props.application.id) }
+                                    <Button variant="primary" isDisabled={ !hasPermission(props.application) }
                                         component={ (props: any) =>
                                             <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Email Template</Button>
                                     <ViewTemplateModal
                                         showModal={ showViewModal }
-                                        applicationName={ props.application.displayName }
+                                        applicationName={ props.application }
                                         onClose={ onClose }
                                     />
                                 </ToolbarItem>
