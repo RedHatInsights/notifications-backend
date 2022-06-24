@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
+import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.openbridge.Bridge;
@@ -110,7 +111,6 @@ public class EndpointResource {
     @Inject
     BridgeAuth bridgeAuth;
 
-
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
@@ -193,14 +193,17 @@ public class EndpointResource {
                 String processorId = null;
                 try {
                     processorId = setupOpenBridgeProcessor(endpoint, properties, processorName);
+                    endpoint.setStatus(EndpointStatus.PROVISIONING);
                 } catch (Exception e) {
                     Log.warn("Processor setup failed: " + e.getMessage());
+                    endpoint.setStatus(EndpointStatus.FAILED);
                     throw new InternalServerErrorException("Can't set up the endpoint");
                 }
 
                 // TODO find a better place for these, that should not be
                 //       visible to users / OB actions
                 //       See also CamelTypeProcessor#callOpenBridge
+                //            and ReadyCheck#execute
                 properties.getExtras().put(OB_PROCESSOR_ID, processorId);
 
             }
