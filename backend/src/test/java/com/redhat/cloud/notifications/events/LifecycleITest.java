@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.FeatureFlipper;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -78,6 +79,9 @@ public class LifecycleITest extends DbIsolatedTest {
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     private Header initRbacMock(String tenant, String orgId, String username, RbacAccess access) {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
@@ -86,6 +90,11 @@ public class LifecycleITest extends DbIsolatedTest {
 
     @Test
     void shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent() {
+        if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
+            // The check is disabled from configuration.
+            return;
+        }
+
         final String accountId = "tenant";
         final String orgId = "someOrdId";
         final String username = "user";

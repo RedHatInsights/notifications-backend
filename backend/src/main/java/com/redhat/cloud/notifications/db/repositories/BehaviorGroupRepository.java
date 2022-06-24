@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.FeatureFlipper;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -33,6 +34,9 @@ public class BehaviorGroupRepository {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     public BehaviorGroup create(String accountId, @Valid BehaviorGroup behaviorGroup) {
         return this.create(accountId, behaviorGroup, false);
@@ -138,6 +142,11 @@ public class BehaviorGroupRepository {
     }
 
     private void checkBehaviorGroupDisplayNameDuplicate(String accountId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
+        if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
+            // The check is disabled from configuration.
+            return;
+        }
+
         String hql = "SELECT COUNT(*) FROM BehaviorGroup WHERE displayName = :displayName";
         if (behaviorGroup.getId() != null) { // The behavior group already exists in the DB, it's being updated.
             hql += " AND id != :behaviorGroupId";

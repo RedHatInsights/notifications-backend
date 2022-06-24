@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.FeatureFlipper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -51,8 +52,16 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @Test
     void shouldThrowExceptionWhenCreatingWithExistingDisplayNameAndSameAccount() {
+        if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
+            // The check is disabled from configuration.
+            return;
+        }
+
         Bundle bundle = resourceHelpers.createBundle();
         BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
 
@@ -69,6 +78,11 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
 
     @Test
     void shouldThrowExceptionWhenCreatingDefaultWithExistingDisplayName() {
+        if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
+            // The check is disabled from configuration.
+            return;
+        }
+
         Bundle bundle = resourceHelpers.createBundle();
         BehaviorGroup behaviorGroup1 = resourceHelpers.createDefaultBehaviorGroup("displayName", bundle.getId());
 
@@ -97,6 +111,11 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
 
     @Test
     void shouldThrowExceptionWhenUpdatingToExistingDisplayNameAndSameAccount() {
+        if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
+            // The check is disabled from configuration.
+            return;
+        }
+
         Bundle bundle = resourceHelpers.createBundle("name", "displayName");
         BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName1", bundle.getId());
         BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(behaviorGroup1.getAccountId(), "displayName2", bundle.getId());
@@ -110,6 +129,11 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
 
     @Test
     void shouldThrowExceptionWhenUpdatingDefaultToExistingDisplayName() {
+        if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
+            // The check is disabled from configuration.
+            return;
+        }
+
         Bundle bundle = resourceHelpers.createBundle("name", "displayName");
         BehaviorGroup behaviorGroup1 = resourceHelpers.createDefaultBehaviorGroup("displayName1", bundle.getId());
         BehaviorGroup behaviorGroup2 = resourceHelpers.createDefaultBehaviorGroup("displayName2", bundle.getId());
