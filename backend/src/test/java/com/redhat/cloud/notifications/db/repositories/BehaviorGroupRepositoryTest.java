@@ -21,7 +21,6 @@ import javax.transaction.Transactional;
 import javax.validation.ConstraintViolationException;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -32,8 +31,6 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
-import static javax.ws.rs.core.Response.Status.OK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -286,12 +283,12 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 1", bundle.getId());
         BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 2", bundle.getId());
         BehaviorGroup behaviorGroup3 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "Behavior group 3", bundle.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId(), behaviorGroup2.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup2.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup1.getId(), behaviorGroup2.getId(), behaviorGroup3.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true);
+        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), behaviorGroup1.getId());
+        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), behaviorGroup1.getId());
+        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), behaviorGroup1.getId(), behaviorGroup2.getId());
+        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), behaviorGroup2.getId());
+        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), behaviorGroup1.getId(), behaviorGroup2.getId(), behaviorGroup3.getId());
+        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId());
     }
 
     @Test
@@ -326,7 +323,7 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         Application app = resourceHelpers.createApplication(bundle.getId());
         EventType eventType = createEventType(app);
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId());
+        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), behaviorGroup.getId());
         List<EventType> eventTypes = resourceHelpers.findEventTypesByBehaviorGroupId(behaviorGroup.getId());
         assertEquals(1, eventTypes.size());
         assertEquals(eventType.getId(), eventTypes.get(0).getId());
@@ -338,7 +335,7 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         Application app = resourceHelpers.createApplication(bundle.getId());
         EventType eventType = createEventType(app);
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
-        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), true, behaviorGroup.getId());
+        updateAndCheckEventTypeBehaviors(DEFAULT_ACCOUNT_ID, eventType.getId(), behaviorGroup.getId());
         List<BehaviorGroup> behaviorGroups = resourceHelpers.findBehaviorGroupsByEventTypeId(eventType.getId());
         assertEquals(1, behaviorGroups.size());
         assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
@@ -355,19 +352,19 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
 
         // At the beginning of the test, endpoint1 shouldn't be linked with any behavior group.
         findBehaviorGroupsByEndpointId(endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint1.getId(), endpoint2.getId());
+        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), endpoint1.getId(), endpoint2.getId());
 
         // Now, endpoint1 should be linked with behaviorGroup1.
         findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId());
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup2.getId(), OK, endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup2.getId(), endpoint1.getId());
 
         // Then, endpoint1 should be linked with both behavior groups.
         findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup1.getId(), behaviorGroup2.getId());
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint2.getId());
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK, endpoint3.getId(), endpoint2.getId(), endpoint1.getId());
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), OK);
+        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), endpoint2.getId());
+        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId(), endpoint3.getId(), endpoint2.getId(), endpoint1.getId());
+        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup1.getId());
 
         // The link between endpoint1 and behaviorGroup1 was removed. Let's check it is still linked with behaviorGroup2.
         findBehaviorGroupsByEndpointId(endpoint1.getId(), behaviorGroup2.getId());
@@ -379,7 +376,7 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
         Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION);
         Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION);
-        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), OK, endpoint1.getId(), endpoint2.getId());
+        updateAndCheckBehaviorGroupActions(DEFAULT_ACCOUNT_ID, bundle.getId(), behaviorGroup.getId(), endpoint1.getId(), endpoint2.getId());
     }
 
     @Test
@@ -387,7 +384,9 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         Bundle bundle = resourceHelpers.createBundle();
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, "displayName", bundle.getId());
         Endpoint endpoint = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK);
-        updateAndCheckBehaviorGroupActions("unknownAccountId", bundle.getId(), behaviorGroup.getId(), NOT_FOUND, endpoint.getId());
+        assertThrows(NotFoundException.class, () -> {
+            updateAndCheckBehaviorGroupActions("unknownAccountId", bundle.getId(), behaviorGroup.getId(), endpoint.getId());
+        });
     }
 
     @Transactional
@@ -426,18 +425,14 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Transactional
-    void updateAndCheckEventTypeBehaviors(String accountId, UUID eventTypeId, boolean expectedResult, UUID... behaviorGroupIds) {
-        boolean updated = behaviorGroupRepository.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupIds));
-        // Is the update result the one we expected?
-        assertEquals(expectedResult, updated);
-        if (expectedResult) {
-            entityManager.clear(); // We need to clear the session L1 cache before checking the update result.
-            // If we expected a success, the event type behaviors should match in any order the given behavior groups IDs.
-            List<EventTypeBehavior> behaviors = findEventTypeBehaviorByEventTypeId(eventTypeId);
-            assertEquals(behaviorGroupIds.length, behaviors.size());
-            for (UUID behaviorGroupId : behaviorGroupIds) {
-                assertEquals(1L, behaviors.stream().filter(behavior -> behavior.getBehaviorGroup().getId().equals(behaviorGroupId)).count());
-            }
+    void updateAndCheckEventTypeBehaviors(String accountId, UUID eventTypeId, UUID... behaviorGroupIds) {
+        behaviorGroupRepository.updateEventTypeBehaviors(accountId, eventTypeId, Set.of(behaviorGroupIds));
+        entityManager.clear(); // We need to clear the session L1 cache before checking the update result.
+        // If we expected a success, the event type behaviors should match in any order the given behavior groups IDs.
+        List<EventTypeBehavior> behaviors = findEventTypeBehaviorByEventTypeId(eventTypeId);
+        assertEquals(behaviorGroupIds.length, behaviors.size());
+        for (UUID behaviorGroupId : behaviorGroupIds) {
+            assertEquals(1L, behaviors.stream().filter(behavior -> behavior.getBehaviorGroup().getId().equals(behaviorGroupId)).count());
         }
     }
 
@@ -449,18 +444,14 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Transactional
-    void updateAndCheckBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId, Status expectedResult, UUID... endpointIds) {
-        Status status = behaviorGroupRepository.updateBehaviorGroupActions(accountId, behaviorGroupId, Arrays.asList(endpointIds));
-        // Is the update result the one we expected?
-        assertEquals(expectedResult, status);
-        if (expectedResult == Status.OK) {
-            entityManager.clear(); // We need to clear the session L1 cache before checking the update result.
-            // If we expected a success, the behavior group actions should match exactly the given endpoint IDs.
-            List<BehaviorGroupAction> actions = findBehaviorGroupActions(accountId, bundleId, behaviorGroupId);
-            assertEquals(endpointIds.length, actions.size());
-            for (int i = 0; i < endpointIds.length; i++) {
-                assertEquals(endpointIds[i], actions.get(i).getEndpoint().getId());
-            }
+    void updateAndCheckBehaviorGroupActions(String accountId, UUID bundleId, UUID behaviorGroupId, UUID... endpointIds) {
+        behaviorGroupRepository.updateBehaviorGroupActions(accountId, behaviorGroupId, Arrays.asList(endpointIds));
+        entityManager.clear(); // We need to clear the session L1 cache before checking the update result.
+        // If we expected a success, the behavior group actions should match exactly the given endpoint IDs.
+        List<BehaviorGroupAction> actions = findBehaviorGroupActions(accountId, bundleId, behaviorGroupId);
+        assertEquals(endpointIds.length, actions.size());
+        for (int i = 0; i < endpointIds.length; i++) {
+            assertEquals(endpointIds[i], actions.get(i).getEndpoint().getId());
         }
     }
 

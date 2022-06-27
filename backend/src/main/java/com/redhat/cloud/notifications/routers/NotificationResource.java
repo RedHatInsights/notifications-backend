@@ -50,7 +50,6 @@ import java.util.stream.Collectors;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
-import static javax.ws.rs.core.Response.Status;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
 public class NotificationResource {
@@ -224,8 +223,8 @@ public class NotificationResource {
             throw new BadRequestException("The endpoints identifiers list should not contain duplicates");
         }
         String accountId = getAccountId(sec);
-        Status status = behaviorGroupRepository.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds);
-        return Response.status(status).build();
+        behaviorGroupRepository.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds);
+        return Response.ok().build();
     }
 
     @PUT
@@ -245,12 +244,8 @@ public class NotificationResource {
             throw new BadRequestException("The behavior groups identifiers list should not contain empty values");
         }
         String accountId = getAccountId(sec);
-        boolean updated = behaviorGroupRepository.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds);
-        if (updated) {
-            return Response.ok().build();
-        } else {
-            return Response.status(Status.NOT_FOUND).build();
-        }
+        behaviorGroupRepository.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds);
+        return Response.ok().build();
     }
 
     @GET
