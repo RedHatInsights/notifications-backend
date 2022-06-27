@@ -382,11 +382,11 @@ public class InternalResource {
             properties.setIgnorePreferences(p.isIgnorePreferences());
             return endpointRepository.getOrCreateEmailSubscriptionEndpoint(null, properties);
         }).collect(Collectors.toList());
-        Response.Status status = behaviorGroupRepository.updateDefaultBehaviorGroupActions(
+        behaviorGroupRepository.updateDefaultBehaviorGroupActions(
                 behaviorGroupId,
                 endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
         );
-        return Response.status(status).build();
+        return Response.ok().build();
     }
 
     @PUT
