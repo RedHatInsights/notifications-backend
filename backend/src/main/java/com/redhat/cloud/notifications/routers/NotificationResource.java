@@ -39,6 +39,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
@@ -188,16 +189,17 @@ public class NotificationResource {
     @Path("/behaviorGroups/{id}")
     @Consumes(APPLICATION_JSON)
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = BehaviorGroup.class))),
+            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.BOOLEAN))),
             @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)))
     })
     @Operation(summary = "Update a behavior group.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
-    public Boolean updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
+    public Response updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         String accountId = getAccountId(sec);
         behaviorGroup.setId(id);
-        return behaviorGroupRepository.update(accountId, behaviorGroup);
+        boolean updated = behaviorGroupRepository.update(accountId, behaviorGroup);
+        return Response.status(200).type(APPLICATION_JSON).entity(updated).build();
     }
 
     @DELETE
