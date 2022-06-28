@@ -20,6 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -170,8 +171,11 @@ public class NotificationResource {
     @POST
     @Path("/behaviorGroups")
     @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
     @Operation(summary = "Create a behavior group.")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = BehaviorGroup.class))),
+            @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)))
+    })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public BehaviorGroup createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
@@ -182,14 +186,18 @@ public class NotificationResource {
     @PUT
     @Path("/behaviorGroups/{id}")
     @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.BOOLEAN))),
+            @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)))
+    })
     @Operation(summary = "Update a behavior group.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
-    public Boolean updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
+    public Response updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         String accountId = getAccountId(sec);
         behaviorGroup.setId(id);
-        return behaviorGroupRepository.update(accountId, behaviorGroup);
+        boolean updated = behaviorGroupRepository.update(accountId, behaviorGroup);
+        return Response.status(200).type(APPLICATION_JSON).entity(updated).build();
     }
 
     @DELETE
