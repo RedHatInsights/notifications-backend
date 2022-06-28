@@ -119,8 +119,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                                                 .atMost(maxRetryAttempts)
                                                 // After we're done retrying, an RBAC server call failure will cause an authentication failure
                                                 .onFailure().transform(failure -> {
-                                                    Log.warnf("RBAC authentication call failed: %s", failure.getMessage());
-                                                    throw new AuthenticationFailedException(failure.getMessage());
+                                                    throw new AuthenticationFailedException("RBAC authentication call failed", failure);
                                                 })
                                                 // Otherwise, we can finish building the QuarkusSecurityIdentity and return the result
                                                 .onItem().transform(rbacRaw -> {

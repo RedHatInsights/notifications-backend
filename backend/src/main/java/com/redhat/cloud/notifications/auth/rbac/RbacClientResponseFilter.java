@@ -18,7 +18,9 @@ public class RbacClientResponseFilter implements ClientResponseFilter {
     public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
         Response.StatusType statusInfo = responseContext.getStatusInfo();
         int status = statusInfo.getStatusCode();
-        if (status != 200) {
+        if (status == 0) {
+            Log.infof("Call to the Rbac server failed with code %d, %s", status, statusInfo.getReasonPhrase());
+        } else if (status != 200) {
             Log.warnf("Call to the Rbac server failed with code %d, %s", status, statusInfo.getReasonPhrase());
         }
     }
