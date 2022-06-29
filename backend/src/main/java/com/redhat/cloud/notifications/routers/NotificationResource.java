@@ -173,7 +173,7 @@ public class NotificationResource {
     @Consumes(APPLICATION_JSON)
     @Operation(summary = "Create a behavior group - assigning actions and linking to event types as requested")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = BehaviorGroup.class))),
+            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = CreateBehaviorGroupResponse.class))),
             @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)))
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
