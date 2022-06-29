@@ -13,11 +13,18 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
+import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.Facet;
+import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
+import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
+import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonArray;
@@ -30,6 +37,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
@@ -39,6 +48,7 @@ import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -567,6 +577,147 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateFullBehaviorGroup() {
+        String tenant = "tenant-bg-create-full";
+
+        Header identityHeader = initRbacMock(tenant, "orgId", "user", FULL_ACCESS);
+
+        helpers.createTestAppAndEventTypes();
+        List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
+        UUID myBundleId = apps.stream().findFirst().get().getBundleId();
+
+        List<UUID> endpoints = Stream.of(
+                helpers.createEndpoint(tenant, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(tenant, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(tenant, EndpointType.CAMEL),
+                helpers.createEndpoint(tenant, EndpointType.CAMEL)
+        ).map(Endpoint::getId).collect(Collectors.toList());
+        Set<UUID> eventTypes = apps.stream().findFirst().get().getEventTypes().stream().map(EventType::getId).collect(Collectors.toSet());
+
+        CreateBehaviorGroupRequest behaviorGroupRequest = new CreateBehaviorGroupRequest();
+        behaviorGroupRequest.bundleId = myBundleId;
+        behaviorGroupRequest.displayName = "My behavior group 1";
+
+        CreateBehaviorGroupResponse response = createBehaviorGroup(identityHeader, behaviorGroupRequest);
+
+        assertEquals("My behavior group 1", response.displayName);
+        assertEquals(myBundleId, response.bundleId);
+        assertEquals(List.of(), response.endpoints);
+        assertEquals(Set.of(), response.eventTypes);
+
+        // Create with only endpoints
+        behaviorGroupRequest.displayName = "My behavior group 2";
+        behaviorGroupRequest.endpointIds = endpoints;
+
+        response = createBehaviorGroup(identityHeader, behaviorGroupRequest);
+
+        assertEquals("My behavior group 2", response.displayName);
+        assertEquals(myBundleId, response.bundleId);
+        assertEquals(endpoints, response.endpoints);
+        assertEquals(Set.of(), response.eventTypes);
+
+        // Create with only event types
+        behaviorGroupRequest.displayName = "My behavior group 3";
+        behaviorGroupRequest.eventTypeIds = eventTypes;
+        behaviorGroupRequest.endpointIds = null;
+
+        response = createBehaviorGroup(identityHeader, behaviorGroupRequest);
+
+        assertEquals("My behavior group 3", response.displayName);
+        assertEquals(myBundleId, response.bundleId);
+        assertEquals(List.of(), response.endpoints);
+        assertEquals(eventTypes, response.eventTypes);
+
+        // Create with both
+        behaviorGroupRequest.displayName = "My behavior group 4";
+        behaviorGroupRequest.endpointIds = endpoints;
+        behaviorGroupRequest.eventTypeIds = eventTypes;
+
+        response = createBehaviorGroup(identityHeader, behaviorGroupRequest);
+
+        assertEquals("My behavior group 4", response.displayName);
+        assertEquals(myBundleId, response.bundleId);
+        assertEquals(endpoints, response.endpoints);
+        assertEquals(eventTypes, response.eventTypes);
+    }
+
+    @Test
+    void testUpdateFullBehaviorGroup() {
+        String tenant = "tenant-bg-update-full";
+        Header identityHeader = initRbacMock(tenant, "orgId", "user", FULL_ACCESS);
+
+        helpers.createTestAppAndEventTypes();
+        List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
+        UUID myBundleId = apps.stream().findFirst().get().getBundleId();
+
+        UUID behaviorGroupId = helpers.createBehaviorGroup(tenant, "My behavior group 1", myBundleId).getId();
+        UUID behaviorGroupIdOtherTenant = helpers.createBehaviorGroup(tenant + "-other", "My behavior", myBundleId).getId();
+
+        List<UUID> endpoints = Stream.of(
+                helpers.createEndpoint(tenant, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(tenant, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(tenant, EndpointType.CAMEL),
+                helpers.createEndpoint(tenant, EndpointType.CAMEL)
+        ).map(Endpoint::getId).collect(Collectors.toList());
+
+        Set<UUID> eventTypes = apps.stream().findFirst().get().getEventTypes().stream().map(EventType::getId).collect(Collectors.toSet());
+
+        // Updating a behavior of other tenant yields false
+        UpdateBehaviorGroupRequest behaviorGroupRequest = new UpdateBehaviorGroupRequest();
+        behaviorGroupRequest.displayName = "My behavior group 1.0";
+        Boolean response = updateBehaviorGroup(identityHeader, behaviorGroupIdOtherTenant, behaviorGroupRequest);
+        assertFalse(response);
+        BehaviorGroup behaviorGroup = helpers.getBehaviorGroup(behaviorGroupIdOtherTenant);
+        assertEquals("My behavior", behaviorGroup.getDisplayName()); // No change
+
+        // Updating the behavior group displayName only
+        response = updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest);
+        assertTrue(response);
+        behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
+        assertEquals("My behavior group 1.0", behaviorGroup.getDisplayName());
+
+        // Updating with all null is effectively a no-op
+        behaviorGroupRequest.displayName = null;
+        response = updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest);
+        assertTrue(response);
+        behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
+        assertEquals("My behavior group 1.0", behaviorGroup.getDisplayName());
+
+        // Updating only endpoints
+        behaviorGroupRequest.displayName = "My behavior group 2.0";
+        behaviorGroupRequest.endpointIds = endpoints;
+        behaviorGroupRequest.eventTypeIds = null;
+        response = updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest);
+        assertTrue(response);
+        behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
+        assertEquals("My behavior group 2.0", behaviorGroup.getDisplayName());
+        assertEquals(endpoints, getEndpointsIds(tenant, behaviorGroupId));
+        assertEquals(Set.of(), getEventTypeIds(tenant, behaviorGroupId));
+
+        // Updating only event types (endpoints remain the same)
+        behaviorGroupRequest.displayName = "My behavior group 3.0";
+        behaviorGroupRequest.endpointIds = null;
+        behaviorGroupRequest.eventTypeIds = eventTypes;
+        response = updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest);
+        assertTrue(response);
+        behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
+        assertEquals("My behavior group 3.0", behaviorGroup.getDisplayName());
+        assertEquals(endpoints, getEndpointsIds(tenant, behaviorGroupId));
+        assertEquals(eventTypes, getEventTypeIds(tenant, behaviorGroupId));
+
+        // Updating both to empty
+        behaviorGroupRequest.displayName = "My behavior group 4.0";
+        behaviorGroupRequest.endpointIds = List.of();
+        behaviorGroupRequest.eventTypeIds = Set.of();
+        response = updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest);
+        assertTrue(response);
+        behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
+        assertEquals("My behavior group 4.0", behaviorGroup.getDisplayName());
+        assertEquals(List.of(), getEndpointsIds(tenant, behaviorGroupId));
+        assertEquals(Set.of(), getEventTypeIds(tenant, behaviorGroupId));
+    }
+
+    @Test
     void testInsufficientPrivileges_AccountId() {
         featureFlipper.setUseOrgId(false);
         testInsufficientPrivileges();
@@ -817,5 +968,46 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
                 .then()
                 .statusCode(404);
+    }
+
+    private CreateBehaviorGroupResponse createBehaviorGroup(Header identityHeader, CreateBehaviorGroupRequest request) {
+        return given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(request))
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(200).extract()
+                .as(CreateBehaviorGroupResponse.class);
+    }
+
+    private Boolean updateBehaviorGroup(Header identityHeader, UUID behaviorGroupId, UpdateBehaviorGroupRequest request) {
+        return given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(request))
+                .pathParam("behaviorGroupId", behaviorGroupId)
+                .put("/notifications/behaviorGroups/{behaviorGroupId}")
+                .then()
+                .statusCode(200).extract()
+                .as(Boolean.class);
+    }
+
+    private List<UUID> getEndpointsIds(String tenant, UUID behaviorGroupId) {
+        return helpers
+                .findEndpointsByBehaviorGroupId(tenant, behaviorGroupId)
+                .stream()
+                .map(Endpoint::getId)
+                .collect(Collectors.toList());
+    }
+
+    private Set<UUID> getEventTypeIds(String tenant, UUID behaviorGroupId) {
+        return helpers
+                .findEventTypesByBehaviorGroupId(tenant, behaviorGroupId)
+                .stream()
+                .map(EventType::getId)
+                .collect(Collectors.toSet());
     }
 }

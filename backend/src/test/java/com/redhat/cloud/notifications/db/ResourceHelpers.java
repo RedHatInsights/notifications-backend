@@ -15,12 +15,14 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
@@ -186,6 +188,10 @@ public class ResourceHelpers {
         return history;
     }
 
+    public BehaviorGroup getBehaviorGroup(UUID behaviorGroupId) {
+        return behaviorGroupRepository.get(behaviorGroupId);
+    }
+
     public BehaviorGroup createBehaviorGroup(String accountId, String orgId, String displayName, UUID bundleId) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName(displayName);
@@ -202,6 +208,14 @@ public class ResourceHelpers {
 
     public List<EventType> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
         return behaviorGroupRepository.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, behaviorGroupId);
+    }
+
+    public List<Endpoint> findEndpointsByBehaviorGroupId(String accountId, UUID behaviorGroupId) {
+        String query = "SELECT bga.endpoint FROM BehaviorGroupAction bga WHERE bga.endpoint.accountId = :accountId AND bga.behaviorGroup.id = :behaviorGroupId";
+        return entityManager.createQuery(query, Endpoint.class)
+                .setParameter("accountId", accountId)
+                .setParameter("behaviorGroupId", behaviorGroupId)
+                .getResultList();
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEventTypeId(UUID eventTypeId) {
