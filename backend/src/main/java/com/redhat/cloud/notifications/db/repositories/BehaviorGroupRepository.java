@@ -7,8 +7,6 @@ import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.EventTypeBehavior;
-import com.redhat.cloud.notifications.models.EventTypeBehaviorId;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;

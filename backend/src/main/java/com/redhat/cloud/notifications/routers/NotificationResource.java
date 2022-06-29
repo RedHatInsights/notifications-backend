@@ -237,7 +237,7 @@ public class NotificationResource {
             behaviorGroupRepository.updateBehaviorEventTypes(accountId, orgId, id, request.eventTypeIds);
         }
 
-            return Response.status(200).type(APPLICATION_JSON).entity(true).build();
+        return Response.status(200).type(APPLICATION_JSON).entity(true).build();
     }
 
     @DELETE
