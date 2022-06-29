@@ -21,7 +21,7 @@ public class EmailSubscriptionRepository {
         String query = "INSERT INTO endpoint_email_subscriptions(account_id, user_id, application_id, subscription_type) " +
                 "SELECT :accountId, :userId, a.id, :subscriptionType " +
                 "FROM applications a, bundles b WHERE a.bundle_id = b.id AND a.name = :applicationName AND b.name = :bundleName " +
-                "ON CONFLICT (account_id, user_id, application_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
+                "ON CONFLICT (account_id, org_id, user_id, application_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
         // HQL does not support the ON CONFLICT clause so we need a native query here
         entityManager.createNativeQuery(query)
                 .setParameter("accountId", accountNumber)

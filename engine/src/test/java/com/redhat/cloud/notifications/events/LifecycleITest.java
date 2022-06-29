@@ -494,6 +494,8 @@ public class LifecycleITest {
         EmailSubscription subscription = new EmailSubscription();
         subscription.setId(new EmailSubscriptionId());
         subscription.setAccountId(accountId);
+        // TODO NOTIF-603 Replace the placeholder with the real org ID.
+        subscription.setOrgId("PLACEHOLDER");
         subscription.setUserId(userId);
         subscription.setApplication(application);
         subscription.setType(INSTANT);
