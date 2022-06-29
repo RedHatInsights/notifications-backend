@@ -197,10 +197,15 @@ public class NotificationResource {
         CreateBehaviorGroupResponse response = new CreateBehaviorGroupResponse();
 
         response.id = behaviorGroup.getId();
+        response.accountId = behaviorGroup.getAccountId();
+        response.orgId = null;
         response.bundleId = behaviorGroup.getBundleId();
         response.displayName = behaviorGroup.getDisplayName();
+
         response.endpoints = behaviorGroup.getActions().stream().map(action -> action.getId().endpointId).collect(Collectors.toList());
         response.eventTypes = behaviorGroup.getBehaviors().stream().map(b -> b.getId().eventTypeId).collect(Collectors.toSet());
+
+        response.created = behaviorGroup.getCreated();
 
         return response;
     }
