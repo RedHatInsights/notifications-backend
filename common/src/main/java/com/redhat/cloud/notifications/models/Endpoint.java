@@ -40,9 +40,6 @@ public class Endpoint extends CreationUpdateTimestamped {
     @JsonIgnore
     private String accountId;
 
-    @Size(max = 50)
-    private String orgId;
-
     @NotNull
     @Size(max = 255)
     private String name;
@@ -102,14 +99,6 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
-    }
-
-    public String getOrgId() {
-        return orgId;
-    }
-
-    public void setOrgId(String orgId) {
-        this.orgId = orgId;
     }
 
     public String getName() {
