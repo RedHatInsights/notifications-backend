@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -11,17 +12,16 @@ import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.Json;
 import org.apache.kafka.common.header.internals.RecordHeaders;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -47,8 +47,6 @@ public class FromCamelHistoryFiller {
     public static final String MESSAGES_PROCESSED_COUNTER_NAME = "camel.messages.processed";
     public static final String EGRESS_CHANNEL = "egress";
 
-    private static final Logger log = Logger.getLogger(FromCamelHistoryFiller.class);
-
     @Inject
     NotificationHistoryRepository notificationHistoryRepository;
 
@@ -70,39 +68,39 @@ public class FromCamelHistoryFiller {
     @Channel(EGRESS_CHANNEL)
     Emitter<String> emitter;
 
-    @ConfigProperty(name = "reinject.enabled", defaultValue = "false")
-    boolean enableReInject;
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
     @Incoming(FROMCAMEL_CHANNEL)
     @Blocking
     public void processAsync(String payload) {
         try {
-            log.infof("Processing return from camel: %s", payload);
+            Log.infof("Processing return from camel: %s", payload);
             Map<String, Object> decodedPayload = decodeItem(payload);
             statelessSessionFactory.withSession(statelessSession -> {
                 reinjectIfNeeded(decodedPayload);
                 try {
                     notificationHistoryRepository.updateHistoryItem(decodedPayload);
                 } catch (Exception e) {
-                    log.info("|  Update Fail", e);
+                    Log.info("|  Update Fail", e);
                 }
             });
         } catch (Exception e) {
             messagesErrorCounter.increment();
-            log.error("|  Failure to update the history", e);
+            Log.error("|  Failure to update the history", e);
         } finally {
             messagesProcessedCounter.increment();
         }
     }
 
     private void reinjectIfNeeded(Map<String, Object> payloadMap) {
-        if (!enableReInject || (payloadMap.containsKey("successful") && ((Boolean) payloadMap.get("successful")))) {
+        if (!featureFlipper.isEnableReInject() || (payloadMap.containsKey("successful") && ((Boolean) payloadMap.get("successful")))) {
             return;
         }
 
         String historyId = (String) payloadMap.get("historyId");
-        log.infof("Notification with id %s was not successful, resubmitting for further processing", historyId);
+        Log.infof("Notification with id %s was not successful, resubmitting for further processing", historyId);
 
         Endpoint ep = notificationHistoryRepository.getEndpointForHistoryId(historyId);
 

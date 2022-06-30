@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.db;
 
+import io.quarkus.logging.Log;
 import org.hibernate.Session;
 import org.hibernate.StatelessSession;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -12,8 +12,6 @@ import java.util.function.Function;
 
 @ApplicationScoped
 public class StatelessSessionFactory {
-
-    private static final Logger LOGGER = Logger.getLogger(StatelessSessionFactory.class);
 
     @Inject
     EntityManager entityManager;
@@ -71,7 +69,7 @@ public class StatelessSessionFactory {
         if (threadLocalSession.get() != null) {
             throw new IllegalStateException("Stateless session already bound to the current thread. Did you use nested StatelessSessionFactory#withSession calls?");
         } else {
-            LOGGER.trace("Creating a new stateless session");
+            Log.trace("Creating a new stateless session");
             StatelessSession session = entityManager.unwrap(Session.class).getSessionFactory().openStatelessSession();
             /*
              * We're not using ThreadLocal#withInitial because StatelessSessionFactory#close needs to call ThreadLocal#get
@@ -86,10 +84,10 @@ public class StatelessSessionFactory {
         StatelessSession session = threadLocalSession.get();
         if (session != null) {
             if (session.isOpen()) {
-                LOGGER.trace("Closing the current stateless session");
+                Log.trace("Closing the current stateless session");
                 session.close();
             }
-            LOGGER.trace("Removing the current stateless session from ThreadLocal field");
+            Log.trace("Removing the current stateless session from ThreadLocal field");
             threadLocalSession.remove();
         }
     }

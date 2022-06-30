@@ -1,168 +1,12 @@
 {#include Patch/insightsEmailBody}
 {#content-title}Patch Advisories Daily Report - {action.context.start_time.toStringFormat()}{/content-title}
 {#content-body}
-<tr>
-  <td class="rh-body rh-multi-column">
-    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
-      <tbody>
-        <!-- Content block -->
-        <tr>
-          <td>
-            <div class="container" style="display: table;">
-              <div class="rh-card" style="margin-right: 5px; width: 48%;">
-                <div class="rh-card__header">
-                  <h2>
-                    New Enhancement Advisories
-                  </h2>
-                </div>
-                <div>
-                  <span class="rh-metric__count">{action.context.patch.enhancement.advisories.size()}</span>
-                </div>
-              </div>
-              <div style="display: table-cell; padding-right: 12px"></div>
-              <div class="rh-card" style="margin-left: 12px; width: 48%; height: 100%;">
-                <div class="rh-card__header">
-                  <h2>
-                    New Security Advisories
-                  </h2>
-                </div>
-                <div>
-                  <span class="rh-metric__count">{action.context.patch.security.advisories.size()}</span>
-                </div>
-              </div>
-            </div>
-            <!-- end 50 col -->
-            <!--[if (gte mso 9)|(IE)]>
-                    </td>
-                    </tr>
-                    </table>
-                    <![endif]-->
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <br>
-            <div class="container" style="display: table;">
-              <div class="rh-card" style="margin-right: 5px; width: 48%;">
-                <div class="rh-card__header">
-                  <h2>
-                    New Bugfix Advisories
-                  </h2>
-                </div>
-                <div>
-                  <span class="rh-metric__count">{action.context.patch.bugfix.advisories.size()}</span>
-                </div>
-              </div>
-              <div style="display: table-cell; padding-right: 12px"></div>
-              <div class="rh-card" style="margin-left: 12px; width: 48%; height: 100%;">
-                <div class="rh-card__header">
-                  <h2>
-                    New Unspecified Advisories
-                  </h2>
-                </div>
-                <div>
-                  <span class="rh-metric__count">{action.context.patch.unspecified.advisories.size()}</span>
-                </div>
-              </div>
-            </div>
-            <!-- end 50 col -->
-            <!--[if (gte mso 9)|(IE)]>
-                    </td>
-                    </tr>
-                    </table>
-                    <![endif]-->
-          </td>
-        </tr>
-        <!-- end content block -->
-      </tbody>
-    </table>
-    <br>
-    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
-      <tbody>
-        <!-- Content block -->
-        <tr>
-          <td>
-            <div class="container" style="display: table;">
-              <div class="rh-card" style="margin-right: 5px; width: 48%;">
-                <div class="rh-card__header">
-                  <h2>
-                    Systems affected by Enhancement Advisories
-                  </h2>
-                </div>
-                <div>
-                  <span class="rh-metric__count">{action.context.patch.enhancement.unique_system_count}</span>
-                </div>
-              </div>
-              <div style="display: table-cell; padding-right: 12px"></div>
-              <div class="rh-card" style="margin-left: 12px; width: 48%; height: 100%;">
-                <div class="rh-card__header">
-                  <h2>
-                    Systems affected by Security Advisories
-                  </h2>
-                </div>
-                <div>
-                  <span class="rh-metric__count">{action.context.patch.security.unique_system_count}</span>
-                </div>
-              </div>
-            </div>
-            <!-- end 50 col -->
-            <!--[if (gte mso 9)|(IE)]>
-                    </td>
-                    </tr>
-                    </table>
-                    <![endif]-->
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <br>
-            <div class="container" style="display: table;">
-              <div class="rh-card" style="margin-right: 5px; width: 48%;">
-                <div class="rh-card__header">
-                  <h2>
-                    Systems affected by Bugfix Advisories
-                  </h2>
-                </div>
-                <div>
-                  <span class="rh-metric__count">{action.context.patch.bugfix.unique_system_count}</span>
-                </div>
-              </div>
-              <div style="display: table-cell; padding-right: 12px"></div>
-              <div class="rh-card" style="margin-left: 12px; width: 48%; height: 100%;">
-                <div class="rh-card__header">
-                  <h2>
-                    Systems affected in Total
-                  </h2>
-                </div>
-                <div>
-                  <p></p>
-                  <span class="rh-metric__count">{action.context.unique_system_count}</span>
-                </div>
-              </div>
-            </div>
-            <!-- end 50 col -->
-            <!--[if (gte mso 9)|(IE)]>
-                    </td>
-                    </tr>
-                    </table>
-                    <![endif]-->
-          </td>
-        </tr>
-        <!-- end content block -->
-      </tbody>
-    </table>
-    <br>
-  </td>
-</tr>
-<!-- end body section -->
-
 <!-- Body section -->
 <tr>
   <td class="rh-body">
     <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0"
       width="100%">
       <tbody>
-        <!-- Content block -->
         <tr>
           <td class="rh-content__block">
             <p>
@@ -173,9 +17,6 @@
             </p>
           </td>
         </tr>
-        <!-- end content block -->
-
-        <!-- Content block -->
         <tr>
           <td class="rh-content__block">
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center"
@@ -192,22 +33,17 @@
             </table>
           </td>
         </tr>
-        <!-- end content block -->
       </tbody>
     </table>
   </td>
 </tr>
-<!-- end body section -->
-
-<!-- Body section -->
 <tr>
   <td class="rh-body">
     {#for key in action.context.patch.keySet()}
-    {#if action.context.patch.get(key).get("advisories").size() > 0}
+    {#if action.context.patch.get(key).size() > 0}
     <table class="rh-content rh-m-plain" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0"
       width="100%">
       <tbody>
-        <!-- Content block -->
         <tr>
           <td class="rh-content__block">
             <table width:="" 100%;="" class="rh-data-table rh-m-bordered">
@@ -217,7 +53,7 @@
                 </tr>
               </thead>
               <tbody>
-                {#for advisory in action.context.patch.get(key).get("advisories").keySet()}
+                {#for advisory in action.context.patch.get(key)}
                 <tr>
                   <td>
                     <a class="rh-url" href="{environment.url}/insights/patch/advisories/{advisory}">{advisory}</a>
@@ -228,7 +64,6 @@
             </table>
           </td>
         </tr>
-        <!-- end content block -->
       </tbody>
     </table>
     <br>
@@ -236,5 +71,6 @@
     {/for}
   </td>
 </tr>
+<!-- end body section -->
 {/content-body}
 {/include}

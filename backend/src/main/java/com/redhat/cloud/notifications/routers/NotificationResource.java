@@ -22,6 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -52,7 +53,6 @@ import java.util.stream.Collectors;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
-import static javax.ws.rs.core.Response.Status;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
 public class NotificationResource {
@@ -199,8 +199,11 @@ public class NotificationResource {
     @POST
     @Path("/behaviorGroups")
     @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
     @Operation(summary = "Create a behavior group.")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = BehaviorGroup.class))),
+            @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)))
+    })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public BehaviorGroup createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
@@ -216,20 +219,24 @@ public class NotificationResource {
     @PUT
     @Path("/behaviorGroups/{id}")
     @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.BOOLEAN))),
+            @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)))
+    })
     @Operation(summary = "Update a behavior group.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
-    public Boolean updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
+    public Response updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         behaviorGroup.setId(id);
-
+        boolean updated;
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            return behaviorGroupRepositoryOrgId.update(orgId, behaviorGroup);
+            updated = behaviorGroupRepositoryOrgId.update(orgId, behaviorGroup);
         } else {
             String accountId = getAccountId(sec);
-            return behaviorGroupRepository.update(accountId, behaviorGroup);
+            updated = behaviorGroupRepository.update(accountId, behaviorGroup);
         }
+        return Response.status(200).type(APPLICATION_JSON).entity(updated).build();
     }
 
     @DELETE
@@ -267,17 +274,14 @@ public class NotificationResource {
         if (endpointIds.size() != endpointIds.stream().distinct().count()) {
             throw new BadRequestException("The endpoints identifiers list should not contain duplicates");
         }
-
-        Status status;
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            status = behaviorGroupRepositoryOrgId.updateBehaviorGroupActions(orgId, behaviorGroupId, endpointIds);
+            behaviorGroupRepositoryOrgId.updateBehaviorGroupActions(orgId, behaviorGroupId, endpointIds);
         } else {
             String accountId = getAccountId(sec);
-            status = behaviorGroupRepository.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds);
+            behaviorGroupRepository.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds);
         }
-
-        return Response.status(status).build();
+        return Response.ok().build();
     }
 
     @PUT
@@ -296,21 +300,14 @@ public class NotificationResource {
         if (behaviorGroupIds.contains(null)) {
             throw new BadRequestException("The behavior groups identifiers list should not contain empty values");
         }
-
-        boolean updated;
         if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
-            updated = behaviorGroupRepositoryOrgId.updateEventTypeBehaviors(orgId, eventTypeId, behaviorGroupIds);
+            behaviorGroupRepositoryOrgId.updateEventTypeBehaviors(orgId, eventTypeId, behaviorGroupIds);
         } else {
             String accountId = getAccountId(sec);
-            updated = behaviorGroupRepository.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds);
+            behaviorGroupRepository.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds);
         }
-
-        if (updated) {
-            return Response.ok().build();
-        } else {
-            return Response.status(Status.NOT_FOUND).build();
-        }
+        return Response.ok().build();
     }
 
     @GET

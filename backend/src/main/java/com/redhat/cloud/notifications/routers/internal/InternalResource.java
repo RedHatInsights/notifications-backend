@@ -23,12 +23,12 @@ import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.internal.models.ServerInfo;
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.jboss.logging.Logger;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -67,7 +67,6 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 @Path(API_INTERNAL)
 public class InternalResource {
 
-    private static final Logger LOGGER = Logger.getLogger(InternalResource.class);
     private static final Pattern GIT_COMMIT_ID_PATTERN = Pattern.compile("git.commit.id.abbrev=([0-9a-f]{7})");
 
     @Inject
@@ -113,7 +112,7 @@ public class InternalResource {
         if (m.matches()) {
             return m.group(1);
         } else {
-            LOGGER.infof("Git commit hash not found: %s", gitProperties);
+            Log.infof("Git commit hash not found: %s", gitProperties);
             return "Git commit hash not found";
         }
     }
@@ -404,20 +403,18 @@ public class InternalResource {
             properties.setIgnorePreferences(p.isIgnorePreferences());
             return endpointRepository.getOrCreateEmailSubscriptionEndpoint(null, properties);
         }).collect(Collectors.toList());
-
-        Response.Status status;
         if (orgIdConfig.isUseOrgId()) {
-            status = behaviorGroupRepositoryOrgId.updateDefaultBehaviorGroupActions(
+            behaviorGroupRepositoryOrgId.updateDefaultBehaviorGroupActions(
                     behaviorGroupId,
                     endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
             );
         } else {
-            status = behaviorGroupRepository.updateDefaultBehaviorGroupActions(
+            behaviorGroupRepository.updateDefaultBehaviorGroupActions(
                     behaviorGroupId,
                     endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
             );
         }
-        return Response.status(status).build();
+        return Response.ok().build();
     }
 
     @PUT

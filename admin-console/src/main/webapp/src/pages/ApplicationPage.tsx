@@ -71,7 +71,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
 
-    const getAggregationEmailTemplates = useMemo(() => {
+    const aggregationEmailTemplates = useMemo(() => {
         if (aggregationTemplates.payload?.status === 200) {
             return aggregationTemplates.payload.value;
         }
@@ -160,7 +160,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             <AggregationTemplateCard
                 applicationName={ application?.displayName }
                 bundleName={ bundle?.display_name }
-                templateName={ getAggregationEmailTemplates?.map(a => a.body_template?.name) } />
+                templateName={ aggregationEmailTemplates?.map(a => a.body_template?.name) } />
             { isAdmin && application && <InstantEmailTemplateTable application={ application } /> }
             <CreateEditModal
                 isEdit={ isEdit }

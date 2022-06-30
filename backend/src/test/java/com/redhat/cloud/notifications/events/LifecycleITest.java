@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
@@ -78,10 +79,53 @@ public class LifecycleITest extends DbIsolatedTest {
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     private Header initRbacMock(String tenant, String orgId, String username, RbacAccess access) {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
+    }
+
+    @Test
+    void shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent() {
+        if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
+            // The check is disabled from configuration.
+            return;
+        }
+
+        final String accountId = "tenant";
+        final String orgId = "someOrdId";
+        final String username = "user";
+
+        // Identity header used for all public APIs calls. Internal APIs calls don't need that.
+        Header identityHeader = initRbacMock(accountId, orgId, username, RbacAccess.FULL_ACCESS);
+        Header turnpikeIdentityHeader = createTurnpikeIdentityHeader("admin", adminRole);
+
+        // First, we need a bundle, an app and an event type. Let's create them!
+        String bundleId = createBundle(turnpikeIdentityHeader);
+
+        // Create first behavior group with name BG1
+        createBehaviorGroup(identityHeader, bundleId, "BG1");
+
+        // create a Behavior Group with the same name again
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName("BG1");
+        behaviorGroup.setBundleId(UUID.fromString(bundleId));
+
+        String responseBody = given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .body(Json.encode(behaviorGroup))
+                .when()
+                .post(API_NOTIFICATIONS_V_1_0 + "/notifications/behaviorGroups")
+                .then()
+                .statusCode(400)
+                .contentType(TEXT)
+                .extract().asString();
+
+        assertEquals("A behavior group with display name [" + behaviorGroup.getDisplayName() + "] already exists", responseBody);
     }
 
     @Test
@@ -114,8 +158,8 @@ public class LifecycleITest extends DbIsolatedTest {
         checkAllEventTypes(identityHeader);
 
         // We also need behavior groups.
-        String behaviorGroupId1 = createBehaviorGroup(identityHeader, bundleId);
-        String behaviorGroupId2 = createBehaviorGroup(identityHeader, bundleId);
+        String behaviorGroupId1 = createBehaviorGroup(identityHeader, bundleId, "Behavior group 1");
+        String behaviorGroupId2 = createBehaviorGroup(identityHeader, bundleId, "Behavior group 2");
         String defaultBehaviorGroupId = createDefaultBehaviorGroup(turnpikeIdentityHeader, bundleId);
 
         // We need actions for our behavior groups.
@@ -349,9 +393,9 @@ public class LifecycleITest extends DbIsolatedTest {
         assertEquals(2, jsonEventTypes.size()); // One from the current test, one from the default DB records.
     }
 
-    private String createBehaviorGroupInternal(String path, Header identityHeader, String bundleId) {
+    private String createBehaviorGroupInternal(String path, Header identityHeader, String bundleId, String displayName) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setDisplayName("Behavior group");
+        behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(UUID.fromString(bundleId));
 
         var request = given();
@@ -381,12 +425,12 @@ public class LifecycleITest extends DbIsolatedTest {
         return jsonBehaviorGroup.getString("id");
     }
 
-    private String createBehaviorGroup(Header identityHeader, String bundleId) {
-        return createBehaviorGroupInternal(API_NOTIFICATIONS_V_1_0 + "/notifications/behaviorGroups", identityHeader, bundleId);
+    private String createBehaviorGroup(Header identityHeader, String bundleId, String displayName) {
+        return createBehaviorGroupInternal(API_NOTIFICATIONS_V_1_0 + "/notifications/behaviorGroups", identityHeader, bundleId, displayName);
     }
 
     private String createDefaultBehaviorGroup(Header turnpikeIdentityHeader, String bundleId) {
-        return createBehaviorGroupInternal(API_INTERNAL + "/behaviorGroups/default", turnpikeIdentityHeader, bundleId);
+        return createBehaviorGroupInternal(API_INTERNAL + "/behaviorGroups/default", turnpikeIdentityHeader, bundleId, "Behavior group");
     }
 
     @Transactional

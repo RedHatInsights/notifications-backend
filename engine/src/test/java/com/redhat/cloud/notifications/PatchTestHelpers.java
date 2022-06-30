@@ -11,9 +11,9 @@ import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class PatchTestHelpers {
 
@@ -34,7 +34,7 @@ public class PatchTestHelpers {
         emailActionMessage.setBundle(bundle);
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.now());
-        emailActionMessage.setEventType("new-advisories");
+        emailActionMessage.setEventType("new-advisory");
         emailActionMessage.setContext(
                 new Context.ContextBuilder()
                         .withAdditionalProperty("inventory_id", inventory_id)
@@ -70,7 +70,7 @@ public class PatchTestHelpers {
         emailActionMessage.setBundle(bundle);
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.now());
-        emailActionMessage.setEventType("new-advisories");
+        emailActionMessage.setEventType("new-advisory");
         emailActionMessage.setContext(
                 new Context.ContextBuilder()
                         .withAdditionalProperty("inventory_id", "inventory_id")
@@ -113,18 +113,8 @@ public class PatchTestHelpers {
         return aggregation;
     }
 
-    public static Integer getUniqueHostForAdvisoryType(PatchEmailPayloadAggregator aggregator, String advisoryType) {
-        Map<String, Map> patch = (Map<String, Map>) aggregator.getContext().get("patch");
-        return (Integer) patch.get(advisoryType).get(UNIQUE_HOSTS_CNT);
-    }
-
-    public static Integer getUniqueHost(PatchEmailPayloadAggregator aggregator) {
-        return (Integer) aggregator.getContext().get(UNIQUE_HOSTS_CNT);
-    }
-
-    public static Set<String> getAdvisoriesByType(PatchEmailPayloadAggregator aggregator, String advisoryType) {
+    public static ArrayList<String> getAdvisoriesByType(PatchEmailPayloadAggregator aggregator, String advisoryType) {
         Map<String, Object> patch = (Map<String, Object>) ((Map<String, Object>) aggregator.getContext()).get("patch");
-        Map<String, Object> advisories = (Map<String, Object>) ((Map<String, Object>) patch.get(advisoryType)).get(ADVISORIES_KEY);
-        return advisories.keySet();
+        return (ArrayList<String>) patch.get(advisoryType);
     }
 }

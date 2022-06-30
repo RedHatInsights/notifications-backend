@@ -8,7 +8,7 @@ import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import org.jboss.logging.Logger;
+import io.quarkus.logging.Log;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -27,8 +27,6 @@ import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 
 @ApplicationScoped
 public class EndpointRepository {
-
-    private static final Logger LOGGER = Logger.getLogger(EndpointRepository.class);
 
     @Inject
     StatelessSessionFactory statelessSessionFactory;
@@ -107,7 +105,7 @@ public class EndpointRepository {
                 if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
                     endpoint.setOrgId(orgId);
                 } else {
-                    LOGGER.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
+                    Log.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
                 }
             }
         }

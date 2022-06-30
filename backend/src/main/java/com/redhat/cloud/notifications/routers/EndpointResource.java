@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
@@ -16,6 +17,7 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
+import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.openbridge.Bridge;
@@ -24,8 +26,8 @@ import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -34,7 +36,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.jboss.logging.Logger;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -78,8 +79,6 @@ public class EndpointResource {
     public static final String OB_PROCESSOR_NAME = "processorname"; // Must be all lower for the filter.
     public static final String SLACK = "slack_sink_0.1";
 
-    private static final Logger LOGGER = Logger.getLogger(EndpointResource.class);
-
     private static final List<EndpointType> systemEndpointType = List.of(
             EndpointType.EMAIL_SUBSCRIPTION
     );
@@ -99,8 +98,8 @@ public class EndpointResource {
     @Inject
     RbacGroupValidator rbacGroupValidator;
 
-    @ConfigProperty(name = "ob.enabled", defaultValue = "false")
-    boolean obEnabled;
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Inject
     @RestClient
@@ -111,7 +110,6 @@ public class EndpointResource {
 
     @Inject
     BridgeAuth bridgeAuth;
-
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -175,7 +173,7 @@ public class EndpointResource {
             throw new BadRequestException("Properties is required");
         }
 
-        if (obEnabled) {
+        if (featureFlipper.isObEnabled()) {
             // TODO NOTIF-429 - see similar in EndpointResources#createEndpoint
             String endpointSubType;
             if (endpoint.getSubType() != null) {
@@ -195,14 +193,17 @@ public class EndpointResource {
                 String processorId = null;
                 try {
                     processorId = setupOpenBridgeProcessor(endpoint, properties, processorName);
+                    endpoint.setStatus(EndpointStatus.PROVISIONING);
                 } catch (Exception e) {
-                    LOGGER.warn("Processor setup failed: " + e.getMessage());
+                    Log.warn("Processor setup failed: " + e.getMessage());
+                    endpoint.setStatus(EndpointStatus.FAILED);
                     throw new InternalServerErrorException("Can't set up the endpoint");
                 }
 
                 // TODO find a better place for these, that should not be
                 //       visible to users / OB actions
                 //       See also CamelTypeProcessor#callOpenBridge
+                //            and ReadyCheck#execute
                 properties.getExtras().put(OB_PROCESSOR_ID, processorId);
 
             }
@@ -263,7 +264,7 @@ public class EndpointResource {
         EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
         checkSystemEndpoint(endpointType);
 
-        if (obEnabled) {
+        if (featureFlipper.isObEnabled()) {
             Endpoint e = endpointRepository.getEndpoint(principal.getAccount(), id);
             if (e != null) {
                 EndpointProperties properties = e.getProperties();
@@ -276,11 +277,11 @@ public class EndpointResource {
                             try {
                                 bridgeApiService.deleteProcessor(bridge.getId(), processorId, bridgeAuth.getToken());
                             } catch (Exception ex) {
-                                LOGGER.warn("Removal of OB processor failed:" + ex.getMessage());
+                                Log.warn("Removal of OB processor failed:" + ex.getMessage());
                                 // Nothing more we can do
                             }
                         } else {
-                            LOGGER.warn("ProcessorId was null for endpoint " + id.toString());
+                            Log.warn("ProcessorId was null for endpoint " + id.toString());
                         }
                     }
                 }

@@ -23,6 +23,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -65,7 +66,7 @@ public class UserConfigResource {
     @Produces(TEXT_PLAIN)
     @Operation(hidden = true)
     @Transactional
-    public Response saveSettings(@Context SecurityContext sec, @Valid SettingsValues values) {
+    public Response saveSettings(@Context SecurityContext sec, @NotNull @Valid SettingsValues values) {
 
         final RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         final String account = principal.getAccount();

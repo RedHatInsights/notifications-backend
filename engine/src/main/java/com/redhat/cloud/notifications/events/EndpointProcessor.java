@@ -13,7 +13,7 @@ import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProc
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.jboss.logging.Logger;
+import io.quarkus.logging.Log;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -28,8 +28,6 @@ public class EndpointProcessor {
 
     public static final String PROCESSED_MESSAGES_COUNTER_NAME = "processor.input.processed";
     public static final String PROCESSED_ENDPOINTS_COUNTER_NAME = "processor.input.endpoint.processed";
-
-    private static final Logger LOGGER = Logger.getLogger(EndpointProcessor.class);
 
     @Inject
     EndpointRepository endpointRepository;
@@ -90,7 +88,7 @@ public class EndpointProcessor {
                 try {
                     notificationHistoryRepository.createNotificationHistory(history);
                 } catch (Exception e) {
-                    LOGGER.errorf("Notification history creation failed for %s", history.getEndpoint());
+                    Log.errorf("Notification history creation failed for %s", history.getEndpoint());
                 }
             }
         }

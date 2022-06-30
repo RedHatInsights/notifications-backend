@@ -29,13 +29,13 @@ import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
 import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -61,8 +61,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     public static final String AGGREGATION_COMMAND_REJECTED_COUNTER_NAME = "aggregation.command.rejected";
     public static final String AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME = "aggregation.command.processed";
     public static final String AGGREGATION_COMMAND_ERROR_COUNTER_NAME = "aggregation.command.error";
-
-    private static final Logger LOGGER = Logger.getLogger(EmailSubscriptionTypeProcessor.class);
 
     private static final List<EmailSubscriptionType> NON_INSTANT_SUBSCRIPTION_TYPES = Arrays.stream(EmailSubscriptionType.values())
             .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
@@ -111,8 +109,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     private Counter rejectedAggregationCommandCount;
     private Counter processedAggregationCommandCount;
     private Counter failedAggregationCommandCount;
-
-    private static final Logger LOG = Logger.getLogger(EmailSubscriptionTypeProcessor.class);
 
     @PostConstruct
     void postConstruct() {
@@ -195,7 +191,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
                 .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
 
-        LOG.info("sending email for event: " + event);
         return recipientResolver.recipientUsers(action.getAccountId(), action.getOrgId(), requests, subscribers)
                 .stream()
                 .map(user -> emailSender.sendEmail(user, event, subject, body))
@@ -213,12 +208,12 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         try {
             aggregationCommand = objectMapper.readValue(aggregationCommandJson, AggregationCommand.class);
         } catch (JsonProcessingException e) {
-            LOGGER.error("Kafka aggregation payload parsing failed", e);
+            Log.error("Kafka aggregation payload parsing failed", e);
             rejectedAggregationCommandCount.increment();
             return;
         }
 
-        LOGGER.infof("Processing received aggregation command: %s", aggregationCommand);
+        Log.infof("Processing received aggregation command: %s", aggregationCommand);
         processedAggregationCommandCount.increment();
 
         try {
@@ -232,7 +227,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                         aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY));
             });
         } catch (Exception e) {
-            LOGGER.info("Error while processing aggregation", e);
+            Log.info("Error while processing aggregation", e);
             failedAggregationCommandCount.increment();
         }
     }

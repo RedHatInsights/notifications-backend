@@ -4,10 +4,10 @@ import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.KafkaMessage;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
 import org.apache.kafka.common.header.Header;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -27,7 +27,6 @@ public class KafkaMessageDeduplicator {
     public static final String MESSAGE_ID_INVALID_COUNTER_NAME = "kafka-message-id.invalid";
     public static final String MESSAGE_ID_MISSING_COUNTER_NAME = "kafka-message-id.missing";
 
-    private static final Logger LOGGER = Logger.getLogger(KafkaMessageDeduplicator.class);
     private static final String ACCEPTED_UUID_VERSION = "4";
 
     @Inject
@@ -62,7 +61,7 @@ public class KafkaMessageDeduplicator {
                 Header header = headers.next();
                 if (header.value() == null) {
                     invalidMessageIdCounter.increment();
-                    LOGGER.warnf("Application %s/%s sent an invalid Kafka header [%s=null]. They must change their " +
+                    Log.warnf("Application %s/%s sent an invalid Kafka header [%s=null]. They must change their " +
                                     "integration and send a non-null value.", bundleName, applicationName, MESSAGE_ID_HEADER);
                 } else {
                     String headerValue = new String(header.value(), UTF_8);
@@ -73,24 +72,24 @@ public class KafkaMessageDeduplicator {
                             throw new IllegalArgumentException("Wrong UUID version received");
                         }
                         validMessageIdCounter.increment();
-                        LOGGER.tracef("Application %s/%s sent a valid Kafka header [%s=%s]",
+                        Log.tracef("Application %s/%s sent a valid Kafka header [%s=%s]",
                                 bundleName, applicationName, MESSAGE_ID_HEADER, headerValue);
                         return messageId;
                     } catch (IllegalArgumentException e) {
                         invalidMessageIdCounter.increment();
-                        LOGGER.warnf("Application %s/%s sent an invalid Kafka header [%s=%s]. They must change their " +
+                        Log.warnf("Application %s/%s sent an invalid Kafka header [%s=%s]. They must change their " +
                                 "integration and send a valid UUID (version 4).", bundleName, applicationName, MESSAGE_ID_HEADER, headerValue);
                     }
                 }
             }
             if (headers.hasNext()) {
-                LOGGER.warnf("Application %s/%s sent multiple Kafka headers [%s]. They must change their " +
+                Log.warnf("Application %s/%s sent multiple Kafka headers [%s]. They must change their " +
                                 "integration and send only one value.", bundleName, applicationName, MESSAGE_ID_HEADER);
             }
         }
         if (!found) {
             missingMessageIdCounter.increment();
-            LOGGER.tracef("Application %s/%s did not send any Kafka header [%s]",
+            Log.tracef("Application %s/%s did not send any Kafka header [%s]",
                     bundleName, applicationName, MESSAGE_ID_HEADER);
         }
         // This will be returned if the message ID is either invalid or not found.

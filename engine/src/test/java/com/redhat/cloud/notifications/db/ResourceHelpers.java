@@ -5,6 +5,9 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
@@ -15,9 +18,11 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import java.security.SecureRandom;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
+import static java.lang.Boolean.TRUE;
 
 @ApplicationScoped
 public class ResourceHelpers {
@@ -76,6 +81,33 @@ public class ResourceHelpers {
         eventType.setDescription("Policies is super cool, you should use it");
         entityManager.persist(eventType);
         return eventType;
+    }
+
+    @Transactional
+    public Event createEvent(EventType eventType) {
+        Event event = new Event();
+        event.setId(UUID.randomUUID());
+        event.setAccountId("account-id");
+        event.setEventType(eventType);
+        event.setEventTypeDisplayName(eventType.getDisplayName());
+        event.setApplicationId(eventType.getApplication().getId());
+        event.setApplicationDisplayName(eventType.getApplication().getDisplayName());
+        event.setBundleId(eventType.getApplication().getBundle().getId());
+        event.setBundleDisplayName(eventType.getApplication().getBundle().getDisplayName());
+        entityManager.persist(event);
+        return event;
+    }
+
+    @Transactional
+    public Endpoint createEndpoint(EndpointType type, String subType) {
+        Endpoint endpoint = new Endpoint();
+        endpoint.setType(type);
+        endpoint.setSubType(subType);
+        endpoint.setName("endpoint-" + new SecureRandom().nextInt());
+        endpoint.setDescription("Endpoint description");
+        endpoint.setEnabled(TRUE);
+        entityManager.persist(endpoint);
+        return endpoint;
     }
 
     @Transactional

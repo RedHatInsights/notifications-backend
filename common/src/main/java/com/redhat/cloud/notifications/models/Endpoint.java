@@ -10,6 +10,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import javax.persistence.CascadeType;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
@@ -40,6 +42,10 @@ public class Endpoint extends CreationUpdateTimestamped {
     @JsonIgnore
     private String accountId;
 
+    @Size(max = 50)
+    @JsonIgnore
+    private String orgId;
+
     @NotNull
     @Size(max = 255)
     private String name;
@@ -48,6 +54,9 @@ public class Endpoint extends CreationUpdateTimestamped {
     private String description;
 
     private Boolean enabled = Boolean.FALSE;
+
+    @Enumerated(EnumType.STRING)
+    private EndpointStatus status = EndpointStatus.UNKNOWN;
 
     @Valid
     @NotNull
@@ -99,6 +108,14 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
     }
 
     public String getName() {
@@ -175,6 +192,14 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.notificationHistories = notificationHistories;
     }
 
+    public EndpointStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(EndpointStatus status) {
+        this.status = status;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -197,11 +222,13 @@ public class Endpoint extends CreationUpdateTimestamped {
         return "Endpoint{" +
                 "id=" + id +
                 ", accountId='" + accountId + '\'' +
+                ", orgId='" + orgId + '\'' +
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", enabled=" + enabled +
                 ", type=" + compositeType.getType() +
                 ", subType=" + compositeType.getSubType() +
+                ", status=" + status + '\'' +
                 ", created=" + getCreated() +
                 ", updated=" + getUpdated() +
                 ", properties=" + properties +

@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.OrgIdConfig;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import org.jboss.logging.Logger;
+import io.quarkus.logging.Log;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -15,10 +15,8 @@ import java.util.List;
 @ApplicationScoped
 public class EmailAggregationRepository {
 
-    private static final Logger LOGGER = Logger.getLogger(EmailAggregationRepository.class);
-
     @Inject
-    OrgIdConfig orgIdConfig;
+    FeatureFlipper featureFlipper;
 
     @Inject
     StatelessSessionFactory statelessSessionFactory;
@@ -29,15 +27,15 @@ public class EmailAggregationRepository {
             statelessSessionFactory.getCurrentSession().insert(aggregation);
             return true;
         } catch (Exception e) {
-            LOGGER.warn("Email aggregation persisting failed", e);
+            Log.warn("Email aggregation persisting failed", e);
             return false;
         }
     }
 
     public List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
-        if (orgIdConfig.isUseOrgId() && key.getOrgId() != null && !key.getOrgId().isEmpty()) {
+        if (featureFlipper.isUseOrgId() && key.getOrgId() != null && !key.getOrgId().isEmpty()) {
             String query = "FROM EmailAggregation WHERE accountId = :accountId AND orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
-            final List<EmailAggregation> resultList = statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
+            return statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
                     .setParameter("accountId", key.getAccountId())
                     .setParameter("orgId", key.getOrgId())
                     .setParameter("bundleName", key.getBundle())
@@ -45,9 +43,6 @@ public class EmailAggregationRepository {
                     .setParameter("start", start)
                     .setParameter("end", end)
                     .getResultList();
-
-            LOGGER.info("getEmailAggregation resultlist" + resultList);
-            return resultList;
         } else {
             String query = "FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
             return statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
