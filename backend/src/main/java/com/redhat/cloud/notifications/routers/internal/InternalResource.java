@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.routers.internal;
 
-import com.redhat.cloud.notifications.OrgIdConfig;
 import com.redhat.cloud.notifications.StartupUtils;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -100,7 +100,7 @@ public class InternalResource {
     StartupUtils startupUtils;
 
     @Inject
-    OrgIdConfig orgIdConfig;
+    FeatureFlipper featureFlipper;
 
     // This endpoint is used during the IQE tests to determine which version of the code is tested.
     @GET
@@ -332,7 +332,7 @@ public class InternalResource {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<BehaviorGroup> getDefaultBehaviorGroups() {
-        if (orgIdConfig.isUseOrgId()) {
+        if (featureFlipper.isUseOrgId()) {
             return behaviorGroupRepositoryOrgId.findDefaults();
         } else {
             return behaviorGroupRepository.findDefaults();
@@ -346,7 +346,7 @@ public class InternalResource {
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public BehaviorGroup createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
-        if (orgIdConfig.isUseOrgId()) {
+        if (featureFlipper.isUseOrgId()) {
             return behaviorGroupRepositoryOrgId.createDefault(behaviorGroup);
         } else {
             return behaviorGroupRepository.createDefault(behaviorGroup);
@@ -363,7 +363,7 @@ public class InternalResource {
     public boolean updateDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         behaviorGroup.setId(id);
 
-        if (orgIdConfig.isUseOrgId()) {
+        if (featureFlipper.isUseOrgId()) {
             return behaviorGroupRepositoryOrgId.updateDefault(behaviorGroup);
         } else {
             return behaviorGroupRepository.updateDefault(behaviorGroup);
@@ -403,7 +403,7 @@ public class InternalResource {
             properties.setIgnorePreferences(p.isIgnorePreferences());
             return endpointRepository.getOrCreateEmailSubscriptionEndpoint(null, properties);
         }).collect(Collectors.toList());
-        if (orgIdConfig.isUseOrgId()) {
+        if (featureFlipper.isUseOrgId()) {
             behaviorGroupRepositoryOrgId.updateDefaultBehaviorGroupActions(
                     behaviorGroupId,
                     endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
@@ -428,7 +428,7 @@ public class InternalResource {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
 
         boolean isSuccess;
-        if (orgIdConfig.isUseOrgId()) {
+        if (featureFlipper.isUseOrgId()) {
             isSuccess = behaviorGroupRepositoryOrgId.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
         } else {
             isSuccess = behaviorGroupRepository.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
@@ -451,7 +451,7 @@ public class InternalResource {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
 
         boolean isSuccess;
-        if (orgIdConfig.isUseOrgId()) {
+        if (featureFlipper.isUseOrgId()) {
             isSuccess = behaviorGroupRepositoryOrgId.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
         } else {
             isSuccess = behaviorGroupRepository.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);

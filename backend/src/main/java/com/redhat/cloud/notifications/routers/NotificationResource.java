@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
-import com.redhat.cloud.notifications.OrgIdConfig;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
@@ -73,7 +73,7 @@ public class NotificationResource {
     EndpointRepository endpointRepository;
 
     @Inject
-    OrgIdConfig orgIdConfig;
+    FeatureFlipper featureFlipper;
 
     private String getAccountId(SecurityContext sec) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
@@ -122,7 +122,7 @@ public class NotificationResource {
     @Operation(summary = "Retrieve the event types affected by the removal of a behavior group.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
-        if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
+        if (featureFlipper.isUseOrgId() && getOrgId(sec) != null) {
             String orgId = getOrgId(sec);
             return behaviorGroupRepositoryOrgId.findEventTypesByBehaviorGroupId(orgId, behaviorGroupId);
         } else {
@@ -141,7 +141,7 @@ public class NotificationResource {
     @Operation(summary = "Retrieve the behavior groups affected by the removal of an endpoint.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
-        if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
+        if (featureFlipper.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
             return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEndpoint(orgId, endpointId);
         } else {
@@ -156,7 +156,7 @@ public class NotificationResource {
     @Operation(summary = "Retrieve the behavior groups linked to an event type.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
-        if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
+        if (featureFlipper.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
             return behaviorGroupRepositoryOrgId.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
         } else {
@@ -207,7 +207,7 @@ public class NotificationResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public BehaviorGroup createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
-        if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
+        if (featureFlipper.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
             return behaviorGroupRepositoryOrgId.create(orgId, behaviorGroup);
         } else {
@@ -229,7 +229,7 @@ public class NotificationResource {
     public Response updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         behaviorGroup.setId(id);
         boolean updated;
-        if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
+        if (featureFlipper.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
             updated = behaviorGroupRepositoryOrgId.update(orgId, behaviorGroup);
         } else {
@@ -246,7 +246,7 @@ public class NotificationResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public Boolean deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
-        if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
+        if (featureFlipper.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
             return behaviorGroupRepositoryOrgId.delete(orgId, behaviorGroupId);
         } else {
@@ -274,7 +274,7 @@ public class NotificationResource {
         if (endpointIds.size() != endpointIds.stream().distinct().count()) {
             throw new BadRequestException("The endpoints identifiers list should not contain duplicates");
         }
-        if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
+        if (featureFlipper.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
             behaviorGroupRepositoryOrgId.updateBehaviorGroupActions(orgId, behaviorGroupId, endpointIds);
         } else {
@@ -300,7 +300,7 @@ public class NotificationResource {
         if (behaviorGroupIds.contains(null)) {
             throw new BadRequestException("The behavior groups identifiers list should not contain empty values");
         }
-        if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
+        if (featureFlipper.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
             behaviorGroupRepositoryOrgId.updateEventTypeBehaviors(orgId, eventTypeId, behaviorGroupIds);
         } else {
@@ -317,7 +317,7 @@ public class NotificationResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
         List<BehaviorGroup> behaviorGroups;
-        if (orgIdConfig.isUseOrgId() && getOrgId(sec) != null) {
+        if (featureFlipper.isUseOrgId() && getOrgId(sec) != null) {
             final String orgId = getOrgId(sec);
             behaviorGroups = behaviorGroupRepositoryOrgId.findByBundleId(orgId, bundleId);
             endpointRepository.loadProperties(

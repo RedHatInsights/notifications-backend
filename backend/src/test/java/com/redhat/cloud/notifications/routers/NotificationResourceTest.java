@@ -3,10 +3,10 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
-import com.redhat.cloud.notifications.OrgIdConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -74,14 +74,14 @@ public class NotificationResourceTest extends DbIsolatedTest {
     BehaviorGroupRepositoryOrgId behaviorGroupRepositoryOrgId;
 
     @Inject
-    OrgIdConfig orgIdConfig;
+    FeatureFlipper featureFlipper;
 
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
         MockServerConfig.clearRbac();
 
-        orgIdConfig.overrideForTest(false);
+        featureFlipper.setUseOrgId(false);
     }
 
     private Header initRbacMock(String tenant, String orgId, String username, RbacAccess access) {
@@ -125,7 +125,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void shouldContainDefaultBehaviorFieldInResponseWhenOrgIdIsPartOfHeader() {
-        orgIdConfig.overrideForTest(true);
+        featureFlipper.setUseOrgId(true);
         Header identityHeader = initRbacMock(ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         final UUID bundleId = helpers.createBundle("bundle-1", "Bundle 1").getId();
@@ -152,7 +152,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void shouldContainDefaultBehaviorFieldInResponseWhenOrgIdAndAccountIdArePartOfHeader() {
-        orgIdConfig.overrideForTest(true);
+        featureFlipper.setUseOrgId(true);
         Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         final UUID bundleId = helpers.createBundle("bundle-1", "Bundle 1").getId();
@@ -179,7 +179,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void shouldNotContainDefaultBehaviorFieldInResponseWhen() {
-        orgIdConfig.overrideForTest(true);
+        featureFlipper.setUseOrgId(true);
         Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
 
         final UUID bundleId = helpers.createBundle("bundle-1", "Bundle 1").getId();
@@ -438,7 +438,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         @Test
         void testGetEventTypesAffectedByEndpointOrgId() {
-            orgIdConfig.overrideForTest(true);
+            featureFlipper.setUseOrgId(true);
 
             String tenant = "testGetEventTypesAffectedByEndpoint";
             String orgId = "testGetEventTypesAffectedByEndpointOrgId";

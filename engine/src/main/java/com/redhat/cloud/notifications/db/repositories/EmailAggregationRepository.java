@@ -57,7 +57,7 @@ public class EmailAggregationRepository {
 
     @Transactional
     public int purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        if (orgIdConfig.isUseOrgId() && key.getOrgId() != null && !key.getOrgId().isEmpty()) {
+        if (featureFlipper.isUseOrgId() && key.getOrgId() != null && !key.getOrgId().isEmpty()) {
             String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
             return statelessSessionFactory.getCurrentSession().createQuery(query)
                     .setParameter("accountId", key.getAccountId())
