@@ -71,31 +71,31 @@ objects:
         requests:
           cpu: "${CPU_REQUEST_FLOO}"
           memory: "${MEMORY_REQUEST_FLOO}"
-    - name: org-id-populator
+    - name: org-id-populator-behavior-group
       podSpec:
         image: quay.io/cloudservices/tenant-utils:latest
         command:
-          - ./org-id-column-populator
-          - -C
-          - -a
-          - account_id
-          - -o
-          - org_id
-          - -t
-          - email_aggregation
-          - --ean-translator-addr
-          - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
-          - --db-operation-timeout
-          - "10"
+        - ./org-id-column-populator
+        - -C
+        - -a
+        - account_id
+        - -o
+        - org_id
+        - -t
+        - behavior_group
+        - --ean-translator-addr
+        - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+        - --db-operation-timeout
+        - "10"
         env:
-          - name: TENANT_TRANSLATOR_HOST
-            value: ${TENANT_TRANSLATOR_HOST}
-          - name: TENANT_TRANSLATOR_PORT
-            value: ${TENANT_TRANSLATOR_PORT}
-          - name: LOG_FORMAT
-            value: ${LOG_FORMAT}
-          - name: LOG_BATCH_FREQUENCY
-            value: '1'
+        - name: TENANT_TRANSLATOR_HOST
+          value: ${TENANT_TRANSLATOR_HOST}
+        - name: TENANT_TRANSLATOR_PORT
+          value: ${TENANT_TRANSLATOR_PORT}
+        - name: LOG_FORMAT
+          value: ${LOG_FORMAT}
+        - name: LOG_BATCH_FREQUENCY
+          value: '1'
         resources:
           limits:
             cpu: 300m
@@ -103,31 +103,127 @@ objects:
           requests:
             cpu: 50m
             memory: 512Mi
-    - name: org-id-populator-event-table
+    - name: org-id-populator-email-aggregation
       podSpec:
         image: quay.io/cloudservices/tenant-utils:latest
         command:
-          - ./org-id-column-populator
-          - -C
-          - -a
-          - account_id
-          - -o
-          - org_id
-          - -t
-          - event
-          - --ean-translator-addr
-          - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
-          - --db-operation-timeout
-          - "10"
+        - ./org-id-column-populator
+        - -C
+        - -a
+        - account_id
+        - -o
+        - org_id
+        - -t
+        - email_aggregation
+        - --ean-translator-addr
+        - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+        - --db-operation-timeout
+        - "10"
         env:
-          - name: TENANT_TRANSLATOR_HOST
-            value: ${TENANT_TRANSLATOR_HOST}
-          - name: TENANT_TRANSLATOR_PORT
-            value: ${TENANT_TRANSLATOR_PORT}
-          - name: LOG_FORMAT
-            value: ${LOG_FORMAT}
-          - name: LOG_BATCH_FREQUENCY
-            value: '1'
+        - name: TENANT_TRANSLATOR_HOST
+          value: ${TENANT_TRANSLATOR_HOST}
+        - name: TENANT_TRANSLATOR_PORT
+          value: ${TENANT_TRANSLATOR_PORT}
+        - name: LOG_FORMAT
+          value: ${LOG_FORMAT}
+        - name: LOG_BATCH_FREQUENCY
+          value: '1'
+        resources:
+          limits:
+            cpu: 300m
+            memory: 1Gi
+          requests:
+            cpu: 50m
+            memory: 512Mi
+    - name: org-id-populator-endpoints
+      podSpec:
+        image: quay.io/cloudservices/tenant-utils:latest
+        command:
+        - ./org-id-column-populator
+        - -C
+        - -a
+        - account_id
+        - -o
+        - org_id
+        - -t
+        - endpoints
+        - --ean-translator-addr
+        - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+        - --db-operation-timeout
+        - "10"
+        env:
+        - name: TENANT_TRANSLATOR_HOST
+          value: ${TENANT_TRANSLATOR_HOST}
+        - name: TENANT_TRANSLATOR_PORT
+          value: ${TENANT_TRANSLATOR_PORT}
+        - name: LOG_FORMAT
+          value: ${LOG_FORMAT}
+        - name: LOG_BATCH_FREQUENCY
+          value: '1'
+        resources:
+          limits:
+            cpu: 300m
+            memory: 1Gi
+          requests:
+            cpu: 50m
+            memory: 512Mi
+    - name: org-id-populator-endpoint-email-subscriptions
+      podSpec:
+        image: quay.io/cloudservices/tenant-utils:latest
+        command:
+        - ./org-id-column-populator
+        - -C
+        - -a
+        - account_id
+        - -o
+        - org_id
+        - -t
+        - endpoint_email_subscriptions
+        - --ean-translator-addr
+        - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+        - --db-operation-timeout
+        - "10"
+        env:
+        - name: TENANT_TRANSLATOR_HOST
+          value: ${TENANT_TRANSLATOR_HOST}
+        - name: TENANT_TRANSLATOR_PORT
+          value: ${TENANT_TRANSLATOR_PORT}
+        - name: LOG_FORMAT
+          value: ${LOG_FORMAT}
+        - name: LOG_BATCH_FREQUENCY
+          value: '1'
+        resources:
+          limits:
+            cpu: 300m
+            memory: 1Gi
+          requests:
+            cpu: 50m
+            memory: 512Mi
+    - name: org-id-populator-event
+      podSpec:
+        image: quay.io/cloudservices/tenant-utils:latest
+        command:
+        - ./org-id-column-populator
+        - -C
+        - -a
+        - account_id
+        - -o
+        - org_id
+        - -t
+        - event
+        - --ean-translator-addr
+        - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+        - --db-operation-timeout
+        - "10"
+        env:
+        - name: TENANT_TRANSLATOR_HOST
+          value: ${TENANT_TRANSLATOR_HOST}
+        - name: TENANT_TRANSLATOR_PORT
+          value: ${TENANT_TRANSLATOR_PORT}
+        - name: LOG_FORMAT
+          value: ${LOG_FORMAT}
+        - name: LOG_BATCH_FREQUENCY
+          value: '1'
         resources:
           limits:
             cpu: 300m
