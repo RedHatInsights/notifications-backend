@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.camel;
 
 import com.redhat.cloud.notifications.Base64Utils;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -22,7 +23,6 @@ import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.common.header.internals.RecordHeaders;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -53,8 +53,8 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     public static final String CAMEL_SUBTYPE_HEADER = "CAMEL_SUBTYPE";
     public static final String PROCESSORNAME = "processorname";
 
-    @ConfigProperty(name = "ob.enabled", defaultValue = "false")
-    boolean obEnabled;
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Inject
     BaseTransformer transformer;
@@ -191,7 +191,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
     private void callOpenBridge(JsonObject body, UUID id, String accountId, CamelProperties camelProperties, String integrationName, String originalEventId) {
 
-        if (!obEnabled) {
+        if (!featureFlipper.isObEnabled()) {
             Log.debug("Ob not enabled, doing nothing");
             return;
         }

@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
@@ -83,8 +84,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Inject
     EndpointResource endpointResource;
 
-    @Inject BridgeHelper
-    bridgeHelper;
+    @Inject
+    BridgeHelper bridgeHelper;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Test
     void testEndpointAdding() {
@@ -397,7 +401,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(400);
 
-        endpointResource.obEnabled = true;
+        featureFlipper.setObEnabled(true);
 
         given()
                 .header(identityHeader)
@@ -408,7 +412,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(400);
 
-        endpointResource.obEnabled = false;
+        featureFlipper.setObEnabled(false);
 
     }
 
@@ -438,8 +442,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(cAttr);
 
-        endpointResource.obEnabled = true;
-        bridgeHelper.setObEnabled(true);
+        featureFlipper.setObEnabled(true);
 
         // First we try with bogus values for the OB endpoint itself (no valid bridge)
         given()
@@ -498,8 +501,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         }
 
         MockServerConfig.clearOpenBridgeEndpoints(bridge);
-        bridgeHelper.setObEnabled(false);
-        endpointResource.obEnabled = false;
+        featureFlipper.setObEnabled(false);
     }
 
     @Test

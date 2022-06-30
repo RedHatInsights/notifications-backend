@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.openbridge;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -18,8 +19,8 @@ import java.util.Map;
 @ApplicationScoped
 public class BridgeHelper {
 
-    @ConfigProperty(name = "ob.enabled", defaultValue = "false")
-    boolean obEnabled;
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @ConfigProperty(name = "ob.bridge.uuid")
     String ourBridge;
@@ -42,7 +43,7 @@ public class BridgeHelper {
     @Produces
     public Bridge getBridgeIfNeeded() {
 
-        if (!obEnabled) {
+        if (!featureFlipper.isObEnabled()) {
             return new Bridge("- OB not enabled -", "http://does.not.exist", "no name");
         }
 
@@ -85,7 +86,7 @@ public class BridgeHelper {
     @RequestScoped
     @Produces
     public BridgeAuth getAuthToken() {
-        if (!obEnabled) {
+        if (!featureFlipper.isObEnabled()) {
             return new BridgeAuth("- OB not enabled token -");
         }
 
@@ -115,10 +116,6 @@ public class BridgeHelper {
         Map<String, Object> tokenMap = authService.getTokenStructWithClientCredentials(body);
         String authToken = (String) tokenMap.get("access_token");
         return "Bearer " + authToken;
-    }
-
-    public void setObEnabled(boolean obEnabled) {
-        this.obEnabled = obEnabled;
     }
 
     public void setOurBridge(String id) {

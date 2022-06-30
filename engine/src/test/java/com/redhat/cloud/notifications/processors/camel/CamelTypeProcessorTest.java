@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -74,6 +75,9 @@ public class CamelTypeProcessorTest {
 
     @Inject
     BridgeHelper bridgeHelper;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @BeforeEach
     void beforeEach() {
@@ -152,8 +156,7 @@ public class CamelTypeProcessorTest {
         Endpoint endpoint = buildCamelEndpoint(event.getAction().getAccountId());
         endpoint.setSubType("slack");
 
-        processor.obEnabled = true;
-        bridgeHelper.setObEnabled(true);
+        featureFlipper.setObEnabled(true);
 
         // Let's trigger the processing.
         // First with 'random OB endpoints', so we expect this to fail
@@ -227,8 +230,7 @@ public class CamelTypeProcessorTest {
         assertFalse(historyItem.isInvocationResult());
 
         MockServerConfig.clearOpenBridgeEndpoints(bridge);
-        processor.obEnabled = false;
-        bridgeHelper.setObEnabled(false);
+        featureFlipper.setObEnabled(false);
 
     }
 
