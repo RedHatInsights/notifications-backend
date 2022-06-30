@@ -1,14 +1,11 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
 
@@ -38,28 +35,13 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
     private static final String UNSPECIFIED_TYPE = "unspecified";
     private static final List<String> ADVISORY_TYPES = Arrays.asList(ENHANCEMENT_TYPE, BUGFIX_TYPE, SECURITY_TYPE, UNSPECIFIED_TYPE);
 
-    private final Set<String> uniqueHosts = new HashSet<>();
-    private final Map<String, HashSet<String>> uniqueHostsPerAdvisoryType = new HashMap<>() {
-        {
-            put(ENHANCEMENT_TYPE, new HashSet<>());
-            put(BUGFIX_TYPE, new HashSet<>());
-            put(SECURITY_TYPE, new HashSet<>());
-            put(UNSPECIFIED_TYPE, new HashSet<>());
-        }
-    };
-    private static final String UNIQUE_HOSTS_CNT = "unique_system_count";
-
     public PatchEmailPayloadAggregator() {
         JsonObject patch = new JsonObject();
 
-        patch.put(ENHANCEMENT_TYPE, new JsonObject());
-        patch.put(BUGFIX_TYPE, new JsonObject());
-        patch.put(SECURITY_TYPE, new JsonObject());
-        patch.put(UNSPECIFIED_TYPE, new JsonObject());
-
-        patch.forEach(advisoryType -> {
-            patch.getJsonObject(advisoryType.getKey()).put(ADVISORIES_KEY, new JsonObject());
-        });
+        patch.put(ENHANCEMENT_TYPE, new JsonArray());
+        patch.put(BUGFIX_TYPE, new JsonArray());
+        patch.put(SECURITY_TYPE, new JsonArray());
+        patch.put(UNSPECIFIED_TYPE, new JsonArray());
 
         context.put(PATCH_KEY, patch);
     }
@@ -75,7 +57,6 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
         }
 
         JsonObject payloadContext = notificationPayload.getJsonObject(CONTEXT_KEY);
-        String inventoryID = payloadContext.getString(INVENTORY_ID);
 
         // Put and group advisories
         notificationPayload.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
@@ -88,24 +69,8 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
                 return;
             }
 
-            JsonObject newAdvisory = new JsonObject();
             String advisoryName = payload.getString(ADVISORY_NAME);
-            newAdvisory.put(ADVISORY_NAME, advisoryName);
-            patch.getJsonObject(advisoryType).getJsonObject(ADVISORIES_KEY).put(advisoryName, newAdvisory);
-
-            uniqueHostsPerAdvisoryType.get(advisoryType).add(inventoryID);
+            patch.getJsonArray(advisoryType).add(advisoryName);
         });
-
-        // Put unique systems count per each advisory type
-        patch.forEach(advisoryType -> {
-            String key = advisoryType.getKey();
-            if (ADVISORY_TYPES.contains(key)) {
-                patch.getJsonObject(key).put(UNIQUE_HOSTS_CNT, uniqueHostsPerAdvisoryType.get(key).size());
-            }
-        });
-
-        // Put total unique systems count
-        uniqueHosts.add(inventoryID);
-        context.put(UNIQUE_HOSTS_CNT, uniqueHosts.size());
     }
 }
