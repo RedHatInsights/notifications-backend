@@ -1,15 +1,21 @@
 package com.redhat.cloud.notifications.processors.camel;
 
+import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.openbridge.Bridge;
+import com.redhat.cloud.notifications.openbridge.BridgeHelper;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.TracingMetadata;
@@ -27,12 +33,12 @@ import org.junit.jupiter.api.Test;
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CAMEL_SUBTYPE_HEADER;
@@ -47,11 +53,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class CamelTypeProcessorTest {
 
+    public static final String SUB_TYPE_KEY = "subType";
+    public static final String SUB_TYPE = "sub-type";
     @Inject
     @Any
     InMemoryConnector inMemoryConnector;
@@ -62,9 +72,12 @@ public class CamelTypeProcessorTest {
     @Inject
     CamelTypeProcessor processor;
 
+    @Inject
+    BridgeHelper bridgeHelper;
+
     @BeforeEach
     void beforeEach() {
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(PROCESSED_COUNTER_NAME);
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
     }
 
     @AfterEach
@@ -87,7 +100,9 @@ public class CamelTypeProcessorTest {
         // Two endpoints should have been processed.
         assertEquals(2, result.size());
         // Metrics should report the same thing.
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2, SUB_TYPE_KEY, SUB_TYPE);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, "other-type");
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0);
 
         // Let's have a look at the first result entry fields.
         assertEquals(event, result.get(0).getEvent());
@@ -128,6 +143,95 @@ public class CamelTypeProcessorTest {
         checkTracingMetadata(message);
     }
 
+    @Test
+    void testOBEndpointProcessing() {
+
+        // We need input data for the test.
+        Event event = buildEvent();
+        event.setAccountId("rhid123");
+        Endpoint endpoint = buildCamelEndpoint(event.getAction().getAccountId());
+        endpoint.setSubType("slack");
+
+        processor.obEnabled = true;
+        bridgeHelper.setObEnabled(true);
+
+        // Let's trigger the processing.
+        // First with 'random OB endpoints', so we expect this to fail
+        List<NotificationHistory> result = processor.process(event, List.of(endpoint));
+
+        // One endpoint should have been processed.
+        assertEquals(1, result.size());
+        // Metrics should report the same thing.
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, SUB_TYPE);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 1, SUB_TYPE_KEY, "slack");
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, "other-type");
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0);
+
+        // Let's have a look at the first result entry fields.
+        NotificationHistory historyItem = result.get(0);
+        assertEquals(event, historyItem.getEvent());
+        assertEquals(endpoint, historyItem.getEndpoint());
+        assertEquals(CAMEL, historyItem.getEndpointType());
+        assertEquals("slack", historyItem.getEndpointSubType());
+        assertEquals(1, historyItem.getDetails().size());
+        Map<String, Object> details = historyItem.getDetails();
+        assertTrue(details.containsKey("failure"));
+
+        // Now set up some mock OB endpoints (simulate valid bridge)
+        String eventsEndpoint = getMockServerUrl() + "/events";
+        System.out.println("==> Setting events endpoint to " + eventsEndpoint);
+        Bridge bridge = new Bridge("321", eventsEndpoint, "my bridge");
+        Map<String, String> auth = new HashMap<>();
+        auth.put("access_token", "li-la-lu-token");
+        Map<String, String> obProcessor = new HashMap<>();
+        obProcessor.put("id", "p-my-id");
+
+        MockServerConfig.addOpenBridgeEndpoints(auth, bridge);
+        bridgeHelper.setOurBridge("321");
+
+        System.out.println("==> Auth token " + bridgeHelper.getAuthToken());
+        System.out.println("==> The bridge " + bridgeHelper.getBridgeIfNeeded());
+
+        // Process again
+        result = processor.process(event, List.of(endpoint));
+
+        // One endpoint should have been processed.
+        assertEquals(1, result.size());
+        // Metrics should report the same thing.
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2, SUB_TYPE_KEY, "slack");
+
+        // Let's have a look at the first result entry fields.
+        historyItem = result.get(0);
+        assertEquals(event, historyItem.getEvent());
+        assertEquals(endpoint, historyItem.getEndpoint());
+        assertEquals(CAMEL, historyItem.getEndpointType());
+        assertEquals("slack", historyItem.getEndpointSubType());
+        assertNull(historyItem.getDetails());
+
+        // Now try again, but the remote throws an error
+        event.getAction().setAccountId("something-random");
+        result = processor.process(event, List.of(endpoint));
+        assertEquals(1, result.size());
+        // Metrics should report the same thing.
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 3, SUB_TYPE_KEY, "slack");
+
+        // Let's have a look at the first result entry fields.
+        historyItem = result.get(0);
+        assertEquals(event, historyItem.getEvent());
+        assertEquals(1, historyItem.getDetails().size());
+        details = historyItem.getDetails();
+        assertTrue(details.containsKey("failure"));
+
+        assertNotNull(historyItem.getInvocationTime());
+        // The invocation will be complete when the response from Camel has been received.
+        assertFalse(historyItem.isInvocationResult());
+
+        MockServerConfig.clearOpenBridgeEndpoints(bridge);
+        processor.obEnabled = false;
+        bridgeHelper.setObEnabled(false);
+
+    }
+
     private static Event buildEvent() {
         Action action = new Action();
         action.setVersion("v1.0.0");
@@ -137,13 +241,18 @@ public class CamelTypeProcessorTest {
         action.setTimestamp(LocalDateTime.now());
         action.setAccountId("account-id");
         action.setRecipients(List.of());
-        action.setContext(new HashMap<>());
+        action.setContext(new Context.ContextBuilder().build());
         action.setEvents(
                 List.of(
-                        com.redhat.cloud.notifications.ingress.Event
-                                .newBuilder()
-                                .setMetadataBuilder(Metadata.newBuilder())
-                                .setPayload(Map.of("k1", "v1", "k2", "v2", "k3", "v3"))
+                        new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                                .withMetadata(new Metadata.MetadataBuilder().build())
+                                .withPayload(
+                                        new Payload.PayloadBuilder()
+                                                .withAdditionalProperty("k1", "v1")
+                                                .withAdditionalProperty("k2", "v2")
+                                                .withAdditionalProperty("k3", "v3")
+                                                .build()
+                                )
                                 .build()
                 )
         );
@@ -163,19 +272,19 @@ public class CamelTypeProcessorTest {
         properties.setBasicAuthentication(basicAuth);
         properties.setExtras(Map.of("foo", "bar"));
         // Todo: NOTIF-429 backward compatibility change - Remove soon.
-        properties.setSubType("sub-type");
+        properties.setSubType(SUB_TYPE);
 
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
         endpoint.setType(CAMEL);
-        endpoint.setSubType("sub-type");
+        endpoint.setSubType(SUB_TYPE);
         endpoint.setProperties(properties);
         return endpoint;
     }
 
     private void checkBasicAuthentication(JsonObject notifMetadata, BasicAuthentication expectedBasicAuth) {
         String credentials = expectedBasicAuth.getUsername() + ":" + expectedBasicAuth.getPassword();
-        String expectedBase64Credentials = new String(Base64.getEncoder().encode(credentials.getBytes(UTF_8)), UTF_8);
+        String expectedBase64Credentials = Base64Utils.encode(credentials);
         assertEquals(expectedBase64Credentials, notifMetadata.getString("basicAuth"));
     }
 

@@ -6,7 +6,7 @@ import { Operations } from '../../generated/OpenapiInternal';
 import { EventType } from '../../types/Notifications';
 
 const validateResponse = validationResponseTransformer(
-    (payload: Operations.InternalServiceGetEventTypes.Payload) => {
+    (payload: Operations.InternalResourceGetEventTypes.Payload) => {
         if (payload.status === 200) {
             const eventTypes: ReadonlyArray<EventType> = payload.value.map(value => ({
                 id: value.id ?? '',
@@ -29,7 +29,7 @@ const validateResponse = validationResponseTransformer(
 );
 
 export const useEventTypes = (applicationId: string) => {
-    const query = useQuery(Operations.InternalServiceGetEventTypes.actionCreator({
+    const query = useQuery(Operations.InternalResourceGetEventTypes.actionCreator({
         appId: applicationId
     }));
 

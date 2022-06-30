@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
+import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
@@ -23,6 +24,7 @@ import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -33,7 +35,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.jboss.logging.Logger;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -75,9 +76,7 @@ public class EndpointResource {
 
     public static final String OB_PROCESSOR_ID = "processorId";
     public static final String OB_PROCESSOR_NAME = "processorname"; // Must be all lower for the filter.
-    public static final String SLACK = "Slack";
-
-    private static final Logger LOGGER = Logger.getLogger(EndpointResource.class);
+    public static final String SLACK = "slack_sink_0.1";
 
     private static final List<EndpointType> systemEndpointType = List.of(
             EndpointType.EMAIL_SUBSCRIPTION
@@ -94,6 +93,9 @@ public class EndpointResource {
 
     @Inject
     ApplicationRepository applicationRepository;
+
+    @Inject
+    RbacGroupValidator rbacGroupValidator;
 
     @ConfigProperty(name = "ob.enabled", defaultValue = "false")
     boolean obEnabled;
@@ -116,7 +118,7 @@ public class EndpointResource {
         @Parameter(
                 name = "limit",
                 in = ParameterIn.QUERY,
-                description = "Number of items per page, if not specified or 0 is used, returns all elements",
+                description = "Number of items per page. If the value is 0, it will return all elements",
                 schema = @Schema(type = SchemaType.INTEGER)
             ),
         @Parameter(
@@ -139,13 +141,8 @@ public class EndpointResource {
 
         if (targetType != null && targetType.size() > 0) {
             Set<CompositeEndpointType> compositeType = targetType.stream().map(s -> {
-                String[] pieces = s.split(":", 2);
                 try {
-                    if (pieces.length == 1) {
-                        return new CompositeEndpointType(EndpointType.valueOf(s.toUpperCase()));
-                    } else {
-                        return new CompositeEndpointType(EndpointType.valueOf(pieces[0].toUpperCase()), pieces[1]);
-                    }
+                    return CompositeEndpointType.fromString(s);
                 } catch (IllegalArgumentException e) {
                     throw new BadRequestException("Unknown endpoint type: [" + s + "]", e);
                 }
@@ -197,7 +194,7 @@ public class EndpointResource {
                 try {
                     processorId = setupOpenBridgeProcessor(endpoint, properties, processorName);
                 } catch (Exception e) {
-                    LOGGER.warn("Processor setup failed: " + e.getMessage());
+                    Log.warn("Processor setup failed: " + e.getMessage());
                     throw new InternalServerErrorException("Can't set up the endpoint");
                 }
 
@@ -221,9 +218,21 @@ public class EndpointResource {
     public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid RequestEmailSubscriptionProperties requestProps) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
 
+        if (requestProps.getGroupId() != null && requestProps.isOnlyAdmins()) {
+            throw new BadRequestException(String.format("Cannot use RBAC groups and only admins in the same endpoint"));
+        }
+
+        if (requestProps.getGroupId() != null) {
+            boolean isValid = rbacGroupValidator.validate(requestProps.getGroupId(), principal.getIdentity().rawIdentity);
+            if (!isValid) {
+                throw new BadRequestException(String.format("Invalid RBAC group identified with id %s", requestProps.getGroupId()));
+            }
+        }
+
         // Prevent from creating not public facing properties
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
         properties.setOnlyAdmins(requestProps.isOnlyAdmins());
+        properties.setGroupId(requestProps.getGroupId());
 
         return endpointRepository.getOrCreateEmailSubscriptionEndpoint(principal.getAccount(), properties);
     }
@@ -265,11 +274,11 @@ public class EndpointResource {
                             try {
                                 bridgeApiService.deleteProcessor(bridge.getId(), processorId, bridgeAuth.getToken());
                             } catch (Exception ex) {
-                                LOGGER.warn("Removal of OB processor failed:" + ex.getMessage());
+                                Log.warn("Removal of OB processor failed:" + ex.getMessage());
                                 // Nothing more we can do
                             }
                         } else {
-                            LOGGER.warn("ProcessorId was null for endpoint " + id.toString());
+                            Log.warn("ProcessorId was null for endpoint " + id.toString());
                         }
                     }
                 }
@@ -461,8 +470,8 @@ public class EndpointResource {
         out.put("transformationTemplate", template);
 
         Map<String, String> props = new HashMap<>();
-        props.put("channel", properties.getExtras().getOrDefault("channel", "#general"));
-        props.put("webhookUrl", properties.getUrl());
+        props.put("slack_channel", properties.getExtras().getOrDefault("channel", "#general"));
+        props.put("slack_webhook_url", properties.getUrl());
         actionMap.put("parameters", props);
 
         String token = bridgeAuth.getToken();

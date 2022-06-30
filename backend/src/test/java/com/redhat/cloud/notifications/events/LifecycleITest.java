@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
-import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
@@ -41,6 +40,7 @@ import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
@@ -78,10 +78,45 @@ public class LifecycleITest extends DbIsolatedTest {
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
-    private Header initRbacMock(String tenant, String username, MockServerConfig.RbacAccess access) {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
+    private Header initRbacMock(String tenant, String orgId, String username, RbacAccess access) {
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
+    }
+
+    @Test
+    void shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent() {
+        final String accountId = "tenant";
+        final String orgId = "someOrdId";
+        final String username = "user";
+
+        // Identity header used for all public APIs calls. Internal APIs calls don't need that.
+        Header identityHeader = initRbacMock(accountId, orgId, username, RbacAccess.FULL_ACCESS);
+        Header turnpikeIdentityHeader = createTurnpikeIdentityHeader("admin", adminRole);
+
+        // First, we need a bundle, an app and an event type. Let's create them!
+        String bundleId = createBundle(turnpikeIdentityHeader);
+
+        // Create first behavior group with name BG1
+        createBehaviorGroup(identityHeader, bundleId, "BG1");
+
+        // create a Behavior Group with the same name again
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setDisplayName("BG1");
+        behaviorGroup.setBundleId(UUID.fromString(bundleId));
+
+        String responseBody = given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .body(Json.encode(behaviorGroup))
+                .when()
+                .post(API_NOTIFICATIONS_V_1_0 + "/notifications/behaviorGroups")
+                .then()
+                .statusCode(400)
+                .contentType(JSON)
+                .extract().asString();
+
+        assertEquals("A behavior group with display name [" + behaviorGroup.getDisplayName() + "] already exists", responseBody);
     }
 
     @Test
@@ -94,6 +129,7 @@ public class LifecycleITest extends DbIsolatedTest {
          */
 
         final String accountId = "tenant";
+        final String orgId = "someOrdId";
         final String username = "user";
 
         RequestDefaultBehaviorGroupPropertyList defaultBehaviorGroupProperties = new RequestDefaultBehaviorGroupPropertyList();
@@ -103,7 +139,7 @@ public class LifecycleITest extends DbIsolatedTest {
         RequestEmailSubscriptionProperties userEmailEndpointRequest = new RequestEmailSubscriptionProperties();
 
         // Identity header used for all public APIs calls. Internal APIs calls need a different token.
-        Header identityHeader = initRbacMock(accountId, username, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(accountId, orgId, username, RbacAccess.FULL_ACCESS);
         Header turnpikeIdentityHeader = createTurnpikeIdentityHeader("admin", adminRole);
 
         // First, we need a bundle, an app and an event type. Let's create them!
@@ -113,8 +149,8 @@ public class LifecycleITest extends DbIsolatedTest {
         checkAllEventTypes(identityHeader);
 
         // We also need behavior groups.
-        String behaviorGroupId1 = createBehaviorGroup(identityHeader, bundleId);
-        String behaviorGroupId2 = createBehaviorGroup(identityHeader, bundleId);
+        String behaviorGroupId1 = createBehaviorGroup(identityHeader, bundleId, "Behavior group 1");
+        String behaviorGroupId2 = createBehaviorGroup(identityHeader, bundleId, "Behavior group 2");
         String defaultBehaviorGroupId = createDefaultBehaviorGroup(turnpikeIdentityHeader, bundleId);
 
         // We need actions for our behavior groups.
@@ -149,7 +185,7 @@ public class LifecycleITest extends DbIsolatedTest {
         String emailEndpoint = getEmailEndpoint(identityHeader, userEmailEndpointRequest);
 
         // Before the notifications split, a Kafka message was sent here.
-        Event event = createEvent(accountId, eventTypeId);
+        Event event = createEvent(accountId, orgId, eventTypeId);
         createNotificationHistory(event, endpointId1, true);
         createNotificationHistory(event, endpointId2, true);
 
@@ -167,7 +203,7 @@ public class LifecycleITest extends DbIsolatedTest {
         checkEventTypeBehaviorGroups(identityHeader, eventTypeId, behaviorGroupId1, behaviorGroupId2, defaultBehaviorGroupId);
 
         // Before the notifications split, a Kafka message was sent here.
-        event = createEvent(accountId, eventTypeId);
+        event = createEvent(accountId, orgId, eventTypeId);
         createNotificationHistory(event, endpointId1, true);
         createNotificationHistory(event, endpointId2, true);
         createNotificationHistory(event, endpointId3, false);
@@ -182,7 +218,7 @@ public class LifecycleITest extends DbIsolatedTest {
         subscribeUserPreferences(identityHeader, BUNDLE_NAME, APP_NAME);
 
         // Before the notifications split, a Kafka message was sent here.
-        event = createEvent(accountId, eventTypeId);
+        event = createEvent(accountId, orgId, eventTypeId);
         createNotificationHistory(event, endpointId1, true);
         createNotificationHistory(event, endpointId2, true);
         createNotificationHistory(event, endpointId3, false);
@@ -201,7 +237,7 @@ public class LifecycleITest extends DbIsolatedTest {
         addBehaviorGroupActions(identityHeader, behaviorGroupId2, 200, endpointId3, endpointId2);
 
         // Before the notifications split, a Kafka message was sent here.
-        createEvent(accountId, eventTypeId);
+        createEvent(accountId, orgId, eventTypeId);
         createNotificationHistory(event, endpointId1, true);
         createNotificationHistory(event, endpointId2, true);
         createNotificationHistory(event, endpointId3, false);
@@ -348,9 +384,9 @@ public class LifecycleITest extends DbIsolatedTest {
         assertEquals(2, jsonEventTypes.size()); // One from the current test, one from the default DB records.
     }
 
-    private String createBehaviorGroupInternal(String path, Header identityHeader, String bundleId) {
+    private String createBehaviorGroupInternal(String path, Header identityHeader, String bundleId, String displayName) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setDisplayName("Behavior group");
+        behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(UUID.fromString(bundleId));
 
         var request = given();
@@ -372,6 +408,7 @@ public class LifecycleITest extends DbIsolatedTest {
         jsonBehaviorGroup.mapTo(BehaviorGroup.class);
         assertNotNull(jsonBehaviorGroup.getString("id"));
         assertNull(jsonBehaviorGroup.getString("accountId"));
+        assertNull(jsonBehaviorGroup.getString("orgId"));
         assertEquals(behaviorGroup.getDisplayName(), jsonBehaviorGroup.getString("display_name"));
         assertEquals(behaviorGroup.getBundleId().toString(), jsonBehaviorGroup.getString("bundle_id"));
         assertNotNull(jsonBehaviorGroup.getString("created"));
@@ -379,21 +416,21 @@ public class LifecycleITest extends DbIsolatedTest {
         return jsonBehaviorGroup.getString("id");
     }
 
-    private String createBehaviorGroup(Header identityHeader, String bundleId) {
-        return createBehaviorGroupInternal(API_NOTIFICATIONS_V_1_0 + "/notifications/behaviorGroups", identityHeader, bundleId);
+    private String createBehaviorGroup(Header identityHeader, String bundleId, String displayName) {
+        return createBehaviorGroupInternal(API_NOTIFICATIONS_V_1_0 + "/notifications/behaviorGroups", identityHeader, bundleId, displayName);
     }
 
     private String createDefaultBehaviorGroup(Header turnpikeIdentityHeader, String bundleId) {
-        return createBehaviorGroupInternal(API_INTERNAL + "/behaviorGroups/default", turnpikeIdentityHeader, bundleId);
+        return createBehaviorGroupInternal(API_INTERNAL + "/behaviorGroups/default", turnpikeIdentityHeader, bundleId, "Behavior group");
     }
 
     @Transactional
-    Event createEvent(String accountId, String eventTypeId) {
-        EventType eventType =  entityManager.createQuery("FROM EventType e JOIN FETCH e.application a JOIN FETCH a.bundle WHERE e.id = :id", EventType.class)
+    Event createEvent(String accountId, String orgId, String eventTypeId) {
+        EventType eventType = entityManager.createQuery("FROM EventType e JOIN FETCH e.application a JOIN FETCH a.bundle WHERE e.id = :id", EventType.class)
                 .setParameter("id", UUID.fromString(eventTypeId))
                 .getSingleResult();
 
-        Event event = new Event(accountId, eventType);
+        Event event = new Event(accountId, orgId, eventType, UUID.randomUUID());
         entityManager.persist(event);
         return event;
     }
@@ -453,7 +490,7 @@ public class LifecycleITest extends DbIsolatedTest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(true);
         properties.setSecretToken(secretToken);
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl() + WEBHOOK_MOCK_PATH);
+        properties.setUrl(getMockServerUrl() + WEBHOOK_MOCK_PATH);
 
         Endpoint endpoint = new Endpoint();
         endpoint.setType(EndpointType.WEBHOOK);
@@ -478,6 +515,7 @@ public class LifecycleITest extends DbIsolatedTest {
         jsonEndpoint.mapTo(Endpoint.class);
         assertNotNull(jsonEndpoint.getString("id"));
         assertNull(jsonEndpoint.getString("accountId"));
+        assertNull(jsonEndpoint.getString("orgId"));
         assertEquals(endpoint.getName(), jsonEndpoint.getString("name"));
         assertEquals(endpoint.getDescription(), jsonEndpoint.getString("description"));
         assertTrue(jsonEndpoint.getBoolean("enabled"));

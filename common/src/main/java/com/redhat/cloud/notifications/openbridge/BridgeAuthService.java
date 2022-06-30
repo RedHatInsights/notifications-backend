@@ -14,12 +14,17 @@ import java.util.Map;
  * Talk to the IDM server of openbridge to get a bearer token
  */
 @RegisterRestClient(configKey = "kc")
-@Path("/auth/realms/event-bridge-fm/protocol/openid-connect/token")
+@Path("/auth/realms/redhat-external/protocol/openid-connect/token")
 public interface BridgeAuthService {
 
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    Map<String, Object> getTokenStruct(String body,
-         @HeaderParam("Authorization") String authHeader);
+    Map<String, Object> getTokenStructWithClientPassword(String body,
+                                                         @HeaderParam("Authorization") String authHeader);
+
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, Object> getTokenStructWithClientCredentials(String body);
 }

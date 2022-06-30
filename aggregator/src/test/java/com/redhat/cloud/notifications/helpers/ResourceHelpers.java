@@ -16,8 +16,8 @@ public class ResourceHelpers {
     @Inject
     Session session;
 
-    public void addEmailAggregation(String tenant, String bundle, String application, String policyId, String insightsId) {
-        EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, bundle, application, policyId, insightsId);
+    public void addEmailAggregation(String tenant, String orgId, String bundle, String application, String policyId, String insightsId) {
+        EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, orgId, bundle, application, policyId, insightsId);
         addEmailAggregation(aggregation);
     }
 

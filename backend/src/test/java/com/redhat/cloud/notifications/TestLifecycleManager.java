@@ -10,6 +10,8 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
+
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
     PostgreSQLContainer<?> postgreSQLContainer;
@@ -24,6 +26,8 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
             throw new RuntimeException(e);
         }
         setupMockEngine(properties);
+
+        properties.put("ob.backchannel.user", "ob-user");
 
         System.out.println(" -- Running with properties: " + properties);
         return properties;
@@ -60,8 +64,8 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
     void setupMockEngine(Map<String, String> props) {
         MockServerLifecycleManager.start();
-        props.put("quarkus.rest-client.rbac-authentication.url", MockServerLifecycleManager.getContainerUrl());
-        props.put("quarkus.rest-client.ob.url", MockServerLifecycleManager.getContainerUrl());
-        props.put("quarkus.rest-client.kc.url", MockServerLifecycleManager.getContainerUrl());
+        props.put("quarkus.rest-client.rbac-authentication.url", getMockServerUrl());
+        props.put("quarkus.rest-client.ob.url", getMockServerUrl());
+        props.put("quarkus.rest-client.kc.url", getMockServerUrl());
     }
 }

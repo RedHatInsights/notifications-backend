@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Title, Toolbar,
+import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar,
     ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { EyeIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
@@ -7,24 +7,20 @@ import {
     Td,  Th,   Thead,
     Tr } from '@patternfly/react-table';
 import * as React from 'react';
-import { useParams } from 'react-router';
 import { Link } from 'react-router-dom';
 
 import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
-import { useApplicationTypes } from '../../services/EventTypes/GetApplication';
-import { ListEventTypes } from '../EventTypes/ListEventTypes';
+import { useGetTemplates } from '../../services/EmailTemplates/GetTemplates';
 import { ViewTemplateModal } from './ViewEmailTemplateModal';
 
-type ApplicationPageParams = {
-    applicationId: string;
+interface EmailTemplateTableProps {
+    application: string;
 }
 
-export const EmailTemplateTable: React.FunctionComponent = () => {
+export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps> = props => {
     const { hasPermission } = useUserPermissions();
-
-    const { applicationId } = useParams<ApplicationPageParams>();
-    const applicationTypesQuery = useApplicationTypes(applicationId);
+    const getAllTemplates = useGetTemplates();
 
     const [ showViewModal, setShowViewModal ] = React.useState(false);
     const viewModal = () => {
@@ -35,58 +31,34 @@ export const EmailTemplateTable: React.FunctionComponent = () => {
         setShowViewModal(false);
     };
 
-    const application = React.useMemo(() => {
-        if (applicationTypesQuery.payload?.status === 200) {
-            return applicationTypesQuery.payload.value;
-        }
+    const columns = [ 'Email Templates' ];
 
-        return undefined;
-    }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
+    if (getAllTemplates.loading) {
+        return <Spinner />;
+    }
 
-    const columns = [ 'Email Template', 'Event Types' ];
-    const rows = [
-        {
-            displayName: 'email template 1',
-            id: '1',
-            eventType: 'event Type 1'
-        },
-        {
-            displayName: 'email template 2',
-            id: '2',
-            eventType: 'event Type 2'
-
-        },
-        {
-            displayName: 'email template 3',
-            id: '3',
-            eventType: 'event Type 3'
-
-        },
-        {
-            displayName: 'email template 4',
-            id: '4',
-            eventType: 'event Type 4'
-        }
-    ];
+    if (getAllTemplates.payload?.status !== 200) {
+        return <span>Error while loading templates: {getAllTemplates.errorObject.toString()}</span>;
+    }
 
     return (
         <React.Fragment>
             <PageSection>
                 <Title headingLevel="h1">
                     <Breadcrumb>
-                        <BreadcrumbItem target='#'> Email Template for { application?.displayName ?? '' }</BreadcrumbItem>
+                        <BreadcrumbItem target='#'>Email Templates</BreadcrumbItem>
                     </Breadcrumb></Title>
                 <TableComposable aria-label="Email Template table">
                     <Thead>
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button variant="primary" isDisabled={ !application || !hasPermission(application?.id) }
+                                    <Button variant="primary" isDisabled={ !hasPermission(props.application) }
                                         component={ (props: any) =>
                                             <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Email Template</Button>
                                     <ViewTemplateModal
                                         showModal={ showViewModal }
-                                        applicationName={ application?.displayName ?? '' }
+                                        applicationName={ props.application }
                                         onClose={ onClose }
                                     />
                                 </ToolbarItem>
@@ -99,14 +71,9 @@ export const EmailTemplateTable: React.FunctionComponent = () => {
                         </Tr>
                     </Thead>
                     <Tbody>
-                        { rows.map(r => (
-                            <Tr key={ r.id }>
-                                <Td>{r.displayName}</Td>
-                                <Td>
-                                    <ListEventTypes
-                                        appId={ application?.id ?? '' }
-                                    />
-                                </Td>
+                        { getAllTemplates.payload.value.map(e => (
+                            <Tr key={ e.id }>
+                                <Td>{ e.name }</Td>
                                 <Td>
                                     <Button className='view' type='button' variant='plain' onClick={ viewModal }
                                     > { <EyeIcon /> } </Button></Td>
@@ -117,7 +84,6 @@ export const EmailTemplateTable: React.FunctionComponent = () => {
                                     <Button className='delete' type='button' variant='plain'
                                         isDisabled>{ <TrashIcon /> } </Button></Td>
                             </Tr>
-
                         ))}
                     </Tbody>
                 </TableComposable>

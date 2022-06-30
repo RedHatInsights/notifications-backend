@@ -7,8 +7,10 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
@@ -49,17 +51,18 @@ import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.ReflectionHelper.updateField;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_ENDPOINTS_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_MESSAGES_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_EXCEPTION_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -120,8 +123,9 @@ public class LifecycleITest {
     @Test
     void test() {
         final String accountId = "tenant";
+        final String orgId = "org-id";
         final String username = "user";
-        setupEmailMock(accountId, username);
+        setupEmailMock(accountId, orgId, username);
 
         // First, we need a bundle, an app and an event type. Let's create them!
         Bundle bundle = resourceHelpers.createBundle(BUNDLE_NAME);
@@ -147,7 +151,7 @@ public class LifecycleITest {
         addDefaultBehaviorGroupAction(defaultBehaviorGroup);
 
         // Let's push a first message! It should not trigger any webhook call since we didn't link the event type with any behavior group.
-        pushMessage(0, 0, 0);
+        pushMessage(0, 0, 0, 0);
 
         // Now we'll link the event type with one behavior group.
         addEventTypeBehavior(eventType.getId(), behaviorGroup1.getId());
@@ -158,7 +162,7 @@ public class LifecycleITest {
         });
 
         // Pushing a new message should trigger two webhook calls.
-        pushMessage(2, 0, 0);
+        pushMessage(2, 0, 0, 0);
 
         // Let's check the notifications history.
         retry(() -> checkEndpointHistory(endpoint1, 1, true));
@@ -172,7 +176,7 @@ public class LifecycleITest {
         addEventTypeBehavior(eventType.getId(), behaviorGroup2.getId());
 
         // Pushing a new message should trigger three webhook calls and 1 emails - email is not sent as the user is not subscribed
-        pushMessage(3, 1, 0);
+        pushMessage(3, 1, 0, 0);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(endpoint1, 2, true));
@@ -184,7 +188,7 @@ public class LifecycleITest {
         subscribeUserPreferences(accountId, username, app.getId());
 
         // Pushing a new message should trigger three webhook calls and 1 email
-        pushMessage(3, 1, 1);
+        pushMessage(3, 1, 1, 0);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(endpoint1, 3, true));
@@ -199,7 +203,7 @@ public class LifecycleITest {
         addBehaviorGroupAction(behaviorGroup2.getId(), endpoint2.getId());
 
         // Pushing a new message should trigger three webhook calls.
-        pushMessage(3, 1, 1);
+        pushMessage(3, 1, 1, 0);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(endpoint1, 4, true));
@@ -214,7 +218,7 @@ public class LifecycleITest {
         // Unlinking user behavior group
         clearEventTypeBehaviors(eventType);
 
-        pushMessage(0, 0, 0);
+        pushMessage(0, 0, 0, 0);
 
         // The notifications history should be exactly the same than last time.
         retry(() -> checkEndpointHistory(endpoint1, 4, true));
@@ -224,11 +228,11 @@ public class LifecycleITest {
 
         // Linking the default behavior group again
         addEventTypeBehavior(eventType.getId(), defaultBehaviorGroup.getId());
-        pushMessage(0, 1, 1);
+        pushMessage(0, 1, 1, 0);
 
         // Deleting the default behavior group should unlink it
         deleteBehaviorGroup(defaultBehaviorGroup);
-        pushMessage(0, 0, 0);
+        pushMessage(0, 0, 0, 0);
 
         // We'll finish with a bundle removal.
         deleteBundle(bundle);
@@ -261,7 +265,7 @@ public class LifecycleITest {
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(true);
         properties.setSecretToken(secretToken);
-        properties.setUrl(MockServerLifecycleManager.getContainerUrl() + WEBHOOK_MOCK_PATH);
+        properties.setUrl(getMockServerUrl() + WEBHOOK_MOCK_PATH);
         return createEndpoint(accountId, WEBHOOK, "endpoint", "Endpoint", properties);
     }
 
@@ -303,8 +307,8 @@ public class LifecycleITest {
      * Pushes a single message to the 'ingress' channel.
      * Depending on the event type, behavior groups and endpoints configuration, it will trigger zero or more webhook calls.
      */
-    private void pushMessage(int expectedWebhookCalls, int expectedEmailEndpoints, int expectedSentEmails) {
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
+    private void pushMessage(int expectedWebhookCalls, int expectedEmailEndpoints, int expectedSentEmails, int expectedExceptionCount) {
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSING_EXCEPTION_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
 
         Runnable waitForWebhooks = setupCountdownCalls(
                 expectedWebhookCalls,
@@ -329,6 +333,7 @@ public class LifecycleITest {
 
         micrometerAssertionHelper.awaitAndAssertCounterIncrement(PROCESSED_MESSAGES_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 0);
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, expectedExceptionCount);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_ENDPOINTS_COUNTER_NAME, expectedWebhookCalls + expectedEmailEndpoints);
         micrometerAssertionHelper.clearSavedValues();
     }
@@ -360,17 +365,18 @@ public class LifecycleITest {
     private void emitMockedIngressAction() throws IOException {
         Action action = new Action();
         action.setAccountId("tenant");
+        action.setOrgId("org-id");
         action.setVersion("v1.0.0");
         action.setBundle(BUNDLE_NAME);
         action.setApplication(APP_NAME);
         action.setEventType(EVENT_TYPE_NAME);
         action.setTimestamp(LocalDateTime.now());
-        action.setContext(Map.of());
+        action.setContext(new Context.ContextBuilder().build());
         action.setRecipients(List.of());
         action.setEvents(List.of(
-                Event.newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of())
+                new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(new Payload.PayloadBuilder().build())
                         .build()
         ));
 
@@ -378,7 +384,7 @@ public class LifecycleITest {
         inMemoryConnector.source("ingress").send(serializedAction);
     }
 
-    private void setupEmailMock(String accountId, String username) {
+    private void setupEmailMock(String accountId, String orgId, String username) {
         Mockito.when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
 
         User user = new User();
@@ -391,13 +397,14 @@ public class LifecycleITest {
 
         Mockito.when(rbacRecipientUsersProvider.getUsers(
                 eq(accountId),
+                eq(orgId),
                 eq(true)
         )).thenReturn(List.of(user));
 
         updateField(
                 emailSender,
                 "bopUrl",
-                MockServerLifecycleManager.getContainerUrl() + EMAIL_SENDER_MOCK_PATH,
+                getMockServerUrl() + EMAIL_SENDER_MOCK_PATH,
                 EmailSender.class
         );
     }

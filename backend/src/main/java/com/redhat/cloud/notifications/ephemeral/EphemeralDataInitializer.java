@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
+import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -22,7 +22,6 @@ public class EphemeralDataInitializer {
 
     public static final String EPHEMERAL_DATA_KEY = "NOTIFICATIONS_EPHEMERAL_DATA";
 
-    private static final Logger LOGGER = Logger.getLogger(EphemeralDataInitializer.class);
     private static final String ENV_NAME_KEY = "ENV_NAME";
     private static final String ENV_EPHEMERAL_PREFIX = "env-ephemeral";
 
@@ -46,26 +45,26 @@ public class EphemeralDataInitializer {
                 if (inputStream != null) {
                     String rawData = new String(inputStream.readAllBytes(), UTF_8);
                     if (!rawData.isBlank()) {
-                        LOGGER.info("Loading ephemeral data from file");
+                        Log.info("Loading ephemeral data from file");
                         EphemeralData data = objectMapper.readValue(rawData, EphemeralData.class);
                         persist(data);
                     }
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("Ephemeral data loading from file failed", e);
+            Log.error("Ephemeral data loading from file failed", e);
         }
     }
 
     private void loadFromEnvVar() {
         String rawData = System.getenv(EPHEMERAL_DATA_KEY);
         if (rawData != null && !rawData.isBlank()) {
-            LOGGER.info("Loading ephemeral data from environment variable");
+            Log.info("Loading ephemeral data from environment variable");
             try {
                 EphemeralData data = objectMapper.readValue(rawData, EphemeralData.class);
                 persist(data);
             } catch (Exception e) {
-                LOGGER.error("Ephemeral data loading from environment variable failed", e);
+                Log.error("Ephemeral data loading from environment variable failed", e);
             }
         }
     }
@@ -80,7 +79,7 @@ public class EphemeralDataInitializer {
                     bundle = entityManager.createQuery(selectBundleQuery, Bundle.class)
                             .setParameter("bundleName", b.name)
                             .getSingleResult();
-                    LOGGER.infof("Bundle with name '%s' already exists, it won't be created from the ephemeral data", b.name);
+                    Log.infof("Bundle with name '%s' already exists, it won't be created from the ephemeral data", b.name);
                 } catch (NoResultException e) {
                     bundle = new Bundle();
                     bundle.setName(b.name);
@@ -97,7 +96,7 @@ public class EphemeralDataInitializer {
                                     .setParameter("bundleName", b.name)
                                     .setParameter("appName", a.name)
                                     .getSingleResult();
-                            LOGGER.infof("Application with name '%s' already exists, it won't be created from the ephemeral data", a.name);
+                            Log.infof("Application with name '%s' already exists, it won't be created from the ephemeral data", a.name);
                         } catch (NoResultException e) {
                             app = new Application();
                             app.setName(a.name);
@@ -117,7 +116,7 @@ public class EphemeralDataInitializer {
                                             .setParameter("appName", a.name)
                                             .setParameter("eventTypeName", et.name)
                                             .getSingleResult();
-                                    LOGGER.infof("Event type with name '%s' already exists, it won't be created from the ephemeral data", et.name);
+                                    Log.infof("Event type with name '%s' already exists, it won't be created from the ephemeral data", et.name);
                                 } catch (NoResultException e) {
                                     eventType = new EventType();
                                     eventType.setName(et.name);

@@ -10,7 +10,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import org.jboss.logging.Logger;
+import io.quarkus.logging.Log;
 
 import javax.annotation.Nullable;
 import javax.enterprise.context.ApplicationScoped;
@@ -19,6 +19,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -33,17 +34,13 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class EndpointRepository {
 
-    private static final Logger LOGGER = Logger.getLogger(EndpointRepository.class);
-
     @Inject
     EntityManager entityManager;
-
-
 
     @Transactional
     public Endpoint createEndpoint(Endpoint endpoint) {
         // Todo: NOTIF-429 backward compatibility change - Remove soon.
-        if (endpoint.getType() == EndpointType.CAMEL) {
+        if (endpoint.getType() == EndpointType.CAMEL && endpoint.getProperties() != null) {
             CamelProperties properties = endpoint.getProperties(CamelProperties.class);
 
             if (endpoint.getSubType() == null && properties.getSubType() == null) {
@@ -103,7 +100,7 @@ public class EndpointRepository {
                     .setParameter("endpointId", endpointId)
                     .getSingleResult();
         } catch (NoResultException e) {
-            return null;
+            throw new NotFoundException("Endpoint not found");
         }
     }
 
@@ -205,7 +202,7 @@ public class EndpointRepository {
     }
 
     @Transactional
-    private boolean modifyEndpointStatus(String tenant, UUID id, boolean enabled) {
+    boolean modifyEndpointStatus(String tenant, UUID id, boolean enabled) {
         String query = "UPDATE Endpoint SET enabled = :enabled WHERE accountId = :accountId AND id = :id";
         int rowCount = entityManager.createQuery(query)
                 .setParameter("id", id)
@@ -336,7 +333,7 @@ public class EndpointRepository {
 
     public Endpoint loadProperties(Endpoint endpoint) {
         if (endpoint == null) {
-            LOGGER.warn("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
+            Log.warn("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
             return null;
         }
         loadProperties(Collections.singletonList(endpoint));

@@ -34,7 +34,9 @@ import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -92,8 +94,9 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     @Test
     void testSettings() {
         String tenant = "empty";
+        String orgId = "empty";
         String username = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, username);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 

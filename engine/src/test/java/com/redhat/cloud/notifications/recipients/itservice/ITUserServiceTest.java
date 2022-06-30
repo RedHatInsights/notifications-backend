@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -70,10 +71,7 @@ public class ITUserServiceTest {
 
         when(itUserService.getUsers(any(ITUserRequest.class))).thenReturn(itUserResponses);
 
-        // TODO NOTIF-381 Remove this when the recipients retrieval from RBAC is removed.
-        rbacRecipientUsersProvider.retrieveUsersFromIt = true;
-
-        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", true);
+        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", "someOrgId", true);
         assertTrue(someAccountId.get(0).isActive());
 
         assertEquals(someAccountId.get(0).getEmail(), "first_adress@trashmail.org");
@@ -85,8 +83,8 @@ public class ITUserServiceTest {
         User mockedUser = createNonAdminMockedUser();
         List<User> mockedUsers = List.of(mockedUser);
 
-        when(mock.getUsers(Mockito.anyString(), anyBoolean())).thenReturn(mockedUsers);
-        final List<User> users = mock.getUsers("someAccountId", false);
+        when(mock.getUsers(anyString(), anyString(), anyBoolean())).thenReturn(mockedUsers);
+        final List<User> users = mock.getUsers("someAccountId", "someOrgId", false);
 
         final User user = users.get(0);
         assertEquals("firstName", user.getFirstName());

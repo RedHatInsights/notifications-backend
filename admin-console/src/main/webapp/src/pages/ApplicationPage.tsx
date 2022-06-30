@@ -1,11 +1,6 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar,
-    ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
-import {
-    TableComposable,
-    Tbody,
-    Td,  Th,   Thead,
-    Tr } from '@patternfly/react-table';
+import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
@@ -21,8 +16,8 @@ import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
 import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
-import { useEventTypes } from '../services/EventTypes/GetEventTypes';
 import { EventType } from '../types/Notifications';
+import { useEventTypes } from './ApplicationPage/useEventTypes';
 
 type ApplicationPageParams = {
     applicationId: string;
@@ -61,7 +56,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
         }
     }, [ getBundleId, bundleNameQuery.query ]);
 
-    const bundle = useMemo(() => {
+    const bundle = React.useMemo(() => {
         if (bundleNameQuery.payload?.status === 200) {
             return bundleNameQuery.payload.value;
         }
@@ -94,9 +89,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
             applicationId
 
         })
-        .then (eventTypesQuery.query);
+        .then (eventTypesQuery.reload);
 
-    }, [ applicationId, eventTypesQuery.query, newEvent.mutate ]);
+    }, [ applicationId, eventTypesQuery.reload, newEvent.mutate ]);
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
@@ -122,20 +117,16 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const onClose = () => {
         setShowModal(false);
-        eventTypesQuery.query();
+        eventTypesQuery.reload();
     };
 
     const onDeleteClose = () => {
         setShowDeleteModal(false);
-        eventTypesQuery.query();
+        eventTypesQuery.reload();
     };
 
-    if (eventTypesQuery.loading) {
-        return <Spinner />;
-    }
-
-    if (eventTypesQuery.payload?.status !== 200) {
-        return <span>Error while loading eventtypes: {eventTypesQuery.errorObject.toString()}</span>;
+    if (eventTypesQuery.error) {
+        return <span>Error while loading eventtypes: {eventTypesQuery.error.toString()}</span>;
     }
 
     return (
@@ -190,8 +181,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     </Tbody>
                 </TableComposable>
             </PageSection>
-            { isAdmin && <EmailTemplateTable /> }
-
+            { isAdmin && <EmailTemplateTable
+                application={ application?.displayName }
+            /> }
             <CreateEditModal
                 isEdit={ isEdit }
                 initialEventType={ eventTypes }
@@ -213,4 +205,3 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     );
 };
-

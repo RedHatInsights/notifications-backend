@@ -30,8 +30,9 @@ public class AuthenticationTest {
     @Test
     void testEndpointRoles() {
         String tenant = "empty";
+        String orgId = "empty";
         String userName = "testEndpointRoles";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         // Fetch endpoint without any Rbac details - errors cause 401 -- unauthorized

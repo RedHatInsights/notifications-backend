@@ -1,15 +1,16 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static java.time.ZoneOffset.UTC;
 
@@ -30,22 +31,25 @@ public class ComplianceTestHelpers {
         emailActionMessage.setTimestamp(LocalDateTime.now());
         emailActionMessage.setEventType(eventType);
 
-        emailActionMessage.setContext(Map.of(
-                "inventory_id", inventoryId,
-                "system_check_in", "2020-08-03T15:22:42.199046",
-                "display_name", "My test machine",
-                "tags", List.of()
-        ));
+        emailActionMessage.setContext(
+                new Context.ContextBuilder()
+                        .withAdditionalProperty("inventory_id", inventoryId)
+                        .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
+                        .withAdditionalProperty("display_name", "My test machine")
+                        .withAdditionalProperty("tags", List.of())
+                        .build()
+        );
         emailActionMessage.setEvents(List.of(
-                Event
-                        .newBuilder()
-                        .setMetadataBuilder(Metadata.newBuilder())
-                        .setPayload(Map.of(
-                                "policy_id", policyId,
-                                "policy_name", "not-tested-name",
-                                "policy_description", "not-used-desc",
-                                "policy_condition", "not-used-condition"
-                        ))
+                new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(
+                                new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("policy_id", policyId)
+                                        .withAdditionalProperty("policy_name", "not-tested-name")
+                                        .withAdditionalProperty("policy_description", "not-used-desc")
+                                        .withAdditionalProperty("policy_condition", "not-used-condition")
+                                        .build()
+                        )
                         .build()
         ));
 

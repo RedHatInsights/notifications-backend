@@ -15,7 +15,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <pushgateway.version>0.15.0</pushgateway.version>
+        <pushgateway.version>0.16.0</pushgateway.version>
     </properties>
 
     <dependencies>
@@ -54,7 +54,7 @@
         <dependency>
             <groupId>io.quarkiverse.logging.cloudwatch</groupId>
             <artifactId>quarkus-logging-cloudwatch</artifactId>
-            <version>${cloudwatch.version}</version>
+            <version>${quarkus-logging-cloudwatch.version}</version>
         </dependency>
 
         <!-- Insights -->
