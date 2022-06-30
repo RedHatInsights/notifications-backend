@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
@@ -27,7 +28,6 @@ import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -98,8 +98,8 @@ public class EndpointResource {
     @Inject
     RbacGroupValidator rbacGroupValidator;
 
-    @ConfigProperty(name = "ob.enabled", defaultValue = "false")
-    boolean obEnabled;
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Inject
     @RestClient
@@ -173,7 +173,7 @@ public class EndpointResource {
             throw new BadRequestException("Properties is required");
         }
 
-        if (obEnabled) {
+        if (featureFlipper.isObEnabled()) {
             // TODO NOTIF-429 - see similar in EndpointResources#createEndpoint
             String endpointSubType;
             if (endpoint.getSubType() != null) {
@@ -264,7 +264,7 @@ public class EndpointResource {
         EndpointType endpointType = endpointRepository.getEndpointTypeById(principal.getAccount(), id);
         checkSystemEndpoint(endpointType);
 
-        if (obEnabled) {
+        if (featureFlipper.isObEnabled()) {
             Endpoint e = endpointRepository.getEndpoint(principal.getAccount(), id);
             if (e != null) {
                 EndpointProperties properties = e.getProperties();

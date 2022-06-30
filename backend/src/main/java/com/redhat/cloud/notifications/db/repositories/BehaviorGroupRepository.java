@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.FeatureFlipper;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;

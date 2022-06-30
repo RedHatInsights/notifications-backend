@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailAggregation;
@@ -19,7 +20,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository.USE_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -49,14 +49,17 @@ public class EmailAggregationRepositoryTest {
     @Inject
     EmailAggregationRepository emailAggregationRepository;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @BeforeEach
     void beforeEach() {
-        System.clearProperty(USE_ORG_ID);
+        featureFlipper.setUseOrgId(false);
     }
 
     @AfterEach
     void afterEach() {
-        System.clearProperty(USE_ORG_ID);
+        featureFlipper.setUseOrgId(false);
     }
 
     // TODO NOTIF-603 Remove when switching to orgId
@@ -102,7 +105,7 @@ public class EmailAggregationRepositoryTest {
     @Test
     void testAllMethodsWithOrgIdUsageEnabled() {
 
-        System.setProperty("notifications.use-org-id", "true");
+        featureFlipper.setUseOrgId(true);
 
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -16,7 +17,6 @@ import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.Json;
 import org.apache.kafka.common.header.internals.RecordHeaders;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -68,8 +68,8 @@ public class FromCamelHistoryFiller {
     @Channel(EGRESS_CHANNEL)
     Emitter<String> emitter;
 
-    @ConfigProperty(name = "reinject.enabled", defaultValue = "false")
-    boolean enableReInject;
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
     @Incoming(FROMCAMEL_CHANNEL)
@@ -95,7 +95,7 @@ public class FromCamelHistoryFiller {
     }
 
     private void reinjectIfNeeded(Map<String, Object> payloadMap) {
-        if (!enableReInject || (payloadMap.containsKey("successful") && ((Boolean) payloadMap.get("successful")))) {
+        if (!featureFlipper.isEnableReInject() || (payloadMap.containsKey("successful") && ((Boolean) payloadMap.get("successful")))) {
             return;
         }
 
