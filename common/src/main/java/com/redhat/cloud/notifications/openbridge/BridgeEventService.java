@@ -6,16 +6,18 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.MediaType;
 
 /**
- * Deliver events to the OpenBridge ingress
+ * Deliver events to the OpenBridge ingress.
+ * This interface is used to programmatically create
+ * a rest-client, as the exact api location is only
+ * known at runtime.
  */
-@Path("/events")
+@Path("/")
 public interface BridgeEventService {
 
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes("application/cloudevents+json")
     void sendEvent(JsonObject payload,
                    @HeaderParam("Authorization") String bearerToken
     );

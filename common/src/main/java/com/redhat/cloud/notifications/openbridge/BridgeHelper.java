@@ -72,9 +72,6 @@ public class BridgeHelper {
 
         String bid = bridgeMap.get("id");
         String ep = bridgeMap.get("endpoint");
-        if (ep.endsWith("/events")) {
-            ep = ep.substring(0, ep.lastIndexOf("/")); // OB is tacking that on at some point in the future, be prepared for the transition period.
-        }
         String name = bridgeMap.get("name");
 
         Bridge bridge = new Bridge(bid, ep, name);

@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
+import com.redhat.cloud.notifications.openbridge.Processor;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -17,7 +18,6 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import javax.ws.rs.WebApplicationException;
 import java.util.List;
-import java.util.Map;
 
 import static io.quarkus.scheduler.Scheduled.ConcurrentExecution.SKIP;
 import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
@@ -69,8 +69,8 @@ public class EndpointReadyChecker {
             CamelProperties cp = em.find(CamelProperties.class, ep.getId()); // TODO Fetch in one go
             String processorId = cp.getExtras().get("processorId");
             try {
-                Map<String, Object> processor = bridgeApiService.getProcessorById(bridge.getId(), processorId, bridgeAuth.getToken());
-                String status = (String) processor.get("status");
+                Processor processor = bridgeApiService.getProcessorById(bridge.getId(), processorId, bridgeAuth.getToken());
+                String status = processor.getStatus();
                 Log.debugf("  Status reported by OB for processor %s : %s", processorId, status);
                 if ("ready".equals(status)) {
                     ep.setStatus(EndpointStatus.READY);
