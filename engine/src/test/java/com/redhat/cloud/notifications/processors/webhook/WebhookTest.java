@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -89,6 +90,7 @@ public class WebhookTest {
         assertEquals("WebhookTest", webhookInput.getString("application"));
         assertEquals("testWebhook", webhookInput.getString("event_type"));
         assertEquals("tenant", webhookInput.getString("account_id"));
+        assertEquals(DEFAULT_ORG_ID, webhookInput.getString("org_id"));
 
         JsonObject webhookInputContext = webhookInput.getJsonObject("context");
         assertEquals("more", webhookInputContext.getString("free"));
@@ -151,6 +153,7 @@ public class WebhookTest {
         webhookActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         webhookActionMessage.setEventType("testWebhook");
         webhookActionMessage.setAccountId("tenant");
+        webhookActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         Payload payload1 = new Payload.PayloadBuilder()
                 .withAdditionalProperty("any", "thing")

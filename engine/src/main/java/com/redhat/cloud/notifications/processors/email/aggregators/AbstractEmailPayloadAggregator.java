@@ -14,6 +14,7 @@ public abstract class AbstractEmailPayloadAggregator {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private String accountId;
+    private String orgId;
     private int processedAggregations;
 
     JsonObject context = new JsonObject();
@@ -21,10 +22,19 @@ public abstract class AbstractEmailPayloadAggregator {
     abstract void processEmailAggregation(EmailAggregation aggregation);
 
     public void aggregate(EmailAggregation aggregation) {
+        aggregate(aggregation, false);
+    }
+
+    public void aggregate(EmailAggregation aggregation, boolean useOrgId) {
         if (accountId == null) {
             accountId = aggregation.getAccountId();
         } else if (!accountId.equals(aggregation.getAccountId())) {
             throw new RuntimeException("Invalid aggregation using different accountIds");
+        }
+        if (orgId == null) {
+            orgId = aggregation.getOrgId();
+        } else if (useOrgId && !orgId.equals(aggregation.getOrgId())) {
+            throw new RuntimeException("Invalid aggregation using different orgIds");
         }
 
         processEmailAggregation(aggregation);
@@ -52,6 +62,10 @@ public abstract class AbstractEmailPayloadAggregator {
 
     String getAccountId() {
         return accountId;
+    }
+
+    String getOrgId() {
+        return orgId;
     }
 
     public int getProcessedAggregations() {

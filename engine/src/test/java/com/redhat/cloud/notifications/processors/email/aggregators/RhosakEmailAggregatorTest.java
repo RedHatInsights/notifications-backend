@@ -18,6 +18,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestHelpers.baseTransformer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -48,8 +49,9 @@ class RhosakEmailAggregatorTest {
     }
 
     @Test
-    void emptyAggregatorHasNoAccountId() {
+    void emptyAggregatorHasNoAccountIdOrOrgId() {
         assertNull(aggregator.getAccountId(), "Empty aggregator has no accountId");
+        assertNull(aggregator.getOrgId(), "Empty aggregator has no orgId");
     }
 
     @Test
@@ -202,6 +204,7 @@ class RhosakEmailAggregatorTest {
         aggregation.setBundleName(APPLICATION_SERVICES);
         aggregation.setApplicationName(RHOSAK);
         aggregation.setAccountId(ACCOUNT_ID);
+        aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(APPLICATION_SERVICES);
@@ -227,6 +230,7 @@ class RhosakEmailAggregatorTest {
         ));
 
         emailActionMessage.setAccountId(ACCOUNT_ID);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);
@@ -239,6 +243,7 @@ class RhosakEmailAggregatorTest {
         aggregation.setBundleName(APPLICATION_SERVICES);
         aggregation.setApplicationName(RHOSAK);
         aggregation.setAccountId(ACCOUNT_ID);
+        aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(APPLICATION_SERVICES);
@@ -265,6 +270,7 @@ class RhosakEmailAggregatorTest {
         ));
 
         emailActionMessage.setAccountId(ACCOUNT_ID);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);

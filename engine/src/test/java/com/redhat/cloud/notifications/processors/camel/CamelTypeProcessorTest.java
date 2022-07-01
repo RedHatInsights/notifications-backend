@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CAMEL_SUBTYPE_HEADER;
@@ -153,6 +154,7 @@ public class CamelTypeProcessorTest {
         // We need input data for the test.
         Event event = buildEvent();
         event.setAccountId("rhid123");
+        event.setOrgId(DEFAULT_ORG_ID);
         Endpoint endpoint = buildCamelEndpoint(event.getAction().getAccountId());
         endpoint.setSubType("slack");
 
@@ -213,6 +215,7 @@ public class CamelTypeProcessorTest {
 
         // Now try again, but the remote throws an error
         event.getAction().setAccountId("something-random");
+        event.getAction().setOrgId(DEFAULT_ORG_ID);
         result = processor.process(event, List.of(endpoint));
         assertEquals(1, result.size());
         // Metrics should report the same thing.
@@ -242,6 +245,7 @@ public class CamelTypeProcessorTest {
         action.setEventType("event-type");
         action.setTimestamp(LocalDateTime.now());
         action.setAccountId("account-id");
+        action.setOrgId(DEFAULT_ORG_ID);
         action.setRecipients(List.of());
         action.setContext(new Context.ContextBuilder().build());
         action.setEvents(
@@ -278,6 +282,7 @@ public class CamelTypeProcessorTest {
 
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
+        endpoint.setOrgId(DEFAULT_ORG_ID);
         endpoint.setType(CAMEL);
         endpoint.setSubType(SUB_TYPE);
         endpoint.setProperties(properties);

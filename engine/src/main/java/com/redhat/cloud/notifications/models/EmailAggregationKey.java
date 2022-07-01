@@ -51,20 +51,22 @@ public class EmailAggregationKey {
 
         EmailAggregationKey that = (EmailAggregationKey) o;
 
-        // TODO NOTIF-603 Add orgId
-        return Objects.equals(accountId, that.accountId) && Objects.equals(bundle, that.bundle) && Objects.equals(application, that.application);
+        return Objects.equals(accountId, that.accountId) &&
+                Objects.equals(orgId, that.orgId) &&
+                Objects.equals(bundle, that.bundle) &&
+                Objects.equals(application, that.application);
     }
 
     @Override
     public int hashCode() {
-        // TODO NOTIF-603 Add orgId
-        return Objects.hash(accountId, bundle, application);
+        return Objects.hash(accountId, orgId, bundle, application);
     }
 
     @Override
     public String toString() {
         return "EmailAggregationKey{" +
                 "accountId='" + accountId + '\'' +
+                ", orgId='" + orgId + '\'' +
                 ", bundle='" + bundle + '\'' +
                 ", application='" + application + '\'' +
                 '}';

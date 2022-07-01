@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
+import com.redhat.cloud.notifications.OrgIdHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -39,6 +40,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -67,6 +69,9 @@ public class EmailTest {
     // InjectSpy allows us to update the fields via reflection (Inject does not)
     @InjectSpy
     EmailSender emailSender;
+
+    @Inject
+    OrgIdHelper orgIdHelper;
 
     static final String BOP_TOKEN = "test-token";
     static final String BOP_ENV = "unitTest";
@@ -104,7 +109,7 @@ public class EmailTest {
         String application = "policies";
 
         for (String username : usernames) {
-            subscribe(tenant, username, bundle, application);
+            subscribe(tenant, DEFAULT_ORG_ID, username, bundle, application);
         }
 
         final List<String> bodyRequests = new ArrayList<>();
@@ -191,7 +196,7 @@ public class EmailTest {
         String application = "policies";
 
         for (String username : usernames) {
-            subscribe(tenant, username, bundle, application);
+            subscribe(tenant, DEFAULT_ORG_ID, username, bundle, application);
         }
 
         final List<String> bodyRequests = new ArrayList<>();
@@ -228,6 +233,7 @@ public class EmailTest {
         ));
 
         emailActionMessage.setAccountId(tenant);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         Event event = new Event();
         event.setAction(emailActionMessage);
@@ -338,18 +344,32 @@ public class EmailTest {
     }
 
     @Transactional
-    void subscribe(String accountNumber, String username, String bundleName, String applicationName) {
-        String query = "INSERT INTO endpoint_email_subscriptions(account_id, user_id, application_id, subscription_type) " +
-                "SELECT :accountId, :userId, a.id, :subscriptionType " +
-                "FROM applications a, bundles b WHERE a.bundle_id = b.id AND a.name = :applicationName AND b.name = :bundleName " +
-                "ON CONFLICT (account_id, user_id, application_id, subscription_type) DO NOTHING";
-        entityManager.createNativeQuery(query)
-                .setParameter("accountId", accountNumber)
-                .setParameter("userId", username)
-                .setParameter("bundleName", bundleName)
-                .setParameter("applicationName", applicationName)
-                .setParameter("subscriptionType", INSTANT.name())
-                .executeUpdate();
+    void subscribe(String accountNumber, String orgId, String username, String bundleName, String applicationName) {
+        if (orgIdHelper.useOrgId(orgId)) {
+            String query = "INSERT INTO endpoint_email_subscriptions(org_id, user_id, application_id, subscription_type) " +
+                    "SELECT :orgId, :userId, a.id, :subscriptionType " +
+                    "FROM applications a, bundles b WHERE a.bundle_id = b.id AND a.name = :applicationName AND b.name = :bundleName " +
+                    "ON CONFLICT (org_id, user_id, application_id, subscription_type) DO NOTHING";
+            entityManager.createNativeQuery(query)
+                    .setParameter("orgId", orgId)
+                    .setParameter("userId", username)
+                    .setParameter("bundleName", bundleName)
+                    .setParameter("applicationName", applicationName)
+                    .setParameter("subscriptionType", INSTANT.name())
+                    .executeUpdate();
+        } else {
+            String query = "INSERT INTO endpoint_email_subscriptions(account_id, user_id, application_id, subscription_type) " +
+                    "SELECT :accountId, :userId, a.id, :subscriptionType " +
+                    "FROM applications a, bundles b WHERE a.bundle_id = b.id AND a.name = :applicationName AND b.name = :bundleName " +
+                    "ON CONFLICT (account_id, user_id, application_id, subscription_type) DO NOTHING";
+            entityManager.createNativeQuery(query)
+                    .setParameter("accountId", accountNumber)
+                    .setParameter("userId", username)
+                    .setParameter("bundleName", bundleName)
+                    .setParameter("applicationName", applicationName)
+                    .setParameter("subscriptionType", INSTANT.name())
+                    .executeUpdate();
+        }
     }
 
     @Transactional

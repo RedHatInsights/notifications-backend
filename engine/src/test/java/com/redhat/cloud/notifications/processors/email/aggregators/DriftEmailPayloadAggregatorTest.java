@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+
 class DriftEmailPayloadAggregatorTest {
 
     private DriftEmailPayloadAggregator aggregator;
@@ -19,14 +21,16 @@ class DriftEmailPayloadAggregatorTest {
     }
 
     @Test
-    void emptyAggregatorHasNoAccountId() {
+    void emptyAggregatorHasNoAccountIdOrOrgId() {
         Assertions.assertNull(aggregator.getAccountId(), "Empty aggregator has no accountId");
+        Assertions.assertNull(aggregator.getOrgId(), "Empty aggregator has no orgId");
     }
 
     @Test
     void shouldHaveOneSingleHost() {
         aggregator.aggregate(DriftTestHelpers.createEmailAggregation("tenant", "rhel", "drift", "baseline_01", "baseline_1", "host-01", "Machine 1"));
         Assertions.assertEquals("tenant", aggregator.getAccountId());
+        Assertions.assertEquals(DEFAULT_ORG_ID, aggregator.getOrgId());
 
         // 1 host
         Assertions.assertEquals(1, aggregator.getUniqueHostCount());
