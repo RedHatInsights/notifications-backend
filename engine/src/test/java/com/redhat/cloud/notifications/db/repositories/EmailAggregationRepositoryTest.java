@@ -115,7 +115,7 @@ public class EmailAggregationRepositoryTest {
             clearEmailAggregations();
             resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
             resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
-            resourceHelpers.addEmailAggregation("other-account", ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation("other-account", "other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2);
             resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
             resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
 
