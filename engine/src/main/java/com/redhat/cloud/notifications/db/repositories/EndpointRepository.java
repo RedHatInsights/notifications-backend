@@ -70,40 +70,19 @@ public class EndpointRepository {
         return endpoint;
     }
 
-    public List<Endpoint> getTargetEndpointsAccountId(String accountId, EventType eventType) {
+    public List<Endpoint> getTargetEndpoints(String tenant, EventType eventType) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                 "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL)";
 
         List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
                 .setParameter("eventType", eventType)
-                .setParameter("accountId", accountId)
+                .setParameter("accountId", tenant)
                 .getResultList();
         loadProperties(endpoints);
         for (Endpoint endpoint : endpoints) {
             if (endpoint.getAccountId() == null) {
                 if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
-                    endpoint.setAccountId(accountId);
-                } else {
-                    LOGGER.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
-                }
-            }
-        }
-        return endpoints;
-    }
-
-    public List<Endpoint> getTargetEndpointsOrgId(String orgId, EventType eventType) {
-        String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL)";
-
-        List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
-                .setParameter("eventType", eventType)
-                .setParameter("orgId", orgId)
-                .getResultList();
-        loadProperties(endpoints);
-        for (Endpoint endpoint : endpoints) {
-            if (endpoint.getOrgId() == null) {
-                if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
-                    endpoint.setOrgId(orgId);
+                    endpoint.setAccountId(tenant);
                 } else {
                     Log.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
                 }
