@@ -158,7 +158,7 @@ public class LifecycleITest {
 
         // Get the account canonical email endpoint
         Endpoint emailEndpoint = statelessSessionFactory.withSession(statelessSession -> {
-            return getAccountCanonicalEmailEndpoint(accountId);
+            return getAccountCanonicalEmailEndpoint(accountId, orgId);
         });
 
         // Pushing a new message should trigger two webhook calls.
@@ -256,8 +256,8 @@ public class LifecycleITest {
                 .executeUpdate();
     }
 
-    Endpoint getAccountCanonicalEmailEndpoint(String accountId) {
-        return endpointRepository.getOrCreateDefaultEmailSubscription(accountId);
+    Endpoint getAccountCanonicalEmailEndpoint(String accountId, String orgId) {
+        return endpointRepository.getOrCreateDefaultEmailSubscription(accountId, orgId);
     }
 
     private Endpoint createWebhookEndpoint(String accountId, String secretToken) {

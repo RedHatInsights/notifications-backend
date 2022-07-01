@@ -48,7 +48,7 @@ public class EmailAggregator {
 
     private Set<String> getEmailSubscribers(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
         return Set.copyOf(emailSubscriptionRepository
-                .getEmailSubscribersUserId(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType));
+                .getEmailSubscribersUserId(aggregationKey.getAccountId(), aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType));
     }
 
     public Map<User, Map<String, Object>> getAggregated(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType, LocalDateTime start, LocalDateTime end) {
@@ -62,7 +62,7 @@ public class EmailAggregator {
             String eventType = getEventType(aggregation);
             // Let's retrieve these targets.
             Set<Endpoint> endpoints = Set.copyOf(endpointRepository
-                    .getTargetEmailSubscriptionEndpoints(aggregationKey.getAccountId(), aggregationKey.getBundle(), aggregationKey.getApplication(), eventType));
+                    .getTargetEmailSubscriptionEndpoints(aggregationKey.getAccountId(), aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), eventType));
 
             // Now we want to determine who will actually receive the aggregation email.
             // All users who subscribed to the current application and subscription type combination are recipients candidates.

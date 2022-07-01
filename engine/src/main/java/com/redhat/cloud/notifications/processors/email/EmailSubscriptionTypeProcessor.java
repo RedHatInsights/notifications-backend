@@ -189,7 +189,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         ).collect(Collectors.toSet());
 
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
-                .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
+                .getEmailSubscribersUserId(action.getAccountId(), action.getOrgId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
 
         return recipientResolver.recipientUsers(action.getAccountId(), action.getOrgId(), requests, subscribers)
                 .stream()
