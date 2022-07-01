@@ -21,7 +21,6 @@ public class BaseTransformer {
         message.put("application", action.getApplication());
         message.put("event_type", action.getEventType());
         message.put("account_id", action.getAccountId());
-        message.put("org_id", action.getOrgId());
         message.put("timestamp", action.getTimestamp().toString());
         message.put("events", new JsonArray(action.getEvents().stream().map(event -> Map.of(
                 "metadata", JsonObject.mapFrom(event.getMetadata()),
