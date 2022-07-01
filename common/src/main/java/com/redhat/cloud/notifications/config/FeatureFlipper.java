@@ -1,9 +1,12 @@
 package com.redhat.cloud.notifications.config;
 
+import io.quarkus.logging.Log;
+import io.quarkus.runtime.StartupEvent;
 import io.quarkus.runtime.configuration.ProfileManager;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 
 import static io.quarkus.runtime.LaunchMode.TEST;
 
@@ -50,6 +53,15 @@ public class FeatureFlipper {
 
     @ConfigProperty(name = "notifications.use-org-id", defaultValue = "false")
     boolean useOrgId;
+
+    void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
+        Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
+        Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
+        Log.infof("The RHOSE (OpenBridge) integration is %s", obEnabled ? "enabled" : "disabled");
+        Log.infof("The actions reinjection in case of Camel integration error is %s", enableReInject ? "enabled" : "disabled");
+        Log.infof("The Kafka outage detector is %s", kafkaConsumedTotalCheckerEnabled ? "enabled" : "disabled");
+        Log.infof("The org ID migration is %s", useOrgId ? "enabled" : "disabled");
+    }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
         return enforceBehaviorGroupNameUnicity;
