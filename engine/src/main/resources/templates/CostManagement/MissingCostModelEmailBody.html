@@ -1,0 +1,49 @@
+{#include Cost-Managment/insightsEmailBody}
+{#content-title}Missing Cost Model - {action.context.resource_display_name}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-body rh-multi-column">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td>
+                    <!-- end 50 col -->
+                    <!--[if (gte mso 9)|(IE)]>
+                    </td>
+                    </tr>
+                    </table>
+                    <![endif]-->
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+
+<!-- Body section -->
+<tr>
+    <td class="rh-body">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <p>
+                        Openshift source {action.context.resource_display_name}'s has no assigned cost model.
+                    </p>
+                    <p>
+                        Please go to the Cost Models page <a class="rh-url" href="{environment.url}/openshift/cost-management/cost-models/"></a> and assign your source to a cost model.
+                    </p>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<!-- end body section -->
+{/content-body}
+{/include}
