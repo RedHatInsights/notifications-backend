@@ -88,7 +88,7 @@ public class DbQuteEngineTest {
                 templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
             });
         });
-        assertEquals("Rendering error in template [outer-template] line 1: included template [inner-template] not found", e.getMessage());
+        assertEquals("Included template [inner-template] not found in template [outer-template] on line 1", e.getMessage());
     }
 
     @Test
@@ -99,7 +99,7 @@ public class DbQuteEngineTest {
                 templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
             });
         });
-        assertEquals("Rendering error in template [other-outer-template] line 1: included template [unknown-inner-template] not found", e.getMessage());
+        assertEquals("Included template [unknown-inner-template] not found in template [other-outer-template] on line 1", e.getMessage());
     }
 
     @Test
