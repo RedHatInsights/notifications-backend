@@ -7,6 +7,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -42,9 +43,9 @@ public interface BridgeApiService {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/{bridgeId}/processors")
-    Map<String, Object> addProcessor(@PathParam("bridgeId") String bridgeId,
+    Processor addProcessor(@PathParam("bridgeId") String bridgeId,
                                     @HeaderParam("Authorization") String bearerToken,
-                                    Map<String, Object> definition
+                                    Processor definition
     );
 
     @DELETE
@@ -56,9 +57,17 @@ public interface BridgeApiService {
 
     @GET
     @Path("/{bridgeId}/processors/{processorId}")
-    Map<String, Object> getProcessorById(@PathParam("bridgeId") String bridgeId,
+    Processor getProcessorById(@PathParam("bridgeId") String bridgeId,
                     @PathParam("processorId") String processorId,
                     @HeaderParam("Authorization") String bearerToken
+    );
+
+    @PUT
+    @Path("/{bridgeId}/processors/{processorId}")
+    Processor updateProcessor(@PathParam("bridgeId") String bridgeId,
+                    @PathParam("processorId") String processorId,
+                    @HeaderParam("Authorization") String bearerToken,
+                    Processor processor
     );
 
 

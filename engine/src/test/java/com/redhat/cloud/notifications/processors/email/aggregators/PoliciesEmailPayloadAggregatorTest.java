@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,9 +18,10 @@ public class PoliciesEmailPayloadAggregatorTest {
     }
 
     @Test
-    void emptyAggregatorHasNoAccountId() {
+    void emptyAggregatorHasNoAccountIdOrOrgId() {
         PoliciesEmailPayloadAggregator aggregator = new PoliciesEmailPayloadAggregator();
         assertNull(aggregator.getAccountId(), "Empty aggregator has no accountId");
+        assertNull(aggregator.getOrgId(), "Empty aggregator has no orgId");
     }
 
     @Test
@@ -27,6 +29,7 @@ public class PoliciesEmailPayloadAggregatorTest {
         PoliciesEmailPayloadAggregator aggregator = new PoliciesEmailPayloadAggregator();
         aggregator.aggregate(TestHelpers.createEmailAggregation("tenant", "insights", "policies", "policy-01", "host-01"));
         assertEquals("tenant", aggregator.getAccountId());
+        assertEquals(DEFAULT_ORG_ID, aggregator.getOrgId());
 
         // 1 host
         assertEquals(1, aggregator.getUniqueHostCount());

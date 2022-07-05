@@ -136,6 +136,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             if (shouldSaveAggregation) {
                 EmailAggregation aggregation = new EmailAggregation();
                 aggregation.setAccountId(action.getAccountId());
+                aggregation.setOrgId(action.getOrgId());
                 aggregation.setApplicationName(action.getApplication());
                 aggregation.setBundleName(action.getBundle());
 
@@ -189,7 +190,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         ).collect(Collectors.toSet());
 
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
-                .getEmailSubscribersUserId(action.getAccountId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
+                .getEmailSubscribersUserId(action.getAccountId(), action.getOrgId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
 
         return recipientResolver.recipientUsers(action.getAccountId(), action.getOrgId(), requests, subscribers)
                 .stream()
@@ -281,6 +282,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 action.setContext(contextBuilder.build());
                 action.setEvents(List.of());
                 action.setAccountId(aggregationKey.getAccountId());
+                action.setOrgId(aggregationKey.getOrgId());
                 action.setApplication(aggregationKey.getApplication());
                 action.setBundle(aggregationKey.getBundle());
 

@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -35,10 +36,12 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static com.redhat.cloud.notifications.events.EventConsumer.CONSUMED_TIMER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.DUPLICATE_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
+import static com.redhat.cloud.notifications.events.EventConsumer.MISSING_ORG_ID;
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_ERROR_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_EXCEPTION_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
@@ -86,6 +89,9 @@ public class EventConsumerTest {
     @Inject
     MeterRegistry registry;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(
@@ -95,7 +101,8 @@ public class EventConsumerTest {
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                MISSING_ORG_ID
         );
         micrometerAssertionHelper.removeDynamicTimer(CONSUMED_TIMER_NAME);
     }
@@ -124,10 +131,41 @@ public class EventConsumerTest {
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                MISSING_ORG_ID
+        );
+        verifyExactlyOneProcessing(eventType, payload, action);
+        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(messageId);
+    }
+
+    @Test
+    void testValidPayloadWithoutOrgId() {
+        featureFlipper.setUseOrgId(true);
+
+        EventType eventType = mockGetEventTypeAndCreateEvent();
+        Action action = buildValidAction();
+        action.setOrgId(null);
+        String payload = serializeAction(action);
+        UUID messageId = UUID.randomUUID();
+        Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
+        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
+
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(MISSING_ORG_ID, 1);
+        assertNoCounterIncrement(
+                REJECTED_COUNTER_NAME,
+                PROCESSING_ERROR_COUNTER_NAME,
+                PROCESSING_EXCEPTION_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(messageId);
+
+        featureFlipper.setUseOrgId(false);
     }
 
     @Test
@@ -146,7 +184,8 @@ public class EventConsumerTest {
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                MISSING_ORG_ID
         );
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
@@ -166,7 +205,8 @@ public class EventConsumerTest {
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                MISSING_ORG_ID
         );
         verify(endpointProcessor, never()).process(any(Event.class));
         verify(kafkaMessageDeduplicator, never()).registerMessageId(any(UUID.class));
@@ -188,7 +228,8 @@ public class EventConsumerTest {
                 PROCESSING_ERROR_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                MISSING_ORG_ID
         );
         verify(endpointProcessor, never()).process(any(Event.class));
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
@@ -210,7 +251,8 @@ public class EventConsumerTest {
                 REJECTED_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                MISSING_ORG_ID
         );
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
@@ -235,7 +277,8 @@ public class EventConsumerTest {
                 PROCESSING_ERROR_COUNTER_NAME,
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                MISSING_ORG_ID
         );
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(messageId);
@@ -258,7 +301,8 @@ public class EventConsumerTest {
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                MISSING_ORG_ID
         );
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
@@ -281,7 +325,8 @@ public class EventConsumerTest {
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                MISSING_ORG_ID
         );
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
@@ -337,6 +382,7 @@ public class EventConsumerTest {
         action.setEventType(EVENT_TYPE);
         action.setTimestamp(LocalDateTime.now());
         action.setAccountId(DEFAULT_ACCOUNT_ID);
+        action.setOrgId(DEFAULT_ORG_ID);
         action.setRecipients(List.of());
         action.setEvents(
                 List.of(

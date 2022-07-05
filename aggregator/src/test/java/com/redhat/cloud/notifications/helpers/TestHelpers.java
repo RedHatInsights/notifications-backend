@@ -55,6 +55,7 @@ public class TestHelpers {
         ));
 
         emailActionMessage.setAccountId(tenant);
+        emailActionMessage.setOrgId(orgId);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);

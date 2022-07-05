@@ -90,7 +90,7 @@ public class EmailSender {
 
         // uses canonical EmailSubscription
         try {
-            Endpoint endpoint = endpointRepository.getOrCreateDefaultEmailSubscription(action.getAccountId());
+            Endpoint endpoint = endpointRepository.getOrCreateDefaultEmailSubscription(action.getAccountId(), action.getOrgId());
             Notification notification = new Notification(event, endpoint);
 
             // TODO Add recipients processing from policies-notifications processing (failed recipients)

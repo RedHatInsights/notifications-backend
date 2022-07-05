@@ -21,6 +21,7 @@ import javax.transaction.Transactional;
 import java.security.SecureRandom;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static java.lang.Boolean.TRUE;
 
@@ -88,6 +89,7 @@ public class ResourceHelpers {
         Event event = new Event();
         event.setId(UUID.randomUUID());
         event.setAccountId("account-id");
+        event.setOrgId(DEFAULT_ORG_ID);
         event.setEventType(eventType);
         event.setEventTypeDisplayName(eventType.getDisplayName());
         event.setApplicationId(eventType.getApplication().getId());
@@ -151,5 +153,12 @@ public class ResourceHelpers {
     public void deleteAllEmailTemplates() {
         entityManager.createQuery("DELETE FROM InstantEmailTemplate").executeUpdate();
         entityManager.createQuery("DELETE FROM AggregationEmailTemplate").executeUpdate();
+    }
+
+    @Transactional
+    public void deleteEndpoint(UUID id) {
+        entityManager.createQuery("DELETE FROM Endpoint WHERE id = :id")
+                .setParameter("id", id)
+                .executeUpdate();
     }
 }

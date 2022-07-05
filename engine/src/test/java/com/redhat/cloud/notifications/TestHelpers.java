@@ -13,6 +13,8 @@ import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+
 public class TestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
@@ -27,6 +29,7 @@ public class TestHelpers {
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
         aggregation.setAccountId(tenant);
+        aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
@@ -57,6 +60,7 @@ public class TestHelpers {
         ));
 
         emailActionMessage.setAccountId(tenant);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);
@@ -110,6 +114,7 @@ public class TestHelpers {
         ));
 
         emailActionMessage.setAccountId(accountId);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         return emailActionMessage;
     }
@@ -121,6 +126,7 @@ public class TestHelpers {
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         emailActionMessage.setEventType(eventType);
         emailActionMessage.setAccountId(accountId);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         if (eventType.equals("deactivated-recommendation")) {
             emailActionMessage.setContext(new Context.ContextBuilder().build());
@@ -225,6 +231,7 @@ public class TestHelpers {
         emailActionMessage.setTimestamp(LocalDateTime.of(2021, 5, 20, 15, 22, 13, 25));
         emailActionMessage.setEventType(eventType);
         emailActionMessage.setAccountId(accountId);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         if (eventType.equals("new-recommendation")) {
             emailActionMessage.setContext(

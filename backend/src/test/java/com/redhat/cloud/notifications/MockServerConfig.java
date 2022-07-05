@@ -117,6 +117,16 @@ public class MockServerConfig {
                 .respond(response()
                         .withStatusCode(202));
 
+        getClient()
+                .when(request()
+                        .withPath("/api/v1/bridges/.*/processors/" + processor.get("id"))
+                        .withMethod("PUT")
+                )
+                .respond(response()
+                        .withStatusCode(202)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(processorString));
+
     }
 
     public static void clearOpenBridgeEndpoints(Bridge bridge) {

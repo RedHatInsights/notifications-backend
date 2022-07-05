@@ -1,0 +1,616 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Hat Insights</title>
+{|
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Red+Hat+Text:wght@400;500;700&display=swap');
+
+    #outlook a{padding:0;} /* Force Outlook to provide a "view in browser" message */
+    body, table, td, p, a, li, blockquote{-webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;} /* Prevent WebKit and Windows mobile changing default text sizes */
+    table, td{mso-table-lspace:0pt; mso-table-rspace:0pt;} /* Remove spacing between tables in Outlook 2007 and up */
+    img{-ms-interpolation-mode:bicubic;} /* Allow smoother rendering of resized image in Internet Explorer */
+
+    /* reset styles */
+    img{border:0; height:auto; line-height:100%; outline:none; text-decoration:none;}
+    table{border-collapse:collapse !important;}
+    a{text-decoration: none !important;}
+
+    /* Remove space around email design */
+    html,
+    body {
+      margin: 0 auto !important;
+      padding: 0 !important;
+      height: 100% !important;
+      width: 100% !important;
+      background-color: #fff;
+      font-size: 16px;
+      color: #151515;
+      font-family: 'Red Hat Text', Helvetica, Arial, sans-serif;
+    }
+
+    /* Stop Outlook resizing small text */
+    * {
+      -ms-text-size-adjust: 100%;
+    }
+    /* Stop Outlook from adding extra spacing to tables */
+    table, td {
+      mso-table-lspace: 0pt !important;
+      mso-table-rspace: 0pt !important;
+    }
+    /* Better rendering method when resizing impages in Outlook IE */
+    img {
+      -ms-interpolation-mode:bicubic;
+    }
+
+/*     a {
+      text-decoration: none;
+      color: #fff;
+    }
+     */
+/*
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-family: 'Red Hat Text', sans-serif;
+      font-size: 16px;
+    } */
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p {
+      margin-top: 0;
+    }
+
+    h1:last-child,
+    h2:last-child,
+    h3:last-child,
+    h4:last-child,
+    h5:last-child,
+    h6:last-child,
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    .rh-masthead__content-title h1,
+    .rh-masthead__content-title h2,
+    .rh-masthead__content-title h3,
+    .rh-masthead__content-title h4,
+    .rh-masthead__subhead h1,
+    .rh-masthead__subhead h2,
+    .rh-masthead__subhead h3,
+    .rh-masthead__subhead h4 {
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    .rh-masthead__subhead h1 {
+      font-size: 18px;
+    }
+
+    .rh-body-table,
+    .rh-body-cell {
+      height: 100% !important;
+      margin: 0;
+      padding: 0;
+      width: 100% !important;
+    }
+
+    .rh-body-table {
+      background-color: #ffffff !important;
+    }
+
+    .rh-data-table,
+    .rh-content__block .rh-data-table {
+      width: 100%;
+      background-color: #fff;
+    }
+
+    .rh-data-table thead {
+      background-color: #e7f1fa;
+    }
+
+    .rh-data-table thead th {
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .rh-data-table tbody th {
+      font-weight: 500;
+      text-align: left;
+      width: 200px;
+    }
+
+    .rh-data-table td {
+      font-size: 14px;
+      width: 60%;
+    }
+
+    .rh-data-table td+td {
+      font-size: 14px;
+      width: auto;
+  }
+
+    .rh-data-table.rh-m-bordered th {
+      padding: 10px;
+      padding-left: 15px;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 500;
+      /* background-color: #ededed; */
+    }
+
+    .rh-data-table.rh-m-bordered td {
+      padding: 10px;
+      padding-left: 15px;
+      text-align: left;
+    }
+
+    .rh-data-table.rh-m-bordered {
+      border-collapse: collapse;
+    }
+
+    .rh-m-bordered tbody tr {
+      border-bottom: 1px solid #b8bbbe;
+    }
+
+    .rh-m-bordered tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+
+    .rh-template-container {
+      padding-top: 0;
+      padding-right: 0;
+      padding-bottom: 24px;
+      padding-left: 0;
+      width: 650px;
+    }
+
+    .rh-template-container,
+    .rh-template-container > tbody {
+      background: #ededed;
+      color: #151515;
+    }
+
+    .rh-head,
+    .rh-body,
+    .rh-footer {
+      margin: 0;
+      mso-line-height-rule: exactly;
+      font-family: 'Red Hat Text', Helvetica;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .rh-body,
+    .rh-masthead,
+    .rh-content,
+    .rh-head {
+      width: 100% !important;
+    }
+
+    .rh-head {
+      padding-bottom: 24px;
+    }
+
+    .rh-masthead__subhead {
+      background-color: #282828 !important;
+      padding-top: 16px;
+      padding-right: 24px;
+      padding-bottom: 16px;
+      padding-right: 24px;
+      color: #ffffff !important;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    .rh-masthead__brand {
+      padding-top: 8px;
+    	padding-bottom: 8px;
+      background-color: #151515 !important;
+      background-repeat: repeat;
+      background-image: url(https://raw.githubusercontent.com/RedHatInsights/frontend-assets/master/src/email-assets/bg_151515.jpg);
+      text-align: center;
+    }
+
+    .rh-masthead__brand-link {
+      display: block;
+      text-align: center;
+    }
+
+    .rh-body {
+      padding-right: 12px;
+      padding-bottom: 16px;
+      padding-left: 12px;
+    }
+
+    .rh-body.rh-multi-column {
+      padding-right: 12px;
+      padding-bottom: 18px;
+      padding-left: 12px;
+    }
+
+    .rh-footer {
+      padding-top: 12px;
+      padding-right: 24px;
+      padding-bottom: 24px;
+    	padding-left: 24px;
+    }
+
+    .rh-content {
+      background: #efefef;
+    }
+
+    .rh-content a,
+    .rh-footer__text a {
+      color: #0066cc;
+    }
+
+    .rh-content + .rh-content {
+      padding-bottom: 24px;
+    }
+
+    /* Content block */
+    .rh-content__block {
+      max-width: 100%;
+      padding-top: 12px;
+      padding-right: 24px;
+      padding-bottom: 12px;
+      padding-left: 24px;
+      overflow: hidden;
+    }
+
+    .rh-content.rh-m-plain {
+      background-color: transparent;
+    }
+
+    .rh-content.rh-m-plain .rh-content__block {
+      padding: 0;
+      background-color: transparent;
+    }
+
+    .rh-content .rh-content__block {
+      background-color: #ffffff;
+    }
+
+    .rh-content__block-title {
+      font-weight: 700;
+    }
+
+    .rh-footer__text {
+      font-size: 12px;
+    }
+
+    .rh-footer__text a {
+      color: #0066cc !important;
+    }
+
+    .rh-cta-link {
+      display: block;
+      padding-top: 12px;
+      padding-right: 24px;
+      padding-bottom: 12px;
+      padding-left: 24px;
+      background-color: #0066cc !important;
+      border-radius: 3px;
+      text-decoration: none;
+    }
+
+    .rh-cta-link a {
+      color: #fff !important;
+      text-decoration: none;
+      font-weight: 400;
+      font-size: 18px;
+    }
+
+    /* dark mode hacks */
+    [data-ogsc] .rh-masthead__brand,
+    [data-ogsb] .rh-masthead__brand {
+      background-color: #151515 !important;
+    }
+
+    [data-ogsc] .rh-card__header h2,
+    [data-ogsb] .rh-card__header h2 {
+      color: #FFFFFF !important;
+    }
+
+    .rh-content table {
+      width: 100%;
+    }
+
+    .rh-content__block table,
+    .rh-card table {
+      width: auto;
+    }
+
+    .rh-multi-column table,
+    table.rh-button-table{
+			background: none !important;
+      background-color: transparent;
+    }
+
+    .rh-pad {
+      padding-right: 12px;
+      padding-left: 12px;
+      background-color: transparent;
+      background: none;
+    }
+
+    .rh-card {
+      background-color: #ffffff;
+      padding-top: 24px;
+      padding-right: 24px;
+      padding-bottom: 12px;
+      padding-left: 36px;
+      text-align: left;
+      border-left: 4px solid #c9190b;
+      vertical-align: top;
+      box-sizing: border-box;
+      display: table-cell;
+    }
+
+    .container {
+      position: inherit;
+      width: 100%;
+      }
+
+    .rh-card-metrics td {
+      padding-right: 12px;
+      padding-bottom: 0;
+    }
+
+    .rh-card-metrics tr:last-child td:last-child {
+      padding-bottom: 0;
+    }
+
+    .rh-metric__count {
+      font-size: 28px;
+    	font-weight: 500;
+      font-family: 'Red Hat Display', Helvetica, Arial sans-serif;
+      line-height: 1.5;
+    }
+
+    .rh-severities td {
+      padding-bottom: 0;
+    }
+
+    .rh-severity {
+      padding-top: 0;
+      padding-right: 0;
+      padding-bottom: 0;
+    }
+
+    .rh-severity img {
+      vertical-align: middle;
+    }
+
+    .rh-card.rh-m-danger,
+    .rh-card.rh-m-no-danger {
+      border-left: 0;
+      border: 0;
+    }
+
+    .rh-card.rh-m-danger {
+      background-color: #c9190b;
+      background: #c9190b !important;
+      color: #ffffff;
+    }
+
+    .rh-card.rh-m-danger .rh-card__header h2 {
+      color: #FFFFFF;
+      color: #FFFFFF !important;
+    }
+
+    .rh-card.rh-m-no-danger {
+      background-color: #b8bbbe;
+      background: #b8bbbe !important;
+      color: #151515;
+    }
+
+    .rh-card.rh-m-no-danger svg,
+    .rh-card.rh-m-no-danger use {
+      fill: #151515;
+    }
+
+    .rh-card.rh-m-set-height {
+      height: 160px;
+    }
+
+    .rh-card-metrics .rh-card__header {
+      padding-bottom: 4px;
+    }
+
+    .rh-card__header h2 {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .rh-50-block {
+      width: 100%;
+      max-width: 281px;
+      display: inline-block;
+      vertical-align: top;
+      direction: ltr;
+    }
+
+    @media only screen and (max-width: 600px) {
+      body{
+        width: 100% !important;
+        min-width: 100% !important;
+      }
+
+      .rh-template-container {
+        max-width: 600px !important;
+        /*@editable*/ width: 100% !important;
+      }
+
+      .rh-body.rh-multi-column {
+        padding-bottom: 0;
+      }
+
+      .rh-50-block {
+        width: 100%;
+        max-width: 100% !important;
+        padding-bottom: 24px;
+      }
+
+      .rh-icon-wrapper {
+        width: 30px;
+        height: 48px;
+      }
+
+      .rh-card.rh-m-set-height {
+        height: auto;
+      }
+    }
+
+    /* Dark Mode */
+		/* @media (prefers-color-scheme: dark) {
+		      .rh-content .rh-content__block,
+		      .rh-card {
+		        background-color: #212427;
+		      }
+
+		      .rh-template-container,
+		      .rh-template-container > tbody {
+		        background-color: #3c3f42;
+		        color: #ffffff;
+		      }
+
+		      .rh-content a,
+		      .rh-footer__text a {
+		        color: #73bcf7;
+		      }
+
+		      .rh-cta-link a {
+		        color: #ffffff;
+		      }
+
+		      .rh-card.rh-m-danger {
+		        background-color: #c9190b;
+		        background: #c9190b;
+		        color: #ffffff;
+		      }
+
+		      .rh-card.rh-m-no-danger {
+		        background-color: #b8bbbe;
+		        background: #b8bbbe;
+		        color: #151515;
+		      }
+		    }
+
+		    [data‐ogsc] {
+		      .rh-content .rh-content__block,
+		      .rh-card {
+		        background-color: #212427;
+		      }
+
+		      .rh-template-container,
+		      .rh-template-container > tbody {
+		        background-color: #3c3f42;
+		        color: #ffffff;
+		      }
+
+		      .rh-content a,
+		      .rh-footer__text a {
+		        color: #73bcf7;
+		      }
+
+		      .rh-cta-link a {
+		        color: #ffffff;
+		      }
+
+		      .rh-card.rh-m-danger {
+		        background-color: #c9190b;
+		        background: #c9190b;
+		        color: #ffffff;
+		      }
+
+		      .rh-card.rh-m-no-danger {
+		        background-color: #b8bbbe;
+		        background: #b8bbbe;
+		        color: #151515;
+		      }
+		    }  */
+
+  </style>
+|}
+</head>
+
+<body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0" class="rh-body">
+<center>
+    <table align="center" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" class="rh-body-table">
+        <tr>
+            <td align="center" valign="top" class="rh-body-cell">
+                <table border="0" cellpadding="0" cellspacing="0" class="rh-template-container">
+
+                    <!-- Head -->
+                    <tr>
+                        <td class="rh-head">
+                            <table class="rh-masthead" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <!--Red Hat logo-->
+                                    <td align="center" class="rh-masthead__brand" bgcolor="#151515">
+                                        <a href="https://console.redhat.com/" target="_blank" class="rh-masthead__brand-link">
+                                            <img src="https://console.redhat.com/apps/frontend-assets/email-assets/logo_insights.jpg" alt="Red Hat logo" width="182" height="90" class="rh-masthead__brand-img" />
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="rh-masthead__subhead">
+                                        <h1><b>{#insert content-title}{/}</b></h1>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- end head -->
+
+                    <!-- Body section -->
+                    <tr>
+                        <td class="rh-body">
+                            <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                {#insert content-body}{/}
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- end body section -->
+
+                    <!-- Footer -->
+                    <tr>
+                        <td class="rh-footer">
+                            <table role="presentation" border="0" align="center" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td class="rh-footer__text">
+                                        You received this notification because of selections you made in your <a href="https://console.redhat.com/user-preferences/notifications/openshift" target="_blank">Hybrid Cloud Console User Preferences</a>. You can opt in or out of receiving notifications by changing your User Preferences.
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- end footer -->
+
+                    <!-- Ensure padding bottom - don't remove empty row -->
+                    <tr>
+                        <td>
+                        </td>
+                    </tr>
+                    <!-- leave - empty row -->
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</center>
+</body>
+</html>

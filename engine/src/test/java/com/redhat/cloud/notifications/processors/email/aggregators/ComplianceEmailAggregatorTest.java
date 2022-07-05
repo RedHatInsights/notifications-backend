@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+
 class ComplianceEmailAggregatorTest {
 
     private ComplianceEmailAggregator aggregator;
@@ -18,14 +20,16 @@ class ComplianceEmailAggregatorTest {
     }
 
     @Test
-    void emptyAggregatorHasNoAccountId() {
+    void emptyAggregatorHasNoAccountIdOrOrgId() {
         Assertions.assertNull(aggregator.getAccountId(), "Empty aggregator has no accountId");
+        Assertions.assertNull(aggregator.getOrgId(), "Empty aggregator has no orgId");
     }
 
     @Test
-    void shouldSetAccountNumber() {
+    void shouldSetAccountNumberAndOrgId() {
         aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("tenant", "rhel", "compliance", "report-upload-failed", "policyId", "inventoryId"));
         Assertions.assertEquals("tenant", aggregator.getAccountId());
+        Assertions.assertEquals(DEFAULT_ORG_ID, aggregator.getOrgId());
     }
 
     @Test

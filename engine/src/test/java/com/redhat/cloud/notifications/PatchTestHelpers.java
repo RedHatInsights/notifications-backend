@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+
 public class PatchTestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
@@ -29,6 +31,7 @@ public class PatchTestHelpers {
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
         aggregation.setAccountId(tenant);
+        aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
@@ -52,6 +55,7 @@ public class PatchTestHelpers {
                         .build()
         ));
         emailActionMessage.setAccountId(tenant);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);
@@ -64,6 +68,7 @@ public class PatchTestHelpers {
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
         aggregation.setAccountId(tenant);
+        aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
         emailActionMessage = new Action();
@@ -106,6 +111,7 @@ public class PatchTestHelpers {
                 .build()
         ));
         emailActionMessage.setAccountId(tenant);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);

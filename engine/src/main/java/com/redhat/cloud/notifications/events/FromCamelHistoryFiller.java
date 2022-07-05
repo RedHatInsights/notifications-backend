@@ -124,6 +124,7 @@ public class FromCamelHistoryFiller {
                 .withApplication("notifications")
                 .withEventType("integration-failed")
                 .withAccountId(ep != null ? ep.getAccountId() : "")
+                .withOrgId(ep != null && ep.getOrgId() != null ? ep.getOrgId() : "")
                 .withContext(contextBuilder.build())
                 .withTimestamp(LocalDateTime.now(ZoneOffset.UTC))
                 .withEvents(Collections.singletonList(event))
