@@ -3,13 +3,16 @@ package com.redhat.cloud.notifications;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,7 +45,12 @@ public class MicrometerAssertionHelper {
                     .counters();
         for (Counter counter : counters) {
             Meter.Id id = counter.getId();
-            counterValuesBeforeTest.put(counterName, registry.counter(counterName, id.getTags()).count());
+            List<String> tags = new ArrayList<>();
+            for (Tag tag : id.getTags()) {
+                tags.add(tag.getKey());
+                tags.add(tag.getValue());
+            }
+            counterValuesBeforeTest.put(counterName + tags, registry.counter(counterName, id.getTags()).count());
         }
     }
 

@@ -3,8 +3,10 @@ package com.redhat.cloud.notifications.processors.camel;
 import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.OrgIdHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -40,10 +42,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CAMEL_SUBTYPE_HEADER;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CLOUD_EVENT_ACCOUNT_EXTENSION_KEY;
+import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CLOUD_EVENT_ORG_ID_EXTENSION_KEY;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CLOUD_EVENT_TYPE_PREFIX;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.NOTIF_METADATA_KEY;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.PROCESSED_COUNTER_NAME;
@@ -79,6 +83,12 @@ public class CamelTypeProcessorTest {
     @Inject
     FeatureFlipper featureFlipper;
 
+    @Inject
+    OrgIdHelper orgIdHelper;
+
+    @Inject
+    ResourceHelpers resourceHelpers;
+
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
@@ -90,7 +100,19 @@ public class CamelTypeProcessorTest {
     }
 
     @Test
-    void testCamelEndpointProcessing() {
+    void testCamelEndpointProcessingWithoutOrgId() {
+        // The assertions will vary depending on the orgId feature flag.
+        testCamelEndpointProcessing();
+    }
+
+    @Test
+    void testCamelEndpointProcessingWithOrgId() {
+        featureFlipper.setUseOrgId(true);
+        // The assertions will vary depending on the orgId feature flag.
+        testCamelEndpointProcessing();
+    }
+
+    private void testCamelEndpointProcessing() {
 
         // We need input data for the test.
         Event event = buildEvent();
@@ -143,8 +165,13 @@ public class CamelTypeProcessorTest {
         // Finally, we need to check the Kafka message metadata.
         UUID historyId = result.get(0).getId();
         checkKafkaMetadata(message, historyId, endpoint1.getSubType());
-        checkCloudEventMetadata(message, historyId, endpoint1.getAccountId(), endpoint1.getSubType());
+        checkCloudEventMetadata(message, historyId, endpoint1.getAccountId(), endpoint1.getOrgId(), endpoint1.getSubType());
         checkTracingMetadata(message);
+
+        // DB and Kafka data must be cleared to prevent a side effect on other tests.
+        inMemorySink.clear();
+        resourceHelpers.deleteEndpoint(endpoint1.getId());
+        resourceHelpers.deleteEndpoint(endpoint2.getId());
     }
 
     @Test
@@ -278,6 +305,7 @@ public class CamelTypeProcessorTest {
 
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
+        endpoint.setOrgId(DEFAULT_ORG_ID);
         endpoint.setType(CAMEL);
         endpoint.setSubType(SUB_TYPE);
         endpoint.setProperties(properties);
@@ -301,10 +329,13 @@ public class CamelTypeProcessorTest {
         assertEquals(expectedSubType, new String(kafkaHeaders.headers(CAMEL_SUBTYPE_HEADER).iterator().next().value(), UTF_8));
     }
 
-    private static void checkCloudEventMetadata(Message<String> message, UUID expectedId, String expectedAccountId, String expectedSubType) {
+    private void checkCloudEventMetadata(Message<String> message, UUID expectedId, String expectedAccountId, String expectedOrgId, String expectedSubType) {
         CloudEventMetadata metadata = message.getMetadata(CloudEventMetadata.class).get();
         assertEquals(expectedId.toString(), metadata.getId());
         assertEquals(expectedAccountId, metadata.getExtension(CLOUD_EVENT_ACCOUNT_EXTENSION_KEY).get());
+        if (orgIdHelper.useOrgId(expectedOrgId)) {
+            assertEquals(expectedOrgId, metadata.getExtension(CLOUD_EVENT_ORG_ID_EXTENSION_KEY).get());
+        }
         assertEquals(CLOUD_EVENT_TYPE_PREFIX + expectedSubType, metadata.getType());
     }
 

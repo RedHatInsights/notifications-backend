@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.camel;
 
 import com.redhat.cloud.notifications.Base64Utils;
+import com.redhat.cloud.notifications.OrgIdHelper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
@@ -20,6 +21,7 @@ import io.opentelemetry.context.Context;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.TracingMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
+import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadataBuilder;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.common.header.internals.RecordHeaders;
@@ -49,6 +51,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     public static final String TOKEN_HEADER = "X-Insight-Token";
     public static final String NOTIF_METADATA_KEY = "notif-metadata";
     public static final String CLOUD_EVENT_ACCOUNT_EXTENSION_KEY = "rh-account";
+    public static final String CLOUD_EVENT_ORG_ID_EXTENSION_KEY = "rh-org-id";
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     public static final String CAMEL_SUBTYPE_HEADER = "CAMEL_SUBTYPE";
     public static final String PROCESSORNAME = "processorname";
@@ -71,6 +74,9 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     BridgeAuth bridgeAuth;
+
+    @Inject
+    OrgIdHelper orgIdHelper;
 
     @Override
     public List<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
@@ -134,6 +140,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         Endpoint endpoint = item.getEndpoint();
         String accountId = endpoint.getAccountId();
+        String orgId = endpoint.getOrgId();
         // the next could give a CCE, but we only come here when it is a camel endpoint anyway
         String subType = endpoint.getSubType();
         CamelProperties camelProperties = endpoint.getProperties(CamelProperties.class);
@@ -159,7 +166,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
             return history;
 
         } else {
-            reallyCallCamel(payload, historyId, accountId, subType, integrationName, originalEventId);
+            reallyCallCamel(payload, historyId, accountId, orgId, subType, integrationName, originalEventId);
             final long endTime = System.currentTimeMillis();
             // We only create a basic stub. The FromCamel filler will update it later
             NotificationHistory history = getHistoryStub(endpoint, item.getEvent(), endTime - startTime, historyId);
@@ -167,16 +174,18 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         }
     }
 
-    public void reallyCallCamel(JsonObject body, UUID historyId, String accountId, String subType, String integrationName, String originalEventId) {
+    public void reallyCallCamel(JsonObject body, UUID historyId, String accountId, String orgId, String subType, String integrationName, String originalEventId) {
 
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
         Message<String> msg = Message.of(body.encode());
-        msg = msg.addMetadata(OutgoingCloudEventMetadata.builder()
+        OutgoingCloudEventMetadataBuilder<?> ceMetadata = OutgoingCloudEventMetadata.builder()
                 .withId(historyId.toString())
                 .withExtension(CLOUD_EVENT_ACCOUNT_EXTENSION_KEY, accountId)
-                .withType(CLOUD_EVENT_TYPE_PREFIX + subType)
-                .build()
-        );
+                .withType(CLOUD_EVENT_TYPE_PREFIX + subType);
+        if (orgIdHelper.useOrgId(orgId)) {
+            ceMetadata.withExtension(CLOUD_EVENT_ORG_ID_EXTENSION_KEY, orgId);
+        }
+        msg = msg.addMetadata(ceMetadata.build());
         msg = msg.addMetadata(OutgoingKafkaRecordMetadata.builder()
             .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, historyId.toString().getBytes(UTF_8))
                     .add(CAMEL_SUBTYPE_HEADER, subType.getBytes(UTF_8)))
