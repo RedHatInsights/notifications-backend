@@ -152,4 +152,11 @@ public class ResourceHelpers {
         entityManager.createQuery("DELETE FROM InstantEmailTemplate").executeUpdate();
         entityManager.createQuery("DELETE FROM AggregationEmailTemplate").executeUpdate();
     }
+
+    @Transactional
+    public void deleteEndpoint(UUID id) {
+        entityManager.createQuery("DELETE FROM Endpoint WHERE id = :id")
+                .setParameter("id", id)
+                .executeUpdate();
+    }
 }
