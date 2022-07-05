@@ -220,7 +220,7 @@ public class NotificationResource {
     @Operation(summary = "Update a behavior group.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
-    public Response updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, UpdateBehaviorGroupRequest request) {
+    public Response updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull UpdateBehaviorGroupRequest request) {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
