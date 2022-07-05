@@ -18,21 +18,18 @@ public class CreateBehaviorGroupRequest {
     /**
      * BundleId the behavior group will be created for.
      */
-    @Valid
     @NotNull
     public UUID bundleId;
 
     /**
      * Display name the behavior group will have.
      */
-    @Valid
     @NotNull
     public String displayName;
 
     /**
      * If not null, the behavior group will have the relations to the endpoints (i.e. actions within a behavior group).
      */
-    @Valid
     // Allow this list to be null to be backwards compatible with the previous CreateBehaviorGroupRequest
     public List<UUID> endpointIds;
 
@@ -40,6 +37,5 @@ public class CreateBehaviorGroupRequest {
      * If not null, the behavior group will have the relations to the event types (i.e. the event type is linked with
      * the behavior group).
      */
-    @Valid
     public Set<UUID> eventTypeIds;
 }
