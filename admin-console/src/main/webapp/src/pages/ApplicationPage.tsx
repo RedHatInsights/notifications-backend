@@ -44,6 +44,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
+    const [ createEditInstantTemplateModal, setCreateEditInstantTemplateModal ] =
+    React.useState({ showModal: false, isEdit: false, instantTemplates: {}});
+
     const getBundleId = React.useMemo(() => {
         if (applicationTypesQuery.payload?.type === 'Application') {
             return applicationTypesQuery.payload.value.bundleId;
@@ -100,9 +103,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     };
 
     const createInstantTemplate = () => {
-        setShowModal(true);
-        setIsEdit(false);
-        setInstantTemplates({});
+        setCreateEditInstantTemplateModal({ isEdit: false, showModal: true, instantTemplates: {}});
     };
 
     const handleSubmit = React.useCallback((eventType) => {
@@ -121,7 +122,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     }, [ applicationId, eventTypesQuery.reload, newEvent.mutate ]);
 
     const handleInstantTemplateSubmit = React.useCallback((instantTemplates) => {
-        setShowModal(false);
+        setCreateEditInstantTemplateModal({ isEdit: false, showModal: false, instantTemplates: {}});
         const mutate = newInstantTemplate.mutate;
         mutate({
             body_template: instantTemplates.body_template,
@@ -201,8 +202,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     onCreateEventType={ createEventType }
                     onEditEventType={ editEventType }
                     onDeleteEventTypeModal={ deleteEventTypeModal }
-                    onCreateInstantTemplate={ createInstantTemplate }
-                    onEditInstantTemplate={ editInstantTemplate }
+                    onCreateEditInstantTemplate={ isEdit ? editInstantTemplate : createInstantTemplate }
                 />
             </PageSection>
             <AggregationTemplateCard
