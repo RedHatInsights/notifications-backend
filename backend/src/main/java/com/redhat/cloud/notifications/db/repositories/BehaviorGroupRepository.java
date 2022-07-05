@@ -333,7 +333,7 @@ public class BehaviorGroupRepository {
 
         List<BehaviorGroup> behaviorGroups = typedQuery.getResultList();
         for (BehaviorGroup behaviorGroup : behaviorGroups) {
-            behaviorGroup.filterOutBundle().filterOutActions();
+            behaviorGroup.filterOutBundle().filterOutActions().filterOutBehaviors();
         }
         return behaviorGroups;
     }
@@ -432,7 +432,7 @@ public class BehaviorGroupRepository {
                 .setParameter("endpointId", endpointId)
                 .getResultList();
         for (BehaviorGroup behaviorGroup : behaviorGroups) {
-            behaviorGroup.filterOutActions();
+            behaviorGroup.filterOutActions().filterOutBehaviors();
         }
         return behaviorGroups;
     }

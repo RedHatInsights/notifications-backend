@@ -74,8 +74,11 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
     private boolean filterOutActions;
 
     @OneToMany(mappedBy = "behaviorGroup", cascade = CascadeType.REMOVE)
-    @JsonIgnore
     private Set<EventTypeBehavior> behaviors;
+
+    @Transient
+    @JsonIgnore
+    private boolean filterOutBehaviors;
 
     @JsonInclude
     @JsonProperty(access = READ_ONLY, value = "default_behavior")
@@ -166,6 +169,15 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     public void setBehaviors(Set<EventTypeBehavior> behaviors) {
         this.behaviors = behaviors;
+    }
+
+    public boolean isFilterOutBehaviors() {
+        return filterOutBehaviors;
+    }
+
+    public BehaviorGroup filterOutBehaviors() {
+        filterOutBehaviors = true;
+        return this;
     }
 
     @Override
