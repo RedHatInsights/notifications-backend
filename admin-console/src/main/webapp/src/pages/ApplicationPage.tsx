@@ -17,7 +17,7 @@ import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
 import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
-import { EventType } from '../types/Notifications';
+import { EventType, InstantTemplate } from '../types/Notifications';
 import { useEventTypes } from './ApplicationPage/useEventTypes';
 
 type ApplicationPageParams = {
@@ -34,6 +34,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const aggregationTemplates = useAggregationTemplates(applicationId);
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
+    const [ instantTemplates, setInstantTemplates ] = React.useState<Partial<InstantTemplate>>({});
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
@@ -85,6 +86,13 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventTypes({});
     };
 
+    const createInstantTemplate = () => {
+        setShowModal(true);
+        setIsEdit(false);
+        setInstantTemplates({});
+
+    };
+
     const handleSubmit = React.useCallback((eventType) => {
         setShowModal(false);
         const mutate = newEvent.mutate;
@@ -104,6 +112,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setShowModal(true);
         setIsEdit(true);
         setEventTypes(e);
+    };
+
+    const editInstantTemplate = (i: InstantTemplate) => {
+        setShowModal(true);
+        setIsEdit(true);
+        setInstantTemplates(i);
     };
 
     const handleDelete = React.useCallback(async () => {
@@ -155,6 +169,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     onCreateEventType={ createEventType }
                     onEditEventType={ editEventType }
                     onDeleteEventTypeModal={ deleteEventTypeModal }
+                    onCreateInstantTemplate={ createInstantTemplate }
+                    onEditInstantTemplate={ editInstantTemplate }
                 />
             </PageSection>
             <AggregationTemplateCard
