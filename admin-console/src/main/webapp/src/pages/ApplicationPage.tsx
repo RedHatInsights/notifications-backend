@@ -11,6 +11,7 @@ import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
+import { useCreateInstantEmailTemplate } from '../services/EmailTemplates/CreateInstantTemplates';
 import { useAggregationTemplates } from '../services/EmailTemplates/GetAggregationTemplates';
 import { useGetTemplates } from '../services/EmailTemplates/GetTemplates';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
@@ -35,6 +36,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const aggregationTemplates = useAggregationTemplates(applicationId);
     const getAllTemplates = useGetTemplates();
+    const newInstantTemplate = useCreateInstantEmailTemplate();
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
 
@@ -102,7 +104,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setShowModal(true);
         setIsEdit(false);
         setInstantTemplates({});
-
     };
 
     const handleSubmit = React.useCallback((eventType) => {
@@ -119,6 +120,22 @@ export const ApplicationPage: React.FunctionComponent = () => {
         .then (eventTypesQuery.reload);
 
     }, [ applicationId, eventTypesQuery.reload, newEvent.mutate ]);
+
+    const handleInstantTemplateSubmit = React.useCallback((instantTemplates) => {
+        setShowModal(false);
+        const mutate = newInstantTemplate.mutate;
+        mutate({
+            body_template: instantTemplates.body_template,
+            body_template_id: instantTemplates.body_template_id,
+            event_type: instantTemplates.event_type,
+            event_type_id: instantTemplates.event_type_id,
+            id: instantTemplates.id,
+            subject_template: instantTemplates.subject_template,
+            subject_template_id: instantTemplates.subject_template_id
+
+        });
+
+    }, [ newInstantTemplate.mutate ]);
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
@@ -214,6 +231,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 showModal={ showModal }
                 onClose={ onTemplateClose }
                 templates={ templates?.map(t => t.name) }
+                onSubmit={ handleInstantTemplateSubmit }
+                initialInstantTemplate={ instantTemplates }
             />
         </React.Fragment>
 
