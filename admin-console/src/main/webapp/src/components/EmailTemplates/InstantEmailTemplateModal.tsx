@@ -12,8 +12,8 @@ import React from 'react';
 import { InstantTemplate } from '../../types/Notifications';
 
 interface InstantTemplateModalProps {
-    isEdit: boolean;
     showModal: boolean;
+    isEdit: boolean;
     onClose: () => void;
     templates: string[] | undefined;
     initialInstantTemplate?: Partial<InstantTemplate>;

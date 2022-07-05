@@ -24,8 +24,7 @@ interface EventTypeTableBaseProps {
     onCreateEventType: () => void;
     onEditEventType: (eventType: EventType) => void;
     onDeleteEventTypeModal: (eventType: EventType) => void;
-    onCreateInstantTemplate: () => void;
-    onEditInstantTemplate: (instantTemplate: InstantTemplate) => void;
+    onCreateEditInstantTemplate: (i: InstantTemplate) => void
 }
 
 type CreateEventTypeButtonProp = {
@@ -80,6 +79,7 @@ const EventTypeTableLayout: React.FunctionComponent<EventTypeTableLayoutProps> =
  * Implements the inner workings of the EventType - shows the rows and connects the function to the rows.
  */
 const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = props => {
+
     return <>
         { props.eventTypes.length === 0 && <Tr>
             <Td colSpan={ numberOfColumns }>
@@ -104,7 +104,7 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                     <Td>{ eventType.displayName }</Td>
                     <Td>{ eventType.name }</Td>
                     <Td><InstantEmailCell eventType={ eventType }
-                        onClick={ () => props.onCreateInstantTemplate } /></Td>
+                        onClick={ () => props.onCreateEditInstantTemplate } /></Td>
                     <Td>
                         <ActionList isIconList>
                             <ActionListItem>
