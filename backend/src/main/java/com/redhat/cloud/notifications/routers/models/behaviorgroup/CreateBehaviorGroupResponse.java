@@ -22,18 +22,6 @@ public class CreateBehaviorGroupResponse {
     public UUID id;
 
     /**
-     * Account id the behavior group belongs to.
-     */
-    @Deprecated
-    @NotNull
-    public String accountId;
-
-    /**
-     * Org id the behavior group belongs to.
-     */
-    public String orgId; // Should add @NotNull when have fully migrated to org id.
-
-    /**
      * Bundle if of the newly created behavior group.
      */
     @NotNull

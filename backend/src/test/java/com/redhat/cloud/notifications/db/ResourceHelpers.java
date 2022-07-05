@@ -187,7 +187,7 @@ public class ResourceHelpers {
     }
 
     public BehaviorGroup getBehaviorGroup(UUID behaviorGroupId) {
-        return behaviorGroupRepository.get(behaviorGroupId);
+        return entityManager.find(BehaviorGroup.class, behaviorGroupId);
     }
 
     public BehaviorGroup createBehaviorGroup(String accountId, String orgId, String displayName, UUID bundleId) {

@@ -27,6 +27,8 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -178,7 +180,7 @@ public class NotificationResource {
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
-    public CreateBehaviorGroupResponse createBehaviorGroup(@Context SecurityContext sec, CreateBehaviorGroupRequest request) {
+    public CreateBehaviorGroupResponse createBehaviorGroup(@Context SecurityContext sec, @Valid @NotNull CreateBehaviorGroupRequest request) {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
@@ -197,8 +199,6 @@ public class NotificationResource {
         CreateBehaviorGroupResponse response = new CreateBehaviorGroupResponse();
 
         response.id = behaviorGroup.getId();
-        response.accountId = behaviorGroup.getAccountId();
-        response.orgId = null;
         response.bundleId = behaviorGroup.getBundleId();
         response.displayName = behaviorGroup.getDisplayName();
 
