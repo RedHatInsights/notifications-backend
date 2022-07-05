@@ -6,10 +6,13 @@ import { useParams } from 'react-router';
 
 import { useUserPermissions } from '../app/PermissionContext';
 import { EmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
+import { InstantTemplateModal } from '../components/EmailTemplates/InstantEmailTemplateModal';
 import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
+import { useAggregationTemplates } from '../services/EmailTemplates/GetAggregationTemplates';
+import { useGetTemplates } from '../services/EmailTemplates/GetTemplates';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
@@ -29,6 +32,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
+
+    const aggregationTemplates = useAggregationTemplates(applicationId);
+    const getAllTemplates = useGetTemplates();
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
 
@@ -69,6 +75,22 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
+
+    const aggregationEmailTemplates = useMemo(() => {
+        if (aggregationTemplates.payload?.status === 200) {
+            return aggregationTemplates.payload.value;
+        }
+
+        return undefined;
+    }, [ aggregationTemplates.payload?.status, aggregationTemplates.payload?.value ]);
+
+    const templates = useMemo(() => {
+        if (getAllTemplates.payload?.status === 200) {
+            return getAllTemplates.payload.value;
+        }
+
+        return undefined;
+    }, [ getAllTemplates.payload?.status, getAllTemplates.payload?.value ]);
 
     const createEventType = () => {
         setShowModal(true);
@@ -131,6 +153,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
         eventTypesQuery.reload();
     };
 
+    const onTemplateClose = () => {
+        setShowModal(false);
+    };
+
     const onDeleteClose = () => {
         setShowDeleteModal(false);
         eventTypesQuery.reload();
@@ -182,6 +208,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 eventTypeName={ eventTypes.name }
                 applicationName={ application?.displayName }
                 bundleName={ bundle?.display_name }
+            />
+            <InstantTemplateModal
+                isEdit={ isEdit }
+                showModal={ showModal }
+                onClose={ onTemplateClose }
+                templates={ templates?.map(t => t.name) }
             />
         </React.Fragment>
 

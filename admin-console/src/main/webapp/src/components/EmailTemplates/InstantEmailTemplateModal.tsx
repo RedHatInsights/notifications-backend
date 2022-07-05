@@ -13,7 +13,7 @@ interface InstantTemplateModalProps {
     isEdit: boolean;
     showModal: boolean;
     onClose: () => void;
-    templates: [];
+    templates: string[] | undefined;
 }
 
 export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalProps> = (props) => {
@@ -32,6 +32,7 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
                             aria-label="Subject template"
                             isRequired
                         >
+                            { props.templates }
                         </FormSelect>
                     </FormGroup>
                     <FormGroup label='Body template' fieldId='body-template'>
@@ -41,6 +42,7 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
                             aria-label="Body template"
                             isRequired
                         >
+                            { props.templates }
                         </FormSelect>
                     </FormGroup>
                     <ActionGroup>
