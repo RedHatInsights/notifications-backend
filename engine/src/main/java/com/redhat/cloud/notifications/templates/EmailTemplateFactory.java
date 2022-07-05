@@ -14,6 +14,7 @@ public class EmailTemplateFactory {
     private static final String POLICIES = "policies";
     private static final String ADVISOR = "advisor";
     private static final String COMPLIANCE = "compliance";
+    private static final String COST_MANAGEMENT = "cost-management";
     private static final String DRIFT = "drift";
     private static final String OPENSHIFT = "openshift";
     private static final String CONSOLE = "console";
@@ -50,6 +51,8 @@ public class EmailTemplateFactory {
         } else if (bundle.equalsIgnoreCase(OPENSHIFT)) {
             if (application.equalsIgnoreCase(ADVISOR)) {
                 return new AdvisorOpenshift();
+            } else if (application.equalsIgnoreCase(COST_MANAGEMENT)) {
+                return new CostManagement();
             }
         } else if (bundle.equalsIgnoreCase(APPLICATION_SERVICES)) {
             if (application.equalsIgnoreCase(RHOSAK)) {
