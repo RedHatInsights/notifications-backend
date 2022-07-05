@@ -43,6 +43,7 @@ import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MES
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+// TODO NOTIF-603 Migrate to orgId (not started in this class)
 @ApplicationScoped
 public class CamelTypeProcessor implements EndpointTypeProcessor {
 

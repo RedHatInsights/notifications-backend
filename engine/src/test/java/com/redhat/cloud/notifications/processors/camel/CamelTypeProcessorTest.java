@@ -180,6 +180,7 @@ public class CamelTypeProcessorTest {
         // We need input data for the test.
         Event event = buildEvent();
         event.setAccountId("rhid123");
+        event.setOrgId(DEFAULT_ORG_ID);
         Endpoint endpoint = buildCamelEndpoint(event.getAction().getAccountId());
         endpoint.setSubType("slack");
 
@@ -240,6 +241,7 @@ public class CamelTypeProcessorTest {
 
         // Now try again, but the remote throws an error
         event.getAction().setAccountId("something-random");
+        event.getAction().setOrgId(DEFAULT_ORG_ID);
         result = processor.process(event, List.of(endpoint));
         assertEquals(1, result.size());
         // Metrics should report the same thing.
@@ -269,6 +271,7 @@ public class CamelTypeProcessorTest {
         action.setEventType("event-type");
         action.setTimestamp(LocalDateTime.now());
         action.setAccountId("account-id");
+        action.setOrgId(DEFAULT_ORG_ID);
         action.setRecipients(List.of());
         action.setContext(new Context.ContextBuilder().build());
         action.setEvents(

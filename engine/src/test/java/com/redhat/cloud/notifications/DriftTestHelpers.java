@@ -12,6 +12,8 @@ import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+
 public class DriftTestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
@@ -21,6 +23,7 @@ public class DriftTestHelpers {
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
         aggregation.setAccountId(tenant);
+        aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
@@ -49,6 +52,7 @@ public class DriftTestHelpers {
         ));
 
         emailActionMessage.setAccountId(tenant);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);
@@ -93,6 +97,7 @@ public class DriftTestHelpers {
         ));
 
         emailActionMessage.setAccountId(tenant);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         return emailActionMessage;
     }

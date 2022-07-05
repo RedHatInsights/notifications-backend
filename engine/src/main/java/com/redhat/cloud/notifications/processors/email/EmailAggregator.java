@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -41,6 +42,9 @@ public class EmailAggregator {
 
     @Inject
     EmailSubscriptionRepository emailSubscriptionRepository;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
     private static final String EVENT_TYPE_KEY = "event_type";
@@ -110,7 +114,7 @@ public class EmailAggregator {
 
     private void fillUsers(EmailAggregationKey aggregationKey, User user, Map<User, AbstractEmailPayloadAggregator> aggregated, EmailAggregation emailAggregation) {
         AbstractEmailPayloadAggregator aggregator = aggregated.computeIfAbsent(user, ignored -> EmailPayloadAggregatorFactory.by(aggregationKey));
-        aggregator.aggregate(emailAggregation);
+        aggregator.aggregate(emailAggregation, featureFlipper.isUseOrgId());
     }
 
     private String getEventType(EmailAggregation aggregation) {

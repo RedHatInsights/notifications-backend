@@ -59,6 +59,7 @@ import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.ReflectionHelper.updateField;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_ENDPOINTS_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_MESSAGES_COUNTER_NAME;
@@ -123,9 +124,8 @@ public class LifecycleITest {
     @Test
     void test() {
         final String accountId = "tenant";
-        final String orgId = "org-id";
         final String username = "user";
-        setupEmailMock(accountId, orgId, username);
+        setupEmailMock(accountId, username);
 
         // First, we need a bundle, an app and an event type. Let's create them!
         Bundle bundle = resourceHelpers.createBundle(BUNDLE_NAME);
@@ -158,7 +158,7 @@ public class LifecycleITest {
 
         // Get the account canonical email endpoint
         Endpoint emailEndpoint = statelessSessionFactory.withSession(statelessSession -> {
-            return getAccountCanonicalEmailEndpoint(accountId, orgId);
+            return getAccountCanonicalEmailEndpoint(accountId, DEFAULT_ORG_ID);
         });
 
         // Pushing a new message should trigger two webhook calls.
@@ -242,6 +242,7 @@ public class LifecycleITest {
     BehaviorGroup createBehaviorGroup(String accountId, Bundle bundle) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setAccountId(accountId);
+        behaviorGroup.setOrgId(DEFAULT_ORG_ID);
         behaviorGroup.setDisplayName("Behavior group");
         behaviorGroup.setBundle(bundle);
         behaviorGroup.setBundleId(bundle.getId());
@@ -281,6 +282,7 @@ public class LifecycleITest {
         Endpoint endpoint = new Endpoint();
         endpoint.setType(type);
         endpoint.setAccountId(accountId);
+        endpoint.setOrgId(DEFAULT_ORG_ID);
         endpoint.setEnabled(true);
         endpoint.setName(name);
         endpoint.setDescription(description);
@@ -365,7 +367,7 @@ public class LifecycleITest {
     private void emitMockedIngressAction() throws IOException {
         Action action = new Action();
         action.setAccountId("tenant");
-        action.setOrgId("org-id");
+        action.setOrgId(DEFAULT_ORG_ID);
         action.setVersion("v1.0.0");
         action.setBundle(BUNDLE_NAME);
         action.setApplication(APP_NAME);
@@ -384,7 +386,7 @@ public class LifecycleITest {
         inMemoryConnector.source("ingress").send(serializedAction);
     }
 
-    private void setupEmailMock(String accountId, String orgId, String username) {
+    private void setupEmailMock(String accountId, String username) {
         Mockito.when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
 
         User user = new User();
@@ -397,7 +399,7 @@ public class LifecycleITest {
 
         Mockito.when(rbacRecipientUsersProvider.getUsers(
                 eq(accountId),
-                eq(orgId),
+                eq(DEFAULT_ORG_ID),
                 eq(true)
         )).thenReturn(List.of(user));
 
@@ -461,7 +463,7 @@ public class LifecycleITest {
 
     @Transactional
     void clearEventTypeBehaviors(EventType eventType) {
-        entityManager.createQuery("DELETE EventTypeBehavior WHERE eventType = :eventType")
+        entityManager.createQuery("DELETE FROM EventTypeBehavior WHERE eventType = :eventType")
                 .setParameter("eventType", eventType)
                 .executeUpdate();
     }
@@ -494,8 +496,7 @@ public class LifecycleITest {
         EmailSubscription subscription = new EmailSubscription();
         subscription.setId(new EmailSubscriptionId());
         subscription.setAccountId(accountId);
-        // TODO NOTIF-603 Replace the placeholder with the real org ID.
-        subscription.setOrgId("PLACEHOLDER");
+        subscription.setOrgId(DEFAULT_ORG_ID);
         subscription.setUserId(userId);
         subscription.setApplication(application);
         subscription.setType(INSTANT);

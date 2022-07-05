@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+
 public class PatchEmailPayloadAggregatorTest {
 
     private PatchEmailPayloadAggregator aggregator;
@@ -25,14 +27,16 @@ public class PatchEmailPayloadAggregatorTest {
     }
 
     @Test
-    void emptyAggregatorHasNoAccountId() {
+    void emptyAggregatorHasNoAccountIdOrOrgId() {
         Assertions.assertNull(aggregator.getAccountId(), "Empty aggregator has no accountId");
+        Assertions.assertNull(aggregator.getOrgId(), "Empty aggregator has no orgId");
     }
 
     @Test
-    void shouldSetAccountNumber() {
+    void shouldSetAccountNumberAndOrgId() {
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation(tenant, bundle, application, "advisory", bugfix, "inventoryId"));
         Assertions.assertEquals("tenant", aggregator.getAccountId());
+        Assertions.assertEquals(DEFAULT_ORG_ID, aggregator.getOrgId());
     }
 
     @Test
