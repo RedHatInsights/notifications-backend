@@ -35,6 +35,7 @@ import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS;
 import static com.redhat.cloud.notifications.routers.EventResource.PATH;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
+import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -85,7 +86,8 @@ public class EventResource {
         }
 
         String accountId = getAccountId(securityContext);
-        List<Event> events = eventRepository.getEvents(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, limit, offset, sortBy);
+        String orgId = getOrgId(securityContext);
+        List<Event> events = eventRepository.getEvents(accountId, orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, limit, offset, sortBy);
         List<EventLogEntry> eventLogEntries = events.stream().map(event -> {
             List<EventLogEntryAction> actions;
             if (!includeActions) {
@@ -117,7 +119,7 @@ public class EventResource {
             }
             return entry;
         }).collect(Collectors.toList());
-        Long count = eventRepository.count(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults);
+        Long count = eventRepository.count(accountId, orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults);
 
         Meta meta = new Meta();
         meta.setCount(count);

@@ -48,6 +48,8 @@ public class IntegrationTemplate extends CreationUpdateTimestamped {
 
     private String accountId;
 
+    private String orgId;
+
     @ManyToOne(optional = false)
     @JsonProperty(access = READ_ONLY)
     private Template theTemplate;
@@ -82,6 +84,14 @@ public class IntegrationTemplate extends CreationUpdateTimestamped {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
     }
 
     /*
