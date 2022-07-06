@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * Talk to the OpenBridge manager API to set up processors etc
  */
-@Path("/api/v1/bridges")
+@Path("/api/smartevents_mgmt/v1/bridges")
 @Produces(MediaType.APPLICATION_JSON)
 @RegisterRestClient(configKey = "ob")
 public interface BridgeApiService {
