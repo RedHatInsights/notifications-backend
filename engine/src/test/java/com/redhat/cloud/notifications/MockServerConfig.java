@@ -26,7 +26,7 @@ public class MockServerConfig {
 
         getClient()
                 .when(request()
-                        .withPath("/api/v1/bridges/.*")
+                        .withPath("/api/smartevents_mgmt/v1/bridges/.*")
                         .withMethod("GET")
                 )
                 .respond(response()
@@ -61,11 +61,11 @@ public class MockServerConfig {
                 ClearType.EXPECTATIONS);
 
         getClient().clear(request()
-                        .withPath("/api/v1/bridges/" + bridge.getId()),
+                        .withPath("/api/smartevents_mgmt/v1/bridges/" + bridge.getId()),
                 ClearType.EXPECTATIONS);
 
         getClient().clear(request()
-                        .withPath("/api/v1/bridges/" + bridge.getId() + "/processors"),
+                        .withPath("/api/smartevents_mgmt/v1/bridges/" + bridge.getId() + "/processors"),
                 ClearType.EXPECTATIONS);
     }
 }
