@@ -116,14 +116,10 @@ public class EventConsumer {
             bundleName[0] = action.getBundle();
             appName[0] = action.getApplication();
             String eventTypeName = action.getEventType();
-            if (orgIdHelper.useOrgId(action.getOrgId())) {
-                Log.infof("Processing received action: (%s) %s/%s/%s", action.getOrgId(), bundleName[0], appName[0], eventTypeName);
-            } else {
-                Log.infof("Processing received action: (%s) %s/%s/%s", action.getAccountId(), bundleName[0], appName[0], eventTypeName);
-                if (featureFlipper.isUseOrgId()) {
-                    missingOrgIdCounter.increment();
-                    Log.info("The org ID migration is enabled but the orgId field is missing or blank in the action");
-                }
+            Log.infof("Processing received action: (accountId=%s, orgId=%s) %s/%s/%s", action.getAccountId(), action.getOrgId(), bundleName[0], appName[0], eventTypeName);
+            if (featureFlipper.isUseOrgId() && (action.getOrgId() == null || action.getOrgId().isBlank())) {
+                missingOrgIdCounter.increment();
+                Log.info("The org ID migration is enabled but the orgId field is missing or blank in the action");
             }
             /*
              * Step 2
