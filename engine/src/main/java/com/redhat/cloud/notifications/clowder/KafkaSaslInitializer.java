@@ -28,6 +28,8 @@ public class KafkaSaslInitializer {
     private static final String SCRAM_SHA_512 = "SCRAM-SHA-512";
 
     void init(@Observes @Priority(PLATFORM_BEFORE) StartupEvent event) {
+        System.out.println("KafkaSaslInitializer initialized");
+        Log.info("KafkaSaslInitializer initialized");
         Config config = ConfigProvider.getConfig();
         config.getOptionalValue(KAFKA_SECURITY_PROTOCOL, String.class).ifPresent(securityProtocol -> {
             switch (securityProtocol) {
@@ -55,12 +57,14 @@ public class KafkaSaslInitializer {
     }
 
     private static void configurePlainAuthentication(String securityProtocol, String saslMechanism, String saslJaasConfig) {
+        System.out.println("Configuring plain auth");
         setValue(KAFKA_SECURITY_PROTOCOL, securityProtocol);
         setValue(KAFKA_SASL_MECHANISM, saslMechanism);
         setValue(KAFKA_SASL_JAAS_CONFIG, saslJaasConfig);
     }
 
     private static void configureScramAuthentication(String securityProtocol, String saslMechanism, String saslJaasConfig, String truststoreLocation, String truststoreType) {
+        System.out.println("Configuring scram auth");
         setValue(KAFKA_SECURITY_PROTOCOL, securityProtocol);
         setValue(KAFKA_SASL_MECHANISM, saslMechanism);
         setValue(KAFKA_SASL_JAAS_CONFIG, saslJaasConfig);
