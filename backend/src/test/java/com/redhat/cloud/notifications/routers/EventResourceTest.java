@@ -59,6 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class EventResourceTest extends DbIsolatedTest {
 
     private static final String OTHER_ACCOUNT_ID = "other-account-id";
+    private static final String OTHER_ORG_ID = "other-org-id";
     private static final LocalDateTime NOW = LocalDateTime.now(UTC);
     private static final String PAYLOAD = "payload";
 
@@ -98,21 +99,21 @@ public class EventResourceTest extends DbIsolatedTest {
         Application app2 = resourceHelpers.createApplication(bundle2.getId(), "app-2", "Application 2");
         EventType eventType1 = resourceHelpers.createEventType(app1.getId(), "event-type-1", "Event type 1", "Event type 1");
         EventType eventType2 = resourceHelpers.createEventType(app2.getId(), "event-type-2", "Event type 2", "Event type 2");
-        Event event1 = createEvent(DEFAULT_ACCOUNT_ID, bundle1, app1, eventType1, NOW.minusDays(5L));
-        Event event2 = createEvent(DEFAULT_ACCOUNT_ID, bundle2, app2, eventType2, NOW);
-        Event event3 = createEvent(DEFAULT_ACCOUNT_ID, bundle2, app2, eventType2, NOW.minusDays(2L));
-        Event event4 = createEvent(OTHER_ACCOUNT_ID, bundle2, app2, eventType2, NOW.minusDays(10L));
-        Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, WEBHOOK);
-        Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, EMAIL_SUBSCRIPTION);
-        Endpoint endpoint3 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, CAMEL, "SlAcK");
+        Event event1 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle1, app1, eventType1, NOW.minusDays(5L));
+        Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW);
+        Event event3 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(2L));
+        Event event4 = createEvent(OTHER_ACCOUNT_ID, OTHER_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(10L));
+        Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
+        Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EMAIL_SUBSCRIPTION);
+        Endpoint endpoint3 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, CAMEL, "SlAcK");
         NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, TRUE);
         NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, FALSE);
         NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, TRUE);
         NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, TRUE);
         NotificationHistory history5 = resourceHelpers.createNotificationHistory(event3, endpoint3, TRUE);
-        endpointRepository.deleteEndpoint(DEFAULT_ACCOUNT_ID, endpoint1.getId());
-        endpointRepository.deleteEndpoint(DEFAULT_ACCOUNT_ID, endpoint2.getId());
-        endpointRepository.deleteEndpoint(DEFAULT_ACCOUNT_ID, endpoint3.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, endpoint1.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, endpoint2.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, endpoint3.getId());
 
         /*
          * Test #1
@@ -493,10 +494,11 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @Transactional
-    Event createEvent(String accountId, Bundle bundle, Application app, EventType eventType, LocalDateTime created) {
+    Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created) {
         Event event = new Event();
         event.setId(UUID.randomUUID());
         event.setAccountId(accountId);
+        event.setOrgId(orgId);
         event.setBundleId(bundle.getId());
         event.setBundleDisplayName(bundle.getDisplayName());
         event.setApplicationId(app.getId());

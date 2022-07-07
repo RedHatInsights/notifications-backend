@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
-import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
@@ -49,6 +48,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
+import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
@@ -66,11 +67,6 @@ public class NotificationResource {
 
     @Inject
     EndpointRepository endpointRepository;
-
-    private String getAccountId(SecurityContext sec) {
-        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        return principal.getAccount();
-    }
 
     @DELETE
     @Path("/{id}")
@@ -110,7 +106,8 @@ public class NotificationResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         String accountId = getAccountId(sec);
-        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(accountId, behaviorGroupId);
+        String orgId = getOrgId(sec);
+        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(accountId, orgId, behaviorGroupId);
     }
 
     /*
@@ -124,7 +121,8 @@ public class NotificationResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         String accountId = getAccountId(sec);
-        return behaviorGroupRepository.findBehaviorGroupsByEndpointId(accountId, endpointId);
+        String orgId = getOrgId(sec);
+        return behaviorGroupRepository.findBehaviorGroupsByEndpointId(accountId, orgId, endpointId);
     }
 
     @GET
@@ -134,7 +132,8 @@ public class NotificationResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
         String accountId = getAccountId(sec);
-        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(accountId, eventTypeId, query);
+        String orgId = getOrgId(sec);
+        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(accountId, orgId, eventTypeId, query);
     }
 
     @GET
@@ -180,7 +179,8 @@ public class NotificationResource {
     @Transactional
     public BehaviorGroup createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
         String accountId = getAccountId(sec);
-        return behaviorGroupRepository.create(accountId, behaviorGroup);
+        String orgId = getOrgId(sec);
+        return behaviorGroupRepository.create(accountId, orgId, behaviorGroup);
     }
 
     @PUT
@@ -195,8 +195,9 @@ public class NotificationResource {
     @Transactional
     public Response updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         String accountId = getAccountId(sec);
+        String orgId = getOrgId(sec);
         behaviorGroup.setId(id);
-        boolean updated = behaviorGroupRepository.update(accountId, behaviorGroup);
+        boolean updated = behaviorGroupRepository.update(accountId, orgId, behaviorGroup);
         return Response.status(200).type(APPLICATION_JSON).entity(updated).build();
     }
 
@@ -208,7 +209,8 @@ public class NotificationResource {
     @Transactional
     public Boolean deleteBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID behaviorGroupId) {
         String accountId = getAccountId(sec);
-        return behaviorGroupRepository.delete(accountId, behaviorGroupId);
+        String orgId = getOrgId(sec);
+        return behaviorGroupRepository.delete(accountId, orgId, behaviorGroupId);
     }
 
     @PUT
@@ -231,7 +233,8 @@ public class NotificationResource {
             throw new BadRequestException("The endpoints identifiers list should not contain duplicates");
         }
         String accountId = getAccountId(sec);
-        behaviorGroupRepository.updateBehaviorGroupActions(accountId, behaviorGroupId, endpointIds);
+        String orgId = getOrgId(sec);
+        behaviorGroupRepository.updateBehaviorGroupActions(accountId, orgId, behaviorGroupId, endpointIds);
         return Response.ok().build();
     }
 
@@ -252,7 +255,8 @@ public class NotificationResource {
             throw new BadRequestException("The behavior groups identifiers list should not contain empty values");
         }
         String accountId = getAccountId(sec);
-        behaviorGroupRepository.updateEventTypeBehaviors(accountId, eventTypeId, behaviorGroupIds);
+        String orgId = getOrgId(sec);
+        behaviorGroupRepository.updateEventTypeBehaviors(accountId, orgId, eventTypeId, behaviorGroupIds);
         return Response.ok().build();
     }
 
@@ -263,7 +267,8 @@ public class NotificationResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> findBehaviorGroupsByBundleId(@Context SecurityContext sec, @PathParam("bundleId") UUID bundleId) {
         String accountId = getAccountId(sec);
-        List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findByBundleId(accountId, bundleId);
+        String orgId = getOrgId(sec);
+        List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findByBundleId(accountId, orgId, bundleId);
         endpointRepository.loadProperties(
                 behaviorGroups
                         .stream()

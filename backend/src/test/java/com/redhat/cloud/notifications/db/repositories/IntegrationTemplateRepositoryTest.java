@@ -42,14 +42,14 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
         Template genericSlack = createTemplate(GENERIC_SLACK, "The default", "The default");
         createIntegrationTemplate(genericSlack, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
 
-        Optional<IntegrationTemplate> ito = templateRepository.findIntegrationTemplate(null, null, IntegrationTemplate.TemplateKind.APPLICATION, SLACK);
+        Optional<IntegrationTemplate> ito = templateRepository.findIntegrationTemplate(null, null, null, IntegrationTemplate.TemplateKind.APPLICATION, SLACK);
         assertTrue(ito.isPresent());
         IntegrationTemplate it = ito.get();
         assertEquals(it.getTemplateKind(), IntegrationTemplate.TemplateKind.APPLICATION);
         assertEquals(it.getTheTemplate().getName(), SPECIFIC_SLACK);
 
         // This should be the default
-        ito = templateRepository.findIntegrationTemplate(null, null, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
+        ito = templateRepository.findIntegrationTemplate(null, null, null, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
         assertTrue(ito.isPresent());
         it = ito.get();
         assertEquals(it.getTemplateKind(), IntegrationTemplate.TemplateKind.DEFAULT);
@@ -61,19 +61,19 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
     void testUserFallback() {
 
         Template specificSlack = createTemplate(SPECIFIC_SLACK, "Just a test", "Li la lu");
-        createIntegrationTemplate(specificSlack, IntegrationTemplate.TemplateKind.ORG, SLACK, "user-123");
+        createIntegrationTemplate(specificSlack, IntegrationTemplate.TemplateKind.ORG, SLACK, "user-123", "org-id-123");
         Template genericSlack = createTemplate(GENERIC_SLACK, "The default", "The default");
         createIntegrationTemplate(genericSlack, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
 
         Optional<IntegrationTemplate> ito = templateRepository.findIntegrationTemplate(null, "user-123",
-                IntegrationTemplate.TemplateKind.ORG, SLACK);
+                "org-id-123", IntegrationTemplate.TemplateKind.ORG, SLACK);
         assertTrue(ito.isPresent());
         IntegrationTemplate it = ito.get();
         assertEquals(IntegrationTemplate.TemplateKind.ORG, it.getTemplateKind());
         assertEquals(SPECIFIC_SLACK, it.getTheTemplate().getName());
 
         // This should be the default
-        ito = templateRepository.findIntegrationTemplate(null, null, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
+        ito = templateRepository.findIntegrationTemplate(null, null, null, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
         assertTrue(ito.isPresent());
         it = ito.get();
         assertEquals(IntegrationTemplate.TemplateKind.DEFAULT, it.getTemplateKind());
@@ -81,7 +81,7 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
 
         // Now see if we fall back to default if the user has no template
         ito = templateRepository.findIntegrationTemplate(null, "unknown-user",
-                IntegrationTemplate.TemplateKind.ORG, SLACK);
+                "unknown-org-id", IntegrationTemplate.TemplateKind.ORG, SLACK);
         assertTrue(ito.isPresent());
         it = ito.get();
         assertEquals(IntegrationTemplate.TemplateKind.DEFAULT, it.getTemplateKind());
@@ -100,7 +100,7 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
     }
 
     @Transactional
-    IntegrationTemplate createIntegrationTemplate(Template template, IntegrationTemplate.TemplateKind kind, String iType, String account) {
+    IntegrationTemplate createIntegrationTemplate(Template template, IntegrationTemplate.TemplateKind kind, String iType, String account, String orgId) {
         IntegrationTemplate gt = new IntegrationTemplate();
         gt.setTemplateKind(kind);
         gt.setIntegrationType(iType);
@@ -108,12 +108,15 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
         if (account != null) {
             gt.setAccountId(account);
         }
+        if (orgId != null) {
+            gt.setOrgId(orgId);
+        }
         entityManager.persist(gt);
         return gt;
     }
 
     IntegrationTemplate createIntegrationTemplate(Template template, IntegrationTemplate.TemplateKind kind, String iType) {
-        return createIntegrationTemplate(template, kind, iType, null);
+        return createIntegrationTemplate(template, kind, iType, null, null);
     }
 
 }

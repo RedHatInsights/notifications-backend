@@ -380,7 +380,7 @@ public class InternalResource {
             EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
             properties.setOnlyAdmins(p.isOnlyAdmins());
             properties.setIgnorePreferences(p.isIgnorePreferences());
-            return endpointRepository.getOrCreateEmailSubscriptionEndpoint(null, properties);
+            return endpointRepository.getOrCreateEmailSubscriptionEndpoint(null, null, properties);
         }).collect(Collectors.toList());
         behaviorGroupRepository.updateDefaultBehaviorGroupActions(
                 behaviorGroupId,
