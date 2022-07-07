@@ -577,18 +577,19 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Test
     void testCreateFullBehaviorGroup() {
         String tenant = "tenant-bg-create-full";
+        String orgId = "org-bg-create-full";
 
-        Header identityHeader = initRbacMock(tenant, "orgId", "user", FULL_ACCESS);
+        Header identityHeader = initRbacMock(tenant, orgId, "user", FULL_ACCESS);
 
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myBundleId = apps.stream().findFirst().get().getBundleId();
 
         List<UUID> endpoints = Stream.of(
-                helpers.createEndpoint(tenant, EndpointType.EMAIL_SUBSCRIPTION),
-                helpers.createEndpoint(tenant, EndpointType.EMAIL_SUBSCRIPTION),
-                helpers.createEndpoint(tenant, EndpointType.CAMEL),
-                helpers.createEndpoint(tenant, EndpointType.CAMEL)
+                helpers.createEndpoint(tenant, orgId, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(tenant, orgId, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(tenant, orgId, EndpointType.CAMEL),
+                helpers.createEndpoint(tenant, orgId, EndpointType.CAMEL)
         ).map(Endpoint::getId).collect(Collectors.toList());
         Set<UUID> eventTypes = apps.stream().findFirst().get().getEventTypes().stream().map(EventType::getId).collect(Collectors.toSet());
 
@@ -642,20 +643,21 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Test
     void testUpdateFullBehaviorGroup() {
         String tenant = "tenant-bg-update-full";
-        Header identityHeader = initRbacMock(tenant, "orgId", "user", FULL_ACCESS);
+        String orgId = "orgId-bg-update-full";
+        Header identityHeader = initRbacMock(tenant, orgId, "user", FULL_ACCESS);
 
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myBundleId = apps.stream().findFirst().get().getBundleId();
 
-        UUID behaviorGroupId = helpers.createBehaviorGroup(tenant, "My behavior group 1", myBundleId).getId();
-        UUID behaviorGroupIdOtherTenant = helpers.createBehaviorGroup(tenant + "-other", "My behavior", myBundleId).getId();
+        UUID behaviorGroupId = helpers.createBehaviorGroup(tenant, orgId, "My behavior group 1", myBundleId).getId();
+        UUID behaviorGroupIdOtherTenant = helpers.createBehaviorGroup(tenant + "-other", orgId + "-other", "My behavior", myBundleId).getId();
 
         List<UUID> endpoints = Stream.of(
-                helpers.createEndpoint(tenant, EndpointType.EMAIL_SUBSCRIPTION),
-                helpers.createEndpoint(tenant, EndpointType.EMAIL_SUBSCRIPTION),
-                helpers.createEndpoint(tenant, EndpointType.CAMEL),
-                helpers.createEndpoint(tenant, EndpointType.CAMEL)
+                helpers.createEndpoint(tenant, orgId, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(tenant, orgId, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(tenant, orgId, EndpointType.CAMEL),
+                helpers.createEndpoint(tenant, orgId, EndpointType.CAMEL)
         ).map(Endpoint::getId).collect(Collectors.toList());
 
         Set<UUID> eventTypes = apps.stream().findFirst().get().getEventTypes().stream().map(EventType::getId).collect(Collectors.toSet());
@@ -690,7 +692,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
         assertEquals("My behavior group 2.0", behaviorGroup.getDisplayName());
         assertEquals(endpoints, getEndpointsIds(tenant, behaviorGroupId));
-        assertEquals(Set.of(), getEventTypeIds(tenant, behaviorGroupId));
+        assertEquals(Set.of(), getEventTypeIds(tenant, orgId, behaviorGroupId));
 
         // Updating only event types (endpoints remain the same)
         behaviorGroupRequest.displayName = "My behavior group 3.0";
@@ -701,7 +703,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
         assertEquals("My behavior group 3.0", behaviorGroup.getDisplayName());
         assertEquals(endpoints, getEndpointsIds(tenant, behaviorGroupId));
-        assertEquals(eventTypes, getEventTypeIds(tenant, behaviorGroupId));
+        assertEquals(eventTypes, getEventTypeIds(tenant, orgId, behaviorGroupId));
 
         // Updating both to empty
         behaviorGroupRequest.displayName = "My behavior group 4.0";
@@ -712,7 +714,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
         assertEquals("My behavior group 4.0", behaviorGroup.getDisplayName());
         assertEquals(List.of(), getEndpointsIds(tenant, behaviorGroupId));
-        assertEquals(Set.of(), getEventTypeIds(tenant, behaviorGroupId));
+        assertEquals(Set.of(), getEventTypeIds(tenant, orgId, behaviorGroupId));
     }
 
     @Test
@@ -1001,9 +1003,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .collect(Collectors.toList());
     }
 
-    private Set<UUID> getEventTypeIds(String tenant, UUID behaviorGroupId) {
+    private Set<UUID> getEventTypeIds(String tenant, String orgId, UUID behaviorGroupId) {
         return helpers
-                .findEventTypesByBehaviorGroupId(tenant, behaviorGroupId)
+                .findEventTypesByBehaviorGroupId(tenant, orgId, behaviorGroupId)
                 .stream()
                 .map(EventType::getId)
                 .collect(Collectors.toSet());

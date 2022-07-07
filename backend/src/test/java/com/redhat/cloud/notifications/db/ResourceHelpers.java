@@ -204,8 +204,12 @@ public class ResourceHelpers {
         return behaviorGroupRepository.createDefault(behaviorGroup);
     }
 
+    public List<EventType> findEventTypesByBehaviorGroupId(String accountId, String orgId, UUID behaviorGroupId) {
+        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(accountId, orgId, behaviorGroupId);
+    }
+
     public List<EventType> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
-        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, behaviorGroupId);
+        return findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, behaviorGroupId);
     }
 
     public List<Endpoint> findEndpointsByBehaviorGroupId(String accountId, UUID behaviorGroupId) {
