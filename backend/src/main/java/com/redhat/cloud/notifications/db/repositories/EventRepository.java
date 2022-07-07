@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.OrgIdHelper;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -26,11 +27,14 @@ public class EventRepository {
     @Inject
     EntityManager entityManager;
 
-    public List<Event> getEvents(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+    @Inject
+    OrgIdHelper orgIdHelper;
+
+    public List<Event> getEvents(String accountId, String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                       Set<Boolean> invocationResults, boolean fetchNotificationHistory, Integer limit, Integer offset, String sortBy) {
         Optional<String> orderByCondition = getOrderByCondition(sortBy);
-        List<UUID> eventIds = getEventIds(accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, limit, offset, orderByCondition);
+        List<UUID> eventIds = getEventIds(accountId, orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, limit, offset, orderByCondition);
         String hql;
         if (fetchNotificationHistory) {
             hql = "SELECT DISTINCT e FROM Event e LEFT JOIN FETCH e.historyEntries he WHERE e.id IN (:eventIds)";
@@ -47,15 +51,20 @@ public class EventRepository {
                 .getResultList();
     }
 
-    public Long count(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+    public Long count(String accountId, String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes,
                       Set<CompositeEndpointType> compositeEndpointTypes, Set<Boolean> invocationResults) {
-        String hql = "SELECT COUNT(*) FROM Event e WHERE e.accountId = :accountId";
+        String hql = "SELECT COUNT(*) FROM Event e WHERE ";
+        if (orgIdHelper.useOrgId(orgId)) {
+            hql += "e.orgId = :orgId";
+        } else {
+            hql += "e.accountId = :accountId";
+        }
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults);
 
         TypedQuery<Long> query = entityManager.createQuery(hql, Long.class);
-        setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults);
+        setQueryParams(query, accountId, orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults);
 
         return query.getSingleResult();
     }
@@ -79,10 +88,15 @@ public class EventRepository {
         }
     }
 
-    private List<UUID> getEventIds(String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+    private List<UUID> getEventIds(String accountId, String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                         LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                         Set<Boolean> invocationResults, Integer limit, Integer offset, Optional<String> orderByCondition) {
-        String hql = "SELECT e.id FROM Event e WHERE e.accountId = :accountId";
+        String hql = "SELECT e.id FROM Event e WHERE ";
+        if (orgIdHelper.useOrgId(orgId)) {
+            hql += "e.orgId = :orgId";
+        } else {
+            hql += "e.accountId = :accountId";
+        }
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults);
 
@@ -91,7 +105,7 @@ public class EventRepository {
         }
 
         TypedQuery<UUID> query = entityManager.createQuery(hql, UUID.class);
-        setQueryParams(query, accountId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults);
+        setQueryParams(query, accountId, orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults);
 
         if (limit != null) {
             query.setMaxResults(limit);
@@ -157,10 +171,14 @@ public class EventRepository {
         return hql;
     }
 
-    private static void setQueryParams(TypedQuery<?> query, String accountId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
+    private void setQueryParams(TypedQuery<?> query, String accountId, String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
                                        LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                        Set<Boolean> invocationResults) {
-        query.setParameter("accountId", accountId);
+        if (orgIdHelper.useOrgId(orgId)) {
+            query.setParameter("orgId", orgId);
+        } else {
+            query.setParameter("accountId", accountId);
+        }
         if (bundleIds != null && !bundleIds.isEmpty()) {
             query.setParameter("bundleIds", bundleIds);
         }

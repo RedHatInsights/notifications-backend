@@ -254,7 +254,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertEquals(true, preferences.getInstantEmail());
 
         // does not fail if we have unknown apps in our bundle's settings
-        emailSubscriptionRepository.subscribe(tenant, username, bundle, "not-found-app", DAILY);
+        emailSubscriptionRepository.subscribe(tenant, orgId, username, bundle, "not-found-app", DAILY);
 
         given()
                 .header(identityHeader)
@@ -265,7 +265,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
                 .statusCode(200)
                 .contentType(JSON);
 
-        emailSubscriptionRepository.unsubscribe(tenant, username, "not-found-bundle", "not-found-app", DAILY);
+        emailSubscriptionRepository.unsubscribe(tenant, orgId, username, "not-found-bundle", "not-found-app", DAILY);
 
         // Fails if we don't specify the bundleName
         given()
@@ -287,8 +287,8 @@ public class UserConfigResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(200)
                 .contentType(TEXT);
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "not-found-bundle-2", "not-found-app-2", DAILY));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, username, "not-found-bundle", "not-found-app", INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "not-found-bundle-2", "not-found-app-2", DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "not-found-bundle", "not-found-app", INSTANT));
 
         // Does not add event type if is not supported by the templates
         when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(FALSE);

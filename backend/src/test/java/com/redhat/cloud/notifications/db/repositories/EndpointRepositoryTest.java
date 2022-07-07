@@ -26,6 +26,8 @@ public class EndpointRepositoryTest {
         EndpointRepository.queryBuilderEndpointsPerType(
                 null,
                 null,
+                false,
+                null,
                 Set.of(
                         new CompositeEndpointType(EndpointType.WEBHOOK),
                         new CompositeEndpointType(EndpointType.CAMEL, "splunk")
@@ -44,6 +46,8 @@ public class EndpointRepositoryTest {
         EndpointRepository.queryBuilderEndpointsPerType(
                 null,
                 null,
+                false,
+                null,
                 Set.of(
                         new CompositeEndpointType(EndpointType.WEBHOOK)
                 ),
@@ -60,6 +64,8 @@ public class EndpointRepositoryTest {
         // with sub-types
         EndpointRepository.queryBuilderEndpointsPerType(
                 null,
+                null,
+                false,
                 null,
                 Set.of(
                         new CompositeEndpointType(EndpointType.CAMEL, "splunk")

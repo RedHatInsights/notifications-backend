@@ -311,17 +311,17 @@ public class NotificationResourceTest extends DbIsolatedTest {
         String orgId = "testGetEventTypesAffectedByEndpointOrgId";
         Header identityHeader = initRbacMock(tenant, orgId, "user", FULL_ACCESS);
         UUID bundleId = helpers.createTestAppAndEventTypes();
-        UUID behaviorGroupId1 = helpers.createBehaviorGroup(tenant, "behavior-group-1", bundleId).getId();
-        UUID behaviorGroupId2 = helpers.createBehaviorGroup(tenant, "behavior-group-2", bundleId).getId();
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(tenant, orgId, "behavior-group-1", bundleId).getId();
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(tenant, orgId, "behavior-group-2", bundleId).getId();
         UUID appId = applicationRepository.getApplications(TEST_BUNDLE_NAME).stream()
                 .filter(a -> a.getName().equals(TEST_APP_NAME_2))
                 .findFirst().get().getId();
-        UUID endpointId1 = helpers.createWebhookEndpoint(tenant);
-        UUID endpointId2 = helpers.createWebhookEndpoint(tenant);
+        UUID endpointId1 = helpers.createWebhookEndpoint(tenant, orgId);
+        UUID endpointId2 = helpers.createWebhookEndpoint(tenant, orgId);
         List<EventType> eventTypes = applicationRepository.getEventTypes(appId);
         // ep1 assigned to ev0; ep2 not assigned.
-        behaviorGroupRepository.updateEventTypeBehaviors(tenant, eventTypes.get(0).getId(), Set.of(behaviorGroupId1));
-        behaviorGroupRepository.updateBehaviorGroupActions(tenant, behaviorGroupId1, List.of(endpointId1));
+        behaviorGroupRepository.updateEventTypeBehaviors(tenant, orgId, eventTypes.get(0).getId(), Set.of(behaviorGroupId1));
+        behaviorGroupRepository.updateBehaviorGroupActions(tenant, orgId, behaviorGroupId1, List.of(endpointId1));
 
         String responseBody = given()
                 .header(identityHeader)
@@ -352,8 +352,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(0, behaviorGroups.size());
 
         // ep1 assigned to event ev0; ep2 assigned to event ev1
-        behaviorGroupRepository.updateEventTypeBehaviors(tenant, eventTypes.get(0).getId(), Set.of(behaviorGroupId2));
-        behaviorGroupRepository.updateBehaviorGroupActions(tenant, behaviorGroupId2, List.of(endpointId2));
+        behaviorGroupRepository.updateEventTypeBehaviors(tenant, orgId, eventTypes.get(0).getId(), Set.of(behaviorGroupId2));
+        behaviorGroupRepository.updateBehaviorGroupActions(tenant, orgId, behaviorGroupId2, List.of(endpointId2));
 
         responseBody = given()
                 .header(identityHeader)

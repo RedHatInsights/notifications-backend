@@ -27,6 +27,11 @@ public class SecurityContextUtil {
         return principal.getAccount();
     }
 
+    public static String getOrgId(SecurityContext securityContext) {
+        RhIdPrincipal principal = (RhIdPrincipal) securityContext.getUserPrincipal();
+        return principal.getOrgId();
+    }
+
     public void hasPermissionForRole(SecurityContext securityContext, String role) {
         if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
             return;
