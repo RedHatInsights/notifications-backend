@@ -51,6 +51,8 @@ public class BehaviorGroupRepository {
             updateBehaviorEventTypes(accountId, orgId, saved.getId(), eventTypes);
         }
 
+        // The previous updates execute native SQL - hibernate is not aware of the changes it made on the behavior group
+        // so we need to refresh to ensure we have the actions and event types.
         entityManager.flush();
         entityManager.refresh(saved);
 
