@@ -4,6 +4,7 @@ import {
     Form,
     FormGroup,
     FormSelect,
+    FormSelectOption,
     Modal,
     ModalVariant
 } from '@patternfly/react-core';
@@ -23,6 +24,10 @@ interface InstantTemplateModalProps {
 export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalProps> = (props) => {
 
     const [ instantTemplate, setInstantTemplate ] = React.useState<Partial<InstantTemplate>>(props.initialInstantTemplate ?? {});
+    const templateOption = [
+        <FormSelectOption key='choose template' isPlaceholder label='Choose a template' />,
+        <FormSelectOption key='templates' label='' value='templates' />
+    ];
 
     const handleChange = (value: string, event: React.FormEvent<HTMLFormElement> | React.FormEvent<HTMLSelectElement>) => {
         const target = event.target as HTMLSelectElement;
@@ -53,7 +58,7 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
                             onChange={ handleChange }
                             isRequired
                         >
-                            { props.templates }
+                            { templateOption }
                         </FormSelect>
                     </FormGroup>
                     <FormGroup label='Body template' fieldId='body-template'>
@@ -64,7 +69,7 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
                             onChange={ handleChange }
                             isRequired
                         >
-                            { props.templates }
+                            { templateOption }
                         </FormSelect>
                     </FormGroup>
                     <ActionGroup>

@@ -44,6 +44,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [ createEditInstantTemplateModal, setCreateEditInstantTemplateModal ] =
     React.useState({ showModal: false, isEdit: false, instantTemplates: {}});
 

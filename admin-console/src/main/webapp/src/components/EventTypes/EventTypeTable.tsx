@@ -24,7 +24,7 @@ interface EventTypeTableBaseProps {
     onCreateEventType: () => void;
     onEditEventType: (eventType: EventType) => void;
     onDeleteEventTypeModal: (eventType: EventType) => void;
-    onCreateEditInstantTemplate: (i: InstantTemplate) => void
+    onCreateEditInstantTemplate: (i: InstantTemplate) => void;
 }
 
 type CreateEventTypeButtonProp = {
@@ -104,7 +104,10 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                     <Td>{ eventType.displayName }</Td>
                     <Td>{ eventType.name }</Td>
                     <Td><InstantEmailCell eventType={ eventType }
-                        onClick={ () => props.onCreateEditInstantTemplate } /></Td>
+                        onClick={ () =>
+                            props.onCreateEditInstantTemplate }
+                    />
+                    </Td>
                     <Td>
                         <ActionList isIconList>
                             <ActionListItem>
