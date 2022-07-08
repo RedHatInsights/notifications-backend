@@ -42,10 +42,6 @@ public class BehaviorGroupRepository {
     @Inject
     OrgIdHelper orgIdHelper;
 
-    public BehaviorGroup get(@NotNull UUID behaviorGroupId) {
-        return entityManager.find(BehaviorGroup.class, behaviorGroupId);
-    }
-
     public BehaviorGroup createFull(String accountId, String orgId, @Valid BehaviorGroup behaviorGroup, List<UUID> endpoints, Set<UUID> eventTypes) {
         BehaviorGroup saved = create(accountId, orgId, behaviorGroup);
         if (endpoints != null) {
