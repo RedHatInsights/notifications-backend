@@ -20,7 +20,7 @@ public class UpdateBehaviorGroupRequest {
      * If not null, changes the list of associated endpoints.
      * This will effectively set the linked endpoints..
      */
-    // Allow this list to be null to be backwards compatible with the previous CreateBehaviorGroupRequest
+    // Allow this list to be null to be backwards compatible with the previous UpdateBehaviorGroupRequest
     public List<UUID> endpointIds;
 
     /**

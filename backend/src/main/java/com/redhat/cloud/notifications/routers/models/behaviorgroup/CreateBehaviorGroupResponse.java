@@ -22,7 +22,7 @@ public class CreateBehaviorGroupResponse {
     public UUID id;
 
     /**
-     * Bundle if of the newly created behavior group.
+     * Bundle id of the newly created behavior group.
      */
     @NotNull
     public UUID bundleId;
