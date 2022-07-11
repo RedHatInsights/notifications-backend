@@ -89,6 +89,18 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     @Test
+    void shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent();
+    }
+
+    @Test
+    void shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent() {
         if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
             // The check is disabled from configuration.
@@ -129,6 +141,18 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     @Test
+    void test_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        test();
+    }
+
+    @Test
+    void test_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        test();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void test() {
         /*
          * TODO

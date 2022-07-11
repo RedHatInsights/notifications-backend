@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -121,7 +122,22 @@ public class LifecycleITest {
     @Inject
     ResourceHelpers resourceHelpers;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @Test
+    void test_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        test();
+    }
+
+    @Test
+    void test_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        test();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void test() {
         final String accountId = "tenant";
         final String username = "user";

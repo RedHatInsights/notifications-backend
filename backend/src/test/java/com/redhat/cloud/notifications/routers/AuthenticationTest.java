@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheName;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -12,6 +13,8 @@ import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import javax.inject.Inject;
 
 import static io.restassured.RestAssured.given;
 
@@ -27,8 +30,25 @@ public class AuthenticationTest {
     @CacheName("rbac-cache")
     Cache cache;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @Test
+    void testEndpointRoles_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEndpointRoles();
+    }
+
+    @Test
+    void testEndpointRoles_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEndpointRoles();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEndpointRoles() {
+        MockServerConfig.clearRbac();
+
         String tenant = "empty";
         String orgId = "empty";
         String userName = "testEndpointRoles";

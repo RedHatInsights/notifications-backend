@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -87,12 +86,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
     EmailSubscriptionRepository emailSubscriptionRepository;
 
     @Inject
-    EndpointResource endpointResource;
-
-    @Inject
-    TemplateRepository templateRepository;
-
-    @Inject
     EntityManager entityManager;
 
     @Inject
@@ -102,6 +95,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     FeatureFlipper featureFlipper;
 
     @Test
+    void testEndpointAdding_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEndpointAdding();
+    }
+
+    @Test
+    void testEndpointAdding_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEndpointAdding();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEndpointAdding() {
         String tenant = "empty";
         String orgId = "empty";
@@ -243,6 +248,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEndpointValidation_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEndpointValidation();
+    }
+
+    @Test
+    void testEndpointValidation_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEndpointValidation();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEndpointValidation() {
         String tenant = "validation";
         String orgId = "validation2";
@@ -303,6 +320,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void addCamelEndpoint_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        addCamelEndpoint();
+    }
+
+    @Test
+    void addCamelEndpoint_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        addCamelEndpoint();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void addCamelEndpoint() {
 
         String tenant = "empty";
@@ -377,6 +406,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void addBogusCamelEndpoint_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        addBogusCamelEndpoint();
+    }
+
+    @Test
+    void addBogusCamelEndpoint_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        addBogusCamelEndpoint();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void addBogusCamelEndpoint() {
 
         String tenant = "empty";
@@ -428,6 +469,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void addOpenBridgeEndpoint_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        addOpenBridgeEndpoint();
+    }
+
+    @Test
+    void addOpenBridgeEndpoint_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        addOpenBridgeEndpoint();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void addOpenBridgeEndpoint() {
 
         String tenant = "empty";
@@ -548,6 +601,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEndpointUpdates_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEndpointUpdates();
+    }
+
+    @Test
+    void testEndpointUpdates_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEndpointUpdates();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEndpointUpdates() {
         String tenant = "updates";
         String orgId = "updates2";
@@ -650,7 +715,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals("not-so-secret-anymore", attrSingleUpdated.getString("secret_token"));
     }
 
-    private static Stream<Arguments> testEndpointTypeQuery() {
+    private static Stream<Arguments> testEndpointTypeQuery_AccountId() {
         return Stream.of(
                 Arguments.of(Set.of(EndpointType.WEBHOOK)),
                 Arguments.of(Set.of(EndpointType.CAMEL)),
@@ -658,8 +723,29 @@ public class EndpointResourceTest extends DbIsolatedTest {
         );
     }
 
+    private static Stream<Arguments> testEndpointTypeQuery_OrgId() {
+        return Stream.of(
+                Arguments.of(Set.of(EndpointType.WEBHOOK)),
+                Arguments.of(Set.of(EndpointType.CAMEL)),
+                Arguments.of(Set.of(EndpointType.WEBHOOK, EndpointType.CAMEL))
+        );
+    }
+
     @ParameterizedTest
     @MethodSource
+    void testEndpointTypeQuery_AccountId(Set<EndpointType> types) {
+        featureFlipper.setUseOrgId(false);
+        testEndpointTypeQuery(types);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testEndpointTypeQuery_OrgId(Set<EndpointType> types) {
+        featureFlipper.setUseOrgId(true);
+        testEndpointTypeQuery(types);
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEndpointTypeQuery(Set<EndpointType> types) {
         String tenant = "limiter";
         String orgId = "limiter2";
@@ -764,6 +850,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEndpointLimiter_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEndpointLimiter();
+    }
+
+    @Test
+    void testEndpointLimiter_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEndpointLimiter();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEndpointLimiter() {
         String tenant = "limiter";
         String orgId = "limiter2";
@@ -810,6 +908,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testSortingOrder_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testSortingOrder();
+    }
+
+    @Test
+    void testSortingOrder_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testSortingOrder();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testSortingOrder() {
         String tenant = "testSortingOrder";
         String orgId = "testSortingOrder2";
@@ -875,6 +985,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testWebhookAttributes_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testWebhookAttributes();
+    }
+
+    @Test
+    void testWebhookAttributes_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testWebhookAttributes();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testWebhookAttributes() {
         String tenant = "testWebhookAttributes";
         String orgId = "testWebhookAttributes2";
@@ -929,6 +1051,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAddEndpointEmailSubscription_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testAddEndpointEmailSubscription();
+    }
+
+    @Test
+    void testAddEndpointEmailSubscription_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testAddEndpointEmailSubscription();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testAddEndpointEmailSubscription() {
         String tenant = "adding-email-subscription";
         String orgId = "adding-email-subscription2";
@@ -1095,6 +1229,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAddEndpointEmailSubscriptionRbac_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testAddEndpointEmailSubscriptionRbac();
+    }
+
+    @Test
+    void testAddEndpointEmailSubscriptionRbac_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testAddEndpointEmailSubscriptionRbac();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testAddEndpointEmailSubscriptionRbac() {
         String tenant = "adding-email-subscription";
         String orgId = "adding-email-subscription2";
@@ -1174,6 +1320,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEmailSubscription_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEmailSubscription();
+    }
+
+    @Test
+    void testEmailSubscription_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEmailSubscription();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEmailSubscription() {
         String tenant = "test-subscription";
         String orgId = "test-subscription-org-id";
@@ -1318,6 +1476,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testUnknownEndpointTypes_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testUnknownEndpointTypes();
+    }
+
+    @Test
+    void testUnknownEndpointTypes_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testUnknownEndpointTypes();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testUnknownEndpointTypes() {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("test-tenant", "test-orgid", "test-user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1342,6 +1512,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testConnectionCount_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testConnectionCount();
+    }
+
+    @Test
+    void testConnectionCount_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testConnectionCount();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testConnectionCount() {
         String tenant = "count";
         String orgId = "count2";
@@ -1404,6 +1586,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testSearch_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testSearch();
+    }
+
+    @Test
+    void testSearch_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testSearch();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testSearch() {
         String tenant = "search";
         String orgId = "search2";
@@ -1448,6 +1642,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testSearchWithType_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testSearchWithType();
+    }
+
+    @Test
+    void testSearchWithType_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testSearchWithType();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testSearchWithType() {
         String tenant = "search-type";
         String orgId = "search-type2";

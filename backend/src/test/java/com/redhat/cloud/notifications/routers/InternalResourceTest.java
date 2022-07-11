@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -63,25 +65,76 @@ public class InternalResourceTest extends DbIsolatedTest {
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @Test
+    void testCreateNullBundle_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateNullBundle();
+    }
+
+    @Test
+    void testCreateNullBundle_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateNullBundle();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateNullBundle() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         createBundle(identity, null, BAD_REQUEST);
     }
 
     @Test
+    void testCreateNullApp_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateNullApp();
+    }
+
+    @Test
+    void testCreateNullApp_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateNullApp();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateNullApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         createApp(identity, null, null, BAD_REQUEST);
     }
 
     @Test
+    void testCreateNullEventType_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateNullEventType();
+    }
+
+    @Test
+    void testCreateNullEventType_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateNullEventType();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateNullEventType() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         createEventType(identity, null, BAD_REQUEST);
     }
 
     @Test
+    void testCreateInvalidBundle_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateInvalidBundle();
+    }
+
+    @Test
+    void testCreateInvalidBundle_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateInvalidBundle();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateInvalidBundle() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         createBundle(identity, buildBundle(null, "I am valid"), BAD_REQUEST);
@@ -90,6 +143,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateInvalidApp_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateInvalidApp();
+    }
+
+    @Test
+    void testCreateInvalidApp_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateInvalidApp();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateInvalidApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
@@ -100,6 +165,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateInvalidEventType_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateInvalidEventType();
+    }
+
+    @Test
+    void testCreateInvalidEventType_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateInvalidEventType();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateInvalidEventType() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
@@ -111,6 +188,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testBundleNameUniqueSqlConstraint_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testBundleNameUniqueSqlConstraint();
+    }
+
+    @Test
+    void testBundleNameUniqueSqlConstraint_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testBundleNameUniqueSqlConstraint();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testBundleNameUniqueSqlConstraint() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // Double bundle creation with the same name.
@@ -123,6 +212,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAppNameUniqueSqlConstraint_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testAppNameUniqueSqlConstraint();
+    }
+
+    @Test
+    void testAppNameUniqueSqlConstraint_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testAppNameUniqueSqlConstraint();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testAppNameUniqueSqlConstraint() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
@@ -136,6 +237,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEventTypeNameUniqueSqlConstraint_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEventTypeNameUniqueSqlConstraint();
+    }
+
+    @Test
+    void testEventTypeNameUniqueSqlConstraint_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEventTypeNameUniqueSqlConstraint();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEventTypeNameUniqueSqlConstraint() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
@@ -147,6 +260,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testGetUnknownBundle_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testGetUnknownBundle();
+    }
+
+    @Test
+    void testGetUnknownBundle_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testGetUnknownBundle();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testGetUnknownBundle() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
@@ -154,6 +279,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testGetUnknownApp_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testGetUnknownApp();
+    }
+
+    @Test
+    void testGetUnknownApp_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testGetUnknownApp();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testGetUnknownApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownAppId = UUID.randomUUID().toString();
@@ -161,6 +298,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testUpdateNullBundle_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testUpdateNullBundle();
+    }
+
+    @Test
+    void testUpdateNullBundle_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testUpdateNullBundle();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testUpdateNullBundle() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
@@ -168,6 +317,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testUpdateNullApp_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testUpdateNullApp();
+    }
+
+    @Test
+    void testUpdateNullApp_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testUpdateNullApp();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testUpdateNullApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
@@ -176,6 +337,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testUpdateUnknownBundle_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testUpdateUnknownBundle();
+    }
+
+    @Test
+    void testUpdateUnknownBundle_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testUpdateUnknownBundle();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testUpdateUnknownBundle() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
@@ -183,6 +356,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testUpdateUnknownApp_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testUpdateUnknownApp();
+    }
+
+    @Test
+    void testUpdateUnknownApp_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testUpdateUnknownApp();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testUpdateUnknownApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
@@ -191,6 +376,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAddAppToUnknownBundle_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testAddAppToUnknownBundle();
+    }
+
+    @Test
+    void testAddAppToUnknownBundle_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testAddAppToUnknownBundle();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testAddAppToUnknownBundle() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
@@ -198,6 +395,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAddEventTypeToUnknownApp_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testAddEventTypeToUnknownApp();
+    }
+
+    @Test
+    void testAddEventTypeToUnknownApp_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testAddEventTypeToUnknownApp();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testAddEventTypeToUnknownApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownAppId = UUID.randomUUID().toString();
@@ -205,6 +414,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testGetAppsFromUnknownBundle_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testGetAppsFromUnknownBundle();
+    }
+
+    @Test
+    void testGetAppsFromUnknownBundle_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testGetAppsFromUnknownBundle();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testGetAppsFromUnknownBundle() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
@@ -212,6 +433,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testGetEventTypesFromUnknownApp_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testGetEventTypesFromUnknownApp();
+    }
+
+    @Test
+    void testGetEventTypesFromUnknownApp_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testGetEventTypesFromUnknownApp();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testGetEventTypesFromUnknownApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownAppId = UUID.randomUUID().toString();
@@ -219,6 +452,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateAndGetAndUpdateAndDeleteBundle_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateAndGetAndUpdateAndDeleteBundle();
+    }
+
+    @Test
+    void testCreateAndGetAndUpdateAndDeleteBundle_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateAndGetAndUpdateAndDeleteBundle();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateAndGetAndUpdateAndDeleteBundle() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // First, we create two bundles with different names. Only the second one will be used after that.
@@ -238,6 +483,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateAndGetAndUpdateAndDeleteApp_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateAndGetAndUpdateAndDeleteApp();
+    }
+
+    @Test
+    void testCreateAndGetAndUpdateAndDeleteApp_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateAndGetAndUpdateAndDeleteApp();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateAndGetAndUpdateAndDeleteApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle for this test.
@@ -266,6 +523,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateAndGetAndUpdateAndDeleteEventType_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateAndGetAndUpdateAndDeleteEventType();
+    }
+
+    @Test
+    void testCreateAndGetAndUpdateAndDeleteEventType_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateAndGetAndUpdateAndDeleteEventType();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateAndGetAndUpdateAndDeleteEventType() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle and an app for this test.
@@ -293,6 +562,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testDefaultBehaviorGroupCRUD_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testDefaultBehaviorGroupCRUD();
+    }
+
+    @Test
+    void testDefaultBehaviorGroupCRUD_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testDefaultBehaviorGroupCRUD();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testDefaultBehaviorGroupCRUD() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle.
@@ -353,6 +634,18 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void appUserAccessTest_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        appUserAccessTest();
+    }
+
+    @Test
+    void appUserAccessTest_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        appUserAccessTest();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void appUserAccessTest() {
         String appRole = "app-admin";
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);

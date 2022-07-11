@@ -112,7 +112,7 @@ public class DailyEmailAggregationJob {
                         .collect(Collectors.toList());
 
         Log.infof(
-                "Finished collecting email aggregations for period (%s, %s) and type %s after %d seconds. %d (accountIds, applications) pairs were processed",
+                "Finished collecting email aggregations for period (%s, %s) and type %s after %d seconds. %d (accountIds/orgIds, applications) pairs were processed",
                 startTime,
                 endTime,
                 DAILY,
@@ -120,6 +120,7 @@ public class DailyEmailAggregationJob {
                 pendingAggregationCommands.size()
         );
 
+        // TODO NOTIF-603 Rename the gauge after the migration to orgId is done.
         pairsProcessed = Gauge
                 .build()
                 .name("aggregator_job_accountid_application_pairs_processed")

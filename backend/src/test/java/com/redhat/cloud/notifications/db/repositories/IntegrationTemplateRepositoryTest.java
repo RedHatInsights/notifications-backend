@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.Template;
@@ -16,10 +17,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
-/**
- *
- */
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
@@ -27,14 +24,29 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
     public static final String SPECIFIC_SLACK = "specific-slack";
     public static final String SLACK = "slack";
     public static final String GENERIC_SLACK = "generic-slack";
+
     @Inject
     EntityManager entityManager;
 
     @Inject
     TemplateRepository templateRepository;
 
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Test
+    void testMostSpecificOneIsUsed_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testMostSpecificOneIsUsed();
+    }
+
+    @Test
+    void testMostSpecificOneIsUsed_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testMostSpecificOneIsUsed();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testMostSpecificOneIsUsed() {
 
         Template specificSlack = createTemplate(SPECIFIC_SLACK, "Just a test", "Li la lu");
@@ -58,6 +70,18 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testUserFallback_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testUserFallback();
+    }
+
+    @Test
+    void testUserFallback_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testUserFallback();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testUserFallback() {
 
         Template specificSlack = createTemplate(SPECIFIC_SLACK, "Just a test", "Li la lu");

@@ -54,6 +54,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     FeatureFlipper featureFlipper;
 
     @Test
+    void shouldThrowExceptionWhenCreatingWithExistingDisplayNameAndSameAccount_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        shouldThrowExceptionWhenCreatingWithExistingDisplayNameAndSameAccount();
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCreatingWithExistingDisplayNameAndSameAccount_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        shouldThrowExceptionWhenCreatingWithExistingDisplayNameAndSameAccount();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void shouldThrowExceptionWhenCreatingWithExistingDisplayNameAndSameAccount() {
         if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
             // The check is disabled from configuration.
@@ -76,6 +88,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void shouldThrowExceptionWhenCreatingDefaultWithExistingDisplayName_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        shouldThrowExceptionWhenCreatingDefaultWithExistingDisplayName();
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCreatingDefaultWithExistingDisplayName_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        shouldThrowExceptionWhenCreatingDefaultWithExistingDisplayName();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void shouldThrowExceptionWhenCreatingDefaultWithExistingDisplayName() {
         if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
             // The check is disabled from configuration.
@@ -96,6 +120,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void shouldNotThrowExceptionWhenCreatingWithExistingDisplayNameButDifferentAccount_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        shouldNotThrowExceptionWhenCreatingWithExistingDisplayNameButDifferentAccount();
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenCreatingWithExistingDisplayNameButDifferentAccount_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        shouldNotThrowExceptionWhenCreatingWithExistingDisplayNameButDifferentAccount();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void shouldNotThrowExceptionWhenCreatingWithExistingDisplayNameButDifferentAccount() {
         Bundle bundle = resourceHelpers.createBundle();
         BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName", bundle.getId());
@@ -110,6 +146,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void shouldThrowExceptionWhenUpdatingToExistingDisplayNameAndSameAccount_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        shouldThrowExceptionWhenUpdatingToExistingDisplayNameAndSameAccount();
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingToExistingDisplayNameAndSameAccount_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        shouldThrowExceptionWhenUpdatingToExistingDisplayNameAndSameAccount();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void shouldThrowExceptionWhenUpdatingToExistingDisplayNameAndSameAccount() {
         if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
             // The check is disabled from configuration.
@@ -128,6 +176,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void shouldThrowExceptionWhenUpdatingDefaultToExistingDisplayName_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        shouldThrowExceptionWhenUpdatingDefaultToExistingDisplayName();
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingDefaultToExistingDisplayName_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        shouldThrowExceptionWhenUpdatingDefaultToExistingDisplayName();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void shouldThrowExceptionWhenUpdatingDefaultToExistingDisplayName() {
         if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
             // The check is disabled from configuration.
@@ -146,6 +206,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void shouldNotThrowExceptionWhenUpdatingToExistingDisplayNameButDifferentAccount_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        shouldNotThrowExceptionWhenUpdatingToExistingDisplayNameButDifferentAccount();
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenUpdatingToExistingDisplayNameButDifferentAccount_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        shouldNotThrowExceptionWhenUpdatingToExistingDisplayNameButDifferentAccount();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void shouldNotThrowExceptionWhenUpdatingToExistingDisplayNameButDifferentAccount() {
         Bundle bundle = resourceHelpers.createBundle("name", "displayName");
         BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName1", bundle.getId());
@@ -155,6 +227,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void shouldNotThrowExceptionWhenSelfUpdatingWithSameDisplayName_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        shouldNotThrowExceptionWhenSelfUpdatingWithSameDisplayName();
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenSelfUpdatingWithSameDisplayName_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        shouldNotThrowExceptionWhenSelfUpdatingWithSameDisplayName();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void shouldNotThrowExceptionWhenSelfUpdatingWithSameDisplayName() {
         Bundle bundle = resourceHelpers.createBundle("name", "displayName");
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName1", bundle.getId());
@@ -162,6 +246,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void shouldNotThrowExceptionWhenSelfUpdatingDefaultWithSameDisplayName_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        shouldNotThrowExceptionWhenSelfUpdatingDefaultWithSameDisplayName();
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenSelfUpdatingDefaultWithSameDisplayName_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        shouldNotThrowExceptionWhenSelfUpdatingDefaultWithSameDisplayName();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void shouldNotThrowExceptionWhenSelfUpdatingDefaultWithSameDisplayName() {
         Bundle bundle = resourceHelpers.createBundle("name", "displayName");
         BehaviorGroup behaviorGroup = resourceHelpers.createDefaultBehaviorGroup("displayName1", bundle.getId());
@@ -169,6 +265,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateAndUpdateAndDeleteBehaviorGroup_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateAndUpdateAndDeleteBehaviorGroup();
+    }
+
+    @Test
+    void testCreateAndUpdateAndDeleteBehaviorGroup_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateAndUpdateAndDeleteBehaviorGroup();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateAndUpdateAndDeleteBehaviorGroup() {
         String newDisplayName = "newDisplayName";
 
@@ -201,6 +309,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateAndUpdateAndDeleteDefaultBehaviorGroup_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateAndUpdateAndDeleteDefaultBehaviorGroup();
+    }
+
+    @Test
+    void testCreateAndUpdateAndDeleteDefaultBehaviorGroup_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateAndUpdateAndDeleteDefaultBehaviorGroup();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateAndUpdateAndDeleteDefaultBehaviorGroup() {
         String newDisplayName = "newDisplayName";
 
@@ -234,21 +354,69 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateBehaviorGroupWithNullDisplayName_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateBehaviorGroupWithNullDisplayName();
+    }
+
+    @Test
+    void testCreateBehaviorGroupWithNullDisplayName_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateBehaviorGroupWithNullDisplayName();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateBehaviorGroupWithNullDisplayName() {
         createBehaviorGroupWithIllegalDisplayName(null);
     }
 
     @Test
+    void testCreateBehaviorGroupWithEmptyDisplayName_AccountId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateBehaviorGroupWithEmptyDisplayName();
+        featureFlipper.setUseOrgId(false);
+    }
+
+    @Test
+    void testCreateBehaviorGroupWithEmptyDisplayName_OrgId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateBehaviorGroupWithEmptyDisplayName();
+    }
+
     void testCreateBehaviorGroupWithEmptyDisplayName() {
         createBehaviorGroupWithIllegalDisplayName("");
     }
 
     @Test
+    void testCreateBehaviorGroupWithBlankDisplayName_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateBehaviorGroupWithBlankDisplayName();
+    }
+
+    @Test
+    void testCreateBehaviorGroupWithBlankDisplayName_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateBehaviorGroupWithBlankDisplayName();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateBehaviorGroupWithBlankDisplayName() {
         createBehaviorGroupWithIllegalDisplayName(" ");
     }
 
     @Test
+    void testCreateBehaviorGroupWithNullBundleId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateBehaviorGroupWithNullBundleId();
+    }
+
+    @Test
+    void testCreateBehaviorGroupWithNullBundleId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateBehaviorGroupWithNullBundleId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateBehaviorGroupWithNullBundleId() {
         ConstraintViolationException e = assertThrows(ConstraintViolationException.class, () -> {
             resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName", null);
@@ -257,6 +425,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateBehaviorGroupWithUnknownBundleId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testCreateBehaviorGroupWithUnknownBundleId();
+    }
+
+    @Test
+    void testCreateBehaviorGroupWithUnknownBundleId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testCreateBehaviorGroupWithUnknownBundleId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testCreateBehaviorGroupWithUnknownBundleId() {
         NotFoundException e = assertThrows(NotFoundException.class, () -> {
             resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName", UUID.randomUUID());
@@ -265,6 +445,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testfindByBundleIdOrdering_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testfindByBundleIdOrdering();
+    }
+
+    @Test
+    void testfindByBundleIdOrdering_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testfindByBundleIdOrdering();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testfindByBundleIdOrdering() {
         Bundle bundle = resourceHelpers.createBundle();
         BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName1", bundle.getId());
@@ -279,6 +471,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAddAndDeleteEventTypeBehavior_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testAddAndDeleteEventTypeBehavior();
+    }
+
+    @Test
+    void testAddAndDeleteEventTypeBehavior_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testAddAndDeleteEventTypeBehavior();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testAddAndDeleteEventTypeBehavior() {
         Bundle bundle = resourceHelpers.createBundle();
         Application app = resourceHelpers.createApplication(bundle.getId());
@@ -295,6 +499,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAddEventTypeBehaviorWithBundleIntegrityCheckFailure_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testAddEventTypeBehaviorWithBundleIntegrityCheckFailure();
+    }
+
+    @Test
+    void testAddEventTypeBehaviorWithBundleIntegrityCheckFailure_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testAddEventTypeBehaviorWithBundleIntegrityCheckFailure();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testAddEventTypeBehaviorWithBundleIntegrityCheckFailure() {
         /*
          * Bundle 1 objects hierarchy.
@@ -321,6 +537,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testFindEventTypesByBehaviorGroupId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testFindEventTypesByBehaviorGroupId();
+    }
+
+    @Test
+    void testFindEventTypesByBehaviorGroupId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testFindEventTypesByBehaviorGroupId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testFindEventTypesByBehaviorGroupId() {
         Bundle bundle = resourceHelpers.createBundle();
         Application app = resourceHelpers.createApplication(bundle.getId());
@@ -333,6 +561,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testFindBehaviorGroupsByEventTypeId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testFindBehaviorGroupsByEventTypeId();
+    }
+
+    @Test
+    void testFindBehaviorGroupsByEventTypeId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testFindBehaviorGroupsByEventTypeId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testFindBehaviorGroupsByEventTypeId() {
         Bundle bundle = resourceHelpers.createBundle();
         Application app = resourceHelpers.createApplication(bundle.getId());
@@ -345,6 +585,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAddAndDeleteBehaviorGroupAction_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testAddAndDeleteBehaviorGroupAction();
+    }
+
+    @Test
+    void testAddAndDeleteBehaviorGroupAction_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testAddAndDeleteBehaviorGroupAction();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testAddAndDeleteBehaviorGroupAction() {
         Bundle bundle = resourceHelpers.createBundle();
         BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "Behavior group 1", bundle.getId());
@@ -374,6 +626,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAddMultipleEmailSubscriptionBehaviorGroupActions_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testAddMultipleEmailSubscriptionBehaviorGroupActions();
+    }
+
+    @Test
+    void testAddMultipleEmailSubscriptionBehaviorGroupActions_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testAddMultipleEmailSubscriptionBehaviorGroupActions();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testAddMultipleEmailSubscriptionBehaviorGroupActions() {
         Bundle bundle = resourceHelpers.createBundle();
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName", bundle.getId());
@@ -383,6 +647,18 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testUpdateBehaviorGroupActionsWithWrongAccountId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testUpdateBehaviorGroupActionsWithWrongAccountId();
+    }
+
+    @Test
+    void testUpdateBehaviorGroupActionsWithWrongAccountId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testUpdateBehaviorGroupActionsWithWrongAccountId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testUpdateBehaviorGroupActionsWithWrongAccountId() {
         Bundle bundle = resourceHelpers.createBundle();
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName", bundle.getId());

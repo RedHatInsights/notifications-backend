@@ -114,6 +114,18 @@ public class EventConsumerTest {
     }
 
     @Test
+    void testValidPayloadWithMessageId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testValidPayloadWithMessageId();
+    }
+
+    @Test
+    void testValidPayloadWithMessageId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testValidPayloadWithMessageId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testValidPayloadWithMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
@@ -139,6 +151,18 @@ public class EventConsumerTest {
     }
 
     @Test
+    void testValidPayloadWithoutOrgId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testValidPayloadWithoutOrgId();
+    }
+
+    @Test
+    void testValidPayloadWithoutOrgId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testValidPayloadWithoutOrgId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testValidPayloadWithoutOrgId() {
         featureFlipper.setUseOrgId(true);
 
@@ -169,6 +193,18 @@ public class EventConsumerTest {
     }
 
     @Test
+    void testValidPayloadWithoutMessageId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testValidPayloadWithoutMessageId();
+    }
+
+    @Test
+    void testValidPayloadWithoutMessageId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testValidPayloadWithoutMessageId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testValidPayloadWithoutMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
@@ -192,6 +228,18 @@ public class EventConsumerTest {
     }
 
     @Test
+    void testInvalidPayloadWithMessageId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testInvalidPayloadWithMessageId();
+    }
+
+    @Test
+    void testInvalidPayloadWithMessageId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testInvalidPayloadWithMessageId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testInvalidPayloadWithMessageId() {
         Message<String> message = buildMessageWithId(UUID.randomUUID().toString().getBytes(UTF_8), "I am not a valid payload!");
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
@@ -213,6 +261,18 @@ public class EventConsumerTest {
     }
 
     @Test
+    void testUnknownEventTypeWithoutMessageId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testUnknownEventTypeWithoutMessageId();
+    }
+
+    @Test
+    void testUnknownEventTypeWithoutMessageId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testUnknownEventTypeWithoutMessageId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testUnknownEventTypeWithoutMessageId() {
         mockGetUnknownEventType();
         Action action = buildValidAction();
@@ -236,6 +296,18 @@ public class EventConsumerTest {
     }
 
     @Test
+    void testProcessingErrorWithoutMessageId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testProcessingErrorWithoutMessageId();
+    }
+
+    @Test
+    void testProcessingErrorWithoutMessageId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testProcessingErrorWithoutMessageId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testProcessingErrorWithoutMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         mockProcessingFailure();
@@ -259,6 +331,18 @@ public class EventConsumerTest {
     }
 
     @Test
+    void testDuplicatePayload_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testDuplicatePayload();
+    }
+
+    @Test
+    void testDuplicatePayload_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testDuplicatePayload();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testDuplicatePayload() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
@@ -285,6 +369,18 @@ public class EventConsumerTest {
     }
 
     @Test
+    void testNullMessageId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testNullMessageId();
+    }
+
+    @Test
+    void testNullMessageId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testNullMessageId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testNullMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
@@ -309,6 +405,18 @@ public class EventConsumerTest {
     }
 
     @Test
+    void testInvalidMessageId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testInvalidMessageId();
+    }
+
+    @Test
+    void testInvalidMessageId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testInvalidMessageId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testInvalidMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();

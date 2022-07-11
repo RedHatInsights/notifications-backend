@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.processors.webhook;
 
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -43,6 +44,9 @@ public class WebhookTest {
     @Inject
     WebhookTypeProcessor webhookTypeProcessor;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {
         HttpRequest postReq = new HttpRequest()
                 .withPath("/foobar")
@@ -55,6 +59,18 @@ public class WebhookTest {
     }
 
     @Test
+    void testWebhook_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testWebhook();
+    }
+
+    @Test
+    void testWebhook_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testWebhook();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testWebhook() {
         String url = getMockServerUrl() + "/foobar";
 
@@ -108,11 +124,35 @@ public class WebhookTest {
     }
 
     @Test
+    void testRetryWithFinalSuccess_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testRetryWithFinalSuccess();
+    }
+
+    @Test
+    void testRetryWithFinalSuccess_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testRetryWithFinalSuccess();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testRetryWithFinalSuccess() {
         testRetry(true);
     }
 
     @Test
+    void testRetryWithFinalFailure_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testRetryWithFinalFailure();
+    }
+
+    @Test
+    void testRetryWithFinalFailure_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testRetryWithFinalFailure();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testRetryWithFinalFailure() {
         testRetry(false);
     }
