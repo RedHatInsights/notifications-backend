@@ -6,10 +6,11 @@ import * as React from 'react';
 
 import { CreateEditBehaviorGroupModal } from '../../components/SystemBehaviorGroups/CreateEditBehaviorGroupModal';
 import { DeleteBehaviorGroupModal } from '../../components/SystemBehaviorGroups/DeleteBehaviorGroupModal';
-import { useBundleTypes } from '../../services/Applications/GetBundleById';
+import { Schemas } from '../../generated/OpenapiInternal';
 import { useCreateSystemBehaviorGroup } from '../../services/SystemBehaviorGroups/CreateSystemBehaviorGroup';
 import { useDeleteBehaviorGroup } from '../../services/SystemBehaviorGroups/DeleteSystemBehaviorGroup';
 import { useSystemBehaviorGroups } from '../../services/SystemBehaviorGroups/GetBehaviorGroups';
+import { useUpdateBehaviorGroupActionsMutation } from '../../services/SystemBehaviorGroups/UpdateActions';
 import { BehaviorGroup } from '../../types/Notifications';
 
 interface BundlePageProps {
@@ -18,10 +19,10 @@ interface BundlePageProps {
 }
 
 export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (props) => {
-    const getBehaviorGroups = useSystemBehaviorGroups();
-    const getBundles = useBundleTypes(props.bundleId);
+    const getBehaviorGroups = useSystemBehaviorGroups(props.bundleId);
     const newBehaviorGroup = useCreateSystemBehaviorGroup();
     const deleteBehaviorGroupMutation = useDeleteBehaviorGroup();
+    const updateBehaviorActions = useUpdateBehaviorGroupActionsMutation();
 
     const columns = [ 'System Behavior Group', 'Action' ];
 
@@ -53,25 +54,35 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
     const handleSubmit = React.useCallback((systemBehaviorGroup) => {
         setShowModal(false);
         const mutate = newBehaviorGroup.mutate;
+        const updateActionsMutate = updateBehaviorActions.mutate;
         mutate({
             id: systemBehaviorGroup.id,
             displayName: systemBehaviorGroup.displayName ?? '',
-            actions: systemBehaviorGroup.actions,
-            bundleId: systemBehaviorGroup.bundleId
-        }).then(getBehaviorGroups.query);
+            bundleId: props.bundleId
+        })
+        .then(response => {
+            if (response.payload?.status === 200 && (response.payload.value.id || systemBehaviorGroup.id)) {
+                return updateActionsMutate({
+                    behaviorGroupId: response.payload.value.id ?? systemBehaviorGroup.id,
+                    body: [
+                        {
+                            ignore_preferences: false,
+                            only_admins: systemBehaviorGroup.actions === 'email-admin'
+                        }
+                    ]
+                });
+            }
+        })
+        .finally(getBehaviorGroups.query);
 
-    }, [ getBehaviorGroups.query, newBehaviorGroup.mutate ]);
+    }, [ getBehaviorGroups.query, newBehaviorGroup.mutate, props.bundleId, updateBehaviorActions.mutate ]);
 
     const handleDelete = React.useCallback(async () => {
         setShowDeleteModal(false);
         const deleteBehaviorGroup = deleteBehaviorGroupMutation.mutate;
-        const response = await deleteBehaviorGroup(systemBehaviorGroup.id);
-        if (response.error) {
-            return false;
-        }
-
-        return true;
-    }, [ deleteBehaviorGroupMutation.mutate, systemBehaviorGroup.id ]);
+        const response = await deleteBehaviorGroup(systemBehaviorGroup.id).finally(getBehaviorGroups.query);
+        return !response.error;
+    }, [ deleteBehaviorGroupMutation.mutate, systemBehaviorGroup.id, getBehaviorGroups.query ]);
 
     const onClose = () => {
         setShowModal(false);
@@ -97,8 +108,7 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
                 <Title headingLevel='h1'>
                     <Breadcrumb>
                         <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
-                        <BreadcrumbItem target='#' >{ (getBundles.loading || getBundles.payload?.status !== 200)
-                            ? <Spinner /> : getBundles.payload.value.displayName }
+                        <BreadcrumbItem target='#' >{ props.bundle }
                         </BreadcrumbItem>
                         <BreadcrumbItem target='#'> System Behavior Groups </BreadcrumbItem>
                     </Breadcrumb>
@@ -122,7 +132,16 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
                         { getBehaviorGroups.payload.value.map(b =>
                             <Tr key={ b.id }>
                                 <Td>{ b.displayName }</Td>
-                                <Td>{ b.actions }</Td>
+                                <Td>{ b.actions?.map(action => {
+                                    const properties = action.endpoint?.properties as Schemas.EmailSubscriptionProperties;
+                                    if (properties) {
+                                        if (properties.only_admins) {
+                                            return 'Admins';
+                                        } else {
+                                            return 'All users';
+                                        }
+                                    }
+                                }) }</Td>
                                 <Td>
                                     <Button className='edit' type='button' variant='plain'
                                         onClick={ () => editSystemBehaviorGroup(b) }

@@ -4,7 +4,7 @@ import { Operations } from '../../generated/OpenapiInternal';
 import { UUID } from '../../types/Notifications';
 
 export const deleteBehaviorGroupActionCreator = (id: UUID) => {
-    return Operations.InternalServiceDeleteDefaultBehaviorGroup.actionCreator({
+    return Operations.InternalResourceDeleteDefaultBehaviorGroup.actionCreator({
         id
     });
 };

@@ -161,9 +161,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             ))}
                         </Tr>
                     </Thead>
-                    <Tbody>{ (eventTypesQuery.payload.value.length === 0 ? 'There are no event types found for this application' : '') }</Tbody>
+                    <Tbody>{ (eventTypesQuery.data?.length === 0 ? 'There are no event types found for this application' : '') }</Tbody>
                     <Tbody>
-                        { eventTypesQuery.payload.value.map((e: EventType) => (
+                        { eventTypesQuery.data?.map((e: EventType) => (
                             <Tr key={ e.id }>
                                 <Td>{ e.displayName }</Td>
                                 <Td>{ e.name }</Td>
@@ -182,7 +182,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 </TableComposable>
             </PageSection>
             { isAdmin && <EmailTemplateTable
-                application={ application?.displayName }
+                application={ application?.displayName ?? '' }
             /> }
             <CreateEditModal
                 isEdit={ isEdit }

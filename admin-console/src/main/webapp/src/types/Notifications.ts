@@ -1,4 +1,5 @@
 import { Schemas } from '../generated/OpenapiInternal';
+import Endpoint = Schemas.Endpoint;
 
 export interface Bundle {
     id: string;
@@ -19,10 +20,12 @@ export interface RoleOwnedApplication extends Application {
 
 export type UUID = Schemas.UUID;
 
+// Consider using the generated types instead of writing the same again
 export type BehaviorGroupAction = {
     created?: string | undefined | null;
     id?: BehaviorGroupActionId | undefined | null;
-  };
+    endpoint?: Endpoint | undefined | null;
+};
 
 export type BehaviorGroupActionId = {
     behaviorGroupId: UUID;
