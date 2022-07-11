@@ -9,7 +9,7 @@ type UpdateBehaviorGroupActionsParams = {
 }
 
 const updateBehaviorGroupActionsActionCreator =  (params: UpdateBehaviorGroupActionsParams) => {
-    return Operations.InternalServiceUpdateDefaultBehaviorGroupActions.actionCreator({
+    return Operations.InternalResourceUpdateDefaultBehaviorGroupActions.actionCreator({
         behaviorGroupId: params.behaviorGroupId,
         body: params.body
     });

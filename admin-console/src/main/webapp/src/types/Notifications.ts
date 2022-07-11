@@ -73,8 +73,6 @@ export type InstantTemplate = {
 
 }
 
-export type UUID = string;
-
 export type Application1 = {
     bundle_id: UUID;
     display_name: string;
