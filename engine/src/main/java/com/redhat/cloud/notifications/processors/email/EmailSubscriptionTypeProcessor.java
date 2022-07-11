@@ -236,42 +236,26 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     private void processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
         final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
 
-        TemplateInstance subject;
-        TemplateInstance body;
+        TemplateInstance subject = null;
+        TemplateInstance body = null;
 
         if (useTemplatesFromDb) {
             Optional<AggregationEmailTemplate> aggregationEmailTemplate = templateRepository
                     .findAggregationEmailTemplate(aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType);
-            if (aggregationEmailTemplate.isEmpty()) {
-                if (delete) {
-                    emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime);
-                }
-                return;
-            } else {
+            if (aggregationEmailTemplate.isPresent()) {
                 String subjectData = aggregationEmailTemplate.get().getSubjectTemplate().getData();
                 subject = templateService.compileTemplate(subjectData, "subject");
                 String bodyData = aggregationEmailTemplate.get().getBodyTemplate().getData();
                 body = templateService.compileTemplate(bodyData, "body");
             }
         } else {
-            if (!emailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
-                if (delete) {
-                    emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime);
-                }
-                return;
+            if (emailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
+                subject = emailTemplate.getTitle(null, emailSubscriptionType);
+                body = emailTemplate.getBody(null, emailSubscriptionType);
             }
-
-            subject = emailTemplate.getTitle(null, emailSubscriptionType);
-            body = emailTemplate.getBody(null, emailSubscriptionType);
         }
 
-        if (subject == null || body == null) {
-            if (delete) {
-                emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime);
-            }
-            return;
-        }
-        try {
+        if (subject != null && body != null) {
             for (Map.Entry<User, Map<String, Object>> aggregation :
                     emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime).entrySet()) {
 
@@ -286,7 +270,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 action.setApplication(aggregationKey.getApplication());
                 action.setBundle(aggregationKey.getBundle());
 
-                // We don't have a eventtype as this aggregates over multiple event types
+                // We don't have an event type as this aggregates over multiple event types
                 action.setEventType(null);
                 action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 
@@ -296,10 +280,10 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
                 emailSender.sendEmail(aggregation.getKey(), event, subject, body);
             }
-        } finally {
-            if (delete) {
-                emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime);
-            }
+        }
+
+        if (delete) {
+            emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime);
         }
     }
 }
