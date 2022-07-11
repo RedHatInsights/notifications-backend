@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import javax.persistence.EmbeddedId;
@@ -28,6 +29,7 @@ public class EventTypeBehavior extends CreationTimestamped {
     @ManyToOne
     @MapsId("behaviorGroupId")
     @JoinColumn(name = "behavior_group_id")
+    @JsonIgnore
     private BehaviorGroup behaviorGroup;
 
     public EventTypeBehavior() {
