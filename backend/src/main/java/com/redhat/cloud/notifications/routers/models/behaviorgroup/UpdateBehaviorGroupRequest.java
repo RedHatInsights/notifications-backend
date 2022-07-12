@@ -11,6 +11,13 @@ import java.util.UUID;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class UpdateBehaviorGroupRequest {
+
+    /**
+     * Remove: Only used to make QA tests happy
+     */
+    @Deprecated
+    public UUID bundleId;
+
     /**
      * If not null, changes the display name of the behavior group to this value.
      */
