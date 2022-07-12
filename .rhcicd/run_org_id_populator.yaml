@@ -6,8 +6,8 @@ metadata:
 spec:
   appName: notifications-backend
   jobs:
-    - org-id-populator-behavior-group
-    - org-id-populator-email-aggregation
-    - org-id-populator-endpoints
-    - org-id-populator-endpoint-email-subscriptions
-    - org-id-populator-event
+    - behavior-group
+    - email-aggregation
+    - endpoints
+    - endpoint-email-subscriptions
+    - event
