@@ -17,9 +17,6 @@ public class EmailSubscriptionId implements Serializable {
     @Size(max = 50)
     public String accountId;
 
-    @Size(max = 50)
-    public String orgId;
-
     @NotNull
     @Size(max = 50)
     public String userId;
@@ -40,7 +37,6 @@ public class EmailSubscriptionId implements Serializable {
         if (o instanceof EmailSubscriptionId) {
             EmailSubscriptionId other = (EmailSubscriptionId) o;
             return Objects.equals(accountId, other.accountId) &&
-                    Objects.equals(orgId, other.orgId) &&
                     Objects.equals(userId, other.userId) &&
                     Objects.equals(subscriptionType, other.subscriptionType) &&
                     Objects.equals(applicationId, other.applicationId);
@@ -50,6 +46,6 @@ public class EmailSubscriptionId implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(accountId, orgId, userId, subscriptionType, applicationId);
+        return Objects.hash(accountId, userId, subscriptionType, applicationId);
     }
 }

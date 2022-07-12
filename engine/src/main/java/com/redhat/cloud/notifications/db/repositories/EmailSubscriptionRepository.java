@@ -19,7 +19,7 @@ public class EmailSubscriptionRepository {
 
     public List<String> getEmailSubscribersUserId(String accountId, String orgId, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         if (orgIdHelper.useOrgId(orgId)) {
-            String query = "SELECT es.id.userId FROM EmailSubscription es WHERE id.orgId = :orgId AND application.bundle.name = :bundleName " +
+            String query = "SELECT es.id.userId FROM EmailSubscription es WHERE orgId = :orgId AND application.bundle.name = :bundleName " +
                     "AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
             return statelessSessionFactory.getCurrentSession().createQuery(query, String.class)
                     .setParameter("orgId", orgId)

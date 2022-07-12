@@ -41,7 +41,7 @@ public class EmailSubscriptionRepository {
     @Transactional
     public boolean unsubscribe(String accountNumber, String orgId, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         if (orgIdHelper.useOrgId(orgId)) {
-            String query = "DELETE FROM EmailSubscription WHERE id.orgId = :orgId AND id.userId = :userId " +
+            String query = "DELETE FROM EmailSubscription WHERE orgId = :orgId AND id.userId = :userId " +
                     "AND id.applicationId = (SELECT a.id FROM Application a, Bundle b WHERE a.bundle.id = b.id " +
                     "AND b.name = :bundleName AND a.name = :applicationName) AND id.subscriptionType = :subscriptionType";
             entityManager.createQuery(query)
@@ -69,7 +69,7 @@ public class EmailSubscriptionRepository {
     public EmailSubscription getEmailSubscription(String accountNumber, String orgId, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         if (orgIdHelper.useOrgId(orgId)) {
             String query = "SELECT es FROM EmailSubscription es LEFT JOIN FETCH es.application a LEFT JOIN FETCH a.bundle b " +
-                    "WHERE es.id.orgId = :orgId AND es.id.userId = :userId " +
+                    "WHERE es.orgId = :orgId AND es.id.userId = :userId " +
                     "AND b.name = :bundleName AND a.name = :applicationName AND es.id.subscriptionType = :subscriptionType";
             try {
                 return entityManager.createQuery(query, EmailSubscription.class)
@@ -103,7 +103,7 @@ public class EmailSubscriptionRepository {
     public List<EmailSubscription> getEmailSubscriptionsForUser(String accountNumber, String orgId, String username) {
         if (orgIdHelper.useOrgId(orgId)) {
             String query = "SELECT es FROM EmailSubscription es LEFT JOIN FETCH es.application a LEFT JOIN FETCH a.bundle b " +
-                    "WHERE es.id.orgId = :orgId AND es.id.userId = :userId";
+                    "WHERE es.orgId = :orgId AND es.id.userId = :userId";
             return entityManager.createQuery(query, EmailSubscription.class)
                     .setParameter("orgId", orgId)
                     .setParameter("userId", username)

@@ -6,6 +6,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapsId;
 import javax.persistence.Table;
+import javax.validation.constraints.Size;
 import java.util.Objects;
 
 @Entity
@@ -14,6 +15,9 @@ public class EmailSubscription {
 
     @EmbeddedId
     private EmailSubscriptionId id;
+
+    @Size(max = 50)
+    private String orgId;
 
     @ManyToOne
     @MapsId("applicationId")
@@ -33,11 +37,11 @@ public class EmailSubscription {
     }
 
     public String getOrgId() {
-        return id.orgId;
+        return orgId;
     }
 
     public void setOrgId(String orgId) {
-        id.orgId = orgId;
+        this.orgId = orgId;
     }
 
     public String getUserId() {
