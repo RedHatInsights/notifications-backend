@@ -130,11 +130,16 @@ public class ApplicationRepository {
 
     public EventType getEventType(String bundleName, String applicationName, String eventTypeName) {
         final String query = "FROM EventType WHERE name = :eventTypeName AND application.name = :applicationName AND application.bundle.name = :bundleName";
-        return entityManager.createQuery(query, EventType.class)
-                .setParameter("bundleName", bundleName)
-                .setParameter("applicationName", applicationName)
-                .setParameter("eventTypeName", eventTypeName)
-                .getSingleResult();
+        try {
+            return entityManager.createQuery(query, EventType.class)
+                    .setParameter("bundleName", bundleName)
+                    .setParameter("applicationName", applicationName)
+                    .setParameter("eventTypeName", eventTypeName)
+                    .getSingleResult();
+        } catch (NoResultException noResultException) {
+            return null;
+        }
+
     }
 
     public List<EventType> getEventTypes(UUID appId) {

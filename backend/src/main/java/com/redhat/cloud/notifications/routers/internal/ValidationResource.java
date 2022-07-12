@@ -13,7 +13,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.inject.Inject;
-import javax.persistence.NoResultException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -36,11 +35,12 @@ public class ValidationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/baet")
     public Response validate(@RestQuery String bundle, @RestQuery String application, @RestQuery String eventType) {
-        try {
-            return convertToOkayResponse(applicationRepository.getEventType(bundle, application, eventType));
-        } catch (NoResultException e) {
+        EventType foundEventType = applicationRepository.getEventType(bundle, application, eventType);
+        if (foundEventType == null) {
             return convertToNotFoundResponse(bundle, application, eventType);
         }
+
+        return convertToOkayResponse(applicationRepository.getEventType(bundle, application, eventType));
     }
 
     @POST
