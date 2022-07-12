@@ -1,18 +1,17 @@
-import { Breadcrumb, BreadcrumbItem, PageSection, Spinner, Title } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
+import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
 import { useUserPermissions } from '../app/PermissionContext';
-import { AggregationTemplateCard } from '../components/EmailTemplates/EmailTemplateCard';
-import { InstantEmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
+import { EmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
 import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
-import { EventTypeTable } from '../components/EventTypes/EventTypeTable';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
-import { useAggregationTemplates } from '../services/EmailTemplates/GetAggregationTemplates';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
@@ -31,9 +30,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
-    const aggregationTemplates = useAggregationTemplates(applicationId);
+
+    const columns = [ 'Event Type', 'Name', 'Event Type Id' ];
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
+
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
@@ -70,14 +71,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
-
-    const aggregationEmailTemplates = useMemo(() => {
-        if (aggregationTemplates.payload?.status === 200) {
-            return aggregationTemplates.payload.value;
-        }
-
-        return undefined;
-    }, [ aggregationTemplates.payload?.status, aggregationTemplates.payload?.value ]);
 
     const createEventType = () => {
         setShowModal(true);
@@ -149,22 +142,51 @@ export const ApplicationPage: React.FunctionComponent = () => {
                         || applicationTypesQuery.payload?.status !== 200) ? <Spinner /> : applicationTypesQuery.payload.value.displayName }
                         </BreadcrumbItem>
                     </Breadcrumb></Title>
-                <EventTypeTable
-                    hasPermissions={ application ? hasPermission(application.id) : false }
-                    eventTypes={ eventTypesQuery.data }
-                    onCreateEventType={ createEventType }
-                    onEditEventType={ editEventType }
-                    onDeleteEventTypeModal={ deleteEventTypeModal }
-                />
+                <TableComposable
+                    aria-label="Event types table"
+                >
+                    <Thead>
+                        <Toolbar>
+                            <ToolbarContent>
+                                <ToolbarItem>
+                                    <Button variant='primary' type='button'
+                                        isDisabled={ !application || !hasPermission(application?.id) }
+                                        onClick={ createEventType }> Create Event Type </Button>
+                                </ToolbarItem>
+                            </ToolbarContent>
+                        </Toolbar>
+                        <Tr>
+                            {columns.map((column, columnIndex) => (
+                                <Th key={ columnIndex }>{column}</Th>
+                            ))}
+                        </Tr>
+                    </Thead>
+                    <Tbody>{ (eventTypesQuery.data?.length === 0 ? 'There are no event types found for this application' : '') }</Tbody>
+                    <Tbody>
+                        { eventTypesQuery.data?.map((e: EventType) => (
+                            <Tr key={ e.id }>
+                                <Td>{ e.displayName }</Td>
+                                <Td>{ e.name }</Td>
+                                <Td>{ e.id }</Td>
+                                <Td>
+                                    <Button className='edit' type='button' variant='plain'
+                                        isDisabled={ !application || !hasPermission(application?.id) }
+                                        onClick={ () => editEventType(e) }> { <PencilAltIcon /> } </Button></Td>
+                                <Td>
+                                    <Button className='delete' type='button' variant='plain'
+                                        isDisabled={ !application || !hasPermission(application?.id) }
+                                        onClick={ () => deleteEventTypeModal(e) }>{ <TrashIcon /> } </Button></Td>
+                            </Tr>
+                        ))}
+                    </Tbody>
+                </TableComposable>
             </PageSection>
-            <AggregationTemplateCard
-                applicationName={ application?.displayName }
-                bundleName={ bundle?.display_name }
-                templateName={ aggregationEmailTemplates?.map(a => a.body_template?.name) } />
-            { isAdmin && application && <InstantEmailTemplateTable application={ application } /> }
+            { isAdmin && <EmailTemplateTable
+                application={ application?.displayName ?? '' }
+            /> }
             <CreateEditModal
                 isEdit={ isEdit }
-                initialEventType= { eventTypes }
+                initialEventType={ eventTypes }
                 showModal={ showModal }
                 applicationName={ application?.displayName }
                 onClose={ onClose }

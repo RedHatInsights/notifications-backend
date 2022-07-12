@@ -15,6 +15,7 @@ import { useDeleteApplication } from '../services/Applications/DeleteApplication
 import { useApplications } from '../services/Applications/GetApplicationById';
 import { useBundleTypes } from '../services/Applications/GetBundleById';
 import { Application, RoleOwnedApplication } from '../types/Notifications';
+import { BehaviorGroupsTable } from './BundlePage/BehaviorGroupTable';
 
 type BundlePageParams = {
     bundleId: string;
@@ -190,6 +191,9 @@ export const BundlePage: React.FunctionComponent = () => {
                     </Tbody>
                 </TableComposable>
             </PageSection>
+            <BehaviorGroupsTable
+                bundleId={ bundleId }
+                bundle={ bundle?.displayName } />
         </React.Fragment>
 
     );

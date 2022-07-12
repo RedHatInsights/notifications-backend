@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessReposito
 import com.redhat.cloud.notifications.db.repositories.StatusRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
+import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CurrentStatus;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -50,7 +51,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -324,7 +327,17 @@ public class InternalResource {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public List<BehaviorGroup> getDefaultBehaviorGroups() {
-        return behaviorGroupRepository.findDefaults();
+        List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findDefaults();
+        endpointRepository.loadProperties(
+                behaviorGroups
+                        .stream()
+                        .map(BehaviorGroup::getActions)
+                        .filter(Objects::nonNull)
+                        .flatMap(Collection::stream)
+                        .map(BehaviorGroupAction::getEndpoint)
+                        .collect(Collectors.toList())
+        );
+        return behaviorGroups;
     }
 
     @POST

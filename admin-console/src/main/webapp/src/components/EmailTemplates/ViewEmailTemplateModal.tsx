@@ -3,7 +3,7 @@ import React from 'react';
 
 interface ViewTemplateModalProps {
     showModal: boolean;
-    applicationName: string;
+    applicationName?: string | undefined;
     onClose: () => void;
 }
 

@@ -9,6 +9,7 @@ import { useEventTypes as useGetEventTypes } from '../../services/EventTypes/Get
 import { EventTypeRow } from '../../types/Notifications';
 
 interface EventTypesController {
+    payload: any;
     data: ReadonlyArray<EventTypeRow> | undefined;
     loading: boolean;
     reload: () => void;
@@ -62,6 +63,7 @@ export const useEventTypes = (applicationId: string): EventTypesController => {
     }, [ eventTypesQuery.payload, eventTypesQuery.loading, query ]);
 
     return {
+        payload: eventTypeRows,
         data: eventTypeRows,
         loading: eventTypesQuery.loading,
         reload: eventTypesQuery.query,

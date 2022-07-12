@@ -1,4 +1,5 @@
 import { Schemas } from '../generated/OpenapiInternal';
+import Endpoint = Schemas.Endpoint;
 
 export interface Bundle {
     id: string;
@@ -16,6 +17,29 @@ export interface Application {
 export interface RoleOwnedApplication extends Application {
     ownerRole?: string;
 }
+
+export type UUID = Schemas.UUID;
+
+// Consider using the generated types instead of writing the same again
+export type BehaviorGroupAction = {
+    created?: string | undefined | null;
+    id?: BehaviorGroupActionId | undefined | null;
+    endpoint?: Endpoint | undefined | null;
+};
+
+export type BehaviorGroupActionId = {
+    behaviorGroupId: UUID;
+    endpointId: UUID;
+  };
+
+export type BehaviorGroup = {
+    actions?: Array<BehaviorGroupAction> | undefined | null;
+    bundle?: Bundle | undefined | null;
+    bundleId: UUID;
+    isDefault?: boolean | undefined | null;
+    displayName: string;
+    id?: UUID | undefined | null;
+  };
 
 export interface EventType {
     id: string;
@@ -51,8 +75,6 @@ export type InstantTemplate = {
     subject_template: Template;
 
 }
-
-export type UUID = string;
 
 export type Application1 = {
     bundle_id: UUID;
