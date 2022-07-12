@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.OrgIdHelper;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -28,7 +28,7 @@ public class EventRepository {
     EntityManager entityManager;
 
     @Inject
-    OrgIdHelper orgIdHelper;
+    FeatureFlipper featureFlipper;
 
     public List<Event> getEvents(String accountId, String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
@@ -55,7 +55,7 @@ public class EventRepository {
                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes,
                       Set<CompositeEndpointType> compositeEndpointTypes, Set<Boolean> invocationResults) {
         String hql = "SELECT COUNT(*) FROM Event e WHERE ";
-        if (orgIdHelper.useOrgId(orgId)) {
+        if (featureFlipper.isUseOrgIdInEvents()) {
             hql += "e.orgId = :orgId";
         } else {
             hql += "e.accountId = :accountId";
@@ -92,7 +92,7 @@ public class EventRepository {
                                         LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                         Set<Boolean> invocationResults, Integer limit, Integer offset, Optional<String> orderByCondition) {
         String hql = "SELECT e.id FROM Event e WHERE ";
-        if (orgIdHelper.useOrgId(orgId)) {
+        if (featureFlipper.isUseOrgIdInEvents()) {
             hql += "e.orgId = :orgId";
         } else {
             hql += "e.accountId = :accountId";
@@ -174,7 +174,7 @@ public class EventRepository {
     private void setQueryParams(TypedQuery<?> query, String accountId, String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
                                        LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                        Set<Boolean> invocationResults) {
-        if (orgIdHelper.useOrgId(orgId)) {
+        if (featureFlipper.isUseOrgIdInEvents()) {
             query.setParameter("orgId", orgId);
         } else {
             query.setParameter("accountId", accountId);

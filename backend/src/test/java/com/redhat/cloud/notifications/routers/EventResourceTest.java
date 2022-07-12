@@ -78,15 +78,15 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly_AccountId() {
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
         shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly();
     }
 
     @Test
     void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly_OrgId() {
-        featureFlipper.setUseOrgId(true);
+        featureFlipper.setUseOrgIdInEvents(true);
         shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly();
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
     }
 
     void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly() {
@@ -100,15 +100,15 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     void testAllQueryParams_AccountId() {
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
         testAllQueryParams();
     }
 
     @Test
     void testAllQueryParams_OrgId() {
-        featureFlipper.setUseOrgId(true);
+        featureFlipper.setUseOrgIdInEvents(true);
         testAllQueryParams();
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
     }
 
     void testAllQueryParams() {
@@ -471,15 +471,15 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     void testInsufficientPrivileges_AccountId() {
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
         testInsufficientPrivileges();
     }
 
     @Test
     void testInsufficientPrivileges_OrgId() {
-        featureFlipper.setUseOrgId(true);
+        featureFlipper.setUseOrgIdInEvents(true);
         testInsufficientPrivileges();
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
     }
 
     void testInsufficientPrivileges() {
@@ -493,15 +493,15 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     void testInvalidSortBy_AccountId() {
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
         testInvalidSortBy();
     }
 
     @Test
     void testInvalidSortBy_OrgId() {
-        featureFlipper.setUseOrgId(true);
+        featureFlipper.setUseOrgIdInEvents(true);
         testInvalidSortBy();
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
     }
 
     void testInvalidSortBy() {
@@ -517,15 +517,15 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     void testInvalidLimit_AccountId() {
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
         testInvalidLimit();
     }
 
     @Test
     void testInvalidLimit_OrgId() {
-        featureFlipper.setUseOrgId(true);
+        featureFlipper.setUseOrgIdInEvents(true);
         testInvalidLimit();
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
     }
 
     void testInvalidLimit() {
@@ -548,15 +548,15 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     void shouldBeAllowedToGetEventLogs_AccountId() {
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
         shouldBeAllowedToGetEventLogs();
     }
 
     @Test
     void shouldBeAllowedToGetEventLogs_OrgId() {
-        featureFlipper.setUseOrgId(true);
+        featureFlipper.setUseOrgIdInEvents(true);
         shouldBeAllowedToGetEventLogs();
-        featureFlipper.setUseOrgId(false);
+        featureFlipper.setUseOrgIdInEvents(false);
     }
 
     void shouldBeAllowedToGetEventLogs() {
