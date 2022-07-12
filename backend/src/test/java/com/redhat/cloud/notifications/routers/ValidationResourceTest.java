@@ -11,7 +11,6 @@ import io.restassured.http.Header;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
-import javax.persistence.NoResultException;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
