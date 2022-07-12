@@ -186,6 +186,10 @@ public class ResourceHelpers {
         return history;
     }
 
+    public BehaviorGroup getBehaviorGroup(UUID behaviorGroupId) {
+        return entityManager.find(BehaviorGroup.class, behaviorGroupId);
+    }
+
     public BehaviorGroup createBehaviorGroup(String accountId, String orgId, String displayName, UUID bundleId) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName(displayName);
@@ -200,8 +204,20 @@ public class ResourceHelpers {
         return behaviorGroupRepository.createDefault(behaviorGroup);
     }
 
+    public List<EventType> findEventTypesByBehaviorGroupId(String accountId, String orgId, UUID behaviorGroupId) {
+        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(accountId, orgId, behaviorGroupId);
+    }
+
     public List<EventType> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
-        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, behaviorGroupId);
+        return findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, behaviorGroupId);
+    }
+
+    public List<Endpoint> findEndpointsByBehaviorGroupId(String accountId, UUID behaviorGroupId) {
+        String query = "SELECT bga.endpoint FROM BehaviorGroupAction bga WHERE bga.endpoint.accountId = :accountId AND bga.behaviorGroup.id = :behaviorGroupId";
+        return entityManager.createQuery(query, Endpoint.class)
+                .setParameter("accountId", accountId)
+                .setParameter("behaviorGroupId", behaviorGroupId)
+                .getResultList();
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEventTypeId(UUID eventTypeId) {

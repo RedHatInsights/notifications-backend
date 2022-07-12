@@ -41,6 +41,24 @@ public class BehaviorGroupRepository {
     @Inject
     OrgIdHelper orgIdHelper;
 
+    public BehaviorGroup createFull(String accountId, String orgId, @Valid BehaviorGroup behaviorGroup, List<UUID> endpoints, Set<UUID> eventTypes) {
+        BehaviorGroup saved = create(accountId, orgId, behaviorGroup);
+        if (endpoints != null) {
+            updateBehaviorGroupActions(accountId, orgId, saved.getId(), endpoints);
+        }
+
+        if (eventTypes != null) {
+            updateBehaviorEventTypes(accountId, orgId, saved.getId(), eventTypes);
+        }
+
+        // The previous updates execute native SQL - hibernate is not aware of the changes it made on the behavior group
+        // so we need to refresh to ensure we have the actions and event types.
+        entityManager.flush();
+        entityManager.refresh(saved);
+
+        return saved;
+    }
+
     public BehaviorGroup create(String accountId, String orgId, @Valid BehaviorGroup behaviorGroup) {
         return this.create(accountId, orgId, behaviorGroup, false);
     }
@@ -289,6 +307,80 @@ public class BehaviorGroupRepository {
                 .setParameter("behaviorGroupId", behaviorGroupId)
                 .executeUpdate();
         return true;
+    }
+
+    /**
+     * Sets the event types of a behavior group
+     * @param accountId Account id of the behavior group
+     * @param behaviorGroupId Id of the behavior group
+     * @param eventTypeIds List of the event type ids that we want to set
+     */
+    @Transactional
+    public void updateBehaviorEventTypes(String accountId, String orgId, UUID behaviorGroupId, Set<UUID> eventTypeIds) {
+        BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
+        if (featureFlipper.isUseOrgId()) {
+            if (behaviorGroup == null || !behaviorGroup.getOrgId().equals(orgId)) {
+                throw new NotFoundException("Behavior group not found in the org");
+            }
+        } else {
+            if (behaviorGroup == null || !behaviorGroup.getAccountId().equals(accountId)) {
+                throw new NotFoundException("Behavior group not found in the account");
+            }
+        }
+
+        if (!eventTypeIds.isEmpty()) {
+            // Behavior group can only be linked to event types in the same bundle
+            String integrityCheckHql = "SELECT id from EventType WHERE id IN (:eventTypeIds) "
+                    + "AND application.bundle.id != :bundleId";
+            List<UUID> differentBundle = entityManager.createQuery(integrityCheckHql, UUID.class)
+                    .setParameter("eventTypeIds", eventTypeIds)
+                    .setParameter("bundleId", behaviorGroup.getBundleId())
+                    .getResultList();
+            if (!differentBundle.isEmpty()) {
+                throw new BadRequestException("Some event types can't be linked to the behavior group because they " +
+                        "belong to a different bundle: " + differentBundle);
+            }
+        }
+
+        /*
+         * Lock related rows to avoid deadlocks
+         */
+        String lockQuery = "SELECT id.eventTypeId FROM EventTypeBehavior " +
+                "WHERE id.behaviorGroupId = :behaviorGroupId";
+        List<UUID> eventTypesFromDb = entityManager.createQuery(lockQuery, UUID.class)
+                .setParameter("behaviorGroupId", behaviorGroupId)
+                .setLockMode(PESSIMISTIC_WRITE)
+                .getResultList();
+
+        /*
+        * Delete the event type links that were not provided
+        */
+        List<UUID> eventTypesToDelete = new ArrayList<>(eventTypesFromDb);
+        eventTypesToDelete.removeAll(eventTypeIds);
+
+        if (!eventTypesToDelete.isEmpty()) {
+            String deleteQuery = "DELETE FROM EventTypeBehavior " +
+                    "WHERE id.eventTypeId IN (:eventTypeIds) AND id.behaviorGroupId = :behaviorGroupId";
+            entityManager.createQuery(deleteQuery)
+                    .setParameter("eventTypeIds", eventTypesToDelete)
+                    .setParameter("behaviorGroupId", behaviorGroupId)
+                    .executeUpdate();
+        }
+
+        List<UUID> eventTypesToAdd = new ArrayList<>(eventTypeIds);
+        eventTypesToAdd.removeAll(eventTypesFromDb);
+
+        if (!eventTypesToAdd.isEmpty()) {
+            for (UUID eventTypeId : eventTypesToAdd) {
+                String insertQuery = "INSERT INTO event_type_behavior (event_type_id, behavior_group_id, created) " +
+                        "SELECT :eventTypeId, :behaviorGroupId, :created";
+                entityManager.createNativeQuery(insertQuery)
+                        .setParameter("eventTypeId", eventTypeId)
+                        .setParameter("behaviorGroupId", behaviorGroupId)
+                        .setParameter("created", LocalDateTime.now(UTC))
+                        .executeUpdate();
+            }
+        }
     }
 
     @Transactional

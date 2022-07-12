@@ -14,6 +14,9 @@ import com.redhat.cloud.notifications.routers.models.Facet;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
+import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
+import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
+import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -170,17 +173,41 @@ public class NotificationResource {
     @POST
     @Path("/behaviorGroups")
     @Consumes(APPLICATION_JSON)
-    @Operation(summary = "Create a behavior group.")
+    @Operation(summary = "Create a behavior group - assigning actions and linking to event types as requested")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = BehaviorGroup.class))),
+            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = CreateBehaviorGroupResponse.class))),
             @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)))
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
-    public BehaviorGroup createBehaviorGroup(@Context SecurityContext sec, @NotNull @Valid BehaviorGroup behaviorGroup) {
+    public CreateBehaviorGroupResponse createBehaviorGroup(@Context SecurityContext sec, @Valid @NotNull CreateBehaviorGroupRequest request) {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
-        return behaviorGroupRepository.create(accountId, orgId, behaviorGroup);
+
+        BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setBundleId(request.bundleId);
+        behaviorGroup.setDisplayName(request.displayName);
+
+        behaviorGroup = behaviorGroupRepository.createFull(
+                accountId,
+                orgId,
+                behaviorGroup,
+                request.endpointIds,
+                request.eventTypeIds
+        );
+
+        CreateBehaviorGroupResponse response = new CreateBehaviorGroupResponse();
+
+        response.id = behaviorGroup.getId();
+        response.bundleId = behaviorGroup.getBundleId();
+        response.displayName = behaviorGroup.getDisplayName();
+
+        response.endpoints = behaviorGroup.getActions().stream().map(action -> action.getId().endpointId).collect(Collectors.toList());
+        response.eventTypes = behaviorGroup.getBehaviors().stream().map(b -> b.getId().eventTypeId).collect(Collectors.toSet());
+
+        response.created = behaviorGroup.getCreated();
+
+        return response;
     }
 
     @PUT
@@ -188,17 +215,35 @@ public class NotificationResource {
     @Consumes(APPLICATION_JSON)
     @APIResponses(value = {
             @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.BOOLEAN))),
-            @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)))
+            @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING))),
+            @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)))
     })
     @Operation(summary = "Update a behavior group.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
-    public Response updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
+    public Response updateBehaviorGroup(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull UpdateBehaviorGroupRequest request) {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
-        behaviorGroup.setId(id);
-        boolean updated = behaviorGroupRepository.update(accountId, orgId, behaviorGroup);
-        return Response.status(200).type(APPLICATION_JSON).entity(updated).build();
+
+        if (request.displayName != null) {
+            BehaviorGroup behaviorGroup = new BehaviorGroup();
+            behaviorGroup.setId(id);
+            behaviorGroup.setDisplayName(request.displayName);
+
+            if (!behaviorGroupRepository.update(accountId, orgId, behaviorGroup)) {
+                return Response.status(200).type(APPLICATION_JSON).entity(false).build();
+            }
+        }
+
+        if (request.endpointIds != null) {
+            behaviorGroupRepository.updateBehaviorGroupActions(accountId, orgId, id, request.endpointIds);
+        }
+
+        if (request.eventTypeIds != null) {
+            behaviorGroupRepository.updateBehaviorEventTypes(accountId, orgId, id, request.eventTypeIds);
+        }
+
+        return Response.status(200).type(APPLICATION_JSON).entity(true).build();
     }
 
     @DELETE
