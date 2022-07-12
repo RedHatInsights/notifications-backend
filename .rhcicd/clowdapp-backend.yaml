@@ -71,7 +71,7 @@ objects:
         requests:
           cpu: "${CPU_REQUEST_FLOO}"
           memory: "${MEMORY_REQUEST_FLOO}"
-    - name: org-id-populator-behavior-group
+    - name: behavior-group
       podSpec:
         image: quay.io/cloudservices/tenant-utils:latest
         command:
@@ -103,7 +103,7 @@ objects:
           requests:
             cpu: 50m
             memory: 512Mi
-    - name: org-id-populator-email-aggregation
+    - name: email-aggregation
       podSpec:
         image: quay.io/cloudservices/tenant-utils:latest
         command:
@@ -135,7 +135,7 @@ objects:
           requests:
             cpu: 50m
             memory: 512Mi
-    - name: org-id-populator-endpoints
+    - name: endpoints
       podSpec:
         image: quay.io/cloudservices/tenant-utils:latest
         command:
@@ -167,7 +167,7 @@ objects:
           requests:
             cpu: 50m
             memory: 512Mi
-    - name: org-id-populator-endpoint-email-subscriptions
+    - name: endpoint-email-subscriptions
       podSpec:
         image: quay.io/cloudservices/tenant-utils:latest
         command:
@@ -199,7 +199,7 @@ objects:
           requests:
             cpu: 50m
             memory: 512Mi
-    - name: org-id-populator-event
+    - name: event
       podSpec:
         image: quay.io/cloudservices/tenant-utils:latest
         command:
