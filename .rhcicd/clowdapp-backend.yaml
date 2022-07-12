@@ -85,6 +85,8 @@ objects:
         - behavior_group
         - --ean-translator-addr
         - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+        - --batch-size
+        - "50"
         - --db-operation-timeout
         - "10"
         env:
@@ -117,6 +119,8 @@ objects:
         - email_aggregation
         - --ean-translator-addr
         - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+        - --batch-size
+        - "50"
         - --db-operation-timeout
         - "10"
         env:
@@ -149,6 +153,8 @@ objects:
         - endpoints
         - --ean-translator-addr
         - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+        - --batch-size
+        - "50"
         - --db-operation-timeout
         - "10"
         env:
@@ -181,6 +187,8 @@ objects:
         - endpoint_email_subscriptions
         - --ean-translator-addr
         - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+        - --batch-size
+        - "50"
         - --db-operation-timeout
         - "10"
         env:
@@ -213,8 +221,10 @@ objects:
         - event
         - --ean-translator-addr
         - http://${TENANT_TRANSLATOR_HOST}:${TENANT_TRANSLATOR_PORT}
+        - --batch-size
+        - "50"
         - --db-operation-timeout
-        - "10"
+        - "300"
         env:
         - name: TENANT_TRANSLATOR_HOST
           value: ${TENANT_TRANSLATOR_HOST}
