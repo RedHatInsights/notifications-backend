@@ -54,6 +54,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-org-id", defaultValue = "false")
     boolean useOrgId;
 
+    @ConfigProperty(name = "notifications.events.use-org-id", defaultValue = "false")
+    boolean useOrgIdInEvents;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -61,6 +64,7 @@ public class FeatureFlipper {
         Log.infof("The actions reinjection in case of Camel integration error is %s", enableReInject ? "enabled" : "disabled");
         Log.infof("The Kafka outage detector is %s", kafkaConsumedTotalCheckerEnabled ? "enabled" : "disabled");
         Log.infof("The org ID migration is %s", useOrgId ? "enabled" : "disabled");
+        Log.infof("The org ID migration is %s in the events API", useOrgIdInEvents ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -83,6 +87,15 @@ public class FeatureFlipper {
     public void setUseOrgId(boolean useOrgId) {
         checkTestLaunchMode();
         this.useOrgId = useOrgId;
+    }
+
+    public boolean isUseOrgIdInEvents() {
+        return useOrgIdInEvents;
+    }
+
+    public void setUseOrgIdInEvents(boolean useOrgIdInEvents) {
+        checkTestLaunchMode();
+        this.useOrgIdInEvents = useOrgIdInEvents;
     }
 
     public boolean isEnableReInject() {
