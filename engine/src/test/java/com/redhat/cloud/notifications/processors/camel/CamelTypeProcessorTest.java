@@ -101,6 +101,7 @@ public class CamelTypeProcessorTest {
 
     @Test
     void testCamelEndpointProcessingWithoutOrgId() {
+        featureFlipper.setUseOrgId(false);
         // The assertions will vary depending on the orgId feature flag.
         testCamelEndpointProcessing();
     }
@@ -110,6 +111,7 @@ public class CamelTypeProcessorTest {
         featureFlipper.setUseOrgId(true);
         // The assertions will vary depending on the orgId feature flag.
         testCamelEndpointProcessing();
+        featureFlipper.setUseOrgId(false);
     }
 
     private void testCamelEndpointProcessing() {

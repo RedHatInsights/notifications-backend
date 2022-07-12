@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
@@ -51,6 +52,9 @@ class EmailSubscriptionTypeProcessorTest {
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
         assertTrue(testee.process(new Event(), null).isEmpty());
@@ -62,6 +66,18 @@ class EmailSubscriptionTypeProcessorTest {
     }
 
     @Test
+    void shouldSuccessfullySendEmail_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        shouldSuccessfullySendEmail();
+    }
+
+    @Test
+    void shouldSuccessfullySendEmail_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        shouldSuccessfullySendEmail();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void shouldSuccessfullySendEmail() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
 
@@ -113,6 +129,18 @@ class EmailSubscriptionTypeProcessorTest {
     }
 
     @Test
+    void consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload();
+    }
+
+    @Test
+    void consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
 

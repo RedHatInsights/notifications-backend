@@ -539,7 +539,7 @@ public class BehaviorGroupRepository {
             if (featureFlipper.isUseOrgId()) {
                 upsertQuery = "INSERT INTO behavior_group_action (behavior_group_id, endpoint_id, position, created) " +
                         "SELECT :behaviorGroupId, :endpointId, :position, :created " +
-                        "WHERE EXISTS (SELECT 1 FROM endpoints WHERE orgId " +
+                        "WHERE EXISTS (SELECT 1 FROM endpoints WHERE org_id " +
                         (orgId == null ? "IS NULL" : "= :orgId") +
                         " AND id = :endpointId) " +
                         "ON CONFLICT (behavior_group_id, endpoint_id) DO UPDATE SET position = :position";

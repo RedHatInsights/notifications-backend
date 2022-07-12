@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -66,6 +67,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
@@ -79,6 +83,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEventTypeFetching_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEventTypeFetching();
+    }
+
+    @Test
+    void testEventTypeFetching_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEventTypeFetching();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEventTypeFetching() {
         helpers.createTestAppAndEventTypes();
         Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
@@ -152,6 +168,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEventTypeFetchingByApplication_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEventTypeFetchingByApplication();
+    }
+
+    @Test
+    void testEventTypeFetchingByApplication_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEventTypeFetchingByApplication();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEventTypeFetchingByApplication() {
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
@@ -181,6 +209,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEventTypeFetchingByBundle_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEventTypeFetchingByBundle();
+    }
+
+    @Test
+    void testEventTypeFetchingByBundle_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEventTypeFetchingByBundle();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEventTypeFetchingByBundle() {
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
@@ -211,6 +251,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEventTypeFetchingByBundleAndApplicationId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEventTypeFetchingByBundleAndApplicationId();
+    }
+
+    @Test
+    void testEventTypeFetchingByBundleAndApplicationId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEventTypeFetchingByBundleAndApplicationId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEventTypeFetchingByBundleAndApplicationId() {
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
@@ -244,6 +296,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEventTypeFetchingByEventTypeName_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEventTypeFetchingByEventTypeName();
+    }
+
+    @Test
+    void testEventTypeFetchingByEventTypeName_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEventTypeFetchingByEventTypeName();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEventTypeFetchingByEventTypeName() {
         helpers.createTestAppAndEventTypes();
         Header identityHeader = initRbacMock(TENANT, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
@@ -271,6 +335,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testEventTypeFetchingByBundleApplicationAndEventTypeName_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testEventTypeFetchingByBundleApplicationAndEventTypeName();
+    }
+
+    @Test
+    void testEventTypeFetchingByBundleApplicationAndEventTypeName_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testEventTypeFetchingByBundleApplicationAndEventTypeName();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testEventTypeFetchingByBundleApplicationAndEventTypeName() {
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
@@ -306,6 +382,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testGetEventTypesAffectedByEndpoint_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testGetEventTypesAffectedByEndpoint();
+    }
+
+    @Test
+    void testGetEventTypesAffectedByEndpoint_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testGetEventTypesAffectedByEndpoint();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testGetEventTypesAffectedByEndpoint() {
         String tenant = "testGetEventTypesAffectedByEndpoint";
         String orgId = "testGetEventTypesAffectedByEndpointOrgId";
@@ -387,6 +475,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testGetApplicationFacets_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testGetApplicationFacets();
+    }
+
+    @Test
+    void testGetApplicationFacets_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testGetApplicationFacets();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testGetApplicationFacets() {
         Header identityHeader = initRbacMock("test", "test2", "user", READ_ACCESS);
         List<Facet> applications = given()
@@ -416,6 +516,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testGetBundlesFacets_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testGetBundlesFacets();
+    }
+
+    @Test
+    void testGetBundlesFacets_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testGetBundlesFacets();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testGetBundlesFacets() {
         // no children by default
         Header identityHeader = initRbacMock("test", "test2", "user", READ_ACCESS);
@@ -455,6 +567,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testInsufficientPrivileges_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testInsufficientPrivileges();
+    }
+
+    @Test
+    void testInsufficientPrivileges_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testInsufficientPrivileges();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testInsufficientPrivileges() {
         Header noAccessIdentityHeader = initRbacMock("tenant", "orgId", "noAccess", NO_ACCESS);
         Header readAccessIdentityHeader = initRbacMock("tenant", "orgId", "readAccess", READ_ACCESS);
@@ -545,6 +669,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testUpdateUnknownBehaviorGroupId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testUpdateUnknownBehaviorGroupId();
+    }
+
+    @Test
+    void testUpdateUnknownBehaviorGroupId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testUpdateUnknownBehaviorGroupId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testUpdateUnknownBehaviorGroupId() {
         Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
 
@@ -564,6 +700,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testDeleteUnknownBehaviorGroupId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testDeleteUnknownBehaviorGroupId();
+    }
+
+    @Test
+    void testDeleteUnknownBehaviorGroupId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testDeleteUnknownBehaviorGroupId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testDeleteUnknownBehaviorGroupId() {
         Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
         given()
@@ -576,6 +724,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testFindBehaviorGroupsByUnknownBundleId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testFindBehaviorGroupsByUnknownBundleId();
+    }
+
+    @Test
+    void testFindBehaviorGroupsByUnknownBundleId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testFindBehaviorGroupsByUnknownBundleId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testFindBehaviorGroupsByUnknownBundleId() {
         Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
         given()
@@ -588,6 +748,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId();
+    }
+
+    @Test
+    void testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId() {
         Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
         given()
@@ -600,6 +772,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testFindBehaviorGroupsByUnknownEventTypeId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testFindBehaviorGroupsByUnknownEventTypeId();
+    }
+
+    @Test
+    void testFindBehaviorGroupsByUnknownEventTypeId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testFindBehaviorGroupsByUnknownEventTypeId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testFindBehaviorGroupsByUnknownEventTypeId() {
         Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
         given()
@@ -612,6 +796,18 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId();
+    }
+
+    @Test
+    void testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId() {
         Header identityHeader = initRbacMock("tenant", "someOrgId", "user", FULL_ACCESS);
         given()

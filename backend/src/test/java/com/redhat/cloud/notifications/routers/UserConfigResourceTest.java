@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -54,6 +55,9 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     @InjectMock
     TemplateEngineClient templateEngineClient;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     private Field rhelPolicyForm(SettingsValueJsonForm jsonForm) {
         for (Field section : jsonForm.fields.get(0).sections) {
             if (section.name.equals("policies")) {
@@ -92,6 +96,18 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testSettings_AccountId() {
+        featureFlipper.setUseOrgId(false);
+        testSettings();
+    }
+
+    @Test
+    void testSettings_OrgId() {
+        featureFlipper.setUseOrgId(true);
+        testSettings();
+        featureFlipper.setUseOrgId(false);
+    }
+
     void testSettings() {
         String tenant = "empty";
         String orgId = "empty";
