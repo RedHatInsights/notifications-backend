@@ -13,7 +13,7 @@ objects:
     testing:
       iqe:
         debug: false
-        dynaconfEnvName: 'stage_post_deploy'
+        dynaconfEnvName: clowder_smoke
         filter: ''
         marker: 'notification_smoke and api'
 parameters:
