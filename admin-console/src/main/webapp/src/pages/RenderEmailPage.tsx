@@ -122,7 +122,6 @@ export const RenderEmailPage: React.FunctionComponent = () => {
             payload: payload ?? ''
         });
         // We only want to activate this once
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ ]);
 
     let renderedProps: RenderedTemplateProps;

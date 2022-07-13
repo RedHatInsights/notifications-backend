@@ -12,6 +12,8 @@ const client = createClient({
     responseInterceptors: [ validateSchemaResponseInterceptor ]
 });
 
+global.Buffer = require('buffer').Buffer;
+
 ReactDOM.render(
     <React.StrictMode>
         <HashRouter>
