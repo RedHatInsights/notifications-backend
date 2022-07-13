@@ -5,6 +5,7 @@ import * as React from 'react';
 import ReactDOM from 'react-dom';
 import { ClientContextProvider, createClient } from 'react-fetching-library';
 import { HashRouter } from 'react-router-dom';
+import { Buffer } from 'buffer';
 
 import { App } from './app/App';
 
@@ -12,7 +13,7 @@ const client = createClient({
     responseInterceptors: [ validateSchemaResponseInterceptor ]
 });
 
-global.Buffer = require('buffer').Buffer;
+window.Buffer = Buffer;
 
 ReactDOM.render(
     <React.StrictMode>
