@@ -41,6 +41,7 @@
 
         <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
         <checkstyle-plugin.version>3.1.2</checkstyle-plugin.version>
+        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
         <jacoco-plugin.version>0.8.8</jacoco-plugin.version>
         <checkstyle.version>8.44</checkstyle.version>
 
@@ -60,6 +61,7 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>2.10.3.Final</quarkus.platform.version>
+
     </properties>
 
     <dependencyManagement>
@@ -107,7 +109,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.2.2</version>
+                    <version>${maven-jar-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -156,15 +158,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${checkstyle-plugin.version}</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.redhat.cloud.notifications</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>1.0</version>
-                    </dependency>
-                </dependencies>
                 <configuration>
-                    <configLocation>checkstyle/checkstyle.xml</configLocation>
+                    <configLocation>${maven.multiModuleProjectDirectory}/checkstyle/src/main/resources/checkstyle/checkstyle.xml</configLocation>
+                    <suppressionsLocation>${maven.multiModuleProjectDirectory}/checkstyle/src/main/resources/checkstyle/checkstyle-suppressions.xml</suppressionsLocation>
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
