@@ -165,6 +165,16 @@ public class Processor {
         public void setValue(String value) {
             this.value = value;
         }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("Filter{");
+            sb.append("'").append(key).append('\'');
+            sb.append(" '").append(type).append('\'');
+            sb.append(" '").append(value).append('\'');
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
     public static class Action {
@@ -195,6 +205,15 @@ public class Processor {
 
         public void setParameters(Map<String, String> parameters) {
             this.parameters = parameters;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("Action{");
+            sb.append("type='").append(type).append('\'');
+            sb.append(", parameters=").append(parameters);
+            sb.append('}');
+            return sb.toString();
         }
     }
 
