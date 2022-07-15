@@ -45,9 +45,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [ createEditInstantTemplateModal, setCreateEditInstantTemplateModal ] =
-    React.useState({ showModal: false, isEdit: false, instantTemplates: {}});
+    const [ showEditTemplateModal, setShowEditTemplateModal ] = React.useState({
+        showTemplateModal: false,
+        editTemplateModal: false,
+        instantTemplates: {}
+    });
 
     const getBundleId = React.useMemo(() => {
         if (applicationTypesQuery.payload?.type === 'Application') {
@@ -105,7 +107,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
     };
 
     const createInstantTemplate = () => {
-        setCreateEditInstantTemplateModal({ isEdit: false, showModal: true, instantTemplates: {}});
+        setShowEditTemplateModal({
+            showTemplateModal: true,
+            editTemplateModal: false,
+            instantTemplates: {}
+        });
     };
 
     const handleSubmit = React.useCallback((eventType) => {
@@ -124,7 +130,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
     }, [ applicationId, eventTypesQuery.reload, newEvent.mutate ]);
 
     const handleInstantTemplateSubmit = React.useCallback((instantTemplates) => {
-        setCreateEditInstantTemplateModal({ isEdit: false, showModal: false, instantTemplates: {}});
+        setShowEditTemplateModal({
+            showTemplateModal: false,
+            editTemplateModal: false,
+            instantTemplates: {}
+        });
         const mutate = newInstantTemplate.mutate;
         mutate({
             body_template: instantTemplates.body_template,
@@ -146,9 +156,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
     };
 
     const editInstantTemplate = (i: InstantTemplate) => {
-        setShowModal(true);
-        setIsEdit(true);
-        setInstantTemplates(i);
+        setShowEditTemplateModal({
+            showTemplateModal: true,
+            editTemplateModal: true,
+            instantTemplates: i
+        });
     };
 
     const handleDelete = React.useCallback(async () => {
@@ -228,12 +240,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 bundleName={ bundle?.display_name }
             />
             <InstantTemplateModal
-                isEdit={ isEdit }
-                showModal={ showModal }
+                isEdit={ showEditTemplateModal }
+                showModal={ showEditTemplateModal }
                 onClose={ onTemplateClose }
-                templates={ templates?.map(t => t.name) }
+                templates={ templates }
                 onSubmit={ handleInstantTemplateSubmit }
-                initialInstantTemplate={ instantTemplates }
+                initialInstantTemplate={ showEditTemplateModal }
             />
         </React.Fragment>
 

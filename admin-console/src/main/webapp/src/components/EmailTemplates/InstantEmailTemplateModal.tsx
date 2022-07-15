@@ -10,20 +10,21 @@ import {
 } from '@patternfly/react-core';
 import React from 'react';
 
-import { InstantTemplate } from '../../types/Notifications';
+import { InstantTemplate, Template } from '../../types/Notifications';
 
 interface InstantTemplateModalProps {
-    showModal: boolean;
-    isEdit: boolean;
+    showModal: Record<string, unknown>;
+    isEdit: Record<string, unknown>;
     onClose: () => void;
-    templates: string[] | undefined;
-    initialInstantTemplate?: Partial<InstantTemplate>;
+    templates: readonly Template[] | undefined;
+    initialInstantTemplate?: Record<string, unknown>;
     onSubmit: (instantTemplate: Partial<InstantTemplate>) => void;
 }
 
 export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalProps> = (props) => {
 
     const [ instantTemplate, setInstantTemplate ] = React.useState<Partial<InstantTemplate>>(props.initialInstantTemplate ?? {});
+
     const templateOption = [
         <FormSelectOption key='choose template' isPlaceholder label='Choose a template' />,
         <FormSelectOption key='templates' label='' value='templates' />
@@ -47,7 +48,6 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
             <Modal
                 variant={ ModalVariant.medium }
                 title={ `${ props.isEdit ? `Update` : 'Select'} your instant email templates` }
-                isOpen={ props.showModal }
                 onClose={ props.onClose }
             ><Form isHorizontal>
                     <FormGroup label='Subject template' fieldId='subject-template'>
