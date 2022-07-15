@@ -32,8 +32,6 @@ public class ITUserRequest {
         this.by = by;
         if (useOrgId) {
             this.by.accountId = orgId;
-        } else {
-            this.by.accountId = null;
         }
 
         this.by.withPaging = new WithPaging();
