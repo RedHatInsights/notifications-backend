@@ -18,7 +18,7 @@ export const linkTo = {
     application: (applicationId: string) => `/application/${applicationId}`,
     aggregation: () => '/aggregation',
     email: () => '/email',
-    emailTemplates: () => `/emailTemplates`,
+    emailTemplates: () => '/emailTemplates',
     messageValidator: () => '/utils/message-validator'
 };
 
