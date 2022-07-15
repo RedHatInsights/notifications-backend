@@ -8,8 +8,7 @@ public class AllOf {
 
     @JsonInclude(NON_EMPTY)
     public String ebsAccountNumber;
-    @JsonInclude(NON_EMPTY)
-    public String accountId;
+
     public String status;
     public PermissionCode permissionCode;
 }
