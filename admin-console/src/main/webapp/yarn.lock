@@ -6670,10 +6670,10 @@ open@^8.0.9, open@^8.4.0:
     is-docker "^2.1.1"
     is-wsl "^2.2.0"
 
-openapi2typescript-cli@0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/openapi2typescript-cli/-/openapi2typescript-cli-0.6.0.tgz#c9af117f071ed5f564ded4ae6c5ac19666ccb14d"
-  integrity sha512-Eim2VWSdWPJ8EYiMEdiwnYBf7id5FoAGvK4WsL3tpvhGzP5cW5sCz11Ua2UNdeKB468JcWZmAX8BQilhuVWNBg==
+openapi2typescript-cli@0.6.1:
+  version "0.6.1"
+  resolved "https://registry.yarnpkg.com/openapi2typescript-cli/-/openapi2typescript-cli-0.6.1.tgz#616298deac758cd180c537d6c71bd8d8a12030a9"
+  integrity sha512-K0hjlsIHAi/CdivtLjBZouCz8vy/pYSTBDrOiVydCpyPV2yna2Mg8PCYNE7DfoLzroREpK7GfOQT4vepFtlhVQ==
   dependencies:
     camelcase "5.3.1"
     commander "7.2.0"
@@ -6682,10 +6682,10 @@ openapi2typescript-cli@0.6.0:
     node-fetch "^2.6.1"
     prettier "2.3.1"
 
-openapi2typescript@0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/openapi2typescript/-/openapi2typescript-0.2.0.tgz#903fa484572371c22a08da82efab97ad96225e7c"
-  integrity sha512-WhSkSBq6G6mvI3iYyKUFc6D0OgePsbRoxBvhtJC+rm4oSXUrf+Xl8Hgb1a1sHVOHdVaHdGQkmpKU9YePCxpGXw==
+openapi2typescript@0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/openapi2typescript/-/openapi2typescript-0.2.1.tgz#49cf65b569078a7e7553c307455ac8f603bdb029"
+  integrity sha512-M6f0J5GVAXGX81vIvNOKwOpc7UFv7qF4zJV5BvDXqk/6x301NCsQnHgnozxcBDN5R165D3Za9XSN7PGlJpnJsA==
   optionalDependencies:
     react-fetching-library "^1.7.6"
 

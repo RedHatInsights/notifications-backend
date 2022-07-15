@@ -15,7 +15,7 @@
     "immer": "9.0.15",
     "monaco-editor": "0.21.3",
     "monaco-editor-webpack-plugin": "2.1.0",
-    "openapi2typescript": "0.2.0",
+    "openapi2typescript": "0.2.1",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-fetching-library": "1.7.6",
@@ -46,7 +46,7 @@
     "eslint-plugin-jsx-a11y": "^6.5.1",
     "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-react-hooks": "^4.3.0",
-    "openapi2typescript-cli": "0.6.0",
+    "openapi2typescript-cli": "0.6.1",
     "react-scripts": "5.0.1",
     "typescript": "4.7.4"
   },
