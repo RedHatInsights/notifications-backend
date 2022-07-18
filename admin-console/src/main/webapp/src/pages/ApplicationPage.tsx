@@ -106,14 +106,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventTypes({});
     };
 
-    const createInstantTemplate = () => {
-        setShowEditTemplateModal({
-            showTemplateModal: true,
-            editTemplateModal: false,
-            instantTemplates: {}
-        });
-    };
-
     const handleSubmit = React.useCallback((eventType) => {
         setShowModal(false);
         const mutate = newEvent.mutate;
@@ -155,12 +147,20 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventTypes(e);
     };
 
-    const editInstantTemplate = (i: InstantTemplate) => {
-        setShowEditTemplateModal({
-            showTemplateModal: true,
-            editTemplateModal: true,
-            instantTemplates: i
-        });
+    const openInstantTemplateModal = (instantTemplate?: InstantTemplate) => {
+        if (instantTemplate) {
+            setShowEditTemplateModal({
+                showTemplateModal: true,
+                editTemplateModal: true,
+                instantTemplates: instantTemplate
+            });
+        }  else {
+            setShowEditTemplateModal({
+                showTemplateModal: true,
+                editTemplateModal: false,
+                instantTemplates: {}
+            });
+        }
     };
 
     const handleDelete = React.useCallback(async () => {
@@ -216,7 +216,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     onCreateEventType={ createEventType }
                     onEditEventType={ editEventType }
                     onDeleteEventTypeModal={ deleteEventTypeModal }
-                    onCreateEditInstantTemplate={ isEdit ? editInstantTemplate : createInstantTemplate }
+                    onCreateEditInstantTemplate={ openInstantTemplateModal }
                 />
             </PageSection>
             { isAdmin && <EmailTemplateTable
