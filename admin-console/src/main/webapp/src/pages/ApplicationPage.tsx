@@ -21,6 +21,7 @@ import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
 import { EventType, InstantTemplate } from '../types/Notifications';
 import { useEventTypes } from './ApplicationPage/useEventTypes';
 import { EventTypeTable } from '../components/EventTypes/EventTypeTable';
+import { useSaveModal } from '../hooks/useSaveModal';
 
 type ApplicationPageParams = {
     applicationId: string;
@@ -45,11 +46,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
-    const [ showEditTemplateModal, setShowEditTemplateModal ] = React.useState({
-        showTemplateModal: false,
-        editTemplateModal: false,
-        instantTemplates: {}
-    });
+    const templateSaveModal = useSaveModal<InstantTemplate>();
 
     const getBundleId = React.useMemo(() => {
         if (applicationTypesQuery.payload?.type === 'Application') {
@@ -122,11 +119,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
     }, [ applicationId, eventTypesQuery.reload, newEvent.mutate ]);
 
     const handleInstantTemplateSubmit = React.useCallback((instantTemplates) => {
-        setShowEditTemplateModal({
-            showTemplateModal: false,
-            editTemplateModal: false,
-            instantTemplates: {}
-        });
+        const close = templateSaveModal.close;
+        close();
         const mutate = newInstantTemplate.mutate;
         mutate({
             body_template: instantTemplates.body_template,
@@ -139,7 +133,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
         });
 
-    }, [ newInstantTemplate.mutate ]);
+    }, [ newInstantTemplate.mutate, templateSaveModal.close ]);
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
@@ -148,19 +142,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     };
 
     const openInstantTemplateModal = (instantTemplate?: InstantTemplate) => {
-        if (instantTemplate) {
-            setShowEditTemplateModal({
-                showTemplateModal: true,
-                editTemplateModal: true,
-                instantTemplates: instantTemplate
-            });
-        }  else {
-            setShowEditTemplateModal({
-                showTemplateModal: true,
-                editTemplateModal: false,
-                instantTemplates: {}
-            });
-        }
+        templateSaveModal.open(instantTemplate, !!instantTemplate);
     };
 
     const handleDelete = React.useCallback(async () => {
@@ -240,14 +222,13 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 bundleName={ bundle?.display_name }
             />
             <InstantTemplateModal
-                isEdit={ showEditTemplateModal }
-                showModal={ showEditTemplateModal }
+                isEdit={ templateSaveModal.isEdit }
+                showModal={ templateSaveModal.isOpen }
                 onClose={ onTemplateClose }
                 templates={ templates }
                 onSubmit={ handleInstantTemplateSubmit }
-                initialInstantTemplate={ showEditTemplateModal }
+                initialInstantTemplate={ templateSaveModal.template }
             />
         </React.Fragment>
-
     );
 };

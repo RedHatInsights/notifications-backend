@@ -13,11 +13,11 @@ import React from 'react';
 import { InstantTemplate, Template } from '../../types/Notifications';
 
 interface InstantTemplateModalProps {
-    showModal: Record<string, unknown>;
-    isEdit: Record<string, unknown>;
+    showModal: boolean;
+    isEdit: boolean;
     onClose: () => void;
     templates: readonly Template[] | undefined;
-    initialInstantTemplate?: Record<string, unknown>;
+    initialInstantTemplate?: InstantTemplate;
     onSubmit: (instantTemplate: Partial<InstantTemplate>) => void;
 }
 
@@ -47,7 +47,7 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
         <React.Fragment>
             <Modal
                 variant={ ModalVariant.medium }
-                title={ `${ props.isEdit ? `Update` : 'Select'} your instant email templates` }
+                title={ `${ props.isEdit ? 'Update' : 'Select'} your instant email templates` }
                 onClose={ props.onClose }
             ><Form isHorizontal>
                     <FormGroup label='Subject template' fieldId='subject-template'>
