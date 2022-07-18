@@ -1,6 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
-import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Breadcrumb, BreadcrumbItem, PageSection, Spinner, Title } from '@patternfly/react-core';
 import * as React from 'react';
 import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
@@ -18,6 +16,7 @@ import { useApplicationTypes } from '../services/EventTypes/GetApplication';
 import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
 import { EventType } from '../types/Notifications';
 import { useEventTypes } from './ApplicationPage/useEventTypes';
+import { EventTypeTable } from '../components/EventTypes/EventTypeTable';
 
 type ApplicationPageParams = {
     applicationId: string;
@@ -30,8 +29,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const applicationTypesQuery = useApplicationTypes(applicationId);
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
-
-    const columns = [ 'Event Type', 'Name', 'Event Type Id' ];
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
 
@@ -142,44 +139,13 @@ export const ApplicationPage: React.FunctionComponent = () => {
                         || applicationTypesQuery.payload?.status !== 200) ? <Spinner /> : applicationTypesQuery.payload.value.displayName }
                         </BreadcrumbItem>
                     </Breadcrumb></Title>
-                <TableComposable
-                    aria-label="Event types table"
-                >
-                    <Thead>
-                        <Toolbar>
-                            <ToolbarContent>
-                                <ToolbarItem>
-                                    <Button variant='primary' type='button'
-                                        isDisabled={ !application || !hasPermission(application?.id) }
-                                        onClick={ createEventType }> Create Event Type </Button>
-                                </ToolbarItem>
-                            </ToolbarContent>
-                        </Toolbar>
-                        <Tr>
-                            {columns.map((column, columnIndex) => (
-                                <Th key={ columnIndex }>{column}</Th>
-                            ))}
-                        </Tr>
-                    </Thead>
-                    <Tbody>{ (eventTypesQuery.data?.length === 0 ? 'There are no event types found for this application' : '') }</Tbody>
-                    <Tbody>
-                        { eventTypesQuery.data?.map((e: EventType) => (
-                            <Tr key={ e.id }>
-                                <Td>{ e.displayName }</Td>
-                                <Td>{ e.name }</Td>
-                                <Td>{ e.id }</Td>
-                                <Td>
-                                    <Button className='edit' type='button' variant='plain'
-                                        isDisabled={ !application || !hasPermission(application?.id) }
-                                        onClick={ () => editEventType(e) }> { <PencilAltIcon /> } </Button></Td>
-                                <Td>
-                                    <Button className='delete' type='button' variant='plain'
-                                        isDisabled={ !application || !hasPermission(application?.id) }
-                                        onClick={ () => deleteEventTypeModal(e) }>{ <TrashIcon /> } </Button></Td>
-                            </Tr>
-                        ))}
-                    </Tbody>
-                </TableComposable>
+                <EventTypeTable
+                    hasPermissions={ hasPermission(applicationId) }
+                    onCreateEventType={ createEventType }
+                    onEditEventType={ editEventType }
+                    onDeleteEventTypeModal={ deleteEventTypeModal }
+                    eventTypes={ eventTypesQuery.payload }
+                />
             </PageSection>
             { isAdmin && <EmailTemplateTable
                 application={ application?.displayName ?? '' }
