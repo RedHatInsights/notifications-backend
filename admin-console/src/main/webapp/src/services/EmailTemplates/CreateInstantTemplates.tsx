@@ -18,14 +18,9 @@ const actionCreator =  (params: CreateInstantTemplate) => {
     if (params.id === undefined) {
         return Operations.TemplateResourceCreateInstantEmailTemplate.actionCreator({
             body: {
-                body_template: params.body_template,
-                body_template_id: params.body_template_id,
-                event_type: params.event_type,
                 event_type_id: params.event_type_id,
-                id: params.id,
-                subject_template: params.subject_template,
-                subject_template_id: params.subject_template_id
-
+                subject_template_id: params.subject_template_id,
+                body_template_id: params.body_template_id
             }
         });
     }
@@ -33,14 +28,9 @@ const actionCreator =  (params: CreateInstantTemplate) => {
     return Operations.TemplateResourceUpdateInstantEmailTemplate.actionCreator({
         templateId: params.id,
         body: {
-            body_template: params.body_template,
-            body_template_id: params.body_template_id,
-            event_type: params.event_type,
             event_type_id: params.event_type_id,
-            id: params.id,
-            subject_template: params.subject_template,
-            subject_template_id: params.subject_template_id
-
+            subject_template_id: params.subject_template_id,
+            body_template_id: params.body_template_id
         }
     });
 };
