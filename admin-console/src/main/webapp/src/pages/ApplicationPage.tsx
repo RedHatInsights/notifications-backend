@@ -118,21 +118,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     }, [ applicationId, eventTypesQuery.reload, newEvent.mutate ]);
 
-    const handleInstantTemplateSubmit = React.useCallback((instantTemplates) => {
+    const handleInstantTemplateSubmit = React.useCallback((instantTemplate: InstantTemplate) => {
         const close = templateSaveModal.close;
         close();
         const mutate = newInstantTemplate.mutate;
-        mutate({
-            body_template: instantTemplates.body_template,
-            body_template_id: instantTemplates.body_template_id,
-            event_type: instantTemplates.event_type,
-            event_type_id: instantTemplates.event_type_id,
-            id: instantTemplates.id,
-            subject_template: instantTemplates.subject_template,
-            subject_template_id: instantTemplates.subject_template_id
-
-        });
-
+        mutate(instantTemplate);
     }, [ newInstantTemplate.mutate, templateSaveModal.close ]);
 
     const editEventType = (e: EventType) => {
@@ -164,10 +154,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const onClose = () => {
         setShowModal(false);
         eventTypesQuery.reload();
-    };
-
-    const onTemplateClose = () => {
-        setShowModal(false);
     };
 
     const onDeleteClose = () => {
@@ -224,7 +210,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             <InstantTemplateModal
                 isEdit={ templateSaveModal.isEdit }
                 showModal={ templateSaveModal.isOpen }
-                onClose={ onTemplateClose }
+                onClose={ templateSaveModal.close }
                 templates={ templates }
                 onSubmit={ handleInstantTemplateSubmit }
                 initialInstantTemplate={ templateSaveModal.template }

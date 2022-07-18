@@ -18,16 +18,18 @@ interface InstantTemplateModalProps {
     onClose: () => void;
     templates: readonly Template[] | undefined;
     initialInstantTemplate?: InstantTemplate;
-    onSubmit: (instantTemplate: Partial<InstantTemplate>) => void;
+    onSubmit: (instantTemplate: InstantTemplate) => void;
 }
 
 export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalProps> = (props) => {
 
-    const [ instantTemplate, setInstantTemplate ] = React.useState<Partial<InstantTemplate>>(props.initialInstantTemplate ?? {});
+    const [ instantTemplate, setInstantTemplate ] = React.useState<Partial<InstantTemplate>>({});
 
     const templateOption = [
         <FormSelectOption key='choose template' isPlaceholder label='Choose a template' />,
-        <FormSelectOption key='templates' label='' value='templates' />
+        ...(props.templates ? props.templates.map(template => (
+            <FormSelectOption key={ template.id } label={ template.name } value={ template.id } />
+        )) : [])
     ];
 
     const handleChange = (value: string, event: React.FormEvent<HTMLFormElement> | React.FormEvent<HTMLSelectElement>) => {
@@ -36,12 +38,14 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
     };
 
     const onSubmitLocal = React.useCallback(() => {
-        props.onSubmit(instantTemplate);
+        if (instantTemplate.bodyTemplateId && instantTemplate.subjectTemplateId && instantTemplate.eventTypeId) {
+            props.onSubmit(instantTemplate as InstantTemplate);
+        }
     }, [ instantTemplate, props ]);
 
     React.useEffect(() => {
         setInstantTemplate(props.initialInstantTemplate ?? {});
-    }, [ props.initialInstantTemplate ]);
+    }, [ props.initialInstantTemplate, props.showModal ]);
 
     return (
         <React.Fragment>
@@ -49,14 +53,16 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
                 variant={ ModalVariant.medium }
                 title={ `${ props.isEdit ? 'Update' : 'Select'} your instant email templates` }
                 onClose={ props.onClose }
-            ><Form isHorizontal>
+            >
+                <Form isHorizontal>
                     <FormGroup label='Subject template' fieldId='subject-template'>
                         <FormSelect
                             id="subject-template"
-                            name="subject-template"
+                            name="subjectTemplateId"
                             aria-label="Subject template"
                             onChange={ handleChange }
                             isRequired
+                            value={ instantTemplate.subjectTemplateId }
                         >
                             { templateOption }
                         </FormSelect>
@@ -64,10 +70,11 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
                     <FormGroup label='Body template' fieldId='body-template'>
                         <FormSelect
                             id="body-template"
-                            name="body-template"
+                            name="bodyTemplateId"
                             aria-label="Body template"
                             onChange={ handleChange }
                             isRequired
+                            value={ instantTemplate.bodyTemplateId }
                         >
                             { templateOption }
                         </FormSelect>
@@ -84,4 +91,3 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
         </React.Fragment>
     );
 };
-

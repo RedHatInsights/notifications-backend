@@ -1,26 +1,21 @@
 import { useMutation } from 'react-fetching-library';
 
-import { Operations, Schemas } from '../../generated/OpenapiInternal';
-import { Template } from '../../types/Notifications';
+import { Operations } from '../../generated/OpenapiInternal';
 
 export type CreateInstantTemplate = {
-    body_template: Template;
-    body_template_id: string;
-    event_type: Schemas.EventType | null | undefined;
-    event_type_id: string;
-    id: string;
-    subject_template: Template;
-    subject_template_id: string;
-
+    id?: string;
+    eventTypeId: string;
+    subjectTemplateId: string;
+    bodyTemplateId: string;
 }
 
 const actionCreator =  (params: CreateInstantTemplate) => {
     if (params.id === undefined) {
         return Operations.TemplateResourceCreateInstantEmailTemplate.actionCreator({
             body: {
-                event_type_id: params.event_type_id,
-                subject_template_id: params.subject_template_id,
-                body_template_id: params.body_template_id
+                event_type_id: params.eventTypeId,
+                subject_template_id: params.subjectTemplateId,
+                body_template_id: params.bodyTemplateId
             }
         });
     }
@@ -28,9 +23,9 @@ const actionCreator =  (params: CreateInstantTemplate) => {
     return Operations.TemplateResourceUpdateInstantEmailTemplate.actionCreator({
         templateId: params.id,
         body: {
-            event_type_id: params.event_type_id,
-            subject_template_id: params.subject_template_id,
-            body_template_id: params.body_template_id
+            event_type_id: params.eventTypeId,
+            subject_template_id: params.subjectTemplateId,
+            body_template_id: params.bodyTemplateId
         }
     });
 };

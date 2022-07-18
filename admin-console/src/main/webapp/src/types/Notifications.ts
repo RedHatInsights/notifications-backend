@@ -68,12 +68,10 @@ export interface Template {
 }
 
 export type InstantTemplate = {
-    body_template: Schemas.Template;
-    event_type: Schemas.EventType;
-    event_type_id: UUID;
-    id: UUID;
-    subject_template: Template;
-
+    id: string;
+    eventTypeId: string;
+    subjectTemplateId: string;
+    bodyTemplateId: string;
 }
 
 export type Application1 = {
