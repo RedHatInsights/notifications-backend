@@ -21,7 +21,7 @@ export const InstantEmailCell: React.FunctionComponent<InstantEmailCellProps> = 
                 type='button'
                 onClick={ props.onClick }
             >
-             View instant template
+             Edit instant template
             </Button>
             :
             <Button

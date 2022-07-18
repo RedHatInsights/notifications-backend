@@ -120,10 +120,13 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const handleInstantTemplateSubmit = React.useCallback((instantTemplate: InstantTemplate) => {
         const close = templateSaveModal.close;
-        close();
+        const reload = eventTypesQuery.reload;
         const mutate = newInstantTemplate.mutate;
-        mutate(instantTemplate);
-    }, [ newInstantTemplate.mutate, templateSaveModal.close ]);
+        mutate(instantTemplate).then(() => {
+            close();
+            reload();
+        });
+    }, [ newInstantTemplate.mutate, templateSaveModal.close, eventTypesQuery.reload ]);
 
     const editEventType = (e: EventType) => {
         setShowModal(true);

@@ -1,6 +1,5 @@
 import { Schemas } from '../generated/OpenapiInternal';
 import Endpoint = Schemas.Endpoint;
-import InstantEmailTemplate = Schemas.InstantEmailTemplate;
 
 export interface Bundle {
     id: string;
@@ -50,12 +49,11 @@ export interface EventType {
     applicationId: string;
 }
 
-type InstantEmailTemplateRow = InstantEmailTemplate & {
+type InstantEmailTemplateRow = {
     isLoading: true;
-} | {
+} | ({
     isLoading: false;
-    id: string | undefined;
-}
+} & Partial<InstantTemplate>);
 
 export interface EventTypeRow extends EventType {
     instantEmail: InstantEmailTemplateRow;

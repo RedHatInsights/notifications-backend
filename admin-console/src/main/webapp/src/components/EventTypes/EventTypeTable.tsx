@@ -105,7 +105,7 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                     <Td>{ eventType.name }</Td>
                     <Td><InstantEmailCell eventType={ eventType }
                         onClick={ () =>
-                            props.onUpdateInstantTemplate(eventType) }
+                            !eventType.instantEmail.isLoading && props.onUpdateInstantTemplate(eventType.instantEmail) }
                     />
                     </Td>
                     <Td>

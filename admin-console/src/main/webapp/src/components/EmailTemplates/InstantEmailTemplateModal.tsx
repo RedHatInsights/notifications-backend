@@ -39,11 +39,12 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
 
     const onSubmitLocal = React.useCallback((evt) => {
         evt.preventDefault();
+        const onSubmit = props.onSubmit;
         if (instantTemplate.bodyTemplateId && instantTemplate.subjectTemplateId && instantTemplate.eventTypeId) {
-            props.onSubmit(instantTemplate as InstantTemplate);
+            onSubmit(instantTemplate as InstantTemplate);
         }
         return false;
-    }, [ instantTemplate, props ]);
+    }, [ instantTemplate, props.onSubmit ]);
 
     React.useEffect(() => {
         setInstantTemplate(props.initialInstantTemplate ?? {});
