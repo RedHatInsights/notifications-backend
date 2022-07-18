@@ -53,6 +53,7 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
     return (
         <React.Fragment>
             <Modal
+                isOpen={ props.showModal }
                 variant={ ModalVariant.medium }
                 title={ `${ props.isEdit ? 'Update' : 'Select'} your instant email templates` }
                 onClose={ props.onClose }
