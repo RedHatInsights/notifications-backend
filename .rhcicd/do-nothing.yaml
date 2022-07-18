@@ -7,9 +7,13 @@ objects:
 - apiVersion: v1
   kind: Job
   metadata:
-    name: notifications-do-nothing-job
+    name: notifications-do-nothing-job-${IMAGE_TAG}
   spec:
     containers:
     - name: notifications-do-nothing
       image: redhat/ubi8-micro
       command: ["exit 0"]
+parameters:
+- name: IMAGE_TAG
+  value: ''
+  required: true
