@@ -6,6 +6,8 @@ metadata:
 objects:
 - apiVersion: v1
   kind: Job
+  metadata:
+    name: notifications-do-nothing-job
   spec:
     containers:
     - name: notifications-do-nothing
