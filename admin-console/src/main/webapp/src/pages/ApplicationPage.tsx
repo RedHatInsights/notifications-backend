@@ -5,8 +5,9 @@ import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
 import { useUserPermissions } from '../app/PermissionContext';
-import { EmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
+import { AggregationTemplateCard } from '../components/EmailTemplates/EmailTemplateCard';
 import { InstantTemplateModal } from '../components/EmailTemplates/InstantEmailTemplateModal';
+import { EmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
 import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
@@ -41,7 +42,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
 
-    const [ instantTemplates, setInstantTemplates ] = React.useState<Partial<InstantTemplate>>({});
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
@@ -113,8 +113,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             description: eventType.description ?? '',
             applicationId
 
-        })
-        .then (eventTypesQuery.reload);
+        }).then (eventTypesQuery.reload);
 
     }, [ applicationId, eventTypesQuery.reload, newEvent.mutate ]);
 
@@ -178,21 +177,23 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             { bundle ? bundle.display_name : <Spinner /> }
                         </BreadcrumbLinkItem>
                         <BreadcrumbItem to='#' isActive> { (applicationTypesQuery.loading
-                        || applicationTypesQuery.payload?.status !== 200) ? <Spinner /> : applicationTypesQuery.payload.value.displayName }
+                            || applicationTypesQuery.payload?.status !== 200) ? <Spinner /> : applicationTypesQuery.payload.value.displayName }
                         </BreadcrumbItem>
                     </Breadcrumb></Title>
                 <EventTypeTable
                     hasPermissions={ hasPermission(applicationId) }
-                    eventTypes={ eventTypesQuery.data }
                     onCreateEventType={ createEventType }
                     onEditEventType={ editEventType }
                     onDeleteEventTypeModal={ deleteEventTypeModal }
                     onUpdateInstantTemplate={ openInstantTemplateModal }
+                    eventTypes={ eventTypesQuery.data }
                 />
             </PageSection>
-            { isAdmin && <EmailTemplateTable
-                application={ application?.displayName ?? '' }
-            /> }
+            <AggregationTemplateCard
+                applicationName={ application?.displayName }
+                bundleName={ bundle?.display_name }
+                templateName={ aggregationEmailTemplates?.map(a => a.body_template?.name) } />
+            { isAdmin && application && <EmailTemplateTable application={ application } /> }
             <CreateEditModal
                 isEdit={ isEdit }
                 initialEventType={ eventTypes }
