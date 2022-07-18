@@ -1,12 +1,13 @@
 ---
 apiVersion: v1
-kind: Job
+kind: Template
 metadata:
   name: notifications-do-nothing
-spec:
-  template:
-    spec:
-      containers:
-      - name: notifications-do-nothing
-        image: redhat/ubi8-micro
-        command: ["exit 0"]
+objects:
+- apiVersion: v1
+  kind: Job
+  spec:
+    containers:
+    - name: notifications-do-nothing
+      image: redhat/ubi8-micro
+      command: ["exit 0"]
