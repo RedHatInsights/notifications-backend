@@ -46,7 +46,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
-    const templateSaveModal = useSaveModal<InstantTemplate>();
+    const templateSaveModal = useSaveModal<Partial<InstantTemplate>>();
 
     const getBundleId = React.useMemo(() => {
         if (applicationTypesQuery.payload?.type === 'Application') {
@@ -131,8 +131,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
         setEventTypes(e);
     };
 
-    const openInstantTemplateModal = (instantTemplate?: InstantTemplate) => {
-        templateSaveModal.open(instantTemplate, !!instantTemplate);
+    const openInstantTemplateModal = (instantTemplate: Partial<InstantTemplate>) => {
+        templateSaveModal.open(instantTemplate, !!instantTemplate.id);
     };
 
     const handleDelete = React.useCallback(async () => {
@@ -184,7 +184,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     onCreateEventType={ createEventType }
                     onEditEventType={ editEventType }
                     onDeleteEventTypeModal={ deleteEventTypeModal }
-                    onCreateEditInstantTemplate={ openInstantTemplateModal }
+                    onUpdateInstantTemplate={ openInstantTemplateModal }
                 />
             </PageSection>
             { isAdmin && <EmailTemplateTable

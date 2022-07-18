@@ -17,7 +17,7 @@ interface InstantTemplateModalProps {
     isEdit: boolean;
     onClose: () => void;
     templates: readonly Template[] | undefined;
-    initialInstantTemplate?: InstantTemplate;
+    initialInstantTemplate?: Partial<InstantTemplate>;
     onSubmit: (instantTemplate: InstantTemplate) => void;
 }
 
@@ -37,10 +37,12 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
         setInstantTemplate(prev => ({ ...prev, [target.name]: target.value }));
     };
 
-    const onSubmitLocal = React.useCallback(() => {
+    const onSubmitLocal = React.useCallback((evt) => {
+        evt.preventDefault();
         if (instantTemplate.bodyTemplateId && instantTemplate.subjectTemplateId && instantTemplate.eventTypeId) {
             props.onSubmit(instantTemplate as InstantTemplate);
         }
+        return false;
     }, [ instantTemplate, props ]);
 
     React.useEffect(() => {
@@ -81,7 +83,7 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
                     </FormGroup>
                     <ActionGroup>
                         <Button variant='primary' type='submit'
-                            onSubmit={ onSubmitLocal }
+                            onClick={ onSubmitLocal }
                         >{ props.isEdit ? 'Update' : 'Submit' }</Button>
                         <Button variant='link' type='reset'
                             onClick={ props.onClose }>Cancel</Button>

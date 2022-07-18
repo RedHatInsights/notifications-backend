@@ -1,5 +1,6 @@
 import { Schemas } from '../generated/OpenapiInternal';
 import Endpoint = Schemas.Endpoint;
+import InstantEmailTemplate = Schemas.InstantEmailTemplate;
 
 export interface Bundle {
     id: string;
@@ -49,7 +50,7 @@ export interface EventType {
     applicationId: string;
 }
 
-type InstantEmailTemplateRow = {
+type InstantEmailTemplateRow = InstantEmailTemplate & {
     isLoading: true;
 } | {
     isLoading: false;
