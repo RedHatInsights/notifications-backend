@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "./static/css/main.a2bbab57.css",
-    "main.js": "./static/js/main.ac486adc.js",
+    "main.js": "./static/js/main.aa17bf03.js",
     "static/css/74.61738d43.chunk.css": "./static/css/74.61738d43.chunk.css",
     "static/js/74.630c5898.chunk.js": "./static/js/74.630c5898.chunk.js",
     "static/css/796.ef16d86f.chunk.css": "./static/css/796.ef16d86f.chunk.css",
@@ -151,7 +151,7 @@
     "static/media/redhat-logo.svg": "./static/media/redhat-logo.f7405300d685531f8e1fe267c90cecee.svg",
     "index.html": "./index.html",
     "main.a2bbab57.css.map": "./static/css/main.a2bbab57.css.map",
-    "main.ac486adc.js.map": "./static/js/main.ac486adc.js.map",
+    "main.aa17bf03.js.map": "./static/js/main.aa17bf03.js.map",
     "74.61738d43.chunk.css.map": "./static/css/74.61738d43.chunk.css.map",
     "74.630c5898.chunk.js.map": "./static/js/74.630c5898.chunk.js.map",
     "796.ef16d86f.chunk.css.map": "./static/css/796.ef16d86f.chunk.css.map",
@@ -229,6 +229,6 @@
   },
   "entrypoints": [
     "static/css/main.a2bbab57.css",
-    "static/js/main.ac486adc.js"
+    "static/js/main.aa17bf03.js"
   ]
 }
