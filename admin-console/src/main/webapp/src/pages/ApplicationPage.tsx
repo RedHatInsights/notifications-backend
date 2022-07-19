@@ -5,18 +5,24 @@ import { useParameterizedQuery } from 'react-fetching-library';
 import { useParams } from 'react-router';
 
 import { useUserPermissions } from '../app/PermissionContext';
+import { AggregationTemplateCard } from '../components/EmailTemplates/EmailTemplateCard';
+import { InstantTemplateModal } from '../components/EmailTemplates/InstantEmailTemplateModal';
 import { EmailTemplateTable } from '../components/EmailTemplates/EmailTemplateTable';
 import { CreateEditModal } from '../components/EventTypes/CreateEditModal';
 import { DeleteModal } from '../components/EventTypes/DeleteModal';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
+import { useCreateInstantEmailTemplate } from '../services/EmailTemplates/CreateInstantTemplates';
+import { useAggregationTemplates } from '../services/EmailTemplates/GetAggregationTemplates';
+import { useGetTemplates } from '../services/EmailTemplates/GetTemplates';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
 import { useApplicationTypes } from '../services/EventTypes/GetApplication';
 import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
-import { EventType } from '../types/Notifications';
+import { EventType, InstantTemplate } from '../types/Notifications';
 import { useEventTypes } from './ApplicationPage/useEventTypes';
 import { EventTypeTable } from '../components/EventTypes/EventTypeTable';
+import { useSaveModal } from '../hooks/useSaveModal';
 
 type ApplicationPageParams = {
     applicationId: string;
@@ -30,11 +36,17 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
 
+    const aggregationTemplates = useAggregationTemplates(applicationId);
+    const getAllTemplates = useGetTemplates();
+    const newInstantTemplate = useCreateInstantEmailTemplate();
+
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
 
     const [ showModal, setShowModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
+
+    const templateSaveModal = useSaveModal<Partial<InstantTemplate>>();
 
     const getBundleId = React.useMemo(() => {
         if (applicationTypesQuery.payload?.type === 'Application') {
@@ -69,6 +81,22 @@ export const ApplicationPage: React.FunctionComponent = () => {
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
 
+    const aggregationEmailTemplates = useMemo(() => {
+        if (aggregationTemplates.payload?.status === 200) {
+            return aggregationTemplates.payload.value;
+        }
+
+        return undefined;
+    }, [ aggregationTemplates.payload?.status, aggregationTemplates.payload?.value ]);
+
+    const templates = useMemo(() => {
+        if (getAllTemplates.payload?.status === 200) {
+            return getAllTemplates.payload.value;
+        }
+
+        return undefined;
+    }, [ getAllTemplates.payload?.status, getAllTemplates.payload?.value ]);
+
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
@@ -85,15 +113,28 @@ export const ApplicationPage: React.FunctionComponent = () => {
             description: eventType.description ?? '',
             applicationId
 
-        })
-        .then (eventTypesQuery.reload);
+        }).then (eventTypesQuery.reload);
 
     }, [ applicationId, eventTypesQuery.reload, newEvent.mutate ]);
+
+    const handleInstantTemplateSubmit = React.useCallback((instantTemplate: InstantTemplate) => {
+        const close = templateSaveModal.close;
+        const reload = eventTypesQuery.reload;
+        const mutate = newInstantTemplate.mutate;
+        mutate(instantTemplate).then(() => {
+            close();
+            reload();
+        });
+    }, [ newInstantTemplate.mutate, templateSaveModal.close, eventTypesQuery.reload ]);
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
         setIsEdit(true);
         setEventTypes(e);
+    };
+
+    const openInstantTemplateModal = (instantTemplate: Partial<InstantTemplate>) => {
+        templateSaveModal.open(instantTemplate, !!instantTemplate.id);
     };
 
     const handleDelete = React.useCallback(async () => {
@@ -136,7 +177,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                             { bundle ? bundle.display_name : <Spinner /> }
                         </BreadcrumbLinkItem>
                         <BreadcrumbItem to='#' isActive> { (applicationTypesQuery.loading
-                        || applicationTypesQuery.payload?.status !== 200) ? <Spinner /> : applicationTypesQuery.payload.value.displayName }
+                            || applicationTypesQuery.payload?.status !== 200) ? <Spinner /> : applicationTypesQuery.payload.value.displayName }
                         </BreadcrumbItem>
                     </Breadcrumb></Title>
                 <EventTypeTable
@@ -144,12 +185,15 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     onCreateEventType={ createEventType }
                     onEditEventType={ editEventType }
                     onDeleteEventTypeModal={ deleteEventTypeModal }
-                    eventTypes={ eventTypesQuery.payload }
+                    onUpdateInstantTemplate={ openInstantTemplateModal }
+                    eventTypes={ eventTypesQuery.data }
                 />
             </PageSection>
-            { isAdmin && <EmailTemplateTable
-                application={ application?.displayName ?? '' }
-            /> }
+            <AggregationTemplateCard
+                applicationName={ application?.displayName }
+                bundleName={ bundle?.display_name }
+                templateName={ aggregationEmailTemplates?.map(a => a.body_template?.name) } />
+            { isAdmin && application && <EmailTemplateTable application={ application } /> }
             <CreateEditModal
                 isEdit={ isEdit }
                 initialEventType={ eventTypes }
@@ -167,7 +211,14 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 applicationName={ application?.displayName }
                 bundleName={ bundle?.display_name }
             />
+            <InstantTemplateModal
+                isEdit={ templateSaveModal.isEdit }
+                showModal={ templateSaveModal.isOpen }
+                onClose={ templateSaveModal.close }
+                templates={ templates }
+                onSubmit={ handleInstantTemplateSubmit }
+                initialInstantTemplate={ templateSaveModal.template }
+            />
         </React.Fragment>
-
     );
 };

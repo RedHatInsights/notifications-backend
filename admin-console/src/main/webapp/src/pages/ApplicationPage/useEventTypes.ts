@@ -6,7 +6,7 @@ import {
     Operations
 } from '../../generated/OpenapiInternal';
 import { useEventTypes as useGetEventTypes } from '../../services/EventTypes/GetEventTypes';
-import { EventTypeRow } from '../../types/Notifications';
+import {EventTypeRow, InstantTemplate} from '../../types/Notifications';
 
 interface EventTypesController {
     payload: any;
@@ -43,7 +43,14 @@ export const useEventTypes = (applicationId: string): EventTypesController => {
                 }))
                 .then(result => {
                     if (result.payload?.status === 200 || result.payload?.status === 404) {
-                        const value = result.payload.status === 200 ? result.payload.value.id : undefined;
+                        const value: Partial<InstantTemplate> = result.payload.status === 200 ? {
+                            id: result.payload.value.id ?? undefined,
+                            bodyTemplateId: result.payload.value.body_template_id ?? undefined,
+                            subjectTemplateId: result.payload.value.subject_template_id ?? undefined,
+                            eventTypeId: result.payload.value.event_type_id ?? row.id
+                        } : {
+                            eventTypeId: row.id
+                        };
                         setEventTypeRows(produce(draft => {
                             const originalValue = original(draft);
                             if (draft && originalValue) {
@@ -51,7 +58,7 @@ export const useEventTypes = (applicationId: string): EventTypesController => {
                                 if (index !== -1) {
                                     draft[index].instantEmail = {
                                         isLoading: false,
-                                        id: value === null ? undefined : value
+                                        ...value
                                     };
                                 }
                             }

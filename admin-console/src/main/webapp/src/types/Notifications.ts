@@ -51,10 +51,9 @@ export interface EventType {
 
 type InstantEmailTemplateRow = {
     isLoading: true;
-} | {
+} | ({
     isLoading: false;
-    id: string | undefined;
-}
+} & Partial<InstantTemplate>);
 
 export interface EventTypeRow extends EventType {
     instantEmail: InstantEmailTemplateRow;
@@ -68,12 +67,10 @@ export interface Template {
 }
 
 export type InstantTemplate = {
-    body_template: Schemas.Template;
-    event_type: Schemas.EventType;
-    event_type_id: UUID;
-    id: UUID;
-    subject_template: Template;
-
+    id: string;
+    eventTypeId: string;
+    subjectTemplateId: string;
+    bodyTemplateId: string;
 }
 
 export type Application1 = {

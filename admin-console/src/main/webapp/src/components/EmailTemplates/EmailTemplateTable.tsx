@@ -13,9 +13,10 @@ import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
 import { useGetTemplates } from '../../services/EmailTemplates/GetTemplates';
 import { ViewTemplateModal } from './ViewEmailTemplateModal';
+import { Application } from '../../types/Notifications';
 
 interface EmailTemplateTableProps {
-    application: string;
+    application: Application;
 }
 
 export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps> = props => {
@@ -53,12 +54,12 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button variant="primary" isDisabled={ !hasPermission(props.application) }
+                                    <Button variant="primary" isDisabled={ !hasPermission(props.application.id) }
                                         component={ (props: any) =>
                                             <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Email Template</Button>
                                     <ViewTemplateModal
                                         showModal={ showViewModal }
-                                        applicationName={ props.application }
+                                        applicationName={ props.application.displayName }
                                         onClose={ onClose }
                                     />
                                 </ToolbarItem>
