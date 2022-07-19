@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: notifications-do-nothing
 objects:
-- apiVersion: v1
+- apiVersion: batch/v1
   kind: Job
   metadata:
     name: notifications-do-nothing-job-${IMAGE_TAG}-${JOBID}
