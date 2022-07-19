@@ -9,10 +9,13 @@ objects:
   metadata:
     name: notifications-do-nothing-job-${IMAGE_TAG}-${JOBID}
   spec:
-    containers:
-    - name: notifications-do-nothing
-      image: redhat/ubi8-micro
-      command: ["exit 0"]
+    template:
+      spec:
+        containers:
+        - name: notifications-do-nothing
+          image: redhat/ubi8-micro
+          command: ["exit 0"]
+        restartPolicy: Never
 parameters:
 - name: IMAGE_TAG
   value: ''
