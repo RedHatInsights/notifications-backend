@@ -84,7 +84,7 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
                     { !props.isEdit && <FormGroup
                         fieldId="role-name"
                         label="Role admin"
-                        helperText="Role of users who will manage the application"
+                        helperText="Rover group of users who will manage the application"
                     >
                         { permissions.isAdmin ? (
                             <TextInput
