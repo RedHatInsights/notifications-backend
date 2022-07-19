@@ -13,7 +13,7 @@ objects:
       spec:
         containers:
         - name: notifications-do-nothing
-          image: redhat/ubi8-micro:latest
+          image: quay.io/app-sre/ubi8-ubi-minimal:latest
           command: ["exit 0"]
         restartPolicy: Never
 parameters:
