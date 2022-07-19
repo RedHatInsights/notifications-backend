@@ -7,7 +7,7 @@ objects:
 - apiVersion: v1
   kind: Job
   metadata:
-    name: notifications-do-nothing-job-${IMAGE_TAG}
+    name: notifications-do-nothing-job-${IMAGE_TAG}-${JOBID}
   spec:
     containers:
     - name: notifications-do-nothing
@@ -17,3 +17,6 @@ parameters:
 - name: IMAGE_TAG
   value: ''
   required: true
+- name: JOBID
+  generate: expression
+  from: "[0-9a-f]{7}"
