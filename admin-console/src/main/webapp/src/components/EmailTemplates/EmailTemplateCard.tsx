@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Card, CardBody, CardHeader, PageSection, Title } from '@patternfly/react-core';
+import { Card, CardBody, CardHeader, PageSection, Title } from '@patternfly/react-core';
 import * as React from 'react';
 
 interface AggregationEmailCardProps {
@@ -11,10 +11,9 @@ export const AggregationTemplateCard: React.FunctionComponent<AggregationEmailCa
 
     return (
         <PageSection>
-            <Title headingLevel="h1">
-                <Breadcrumb>
-                    <BreadcrumbItem target='#'>Aggregation Email Template for { props.applicationName }</BreadcrumbItem>
-                </Breadcrumb></Title>
+            <Title headingLevel="h3">
+                Aggregation Email Template for { props.applicationName }
+            </Title>
             <Card>
                 <CardHeader>
                     {`Application: ${ props.applicationName } `}

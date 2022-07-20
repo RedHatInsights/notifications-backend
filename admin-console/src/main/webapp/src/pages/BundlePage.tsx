@@ -1,5 +1,7 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner,
-    Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import {
+    Breadcrumb, BreadcrumbItem, Button, PageSection, PageSectionTypes, Skeleton, Spinner,
+    Title, Toolbar, ToolbarContent, ToolbarItem
+} from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
@@ -115,14 +117,17 @@ export const BundlePage: React.FunctionComponent = () => {
 
     return (
         <React.Fragment>
+            <PageSection type={ PageSectionTypes.breadcrumb }>
+                <Breadcrumb>
+                    <BreadcrumbItem> Bundles </BreadcrumbItem>
+                    <BreadcrumbItem>{ (getBundles.loading || getBundles.payload?.status !== 200)
+                        ? <Skeleton width="60px" /> : getBundles.payload.value.displayName }
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </PageSection>
             <PageSection>
-                <Title headingLevel='h1'>
-                    <Breadcrumb>
-                        <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
-                        <BreadcrumbItem target='#' >{ (getBundles.loading || getBundles.payload?.status !== 200)
-                            ? <Spinner /> : getBundles.payload.value.displayName }
-                        </BreadcrumbItem>
-                    </Breadcrumb>
+                <Title headingLevel='h3'>
+                    Applications
                 </Title>
                 <TableComposable aria-label="Applications table">
                     <Thead>

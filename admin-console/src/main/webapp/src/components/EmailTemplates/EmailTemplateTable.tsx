@@ -1,5 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner, Title, Toolbar,
-    ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { EyeIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
     TableComposable,
@@ -45,10 +44,9 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
     return (
         <React.Fragment>
             <PageSection>
-                <Title headingLevel="h1">
-                    <Breadcrumb>
-                        <BreadcrumbItem target='#'>Email Templates</BreadcrumbItem>
-                    </Breadcrumb></Title>
+                <Title headingLevel="h3">
+                    Email Templates
+                </Title>
                 <TableComposable aria-label="Email Template table">
                     <Thead>
                         <Toolbar>
