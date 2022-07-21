@@ -1,13 +1,17 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.request;
 
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
+import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+@QuarkusTest
 class ITUserRequestTest {
 
     private final ITUserRequest testee = new ITUserRequest("someAccountId", "someOrgId", false, true, 0, 101);
@@ -49,5 +53,18 @@ class ITUserRequestTest {
 
         assertEquals("someOrgId", testee.by.allOf.accountId);
         assertNull(testee.by.allOf.ebsAccountNumber);
+    }
+
+    @Test
+    void shouldFallBackIfOrgIdIsNullOrEmptyString() {
+        String someAccountId = "someAccountId";
+        ITUserRequest testeeNull = new ITUserRequest(someAccountId, null, true, true, 0, 101);
+        ITUserRequest testeeEmptyString = new ITUserRequest(someAccountId, "", true, true, 0, 101);
+
+        assertNull(testeeNull.by.allOf.accountId);
+        assertEquals(someAccountId, testeeNull.by.allOf.ebsAccountNumber);
+
+        assertNull(testeeEmptyString.by.allOf.accountId);
+        assertEquals(someAccountId, testeeEmptyString.by.allOf.ebsAccountNumber);
     }
 }

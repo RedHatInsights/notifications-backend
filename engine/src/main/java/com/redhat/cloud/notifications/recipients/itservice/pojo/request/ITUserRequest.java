@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.request;
 
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
+import io.quarkus.logging.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,13 @@ public class ITUserRequest {
         final ITUserRequestBy by = new ITUserRequestBy();
         AllOf allOf = new AllOf();
         allOf.status = "enabled";
+
+        if (useOrgId) {
+            if (orgId == null || orgId.isBlank()) {
+                useOrgId = false;
+                Log.info("Orgid value is not set");
+            }
+        }
 
         if (useOrgId) {
             allOf.ebsAccountNumber = null;
