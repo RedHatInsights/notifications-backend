@@ -17,8 +17,10 @@ public class ITUserRequest {
 
         if (useOrgId) {
             allOf.ebsAccountNumber = null;
+            allOf.accountId = orgId;
         } else {
             allOf.ebsAccountNumber = accountId;
+            allOf.accountId = null;
         }
 
         if (adminsOnly) {
@@ -30,10 +32,6 @@ public class ITUserRequest {
         by.allOf = allOf;
 
         this.by = by;
-        if (useOrgId) {
-            this.by.accountId = orgId;
-        }
-
         this.by.withPaging = new WithPaging();
         this.by.withPaging.firstResultIndex = firstResult;
         this.by.withPaging.maxResults = maxResults;

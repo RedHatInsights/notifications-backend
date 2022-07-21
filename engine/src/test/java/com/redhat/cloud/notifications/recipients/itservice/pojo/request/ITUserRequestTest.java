@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.request;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import org.junit.jupiter.api.Test;
 
@@ -42,63 +40,14 @@ class ITUserRequestTest {
 
     @Test
     void shouldNotContainOrgIdByDefault() {
-        assertNull(testee.by.accountId);
+        assertNull(testee.by.allOf.accountId);
     }
 
     @Test
     void shouldContainOrgIdWhenOrgIdFlagIsTrue() {
         ITUserRequest testee = new ITUserRequest("someAccountId", "someOrgId", true, true, 0, 101);
 
-        assertEquals("someOrgId", testee.by.accountId);
+        assertEquals("someOrgId", testee.by.allOf.accountId);
         assertNull(testee.by.allOf.ebsAccountNumber);
-    }
-
-    @Test
-    void shouldContainOrgId() throws JsonProcessingException {
-        testee.by.accountId = "someOrgId";
-
-        String result = new ObjectMapper().writeValueAsString(testee);
-
-        assertEquals("{\"by\":{\"accountId\":\"someOrgId\",\"allOf\":{\"ebsAccountNumber\":\"someAccountId\",\"status\":\"enabled\",\"permissionCode\":{\"value\":\"admin:org:all\",\"operand\":\"eq\"}},\"withPaging\":{\"firstResultIndex\":0,\"maxResults\":101}},\"include\":{\"allOf\":[\"authentications\",\"personal_information\"],\"accountRelationships\":[{\"allOf\":[\"primary_email\"],\"by\":{\"active\":true}}]}}", result);
-    }
-
-    @Test
-    void shouldNotContainEbsAccountNumberWhenItIsEmpty() throws JsonProcessingException {
-        testee.by.accountId = "someOrgId";
-        testee.by.allOf.ebsAccountNumber = "";
-
-        String result = new ObjectMapper().writeValueAsString(testee);
-
-        assertEquals("{\"by\":{\"accountId\":\"someOrgId\",\"allOf\":{\"status\":\"enabled\",\"permissionCode\":{\"value\":\"admin:org:all\",\"operand\":\"eq\"}},\"withPaging\":{\"firstResultIndex\":0,\"maxResults\":101}},\"include\":{\"allOf\":[\"authentications\",\"personal_information\"],\"accountRelationships\":[{\"allOf\":[\"primary_email\"],\"by\":{\"active\":true}}]}}", result);
-    }
-
-    @Test
-    void shouldNotContainOrgIdWhenItIsEmpty() throws JsonProcessingException {
-        testee.by.accountId = "";
-        testee.by.allOf.ebsAccountNumber = "someEbsAccountNumber";
-
-        String result = new ObjectMapper().writeValueAsString(testee);
-
-        assertEquals("{\"by\":{\"allOf\":{\"ebsAccountNumber\":\"someEbsAccountNumber\",\"status\":\"enabled\",\"permissionCode\":{\"value\":\"admin:org:all\",\"operand\":\"eq\"}},\"withPaging\":{\"firstResultIndex\":0,\"maxResults\":101}},\"include\":{\"allOf\":[\"authentications\",\"personal_information\"],\"accountRelationships\":[{\"allOf\":[\"primary_email\"],\"by\":{\"active\":true}}]}}", result);
-    }
-
-    @Test
-    void shouldNotContainEbsAccountNumberWhenItIsNull() throws JsonProcessingException {
-        testee.by.accountId = "someOrgId";
-        testee.by.allOf.ebsAccountNumber = null;
-
-        String result = new ObjectMapper().writeValueAsString(testee);
-
-        assertEquals("{\"by\":{\"accountId\":\"someOrgId\",\"allOf\":{\"status\":\"enabled\",\"permissionCode\":{\"value\":\"admin:org:all\",\"operand\":\"eq\"}},\"withPaging\":{\"firstResultIndex\":0,\"maxResults\":101}},\"include\":{\"allOf\":[\"authentications\",\"personal_information\"],\"accountRelationships\":[{\"allOf\":[\"primary_email\"],\"by\":{\"active\":true}}]}}", result);
-    }
-
-    @Test
-    void shouldNotContainOrgIdWhenItIsNull() throws JsonProcessingException {
-        testee.by.accountId = null;
-        testee.by.allOf.ebsAccountNumber = "someEbsAccountNumber";
-
-        String result = new ObjectMapper().writeValueAsString(testee);
-
-        assertEquals("{\"by\":{\"allOf\":{\"ebsAccountNumber\":\"someEbsAccountNumber\",\"status\":\"enabled\",\"permissionCode\":{\"value\":\"admin:org:all\",\"operand\":\"eq\"}},\"withPaging\":{\"firstResultIndex\":0,\"maxResults\":101}},\"include\":{\"allOf\":[\"authentications\",\"personal_information\"],\"accountRelationships\":[{\"allOf\":[\"primary_email\"],\"by\":{\"active\":true}}]}}", result);
     }
 }
