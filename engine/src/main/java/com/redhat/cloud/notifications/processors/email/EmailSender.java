@@ -102,7 +102,7 @@ public class EmailSender {
             NotificationHistory history = webhookSender.doHttpRequest(
                     notification,
                     bopRequest,
-                    getPayload(user, action, subject, body));
+                    getPayload(user, action, subject, body), "POST", bopUrl);
 
             processedTimer.stop(registry.timer("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication()));
 

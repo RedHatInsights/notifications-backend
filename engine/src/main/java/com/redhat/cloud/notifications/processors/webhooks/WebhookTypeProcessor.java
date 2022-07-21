@@ -134,7 +134,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
         JsonObject payload = transformer.transform(item.getEvent().getAction());
 
-        return doHttpRequest(item, req, payload);
+        return doHttpRequest(item, req, payload, properties.getMethod().name(), properties.getUrl());
     }
 
     private WebClient getWebClient(boolean disableSSLVerification) {
@@ -145,7 +145,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         }
     }
 
-    public NotificationHistory doHttpRequest(Notification item, HttpRequest<Buffer> req, JsonObject payload) {
+    public NotificationHistory doHttpRequest(Notification item, HttpRequest<Buffer> req, JsonObject payload, String method, String url) {
         final long startTime = System.currentTimeMillis();
 
         try {
@@ -162,13 +162,13 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                 boolean shouldResetEndpointServerErrors = false;
                 if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
                     // Accepted
-                    Log.debugf("Webhook request to %s was successful: %d", reqImpl.host(), resp.statusCode());
+                    Log.debugf("Webhook request to %s was successful: %d", url, resp.statusCode());
                     history.setInvocationResult(true);
                     shouldResetEndpointServerErrors = true;
                 } else if (resp.statusCode() >= 500) {
                     // Temporary error, allow retry
                     serverError = true;
-                    Log.debugf("Webhook request to %s failed: %d %s", reqImpl.host(), resp.statusCode(), resp.statusMessage());
+                    Log.debugf("Webhook request to %s failed: %d %s", url, resp.statusCode(), resp.statusMessage());
                     history.setInvocationResult(false);
                     if (featureFlipper.isDisableWebhookEndpointsOnFailure()) {
                         if (!isEmailEndpoint) {
@@ -188,7 +188,7 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                     }
                 } else {
                     // Redirects etc should have been followed by the vertx (test this)
-                    Log.debugf("Webhook request to %s failed: %d %s %s", reqImpl.host(), resp.statusCode(), resp.statusMessage(), payload);
+                    Log.debugf("Webhook request to %s failed: %d %s %s", url, resp.statusCode(), resp.statusMessage(), payload);
                     history.setInvocationResult(false);
                     // TODO NOTIF-512 Should we disable endpoints in case of 3xx status code?
                     if (featureFlipper.isDisableWebhookEndpointsOnFailure()) {
@@ -226,8 +226,8 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
                 if (!history.isInvocationResult()) {
                     JsonObject details = new JsonObject();
-                    details.put("url", getCallUrl(reqImpl));
-                    details.put("method", reqImpl.method().name());
+                    details.put("url", url); // TODO does this show http or https
+                    details.put("method", method);
                     details.put("code", resp.statusCode());
                     // This isn't async body reading, lets hope vertx handles it async underneath before calling this apply method
                     details.put("response_body", resp.bodyAsString());
@@ -253,23 +253,13 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
             // TODO Duplicate code with the error return code part
             JsonObject details = new JsonObject();
             details.put("url", reqImpl.uri());
-            details.put("method", reqImpl.method());
+            details.put("method", method);
             details.put("error_message", e.getMessage()); // TODO This message isn't always the most descriptive..
             history.setDetails(details.getMap());
             return history;
         }
     }
 
-    private String getCallUrl(HttpRequestImpl<Buffer> reqImpl) {
-        String protocol;
-        if (reqImpl.ssl()) {
-            protocol = "https";
-        } else {
-            protocol = "http";
-        }
-
-        return protocol + "://" + reqImpl.host() + ":" + reqImpl.port() + reqImpl.uri();
-    }
 
     private NotificationHistory buildNotificationHistory(Notification item, long startTime) {
         long invocationTime = System.currentTimeMillis() - startTime;
