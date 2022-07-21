@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.request;
 
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
+import io.quarkus.logging.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +17,18 @@ public class ITUserRequest {
         allOf.status = "enabled";
 
         if (useOrgId) {
+            if (orgId == null || orgId.isBlank()) {
+                useOrgId = false;
+                Log.info("Orgid value is not set");
+            }
+        }
+
+        if (useOrgId) {
             allOf.ebsAccountNumber = null;
+            allOf.accountId = orgId;
         } else {
             allOf.ebsAccountNumber = accountId;
+            allOf.accountId = null;
         }
 
         if (adminsOnly) {
@@ -30,10 +40,6 @@ public class ITUserRequest {
         by.allOf = allOf;
 
         this.by = by;
-        if (useOrgId) {
-            this.by.accountId = orgId;
-        }
-
         this.by.withPaging = new WithPaging();
         this.by.withPaging.firstResultIndex = firstResult;
         this.by.withPaging.maxResults = maxResults;
