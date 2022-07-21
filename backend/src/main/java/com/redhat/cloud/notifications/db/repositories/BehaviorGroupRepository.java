@@ -702,11 +702,11 @@ public class BehaviorGroupRepository {
             if (featureFlipper.isUseOrgId()) {
                 if (isDefaultBehaviorGroup) {
                     if (behaviorGroup.getOrgId() != null) {
-                        throw new BadRequestException("Default behavior groups must have a null accountId");
+                        throw new BadRequestException("Default behavior groups must have a null org id");
                     }
                 } else {
                     if (behaviorGroup.getOrgId() == null) {
-                        throw new BadRequestException("Only default behavior groups have a null accountId");
+                        throw new BadRequestException("Only default behavior groups have a null org id");
                     }
                 }
             } else {
