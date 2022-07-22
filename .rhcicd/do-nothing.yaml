@@ -14,7 +14,8 @@ objects:
         containers:
         - name: notifications-do-nothing
           image: quay.io/app-sre/ubi8-ubi-minimal:latest
-          command: ["echo donothing"]
+          command: ["/bin/sh"]
+          args: ["-c", "exit 0"]
         restartPolicy: Never
 parameters:
 - name: IMAGE_TAG
