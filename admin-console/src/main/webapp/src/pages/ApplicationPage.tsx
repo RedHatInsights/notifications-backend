@@ -1,4 +1,11 @@
-import { Breadcrumb, BreadcrumbItem, PageSection, Spinner, Title } from '@patternfly/react-core';
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    PageSection,
+    PageSectionTypes,
+    Skeleton,
+    Title
+} from '@patternfly/react-core';
 import * as React from 'react';
 import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
@@ -169,17 +176,21 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     return (
         <React.Fragment>
+            <PageSection type={ PageSectionTypes.breadcrumb }>
+                <Breadcrumb>
+                    <BreadcrumbItem> Bundles </BreadcrumbItem>
+                    <BreadcrumbLinkItem to={ linkTo.bundle(getBundleId ?? '') }>
+                        { bundle ? bundle.display_name : <Skeleton width="60px" /> }
+                    </BreadcrumbLinkItem>
+                    <BreadcrumbItem isActive> { (applicationTypesQuery.loading
+                        || applicationTypesQuery.payload?.status !== 200) ? <Skeleton width="60px" /> : applicationTypesQuery.payload.value.displayName }
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </PageSection>
             <PageSection>
-                <Title headingLevel="h1">
-                    <Breadcrumb>
-                        <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
-                        <BreadcrumbLinkItem to={ linkTo.bundle(getBundleId ?? '') }>
-                            { bundle ? bundle.display_name : <Spinner /> }
-                        </BreadcrumbLinkItem>
-                        <BreadcrumbItem to='#' isActive> { (applicationTypesQuery.loading
-                            || applicationTypesQuery.payload?.status !== 200) ? <Spinner /> : applicationTypesQuery.payload.value.displayName }
-                        </BreadcrumbItem>
-                    </Breadcrumb></Title>
+                <Title headingLevel="h3">
+                    Event types
+                </Title>
                 <EventTypeTable
                     hasPermissions={ hasPermission(applicationId) }
                     onCreateEventType={ createEventType }

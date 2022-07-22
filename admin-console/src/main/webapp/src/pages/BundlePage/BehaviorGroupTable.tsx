@@ -1,5 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, Button, PageSection, Spinner,
-    Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
@@ -105,13 +104,8 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
     return (
         <React.Fragment>
             <PageSection>
-                <Title headingLevel='h1'>
-                    <Breadcrumb>
-                        <BreadcrumbItem target='#'> Bundles </BreadcrumbItem>
-                        <BreadcrumbItem target='#' >{ props.bundle }
-                        </BreadcrumbItem>
-                        <BreadcrumbItem target='#'> System Behavior Groups </BreadcrumbItem>
-                    </Breadcrumb>
+                <Title headingLevel='h3'>
+                    System Behavior Groups
                 </Title>
                 <TableComposable aria-label="System behavior groups table">
                     <Thead>
