@@ -17,12 +17,15 @@ import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
+import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.Json;
+import io.vertx.ext.web.RoutingContext;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.security.Principal;
@@ -67,6 +70,8 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
     @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
     Duration maxBackOff;
 
+    CurrentVertxRequest currentVertxRequest;
+
     @Override
     public Class<ConsoleAuthenticationRequest> getRequestType() {
         return ConsoleAuthenticationRequest.class;
@@ -74,6 +79,9 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
 
     @Override
     public Uni<SecurityIdentity> authenticate(ConsoleAuthenticationRequest rhAuthReq, AuthenticationRequestContext authenticationRequestContext) {
+
+        RoutingContext routingContext = request().getCurrent();
+
         if (!isRbacEnabled) {
             Principal principal;
             String xH = rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER);
@@ -84,6 +92,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                 } catch (IllegalIdentityHeaderException e) {
                     return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
                 }
+                routingContext.put("x-rh-rbac-org-id", ((RhIdentity) identity).getOrgId());
             } else {
                 principal = ConsolePrincipal.noIdentity();
             }
@@ -146,6 +155,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                                                     if (rbacRaw.canWrite("integrations", "endpoints")) {
                                                         builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
                                                     }
+                                                    routingContext.put("x-rh-rbac-org-id", ((RhIdentity) identity).getOrgId());
                                                     return builder.build();
                                                 });
                                     } else if (identity instanceof TurnpikeSamlIdentity) {
@@ -178,5 +188,12 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
         ConsoleIdentity identity = Json.decodeValue(xRhDecoded, ConsoleIdentityWrapper.class).getIdentity();
         identity.rawIdentity = xRhIdHeader;
         return identity;
+    }
+
+    private CurrentVertxRequest request() {
+        if (currentVertxRequest == null) {
+            currentVertxRequest = CDI.current().select(CurrentVertxRequest.class).get();
+        }
+        return currentVertxRequest;
     }
 }
