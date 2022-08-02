@@ -39,7 +39,7 @@ public class MicrometerAssertionHelper {
         }
     }
 
-    public void saveCounterValueWithTagsBeforeTest(String counterName, String tagKeys) {
+    public void saveCounterValueWithTagsBeforeTest(String counterName, String... tagKeys) {
         Collection<Counter> counters = registry.find(counterName)
             .tagKeys(tagKeys)
                     .counters();

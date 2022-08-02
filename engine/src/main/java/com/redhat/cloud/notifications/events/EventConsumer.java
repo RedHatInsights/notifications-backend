@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.OrgIdHelper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
@@ -65,14 +64,10 @@ public class EventConsumer {
     @Inject
     FeatureFlipper featureFlipper;
 
-    @Inject
-    OrgIdHelper orgIdHelper;
-
     private Counter rejectedCounter;
     private Counter processingErrorCounter;
     private Counter duplicateCounter;
     private Counter processingExceptionCounter;
-    private Counter missingOrgIdCounter;
 
     @PostConstruct
     public void init() {
@@ -80,7 +75,6 @@ public class EventConsumer {
         processingErrorCounter = registry.counter(PROCESSING_ERROR_COUNTER_NAME);
         processingExceptionCounter = registry.counter(PROCESSING_EXCEPTION_COUNTER_NAME);
         duplicateCounter = registry.counter(DUPLICATE_COUNTER_NAME);
-        missingOrgIdCounter = registry.counter(MISSING_ORG_ID);
     }
 
     @Incoming(INGRESS_CHANNEL)
@@ -117,9 +111,14 @@ public class EventConsumer {
             appName[0] = action.getApplication();
             String eventTypeName = action.getEventType();
             Log.infof("Processing received action: (accountId=%s, orgId=%s) %s/%s/%s", action.getAccountId(), action.getOrgId(), bundleName[0], appName[0], eventTypeName);
-            if (featureFlipper.isUseOrgId() && (action.getOrgId() == null || action.getOrgId().isBlank())) {
+            if (action.getOrgId() == null || action.getOrgId().isBlank()) {
+                String bundle = bundleName[0] == null ? "" : bundleName[0];
+                String application = appName[0] == null ? "" : appName[0];
+                Counter missingOrgIdCounter = registry.counter(MISSING_ORG_ID, "bundle", bundle, "application", application);
                 missingOrgIdCounter.increment();
-                Log.info("The org ID migration is enabled but the orgId field is missing or blank in the action");
+                if (featureFlipper.isUseOrgId()) {
+                    Log.info("The org ID migration is enabled but the orgId field is missing or blank in the action");
+                }
             }
             /*
              * Step 2

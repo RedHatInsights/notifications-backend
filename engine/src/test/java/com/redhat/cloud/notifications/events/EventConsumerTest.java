@@ -101,9 +101,9 @@ public class EventConsumerTest {
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME,
-                MISSING_ORG_ID
+                MESSAGE_ID_MISSING_COUNTER_NAME
         );
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(MISSING_ORG_ID, "application", "bundle");
         micrometerAssertionHelper.removeDynamicTimer(CONSUMED_TIMER_NAME);
     }
 
@@ -177,7 +177,7 @@ public class EventConsumerTest {
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
         assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
-        micrometerAssertionHelper.assertCounterIncrement(MISSING_ORG_ID, 1);
+        micrometerAssertionHelper.assertCounterIncrement(MISSING_ORG_ID, 1, "application", APP, "bundle", BUNDLE);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
