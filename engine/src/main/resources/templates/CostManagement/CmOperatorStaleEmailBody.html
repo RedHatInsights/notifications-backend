@@ -1,5 +1,5 @@
 {#include CostManagement/insightsEmailBody}
-{#content-title}Missing Cost Model - {action.context.source_name}{/content-title}
+{#content-title}Cost Management has not received data for cluster - {action.context.source_name}{/content-title}
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
@@ -32,10 +32,10 @@
             <tr>
                 <td class="rh-content__block">
                     <p>
-                        Openshift source {action.context.source_name} has no assigned cost model.
+                        Openshift source {action.context.resource_display_name} has not received any payloads in the last 3 or more days.
                     </p>
                     <p>
-                        Please go to the <a class="rh-url" href="{environment.url}/openshift/cost-management/cost-models/">Cost Models page</a> and assign your source to a cost model.
+                        Please go to <a class="rh-url" href="{environment.url}/settings/sources/detail/{action.context.source_id}">{action.context.source_name} and confirm whether it should be recieving data or not. </a> If the source/cluster no longer exists consider removing the source or pausing its data collection.
                     </p>
                 </td>
             </tr>

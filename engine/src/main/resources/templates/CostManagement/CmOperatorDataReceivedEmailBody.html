@@ -1,5 +1,5 @@
 {#include CostManagement/insightsEmailBody}
-{#content-title}Missing Cost Model - {action.context.source_name}{/content-title}
+{#content-title}Cost Management has received data from source - {action.context.source_name}{/content-title}
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
@@ -32,10 +32,7 @@
             <tr>
                 <td class="rh-content__block">
                     <p>
-                        Openshift source {action.context.source_name} has no assigned cost model.
-                    </p>
-                    <p>
-                        Please go to the <a class="rh-url" href="{environment.url}/openshift/cost-management/cost-models/">Cost Models page</a> and assign your source to a cost model.
+                        Openshift source {action.context.source_name} has received a new payload and processing should begin shortly.
                     </p>
                 </td>
             </tr>
