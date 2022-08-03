@@ -86,7 +86,7 @@ public class CostManagement implements EmailTemplate {
 
         public static native TemplateInstance CostModelRemoveEmailBody();
 
-        public static native TemplateInstance CmOperatorStaleTitle();
+        public static native TemplateInstance CmOperatorStaleEmailTitle();
 
         public static native TemplateInstance CmOperatorStaleEmailBody();
 
