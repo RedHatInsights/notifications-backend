@@ -1,5 +1,5 @@
 {#include CostManagement/insightsEmailBody}
-{#content-title}Missing Cost Model - {action.context.source_name}{/content-title}
+{#content-title}Cost Management has processed data from cluster - {action.context.source_name}{/content-title}
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
@@ -32,10 +32,10 @@
             <tr>
                 <td class="rh-content__block">
                     <p>
-                        Openshift source {action.context.source_name} has no assigned cost model.
+                        Cost management has completed processing for openshift source {action.context.source_name}.
                     </p>
                     <p>
-                        Please go to the <a class="rh-url" href="{environment.url}/openshift/cost-management/cost-models/">Cost Models page</a> and assign your source to a cost model.
+                        Please visit <a class="rh-url" href="{environment.url}/openshift/cost-management/ocp/"> to see your processed data in the available dashboards. </a>
                     </p>
                 </td>
             </tr>

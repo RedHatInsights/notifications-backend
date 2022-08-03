@@ -7,39 +7,59 @@ import io.quarkus.qute.TemplateInstance;
 // Name needs to be "CostManagement" to read templates from resources/templates/CostManagement
 public class CostManagement implements EmailTemplate {
 
-    private static final String MISSING_COST_MODEL = "missing-cost-model";
-
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
-        if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals(MISSING_COST_MODEL)) {
+        switch (eventType) {
+            case "missing-cost-model":
                 return Templates.MissingCostModelEmailTitle();
-            }
+            case "cost-model-create":
+                return Templates.CostModelCreateEmailTitle();
+            case "cost-model-update":
+                return Templates.CostModelUpdateEmailTitle();
+            case "ccost-model-remove":
+                return Templates.CostModelRemoveEmailTitle();
+            case "cm-operator-stale":
+                return Templates.CmOperatorStaleEmailTitle();
+            case "cm-operator-data-processed":
+                return Templates.CmOperatorDataProcessedEmailTitle();
+            case "cm-operator-data-received":
+                return Templates.CmOperatorDataReceivedEmailTitle();
+            default:
+                throw new UnsupportedOperationException(String.format(
+                    "No email title template for CostManagement event_type: %s found.",
+                    eventType
+                ));
         }
-
-        throw new UnsupportedOperationException(String.format(
-                "No email title template for CostManagement event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
     }
 
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
-        if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals(MISSING_COST_MODEL)) {
+        switch (eventType) {
+            case "missing-cost-model":
                 return Templates.MissingCostModelEmailBody();
-            }
+            case "cost-model-create":
+                return Templates.CostModelCreateEmailBody();
+            case "cost-model-update":
+                return Templates.CostModelUpdateEmailBody();
+            case "ccost-model-remove":
+                return Templates.CostModelRemoveEmailBody();
+            case "cm-operator-stale":
+                return Templates.CmOperatorStaleEmailBody();
+            case "cm-operator-data-processed":
+                return Templates.CmOperatorDataProcessedEmailBody();
+            case "cm-operator-data-received":
+                return Templates.CmOperatorDataReceivedEmailBody();
+            default:
+                throw new UnsupportedOperationException(String.format(
+                    "No email title template for CostManagement event_type: %s found.",
+                    eventType
+                ));
         }
-
-        throw new UnsupportedOperationException(String.format(
-                "No email body template for CostManagement event_type: %s and EmailSubscription: %s found.",
-                eventType, type
-        ));
     }
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return eventType.equals(MISSING_COST_MODEL) && type == EmailSubscriptionType.INSTANT;
+        return true;
     }
 
     @Override
@@ -53,6 +73,30 @@ public class CostManagement implements EmailTemplate {
         public static native TemplateInstance MissingCostModelEmailTitle();
 
         public static native TemplateInstance MissingCostModelEmailBody();
+
+        public static native TemplateInstance CostModelCreateEmailTitle();
+
+        public static native TemplateInstance CostModelCreateEmailBody();
+
+        public static native TemplateInstance CostModelUpdateEmailTitle();
+
+        public static native TemplateInstance CostModelUpdateEmailBody();
+
+        public static native TemplateInstance CostModelRemoveEmailTitle();
+
+        public static native TemplateInstance CostModelRemoveEmailBody();
+
+        public static native TemplateInstance CmOperatorStaleEmailTitle();
+
+        public static native TemplateInstance CmOperatorStaleEmailBody();
+
+        public static native TemplateInstance CmOperatorDataProcessedEmailTitle();
+
+        public static native TemplateInstance CmOperatorDataProcessedEmailBody();
+
+        public static native TemplateInstance CmOperatorDataReceivedEmailTitle();
+
+        public static native TemplateInstance CmOperatorDataReceivedEmailBody();
     }
 
 }
