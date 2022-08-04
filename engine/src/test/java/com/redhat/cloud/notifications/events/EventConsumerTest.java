@@ -171,7 +171,7 @@ public class EventConsumerTest {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
         action.setOrgId(null);
-        MockServerConfig.mockBopOrgIdTranslation(action.getAccountId());
+        MockServerConfig.mockBopOrgIdTranslation();
         String payload = serializeAction(action);
         UUID messageId = UUID.randomUUID();
         Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);

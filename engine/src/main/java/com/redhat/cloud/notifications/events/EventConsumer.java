@@ -123,7 +123,7 @@ public class EventConsumer {
                 if (featureFlipper.isUseOrgId()) {
                     Log.info("The org ID migration is enabled but the orgId field is missing or blank in the action");
                 }
-                if (featureFlipper.isTranslateAccountIdToOrgId()) {
+                if (featureFlipper.isTranslateAccountIdToOrgId() && action.getAccountId() != null && !action.getAccountId().isBlank()) {
                     try {
                         String orgId = orgIdTranslator.translate(action.getAccountId());
                         action.setOrgId(orgId);
