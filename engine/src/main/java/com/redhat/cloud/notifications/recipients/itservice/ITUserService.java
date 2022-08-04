@@ -15,7 +15,7 @@ import java.util.List;
 public interface ITUserService {
 
     @POST
-    @Path("/findUsers")
+    @Path("/v2/findUsers")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     List<ITUserResponse> getUsers(ITUserRequest itUserRequest);
