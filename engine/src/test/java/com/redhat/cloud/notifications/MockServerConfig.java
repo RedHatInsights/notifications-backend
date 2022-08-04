@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.openbridge.Bridge;
+import io.vertx.core.json.JsonObject;
 import org.mockserver.model.ClearType;
 
-import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
@@ -72,15 +72,17 @@ public class MockServerConfig {
     }
 
     // TODO NOTIF-744 Remove this as soon as all onboarded apps include the org_id field in their Kafka messages.
-    public static void mockBopOrgIdTranslation(String accountId) {
+    public static void mockBopOrgIdTranslation() {
+        JsonObject response = new JsonObject();
+        response.put("id", DEFAULT_ORG_ID);
+
         getClient()
                 .when(request()
                         .withMethod("POST")
-                        .withPath("/v2/accountMapping/orgIds")
-                        .withBody(Json.encode(List.of(accountId)))
+                        .withPath("/v2/findAccount")
                 )
                 .respond(response()
                         .withHeader("Content-Type", "application/json")
-                        .withBody(Json.encode(Map.of(accountId, DEFAULT_ORG_ID))));
+                        .withBody(response.toString()));
     }
 }
