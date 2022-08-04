@@ -17,7 +17,7 @@ public class OrgIdTranslator {
 
     @CacheResult(cacheName = "account-id-to-org-id")
     public String translate(String accountId) {
-        Log.debugf("Calling BOP to translate EAN %s to an org ID", accountId);
+        Log.debugf("Calling IT users service to translate EAN %s to an org ID", accountId);
         OrgIdRequestBy by = new OrgIdRequestBy();
         by.ebsAccountNumber = accountId;
         OrgIdRequest request = new OrgIdRequest();
@@ -27,7 +27,7 @@ public class OrgIdTranslator {
             Log.debugf("EAN %s translated to org ID %s", accountId, response.id);
             return response.id;
         } else {
-            Log.debugf("BOP did not know EAN %s", accountId);
+            Log.debugf("IT users service did not know EAN %s", accountId);
             return null;
         }
     }
