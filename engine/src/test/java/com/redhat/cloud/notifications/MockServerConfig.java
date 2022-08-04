@@ -3,9 +3,11 @@ package com.redhat.cloud.notifications;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import org.mockserver.model.ClearType;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.RegexBody.regex;
@@ -67,5 +69,18 @@ public class MockServerConfig {
         getClient().clear(request()
                         .withPath("/api/smartevents_mgmt/v1/bridges/" + bridge.getId() + "/processors"),
                 ClearType.EXPECTATIONS);
+    }
+
+    // TODO NOTIF-744 Remove this as soon as all onboarded apps include the org_id field in their Kafka messages.
+    public static void mockBopOrgIdTranslation(String accountId) {
+        getClient()
+                .when(request()
+                        .withMethod("POST")
+                        .withPath("/v2/accountMapping/orgIds")
+                        .withBody(Json.encode(List.of(accountId)))
+                )
+                .respond(response()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(Json.encode(Map.of(accountId, DEFAULT_ORG_ID))));
     }
 }

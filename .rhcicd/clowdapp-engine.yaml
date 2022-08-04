@@ -103,6 +103,8 @@ objects:
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
         - name: NOTIFICATIONS_USE_ORG_ID
           value: ${NOTIFICATIONS_USE_ORG_ID}
+        - name: NOTIFICATIONS_TRANSLATE_ACCOUNT_ID_TO_ORG_ID
+          value: ${NOTIFICATIONS_TRANSLATE_ACCOUNT_ID_TO_ORG_ID}
         - name: PROCESSOR_EMAIL_BOP_APITOKEN
           valueFrom:
             secretKeyRef:
@@ -280,4 +282,6 @@ parameters:
   description: Enable Sentry (or not)
   value: "false"
 - name: NOTIFICATIONS_USE_ORG_ID
+  value: "false"
+- name: NOTIFICATIONS_TRANSLATE_ACCOUNT_ID_TO_ORG_ID
   value: "false"

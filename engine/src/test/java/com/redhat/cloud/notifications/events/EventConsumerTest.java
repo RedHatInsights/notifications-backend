@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
@@ -165,10 +166,12 @@ public class EventConsumerTest {
 
     void testValidPayloadWithoutOrgId() {
         featureFlipper.setUseOrgId(true);
+        featureFlipper.setTranslateAccountIdToOrgId(true);
 
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction();
         action.setOrgId(null);
+        MockServerConfig.mockBopOrgIdTranslation(action.getAccountId());
         String payload = serializeAction(action);
         UUID messageId = UUID.randomUUID();
         Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
@@ -186,10 +189,13 @@ public class EventConsumerTest {
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME
         );
+        // The action org ID is set by OrgIdTranslator after the Kafka message is received.
+        action.setOrgId(DEFAULT_ORG_ID);
         verifyExactlyOneProcessing(eventType, payload, action);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(messageId);
 
         featureFlipper.setUseOrgId(false);
+        featureFlipper.setTranslateAccountIdToOrgId(false);
     }
 
     @Test
@@ -471,6 +477,7 @@ public class EventConsumerTest {
         ArgumentCaptor<Event> argumentCaptor = ArgumentCaptor.forClass(Event.class);
         verify(endpointProcessor, times(1)).process(argumentCaptor.capture());
         assertEquals(DEFAULT_ACCOUNT_ID, argumentCaptor.getValue().getAccountId());
+        assertEquals(DEFAULT_ORG_ID, argumentCaptor.getValue().getOrgId());
         assertEquals(eventType, argumentCaptor.getValue().getEventType());
         assertEquals(payload, argumentCaptor.getValue().getPayload());
         assertEquals(action, argumentCaptor.getValue().getAction());

@@ -85,5 +85,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         props.put("quarkus.rest-client.it-s2s.url", getMockServerUrl());
         props.put("quarkus.rest-client.ob.url", getMockServerUrl());
         props.put("quarkus.rest-client.kc.url", getMockServerUrl());
+        // TODO NOTIF-744 Remove this as soon as all onboarded apps include the org_id field in their Kafka messages.
+        props.put("quarkus.rest-client.bop.url", getMockServerUrl());
     }
 }
