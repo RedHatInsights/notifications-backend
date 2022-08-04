@@ -57,6 +57,10 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.events.use-org-id", defaultValue = "false")
     boolean useOrgIdInEvents;
 
+    // TODO NOTIF-744 Remove this as soon as all onboarded apps include the org_id field in their Kafka messages.
+    @ConfigProperty(name = "notifications.translate-account-id-to-org-id", defaultValue = "false")
+    boolean translateAccountIdToOrgId;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -65,6 +69,7 @@ public class FeatureFlipper {
         Log.infof("The Kafka outage detector is %s", kafkaConsumedTotalCheckerEnabled ? "enabled" : "disabled");
         Log.infof("The org ID migration is %s", useOrgId ? "enabled" : "disabled");
         Log.infof("The org ID migration is %s in the events API", useOrgIdInEvents ? "enabled" : "disabled");
+        Log.infof("The account ID translation to org ID is %s", translateAccountIdToOrgId ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -109,6 +114,15 @@ public class FeatureFlipper {
     public void setKafkaConsumedTotalCheckerEnabled(boolean kafkaConsumedTotalCheckerEnabled) {
         // It's ok to override this config value at runtime.
         this.kafkaConsumedTotalCheckerEnabled = kafkaConsumedTotalCheckerEnabled;
+    }
+
+    public boolean isTranslateAccountIdToOrgId() {
+        return translateAccountIdToOrgId;
+    }
+
+    public void setTranslateAccountIdToOrgId(boolean translateAccountIdToOrgId) {
+        checkTestLaunchMode();
+        this.translateAccountIdToOrgId = translateAccountIdToOrgId;
     }
 
     /**
