@@ -16,7 +16,7 @@ public class CostManagement implements EmailTemplate {
                 return Templates.CostModelCreateEmailTitle();
             case "cost-model-update":
                 return Templates.CostModelUpdateEmailTitle();
-            case "ccost-model-remove":
+            case "cost-model-remove":
                 return Templates.CostModelRemoveEmailTitle();
             case "cm-operator-stale":
                 return Templates.CmOperatorStaleEmailTitle();
@@ -41,7 +41,7 @@ public class CostManagement implements EmailTemplate {
                 return Templates.CostModelCreateEmailBody();
             case "cost-model-update":
                 return Templates.CostModelUpdateEmailBody();
-            case "ccost-model-remove":
+            case "cost-model-remove":
                 return Templates.CostModelRemoveEmailBody();
             case "cm-operator-stale":
                 return Templates.CmOperatorStaleEmailBody();
