@@ -24,6 +24,7 @@ public class EmailTemplateFactory {
     private static final String VULNERABILITY = "vulnerability";
     private static final String EDGE_MANAGEMENT = "edge-management";
     private static final String PATCH = "patch";
+    private static final String MALWARE_DETECTION = "malware-detection";
 
     private static final String BUNDLE_ANSIBLE = "ansible";
     private static final String APP_ANSIBLE_REPORTS = "reports";
@@ -45,6 +46,8 @@ public class EmailTemplateFactory {
                     return new EdgeManagement();
                 case PATCH:
                     return new Patch();
+                case MALWARE_DETECTION:
+                    return new MalwareDetection();
                 default:
                     break;
             }
