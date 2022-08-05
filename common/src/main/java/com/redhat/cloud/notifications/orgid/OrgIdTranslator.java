@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.events.orgid;
+package com.redhat.cloud.notifications.orgid;
 
 import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
