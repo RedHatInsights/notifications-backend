@@ -11,6 +11,7 @@ import {
     Title
 } from '@patternfly/react-core';
 import * as React from 'react';
+import { ChangeHandler } from 'react-monaco-editor';
 
 import { useUserPermissions } from '../app/PermissionContext';
 import { useCreateTemplate } from '../services/EmailTemplates/CreateTemplate';
@@ -73,7 +74,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
     const newTemplate = useCreateTemplate();
     const [ templates, setTemplates ] = React.useState<Partial<Template>>();
 
-    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<ChangeHandler>) => {
         const target = event.target as HTMLInputElement;
         setTemplates(prev => ({ ...prev, [target.name]: target.value }));
     };
@@ -126,6 +127,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                             code={ defaultContentTemplate }
                             value={ templates?.data}
                             isMinimapVisible={ false }
+                            onChange={ handleChange }
                             height="300px" />
                     </FormGroup>
                     <FormGroup>

@@ -9,14 +9,15 @@ export type CreateTemplate = {
     description: string;
 }
 
-const actionCreator = (params: CreateTemplate) => Operations.TemplateResourceCreateTemplate.actionCreator({
-    body: {
-        id: params.id,
-        data: params.data,
-        name: params.name,
-        description: params.description
-    }
-});
+const actionCreator = (params: CreateTemplate) => 
+    Operations.TemplateResourceCreateTemplate.actionCreator({
+        body: {
+            id: params.id,
+            data: params.data,
+            name: params.name,
+            description: params.description
+        }
+    });
 
 export const useCreateTemplate = () => {
     return useMutation(actionCreator);
