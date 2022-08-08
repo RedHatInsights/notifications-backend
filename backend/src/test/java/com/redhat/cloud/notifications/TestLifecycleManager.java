@@ -40,7 +40,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     }
 
     void setupPostgres(Map<String, String> props) throws SQLException {
-        postgreSQLContainer = new PostgreSQLContainer<>("postgres");
+        postgreSQLContainer = new PostgreSQLContainer<>("postgres:12");
         postgreSQLContainer.start();
         // Now that postgres is started, we need to get its URL and tell Quarkus
         // quarkus.datasource.driver=io.opentracing.contrib.jdbc.TracingDriver
@@ -52,7 +52,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         props.put("quarkus.datasource.db-kind", "postgresql");
 
         // Install the pgcrypto extension
-        // Could perhas be done by a migration with a lower number than the 'live' ones.
+        // Could perhaps be done by a migration with a lower number than the 'live' ones.
         PGSimpleDataSource ds = new PGSimpleDataSource();
         ds.setURL(jdbcUrl);
         Connection connection = ds.getConnection("test", "test");

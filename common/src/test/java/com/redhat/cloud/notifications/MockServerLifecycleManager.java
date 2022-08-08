@@ -29,6 +29,8 @@ public class MockServerLifecycleManager {
     }
 
     public static void stop() {
-        mockServer.stop();
+        if (mockServer != null) {
+            mockServer.stop();
+        }
     }
 }
