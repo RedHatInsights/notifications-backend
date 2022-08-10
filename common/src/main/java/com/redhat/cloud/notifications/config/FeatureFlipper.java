@@ -51,12 +51,20 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.kafka-consumed-total-checker.enabled", defaultValue = "false")
     boolean kafkaConsumedTotalCheckerEnabled;
 
+    @ConfigProperty(name = "notifications.use-default-template", defaultValue = "false")
+    boolean useDefaultTemplate;
+
+    @ConfigProperty(name = "notifications.use-templates-from-db", defaultValue = "false")
+    boolean useTemplatesFromDb;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
         Log.infof("The RHOSE (OpenBridge) integration is %s", obEnabled ? "enabled" : "disabled");
         Log.infof("The actions reinjection in case of Camel integration error is %s", enableReInject ? "enabled" : "disabled");
         Log.infof("The Kafka outage detector is %s", kafkaConsumedTotalCheckerEnabled ? "enabled" : "disabled");
+        Log.infof("The use of default templates is %s", useDefaultTemplate ? "enabled" : "disabled");
+        Log.infof("The use of templates from database is %s", useTemplatesFromDb ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -83,6 +91,24 @@ public class FeatureFlipper {
     public void setKafkaConsumedTotalCheckerEnabled(boolean kafkaConsumedTotalCheckerEnabled) {
         // It's ok to override this config value at runtime.
         this.kafkaConsumedTotalCheckerEnabled = kafkaConsumedTotalCheckerEnabled;
+    }
+
+    public boolean isUseDefaultTemplate() {
+        return useDefaultTemplate;
+    }
+
+    public void setUseDefaultTemplate(boolean useDefaultTemplate) {
+        checkTestLaunchMode();
+        this.useDefaultTemplate = useDefaultTemplate;
+    }
+
+    public boolean isUseTemplatesFromDb() {
+        return useTemplatesFromDb;
+    }
+
+    public void setUseTemplatesFromDb(boolean useTemplatesFromDb) {
+        checkTestLaunchMode();
+        this.useTemplatesFromDb = useTemplatesFromDb;
     }
 
     /**

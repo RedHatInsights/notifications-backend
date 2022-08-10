@@ -1,0 +1,1 @@
+{action.context.system_check_in.toUtcFormat()} - {action.bundle}/{action.application}/{action.eventType} triggered

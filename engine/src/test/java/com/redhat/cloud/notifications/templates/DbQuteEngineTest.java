@@ -1,14 +1,19 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
+import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
+import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.qute.TemplateException;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,12 +22,15 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.templates.TemplateService.USE_TEMPLATES_FROM_DB_KEY;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -39,14 +47,17 @@ public class DbQuteEngineTest {
     @Inject
     StatelessSessionFactory statelessSessionFactory;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @BeforeEach
     void beforeEach() {
-        System.setProperty(USE_TEMPLATES_FROM_DB_KEY, "true");
+        featureFlipper.setUseTemplatesFromDb(true);
     }
 
     @AfterEach
     void afterEach() {
-        System.clearProperty(USE_TEMPLATES_FROM_DB_KEY);
+        featureFlipper.setUseTemplatesFromDb(false);
     }
 
     @Test
@@ -160,6 +171,38 @@ public class DbQuteEngineTest {
                 templateInstance
                 .data("payload", payload)
                 .render()
+        );
+    }
+
+    @Test
+    void testActionToJsonExtension() throws IOException {
+        Template template = createTemplate("action-to-json-template", "{action.toPrettyJson()}");
+        Action action = new Action.ActionBuilder()
+                .withOrgId("123456")
+                .withEventType("triggered")
+                .withApplication("policies")
+                .withBundle("rhel")
+                .withTimestamp(LocalDateTime.of(2022, 8, 24, 13, 30, 0, 0))
+                .withContext(
+                        new Context.ContextBuilder()
+                        .withAdditionalProperty("foo", "im foo")
+                        .withAdditionalProperty("bar", Map.of("baz", "im baz"))
+                        .build()
+                )
+                .withEvents(List.of(
+                        new Event.EventBuilder()
+                                .withPayload(new Payload())
+                                .build()
+                ))
+                .build();
+        TemplateInstance templateInstance = templateService.compileTemplate(template.getData(), template.getName());
+
+        InputStream expectedInputStream = MockServerConfig.class.getClassLoader().getResourceAsStream("qute/expected-pretty-json-action.json");
+        String expected = IOUtils.toString(expectedInputStream, UTF_8).trim();
+        assertEquals(expected,
+                templateInstance
+                        .data("action", action)
+                        .render()
         );
     }
 

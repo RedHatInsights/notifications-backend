@@ -1,12 +1,29 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@QuarkusTest
 class EmailTemplateFactoryTest {
 
-    EmailTemplateFactory testee = new EmailTemplateFactory();
+    @Inject
+    FeatureFlipper featureFlipper;
+
+    @Inject
+    EmailTemplateFactory testee;
+
+    @BeforeEach
+    void beforeEach() {
+        featureFlipper.setUseDefaultTemplate(false);
+    }
 
     @Test
     void shouldReturnNotSupportedEmailTemplate() {
@@ -55,5 +72,24 @@ class EmailTemplateFactoryTest {
     void shouldReturnRbac() {
         final EmailTemplate emailTemplate = testee.get("console", "rbac");
         assertTrue(emailTemplate instanceof Rbac);
+    }
+
+    @Test
+    void shouldUseDefaultWhenEnabledAndNotFound() {
+        featureFlipper.setUseDefaultTemplate(true);
+        EmailTemplate emailTemplate = testee.get("foo", "bar");
+        assertTrue(emailTemplate instanceof Default);
+        Default defaultEmailTemplate = (Default) emailTemplate;
+        assertTrue(defaultEmailTemplate.wrappedEmailTemplate instanceof EmailTemplateNotSupported);
+
+        assertTrue(emailTemplate.isSupported("any", EmailSubscriptionType.INSTANT));
+        assertTrue(emailTemplate.isEmailSubscriptionSupported(EmailSubscriptionType.INSTANT));
+
+        assertFalse(emailTemplate.isSupported("any", EmailSubscriptionType.DAILY));
+        assertFalse(emailTemplate.isEmailSubscriptionSupported(EmailSubscriptionType.DAILY));
+
+        featureFlipper.setUseDefaultTemplate(false);
+        emailTemplate = testee.get("foo", "bar");
+        assertTrue(emailTemplate instanceof EmailTemplateNotSupported);
     }
 }

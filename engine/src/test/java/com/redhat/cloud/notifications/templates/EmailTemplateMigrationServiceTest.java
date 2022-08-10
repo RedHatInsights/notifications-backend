@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
@@ -24,7 +25,6 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
-import static com.redhat.cloud.notifications.templates.TemplateService.USE_TEMPLATES_FROM_DB_KEY;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,14 +49,17 @@ public class EmailTemplateMigrationServiceTest {
     @Inject
     StatelessSessionFactory statelessSessionFactory;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @BeforeEach
     void beforeEach() {
-        System.setProperty(USE_TEMPLATES_FROM_DB_KEY, "true");
+        featureFlipper.setUseTemplatesFromDb(true);
     }
 
     @AfterEach
     void afterEach() {
-        System.clearProperty(USE_TEMPLATES_FROM_DB_KEY);
+        featureFlipper.setUseTemplatesFromDb(false);
     }
 
     @Test
