@@ -11,8 +11,6 @@ import {
     Title
 } from '@patternfly/react-core';
 import * as React from 'react';
-import { ChangeHandler } from 'react-monaco-editor';
-
 import { useUserPermissions } from '../app/PermissionContext';
 import { useCreateTemplate } from '../services/EmailTemplates/CreateTemplate';
 import { Template } from '../types/Notifications';
@@ -74,9 +72,13 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
     const newTemplate = useCreateTemplate();
     const [ templates, setTemplates ] = React.useState<Partial<Template>>();
 
-    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<ChangeHandler>) => {
+    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
         const target = event.target as HTMLInputElement;
         setTemplates(prev => ({ ...prev, [target.name]: target.value }));
+    };
+
+    const handleCodeChange = (value: string) => {
+        setTemplates(prev => ({ ...prev, content: value }));
     };
 
     const handleSubmit = React.useCallback((template) => {
@@ -127,7 +129,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                             code={ defaultContentTemplate }
                             value={ templates?.data}
                             isMinimapVisible={ false }
-                            onChange={ handleChange }
+                            onChange={ handleCodeChange }
                             height="300px" />
                     </FormGroup>
                     <FormGroup>
@@ -135,6 +137,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                         <CodeEditor
                             isLineNumbersVisible
                             isMinimapVisible={ false }
+                            onChange={ handleCodeChange }
                             code={ defaultPayload }
                             value={ templates?.data}
                             height="300px"
