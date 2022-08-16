@@ -114,7 +114,7 @@ public class EventConsumer {
             bundleName[0] = action.getBundle();
             appName[0] = action.getApplication();
             String eventTypeName = action.getEventType();
-            Log.infof("Processing received action: (accountId=%s, orgId=%s) %s/%s/%s", action.getAccountId(), action.getOrgId(), bundleName[0], appName[0], eventTypeName);
+            Log.infof("Processing received action (id=%s): (accountId=%s, orgId=%s) %s/%s/%s", action.getId(), action.getAccountId(), action.getOrgId(), bundleName[0], appName[0], eventTypeName);
             if (action.getOrgId() == null || action.getOrgId().isBlank()) {
                 String bundle = bundleName[0] == null ? "" : bundleName[0];
                 String application = appName[0] == null ? "" : appName[0];
