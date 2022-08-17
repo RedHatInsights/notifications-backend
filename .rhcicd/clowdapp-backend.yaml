@@ -300,9 +300,19 @@ objects:
         volumes:
         - name: rds-client-ca
           emptyDir: {}
+        - name: keystore
+          secret:
+            secretName: it-services
+            items:
+              - key: keystore.jks
+                path: clientkeystore.jks
+            defaultMode: 420
         volumeMounts:
         - name: rds-client-ca
           mountPath: /tmp
+        - name: keystore
+          readOnly: true
+          mountPath: /mnt/secrets
         readinessProbe:
           httpGet:
             path: /health/ready
@@ -366,6 +376,18 @@ objects:
           value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
           value: ${QUARKUS_REST_CLIENT_KC_URL}
+        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE
+          value: /mnt/secrets/clientkeystore.jks
+        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: it-services
+              key: it-services-keystorepassword
+        - name: QUARKUS_REST_CLIENT_IT_S2S_URL
+          valueFrom:
+            secretKeyRef:
+              name: it-services
+              key: url
 - apiVersion: v1
   kind: ConfigMap
   metadata:
