@@ -8,15 +8,6 @@
             <!-- Content block -->
             <tr>
                 <td>
-                    <!-- start 50 col -->
-                    <!--[if (gte mso 9)|(IE)]>
-                    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-spacing:0;" >
-                        <tr>
-
-                            <td valign="top" style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;">
-                    <![endif]-->
-
-                    <!-- start 50 col -->
                     <div>
                         <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                             <tbody>
@@ -51,12 +42,6 @@
                             </tbody>
                         </table>
                     </div>
-                    <!-- end 50 col -->
-                    <!--[if (gte mso 9)|(IE)]>
-                    </td>
-                    </tr>
-                    </table>
-                    <![endif]-->
                 </td>
             </tr>
             <!-- end content block -->
@@ -74,7 +59,7 @@
             <!-- Content block -->
             <tr>
                 <td class="rh-content__block">
-                    <table width:="" 100%;="" class="rh-data-table rh-m-bordered">
+                    <table class="rh-data-table rh-m-bordered">
                         <thead>
                         <tr>
                             <th>Deactivated recommendations</th>
@@ -125,12 +110,28 @@
                         Hi {user.firstName},
                         <br>
                         <br>
-                        Certain recommendations that were affecting your systems have been recently deactivated and hence are no longer affecting your systems.
+                        These recommendations have been recently deactivated by Red Hat Insights and are no longer affecting your systems.
+                        <br>
                     </p>
                 </td>
             </tr>
             <!-- end content block -->
 
+            <!-- Button for navigating to the Insights UI -->
+              <tr>
+                <td class="rh-content__block" style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; max-width: 100%; padding-top: 0; padding-right: 24px; padding-bottom: 24px; padding-left: 24px; overflow: hidden; background-color: #ffffff;">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" class="rh-button-table" style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; width: auto; background: none !important; background-color: transparent;">
+                    <tr style="-ms-text-size-adjust: 100%;">
+                      <td class="rh-cta-link" align="center" style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; display: block; padding-top: 12px; padding-right: 24px; padding-bottom: 12px; padding-left: 24px; background-color: #0066cc !important; border-radius: 3px; text-decoration: none;">
+                        <a target="_blank" href="{environment.url}/insights/advisor" style="-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none !important; color: #fff !important; font-weight: 400; font-size: 18px;">
+                          <span>Go to Insights Advisor</span>
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <!-- end button -->
             </tbody>
         </table>
     </td>

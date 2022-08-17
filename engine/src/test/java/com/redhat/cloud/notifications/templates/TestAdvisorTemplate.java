@@ -2,10 +2,13 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -147,11 +150,15 @@ public class TestAdvisorTemplate {
         assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 1 deactivated recommendation\n", result, "Title contains the number of reports created");
     }
 
+    @Inject
+    Environment environment;
+
     @Test
     public void testInstantEmailBodyForDeactivatedRecommendation() {
         Action action = TestHelpers.createAdvisorAction("123456", "deactivated-recommendation");
         final String result = Advisor.Templates.deactivatedRecommendationInstantEmailBody()
                 .data("action", action).data("user", Map.of("firstName", "Testing"))
+                .data("environment", environment)
                 .render();
 
         action.getEvents().forEach(event -> {
