@@ -156,10 +156,18 @@ objects:
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
           value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
+          value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD}
+        - name: QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE
+          value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE}
         - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
           value: ${CLOUDWATCH_ENABLED}
         - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
           value: ${HOSTNAME}
+        - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
+          value: ${QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE}
+        - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT
+          value: ${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY
           value: ${SENTRY_ENABLED}
         - name: QUARKUS_LOG_SENTRY_DSN
@@ -248,6 +256,15 @@ parameters:
 - name: OB_TOKEN_CLIENT_SECRET
   description: Client Secret to get a Token from SSO
   value: ob.token.client.secret
+- name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
+  description: Period between two batch executions. Defaults to 5s.
+  value: 5s
+- name: QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE
+  description: Number of log events sent to CloudWatch per batch. Defaults to 10,000 which is the maximum number of log events per batch allowed by CloudWatch.
+  value: "10000"
+- name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
+  description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
+  value: "100000"
 - name: QUARKUS_REST_CLIENT_OB_URL
   description: URL of the OpenBridge fleet manager
   value: "http://addMe"
