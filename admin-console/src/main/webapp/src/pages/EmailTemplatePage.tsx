@@ -123,7 +123,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                             onChange={ handleChange }
                         /></FormGroup>
                     <FormGroup>
-                        <Title headingLevel="h2">Data</Title>
+                        <Title headingLevel="h2">Content</Title>
                         <CodeEditor
                             isLineNumbersVisible
                             code={ defaultContentTemplate }
