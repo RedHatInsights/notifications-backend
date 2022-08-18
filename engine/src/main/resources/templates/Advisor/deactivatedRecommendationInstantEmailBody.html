@@ -1,6 +1,7 @@
 {#include Advisor/insightsEmailBody}
 {#content-title}Red Hat Enterprise Linux - Advisor Instant Notification - {action.timestamp.toUtcFormat()}{/content-title}
 {#content-body}
+{#let recs=action.events.size()}
 <tr>
     <td class="rh-body rh-multi-column">
         <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -62,7 +63,7 @@
                     <table class="rh-data-table rh-m-bordered">
                         <thead>
                         <tr>
-                            <th>Deactivated recommendations</th>
+                            <th>Deactivated recommendation{#if recs > 1}s{/if}</th>
                             <th>Total Risk</th>
                             <th>Affected Systems</th>
                             <th>Deactivation Reason</th>
@@ -74,13 +75,13 @@
                                 <td>{it.payload.rule_description}</td>
                                 <td class="rh-severity">
                                     {#switch it.payload.total_risk}
-                                    {#case '1'}
+                                    {#case 1}
                                     <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
-                                    {#case '2'}
+                                    {#case 2}
                                     <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
-                                    {#case '3'}
+                                    {#case 3}
                                     <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
-                                    {#case '4'}
+                                    {#case 4}
                                     <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
                                     {/switch}
                                 </td>
@@ -110,7 +111,11 @@
                         Hi {user.firstName},
                         <br>
                         <br>
-                        These recommendations have been recently deactivated by Red Hat Insights and are no longer affecting your systems.
+                        {#if recs > 1}
+                        These recommendations have recently been deactivated by Red Hat Insights and are no longer affecting your systems.
+                        {#else}
+                        This recommendation has recently been deactivated by Red Hat Insights and is no longer affecting your systems.
+                        {/if}
                         <br>
                     </p>
                 </td>
@@ -137,5 +142,6 @@
     </td>
 </tr>
 <!-- end body section -->
+{/let}
 {/content-body}
 {/include}
