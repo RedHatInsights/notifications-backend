@@ -17,7 +17,7 @@ public class EmailSubscription {
     private EmailSubscriptionId id;
 
     @Size(max = 50)
-    private String orgId;
+    private String accountId;
 
     @ManyToOne
     @MapsId("applicationId")
@@ -29,19 +29,19 @@ public class EmailSubscription {
     }
 
     public String getAccountId() {
-        return id.accountId;
+        return accountId;
     }
 
     public void setAccountId(String accountId) {
-        id.accountId = accountId;
+        this.accountId = accountId;
     }
 
     public String getOrgId() {
-        return orgId;
+        return id.orgId;
     }
 
     public void setOrgId(String orgId) {
-        this.orgId = orgId;
+        id.orgId = orgId;
     }
 
     public String getUserId() {

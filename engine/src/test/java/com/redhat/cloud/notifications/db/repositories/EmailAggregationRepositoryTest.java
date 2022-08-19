@@ -22,7 +22,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -71,17 +70,15 @@ public class EmailAggregationRepositoryTest {
 
         statelessSessionFactory.withSession(statelessSession -> {
             clearEmailAggregations();
-            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
-            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
-            resourceHelpers.addEmailAggregation("other-account", ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
-            resourceHelpers.addEmailAggregation(ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2);
-            resourceHelpers.addEmailAggregation(ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation("other-account", "other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
 
             List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end);
             assertEquals(2, aggregations.size());
 
-            assertNull(aggregations.get(0).getOrgId());
-            assertNull(aggregations.get(1).getOrgId());
             assertTrue(aggregations.stream().map(EmailAggregation::getAccountId).allMatch(ACCOUNT_ID::equals));
             assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
             assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
@@ -148,7 +145,7 @@ public class EmailAggregationRepositoryTest {
             assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME, null));
             assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, null, PAYLOAD1));
             assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, ORG_ID, null, APP_NAME, PAYLOAD1));
-            assertFalse(resourceHelpers.addEmailAggregation(null, ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1));
+            assertFalse(resourceHelpers.addEmailAggregation(ACCOUNT_ID, null, BUNDLE_NAME, APP_NAME, PAYLOAD1));
         });
     }
 

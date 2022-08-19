@@ -38,8 +38,8 @@ public class EventsMigrationResourceTest {
 
         EventType eventType = createEventType();
 
-        Event event1 = createEvent(eventType, "account-123", null);
-        Event event2 = createEvent(eventType, "account-456", null);
+        Event event1 = createEvent(eventType, "account-123", "org-id-123");
+        Event event2 = createEvent(eventType, "account-456", "org-id-456");
         Event event3 = createEvent(eventType, "account-789", "org-id-789");
 
         given()
