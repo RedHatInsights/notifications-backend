@@ -43,7 +43,7 @@
         <checkstyle-plugin.version>3.1.2</checkstyle-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
         <jacoco-plugin.version>0.8.8</jacoco-plugin.version>
-        <checkstyle.version>8.44</checkstyle.version>
+        <checkstyle.version>10.3.2</checkstyle.version>
 
         <testcontainers.version>1.17.3</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
@@ -167,6 +167,13 @@
                     <linkXRef>false</linkXRef>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>validate</id>
