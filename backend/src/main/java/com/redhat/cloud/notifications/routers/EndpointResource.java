@@ -135,12 +135,6 @@ public class EndpointResource {
                 in = ParameterIn.QUERY,
                 description = "Number of items per page. If the value is 0, it will return all elements",
                 schema = @Schema(type = SchemaType.INTEGER)
-            ),
-        @Parameter(
-                name = "pageNumber",
-                in = ParameterIn.QUERY,
-                description = "Page number. Starts at first page (0), if not specified starts at first page.",
-                schema = @Schema(type = SchemaType.INTEGER)
             )
     })
     public EndpointPage getEndpoints(
@@ -464,12 +458,6 @@ public class EndpointResource {
                     schema = @Schema(type = SchemaType.INTEGER)
             ),
         @Parameter(
-                    name = "pageNumber",
-                    in = ParameterIn.QUERY,
-                    description = "Page number. Starts at first page (0), if not specified starts at first page.",
-                    schema = @Schema(type = SchemaType.INTEGER)
-            ),
-        @Parameter(
                     name = "includeDetail",
                     description = "Include the detail in the reply",
                     schema = @Schema(type = SchemaType.BOOLEAN)
@@ -477,7 +465,8 @@ public class EndpointResource {
     })
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
+    public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail,
+                                                        @BeanParam Query query) {
         // TODO We need globally limitations (Paging support and limits etc)
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);

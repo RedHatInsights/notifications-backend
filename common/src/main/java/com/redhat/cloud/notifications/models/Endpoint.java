@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Embedded;
@@ -30,6 +31,7 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 
 @Entity
 @Table(name = "endpoints")
+@Schema(description = "Data for one endpoint (Integration)")
 @JsonNaming(SnakeCaseStrategy.class)
 public class Endpoint extends CreationUpdateTimestamped {
 
@@ -46,6 +48,7 @@ public class Endpoint extends CreationUpdateTimestamped {
     @JsonIgnore
     private String orgId;
 
+    @Parameter(description = "The name of the endpoint.", required = true)
     @NotNull
     @Size(max = 255)
     private String name;

@@ -1,5 +1,9 @@
 package com.redhat.cloud.notifications.db;
 
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
@@ -8,27 +12,33 @@ import java.util.regex.Pattern;
 
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
+@Schema(description = "Query data for paging and sorting")
 public class Query {
 
     private static final Pattern SORT_FIELD_PATTERN = Pattern.compile("^[a-z0-9._]+$", CASE_INSENSITIVE);
     private static final int DEFAULT_RESULTS_PER_PAGE  = 20;
 
+    @Parameter(description = "Number of items per page. If the value is 0, it will return all elements.",
+               schema = @Schema(type = SchemaType.INTEGER))
     @QueryParam("limit")
     @DefaultValue(DEFAULT_RESULTS_PER_PAGE + "")
     private Integer pageSize;
 
+    @Parameter(description = "Page number. Starts at first page (0), if not specified starts at first page.", schema = @Schema(type = SchemaType.INTEGER))
     @QueryParam("pageNumber")
     private Integer pageNumber;
 
+    @Parameter(description = "Number of the starting page.")
     @QueryParam("offset")
     private Integer offset;
 
+    @Parameter(description = "Sort by expression in the form 'name:{asc|desc}'")
     @QueryParam("sort_by")
     private String sortBy;
 
     public static class Limit {
-        private int limit;
-        private int offset;
+        private final int limit;
+        private final int offset;
 
         public Limit(int limit, int offset) {
             this.limit = limit;
