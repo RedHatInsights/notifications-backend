@@ -46,17 +46,17 @@ public class ValidationResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses({
-            @APIResponse(
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON,
-                            schema = @Schema(
-                                    implementation = MessageValidationResponse.class,
-                                    required = true
-                            )
-                    ),
-                    responseCode = "400"
+        @APIResponse(
+                content = @Content(
+                        mediaType = MediaType.APPLICATION_JSON,
+                        schema = @Schema(
+                                implementation = MessageValidationResponse.class,
+                                required = true
+                        )
+                ),
+                responseCode = "400"
             ),
-            @APIResponse(content = @Content(mediaType = MediaType.TEXT_PLAIN), responseCode = "200"),
+        @APIResponse(content = @Content(mediaType = MediaType.TEXT_PLAIN), responseCode = "200"),
     })
     @Path("/message")
     public Response validateMessage(String action) {

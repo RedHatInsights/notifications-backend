@@ -121,8 +121,8 @@ public class TemplateResource {
     @Path("/email/instant/eventType/{eventTypeId}")
     @RolesAllowed(RBAC_INTERNAL_USER)
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = InstantEmailTemplate.class))),
-            @APIResponse(responseCode = "404", description = "No instant email found for the event type", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)))
+        @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = InstantEmailTemplate.class))),
+        @APIResponse(responseCode = "404", description = "No instant email found for the event type", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)))
     })
     public InstantEmailTemplate getInstantEmailTemplateByEventType(@RestPath UUID eventTypeId) {
         return templateRepository.findInstantEmailTemplateByEventType(eventTypeId);
@@ -221,12 +221,12 @@ public class TemplateResource {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", content = {
-                    @Content(schema = @Schema(title = "RenderEmailTemplateResponseSuccess", implementation = RenderEmailTemplateResponse.Success.class))
-            }),
-            @APIResponse(responseCode = "400", content = {
-                    @Content(schema = @Schema(title = "RenderEmailTemplateResponseError", implementation = RenderEmailTemplateResponse.Error.class))
-            })
+        @APIResponse(responseCode = "200", content = {
+            @Content(schema = @Schema(title = "RenderEmailTemplateResponseSuccess", implementation = RenderEmailTemplateResponse.Success.class))
+        }),
+        @APIResponse(responseCode = "400", content = {
+            @Content(schema = @Schema(title = "RenderEmailTemplateResponseError", implementation = RenderEmailTemplateResponse.Error.class))
+        })
     })
     @RolesAllowed(RBAC_INTERNAL_USER)
     public Response renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {

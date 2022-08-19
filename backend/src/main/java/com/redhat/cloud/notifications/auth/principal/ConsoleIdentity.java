@@ -23,9 +23,9 @@ import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeX509Identi
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = RhIdentity.class, name = "User"),
-        @JsonSubTypes.Type(value = TurnpikeX509Identity.class, name = "X509"),
-        @JsonSubTypes.Type(value = TurnpikeSamlIdentity.class, name = "Associate"),
+    @JsonSubTypes.Type(value = RhIdentity.class, name = "User"),
+    @JsonSubTypes.Type(value = TurnpikeX509Identity.class, name = "X509"),
+    @JsonSubTypes.Type(value = TurnpikeSamlIdentity.class, name = "Associate"),
 })
 public abstract class ConsoleIdentity {
     @JsonProperty(required = true)
