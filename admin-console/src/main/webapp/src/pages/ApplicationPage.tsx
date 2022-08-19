@@ -20,7 +20,6 @@ import { DeleteModal } from '../components/EventTypes/DeleteModal';
 import { BreadcrumbLinkItem } from '../components/Wrappers/BreadCrumbLinkItem';
 import { linkTo } from '../Routes';
 import { useCreateInstantEmailTemplate } from '../services/EmailTemplates/CreateInstantTemplates';
-import { useAggregationTemplates } from '../services/EmailTemplates/GetAggregationTemplates';
 import { useGetTemplates } from '../services/EmailTemplates/GetTemplates';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
@@ -43,7 +42,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
 
-    const aggregationTemplates = useAggregationTemplates(applicationId);
     const getAllTemplates = useGetTemplates();
     const newInstantTemplate = useCreateInstantEmailTemplate();
 
@@ -87,14 +85,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
         return undefined;
     }, [ applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value ]);
-
-    const aggregationEmailTemplates = useMemo(() => {
-        if (aggregationTemplates.payload?.status === 200) {
-            return aggregationTemplates.payload.value;
-        }
-
-        return undefined;
-    }, [ aggregationTemplates.payload?.status, aggregationTemplates.payload?.value ]);
 
     const templates = useMemo(() => {
         if (getAllTemplates.payload?.status === 200) {
@@ -202,8 +192,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
             </PageSection>
             <AggregationTemplateCard
                 applicationName={ application?.displayName }
+                application={ application?.id }
                 bundleName={ bundle?.display_name }
-                templateName={ aggregationEmailTemplates?.map(a => a.body_template?.name) } />
+            />
             { isAdmin && application && <EmailTemplateTable application={ application } /> }
             <CreateEditModal
                 isEdit={ isEdit }

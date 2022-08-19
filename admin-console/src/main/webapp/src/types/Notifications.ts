@@ -81,12 +81,19 @@ export type Application1 = {
   };
 
 export type AggregationTemplate = {
-    application?: Schemas.Application1 | undefined | null;
-    application_id?: UUID | undefined | null;
-    body_template?: Schemas.Template | undefined | null;
-    body_template_id: UUID;
-    id?: UUID | undefined | null;
-    subject_template?: Schemas.Template | undefined | null;
-    subject_template_id: UUID;
+    id: string;
+    applicationId: string;
+    subjectTemplateId: string;
+    bodyTemplateId: string;
 
+}
+
+type AggregationEmailTemplateRow = {
+    isLoading: true;
+} | ({
+    isLoading: false;
+} & Partial<AggregationTemplate>);
+
+export interface AggregationCardRow extends Application {
+    aggregationEmail: AggregationEmailTemplateRow;
 }

@@ -1,0 +1,35 @@
+import { useMutation } from 'react-fetching-library';
+
+import { Operations } from '../../generated/OpenapiInternal';
+
+export type CreateAggregationTemplate = {
+    id?: string;
+    applicationId: string;
+    subjectTemplateId: string;
+    bodyTemplateId: string;
+}
+
+const actionCreator =  (params: CreateAggregationTemplate) => {
+    if (params.id === undefined) {
+        return Operations.TemplateResourceCreateAggregationEmailTemplate.actionCreator({
+            body: {
+                application_id: params.applicationId,
+                subject_template_id: params.subjectTemplateId,
+                body_template_id: params.bodyTemplateId
+            }
+        });
+    }
+
+    return Operations.TemplateResourceUpdateAggregationEmailTemplate.actionCreator({
+        templateId: params.id,
+        body: {
+            application_id: params.applicationId,
+            subject_template_id: params.subjectTemplateId,
+            body_template_id: params.bodyTemplateId
+        }
+    });
+};
+
+export const useCreateInstantEmailTemplate = () => {
+    return useMutation(actionCreator);
+};

@@ -1,10 +1,14 @@
 import { Card, CardBody, CardHeader, PageSection, Title } from '@patternfly/react-core';
 import * as React from 'react';
+import { AggregationCardRow, AggregationTemplate } from '../../types/Notifications';
+import { AggregationTemplateCardField } from './Card/AggregationCard';
 
 interface AggregationEmailCardProps {
+    application: AggregationCardRow;
     applicationName?: string;
     bundleName?: string;
-    templateName: (string | undefined)[] | undefined;
+    onUpdateAggregationTemplate: ( aggregationTemplate: Partial<AggregationTemplate> ) => void;
+
 }
 
 export const AggregationTemplateCard: React.FunctionComponent<AggregationEmailCardProps> = (props) => {
@@ -22,7 +26,13 @@ export const AggregationTemplateCard: React.FunctionComponent<AggregationEmailCa
                     {`Bundle: ${ props.bundleName }`}
                 </CardBody>
                 <CardBody>
-                    {`Aggregation Template: ${ props.templateName } `}
+                    { `Aggregation Template: ${
+                        <AggregationTemplateCardField
+                            application={ props.application }
+                            onClick={ () =>
+                                !props.application.aggregationEmail.isLoading && props.onUpdateAggregationTemplate(props.application.aggregationEmail) }
+                        />}
+                        `}
                 </CardBody>
             </Card>
         </PageSection>
