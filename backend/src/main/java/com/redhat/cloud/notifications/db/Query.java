@@ -6,7 +6,9 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -30,13 +32,17 @@ public class Query {
 
     @QueryParam("sort_by")
     private String sortBy;
-    private Set<String> sortFields;
+    private Map<String, String> sortFields;
 
     public void setSortFields(String[] sortFields) {
-        this.sortFields = new HashSet<>();
-        if (sortFields != null) {
-            this.sortFields.addAll(Arrays.asList(sortFields));
+        this.sortFields = new HashMap<>();
+        for (String sortField : sortFields) {
+            this.sortFields.put(sortField, sortField);
         }
+    }
+
+    public void setSortFields(Map<String, String> sortFields) {
+        this.sortFields = Map.copyOf(sortFields);
     }
 
     public static class Limit {
@@ -126,7 +132,9 @@ public class Query {
         }
 
         if (sortFields == null) {
-            throw new IllegalStateException("SortFields not set.");
+            // Throw an exception after migrating all the usages.
+            Log.warnf("NOTIF-674 SortFields not set.");
+            sortFields = Map.of();
         }
 
         String[] sortSplit = sortBy.split(":");
@@ -134,10 +142,13 @@ public class Query {
             throw new BadRequestException("Invalid 'sort_by' query parameter");
         } else {
             Sort sort = new Sort(sortSplit[0]);
-            if (!sortFields.contains(sort.sortColumn.toLowerCase())) {
-                Log.warnf("Unknown sort field passed: ", sort.sortColumn);
-                throw new BadRequestException("Unknown sort field " + sort.sortColumn);
+            if (!sortFields.containsKey(sort.sortColumn.toLowerCase())) {
+                // Throw an exception after migrating all the usages.
+                Log.warnf("NOTIF-674 Unknown sort field passed: ", sort.sortColumn);
+            } else {
+                sort.sortColumn = sortFields.get(sort.sortColumn.toLowerCase());
             }
+
             if (sortSplit.length > 1) {
                 try {
                     Sort.Order order = Sort.Order.valueOf(sortSplit[1].toUpperCase());

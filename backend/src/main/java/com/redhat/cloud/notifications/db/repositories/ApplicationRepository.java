@@ -186,7 +186,10 @@ public class ApplicationRepository {
     }
 
     public List<EventType> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId, String eventTypeName) {
-        limiter.setSortFields(EventType.SORT_FIELDS);
+        if (limiter != null) {
+            limiter.setSortFields(EventType.SORT_FIELDS);
+        }
+
         return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName)
                 .join(JoinBuilder.builder().leftJoinFetch("e.application"))
                 .limit(limiter != null ? limiter.getLimit() : null)

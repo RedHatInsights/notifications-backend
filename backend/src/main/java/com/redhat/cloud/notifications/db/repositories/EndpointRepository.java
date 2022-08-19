@@ -149,8 +149,9 @@ public class EndpointRepository {
     }
 
     public List<Endpoint> getEndpoints(String orgId, @Nullable String name, Query limiter) {
-        limiter.setSortFields(ENDPOINT_SORT_FIELDS);
-
+        if (limiter != null) {
+            limiter.setSortFields(ENDPOINT_SORT_FIELDS);
+        }
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
 
