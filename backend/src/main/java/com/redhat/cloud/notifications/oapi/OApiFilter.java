@@ -156,7 +156,7 @@ public class OApiFilter {
 
     private JsonObject createProdServer(String openApiOption) {
         JsonObject job = new JsonObject();
-        job.put("url", "https://cloud.redhat.com");
+        job.put("url", "https://console.redhat.com/{basePath}");
         job.put("description", "Production Server");
         job.put("variables", new JsonObject()
                 .put("basePath", new JsonObject()
@@ -167,7 +167,7 @@ public class OApiFilter {
     private JsonObject createDevServer(String openApiOption) {
 
         JsonObject job = new JsonObject();
-        job.put("url", "http://localhost:{port}");
+        job.put("url", "http://localhost:{port}/{basePath}");
         job.put("description", "Development Server");
         job.put("variables", new JsonObject()
                 .put("basePath", new JsonObject()
