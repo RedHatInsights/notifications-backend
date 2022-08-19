@@ -31,12 +31,14 @@ import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
@@ -44,6 +46,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.BeanParam;
@@ -126,6 +129,7 @@ public class EndpointResource {
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
+    @Operation(summary = "List endpoints", description = "Get a list of endpoints filtered down by the passed parameters.")
     @Parameters({
         @Parameter(
                 name = "limit",
@@ -183,9 +187,12 @@ public class EndpointResource {
     @POST
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @Operation(summary = "Create a new endpoint", description = "Create a new endpoint from the passed data")
+    @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @Transactional
-    public Endpoint createEndpoint(@Context SecurityContext sec, @NotNull @Valid Endpoint endpoint) {
+    public Endpoint createEndpoint(@Context SecurityContext sec,
+                                   @RequestBody(required = true) @NotNull @NotEmpty @Valid Endpoint endpoint) {
         checkSystemEndpoint(endpoint.getType());
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
@@ -228,13 +235,14 @@ public class EndpointResource {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
-    public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid RequestEmailSubscriptionProperties requestProps) {
+    public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec,
+                     @RequestBody(required = true) @NotNull @Valid RequestEmailSubscriptionProperties requestProps) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
         if (requestProps.getGroupId() != null && requestProps.isOnlyAdmins()) {
-            throw new BadRequestException(String.format("Cannot use RBAC groups and only admins in the same endpoint"));
+            throw new BadRequestException("Cannot use RBAC groups and only admins in the same endpoint");
         }
 
         if (requestProps.getGroupId() != null) {
@@ -339,7 +347,9 @@ public class EndpointResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
-    public Response updateEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @NotNull @Valid Endpoint endpoint) {
+    public Response updateEndpoint(@Context SecurityContext sec,
+                                   @PathParam("id") UUID id,
+                                   @RequestBody(required = true) @NotNull @Valid Endpoint endpoint) {
         // This prevents from updating an endpoint from whatever EndpointType to a system EndpointType
         checkSystemEndpoint(endpoint.getType());
         String accountId = getAccountId(sec);
