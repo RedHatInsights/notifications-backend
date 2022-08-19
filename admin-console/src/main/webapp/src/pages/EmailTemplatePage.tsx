@@ -70,29 +70,33 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
     }, []);
 
     const newTemplate = useCreateTemplate();
-    const [ templates, setTemplates ] = React.useState<Partial<Template>>();
+    const [ template, setTemplate ] = React.useState<Partial<Template>>({
+        data: defaultContentTemplate
+    });
 
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
         const target = event.target as HTMLInputElement;
-        setTemplates(prev => ({ ...prev, [target.name]: target.value }));
+        setTemplate(prev => ({ ...prev, [target.name]: target.value }));
     };
 
     const handleCodeChange = (value: string) => {
-        setTemplates(prev => ({ ...prev, content: value }));
+        setTemplate(prev => ({ ...prev, data: value }));
     };
 
-    const handleSubmit = React.useCallback((template) => {
-        const mutate = newTemplate.mutate;
-        mutate({
-            id: template.id,
-            data: template.data,
-            name: template.name,
-            description: template.description
-        }).then(() => {
-            handleBackClick();
-        });
+    const handleSubmit = React.useCallback(() => {
+        if (template && template.data && template.name && template?.description) {
+            const mutate = newTemplate.mutate;
+            mutate({
+                id: template.id ?? undefined,
+                data: template.data,
+                name: template.name,
+                description: template.description
+            }).then(() => {
+                handleBackClick();
+            });
+        }
 
-    }, [ handleBackClick, newTemplate.mutate ]);
+    }, [ handleBackClick, newTemplate.mutate, template ]);
 
     return (
         <>{ isAdmin &&
@@ -110,7 +114,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                             type='text'
                             id='name'
                             name="name"
-                            value={ templates?.name }
+                            value={ template?.name }
                             onChange={ handleChange }
                         /></FormGroup>
                     <FormGroup label='Description' fieldId='description' isRequired
@@ -119,15 +123,14 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                             type='text'
                             id='description'
                             name="description"
-                            value={ templates?.description }
+                            value={ template?.description }
                             onChange={ handleChange }
                         /></FormGroup>
                     <FormGroup>
                         <Title headingLevel="h2">Content</Title>
                         <CodeEditor
                             isLineNumbersVisible
-                            code={ defaultContentTemplate }
-                            value={ templates?.data}
+                            code={ template?.data }
                             isMinimapVisible={ false }
                             onChange={ handleCodeChange }
                             height="300px" />
@@ -139,7 +142,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                             isMinimapVisible={ false }
                             onChange={ handleCodeChange }
                             code={ defaultPayload }
-                            value={ templates?.data}
+                            value={ template?.data }
                             height="300px"
                             isLanguageLabelVisible
                             language={ Language.json } />
