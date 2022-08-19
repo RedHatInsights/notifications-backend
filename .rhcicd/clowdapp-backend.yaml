@@ -400,10 +400,10 @@ objects:
     clean.sql: |
       \timing
       CALL cleanEventLog();
-      VACUUM event;
-      VACUUM notification_history;
+      VACUUM ANALYZE event;
+      VACUUM ANALYZE notification_history;
       CALL cleanKafkaMessagesIds();
-      VACUUM kafka_message;
+      VACUUM ANALYZE kafka_message;
 - apiVersion: v1
   kind: ConfigMap
   metadata:
