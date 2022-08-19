@@ -71,14 +71,6 @@ public class NotificationResource {
     @Inject
     EndpointRepository endpointRepository;
 
-    @DELETE
-    @Path("/{id}")
-    @Produces(TEXT_PLAIN)
-    @APIResponse(responseCode = "204", description = "Notification has been marked as read", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    public Response markRead(@Context SecurityContext sec, @PathParam("id") Integer id) {
-        // Mark the notification id for <tenantId><userId> 's subscription as read
-        return null;
-    }
 
     @GET
     @Path("/eventTypes")
