@@ -46,7 +46,6 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.BeanParam;
@@ -192,7 +191,7 @@ public class EndpointResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint createEndpoint(@Context SecurityContext sec,
-                                   @RequestBody(required = true) @NotNull @NotEmpty @Valid Endpoint endpoint) {
+                                   @RequestBody(required = true) @NotNull @Valid Endpoint endpoint) {
         checkSystemEndpoint(endpoint.getType());
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
