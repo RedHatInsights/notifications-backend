@@ -2,20 +2,22 @@ import { CodeEditor, Language } from '@patternfly/react-code-editor';
 import {
     ActionGroup,
     Button,
+    Form,
+    FormGroup,
     PageSection,
     Split,
     SplitItem,
+    TextInput,
     Title
 } from '@patternfly/react-core';
 import * as React from 'react';
-
 import { useUserPermissions } from '../app/PermissionContext';
+import { useCreateTemplate } from '../services/EmailTemplates/CreateTemplate';
+import { Template } from '../types/Notifications';
 
-const defaultSubjectTemplate = `
+const defaultContentTemplate = `
 Important email to {user.firstName} from MyCoolApp!
-`.trimLeft();
 
-const defaultBodyTemplate = `
 <div>Hello {user.firstName} {user.lastName},</div>
 <div>We have some important news for you, MyApp has a notification for you</div>
 <div>As a reminder, current user: {user.username}: is active? {user.isActive}; is admin? {user.isAdmin}</div>
@@ -67,6 +69,35 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
         history.back();
     }, []);
 
+    const newTemplate = useCreateTemplate();
+    const [ template, setTemplate ] = React.useState<Partial<Template>>({
+        data: defaultContentTemplate
+    });
+
+    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+        const target = event.target as HTMLInputElement;
+        setTemplate(prev => ({ ...prev, [target.name]: target.value }));
+    };
+
+    const handleCodeChange = (value: string) => {
+        setTemplate(prev => ({ ...prev, data: value }));
+    };
+
+    const handleSubmit = React.useCallback(() => {
+        if (template && template.data && template.name && template?.description) {
+            const mutate = newTemplate.mutate;
+            mutate({
+                id: template.id ?? undefined,
+                data: template.data,
+                name: template.name,
+                description: template.description
+            }).then(() => {
+                handleBackClick();
+            });
+        }
+
+    }, [ handleBackClick, newTemplate.mutate, template ]);
+
     return (
         <>{ isAdmin &&
             <><PageSection>
@@ -76,34 +107,53 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                     </SplitItem>
                 </Split>
             </PageSection><PageSection>
-                <Title headingLevel="h2">Subject template</Title>
-                <CodeEditor
-                    isLineNumbersVisible
-                    code={ defaultSubjectTemplate }
-                    isMinimapVisible={ false }
-                    height="50px" />
-            </PageSection><PageSection>
-                <Title headingLevel="h2">Body template</Title>
-                <CodeEditor
-                    isLineNumbersVisible
-                    code={ defaultBodyTemplate }
-                    isMinimapVisible={ false }
-                    height="300px" />
-            </PageSection><PageSection>
-                <Title headingLevel="h2">Payload</Title>
-                <CodeEditor
-                    isLineNumbersVisible
-                    isMinimapVisible={ false }
-                    code={ defaultPayload }
-                    height="300px"
-                    isLanguageLabelVisible
-                    language={ Language.json } />
+                <Form>
+                    <FormGroup label='Name' fieldId='name' isRequired
+                        helperText='Enter a name for your template'>
+                        <TextInput
+                            type='text'
+                            id='name'
+                            name="name"
+                            value={ template?.name }
+                            onChange={ handleChange }
+                        /></FormGroup>
+                    <FormGroup label='Description' fieldId='description' isRequired
+                        helperText='Enter a brief description for your template'>
+                        <TextInput
+                            type='text'
+                            id='description'
+                            name="description"
+                            value={ template?.description }
+                            onChange={ handleChange }
+                        /></FormGroup>
+                    <FormGroup>
+                        <Title headingLevel="h2">Content</Title>
+                        <CodeEditor
+                            isLineNumbersVisible
+                            code={ template?.data }
+                            isMinimapVisible={ false }
+                            onChange={ handleCodeChange }
+                            height="300px" />
+                    </FormGroup>
+                    <FormGroup>
+                        <Title headingLevel="h2">Payload</Title>
+                        <CodeEditor
+                            isLineNumbersVisible
+                            isMinimapVisible={ false }
+                            onChange={ handleCodeChange }
+                            code={ defaultPayload }
+                            value={ template?.data }
+                            height="300px"
+                            isLanguageLabelVisible
+                            language={ Language.json } />
+                    </FormGroup>
+                </Form>
             </PageSection>
             <PageSection>
                 <ActionGroup>
                     <Split hasGutter>
                         <SplitItem>
-                            <Button variant='primary' type='submit'>Submit</Button>
+                            <Button variant='primary' onClick={ handleSubmit } type='submit'>Submit</Button>
                         </SplitItem>
                         <SplitItem>
                             <Button variant='secondary' type='reset' onClick={ handleBackClick }>Back</Button>
