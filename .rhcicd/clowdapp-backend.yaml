@@ -322,7 +322,7 @@ objects:
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
-          failureThreshold: 116
+          failureThreshold: 3
         livenessProbe:
           httpGet:
             path: /health/live
@@ -332,7 +332,7 @@ objects:
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
-          failureThreshold: 116
+          failureThreshold: 3
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
