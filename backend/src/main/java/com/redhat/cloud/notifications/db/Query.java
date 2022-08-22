@@ -5,11 +5,9 @@ import io.quarkus.logging.Log;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -121,14 +119,14 @@ public class Query {
         }
     }
 
-    public Sort getSort() {
+    public Optional<Sort> getSort() {
         // Endpoints: sort by: name, type, "last connection status" (?), enabled
         //      -> endpoint_id, name, endpoint_type, enabled are the accepted parameter names
         // TODO Should they be id, name, type, enabled for consistency and then modified in the actual query to Postgres?
         // And if it's not an accepted value? Throw exception?
 
         if (sortBy == null || sortBy.length() < 1) {
-            return null;
+            return Optional.empty();
         }
 
         if (sortFields == null) {
@@ -156,7 +154,8 @@ public class Query {
                 } catch (IllegalArgumentException | NullPointerException iae) {
                 }
             }
-            return sort;
+
+            return Optional.of(sort);
         }
     }
 
@@ -164,9 +163,9 @@ public class Query {
         // Use the internal Query
         // What's the proper order? SORT first, then LIMIT? COUNT as last one?
         String query = basicQuery;
-        Sort sort = getSort();
-        if (sort != null) {
-            query = modifyWithSort(query, sort);
+        Optional<Sort> sort = getSort();
+        if (sort.isPresent()) {
+            query = modifyWithSort(query, sort.get());
         }
         return query;
     }
