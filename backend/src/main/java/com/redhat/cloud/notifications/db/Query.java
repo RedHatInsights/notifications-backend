@@ -153,7 +153,6 @@ public class Query {
         }
 
         if (sortFields == null) {
-            // Throw an exception after migrating all the usages.
             Log.warnf("NOTIF-674 SortFields not set.");
             sortFields = Map.of();
             throw new BadRequestException("Allowed sort fields not set for this query");
