@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { Redirect, Route, Switch } from 'react-router';
 
-import { AggregationPage } from './pages/AggregationPage';
 import { ApplicationPage } from './pages/ApplicationPage';
 import { BundlePage } from './pages/BundlePage';
 import { EmailTemplatePage } from './pages/EmailTemplatePage';
@@ -16,17 +15,12 @@ interface Path {
 export const linkTo = {
     bundle: (bundleId: string) => `/bundle/${bundleId}`,
     application: (applicationId: string) => `/application/${applicationId}`,
-    aggregation: () => '/aggregation',
     email: () => '/email',
     emailTemplates: () => '/emailTemplates',
     messageValidator: () => '/utils/message-validator'
 };
 
 const pathRoutes: Path[] = [
-    {
-        path: linkTo.aggregation(),
-        component: AggregationPage
-    },
     {
         path: linkTo.application(':applicationId'),
         component: ApplicationPage
@@ -59,7 +53,7 @@ export const Routes: React.FunctionComponent<unknown> = _props => {
                     path={ pathRoute.path }
                 />
             )) }
-            <Redirect to={ linkTo.aggregation() } />
+            <Redirect to={ linkTo.messageValidator() } />
         </Switch>
     );
 };

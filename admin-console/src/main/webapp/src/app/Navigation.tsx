@@ -42,13 +42,10 @@ export const Navigation: React.FunctionComponent<NavigationProps> = props => {
                     <EnhancedNavItem to={ linkTo.messageValidator() }>
                         Notification validator
                     </EnhancedNavItem>
+                    <EnhancedNavItem to={ linkTo.email() }>
+                        Email templates
+                    </EnhancedNavItem>
                 </NavExpandable>
-                <EnhancedNavItem to={ linkTo.email() }>
-                    Email templates
-                </EnhancedNavItem>
-                <EnhancedNavItem to={ linkTo.aggregation() }>
-                    Aggregation
-                </EnhancedNavItem>
             </NavList>
         </Nav>
     );
