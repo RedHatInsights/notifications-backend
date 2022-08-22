@@ -40,6 +40,7 @@ public class EventRepository {
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                       Set<Boolean> invocationResults, boolean fetchNotificationHistory, Query query) {
         query.setSortFields(sortFields);
+        query.setDefaultSortBy("created:DESC");
         Optional<Query.Sort> sort = query.getSort();
         List<UUID> eventIds = getEventIds(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, query);
         String hql;
@@ -50,7 +51,7 @@ public class EventRepository {
         }
 
         if (sort.isPresent()) {
-            hql += sort.get().getSortQuery();
+            hql += getOrderBy(sort.get());
         }
 
         return entityManager.createQuery(hql, Event.class)
@@ -71,6 +72,14 @@ public class EventRepository {
         return query.getSingleResult();
     }
 
+    private String getOrderBy(Query.Sort sort) {
+        if (!sort.getSortColumn().equals("e.created")) {
+            return " " + sort.getSortQuery() + ", e.created DESC";
+        } else {
+            return " " + sort.getSortQuery();
+        }
+    }
+
     private List<UUID> getEventIds(String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                         LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                         Set<Boolean> invocationResults, Query query) {
@@ -85,7 +94,7 @@ public class EventRepository {
         Optional<Query.Sort> sort = query.getSort();
 
         if (sort.isPresent()) {
-            hql += sort.get().getSortQuery();
+            hql += getOrderBy(sort.get());
         }
 
         TypedQuery<UUID> typedQuery = entityManager.createQuery(hql, UUID.class);

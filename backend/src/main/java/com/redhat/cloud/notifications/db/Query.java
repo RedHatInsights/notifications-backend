@@ -15,7 +15,8 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class Query {
 
-    private static final Pattern SORT_FIELD_PATTERN = Pattern.compile("^[a-z0-9._]+$", CASE_INSENSITIVE);
+    private static final Pattern SORT_BY_PATTERN = Pattern.compile("^([a-z0-9_-]+)(:(asc|desc))?$", CASE_INSENSITIVE);
+
     private static final int DEFAULT_RESULTS_PER_PAGE  = 20;
 
     @QueryParam("limit")
@@ -29,7 +30,13 @@ public class Query {
     private Integer offset;
 
     @QueryParam("sort_by")
-    private String sortBy;
+    String sortBy;
+
+    @QueryParam("sortBy")
+    @Deprecated
+    String sortByDeprecated;
+
+    private String defaultSortBy;
     private Map<String, String> sortFields;
 
     public void setSortFields(String[] sortFields) {
@@ -41,6 +48,10 @@ public class Query {
 
     public void setSortFields(Map<String, String> sortFields) {
         this.sortFields = Map.copyOf(sortFields);
+    }
+
+    public void setDefaultSortBy(String defaultSortBy) {
+        this.defaultSortBy = defaultSortBy;
     }
 
     public static class Limit {
@@ -119,11 +130,23 @@ public class Query {
         }
     }
 
+    String getSortBy() {
+        if (sortBy != null) {
+            return sortBy;
+        } else if (sortByDeprecated != null) {
+            return sortByDeprecated;
+        }
+
+        return defaultSortBy;
+    }
+
     public Optional<Sort> getSort() {
         // Endpoints: sort by: name, type, "last connection status" (?), enabled
         //      -> endpoint_id, name, endpoint_type, enabled are the accepted parameter names
         // TODO Should they be id, name, type, enabled for consistency and then modified in the actual query to Postgres?
         // And if it's not an accepted value? Throw exception?
+
+        String sortBy = getSortBy();
 
         if (sortBy == null || sortBy.length() < 1) {
             return Optional.empty();
@@ -133,30 +156,31 @@ public class Query {
             // Throw an exception after migrating all the usages.
             Log.warnf("NOTIF-674 SortFields not set.");
             sortFields = Map.of();
+            throw new BadRequestException("Allowed sort fields not set for this query");
+        }
+
+        if (!SORT_BY_PATTERN.matcher(sortBy).matches()) {
+            throw new BadRequestException("Invalid 'sortBy' query parameter");
         }
 
         String[] sortSplit = sortBy.split(":");
-        if (!SORT_FIELD_PATTERN.matcher(sortSplit[0]).matches()) {
-            throw new BadRequestException("Invalid 'sort_by' query parameter");
+        Sort sort = new Sort(sortSplit[0]);
+        if (!sortFields.containsKey(sort.sortColumn.toLowerCase())) {
+            Log.warnf("NOTIF-674 Unknown sort field passed: ", sort.sortColumn);
+            throw new BadRequestException("Invalid sort by field: " + sort.sortColumn);
         } else {
-            Sort sort = new Sort(sortSplit[0]);
-            if (!sortFields.containsKey(sort.sortColumn.toLowerCase())) {
-                // Throw an exception after migrating all the usages.
-                Log.warnf("NOTIF-674 Unknown sort field passed: ", sort.sortColumn);
-            } else {
-                sort.sortColumn = sortFields.get(sort.sortColumn.toLowerCase());
-            }
-
-            if (sortSplit.length > 1) {
-                try {
-                    Sort.Order order = Sort.Order.valueOf(sortSplit[1].toUpperCase());
-                    sort.setSortOrder(order);
-                } catch (IllegalArgumentException | NullPointerException iae) {
-                }
-            }
-
-            return Optional.of(sort);
+            sort.sortColumn = sortFields.get(sort.sortColumn.toLowerCase());
         }
+
+        if (sortSplit.length > 1) {
+            try {
+                Sort.Order order = Sort.Order.valueOf(sortSplit[1].toUpperCase());
+                sort.setSortOrder(order);
+            } catch (IllegalArgumentException | NullPointerException iae) {
+            }
+        }
+
+        return Optional.of(sort);
     }
 
     public String getModifiedQuery(String basicQuery) {
