@@ -40,7 +40,7 @@ public class ValidationResource {
             return convertToNotFoundResponse(bundle, application, eventType);
         }
 
-        return convertToOkayResponse(applicationRepository.getEventType(bundle, application, eventType));
+        return convertToOkayResponse(foundEventType);
     }
 
     @POST
