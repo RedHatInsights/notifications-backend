@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
@@ -29,9 +28,6 @@ public class TemplateRepository {
 
     @Inject
     EntityManager entityManager;
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     @Transactional
     public Template createTemplate(Template template) {
@@ -322,32 +318,21 @@ public class TemplateRepository {
      * other than email, like Splunk or Slack via Camel and OpenBridge. See {@link IntegrationTemplate}
      * for more details.
      * @param appName Application name the template applies to. Can be null.
-     * @param accountId The account id for templates that are account specific. Need to be of Kind ORG
+     * @param orgId The organization id for templates that are organization specific. Need to be of Kind ORG
      * @param templateKind Kind of template requested. If it does not exist, Kind DEFAULT is returned or Optional.empty()
      * @param integrationType Type of integration requested. E.g. 'slack' or 'splunk'
      * @return IntegrationTemplate with potential fallback or Optional.empty() if there is not even a default template.
      */
     public Optional<IntegrationTemplate> findIntegrationTemplate(String appName,
-                                                                 String accountId,
                                                                  String orgId,
                                                                  IntegrationTemplate.TemplateKind templateKind,
                                                                  String integrationType) {
-        String hql;
-        if (featureFlipper.isUseOrgId()) {
-            hql = "FROM IntegrationTemplate it JOIN FETCH it.theTemplate " +
-                    "WHERE it.templateKind <= :templateKind " +
-                    "AND it.integrationType = :iType " +
-                    "AND (it.orgId IS NULL" + (orgId != null ? " OR it.orgId = :orgId " : "") + ") " +
-                    (appName != null ? "AND it.application.name = :appName " : " ") +
-                    "ORDER BY it.templateKind DESC, it.orgId ASC "; // nulls in orgId go last. See https://www.postgresql.org/docs/current/queries-order.html
-        } else {
-            hql = "FROM IntegrationTemplate it JOIN FETCH it.theTemplate " +
-                    "WHERE it.templateKind <= :templateKind " +
-                    "AND it.integrationType = :iType " +
-                    "AND (it.accountId IS NULL" + (accountId != null ? " OR it.accountId = :accountId " : "") + ") " +
-                    (appName != null ? "AND it.application.name = :appName " : " ") +
-                    "ORDER BY it.templateKind DESC, it.accountId ASC "; // nulls in account go last. See https://www.postgresql.org/docs/current/queries-order.html
-        }
+        String hql = "FROM IntegrationTemplate it JOIN FETCH it.theTemplate " +
+                "WHERE it.templateKind <= :templateKind " +
+                "AND it.integrationType = :iType " +
+                "AND (it.orgId IS NULL" + (orgId != null ? " OR it.orgId = :orgId " : "") + ") " +
+                (appName != null ? "AND it.application.name = :appName " : " ") +
+                "ORDER BY it.templateKind DESC, it.orgId ASC "; // nulls in orgId go last. See https://www.postgresql.org/docs/current/queries-order.html
         Query query = entityManager.createQuery(hql, IntegrationTemplate.class)
                 .setParameter("templateKind", templateKind)
                 .setParameter("iType", integrationType)
@@ -356,14 +341,8 @@ public class TemplateRepository {
         if (appName != null) {
             query.setParameter("appName", appName);
         }
-        if (featureFlipper.isUseOrgId()) {
-            if (orgId != null) {
-                query.setParameter("orgId", orgId);
-            }
-        } else {
-            if (accountId != null) {
-                query.setParameter("accountId", accountId);
-            }
+        if (orgId != null) {
+            query.setParameter("orgId", orgId);
         }
 
         List<IntegrationTemplate> templates = query.getResultList();

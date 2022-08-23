@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.OrgIdHelper;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.db.builder.WhereBuilder;
@@ -38,12 +36,6 @@ public class EndpointRepository {
 
     @Inject
     EntityManager entityManager;
-
-    @Inject
-    OrgIdHelper orgIdHelper;
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     @Transactional
     public Endpoint createEndpoint(Endpoint endpoint) {
@@ -87,11 +79,11 @@ public class EndpointRepository {
         return endpoint;
     }
 
-    public List<Endpoint> getEndpointsPerCompositeType(String accountId, String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
+    public List<Endpoint> getEndpointsPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
 
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
-        List<Endpoint> endpoints = EndpointRepository.queryBuilderEndpointsPerType(accountId, orgId, featureFlipper.isUseOrgId(), name, type, activeOnly)
+        List<Endpoint> endpoints = EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly)
                 .limit(limit)
                 .sort(sort)
                 .build(entityManager::createQuery)
@@ -100,33 +92,21 @@ public class EndpointRepository {
         return endpoints;
     }
 
-    public EndpointType getEndpointTypeById(String accountId, String orgId, UUID endpointId) {
-        if (orgIdHelper.useOrgId(orgId)) {
-            String query = "Select e.compositeType.type from Endpoint e WHERE e.orgId = :orgId AND e.id = :endpointId";
-            try {
-                return entityManager.createQuery(query, EndpointType.class)
-                        .setParameter("orgId", orgId)
-                        .setParameter("endpointId", endpointId)
-                        .getSingleResult();
-            } catch (NoResultException e) {
-                throw new NotFoundException("Endpoint not found");
-            }
-        } else {
-            String query = "Select e.compositeType.type from Endpoint e WHERE e.accountId = :accountId AND e.id = :endpointId";
-            try {
-                return entityManager.createQuery(query, EndpointType.class)
-                        .setParameter("accountId", accountId)
-                        .setParameter("endpointId", endpointId)
-                        .getSingleResult();
-            } catch (NoResultException e) {
-                throw new NotFoundException("Endpoint not found");
-            }
+    public EndpointType getEndpointTypeById(String orgId, UUID endpointId) {
+        String query = "Select e.compositeType.type from Endpoint e WHERE e.orgId = :orgId AND e.id = :endpointId";
+        try {
+            return entityManager.createQuery(query, EndpointType.class)
+                    .setParameter("orgId", orgId)
+                    .setParameter("endpointId", endpointId)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            throw new NotFoundException("Endpoint not found");
         }
     }
 
     @Transactional
     public Endpoint getOrCreateEmailSubscriptionEndpoint(String accountId, String orgId, EmailSubscriptionProperties properties) {
-        List<Endpoint> emailEndpoints = getEndpointsPerCompositeType(accountId, orgId, null, Set.of(new CompositeEndpointType(EndpointType.EMAIL_SUBSCRIPTION)), null, null);
+        List<Endpoint> emailEndpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(EndpointType.EMAIL_SUBSCRIPTION)), null, null);
         loadProperties(emailEndpoints);
         Optional<Endpoint> endpointOptional = emailEndpoints
                 .stream()
@@ -147,47 +127,33 @@ public class EndpointRepository {
         return createEndpoint(endpoint);
     }
 
-    public Long getEndpointsCountPerCompositeType(String tenant, String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
-        return EndpointRepository.queryBuilderEndpointsPerType(tenant, orgId, featureFlipper.isUseOrgId(), name, type, activeOnly)
+    public Long getEndpointsCountPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
+        return EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly)
                 .buildCount(entityManager::createQuery)
                 .getSingleResult();
     }
 
-    public QueryBuilder<Endpoint> getEndpointsQuery(String tenant, String orgId, @Nullable String name) {
-        if (orgIdHelper.useOrgId(orgId)) {
-            return QueryBuilder.builder(Endpoint.class)
-                    .alias("e")
-                    .where(
-                            WhereBuilder.builder()
-                                    .and("e.orgId = :orgId", "orgId", orgId)
-                                    .ifAnd(
-                                            name != null && !name.isEmpty(),
-                                            "LOWER(e.name) LIKE :name",
-                                            "name", (Supplier<String>) () -> "%" + name.toLowerCase() + "%"
-                                    )
-                    );
-        } else {
-            return QueryBuilder.builder(Endpoint.class)
-                    .alias("e")
-                    .where(
-                            WhereBuilder.builder()
-                                    .and("e.accountId = :accountId", "accountId", tenant)
-                                    .ifAnd(
-                                            name != null && !name.isEmpty(),
-                                            "LOWER(e.name) LIKE :name",
-                                            "name", (Supplier<String>) () -> "%" + name.toLowerCase() + "%"
-                                    )
-                    );
-        }
+    public QueryBuilder<Endpoint> getEndpointsQuery(String orgId, @Nullable String name) {
+        return QueryBuilder.builder(Endpoint.class)
+                .alias("e")
+                .where(
+                        WhereBuilder.builder()
+                                .and("e.orgId = :orgId", "orgId", orgId)
+                                .ifAnd(
+                                        name != null && !name.isEmpty(),
+                                        "LOWER(e.name) LIKE :name",
+                                        "name", (Supplier<String>) () -> "%" + name.toLowerCase() + "%"
+                                )
+                );
     }
 
-    public List<Endpoint> getEndpoints(String tenant, String orgId, @Nullable String name, Query limiter) {
+    public List<Endpoint> getEndpoints(String orgId, @Nullable String name, Query limiter) {
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Query.Sort sort = limiter == null ? null : limiter.getSort();
 
         // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
         //      or should I just create a new method for it?
-        List<Endpoint> endpoints = getEndpointsQuery(tenant, orgId, name)
+        List<Endpoint> endpoints = getEndpointsQuery(orgId, name)
                 .limit(limit)
                 .sort(sort)
                 .build(entityManager::createQuery)
@@ -196,101 +162,62 @@ public class EndpointRepository {
         return endpoints;
     }
 
-    public Long getEndpointsCount(String tenant, String orgId, @Nullable String name) {
-        return getEndpointsQuery(tenant, orgId, name)
+    public Long getEndpointsCount(String orgId, @Nullable String name) {
+        return getEndpointsQuery(orgId, name)
                 .buildCount(entityManager::createQuery)
                 .getSingleResult();
     }
 
-    public Endpoint getEndpoint(String tenant, String orgId, UUID id) {
-        if (orgIdHelper.useOrgId(orgId)) {
-            String query = "SELECT e FROM Endpoint e WHERE e.orgId = :orgId AND e.id = :id";
-            try {
-                Endpoint endpoint = entityManager.createQuery(query, Endpoint.class)
-                        .setParameter("id", id)
-                        .setParameter("orgId", orgId)
-                        .getSingleResult();
-                loadProperties(endpoint);
-                return endpoint;
-            } catch (NoResultException e) {
-                return null;
-            }
-        } else {
-            String query = "SELECT e FROM Endpoint e WHERE e.accountId = :accountId AND e.id = :id";
-            try {
-                Endpoint endpoint = entityManager.createQuery(query, Endpoint.class)
-                        .setParameter("id", id)
-                        .setParameter("accountId", tenant)
-                        .getSingleResult();
-                loadProperties(endpoint);
-                return endpoint;
-            } catch (NoResultException e) {
-                return null;
-            }
+    public Endpoint getEndpoint(String orgId, UUID id) {
+        String query = "SELECT e FROM Endpoint e WHERE e.orgId = :orgId AND e.id = :id";
+        try {
+            Endpoint endpoint = entityManager.createQuery(query, Endpoint.class)
+                    .setParameter("id", id)
+                    .setParameter("orgId", orgId)
+                    .getSingleResult();
+            loadProperties(endpoint);
+            return endpoint;
+        } catch (NoResultException e) {
+            return null;
         }
     }
 
     @Transactional
-    public boolean deleteEndpoint(String tenant, String orgId, UUID id) {
-        if (orgIdHelper.useOrgId(orgId)) {
-            String query = "DELETE FROM Endpoint WHERE orgId = :orgId AND id = :id";
-            int rowCount = entityManager.createQuery(query)
-                    .setParameter("id", id)
-                    .setParameter("orgId", orgId)
-                    .executeUpdate();
-            return rowCount > 0;
-        } else {
-            String query = "DELETE FROM Endpoint WHERE accountId = :accountId AND id = :id";
-            int rowCount = entityManager.createQuery(query)
-                    .setParameter("id", id)
-                    .setParameter("accountId", tenant)
-                    .executeUpdate();
-            return rowCount > 0;
-        }
+    public boolean deleteEndpoint(String orgId, UUID id) {
+        String query = "DELETE FROM Endpoint WHERE orgId = :orgId AND id = :id";
+        int rowCount = entityManager.createQuery(query)
+                .setParameter("id", id)
+                .setParameter("orgId", orgId)
+                .executeUpdate();
+        return rowCount > 0;
         // Actually, the endpoint targeting this should be repeatable
     }
 
-    public boolean disableEndpoint(String tenant, String orgId, UUID id) {
-        return modifyEndpointStatus(tenant, orgId, id, false);
+    public boolean disableEndpoint(String orgId, UUID id) {
+        return modifyEndpointStatus(orgId, id, false);
     }
 
-    public boolean enableEndpoint(String tenant, String orgId, UUID id) {
-        return modifyEndpointStatus(tenant, orgId, id, true);
+    public boolean enableEndpoint(String orgId, UUID id) {
+        return modifyEndpointStatus(orgId, id, true);
     }
 
     @Transactional
-    boolean modifyEndpointStatus(String tenant, String orgId, UUID id, boolean enabled) {
-        if (orgIdHelper.useOrgId(orgId)) {
-            String query = "UPDATE Endpoint SET enabled = :enabled WHERE orgId = :orgId AND id = :id";
-            int rowCount = entityManager.createQuery(query)
-                    .setParameter("id", id)
-                    .setParameter("orgId", orgId)
-                    .setParameter("enabled", enabled)
-                    .executeUpdate();
-            return rowCount > 0;
-        } else {
-            String query = "UPDATE Endpoint SET enabled = :enabled WHERE accountId = :accountId AND id = :id";
-            int rowCount = entityManager.createQuery(query)
-                    .setParameter("id", id)
-                    .setParameter("accountId", tenant)
-                    .setParameter("enabled", enabled)
-                    .executeUpdate();
-            return rowCount > 0;
-        }
+    boolean modifyEndpointStatus(String orgId, UUID id, boolean enabled) {
+        String query = "UPDATE Endpoint SET enabled = :enabled WHERE orgId = :orgId AND id = :id";
+        int rowCount = entityManager.createQuery(query)
+                .setParameter("id", id)
+                .setParameter("orgId", orgId)
+                .setParameter("enabled", enabled)
+                .executeUpdate();
+        return rowCount > 0;
     }
 
     @Transactional
     public boolean updateEndpoint(Endpoint endpoint) {
         // TODO Update could fail because the item did not exist, throw 404 in that case?
         // TODO Fix transaction so that we don't end up with half the updates applied
-        String endpointQuery;
-        if (orgIdHelper.useOrgId(endpoint.getOrgId())) {
-            endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled " +
-                    "WHERE orgId = :orgId AND id = :id";
-        } else {
-            endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled " +
-                    "WHERE accountId = :accountId AND id = :id";
-        }
+        String endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled " +
+                "WHERE orgId = :orgId AND id = :id";
         String webhookQuery = "UPDATE WebhookProperties SET url = :url, method = :method, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
         String camelQuery = "UPDATE CamelProperties SET url = :url, extras = :extras, " +
@@ -301,24 +228,13 @@ public class EndpointRepository {
             throw new RuntimeException("Unable to update an endpoint of type EMAIL_SUBSCRIPTION");
         }
 
-        int endpointRowCount;
-        if (orgIdHelper.useOrgId(endpoint.getOrgId())) {
-            endpointRowCount = entityManager.createQuery(endpointQuery)
-                    .setParameter("name", endpoint.getName())
-                    .setParameter("description", endpoint.getDescription())
-                    .setParameter("enabled", endpoint.isEnabled())
-                    .setParameter("orgId", endpoint.getOrgId())
-                    .setParameter("id", endpoint.getId())
-                    .executeUpdate();
-        } else {
-            endpointRowCount = entityManager.createQuery(endpointQuery)
-                    .setParameter("name", endpoint.getName())
-                    .setParameter("description", endpoint.getDescription())
-                    .setParameter("enabled", endpoint.isEnabled())
-                    .setParameter("accountId", endpoint.getAccountId())
-                    .setParameter("id", endpoint.getId())
-                    .executeUpdate();
-        }
+        int endpointRowCount = entityManager.createQuery(endpointQuery)
+                .setParameter("name", endpoint.getName())
+                .setParameter("description", endpoint.getDescription())
+                .setParameter("enabled", endpoint.isEnabled())
+                .setParameter("orgId", endpoint.getOrgId())
+                .setParameter("id", endpoint.getId())
+                .executeUpdate();
 
         if (endpointRowCount == 0) {
             return false;
@@ -388,56 +304,31 @@ public class EndpointRepository {
         }
     }
 
-    static QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String accountId, String orgId, boolean useOrgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
+    static QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
         Set<EndpointType> basicTypes = type.stream().filter(c -> c.getSubType() == null).map(CompositeEndpointType::getType).collect(Collectors.toSet());
         Set<CompositeEndpointType> compositeTypes = type.stream().filter(c -> c.getSubType() != null).collect(Collectors.toSet());
-        if (useOrgId) {
-            return QueryBuilder
-                    .builder(Endpoint.class)
-                    .alias("e")
-                    .where(
-                            WhereBuilder.builder()
-                                    .ifElse(
-                                            orgId == null,
-                                            WhereBuilder.builder().and("e.orgId IS NULL"),
-                                            WhereBuilder.builder().and("e.orgId = :orgId", "orgId", orgId)
-                                    )
-                                    .and(
-                                            WhereBuilder.builder()
-                                                    .ifOr(basicTypes.size() > 0, "e.compositeType.type IN (:endpointType)", "endpointType", basicTypes)
-                                                    .ifOr(compositeTypes.size() > 0, "e.compositeType IN (:compositeTypes)", "compositeTypes", compositeTypes)
-                                    )
-                                    .ifAnd(activeOnly != null, "e.enabled = :enabled", "enabled", activeOnly)
-                                    .ifAnd(
-                                            name != null && !name.isEmpty(),
-                                            "LOWER(e.name) LIKE :name",
-                                            "name", (Supplier<String>) () -> "%" + name.toLowerCase() + "%"
-                                    )
-                    );
-        } else {
-            return QueryBuilder
-                    .builder(Endpoint.class)
-                    .alias("e")
-                    .where(
-                            WhereBuilder.builder()
-                                    .ifElse(
-                                            accountId == null,
-                                            WhereBuilder.builder().and("e.accountId IS NULL"),
-                                            WhereBuilder.builder().and("e.accountId = :accountId", "accountId", accountId)
-                                    )
-                                    .and(
-                                            WhereBuilder.builder()
-                                                    .ifOr(basicTypes.size() > 0, "e.compositeType.type IN (:endpointType)", "endpointType", basicTypes)
-                                                    .ifOr(compositeTypes.size() > 0, "e.compositeType IN (:compositeTypes)", "compositeTypes", compositeTypes)
-                                    )
-                                    .ifAnd(activeOnly != null, "e.enabled = :enabled", "enabled", activeOnly)
-                                    .ifAnd(
-                                            name != null && !name.isEmpty(),
-                                            "LOWER(e.name) LIKE :name",
-                                            "name", (Supplier<String>) () -> "%" + name.toLowerCase() + "%"
-                                    )
-                    );
-        }
+        return QueryBuilder
+                .builder(Endpoint.class)
+                .alias("e")
+                .where(
+                        WhereBuilder.builder()
+                                .ifElse(
+                                        orgId == null,
+                                        WhereBuilder.builder().and("e.orgId IS NULL"),
+                                        WhereBuilder.builder().and("e.orgId = :orgId", "orgId", orgId)
+                                )
+                                .and(
+                                        WhereBuilder.builder()
+                                                .ifOr(basicTypes.size() > 0, "e.compositeType.type IN (:endpointType)", "endpointType", basicTypes)
+                                                .ifOr(compositeTypes.size() > 0, "e.compositeType IN (:compositeTypes)", "compositeTypes", compositeTypes)
+                                )
+                                .ifAnd(activeOnly != null, "e.enabled = :enabled", "enabled", activeOnly)
+                                .ifAnd(
+                                        name != null && !name.isEmpty(),
+                                        "LOWER(e.name) LIKE :name",
+                                        "name", (Supplier<String>) () -> "%" + name.toLowerCase() + "%"
+                                )
+                );
     }
 
     public Endpoint loadProperties(Endpoint endpoint) {

@@ -2,15 +2,12 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.http.Header;
 import org.junit.jupiter.api.Test;
-
-import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
@@ -25,22 +22,7 @@ class ValidationResourceTest {
     @InjectMock
     ApplicationRepository applicationRepository;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     @Test
-    void shouldReturnNotFoundWhenTripleIsInvalid_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        shouldReturnNotFoundWhenTripleIsInvalid();
-    }
-
-    @Test
-    void shouldReturnNotFoundWhenTripleIsInvalid_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        shouldReturnNotFoundWhenTripleIsInvalid();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void shouldReturnNotFoundWhenTripleIsInvalid() {
         when(applicationRepository.getEventType(eq("blabla"), eq("Notifications"), eq("Any"))).thenReturn(null);
 
@@ -64,18 +46,6 @@ class ValidationResourceTest {
     }
 
     @Test
-    void shouldReturnStatusOkWhenTripleExists_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        shouldReturnStatusOkWhenTripleExists();
-    }
-
-    @Test
-    void shouldReturnStatusOkWhenTripleExists_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        shouldReturnStatusOkWhenTripleExists();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void shouldReturnStatusOkWhenTripleExists() {
         EventType eventType = new EventType();
         when(applicationRepository.getEventType(eq("my-bundle"), eq("Policies"), eq("Any"))).thenReturn(eventType);

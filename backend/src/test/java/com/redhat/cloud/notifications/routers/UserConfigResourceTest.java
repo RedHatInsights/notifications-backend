@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -55,9 +54,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     @InjectMock
     TemplateEngineClient templateEngineClient;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     private Field rhelPolicyForm(SettingsValueJsonForm jsonForm) {
         for (Field section : jsonForm.fields.get(0).sections) {
             if (section.name.equals("policies")) {
@@ -96,23 +92,11 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testSettings_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testSettings();
-    }
-
-    @Test
-    void testSettings_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testSettings();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testSettings() {
-        String tenant = "empty";
+        String accountId = "empty";
         String orgId = "empty";
         String username = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
@@ -270,7 +254,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertEquals(true, preferences.getInstantEmail());
 
         // does not fail if we have unknown apps in our bundle's settings
-        emailSubscriptionRepository.subscribe(tenant, orgId, username, bundle, "not-found-app", DAILY);
+        emailSubscriptionRepository.subscribe(accountId, orgId, username, bundle, "not-found-app", DAILY);
 
         given()
                 .header(identityHeader)
@@ -281,7 +265,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
                 .statusCode(200)
                 .contentType(JSON);
 
-        emailSubscriptionRepository.unsubscribe(tenant, orgId, username, "not-found-bundle", "not-found-app", DAILY);
+        emailSubscriptionRepository.unsubscribe(orgId, username, "not-found-bundle", "not-found-app", DAILY);
 
         // Fails if we don't specify the bundleName
         given()
@@ -303,8 +287,8 @@ public class UserConfigResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(200)
                 .contentType(TEXT);
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "not-found-bundle-2", "not-found-app-2", DAILY));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "not-found-bundle", "not-found-app", INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "not-found-bundle-2", "not-found-app-2", DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "not-found-bundle", "not-found-app", INSTANT));
 
         // Does not add event type if is not supported by the templates
         when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(FALSE);

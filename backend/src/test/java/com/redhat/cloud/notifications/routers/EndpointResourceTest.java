@@ -95,23 +95,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     FeatureFlipper featureFlipper;
 
     @Test
-    void testEndpointAdding_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testEndpointAdding();
-    }
-
-    @Test
-    void testEndpointAdding_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testEndpointAdding();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testEndpointAdding() {
-        String tenant = "empty";
+        String accountId = "empty";
         String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -248,23 +236,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testEndpointValidation_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testEndpointValidation();
-    }
-
-    @Test
-    void testEndpointValidation_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testEndpointValidation();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testEndpointValidation() {
-        String tenant = "validation";
+        String accountId = "validation";
         String orgId = "validation2";
         String userName = "testEndpointValidation";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -320,24 +296,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void addCamelEndpoint_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        addCamelEndpoint();
-    }
-
-    @Test
-    void addCamelEndpoint_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        addCamelEndpoint();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void addCamelEndpoint() {
 
-        String tenant = "empty";
+        String accountId = "empty";
         String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -406,24 +370,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void addBogusCamelEndpoint_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        addBogusCamelEndpoint();
-    }
-
-    @Test
-    void addBogusCamelEndpoint_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        addBogusCamelEndpoint();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void addBogusCamelEndpoint() {
 
-        String tenant = "empty";
+        String accountId = "empty";
         String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -469,24 +421,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void addOpenBridgeEndpoint_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        addOpenBridgeEndpoint();
-    }
-
-    @Test
-    void addOpenBridgeEndpoint_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        addOpenBridgeEndpoint();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void addOpenBridgeEndpoint() {
 
-        String tenant = "empty";
+        String accountId = "empty";
         String orgId = "empty";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -601,23 +541,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testEndpointUpdates_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testEndpointUpdates();
-    }
-
-    @Test
-    void testEndpointUpdates_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testEndpointUpdates();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testEndpointUpdates() {
-        String tenant = "updates";
+        String accountId = "updates";
         String orgId = "updates2";
         String userName = "testEndpointUpdates";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -715,7 +643,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals("not-so-secret-anymore", attrSingleUpdated.getString("secret_token"));
     }
 
-    private static Stream<Arguments> testEndpointTypeQuery_AccountId() {
+    private static Stream<Arguments> testEndpointTypeQuery() {
         return Stream.of(
                 Arguments.of(Set.of(EndpointType.WEBHOOK)),
                 Arguments.of(Set.of(EndpointType.CAMEL)),
@@ -723,34 +651,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
         );
     }
 
-    private static Stream<Arguments> testEndpointTypeQuery_OrgId() {
-        return Stream.of(
-                Arguments.of(Set.of(EndpointType.WEBHOOK)),
-                Arguments.of(Set.of(EndpointType.CAMEL)),
-                Arguments.of(Set.of(EndpointType.WEBHOOK, EndpointType.CAMEL))
-        );
-    }
-
     @ParameterizedTest
     @MethodSource
-    void testEndpointTypeQuery_AccountId(Set<EndpointType> types) {
-        featureFlipper.setUseOrgId(false);
-        testEndpointTypeQuery(types);
-    }
-
-    @ParameterizedTest
-    @MethodSource
-    void testEndpointTypeQuery_OrgId(Set<EndpointType> types) {
-        featureFlipper.setUseOrgId(true);
-        testEndpointTypeQuery(types);
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testEndpointTypeQuery(Set<EndpointType> types) {
-        String tenant = "limiter";
+        String accountId = "limiter";
         String orgId = "limiter2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -850,23 +757,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testEndpointLimiter_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testEndpointLimiter();
-    }
-
-    @Test
-    void testEndpointLimiter_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testEndpointLimiter();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testEndpointLimiter() {
-        String tenant = "limiter";
+        String accountId = "limiter";
         String orgId = "limiter2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -908,29 +803,17 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testSortingOrder_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testSortingOrder();
-    }
-
-    @Test
-    void testSortingOrder_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testSortingOrder();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testSortingOrder() {
-        String tenant = "testSortingOrder";
+        String accountId = "testSortingOrder";
         String orgId = "testSortingOrder2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
         // Create 50 test-ones with sanely sortable name & enabled & disabled & type
-        int[] stats = helpers.createTestEndpoints(tenant, orgId, 50);
+        int[] stats = helpers.createTestEndpoints(accountId, orgId, 50);
         int disableCount = stats[1];
         int webhookCount = stats[2];
 
@@ -985,23 +868,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testWebhookAttributes_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testWebhookAttributes();
-    }
-
-    @Test
-    void testWebhookAttributes_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testWebhookAttributes();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testWebhookAttributes() {
-        String tenant = "testWebhookAttributes";
+        String accountId = "testWebhookAttributes";
         String orgId = "testWebhookAttributes2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -1051,23 +922,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testAddEndpointEmailSubscription_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testAddEndpointEmailSubscription();
-    }
-
-    @Test
-    void testAddEndpointEmailSubscription_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testAddEndpointEmailSubscription();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testAddEndpointEmailSubscription() {
-        String tenant = "adding-email-subscription";
+        String accountId = "adding-email-subscription";
         String orgId = "adding-email-subscription2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -1229,26 +1088,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testAddEndpointEmailSubscriptionRbac_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testAddEndpointEmailSubscriptionRbac();
-    }
-
-    @Test
-    void testAddEndpointEmailSubscriptionRbac_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testAddEndpointEmailSubscriptionRbac();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testAddEndpointEmailSubscriptionRbac() {
-        String tenant = "adding-email-subscription";
+        String accountId = "adding-email-subscription";
         String orgId = "adding-email-subscription2";
         String userName = "user";
         String validGroupId = "f85517d0-063b-4eed-a501-e79ffc1f5ad3";
         String unknownGroupId = "f44f50d5-acab-482c-a3cf-087faf2c709c";
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -1320,23 +1167,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testEmailSubscription_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testEmailSubscription();
-    }
-
-    @Test
-    void testEmailSubscription_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testEmailSubscription();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testEmailSubscription() {
-        String tenant = "test-subscription";
+        String accountId = "test-subscription";
         String orgId = "test-subscription-org-id";
         String username = "test-user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
@@ -1409,10 +1244,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .then().statusCode(200)
                 .contentType(JSON);
 
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", INSTANT));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", DAILY));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
 
         // Enable instant on rhel.policies
         given()
@@ -1421,10 +1256,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .put("/endpoints/email/subscription/rhel/policies/instant")
                 .then().statusCode(200).contentType(JSON);
 
-        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", INSTANT));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", DAILY));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
 
         // Enable daily on rhel.policies
         given()
@@ -1433,10 +1268,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .put("/endpoints/email/subscription/rhel/policies/daily")
                 .then().statusCode(200).contentType(JSON);
 
-        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", INSTANT));
-        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", DAILY));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
 
         // Enable instant on TEST_BUNDLE_NAME.TEST_APP_NAME
         given()
@@ -1445,10 +1280,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/instant")
                 .then().statusCode(200).contentType(JSON);
 
-        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", INSTANT));
-        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", DAILY));
-        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
 
         // Disable daily on rhel.policies
         given()
@@ -1457,10 +1292,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .delete("/endpoints/email/subscription/rhel/policies/daily")
                 .then().statusCode(200).contentType(JSON);
 
-        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", INSTANT));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", DAILY));
-        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
 
         // Disable instant on rhel.policies
         given()
@@ -1469,25 +1304,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .delete("/endpoints/email/subscription/rhel/policies/instant")
                 .then().statusCode(200).contentType(JSON);
 
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", INSTANT));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, "rhel", "policies", DAILY));
-        assertNotNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(tenant, orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
+        assertNotNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
+        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
     }
 
     @Test
-    void testUnknownEndpointTypes_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testUnknownEndpointTypes();
-    }
-
-    @Test
-    void testUnknownEndpointTypes_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testUnknownEndpointTypes();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testUnknownEndpointTypes() {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("test-tenant", "test-orgid", "test-user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1512,23 +1335,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testConnectionCount_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testConnectionCount();
-    }
-
-    @Test
-    void testConnectionCount_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testConnectionCount();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testConnectionCount() {
-        String tenant = "count";
+        String accountId = "count";
         String orgId = "count2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -1586,23 +1397,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testSearch_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testSearch();
-    }
-
-    @Test
-    void testSearch_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testSearch();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testSearch() {
-        String tenant = "search";
+        String accountId = "search";
         String orgId = "search2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
@@ -1642,23 +1441,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testSearchWithType_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testSearchWithType();
-    }
-
-    @Test
-    void testSearchWithType_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testSearchWithType();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testSearchWithType() {
-        String tenant = "search-type";
+        String accountId = "search-type";
         String orgId = "search-type2";
         String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 

@@ -89,7 +89,7 @@ public class UserConfigResource {
                             }
                         } else {
                             subscriptionRequests.add(emailSubscriptionRepository.unsubscribe(
-                                    accountId, orgId, name, bundleName, applicationName, emailSubscriptionType
+                                    orgId, name, bundleName, applicationName, emailSubscriptionType
                             ));
                         }
                     });
@@ -117,14 +117,13 @@ public class UserConfigResource {
             @PathParam("applicationName") String applicationName) {
         final RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         final String name = principal.getName();
-        String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
         final UserConfigPreferences preferences = new UserConfigPreferences();
         // TODO Get the DAILY and INSTANT subscriptions with a single SQL query and return UserConfigPreferences directly from Hibernate.
-        EmailSubscription daily = emailSubscriptionRepository.getEmailSubscription(accountId, orgId, name, bundleName, applicationName, EmailSubscriptionType.DAILY);
+        EmailSubscription daily = emailSubscriptionRepository.getEmailSubscription(orgId, name, bundleName, applicationName, EmailSubscriptionType.DAILY);
         preferences.setDailyEmail(daily != null);
-        EmailSubscription instant = emailSubscriptionRepository.getEmailSubscription(accountId, orgId, name, bundleName, applicationName, EmailSubscriptionType.INSTANT);
+        EmailSubscription instant = emailSubscriptionRepository.getEmailSubscription(orgId, name, bundleName, applicationName, EmailSubscriptionType.INSTANT);
         preferences.setInstantEmail(instant != null);
         return preferences;
     }
@@ -137,10 +136,9 @@ public class UserConfigResource {
 
         final RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         final String name = principal.getName();
-        String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
-        SettingsValues settingsValues = getSettingsValueForUser(accountId, orgId, name, bundleName);
+        SettingsValues settingsValues = getSettingsValueForUser(orgId, name, bundleName);
 
         String jsonFormString = settingsValuesToJsonForm(settingsValues);
         Response.ResponseBuilder builder;
@@ -153,7 +151,7 @@ public class UserConfigResource {
     /**
      * Pulls the user settings values of an user across all the know applications of a bundle
      * */
-    private SettingsValues getSettingsValueForUser(String account, String orgId, String username, String bundleName) {
+    private SettingsValues getSettingsValueForUser(String orgId, String username, String bundleName) {
         if (bundleName == null || bundleName.equals("")) {
             throw new BadRequestException("bundleName must have a value");
         }
@@ -181,7 +179,7 @@ public class UserConfigResource {
                     settingsValues.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
                 }
             }
-            List<EmailSubscription> emailSubscriptions = emailSubscriptionRepository.getEmailSubscriptionsForUser(account, orgId, username);
+            List<EmailSubscription> emailSubscriptions = emailSubscriptionRepository.getEmailSubscriptionsForUser(orgId, username);
             for (EmailSubscription emailSubscription : emailSubscriptions) {
                 if (settingsValues.bundles.containsKey(emailSubscription.getApplication().getBundle().getName())) {
                     BundleSettingsValue bundleSettings = settingsValues.bundles.get(emailSubscription.getApplication().getBundle().getName());
