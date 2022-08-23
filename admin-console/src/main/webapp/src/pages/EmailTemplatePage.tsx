@@ -11,6 +11,7 @@ import {
     Title
 } from '@patternfly/react-core';
 import * as React from 'react';
+import { useParams } from 'react-router-dom';
 import { useUserPermissions } from '../app/PermissionContext';
 import { useCreateTemplate } from '../services/EmailTemplates/CreateTemplate';
 import { Template } from '../types/Notifications';
@@ -74,6 +75,10 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
         data: defaultContentTemplate
     });
 
+    const templateId = useParams<{
+        templateId: string;
+    }>();
+
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
         const target = event.target as HTMLInputElement;
         setTemplate(prev => ({ ...prev, [target.name]: target.value }));
@@ -114,7 +119,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                             type='text'
                             id='name'
                             name="name"
-                            value={ template?.name }
+                            value={ template.name }
                             onChange={ handleChange }
                         /></FormGroup>
                     <FormGroup label='Description' fieldId='description' isRequired
@@ -123,7 +128,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                             type='text'
                             id='description'
                             name="description"
-                            value={ template?.description }
+                            value={ template.description }
                             onChange={ handleChange }
                         /></FormGroup>
                     <FormGroup>
@@ -142,7 +147,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                             isMinimapVisible={ false }
                             onChange={ handleCodeChange }
                             code={ defaultPayload }
-                            value={ template?.data }
+                            value={ template.data }
                             height="300px"
                             isLanguageLabelVisible
                             language={ Language.json } />

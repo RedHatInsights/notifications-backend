@@ -77,8 +77,9 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
                                     <Button className='view' type='button' variant='plain' onClick={ viewModal }
                                     > { <EyeIcon /> } </Button></Td>
                                 <Td>
-                                    <Button className='edit' type='button' variant='plain'
-                                        isDisabled> { <PencilAltIcon /> } </Button></Td>
+                                    <Button className='edit' type='button' variant='plain' component={ (props: any) =>
+                                        <Link { ...props } to={ linkTo.emailTemplates(e.id) } /> }
+                                    > { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
                                         isDisabled>{ <TrashIcon /> } </Button></Td>
@@ -91,4 +92,3 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
 
     );
 };
-
