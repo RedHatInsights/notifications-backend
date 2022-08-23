@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class EmailAggregationResourcesTest {
 
     private static final ZoneId UTC = ZoneId.of("UTC");
-    private static final String ACCOUNT_ID = "123456789";
     private static final String ORG_ID = "987654321";
     private static final String BUNDLE_NAME = "best-bundle";
     private static final String APP_NAME = "awesome-app";
@@ -41,13 +40,13 @@ public class EmailAggregationResourcesTest {
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
 
-        addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
-        addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
-        addEmailAggregation("other-account", "other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2);
-        addEmailAggregation(ACCOUNT_ID, ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
-        addEmailAggregation(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
+        addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
+        addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+        addEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2);
+        addEmailAggregation(ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
+        addEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
 
-        EmailAggregationKey key = new EmailAggregationKey(ACCOUNT_ID, ORG_ID, BUNDLE_NAME, APP_NAME);
+        EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME, APP_NAME);
 
         List<EmailAggregationKey> keys = emailAggregationResources.getApplicationsWithPendingAggregation(start, end);
         assertEquals(4, keys.size());
@@ -62,9 +61,8 @@ public class EmailAggregationResourcesTest {
         assertEquals(3, keys.size());
     }
 
-    private void addEmailAggregation(String accountId, String orgId, String bundleName, String applicationName, JsonObject payload) {
+    private void addEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
         EmailAggregation aggregation = new EmailAggregation();
-        aggregation.setAccountId(accountId);
         aggregation.setOrgId(orgId);
         aggregation.setBundleName(bundleName);
         aggregation.setApplicationName(applicationName);

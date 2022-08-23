@@ -57,7 +57,7 @@ public class EndpointProcessor {
 
     public void process(Event event) {
         processedItems.increment();
-        List<Endpoint> endpoints = endpointRepository.getTargetEndpoints(event.getAccountId(), event.getOrgId(), event.getEventType());
+        List<Endpoint> endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
 
         // Target endpoints are grouped by endpoint type.
         endpointTargeted.increment(endpoints.size());

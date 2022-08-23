@@ -67,7 +67,5 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         props.put("quarkus.rest-client.rbac-authentication.url", getMockServerUrl());
         props.put("quarkus.rest-client.ob.url", getMockServerUrl());
         props.put("quarkus.rest-client.kc.url", getMockServerUrl());
-        // TODO NOTIF-603 Remove the following line after the migration on prod.
-        props.put("quarkus.rest-client.it-s2s.url", getMockServerUrl());
     }
 }

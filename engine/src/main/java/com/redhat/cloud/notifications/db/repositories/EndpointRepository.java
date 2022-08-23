@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.OrgIdHelper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -32,9 +31,6 @@ public class EndpointRepository {
     @Inject
     StatelessSessionFactory statelessSessionFactory;
 
-    @Inject
-    OrgIdHelper orgIdHelper;
-
     /**
      * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION endpoint with empty properties. This
      * endpoint is used to aggregate and store in the DB the email actions outcome, which will be used later by the
@@ -43,20 +39,11 @@ public class EndpointRepository {
      * action recipients.
      */
     public Endpoint getOrCreateDefaultEmailSubscription(String accountId, String orgId) {
-        List<Endpoint> emailEndpoints;
-        if (orgIdHelper.useOrgId(orgId)) {
-            String query = "FROM Endpoint WHERE orgId = :orgId AND compositeType.type = :endpointType";
-            emailEndpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
-                    .setParameter("orgId", orgId)
-                    .setParameter("endpointType", EMAIL_SUBSCRIPTION)
-                    .getResultList();
-        } else {
-            String query = "FROM Endpoint WHERE accountId = :accountId AND compositeType.type = :endpointType";
-            emailEndpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
-                    .setParameter("accountId", accountId)
-                    .setParameter("endpointType", EMAIL_SUBSCRIPTION)
-                    .getResultList();
-        }
+        String query = "FROM Endpoint WHERE orgId = :orgId AND compositeType.type = :endpointType";
+        List<Endpoint> emailEndpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+                .setParameter("orgId", orgId)
+                .setParameter("endpointType", EMAIL_SUBSCRIPTION)
+                .getResultList();
         loadProperties(emailEndpoints);
 
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
@@ -84,76 +71,40 @@ public class EndpointRepository {
         return endpoint;
     }
 
-    public List<Endpoint> getTargetEndpoints(String accountId, String orgId, EventType eventType) {
-        List<Endpoint> endpoints;
-        if (orgIdHelper.useOrgId(orgId)) {
-            String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                    "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL)";
+    public List<Endpoint> getTargetEndpoints(String orgId, EventType eventType) {
+        String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
+                "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL)";
 
-            endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
-                    .setParameter("eventType", eventType)
-                    .setParameter("orgId", orgId)
-                    .getResultList();
-        } else {
-            String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                    "WHERE e.enabled IS TRUE AND b.eventType = :eventType AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL)";
-            endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
-                    .setParameter("eventType", eventType)
-                    .setParameter("accountId", accountId)
-                    .getResultList();
-        }
+        List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+                .setParameter("eventType", eventType)
+                .setParameter("orgId", orgId)
+                .getResultList();
         loadProperties(endpoints);
         for (Endpoint endpoint : endpoints) {
-            if (orgIdHelper.useOrgId(orgId)) {
-                if (endpoint.getOrgId() == null) {
-                    if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
-                        endpoint.setOrgId(orgId);
-                    } else {
-                        Log.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
-                    }
-                }
-            } else {
-                if (endpoint.getAccountId() == null) {
-                    if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
-                        endpoint.setAccountId(accountId);
-                    } else {
-                        Log.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
-                    }
+            if (endpoint.getOrgId() == null) {
+                if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
+                    endpoint.setOrgId(orgId);
+                } else {
+                    Log.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
                 }
             }
         }
         return endpoints;
     }
 
-    public List<Endpoint> getTargetEmailSubscriptionEndpoints(String accountId, String orgId, String bundleName, String applicationName, String eventTypeName) {
-        List<Endpoint> endpoints;
-        if (orgIdHelper.useOrgId(orgId)) {
-            String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                    "WHERE e.enabled IS TRUE AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL) " +
-                    "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
-                    "AND e.compositeType.type = :endpointType";
+    public List<Endpoint> getTargetEmailSubscriptionEndpoints(String orgId, String bundleName, String applicationName, String eventTypeName) {
+        String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
+                "WHERE e.enabled IS TRUE AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL) " +
+                "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
+                "AND e.compositeType.type = :endpointType";
 
-            endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
-                    .setParameter("applicationName", applicationName)
-                    .setParameter("eventTypeName", eventTypeName)
-                    .setParameter("orgId", orgId)
-                    .setParameter("bundleName", bundleName)
-                    .setParameter("endpointType", EMAIL_SUBSCRIPTION)
-                    .getResultList();
-        } else {
-            String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                    "WHERE e.enabled IS TRUE AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.accountId = :accountId OR bga.behaviorGroup.accountId IS NULL) " +
-                    "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
-                    "AND e.compositeType.type = :endpointType";
-
-            endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
-                    .setParameter("applicationName", applicationName)
-                    .setParameter("eventTypeName", eventTypeName)
-                    .setParameter("accountId", accountId)
-                    .setParameter("bundleName", bundleName)
-                    .setParameter("endpointType", EMAIL_SUBSCRIPTION)
-                    .getResultList();
-        }
+        List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+                .setParameter("applicationName", applicationName)
+                .setParameter("eventTypeName", eventTypeName)
+                .setParameter("orgId", orgId)
+                .setParameter("bundleName", bundleName)
+                .setParameter("endpointType", EMAIL_SUBSCRIPTION)
+                .getResultList();
         loadProperties(endpoints);
         return endpoints;
     }

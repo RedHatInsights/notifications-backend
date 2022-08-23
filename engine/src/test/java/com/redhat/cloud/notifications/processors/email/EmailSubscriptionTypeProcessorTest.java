@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
@@ -52,9 +51,6 @@ class EmailSubscriptionTypeProcessorTest {
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
         assertTrue(testee.process(new Event(), null).isEmpty());
@@ -66,29 +62,17 @@ class EmailSubscriptionTypeProcessorTest {
     }
 
     @Test
-    void shouldSuccessfullySendEmail_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        shouldSuccessfullySendEmail();
-    }
-
-    @Test
-    void shouldSuccessfullySendEmail_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        shouldSuccessfullySendEmail();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void shouldSuccessfullySendEmail() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
 
         AggregationCommand aggregationCommand1 = new AggregationCommand(
-                new EmailAggregationKey("account-1", "org-1", "bundle-1", "app-1"),
+                new EmailAggregationKey("org-1", "bundle-1", "app-1"),
                 LocalDateTime.now(),
                 LocalDateTime.now().plusDays(1),
                 DAILY
         );
         AggregationCommand aggregationCommand2 = new AggregationCommand(
-                new EmailAggregationKey("account-2", "org-2", "bundle-2", "app-2"),
+                new EmailAggregationKey("org-2", "bundle-2", "app-2"),
                 LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
                 LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
                 DAILY
@@ -129,18 +113,6 @@ class EmailSubscriptionTypeProcessorTest {
     }
 
     @Test
-    void consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload();
-    }
-
-    @Test
-    void consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
 

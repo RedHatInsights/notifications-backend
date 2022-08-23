@@ -26,11 +26,10 @@ public class PatchTestHelpers {
     private static final String UNIQUE_HOSTS_CNT = "unique_system_count";
     private static final String ADVISORIES_KEY = "advisories";
 
-    public static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String advisoryName, String advisoryType, String inventory_id) {
+    public static EmailAggregation createEmailAggregation(String bundle, String application, String advisoryName, String advisoryType, String inventory_id) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
-        aggregation.setAccountId(tenant);
         aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
@@ -54,7 +53,6 @@ public class PatchTestHelpers {
                         )
                         .build()
         ));
-        emailActionMessage.setAccountId(tenant);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
@@ -63,15 +61,13 @@ public class PatchTestHelpers {
         return aggregation;
     }
 
-    public static EmailAggregation createEmailAggregationMultipleEvents(String tenant, String bundle, String application) {
+    public static EmailAggregation createEmailAggregationMultipleEvents(String bundle, String application) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
-        aggregation.setAccountId(tenant);
         aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
-        emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.now());
@@ -110,7 +106,6 @@ public class PatchTestHelpers {
                         )
                 .build()
         ));
-        emailActionMessage.setAccountId(tenant);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);

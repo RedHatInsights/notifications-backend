@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @QuarkusTest
 class ITUserRequestTest {
 
-    private final ITUserRequest testee = new ITUserRequest("someAccountId", "someOrgId", false, true, 0, 101);
+    private final ITUserRequest testee = new ITUserRequest("someOrgId", true, 0, 101);
 
     @Test
     void shouldSetPermissionCodeWhenAdminsOnly() {
@@ -36,33 +36,8 @@ class ITUserRequestTest {
     }
 
     @Test
-    void shouldContainAccountIdAsEbsAccountNumber() {
-        assertEquals("someAccountId", testee.by.allOf.ebsAccountNumber);
-    }
-
-    @Test
-    void shouldNotContainOrgIdByDefault() {
-        assertNull(testee.by.allOf.accountId);
-    }
-
-    @Test
-    void shouldContainOrgIdWhenOrgIdFlagIsTrue() {
-        ITUserRequest testee = new ITUserRequest("someAccountId", "someOrgId", true, true, 0, 101);
-
+    void shouldContainOrgIdAsAccountId() {
         assertEquals("someOrgId", testee.by.allOf.accountId);
         assertNull(testee.by.allOf.ebsAccountNumber);
-    }
-
-    @Test
-    void shouldFallBackIfOrgIdIsNullOrEmptyString() {
-        String someAccountId = "someAccountId";
-        ITUserRequest testeeNull = new ITUserRequest(someAccountId, null, true, true, 0, 101);
-        ITUserRequest testeeEmptyString = new ITUserRequest(someAccountId, "", true, true, 0, 101);
-
-        assertNull(testeeNull.by.allOf.accountId);
-        assertEquals(someAccountId, testeeNull.by.allOf.ebsAccountNumber);
-
-        assertNull(testeeEmptyString.by.allOf.accountId);
-        assertEquals(someAccountId, testeeEmptyString.by.allOf.ebsAccountNumber);
     }
 }

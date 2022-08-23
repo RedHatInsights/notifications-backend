@@ -4,8 +4,6 @@ import javax.validation.constraints.NotNull;
 
 public class EmailAggregationKey {
 
-    private String accountId;
-
     @NotNull
     private String orgId;
 
@@ -15,15 +13,10 @@ public class EmailAggregationKey {
     @NotNull
     private String application;
 
-    public EmailAggregationKey(String accountId, String orgId, String bundle, String application) {
-        this.accountId = accountId;
+    public EmailAggregationKey(String orgId, String bundle, String application) {
         this.orgId = orgId;
         this.bundle = bundle;
         this.application = application;
-    }
-
-    public String getAccountId() {
-        return accountId;
     }
 
     public String getOrgId() {

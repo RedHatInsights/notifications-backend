@@ -135,7 +135,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
             if (shouldSaveAggregation) {
                 EmailAggregation aggregation = new EmailAggregation();
-                aggregation.setAccountId((String) action.getAccountId());
                 aggregation.setOrgId(action.getOrgId());
                 aggregation.setApplicationName(action.getApplication());
                 aggregation.setBundleName(action.getBundle());
@@ -190,9 +189,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         ).collect(Collectors.toSet());
 
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
-                .getEmailSubscribersUserId((String) action.getAccountId(), action.getOrgId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
+                .getEmailSubscribersUserId(action.getOrgId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
 
-        return recipientResolver.recipientUsers((String) action.getAccountId(), action.getOrgId(), requests, subscribers)
+        return recipientResolver.recipientUsers(action.getOrgId(), requests, subscribers)
                 .stream()
                 .map(user -> emailSender.sendEmail(user, event, subject, body))
                 // The value may be an empty Optional in case of Qute template exception.
@@ -265,7 +264,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 Action action = new Action();
                 action.setContext(contextBuilder.build());
                 action.setEvents(List.of());
-                action.setAccountId(aggregationKey.getAccountId());
                 action.setOrgId(aggregationKey.getOrgId());
                 action.setApplication(aggregationKey.getApplication());
                 action.setBundle(aggregationKey.getBundle());

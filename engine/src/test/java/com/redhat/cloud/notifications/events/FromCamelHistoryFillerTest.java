@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -42,9 +41,6 @@ public class FromCamelHistoryFillerTest {
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(
@@ -59,18 +55,6 @@ public class FromCamelHistoryFillerTest {
     }
 
     @Test
-    void testInvalidPayload_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testInvalidPayload();
-    }
-
-    @Test
-    void testInvalidPayload_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testInvalidPayload();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testInvalidPayload() {
         inMemoryConnector.source(FROMCAMEL_CHANNEL).send("I am not valid!");
 
@@ -81,18 +65,6 @@ public class FromCamelHistoryFillerTest {
     }
 
     @Test
-    void testValidPayload_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testValidPayload();
-    }
-
-    @Test
-    void testValidPayload_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testValidPayload();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testValidPayload() {
         String expectedHistoryId = "e3c90a94-751b-4ce1-b345-b85d825795a4";
         int expectedDuration = 67549274;

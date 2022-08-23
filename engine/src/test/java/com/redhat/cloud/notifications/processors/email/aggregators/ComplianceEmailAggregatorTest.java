@@ -20,27 +20,25 @@ class ComplianceEmailAggregatorTest {
     }
 
     @Test
-    void emptyAggregatorHasNoAccountIdOrOrgId() {
-        Assertions.assertNull(aggregator.getAccountId(), "Empty aggregator has no accountId");
+    void emptyAggregatorHasNoOrgId() {
         Assertions.assertNull(aggregator.getOrgId(), "Empty aggregator has no orgId");
     }
 
     @Test
-    void shouldSetAccountNumberAndOrgId() {
-        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("tenant", "rhel", "compliance", "report-upload-failed", "policyId", "inventoryId"));
-        Assertions.assertEquals("tenant", aggregator.getAccountId());
+    void shouldSetOrgId() {
+        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("rhel", "compliance", "report-upload-failed", "policyId", "inventoryId"));
         Assertions.assertEquals(DEFAULT_ORG_ID, aggregator.getOrgId());
     }
 
     @Test
     void validatePayload() {
-        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("tenant", "rhel", "compliance", "foo", "policy0", "host0"));
-        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("tenant", "rhel", "compliance", "report-upload-failed", "policy1", "host1"));
-        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("tenant", "rhel", "compliance", "report-upload-failed", "policy2", "host2"));
-        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("tenant", "rhel", "compliance", "compliance-below-threshold", "policy3", "host3"));
-        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("tenant", "rhel", "compliance", "compliance-below-threshold", "policy4", "host4"));
-        // aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("tenant", "rhel", "compliance", "system-not-reporting", "policy5", "host5"));
-        // aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("tenant", "rhel", "compliance", "system-not-reporting", "policy6", "host6"));
+        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("rhel", "compliance", "foo", "policy0", "host0"));
+        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("rhel", "compliance", "report-upload-failed", "policy1", "host1"));
+        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("rhel", "compliance", "report-upload-failed", "policy2", "host2"));
+        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("rhel", "compliance", "compliance-below-threshold", "policy3", "host3"));
+        aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("rhel", "compliance", "compliance-below-threshold", "policy4", "host4"));
+        // aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("rhel", "compliance", "system-not-reporting", "policy5", "host5"));
+        // aggregator.aggregate(ComplianceTestHelpers.createEmailAggregation("rhel", "compliance", "system-not-reporting", "policy6", "host6"));
 
         Map<String, Object> context = aggregator.getContext();
         JsonObject compliance = JsonObject.mapFrom(context).getJsonObject("compliance");

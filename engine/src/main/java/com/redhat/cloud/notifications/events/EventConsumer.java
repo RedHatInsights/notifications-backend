@@ -1,13 +1,11 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.orgid.OrgIdTranslator;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -37,7 +35,6 @@ public class EventConsumer {
     public static final String PROCESSING_EXCEPTION_COUNTER_NAME = "input.processing.exception";
     public static final String DUPLICATE_COUNTER_NAME = "input.duplicate";
     public static final String CONSUMED_TIMER_NAME = "input.consumed";
-    public static final String MISSING_ORG_ID = "input.missing.orgid";
 
     private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for [bundleName=%s, applicationName=%s, eventTypeName=%s]";
 
@@ -61,12 +58,6 @@ public class EventConsumer {
 
     @Inject
     StatelessSessionFactory statelessSessionFactory;
-
-    @Inject
-    FeatureFlipper featureFlipper;
-
-    @Inject
-    OrgIdTranslator orgIdTranslator;
 
     private Counter rejectedCounter;
     private Counter processingErrorCounter;
@@ -114,24 +105,7 @@ public class EventConsumer {
             bundleName[0] = action.getBundle();
             appName[0] = action.getApplication();
             String eventTypeName = action.getEventType();
-            Log.infof("Processing received action (id=%s): (accountId=%s, orgId=%s) %s/%s/%s", action.getId(), action.getAccountId(), action.getOrgId(), bundleName[0], appName[0], eventTypeName);
-            if (action.getOrgId() == null || action.getOrgId().isBlank()) {
-                String bundle = bundleName[0] == null ? "" : bundleName[0];
-                String application = appName[0] == null ? "" : appName[0];
-                Counter missingOrgIdCounter = registry.counter(MISSING_ORG_ID, "bundle", bundle, "application", application);
-                missingOrgIdCounter.increment();
-                if (featureFlipper.isUseOrgId()) {
-                    Log.info("The org ID migration is enabled but the orgId field is missing or blank in the action");
-                }
-                if (featureFlipper.isTranslateAccountIdToOrgId() && action.getAccountId() != null && !action.getAccountId().toString().isBlank()) {
-                    try {
-                        String orgId = orgIdTranslator.translate((String) action.getAccountId());
-                        action.setOrgId(orgId);
-                    } catch (Exception e) {
-                        Log.warn("Org ID translation failed", e);
-                    }
-                }
-            }
+            Log.infof("Processing received action (id=%s): (orgId=%s) %s/%s/%s", action.getId(), action.getOrgId(), bundleName[0], appName[0], eventTypeName);
             /*
              * Step 2
              * The message ID is extracted from the Kafka message headers. It can be null for now to give the onboarded

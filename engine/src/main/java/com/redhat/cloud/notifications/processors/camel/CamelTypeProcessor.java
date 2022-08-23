@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.processors.camel;
 
 import com.redhat.cloud.notifications.Base64Utils;
-import com.redhat.cloud.notifications.OrgIdHelper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
@@ -75,9 +74,6 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
     @Inject
     BridgeAuth bridgeAuth;
-
-    @Inject
-    OrgIdHelper orgIdHelper;
 
     @Override
     public List<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
@@ -182,10 +178,8 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
         OutgoingCloudEventMetadataBuilder<?> ceMetadata = OutgoingCloudEventMetadata.builder()
                 .withId(historyId.toString())
                 .withExtension(CLOUD_EVENT_ACCOUNT_EXTENSION_KEY, accountId)
-                .withType(CLOUD_EVENT_TYPE_PREFIX + subType);
-        if (orgIdHelper.useOrgId(orgId)) {
-            ceMetadata.withExtension(CLOUD_EVENT_ORG_ID_EXTENSION_KEY, orgId);
-        }
+                .withType(CLOUD_EVENT_TYPE_PREFIX + subType)
+                .withExtension(CLOUD_EVENT_ORG_ID_EXTENSION_KEY, orgId);
         msg = msg.addMetadata(ceMetadata.build());
         msg = msg.addMetadata(OutgoingKafkaRecordMetadata.builder()
             .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, historyId.toString().getBytes(UTF_8))

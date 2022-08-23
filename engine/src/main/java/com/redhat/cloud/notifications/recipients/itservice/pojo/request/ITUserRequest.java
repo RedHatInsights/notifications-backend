@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.recipients.itservice.pojo.request;
 
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
-import io.quarkus.logging.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,25 +10,11 @@ public class ITUserRequest {
     public ITUserRequestBy by;
     public Include include;
 
-    public ITUserRequest(String accountId, String orgId, boolean useOrgId, boolean adminsOnly, int firstResult, int maxResults) {
+    public ITUserRequest(String orgId, boolean adminsOnly, int firstResult, int maxResults) {
         final ITUserRequestBy by = new ITUserRequestBy();
         AllOf allOf = new AllOf();
         allOf.status = "enabled";
-
-        if (useOrgId) {
-            if (orgId == null || orgId.isBlank()) {
-                useOrgId = false;
-                Log.info("Orgid value is not set");
-            }
-        }
-
-        if (useOrgId) {
-            allOf.ebsAccountNumber = null;
-            allOf.accountId = orgId;
-        } else {
-            allOf.ebsAccountNumber = accountId;
-            allOf.accountId = null;
-        }
+        allOf.accountId = orgId;
 
         if (adminsOnly) {
             PermissionCode permissionCode = new PermissionCode();

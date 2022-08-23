@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -18,31 +17,29 @@ public class PoliciesEmailPayloadAggregatorTest {
     }
 
     @Test
-    void emptyAggregatorHasNoAccountIdOrOrgId() {
+    void emptyAggregatorHasNoOrgId() {
         PoliciesEmailPayloadAggregator aggregator = new PoliciesEmailPayloadAggregator();
-        assertNull(aggregator.getAccountId(), "Empty aggregator has no accountId");
         assertNull(aggregator.getOrgId(), "Empty aggregator has no orgId");
     }
 
     @Test
     void aggregatorTests() {
         PoliciesEmailPayloadAggregator aggregator = new PoliciesEmailPayloadAggregator();
-        aggregator.aggregate(TestHelpers.createEmailAggregation("tenant", "insights", "policies", "policy-01", "host-01"));
-        assertEquals("tenant", aggregator.getAccountId());
-        assertEquals(DEFAULT_ORG_ID, aggregator.getOrgId());
+        aggregator.aggregate(TestHelpers.createEmailAggregation("org-id", "insights", "policies", "policy-01", "host-01"));
+        assertEquals("org-id", aggregator.getOrgId());
 
         // 1 host
         assertEquals(1, aggregator.getUniqueHostCount());
 
-        aggregator.aggregate(TestHelpers.createEmailAggregation("tenant", "insights", "policies", "policy-02", "host-01"));
+        aggregator.aggregate(TestHelpers.createEmailAggregation("org-id", "insights", "policies", "policy-02", "host-01"));
 
         // 1 host (even if two policies)
         assertEquals(1, aggregator.getUniqueHostCount());
         assertEquals(1, getUniqueHostForPolicy(aggregator, "policy-01"));
         assertEquals(1, getUniqueHostForPolicy(aggregator, "policy-02"));
 
-        aggregator.aggregate(TestHelpers.createEmailAggregation("tenant", "insights", "policies", "policy-03", "host-02"));
-        aggregator.aggregate(TestHelpers.createEmailAggregation("tenant", "insights", "policies", "policy-03", "host-03"));
+        aggregator.aggregate(TestHelpers.createEmailAggregation("org-id", "insights", "policies", "policy-03", "host-02"));
+        aggregator.aggregate(TestHelpers.createEmailAggregation("org-id", "insights", "policies", "policy-03", "host-03"));
 
         // 3 hosts
         assertEquals(3, aggregator.getUniqueHostCount());
@@ -52,12 +49,12 @@ public class PoliciesEmailPayloadAggregatorTest {
     }
 
     @Test
-    void emailWithDifferentTenantThrowsError() {
+    void emailWithDifferentOrgIdThrowsError() {
         PoliciesEmailPayloadAggregator aggregator = new PoliciesEmailPayloadAggregator();
 
         assertThrows(RuntimeException.class, () -> {
-            aggregator.aggregate(TestHelpers.createEmailAggregation("tenant1", "insights", "policies", "policy-02", "host-01"));
-            aggregator.aggregate(TestHelpers.createEmailAggregation("tenant2", "insights", "policies", "policy-02", "host-01"));
+            aggregator.aggregate(TestHelpers.createEmailAggregation("org-id-1", "insights", "policies", "policy-02", "host-01"));
+            aggregator.aggregate(TestHelpers.createEmailAggregation("org-id-2", "insights", "policies", "policy-02", "host-01"));
         });
     }
 }

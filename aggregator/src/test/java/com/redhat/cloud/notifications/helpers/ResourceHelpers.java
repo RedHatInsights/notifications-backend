@@ -16,8 +16,8 @@ public class ResourceHelpers {
     @Inject
     Session session;
 
-    public void addEmailAggregation(String tenant, String orgId, String bundle, String application, String policyId, String insightsId) {
-        EmailAggregation aggregation = TestHelpers.createEmailAggregation(tenant, orgId, bundle, application, policyId, insightsId);
+    public void addEmailAggregation(String orgId, String bundle, String application, String policyId, String insightsId) {
+        EmailAggregation aggregation = TestHelpers.createEmailAggregation(orgId, bundle, application, policyId, insightsId);
         addEmailAggregation(aggregation);
     }
 
@@ -33,9 +33,9 @@ public class ResourceHelpers {
 
     @Transactional
     public Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        String query = "DELETE FROM EmailAggregation WHERE accountId = :accountId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
+        String query = "DELETE FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
         return session.createQuery(query)
-                .setParameter("accountId", key.getAccountId())
+                .setParameter("orgId", key.getOrgId())
                 .setParameter("bundleName", key.getBundle())
                 .setParameter("applicationName", key.getApplication())
                 .setParameter("created", lastUsedTime)

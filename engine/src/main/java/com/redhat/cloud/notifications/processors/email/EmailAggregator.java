@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -43,16 +42,13 @@ public class EmailAggregator {
     @Inject
     EmailSubscriptionRepository emailSubscriptionRepository;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
     private static final String EVENT_TYPE_KEY = "event_type";
     private static final String RECIPIENTS_KEY = "recipients";
 
     private Set<String> getEmailSubscribers(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
         return Set.copyOf(emailSubscriptionRepository
-                .getEmailSubscribersUserId(aggregationKey.getAccountId(), aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType));
+                .getEmailSubscribersUserId(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType));
     }
 
     public Map<User, Map<String, Object>> getAggregated(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType, LocalDateTime start, LocalDateTime end) {
@@ -66,7 +62,7 @@ public class EmailAggregator {
             String eventType = getEventType(aggregation);
             // Let's retrieve these targets.
             Set<Endpoint> endpoints = Set.copyOf(endpointRepository
-                    .getTargetEmailSubscriptionEndpoints(aggregationKey.getAccountId(), aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), eventType));
+                    .getTargetEmailSubscriptionEndpoints(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), eventType));
 
             // Now we want to determine who will actually receive the aggregation email.
             // All users who subscribed to the current application and subscription type combination are recipients candidates.
@@ -75,7 +71,6 @@ public class EmailAggregator {
              * The target endpoints properties will determine whether or not each candidate will actually receive an email.
              */
             Set<User> users = recipientResolver.recipientUsers(
-                    aggregationKey.getAccountId(),
                     aggregationKey.getOrgId(),
                     Stream.concat(
                             endpoints
@@ -114,7 +109,7 @@ public class EmailAggregator {
 
     private void fillUsers(EmailAggregationKey aggregationKey, User user, Map<User, AbstractEmailPayloadAggregator> aggregated, EmailAggregation emailAggregation) {
         AbstractEmailPayloadAggregator aggregator = aggregated.computeIfAbsent(user, ignored -> EmailPayloadAggregatorFactory.by(aggregationKey));
-        aggregator.aggregate(emailAggregation, featureFlipper.isUseOrgId());
+        aggregator.aggregate(emailAggregation);
     }
 
     private String getEventType(EmailAggregation aggregation) {

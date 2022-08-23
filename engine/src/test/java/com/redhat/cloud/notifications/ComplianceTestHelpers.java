@@ -19,11 +19,10 @@ public class ComplianceTestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
 
-    public static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String eventType, String policyId, String inventoryId) {
+    public static EmailAggregation createEmailAggregation(String bundle, String application, String eventType, String policyId, String inventoryId) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
-        aggregation.setAccountId(tenant);
         aggregation.setOrgId(DEFAULT_ORG_ID);
         aggregation.setCreated(LocalDateTime.now(UTC).minusHours(5L));
 
@@ -55,7 +54,6 @@ public class ComplianceTestHelpers {
                         .build()
         ));
 
-        emailActionMessage.setAccountId(tenant);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);

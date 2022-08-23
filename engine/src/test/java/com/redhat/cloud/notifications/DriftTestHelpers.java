@@ -18,11 +18,10 @@ public class DriftTestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
 
-    public static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String baselineId, String baselineName, String inventory_id, String inventory_name) {
+    public static EmailAggregation createEmailAggregation(String bundle, String application, String baselineId, String baselineName, String inventory_id, String inventory_name) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
-        aggregation.setAccountId(tenant);
         aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
@@ -51,7 +50,6 @@ public class DriftTestHelpers {
                         .build()
         ));
 
-        emailActionMessage.setAccountId(tenant);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
@@ -60,7 +58,7 @@ public class DriftTestHelpers {
         return aggregation;
     }
 
-    public static Action createDriftAction(String tenant, String bundle, String application, String inventory_id, String inventory_name) {
+    public static Action createDriftAction(String bundle, String application, String inventory_id, String inventory_name) {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
         emailActionMessage.setApplication(application);
@@ -96,7 +94,6 @@ public class DriftTestHelpers {
                         .build()
         ));
 
-        emailActionMessage.setAccountId(tenant);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         return emailActionMessage;

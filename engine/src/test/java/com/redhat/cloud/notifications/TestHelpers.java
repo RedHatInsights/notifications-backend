@@ -24,12 +24,11 @@ public class TestHelpers {
     public static final String policyName2 = "Latest foo is installed";
     public static final String eventType = "test-email-subscription-instant";
 
-    public static EmailAggregation createEmailAggregation(String tenant, String bundle, String application, String policyId, String inventory_id) {
+    public static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventory_id) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
-        aggregation.setAccountId(tenant);
-        aggregation.setOrgId(DEFAULT_ORG_ID);
+        aggregation.setOrgId(orgId);
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
@@ -59,8 +58,7 @@ public class TestHelpers {
                         .build()
         ));
 
-        emailActionMessage.setAccountId(tenant);
-        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+        emailActionMessage.setOrgId(orgId);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
         aggregation.setPayload(payload);
