@@ -15,7 +15,8 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class Query {
 
-    private static final Pattern SORT_BY_PATTERN = Pattern.compile("^([a-z0-9_-]+)(:(asc|desc))?$", CASE_INSENSITIVE);
+    // NOTIF-674 Change to "^([a-z0-9_-]+)(:(asc|desc))?$" after the frontend has been updated
+    private static final Pattern SORT_BY_PATTERN = Pattern.compile("^([a-z0-9._-]+)(:(asc|desc))?$", CASE_INSENSITIVE);
 
     private static final int DEFAULT_RESULTS_PER_PAGE  = 20;
 
@@ -42,11 +43,16 @@ public class Query {
     public void setSortFields(String[] sortFields) {
         this.sortFields = new HashMap<>();
         for (String sortField : sortFields) {
-            this.sortFields.put(sortField, sortField);
+            this.sortFields.put(sortField.toLowerCase(), sortField);
         }
     }
 
     public void setSortFields(Map<String, String> sortFields) {
+        sortFields.keySet().forEach(key -> {
+            if (!key.toLowerCase().equals(key)) {
+                throw new IllegalArgumentException("All keys of sort fields must be specified in lower case");
+            }
+        });
         this.sortFields = Map.copyOf(sortFields);
     }
 
