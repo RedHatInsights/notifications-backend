@@ -319,6 +319,19 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertNotNull(rhelPolicy2, "RHEL policies not found");
         assertEquals(1, rhelPolicy2.fields.get(0).fields.size());
         assertEquals("bundles[rhel].applications[policies].notifications[INSTANT]", rhelPolicy2.fields.get(0).fields.get(0).name);
+
+        // Skip the application if there are no supported types
+        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, INSTANT)).thenReturn(FALSE);
+        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(FALSE);
+        settingsValueJsonForm = given()
+                .header(identityHeader)
+                .when().get("/user-config/notification-preference?bundleName=rhel")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().body().as(SettingsValueJsonForm.class);
+        rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
+        assertNull(rhelPolicy, "RHEL policies was not supposed to be here");
     }
 
 }
