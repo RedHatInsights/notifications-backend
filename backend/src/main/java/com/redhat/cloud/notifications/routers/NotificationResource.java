@@ -7,8 +7,10 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.Facet;
 import com.redhat.cloud.notifications.routers.models.Meta;
@@ -36,6 +38,7 @@ import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -91,6 +94,56 @@ public class NotificationResource {
                 new Meta(count)
         );
     }
+
+    @GET
+    @Path("/bundles/{bundleName}")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "Retrieve the bundle by name")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    public Bundle getBundleByName(@PathParam("bundleName") String bundleName) {
+        Bundle bundle = bundleRepository.getBundle(bundleName);
+        if (bundle == null) {
+            throw new NotFoundException();
+        }
+
+        return bundle;
+    }
+
+    @GET
+    @Path("/bundles/{bundleName}/applications/{applicationName}")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "Retrieve the application by name of a given bundle name")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    public Application getApplicationByNameAndBundleName(
+            @PathParam("bundleName") String bundleName,
+            @PathParam("applicationName") String applicationName
+    ) {
+        Application application = applicationRepository.getApplication(bundleName, applicationName);
+        if (application == null) {
+            throw new NotFoundException();
+        }
+
+        return application;
+    }
+
+    @GET
+    @Path("/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "Retrieve the event type by name of a given bundle name and application name")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    public EventType getEventTypesByNameAndBundleAndApplicationName(
+            @PathParam("bundleName") String bundleName,
+            @PathParam("applicationName") String applicationName,
+            @PathParam("eventTypeName") String eventTypeName
+    ) {
+        EventType eventType = applicationRepository.getEventType(bundleName, applicationName, eventTypeName);
+        if (eventType == null) {
+            throw new NotFoundException();
+        }
+
+        return eventType;
+    }
+
 
     /*
      * Called by the UI to build the behavior group removal confirmation screen.

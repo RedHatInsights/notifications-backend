@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
@@ -41,8 +42,10 @@ import java.util.stream.Stream;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_ACCESS;
+import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME_2;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME;
+import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_EVENT_TYPE_FORMAT;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -718,6 +721,118 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testBundleApplicationEventTypeByName() {
+        String tenant = "tenant-bundle-app-eventtype";
+        String orgId = "orgId-bundle-app-eventtype";
+        Header identityHeader = initRbacMock(tenant, orgId, "user", FULL_ACCESS);
+        helpers.createTestAppAndEventTypes();
+
+        String eventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 1);
+
+        Bundle bundle = given()
+                .header(identityHeader)
+                .when()
+                .given()
+                .pathParam("bundleName", TEST_BUNDLE_NAME)
+                .get("/notifications/bundles/{bundleName}")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(Bundle.class);
+        assertEquals(bundle.getName(), TEST_BUNDLE_NAME);
+
+        Application application = given()
+                .header(identityHeader)
+                .pathParam("bundleName", TEST_BUNDLE_NAME)
+                .pathParam("applicationName", TEST_APP_NAME)
+                .when()
+                .given()
+                .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(Application.class);
+        assertEquals(application.getName(), TEST_APP_NAME);
+
+        EventType eventType = given()
+                .header(identityHeader)
+                .pathParam("bundleName", TEST_BUNDLE_NAME)
+                .pathParam("applicationName", TEST_APP_NAME)
+                .pathParam("eventTypeName", eventTypeName)
+                .when()
+                .given()
+                .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(EventType.class);
+        assertEquals(eventType.getName(), eventTypeName);
+
+        // Not found cases
+        given()
+                .header(identityHeader)
+                .pathParam("bundleName", "bla bla")
+                .when()
+                .given()
+                .get("/notifications/bundles/{bundleName}")
+                .then()
+                .statusCode(404);
+
+        given()
+                .header(identityHeader)
+                .pathParam("bundleName", TEST_BUNDLE_NAME)
+                .pathParam("applicationName", "bla bla")
+                .when()
+                .given()
+                .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
+                .then()
+                .statusCode(404);
+
+        given()
+                .header(identityHeader)
+                .pathParam("bundleName", "bla bla")
+                .pathParam("applicationName", TEST_APP_NAME)
+                .when()
+                .given()
+                .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
+                .then()
+                .statusCode(404);
+
+        given()
+                .header(identityHeader)
+                .pathParam("bundleName", "bla bla")
+                .pathParam("applicationName", TEST_APP_NAME)
+                .pathParam("eventTypeName", eventTypeName)
+                .when()
+                .given()
+                .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
+                .then()
+                .statusCode(404);
+
+        given()
+                .header(identityHeader)
+                .pathParam("bundleName", TEST_BUNDLE_NAME)
+                .pathParam("applicationName", "bla bla")
+                .pathParam("eventTypeName", eventTypeName)
+                .when()
+                .given()
+                .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
+                .then()
+                .statusCode(404);
+
+        given()
+                .header(identityHeader)
+                .pathParam("bundleName", TEST_BUNDLE_NAME)
+                .pathParam("applicationName", TEST_APP_NAME)
+                .pathParam("eventTypeName", "blabla")
+                .when()
+                .given()
+                .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
     void testInsufficientPrivileges_AccountId() {
         featureFlipper.setUseOrgId(false);
         testInsufficientPrivileges();
@@ -815,6 +930,33 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .pathParam("bundleId", UUID.randomUUID())
                 .when()
                 .get("/notifications/bundles/{bundleId}/behaviorGroups")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(noAccessIdentityHeader)
+                .pathParam("bundleName", "myBundle")
+                .when()
+                .get("/notifications/bundles/{bundleName}")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(noAccessIdentityHeader)
+                .pathParam("bundleName", "myBundle")
+                .pathParam("applicationName", "myApp")
+                .when()
+                .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
+                .then()
+                .statusCode(403);
+
+        given()
+                .header(noAccessIdentityHeader)
+                .pathParam("bundleName", "myBundle")
+                .pathParam("applicationName", "myApp")
+                .pathParam("eventTypeName", "myEventType")
+                .when()
+                .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
                 .then()
                 .statusCode(403);
     }

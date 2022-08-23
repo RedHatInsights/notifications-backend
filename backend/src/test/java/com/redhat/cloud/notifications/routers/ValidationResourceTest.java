@@ -11,7 +11,6 @@ import io.restassured.http.Header;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
-import javax.persistence.NoResultException;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
@@ -43,7 +42,7 @@ class ValidationResourceTest {
     }
 
     void shouldReturnNotFoundWhenTripleIsInvalid() {
-        when(applicationRepository.getEventType(eq("blabla"), eq("Notifications"), eq("Any"))).thenThrow(new NoResultException());
+        when(applicationRepository.getEventType(eq("blabla"), eq("Notifications"), eq("Any"))).thenReturn(null);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "empty", "user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
