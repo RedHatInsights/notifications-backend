@@ -150,7 +150,6 @@ public class EndpointResource {
             @QueryParam("active") Boolean activeOnly,
             @QueryParam("name") String name) {
         String orgId = getOrgId(sec);
-        query.setSortFields(Endpoint.SORT_FIELDS);
 
         List<Endpoint> endpoints;
         Long count;

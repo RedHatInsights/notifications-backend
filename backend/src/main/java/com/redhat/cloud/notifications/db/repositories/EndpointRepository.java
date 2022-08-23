@@ -33,8 +33,6 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EndpointRepository {
-    private static final String[] ENDPOINT_SORT_FIELDS = {"name", "enabled", "endpoint_type"};
-
     @Inject
     EntityManager entityManager;
 
@@ -150,7 +148,7 @@ public class EndpointRepository {
 
     public List<Endpoint> getEndpoints(String orgId, @Nullable String name, Query limiter) {
         if (limiter != null) {
-            limiter.setSortFields(ENDPOINT_SORT_FIELDS);
+            limiter.setSortFields(Endpoint.SORT_FIELDS);
         }
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Optional<Query.Sort> sort = limiter == null ? Optional.empty() : limiter.getSort();
