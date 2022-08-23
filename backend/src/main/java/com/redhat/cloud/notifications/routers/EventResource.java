@@ -48,7 +48,10 @@ public class EventResource {
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_READ_NOTIFICATIONS_EVENTS)
-    @Operation(summary = "Retrieve the event log entries.")
+    @Operation(summary = "Retrieve the event log entries.", description =
+            "Allowed sort_by values are bundle, application, event and created. Optionally the ordering can be specified by appending a colon followed by "
+            + " asc (ascending) or desc (descending). e.g. bundle:desc. Default to asc if no order is specified and created:desc if nothing is specified."
+    )
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
                                          @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
                                          @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
