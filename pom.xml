@@ -50,7 +50,7 @@
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <failsafe.version>3.2.4</failsafe.version>
 
-        <mockserver-netty-no-dependencies.version>5.13.2</mockserver-netty-no-dependencies.version>
+        <mockserver-netty-no-dependencies.version>5.14.0</mockserver-netty-no-dependencies.version>
 
         <insights-notification-schemas-java.version>0.15</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>1.2.0</clowder-quarkus-config-source.version>
