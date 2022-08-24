@@ -30,7 +30,7 @@
 
     <properties>
         <enforcer-plugin.version>3.1.0</enforcer-plugin.version>
-        <maven-minimum-version>3.8.1</maven-minimum-version>
+        <maven-minimum-version>3.8.4</maven-minimum-version>
         <java-version>11</java-version>
         <compiler-plugin.version>3.10.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
