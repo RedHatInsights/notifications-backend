@@ -1,25 +1,24 @@
 ---
-apiVersion: v1
+apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
   name: notifications-do-nothing
 objects:
-- apiVersion: batch/v1
-  kind: Job
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdApp
   metadata:
     name: notifications-do-nothing-job-${IMAGE_TAG}-${JOBID}
     annotations:
       ignore-check.kube-linter.io/unset-cpu-requirements : "Not required for this job that does nothing"  
       ignore-check.kube-linter.io/unset-memory-requirements : "Not required for this job that does nothing"  
   spec:
-    template:
-      spec:
-        containers:
-        - name: notifications-do-nothing
-          image: quay.io/app-sre/ubi8-ubi-minimal:8.6-902
-          command: ["/bin/sh"]
-          args: ["-c", "exit 0"]
-        restartPolicy: Never
+    jobs:
+    - name: notifications-do-nothing
+      restartPolicy: Never
+      podSpec:
+        image: quay.io/app-sre/ubi8-ubi-minimal:8.6-902
+        command: ["/bin/sh"]
+        args: ["-c", "exit 0"]
 parameters:
 - name: IMAGE_TAG
   value: ''
