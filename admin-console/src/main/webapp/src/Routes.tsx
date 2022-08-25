@@ -16,7 +16,7 @@ export const linkTo = {
     bundle: (bundleId: string) => `/bundle/${bundleId}`,
     application: (applicationId: string) => `/application/${applicationId}`,
     email: () => '/email',
-    emailTemplates: () => '/emailTemplates',
+    emailTemplates: (templateId: string) => `/emailTemplates${templateId}`,
     messageValidator: () => '/utils/message-validator'
 };
 
@@ -34,7 +34,7 @@ const pathRoutes: Path[] = [
         component: RenderEmailPage
     },
     {
-        path: linkTo.emailTemplates(),
+        path: linkTo.emailTemplates(':templateId'),
         component: EmailTemplatePage
     },
     {

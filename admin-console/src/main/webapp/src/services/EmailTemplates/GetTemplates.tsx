@@ -9,7 +9,7 @@ const validateResponse = validationResponseTransformer(
     (payload: Operations.TemplateResourceGetAllTemplates.Payload) => {
         if (payload.status === 200) {
             const emailTemplates: ReadonlyArray<Template> = payload.value.map(value => ({
-                id: value.id,
+                id: value.id ?? '',
                 name: value.name,
                 description: value.description,
                 data: value.data
