@@ -9,8 +9,20 @@ export type CreateTemplate = {
     description: string;
 }
 
-const actionCreator = (params: CreateTemplate) => 
-    Operations.TemplateResourceCreateTemplate.actionCreator({
+const actionCreator =  (params: CreateTemplate) => {
+    if (params.id === undefined) {
+        return Operations.TemplateResourceCreateTemplate.actionCreator({
+            body: {
+                id: params.id,
+                data: params.data,
+                name: params.name,
+                description: params.description
+            }
+        });
+    }
+
+    return Operations.TemplateResourceUpdateTemplate.actionCreator({
+        templateId: params.id,
         body: {
             id: params.id,
             data: params.data,
@@ -18,6 +30,7 @@ const actionCreator = (params: CreateTemplate) =>
             description: params.description
         }
     });
+};
 
 export const useCreateTemplate = () => {
     return useMutation(actionCreator);

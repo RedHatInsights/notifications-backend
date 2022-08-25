@@ -11,6 +11,7 @@ import {
     Title
 } from '@patternfly/react-core';
 import * as React from 'react';
+import { useParams } from 'react-router-dom';
 import { useUserPermissions } from '../app/PermissionContext';
 import { useCreateTemplate } from '../services/EmailTemplates/CreateTemplate';
 import { Template } from '../types/Notifications';
@@ -63,8 +64,14 @@ const defaultPayload = JSON.stringify({
     ]
 }, null, 2);
 
+type EmailPageParams = {
+    templateId: string;
+}
+
 export const EmailTemplatePage: React.FunctionComponent = () => {
     const { isAdmin } = useUserPermissions();
+    const { templateId } = useParams<EmailPageParams>();
+
     const handleBackClick = React.useCallback(() => {
         history.back();
     }, []);
