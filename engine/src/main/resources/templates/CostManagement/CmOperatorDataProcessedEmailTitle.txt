@@ -1,1 +1,1 @@
-Openshift cluster data processed by cost management
+OpenShift cluster data processed by Cost Management

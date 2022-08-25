@@ -1,1 +1,1 @@
-Openshift cluster data received by cost management
+OpenShift cluster data received by Cost Management
