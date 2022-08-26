@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
-import io.quarkus.logging.Log;
 import io.quarkus.security.ForbiddenException;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -25,16 +24,12 @@ public class SecurityContextUtil {
 
     public static String getAccountId(SecurityContext securityContext) {
         RhIdPrincipal principal = (RhIdPrincipal) securityContext.getUserPrincipal();
-        String accountId = principal.getAccount();
-        Log.infof("accountId=%s", accountId);
-        return accountId;
+        return principal.getAccount();
     }
 
     public static String getOrgId(SecurityContext securityContext) {
         RhIdPrincipal principal = (RhIdPrincipal) securityContext.getUserPrincipal();
-        String orgId = principal.getOrgId();
-        Log.infof("orgId=%s", orgId);
-        return orgId;
+        return principal.getOrgId();
     }
 
     public void hasPermissionForRole(SecurityContext securityContext, String role) {

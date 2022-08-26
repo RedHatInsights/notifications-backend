@@ -263,7 +263,6 @@ public class EndpointResource {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     public Endpoint getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        getAccountId(sec);
         String orgId = getOrgId(sec);
         Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
         if (endpoint == null) {
