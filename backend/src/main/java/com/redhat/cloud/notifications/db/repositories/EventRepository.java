@@ -83,12 +83,7 @@ public class EventRepository {
     private List<UUID> getEventIds(String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                         LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                         Set<Boolean> invocationResults, Query query) {
-        String hql = "SELECT e.id FROM Event e WHERE ";
-        if (featureFlipper.isUseOrgIdInEvents()) {
-            hql += "e.orgId = :orgId";
-        } else {
-            hql += "e.accountId = :accountId";
-        }
+        String hql = "SELECT e.id FROM Event e WHERE e.orgId = :orgId";
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults);
         Optional<Query.Sort> sort = query.getSort();
