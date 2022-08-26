@@ -5,7 +5,7 @@ import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 
 public class Inventory implements EmailTemplate {
-    
+  
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {

@@ -1,15 +1,13 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
-
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Arrays;
 import java.util.List;
 
 public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
-    
+
     private static final String EVENT_TYPE = "event_type";
     private static final String VALIDATION_ERROR = "validation-error";
     private static final String ERRORS = "errors";
@@ -47,7 +45,7 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
             JsonObject error = payload.getJsonObject(ERROR_KEY);
             String errorMessage = error.getString(MESSAGE_KEY);
             String displayName = payload.getString(NAME_KEY);
-      
+
             inventory.getJsonObject(ERRORS).put(errorMessage, displayName);
         });
     }
