@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.Template;
@@ -31,22 +30,7 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
     @Inject
     TemplateRepository templateRepository;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     @Test
-    void testMostSpecificOneIsUsed_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testMostSpecificOneIsUsed();
-    }
-
-    @Test
-    void testMostSpecificOneIsUsed_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testMostSpecificOneIsUsed();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testMostSpecificOneIsUsed() {
 
         Template specificSlack = createTemplate(SPECIFIC_SLACK, "Just a test", "Li la lu");
@@ -54,14 +38,14 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
         Template genericSlack = createTemplate(GENERIC_SLACK, "The default", "The default");
         createIntegrationTemplate(genericSlack, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
 
-        Optional<IntegrationTemplate> ito = templateRepository.findIntegrationTemplate(null, null, null, IntegrationTemplate.TemplateKind.APPLICATION, SLACK);
+        Optional<IntegrationTemplate> ito = templateRepository.findIntegrationTemplate(null, null, IntegrationTemplate.TemplateKind.APPLICATION, SLACK);
         assertTrue(ito.isPresent());
         IntegrationTemplate it = ito.get();
         assertEquals(it.getTemplateKind(), IntegrationTemplate.TemplateKind.APPLICATION);
         assertEquals(it.getTheTemplate().getName(), SPECIFIC_SLACK);
 
         // This should be the default
-        ito = templateRepository.findIntegrationTemplate(null, null, null, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
+        ito = templateRepository.findIntegrationTemplate(null, null, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
         assertTrue(ito.isPresent());
         it = ito.get();
         assertEquals(it.getTemplateKind(), IntegrationTemplate.TemplateKind.DEFAULT);
@@ -70,18 +54,6 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
-    void testUserFallback_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testUserFallback();
-    }
-
-    @Test
-    void testUserFallback_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testUserFallback();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testUserFallback() {
 
         Template specificSlack = createTemplate(SPECIFIC_SLACK, "Just a test", "Li la lu");
@@ -89,7 +61,7 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
         Template genericSlack = createTemplate(GENERIC_SLACK, "The default", "The default");
         createIntegrationTemplate(genericSlack, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
 
-        Optional<IntegrationTemplate> ito = templateRepository.findIntegrationTemplate(null, "user-123",
+        Optional<IntegrationTemplate> ito = templateRepository.findIntegrationTemplate(null,
                 "org-id-123", IntegrationTemplate.TemplateKind.ORG, SLACK);
         assertTrue(ito.isPresent());
         IntegrationTemplate it = ito.get();
@@ -97,14 +69,14 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
         assertEquals(SPECIFIC_SLACK, it.getTheTemplate().getName());
 
         // This should be the default
-        ito = templateRepository.findIntegrationTemplate(null, null, null, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
+        ito = templateRepository.findIntegrationTemplate(null, null, IntegrationTemplate.TemplateKind.DEFAULT, SLACK);
         assertTrue(ito.isPresent());
         it = ito.get();
         assertEquals(IntegrationTemplate.TemplateKind.DEFAULT, it.getTemplateKind());
         assertEquals(GENERIC_SLACK, it.getTheTemplate().getName());
 
         // Now see if we fall back to default if the user has no template
-        ito = templateRepository.findIntegrationTemplate(null, "unknown-user",
+        ito = templateRepository.findIntegrationTemplate(null,
                 "unknown-org-id", IntegrationTemplate.TemplateKind.ORG, SLACK);
         assertTrue(ito.isPresent());
         it = ito.get();

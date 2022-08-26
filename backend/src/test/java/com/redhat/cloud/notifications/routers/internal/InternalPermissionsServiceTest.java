@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers.internal;
 import com.redhat.cloud.notifications.CrudTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.routers.internal.models.InternalApplicationUserPermission;
 import com.redhat.cloud.notifications.routers.internal.models.InternalUserPermissions;
@@ -13,7 +12,6 @@ import io.restassured.http.Header;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
-import javax.inject.Inject;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -33,25 +31,10 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     private static final int OK = 200;
     private static final int FORBIDDEN = 403;
 
     @Test
-    void userAccess_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        userAccess();
-    }
-
-    @Test
-    void userAccess_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        userAccess();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void userAccess() {
         String appRole = "crc-app-team";
         String otherRole = "other-role";
@@ -137,18 +120,6 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
     }
 
     @Test
-    void createAppWithPermissions_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        createAppWithPermissions();
-    }
-
-    @Test
-    void createAppWithPermissions_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        createAppWithPermissions();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void createAppWithPermissions() {
         String appRole = "crc-app-team";
         Header turnpikeAdminHeader = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);
@@ -222,18 +193,6 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
     }
 
     @Test
-    void accessListTest_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        accessListTest();
-    }
-
-    @Test
-    void accessListTest_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        accessListTest();
-        featureFlipper.setUseOrgId(false);
-    }
-
     public void accessListTest() {
         String appRole = "Acrc-app-team";
         String otherRole = "Bcrc-other-team-role";

@@ -82,25 +82,13 @@ public class LifecycleITest extends DbIsolatedTest {
     @Inject
     FeatureFlipper featureFlipper;
 
-    private Header initRbacMock(String tenant, String orgId, String username, RbacAccess access) {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
+    private Header initRbacMock(String accountId, String orgId, String username, RbacAccess access) {
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
 
     @Test
-    void shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent();
-    }
-
-    @Test
-    void shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent() {
         if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
             // The check is disabled from configuration.
@@ -141,18 +129,6 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     @Test
-    void test_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        test();
-    }
-
-    @Test
-    void test_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        test();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void test() {
         /*
          * TODO

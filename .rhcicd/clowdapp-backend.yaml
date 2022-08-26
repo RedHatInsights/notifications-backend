@@ -130,19 +130,9 @@ objects:
         volumes:
         - name: rds-client-ca
           emptyDir: {}
-        - name: keystore
-          secret:
-            secretName: it-services
-            items:
-              - key: keystore.jks
-                path: clientkeystore.jks
-            defaultMode: 420
         volumeMounts:
         - name: rds-client-ca
           mountPath: /tmp
-        - name: keystore
-          readOnly: true
-          mountPath: /mnt/secrets
         readinessProbe:
           httpGet:
             path: /health/ready
@@ -192,10 +182,6 @@ objects:
           value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
-        - name: NOTIFICATIONS_EVENTS_USE_ORG_ID
-          value: ${NOTIFICATIONS_EVENTS_USE_ORG_ID}
-        - name: NOTIFICATIONS_USE_ORG_ID
-          value: ${NOTIFICATIONS_USE_ORG_ID}
         - name: OB_ENABLED
           value: ${OB_ENABLED}
         - name: OB_BRIDGE_UUID
@@ -208,18 +194,6 @@ objects:
           value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
           value: ${QUARKUS_REST_CLIENT_KC_URL}
-        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE
-          value: /mnt/secrets/clientkeystore.jks
-        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: it-services-keystorepassword
-        - name: QUARKUS_REST_CLIENT_IT_S2S_URL
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: url
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -357,7 +331,3 @@ parameters:
 - name: FLOORIST_LOGLEVEL
   description: Floorist loglevel config
   value: 'INFO'
-- name: NOTIFICATIONS_EVENTS_USE_ORG_ID
-  value: "false"
-- name: NOTIFICATIONS_USE_ORG_ID
-  value: "false"

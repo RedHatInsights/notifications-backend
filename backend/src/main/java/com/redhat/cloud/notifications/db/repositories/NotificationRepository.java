@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.OrgIdHelper;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.quarkus.logging.Log;
@@ -24,39 +23,22 @@ public class NotificationRepository {
     @Inject
     EntityManager entityManager;
 
-    @Inject
-    OrgIdHelper orgIdHelper;
-
-    public List<NotificationHistory> getNotificationHistory(String tenant, String orgId, UUID endpoint, boolean includeDetails, Query limiter) {
+    public List<NotificationHistory> getNotificationHistory(String orgId, UUID endpoint, boolean includeDetails, Query limiter) {
         String query = "SELECT NEW NotificationHistory(nh.id, nh.invocationTime, nh.invocationResult, nh.endpoint, nh.created";
         if (includeDetails) {
             query += ", nh.details";
         }
-        query += ") FROM NotificationHistory nh WHERE nh.endpoint.id = :endpointId AND ";
-        if (orgIdHelper.useOrgId(orgId)) {
-            query += "nh.event.orgId = :orgId";
-        } else {
-            query += "nh.event.accountId = :accountId";
-        }
+        query += ") FROM NotificationHistory nh WHERE nh.endpoint.id = :endpointId AND nh.event.orgId = :orgId";
 
         if (limiter != null) {
             query = limiter.getModifiedQuery(query);
         }
 
-        TypedQuery<NotificationHistory> historyQuery;
-        if (orgIdHelper.useOrgId(orgId)) {
-            historyQuery = entityManager.createQuery(query, NotificationHistory.class)
-                    .setParameter("orgId", orgId)
-                    .setParameter("endpointId", endpoint)
-                    // Default limit to prevent OutOfMemoryError, it may be overridden below.
-                    .setMaxResults(MAX_NOTIFICATION_HISTORY_RESULTS);
-        } else {
-            historyQuery = entityManager.createQuery(query, NotificationHistory.class)
-                    .setParameter("accountId", tenant)
-                    .setParameter("endpointId", endpoint)
-                    // Default limit to prevent OutOfMemoryError, it may be overridden below.
-                    .setMaxResults(MAX_NOTIFICATION_HISTORY_RESULTS);
-        }
+        TypedQuery<NotificationHistory> historyQuery = entityManager.createQuery(query, NotificationHistory.class)
+                .setParameter("orgId", orgId)
+                .setParameter("endpointId", endpoint)
+                // Default limit to prevent OutOfMemoryError, it may be overridden below.
+                .setMaxResults(MAX_NOTIFICATION_HISTORY_RESULTS);
 
         if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
             if (limiter.getLimit().getLimit() > MAX_NOTIFICATION_HISTORY_RESULTS) {
@@ -72,39 +54,21 @@ public class NotificationRepository {
                 .getResultList();
     }
 
-    public JsonObject getNotificationDetails(String tenant, String orgId, UUID endpoint, UUID historyId) {
-        if (orgIdHelper.useOrgId(orgId)) {
-            String query = "SELECT details FROM NotificationHistory WHERE event.orgId = :orgId AND endpoint.id = :endpointId AND id = :historyId";
-            try {
-                Map<String, Object> map = entityManager.createQuery(query, Map.class)
-                        .setParameter("orgId", orgId)
-                        .setParameter("endpointId", endpoint)
-                        .setParameter("historyId", historyId)
-                        .getSingleResult();
-                if (map == null) {
-                    return null;
-                } else {
-                    return new JsonObject(map);
-                }
-            } catch (NoResultException e) {
+    public JsonObject getNotificationDetails(String orgId, UUID endpoint, UUID historyId) {
+        String query = "SELECT details FROM NotificationHistory WHERE event.orgId = :orgId AND endpoint.id = :endpointId AND id = :historyId";
+        try {
+            Map<String, Object> map = entityManager.createQuery(query, Map.class)
+                    .setParameter("orgId", orgId)
+                    .setParameter("endpointId", endpoint)
+                    .setParameter("historyId", historyId)
+                    .getSingleResult();
+            if (map == null) {
                 return null;
+            } else {
+                return new JsonObject(map);
             }
-        } else {
-            String query = "SELECT details FROM NotificationHistory WHERE event.accountId = :accountId AND endpoint.id = :endpointId AND id = :historyId";
-            try {
-                Map<String, Object> map = entityManager.createQuery(query, Map.class)
-                        .setParameter("accountId", tenant)
-                        .setParameter("endpointId", endpoint)
-                        .setParameter("historyId", historyId)
-                        .getSingleResult();
-                if (map == null) {
-                    return null;
-                } else {
-                    return new JsonObject(map);
-                }
-            } catch (NoResultException e) {
-                return null;
-            }
+        } catch (NoResultException e) {
+            return null;
         }
     }
 

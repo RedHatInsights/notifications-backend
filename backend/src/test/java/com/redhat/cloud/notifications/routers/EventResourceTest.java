@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -73,22 +72,7 @@ public class EventResourceTest extends DbIsolatedTest {
     @Inject
     EndpointRepository endpointRepository;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     @Test
-    void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly_AccountId() {
-        featureFlipper.setUseOrgIdInEvents(false);
-        shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly();
-    }
-
-    @Test
-    void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly_OrgId() {
-        featureFlipper.setUseOrgIdInEvents(true);
-        shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly();
-        featureFlipper.setUseOrgIdInEvents(false);
-    }
-
     void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly() {
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user2", NOTIFICATIONS_ACCESS_ONLY);
         given()
@@ -99,18 +83,6 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testAllQueryParams_AccountId() {
-        featureFlipper.setUseOrgIdInEvents(false);
-        testAllQueryParams();
-    }
-
-    @Test
-    void testAllQueryParams_OrgId() {
-        featureFlipper.setUseOrgIdInEvents(true);
-        testAllQueryParams();
-        featureFlipper.setUseOrgIdInEvents(false);
-    }
-
     void testAllQueryParams() {
         /*
          * This method is very long, but splitting it into several smaller ones would mean we have to recreate lots of
@@ -139,9 +111,9 @@ public class EventResourceTest extends DbIsolatedTest {
         NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, TRUE);
         NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, TRUE);
         NotificationHistory history5 = resourceHelpers.createNotificationHistory(event3, endpoint3, TRUE);
-        endpointRepository.deleteEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, endpoint1.getId());
-        endpointRepository.deleteEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, endpoint2.getId());
-        endpointRepository.deleteEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, endpoint3.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint1.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint2.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint3.getId());
 
         /*
          * Test #1
@@ -470,18 +442,6 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testInsufficientPrivileges_AccountId() {
-        featureFlipper.setUseOrgIdInEvents(false);
-        testInsufficientPrivileges();
-    }
-
-    @Test
-    void testInsufficientPrivileges_OrgId() {
-        featureFlipper.setUseOrgIdInEvents(true);
-        testInsufficientPrivileges();
-        featureFlipper.setUseOrgIdInEvents(false);
-    }
-
     void testInsufficientPrivileges() {
         Header noAccessIdentityHeader = mockRbac("tenant", DEFAULT_ORG_ID, "noAccess", NO_ACCESS);
         given()
@@ -492,18 +452,6 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testInvalidSortBy_AccountId() {
-        featureFlipper.setUseOrgIdInEvents(false);
-        testInvalidSortBy();
-    }
-
-    @Test
-    void testInvalidSortBy_OrgId() {
-        featureFlipper.setUseOrgIdInEvents(true);
-        testInvalidSortBy();
-        featureFlipper.setUseOrgIdInEvents(false);
-    }
-
     void testInvalidSortBy() {
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
         given()
@@ -516,18 +464,6 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testInvalidLimit_AccountId() {
-        featureFlipper.setUseOrgIdInEvents(false);
-        testInvalidLimit();
-    }
-
-    @Test
-    void testInvalidLimit_OrgId() {
-        featureFlipper.setUseOrgIdInEvents(true);
-        testInvalidLimit();
-        featureFlipper.setUseOrgIdInEvents(false);
-    }
-
     void testInvalidLimit() {
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
         given()
@@ -547,18 +483,6 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void shouldBeAllowedToGetEventLogs_AccountId() {
-        featureFlipper.setUseOrgIdInEvents(false);
-        shouldBeAllowedToGetEventLogs();
-    }
-
-    @Test
-    void shouldBeAllowedToGetEventLogs_OrgId() {
-        featureFlipper.setUseOrgIdInEvents(true);
-        shouldBeAllowedToGetEventLogs();
-        featureFlipper.setUseOrgIdInEvents(false);
-    }
-
     void shouldBeAllowedToGetEventLogs() {
         Header readAccessIdentityHeader = mockRbac("tenant", DEFAULT_ORG_ID, "user-read-access", NOTIFICATIONS_READ_ACCESS_ONLY);
         given()
@@ -587,8 +511,8 @@ public class EventResourceTest extends DbIsolatedTest {
         return event;
     }
 
-    private Header mockRbac(String tenant, String orgId, String username, RbacAccess access) {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(tenant, orgId, username);
+    private Header mockRbac(String accountId, String orgId, String username, RbacAccess access) {
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }

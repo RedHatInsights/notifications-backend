@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers.internal;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
@@ -20,7 +19,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import javax.inject.Inject;
 import javax.ws.rs.BadRequestException;
 
 import java.util.UUID;
@@ -62,22 +60,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     @InjectMock
     TemplateEngineClient templateEngineClient;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     @Test
-    void testAllTemplateEndpoints_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testAllTemplateEndpoints();
-    }
-
-    @Test
-    void testAllTemplateEndpoints_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testAllTemplateEndpoints();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testAllTemplateEndpoints() {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
@@ -109,18 +92,6 @@ public class TemplateResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testAllInstantEmailTemplateEndpoints_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testAllInstantEmailTemplateEndpoints();
-    }
-
-    @Test
-    void testAllInstantEmailTemplateEndpoints_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testAllInstantEmailTemplateEndpoints();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testAllInstantEmailTemplateEndpoints() {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
@@ -196,18 +167,6 @@ public class TemplateResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testAllAggregationEmailTemplateEndpoints_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testAllAggregationEmailTemplateEndpoints();
-    }
-
-    @Test
-    void testAllAggregationEmailTemplateEndpoints_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testAllAggregationEmailTemplateEndpoints();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testAllAggregationEmailTemplateEndpoints() {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
@@ -264,18 +223,6 @@ public class TemplateResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testTemplateIncludeCheckBeforeDelete_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testTemplateIncludeCheckBeforeDelete();
-    }
-
-    @Test
-    void testTemplateIncludeCheckBeforeDelete_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testTemplateIncludeCheckBeforeDelete();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testTemplateIncludeCheckBeforeDelete() {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
@@ -308,18 +255,6 @@ public class TemplateResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testUnauthorizedHttpStatus_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testUnauthorizedHttpStatus();
-    }
-
-    @Test
-    void testUnauthorizedHttpStatus_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testUnauthorizedHttpStatus();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testUnauthorizedHttpStatus() {
         UUID notUsed = UUID.randomUUID();
 
@@ -426,18 +361,6 @@ public class TemplateResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testInvalidEmailTemplateRendering_AccountId() {
-        featureFlipper.setUseOrgId(false);
-        testInvalidEmailTemplateRendering();
-    }
-
-    @Test
-    void testInvalidEmailTemplateRendering_OrgId() {
-        featureFlipper.setUseOrgId(true);
-        testInvalidEmailTemplateRendering();
-        featureFlipper.setUseOrgId(false);
-    }
-
     void testInvalidEmailTemplateRendering() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         RenderEmailTemplateRequest request = new RenderEmailTemplateRequest();

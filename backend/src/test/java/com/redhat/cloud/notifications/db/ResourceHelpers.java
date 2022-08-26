@@ -23,7 +23,6 @@ import javax.transaction.Transactional;
 import java.util.List;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static java.lang.Boolean.FALSE;
@@ -142,7 +141,7 @@ public class ResourceHelpers {
         return endpointRepository.createEndpoint(endpoint);
     }
 
-    public int[] createTestEndpoints(String tenant, String orgId, int count) {
+    public int[] createTestEndpoints(String accountId, String orgId, int count) {
         int[] statsValues = new int[3];
         statsValues[0] = count;
         for (int i = 0; i < count; i++) {
@@ -165,7 +164,7 @@ public class ResourceHelpers {
                 ep.setProperties(properties);
             }
 
-            ep.setAccountId(tenant);
+            ep.setAccountId(accountId);
             ep.setOrgId(orgId);
             endpointRepository.createEndpoint(ep);
         }
@@ -204,36 +203,36 @@ public class ResourceHelpers {
         return behaviorGroupRepository.createDefault(behaviorGroup);
     }
 
-    public List<EventType> findEventTypesByBehaviorGroupId(String accountId, String orgId, UUID behaviorGroupId) {
-        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(accountId, orgId, behaviorGroupId);
+    public List<EventType> findEventTypesByBehaviorGroupId(String orgId, UUID behaviorGroupId) {
+        return behaviorGroupRepository.findEventTypesByBehaviorGroupId(orgId, behaviorGroupId);
     }
 
     public List<EventType> findEventTypesByBehaviorGroupId(UUID behaviorGroupId) {
-        return findEventTypesByBehaviorGroupId(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, behaviorGroupId);
+        return findEventTypesByBehaviorGroupId(DEFAULT_ORG_ID, behaviorGroupId);
     }
 
-    public List<Endpoint> findEndpointsByBehaviorGroupId(String accountId, UUID behaviorGroupId) {
-        String query = "SELECT bga.endpoint FROM BehaviorGroupAction bga WHERE bga.endpoint.accountId = :accountId AND bga.behaviorGroup.id = :behaviorGroupId";
+    public List<Endpoint> findEndpointsByBehaviorGroupId(String orgId, UUID behaviorGroupId) {
+        String query = "SELECT bga.endpoint FROM BehaviorGroupAction bga WHERE bga.endpoint.orgId = :orgId AND bga.behaviorGroup.id = :behaviorGroupId";
         return entityManager.createQuery(query, Endpoint.class)
-                .setParameter("accountId", accountId)
+                .setParameter("orgId", orgId)
                 .setParameter("behaviorGroupId", behaviorGroupId)
                 .getResultList();
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEventTypeId(UUID eventTypeId) {
-        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, eventTypeId, new Query());
+        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ORG_ID, eventTypeId, new Query());
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByEndpointId(UUID endpointId) {
-        return behaviorGroupRepository.findBehaviorGroupsByEndpointId(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, endpointId);
+        return behaviorGroupRepository.findBehaviorGroupsByEndpointId(DEFAULT_ORG_ID, endpointId);
     }
 
     public Boolean updateBehaviorGroup(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.update(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, behaviorGroup);
+        return behaviorGroupRepository.update(DEFAULT_ORG_ID, behaviorGroup);
     }
 
     public Boolean deleteBehaviorGroup(UUID behaviorGroupId) {
-        return behaviorGroupRepository.delete(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, behaviorGroupId);
+        return behaviorGroupRepository.delete(DEFAULT_ORG_ID, behaviorGroupId);
     }
 
     public Boolean updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
