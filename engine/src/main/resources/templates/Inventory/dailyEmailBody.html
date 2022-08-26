@@ -1,0 +1,53 @@
+{#include Inventory/insightsEmailBody}
+{#content-title}Daily Inventory Summary - {action.timestamp.toStringFormat()}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-body">
+        <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <!-- Content block -->
+            <tr>
+                <td class="rh-content__block">
+                    <p>
+                        Red Hat Insights has identified {action.context.inventory.errors.size()} hosts that presented a validation error.
+                        Please review the <a class="rh-url" href="{environment.url}/insights/inventory/">Insights Inventory service</a> to further assess and determine next steps.
+                    </p>
+                </td>
+            </tr>
+            <!-- end content block -->
+            </tbody>
+        </table>
+    </td>
+</tr>
+<tr>
+    <td class="rh-body">
+        <table class="rh-content rh-m-plain" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0"
+        width="100%">
+        <tbody>
+            <tr>
+            <td class="rh-content__block">
+                <table width:="" 100%;="" class="rh-data-table rh-m-bordered">
+                <thead>              
+                    <tr>
+                        <th>Error</th>
+                        <th>Hosts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#for key in action.context.inventory.errors.ketSet()}
+                    <tr>
+                        <td>{key}</td>
+                        <td>{action.context.inventory.errors.get(key)}</td>
+                    </tr>
+                    {/for}
+                </tbody>
+                </table>
+            </td>
+            </tr>
+        </tbody>
+        </table>
+        <br>
+    </td>
+</tr>
+{/content-body}
+{/include}

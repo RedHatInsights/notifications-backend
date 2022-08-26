@@ -1,0 +1,43 @@
+{#include Inventory/insightsEmailBody}
+{#content-title}{action.context.event_name} Instant Notification - {action.timestamp.toStringFormat()}{/content-title}
+{#content-body}
+<tr>
+    <td class="rh-content__block">
+        <table class="rh-data-table rh-m-bordered">
+            <thead>
+            <tr>
+                <th>System</th>
+                <th>Error</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    {if action.events[0].payload.host_id}
+                    <a href="{environment.url}/insights/inventory/{action.events[0].payload.host_id}" target="_blank">{action.events[0].payload.display_name}</a>
+                    {#else}{action.events[0].payload.display_name}
+                    {/if}
+                </td>
+                <td>{action.events[0].payload.error.message}</td>
+            </tr>
+            </tbody>
+        </table>
+    </td>
+</tr>
+<tr>
+    <td class="rh-content__block">
+        <table align="center">
+            <tr>
+                <td class="rh-cta-link" align="center">
+                    <a target="_blank" href="{environment.url}/insights/inventory">
+                        <span>
+                            Open Inventory in Insights
+                        </span>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
+{/content-body}
+{/include}
