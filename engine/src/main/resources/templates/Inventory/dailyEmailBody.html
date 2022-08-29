@@ -9,7 +9,7 @@
             <tr>
                 <td class="rh-content__block">
                     <p>
-                        Red Hat Insights has identified {action.context.inventory.errors.size()} hosts that presented a validation error.
+                        Red Hat Insights has identified {action.context.inventory.errors.size()} host{#if action.context.inventory.errors.size() > 1}s{/if} that presented a validation error.
                         Please review the <a class="rh-url" href="{environment.url}/insights/inventory/">Insights Inventory service</a> to further assess and determine next steps.
                     </p>
                 </td>
@@ -34,7 +34,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {#for key in action.context.inventory.errors.ketSet()}
+                    {#for key in action.context.inventory.errors.keySet()}
                     <tr>
                         <td>{key}</td>
                         <td>{action.context.inventory.errors.get(key)}</td>
