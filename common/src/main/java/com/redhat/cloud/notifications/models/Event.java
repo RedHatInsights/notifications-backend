@@ -31,10 +31,10 @@ public class Event {
 
     private Timestamp created;
 
-    @NotNull
     @Size(max = 50)
     private String accountId;
 
+    @NotNull
     @Size(max = 50)
     private String orgId;
 

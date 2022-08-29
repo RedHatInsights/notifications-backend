@@ -5,9 +5,9 @@ import java.util.Objects;
 
 public class EmailAggregationKey {
 
-    @NotNull
     private String accountId;
 
+    @NotNull
     private String orgId;
 
     @NotNull

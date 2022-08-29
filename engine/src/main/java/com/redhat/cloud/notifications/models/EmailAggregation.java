@@ -26,10 +26,10 @@ public class EmailAggregation extends CreationTimestamped {
     @JsonProperty(access = READ_ONLY)
     private Integer id;
 
-    @NotNull
     @Size(max = 50)
     private String accountId;
 
+    @NotNull
     @Size(max = 50)
     private String orgId;
 

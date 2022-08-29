@@ -4,9 +4,9 @@ import javax.validation.constraints.NotNull;
 
 public class EmailAggregationKey {
 
-    @NotNull
     private String accountId;
 
+    @NotNull
     private String orgId;
 
     @NotNull
