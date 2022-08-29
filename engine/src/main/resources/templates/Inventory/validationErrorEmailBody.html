@@ -13,7 +13,7 @@
             <tbody>
             <tr>
                 <td>
-                    {if action.events[0].payload.host_id is not null}<a href="{environment.url}/insights/inventory/{action.events[0].payload.host_id}" target="_blank">{action.events[0].payload.display_name}</a>{#else}{action.events[0].payload.display_name}{/if}
+                    {#if action.events[0].payload.host_id is not null}<a href="{environment.url}/insights/inventory/{action.events[0].payload.host_id}" target="_blank">{action.events[0].payload.display_name}</a>{#else}{action.events[0].payload.display_name}{/if}
                 </td>
                 <td>{action.events[0].payload.error.message}</td>
             </tr>
