@@ -35,10 +35,12 @@
                 </thead>
                 <tbody>
                     {#for key in action.context.inventory.errors.keySet()}
+                    {#if key_count < 11}
                     <tr>
                         <td>{key}</td>
                         <td>{action.context.inventory.errors.get(key)}</td>
                     </tr>
+                    {/if}
                     {/for}
                 </tbody>
                 </table>
