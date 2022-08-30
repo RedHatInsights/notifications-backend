@@ -139,6 +139,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                             isLineNumbersVisible
                             code={ template?.data }
                             isMinimapVisible={ false }
+                            value={template.data}
                             onChange={ handleCodeChange }
                             height="300px" />
                     </FormGroup>
@@ -149,7 +150,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                             isMinimapVisible={ false }
                             onChange={ handleCodeChange }
                             code={ defaultPayload }
-                            value={ template?.data }
+                            value={ template.data }
                             height="300px"
                             isLanguageLabelVisible
                             language={ Language.json } />
