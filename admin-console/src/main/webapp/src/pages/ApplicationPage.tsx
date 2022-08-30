@@ -192,7 +192,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             </PageSection>
             <AggregationTemplateCard
                 applicationName={ application?.displayName }
-                application={ application?.id }
+                application={ application }
                 bundleName={ bundle?.display_name }
             />
             { isAdmin && application && <EmailTemplateTable application={ application } /> }
