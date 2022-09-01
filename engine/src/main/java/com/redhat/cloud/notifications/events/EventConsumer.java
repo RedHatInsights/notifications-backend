@@ -123,9 +123,9 @@ public class EventConsumer {
                 if (featureFlipper.isUseOrgId()) {
                     Log.info("The org ID migration is enabled but the orgId field is missing or blank in the action");
                 }
-                if (featureFlipper.isTranslateAccountIdToOrgId() && action.getAccountId() != null && !action.getAccountId().isBlank()) {
+                if (featureFlipper.isTranslateAccountIdToOrgId() && action.getAccountId() != null && !action.getAccountId().toString().isBlank()) {
                     try {
-                        String orgId = orgIdTranslator.translate(action.getAccountId());
+                        String orgId = orgIdTranslator.translate((String) action.getAccountId());
                         action.setOrgId(orgId);
                     } catch (Exception e) {
                         Log.warn("Org ID translation failed", e);
