@@ -17,11 +17,10 @@ public class TestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
 
-    static EmailAggregation createEmailAggregation(String tenant, String orgId, String bundle, String application, String policyId, String inventoryId) {
+    static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventoryId) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
-        aggregation.setAccountId(tenant);
         aggregation.setOrgId(orgId);
         aggregation.setCreated(LocalDateTime.now(UTC).minusHours(5L));
 
@@ -54,7 +53,6 @@ public class TestHelpers {
                         .build()
         ));
 
-        emailActionMessage.setAccountId(tenant);
         emailActionMessage.setOrgId(orgId);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);

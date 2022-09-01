@@ -26,9 +26,6 @@ public class EmailAggregation extends CreationTimestamped {
     @JsonProperty(access = READ_ONLY)
     private Integer id;
 
-    @Size(max = 50)
-    private String accountId;
-
     @NotNull
     @Size(max = 50)
     private String orgId;
@@ -55,14 +52,6 @@ public class EmailAggregation extends CreationTimestamped {
 
     public void setId(Integer id) {
         this.id = id;
-    }
-
-    public String getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(String accountId) {
-        this.accountId = accountId;
     }
 
     public String getOrgId() {

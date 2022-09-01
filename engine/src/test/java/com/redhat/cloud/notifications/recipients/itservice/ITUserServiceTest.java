@@ -71,7 +71,7 @@ public class ITUserServiceTest {
 
         when(itUserService.getUsers(any(ITUserRequest.class))).thenReturn(itUserResponses);
 
-        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someAccountId", "someOrgId", true);
+        final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someOrgId", true);
         assertTrue(someAccountId.get(0).isActive());
 
         assertEquals(someAccountId.get(0).getEmail(), "first_adress@trashmail.org");
@@ -83,8 +83,8 @@ public class ITUserServiceTest {
         User mockedUser = createNonAdminMockedUser();
         List<User> mockedUsers = List.of(mockedUser);
 
-        when(mock.getUsers(anyString(), anyString(), anyBoolean())).thenReturn(mockedUsers);
-        final List<User> users = mock.getUsers("someAccountId", "someOrgId", false);
+        when(mock.getUsers(anyString(), anyBoolean())).thenReturn(mockedUsers);
+        final List<User> users = mock.getUsers("someOrgId", false);
 
         final User user = users.get(0);
         assertEquals("firstName", user.getFirstName());

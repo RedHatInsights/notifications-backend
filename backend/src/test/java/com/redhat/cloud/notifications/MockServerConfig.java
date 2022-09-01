@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.openbridge.Bridge;
-import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;
 import org.mockserver.model.ClearType;
 import org.mockserver.model.HttpRequest;
@@ -156,36 +155,5 @@ public class MockServerConfig {
             fail("Failed to read rhid example file: " + e.getMessage());
             return "";
         }
-    }
-
-    // TODO NOTIF-603 Remove this method after the org ID migration is done on prod.
-    public static void mockBopOrgIdTranslation() {
-        getClient()
-                .when(request()
-                        .withMethod("POST")
-                        .withPath("/v2/findAccount")
-                        .withBody("{\"by\":{\"ebsAccountNumber\":\"account-123\"}}")
-
-                )
-                .respond(response()
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(buildTranslationReponse("org-id-123")));
-
-        getClient()
-                .when(request()
-                        .withMethod("POST")
-                        .withPath("/v2/findAccount")
-                        .withBody("{\"by\":{\"ebsAccountNumber\":\"account-456\"}}")
-
-                )
-                .respond(response()
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(buildTranslationReponse("org-id-456")));
-    }
-
-    private static String buildTranslationReponse(String orgId) {
-        JsonObject response = new JsonObject();
-        response.put("id", orgId);
-        return response.toString();
     }
 }

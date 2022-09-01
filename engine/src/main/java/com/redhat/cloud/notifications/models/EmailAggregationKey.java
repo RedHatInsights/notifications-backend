@@ -5,8 +5,6 @@ import java.util.Objects;
 
 public class EmailAggregationKey {
 
-    private String accountId;
-
     @NotNull
     private String orgId;
 
@@ -16,15 +14,10 @@ public class EmailAggregationKey {
     @NotNull
     private String application;
 
-    public EmailAggregationKey(String accountId, String orgId, String bundle, String application) {
-        this.accountId = accountId;
+    public EmailAggregationKey(String orgId, String bundle, String application) {
         this.orgId = orgId;
         this.bundle = bundle;
         this.application = application;
-    }
-
-    public String getAccountId() {
-        return accountId;
     }
 
     public String getOrgId() {
@@ -51,22 +44,20 @@ public class EmailAggregationKey {
 
         EmailAggregationKey that = (EmailAggregationKey) o;
 
-        return Objects.equals(accountId, that.accountId) &&
-                Objects.equals(orgId, that.orgId) &&
+        return Objects.equals(orgId, that.orgId) &&
                 Objects.equals(bundle, that.bundle) &&
                 Objects.equals(application, that.application);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(accountId, orgId, bundle, application);
+        return Objects.hash(orgId, bundle, application);
     }
 
     @Override
     public String toString() {
         return "EmailAggregationKey{" +
-                "accountId='" + accountId + '\'' +
-                ", orgId='" + orgId + '\'' +
+                "orgId='" + orgId + '\'' +
                 ", bundle='" + bundle + '\'' +
                 ", application='" + application + '\'' +
                 '}';

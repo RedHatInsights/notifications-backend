@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
@@ -45,9 +44,6 @@ public class RbacRecipientUsersProvider {
     public static final String ORG_ADMIN_PERMISSION = "admin:org:all";
 
     @Inject
-    FeatureFlipper featureFlipper;
-
-    @Inject
     @RestClient
     RbacServiceToService rbacServiceToService;
 
@@ -89,7 +85,7 @@ public class RbacRecipientUsersProvider {
     private Counter itFailuresCounter;
     private RetryPolicy<Object> itRetryPolicy;
 
-    private Map</* accountId */ String, AtomicInteger> rbacUsers = new ConcurrentHashMap<>();
+    private Map</* orgId */ String, AtomicInteger> rbacUsers = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
@@ -121,7 +117,7 @@ public class RbacRecipientUsersProvider {
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
-    public List<User> getUsers(String accountId, String orgId, boolean adminsOnly) {
+    public List<User> getUsers(String orgId, boolean adminsOnly) {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
@@ -131,7 +127,7 @@ public class RbacRecipientUsersProvider {
         int firstResult = 0;
 
         do {
-            ITUserRequest request = new ITUserRequest(accountId, orgId, featureFlipper.isUseOrgId(), adminsOnly, firstResult, maxResultsPerPage);
+            ITUserRequest request = new ITUserRequest(orgId, adminsOnly, firstResult, maxResultsPerPage);
             usersPaging = retryOnItError(() -> itUserService.getUsers(request));
             usersTotal.addAll(usersPaging);
 
@@ -141,26 +137,26 @@ public class RbacRecipientUsersProvider {
         users = transformToUser(usersTotal);
 
         // Micrometer doesn't like when tags are null and throws a NPE.
-        String accountIdTag = accountId == null ? "" : accountId;
-        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "accountId", accountIdTag));
-        getRbacUsersGauge(accountIdTag).set(users.size());
+        String orgIdTag = orgId == null ? "" : orgId;
+        getUsersTotalTimer.stop(meterRegistry.timer("rbac.get-users.total", "orgId", orgIdTag));
+        getRbacUsersGauge(orgIdTag).set(users.size());
 
         return users;
     }
 
-    private AtomicInteger getRbacUsersGauge(String accountIdTag) {
-        return rbacUsers.computeIfAbsent(accountIdTag, accountId -> {
-            Set<Tag> tags = Set.of(Tag.of("accountId", accountId));
+    private AtomicInteger getRbacUsersGauge(String orgIdTag) {
+        return rbacUsers.computeIfAbsent(orgIdTag, orgId -> {
+            Set<Tag> tags = Set.of(Tag.of("orgId", orgId));
             return meterRegistry.gauge("rbac.users", tags, new AtomicInteger());
         });
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-group-users")
-    public List<User> getGroupUsers(String accountId, String orgId, boolean adminOnly, UUID groupId) {
+    public List<User> getGroupUsers(String orgId, boolean adminOnly, UUID groupId) {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
         RbacGroup rbacGroup;
         try {
-            rbacGroup = retryOnRbacError(() -> rbacServiceToService.getGroup(accountId, orgId, groupId));
+            rbacGroup = retryOnRbacError(() -> rbacServiceToService.getGroup(orgId, groupId));
         } catch (ClientWebApplicationException exception) {
             // The group does not exist (or no longer exists - ignore)
             if (exception.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
@@ -172,15 +168,15 @@ public class RbacRecipientUsersProvider {
 
         List<User> users;
         if (rbacGroup.isPlatformDefault()) {
-            users = getUsers(accountId, orgId, adminOnly);
+            users = getUsers(orgId, adminOnly);
         } else {
             users = getWithPagination(page -> {
                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
                 Page<RbacUser> rbacUsers = retryOnRbacError(() ->
-                        rbacServiceToService.getGroupUsers(accountId, orgId, groupId, page * rbacElementsPerPage, rbacElementsPerPage));
+                        rbacServiceToService.getGroupUsers(orgId, groupId, page * rbacElementsPerPage, rbacElementsPerPage));
                 // Micrometer doesn't like when tags are null and throws a NPE.
-                String accountIdTag = accountId == null ? "" : accountId;
-                getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "accountId", accountIdTag));
+                String orgIdTag = orgId == null ? "" : orgId;
+                getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "orgId", orgIdTag));
                 return rbacUsers;
             });
             // getGroupUsers doesn't have an adminOnly param.
@@ -189,9 +185,8 @@ public class RbacRecipientUsersProvider {
             }
         }
         // Micrometer doesn't like when tags are null and throws a NPE.
-        String accountIdTag = accountId == null ? "" : accountId;
         String orgIdTag = orgId == null ? "" : orgId;
-        getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "accountId", accountIdTag, "orgId", orgIdTag, "users", String.valueOf(users.size())));
+        getGroupUsersTotalTimer.stop(meterRegistry.timer("rbac.get-group-users.total", "orgId", orgIdTag, "users", String.valueOf(users.size())));
         return users;
     }
 

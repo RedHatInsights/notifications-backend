@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.processors.camel;
 import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
-import com.redhat.cloud.notifications.OrgIdHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -84,9 +83,6 @@ public class CamelTypeProcessorTest {
     FeatureFlipper featureFlipper;
 
     @Inject
-    OrgIdHelper orgIdHelper;
-
-    @Inject
     ResourceHelpers resourceHelpers;
 
     @BeforeEach
@@ -100,21 +96,7 @@ public class CamelTypeProcessorTest {
     }
 
     @Test
-    void testCamelEndpointProcessingWithoutOrgId() {
-        featureFlipper.setUseOrgId(false);
-        // The assertions will vary depending on the orgId feature flag.
-        testCamelEndpointProcessing();
-    }
-
-    @Test
-    void testCamelEndpointProcessingWithOrgId() {
-        featureFlipper.setUseOrgId(true);
-        // The assertions will vary depending on the orgId feature flag.
-        testCamelEndpointProcessing();
-        featureFlipper.setUseOrgId(false);
-    }
-
-    private void testCamelEndpointProcessing() {
+    void testCamelEndpointProcessing() {
 
         // We need input data for the test.
         Event event = buildEvent();
@@ -338,9 +320,7 @@ public class CamelTypeProcessorTest {
         CloudEventMetadata metadata = message.getMetadata(CloudEventMetadata.class).get();
         assertEquals(expectedId.toString(), metadata.getId());
         assertEquals(expectedAccountId, metadata.getExtension(CLOUD_EVENT_ACCOUNT_EXTENSION_KEY).get());
-        if (orgIdHelper.useOrgId(expectedOrgId)) {
-            assertEquals(expectedOrgId, metadata.getExtension(CLOUD_EVENT_ORG_ID_EXTENSION_KEY).get());
-        }
+        assertEquals(expectedOrgId, metadata.getExtension(CLOUD_EVENT_ORG_ID_EXTENSION_KEY).get());
         assertEquals(CLOUD_EVENT_TYPE_PREFIX + expectedSubType, metadata.getType());
     }
 

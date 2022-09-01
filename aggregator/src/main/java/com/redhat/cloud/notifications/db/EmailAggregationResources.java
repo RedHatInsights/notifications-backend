@@ -18,13 +18,13 @@ public class EmailAggregationResources {
     Session session;
 
     public List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
-        String query = "SELECT DISTINCT account_id, org_id, bundle, application FROM email_aggregation WHERE created > :start AND created <= :end";
+        String query = "SELECT DISTINCT org_id, bundle, application FROM email_aggregation WHERE created > :start AND created <= :end";
         List<Object[]> records = session.createNativeQuery(query)
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getResultList();
         return records.stream()
-                .map(record -> new EmailAggregationKey((String) record[0], (String) record[1], (String) record[2], (String) record[3]))
+                .map(record -> new EmailAggregationKey((String) record[0], (String) record[1], (String) record[2]))
                 .collect(toList());
     }
 

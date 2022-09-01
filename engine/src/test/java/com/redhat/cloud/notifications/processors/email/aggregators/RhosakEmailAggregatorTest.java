@@ -50,7 +50,6 @@ class RhosakEmailAggregatorTest {
 
     @Test
     void emptyAggregatorHasNoAccountIdOrOrgId() {
-        assertNull(aggregator.getAccountId(), "Empty aggregator has no accountId");
         assertNull(aggregator.getOrgId(), "Empty aggregator has no orgId");
     }
 
@@ -203,7 +202,6 @@ class RhosakEmailAggregatorTest {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(APPLICATION_SERVICES);
         aggregation.setApplicationName(RHOSAK);
-        aggregation.setAccountId(ACCOUNT_ID);
         aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
@@ -242,7 +240,6 @@ class RhosakEmailAggregatorTest {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(APPLICATION_SERVICES);
         aggregation.setApplicationName(RHOSAK);
-        aggregation.setAccountId(ACCOUNT_ID);
         aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
