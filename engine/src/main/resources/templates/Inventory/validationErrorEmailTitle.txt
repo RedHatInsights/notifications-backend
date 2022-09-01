@@ -1,1 +1,1 @@
-{action.timestamp.toUtcFormat()} - Validation error triggered on Inventory
+{action.timestamp.toUtcFormat()} - {action.context.event_name} triggered on Inventory
