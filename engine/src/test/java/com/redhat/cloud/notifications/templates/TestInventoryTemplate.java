@@ -19,7 +19,7 @@ public class TestInventoryTemplate {
                 .render();
 
         assertTrue(result.contains("2022 "));
-        assertTrue(result.contains("- Validation error triggered on Inventory"));
+        assertTrue(result.contains("- Host Validation Error triggered on Inventory"));
     }
 
     @Test
