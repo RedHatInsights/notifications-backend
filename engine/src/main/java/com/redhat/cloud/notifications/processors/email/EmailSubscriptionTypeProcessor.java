@@ -134,6 +134,10 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
             if (shouldSaveAggregation) {
                 EmailAggregation aggregation = new EmailAggregation();
+<<<<<<< HEAD
+=======
+                aggregation.setAccountId(action.getAccountId());
+>>>>>>> 4d1fa9df (Remove casts introduced in previous schema change)
                 aggregation.setOrgId(action.getOrgId());
                 aggregation.setApplicationName(action.getApplication());
                 aggregation.setBundleName(action.getBundle());

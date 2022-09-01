@@ -100,9 +100,9 @@ public class CamelTypeProcessorTest {
 
         // We need input data for the test.
         Event event = buildEvent();
-        Endpoint endpoint1 = buildCamelEndpoint((String) event.getAction().getAccountId());
+        Endpoint endpoint1 = buildCamelEndpoint(event.getAction().getAccountId());
         CamelProperties properties1 = endpoint1.getProperties(CamelProperties.class);
-        Endpoint endpoint2 = buildCamelEndpoint((String) event.getAction().getAccountId());
+        Endpoint endpoint2 = buildCamelEndpoint(event.getAction().getAccountId());
 
         // Let's trigger the processing.
         List<NotificationHistory> result = processor.process(event, List.of(endpoint1, endpoint2));
@@ -165,7 +165,7 @@ public class CamelTypeProcessorTest {
         Event event = buildEvent();
         event.setAccountId("rhid123");
         event.setOrgId(DEFAULT_ORG_ID);
-        Endpoint endpoint = buildCamelEndpoint((String) event.getAction().getAccountId());
+        Endpoint endpoint = buildCamelEndpoint(event.getAction().getAccountId());
         endpoint.setSubType("slack");
 
         featureFlipper.setObEnabled(true);
