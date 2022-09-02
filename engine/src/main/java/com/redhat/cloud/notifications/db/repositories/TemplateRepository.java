@@ -106,7 +106,7 @@ public class TemplateRepository {
         return defaultEmailTemplate;
     }
 
-    private InstantEmailTemplate getInternalDefaultInstantTemplate() throws Exception {
+    private InstantEmailTemplate loadDefaultEmailTemplate() throws Exception {
         final String instantEmailSubjectPath = "templates/Default/instantEmailTitle.txt";
         final String instantEmailBodyPath = "templates/Default/instantEmailBody.html";
 
