@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import javax.inject.Inject;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
