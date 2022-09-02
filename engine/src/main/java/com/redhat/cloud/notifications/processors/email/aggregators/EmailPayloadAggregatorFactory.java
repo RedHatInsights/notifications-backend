@@ -13,6 +13,7 @@ public class EmailPayloadAggregatorFactory {
     private static final String ANSIBLE = "ansible";
     private static final String PATCH = "patch";
     private static final String VULNERABILITY = "vulnerability";
+    private static final String INVENTORY = "inventory";
 
     private EmailPayloadAggregatorFactory() {
 
@@ -36,6 +37,9 @@ public class EmailPayloadAggregatorFactory {
         }
         if (bundle.equals(RHEL) && application.equals(VULNERABILITY)) {
             return new VulnerabilityEmailPayloadAggregator();
+        }
+        if (bundle.equals(RHEL) && application.equals(INVENTORY)) {
+            return new InventoryEmailAggregator();
         }
         if (bundle.equals(APPLICATION_SERVICES) && application.equalsIgnoreCase(RHOSAK)) {
             return new RhosakEmailAggregator();

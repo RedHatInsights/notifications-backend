@@ -156,6 +156,21 @@ public class EmailTemplateMigrationService {
         );
 
         /*
+         * Former src/main/resources/templates/Inventory folder.
+         */
+        getOrCreateTemplate(warnings, "Inventory/insightsEmailBody", "html", "Inventory Insights email body");
+        createInstantEmailTemplate(
+                warnings, "rhel", "inventory", List.of("validation-error"),
+                "Inventory/validationErrorEmailTitle", "txt", "Inventory instant email title",
+                "Inventory/validationErrorEmailBody", "html", "Inventory instant email body"
+        );
+        createDailyEmailTemplate(
+                warnings, "rhel", "Inventory",
+                "Inventory/dailyEmailTitle", "txt", "Inventory daily email title",
+                "Inventory/dailyEmailBody", "html", "Inventory daily email body"
+        );
+
+        /*
         * Former src/main/resources/templates/Patch folder.
          */
         getOrCreateTemplate(warnings, "Patch/insightsEmailBody", "html", "Patch Insights email body");
