@@ -42,7 +42,6 @@ public class InventoryTestHelpers {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
-        aggregation.setAccountId(tenant);
         aggregation.setOrgId(DEFAULT_ORG_ID);
 
         Action emailActionMessage = new Action();
@@ -81,7 +80,6 @@ public class InventoryTestHelpers {
                         .build()
         ));
 
-        emailActionMessage.setAccountId(tenant);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
@@ -116,7 +114,6 @@ public class InventoryTestHelpers {
                         .build()
         ));
 
-        emailActionMessage.setAccountId(tenant);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         return emailActionMessage;

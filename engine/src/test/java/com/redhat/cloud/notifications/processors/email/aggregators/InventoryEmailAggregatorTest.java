@@ -20,15 +20,13 @@ public class InventoryEmailAggregatorTest {
     }
 
     @Test
-    void emptyAggregatorHasNoAccountIdOrOrgId() {
-        Assertions.assertNull(aggregator.getAccountId(), "Empty aggregator has no accountId");
+    void emptyAggregatorHasNoOrgId() {
         Assertions.assertNull(aggregator.getOrgId(), "Empty aggregator has no orgId");
     }
 
     @Test
-    void shouldSetAccountNumberAndOrgId() {
+    void shouldSetOrgId() {
         aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "Host Validation Failure"));
-        Assertions.assertEquals("tenant", aggregator.getAccountId());
         Assertions.assertEquals(DEFAULT_ORG_ID, aggregator.getOrgId());
     }
 
