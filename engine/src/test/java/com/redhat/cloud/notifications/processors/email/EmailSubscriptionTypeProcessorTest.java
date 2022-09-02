@@ -94,7 +94,7 @@ class EmailSubscriptionTypeProcessorTest {
     @BeforeEach
     void beforeEach() {
         featureFlipper.setUseTemplatesFromDb(false);
-        featureFlipper.setUseTemplatesFromDb(false);
+        featureFlipper.setUseDefaultTemplate(false);
     }
 
     @Test
