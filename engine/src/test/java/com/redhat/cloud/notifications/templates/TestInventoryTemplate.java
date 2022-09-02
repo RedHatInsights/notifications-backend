@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.InventoryTestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
@@ -11,11 +12,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestInventoryTemplate {
 
+    @Inject
+    Environment environment;
+
     @Test
     public void testInstantEmailTitle() {
         Action action = InventoryTestHelpers.createInventoryAction("123456", "rhel", "inventory", "Host Validation Error");
         String result = Inventory.Templates.validationErrorEmailTitle()
                 .data("action", action)
+                .data("environment", environment)
                 .render();
 
         assertTrue(result.contains("2022 "));
@@ -27,6 +32,7 @@ public class TestInventoryTemplate {
         Action action = InventoryTestHelpers.createInventoryAction("", "", "", "FooEvent");
         String result = Inventory.Templates.validationErrorEmailBody()
                 .data("action", action)
+                .data("environment", environment)
                 .render();
 
         assertTrue(result.contains(InventoryTestHelpers.displayName1), "Body should contain host display name" + InventoryTestHelpers.displayName1);
