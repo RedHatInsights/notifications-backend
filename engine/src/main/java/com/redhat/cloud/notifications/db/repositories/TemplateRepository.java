@@ -97,7 +97,7 @@ public class TemplateRepository {
         }
 
         try {
-            defaultEmailTemplate = Optional.of(getInternalDefaultInstantTemplate());
+            defaultEmailTemplate = Optional.of(loadDefaultEmailTemplate());
         } catch (Exception exception) {
             defaultEmailTemplate = Optional.empty();
             Log.warn("Could not load the instant default email template", exception);
