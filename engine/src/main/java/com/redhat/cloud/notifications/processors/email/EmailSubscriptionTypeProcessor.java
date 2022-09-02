@@ -162,14 +162,13 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         if (featureFlipper.isUseTemplatesFromDb()) {
             Optional<InstantEmailTemplate> instantEmailTemplate = templateRepository
                     .findInstantEmailTemplate(event.getEventType().getId());
-            if (instantEmailTemplate.isPresent()) {
+            if (instantEmailTemplate.isEmpty()) {
+                return Collections.emptyList();
+            } else {
                 String subjectData = instantEmailTemplate.get().getSubjectTemplate().getData();
                 subject = templateService.compileTemplate(subjectData, "subject");
                 String bodyData = instantEmailTemplate.get().getBodyTemplate().getData();
                 body = templateService.compileTemplate(bodyData, "body");
-            } else {
-                subject = null;
-                body = null;
             }
         } else {
             if (!emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
@@ -187,7 +186,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 if (featureFlipper.isUseDefaultTemplate()) {
                     fileTemplateBody = Default.getBody(fileTemplateSubject != null, fileTemplateBody != null);
                     fileTemplateSubject = Default.getTitle();
-
                 } else {
                     return Collections.emptyList();
                 }
@@ -195,10 +193,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
 
             subject = fileTemplateSubject;
             body = fileTemplateBody;
-        }
-
-        if (subject == null || body == null) {
-            return Collections.emptyList();
         }
 
         Set<RecipientSettings> requests = Stream.concat(
