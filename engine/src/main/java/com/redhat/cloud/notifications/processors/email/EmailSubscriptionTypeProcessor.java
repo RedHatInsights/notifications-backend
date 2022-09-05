@@ -123,11 +123,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             return Collections.emptyList();
         } else {
             Action action = event.getAction();
-            final EmailTemplate template = emailTemplateFactory.get(action.getBundle(), action.getApplication());
             boolean shouldSaveAggregation;
             if (featureFlipper.isUseTemplatesFromDb()) {
                 shouldSaveAggregation = templateRepository.isEmailAggregationSupported(action.getBundle(), action.getApplication(), NON_INSTANT_SUBSCRIPTION_TYPES);
             } else {
+                EmailTemplate template = emailTemplateFactory.get(action.getBundle(), action.getApplication());
                 shouldSaveAggregation = NON_INSTANT_SUBSCRIPTION_TYPES.stream()
                         .anyMatch(emailSubscriptionType -> template.isSupported(action.getEventType(), emailSubscriptionType));
             }
@@ -143,15 +143,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 emailAggregationRepository.addEmailAggregation(aggregation);
             }
 
-            return sendEmail(
-                    event,
-                    Set.copyOf(endpoints),
-                    template
-            );
+            return sendEmail(event, Set.copyOf(endpoints));
         }
     }
 
-    private List<NotificationHistory> sendEmail(Event event, Set<Endpoint> endpoints, EmailTemplate emailTemplate) {
+    private List<NotificationHistory> sendEmail(Event event, Set<Endpoint> endpoints) {
         EmailSubscriptionType emailSubscriptionType = EmailSubscriptionType.INSTANT;
         processedEmailCount.increment();
         Action action = event.getAction();
@@ -171,6 +167,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 body = templateService.compileTemplate(bodyData, "body");
             }
         } else {
+            EmailTemplate emailTemplate = emailTemplateFactory.get(action.getBundle(), action.getApplication());
             if (!emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
                 return Collections.emptyList();
             }
@@ -245,8 +242,6 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     private void processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
-        final EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
-
         TemplateInstance subject = null;
         TemplateInstance body = null;
 
@@ -260,6 +255,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 body = templateService.compileTemplate(bodyData, "body");
             }
         } else {
+            EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
             if (emailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
                 subject = emailTemplate.getTitle(null, emailSubscriptionType);
                 body = emailTemplate.getBody(null, emailSubscriptionType);
