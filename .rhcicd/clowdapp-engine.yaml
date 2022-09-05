@@ -182,6 +182,8 @@ objects:
           value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
           value: ${QUARKUS_REST_CLIENT_KC_URL}
+        - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
+          value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -293,4 +295,6 @@ parameters:
   value: "false"
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
+  value: "false"
+- name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
   value: "false"

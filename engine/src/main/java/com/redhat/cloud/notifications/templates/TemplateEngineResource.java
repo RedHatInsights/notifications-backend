@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -8,7 +9,6 @@ import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.quarkus.qute.TemplateInstance;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.inject.Inject;
@@ -22,14 +22,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.templates.TemplateService.USE_TEMPLATES_FROM_DB_KEY;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path(API_INTERNAL + "/template-engine")
 public class TemplateEngineResource {
-
-    @ConfigProperty(name = USE_TEMPLATES_FROM_DB_KEY)
-    boolean useTemplatesFromDb;
 
     @Inject
     ActionParser actionParser;
@@ -43,11 +39,14 @@ public class TemplateEngineResource {
     @Inject
     TemplateRepository templateRepository;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @GET
     @Path("/subscription_type_supported")
     @Produces(APPLICATION_JSON)
     public Boolean isSubscriptionTypeSupported(@NotNull @RestQuery String bundleName, @NotNull @RestQuery String applicationName, @NotNull @RestQuery EmailSubscriptionType subscriptionType) {
-        if (useTemplatesFromDb) {
+        if (featureFlipper.isUseTemplatesFromDb()) {
             return templateRepository.isEmailSubscriptionSupported(bundleName, applicationName, subscriptionType);
         } else {
             return emailTemplateFactory.get(bundleName, applicationName).isEmailSubscriptionSupported(subscriptionType);

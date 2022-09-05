@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.TemplateInstance;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 @ApplicationScoped
 public class EmailTemplateFactory {
@@ -30,7 +32,18 @@ public class EmailTemplateFactory {
     private static final String BUNDLE_ANSIBLE = "ansible";
     private static final String APP_ANSIBLE_REPORTS = "reports";
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     public EmailTemplate get(String bundle, String application) {
+        if (featureFlipper.isUseDefaultTemplate()) {
+            return new Default(this.getInternal(bundle, application));
+        }
+
+        return this.getInternal(bundle, application);
+    }
+
+    private EmailTemplate getInternal(String bundle, String application) {
         if (bundle.equalsIgnoreCase(RHEL)) {
             switch (application.toLowerCase()) {
                 case POLICIES:
@@ -78,6 +91,7 @@ public class EmailTemplateFactory {
                 return new Rbac();
             }
         }
+
         return new EmailTemplateNotSupported();
     }
 }

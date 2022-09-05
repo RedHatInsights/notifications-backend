@@ -1,0 +1,19 @@
+{
+  "version" : "2.0.0",
+  "bundle" : "rhel",
+  "application" : "policies",
+  "event_type" : "triggered",
+  "timestamp" : "2022-08-24T13:30:00",
+  "org_id" : "123456",
+  "context" : {
+    "foo" : "im foo",
+    "bar" : {
+      "baz" : "im baz"
+    }
+  },
+  "events" : [ {
+    "payload" : { },
+    "metadata" : { }
+  } ],
+  "recipients" : [ ]
+}
