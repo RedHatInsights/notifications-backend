@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
 import com.redhat.cloud.notifications.auth.principal.ConsoleIdentityWrapper;
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipalFactory;
+import com.redhat.cloud.notifications.auth.principal.IllegalIdentityHeaderException;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeSamlIdentity;
 import com.redhat.cloud.notifications.auth.rbac.RbacServer;
@@ -78,7 +79,11 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
             String xH = rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER);
             if (xH != null) {
                 ConsoleIdentity identity = getRhIdentityFromString(xH);
-                principal = ConsolePrincipalFactory.fromIdentity(identity);
+                try {
+                    principal = ConsolePrincipalFactory.fromIdentity(identity);
+                } catch (IllegalIdentityHeaderException e) {
+                    return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
+                }
             } else {
                 principal = ConsolePrincipal.noIdentity();
             }
@@ -103,9 +108,12 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                                 .onItem().transformToUni(builder -> {
                                     // Decode the header and deserialize the resulting JSON
                                     ConsoleIdentity identity = getRhIdentityFromString(xRhIdHeader);
-                                    ConsolePrincipal<?> principal = ConsolePrincipalFactory.fromIdentity(identity);
-                                    builder.setPrincipal(principal);
-
+                                    try {
+                                        ConsolePrincipal<?> principal = ConsolePrincipalFactory.fromIdentity(identity);
+                                        builder.setPrincipal(principal);
+                                    } catch (IllegalIdentityHeaderException e) {
+                                        return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
+                                    }
                                     if (identity instanceof RhIdentity) {
                                         return rbacServer.getRbacInfo("notifications,integrations", xRhIdHeader)
                                                 /*
