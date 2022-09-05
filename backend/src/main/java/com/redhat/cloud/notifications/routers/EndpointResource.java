@@ -40,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.annotation.security.RolesAllowed;
@@ -186,7 +187,10 @@ public class EndpointResource {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Create a new endpoint", description = "Create a new endpoint from the passed data")
-    @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Endpoint.class))),
+        @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
+    })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint createEndpoint(@Context SecurityContext sec,
