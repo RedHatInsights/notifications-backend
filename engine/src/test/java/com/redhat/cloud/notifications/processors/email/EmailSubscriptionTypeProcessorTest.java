@@ -164,12 +164,12 @@ class EmailSubscriptionTypeProcessorTest {
                 .thenReturn(new Default(new EmailTemplate() {
                     @Override
                     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
-                        return null;
+                        throw new UnsupportedOperationException("Not supported");
                     }
 
                     @Override
                     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
-                        return null;
+                        throw new UnsupportedOperationException("Not supported");
                     }
 
                     @Override
