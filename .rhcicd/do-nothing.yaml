@@ -13,7 +13,7 @@ objects:
       ignore-check.kube-linter.io/unset-memory-requirements : "Not required for this job that does nothing"  
   spec:
     jobs:
-    - name: notifications-do-nothing
+    - name: do-nothing-backend
       restartPolicy: Never
       schedule: "0 0 * * *"
       podSpec:
