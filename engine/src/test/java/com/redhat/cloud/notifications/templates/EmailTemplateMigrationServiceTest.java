@@ -104,6 +104,15 @@ public class EmailTemplateMigrationServiceTest {
         // App: advisor
         Application advisorOpenshift = resourceHelpers.createApp(openshift.getId(), "advisor");
         EventType newRecommendationOpenshift = resourceHelpers.createEventType(advisorOpenshift.getId(), "new-recommendation");
+        // App: cost-management
+        Application costManagement = resourceHelpers.createApp(openshift.getId(), "cost-management");
+        EventType missingCostModel = resourceHelpers.createEventType(costManagement.getId(), "missing-cost-model");
+        EventType costModelCreate = resourceHelpers.createEventType(costManagement.getId(), "cost-model-create");
+        EventType costModelUpdate = resourceHelpers.createEventType(costManagement.getId(), "cost-model-update");
+        EventType costModelRemove = resourceHelpers.createEventType(costManagement.getId(), "cost-model-remove");
+        EventType operatorStale = resourceHelpers.createEventType(costManagement.getId(), "cm-operator-stale");
+        EventType operatorDataProcessed = resourceHelpers.createEventType(costManagement.getId(), "cm-operator-data-processed");
+        EventType operatorDataReceived = resourceHelpers.createEventType(costManagement.getId(), "cm-operator-data-received");
 
         /*
          * Bundle: application-services
@@ -200,6 +209,15 @@ public class EmailTemplateMigrationServiceTest {
             // App: advisor
             findAndCompileInstantEmailTemplate(newRecommendationOpenshift.getId());
             assertTrue(templateRepository.findAggregationEmailTemplate(openshift.getName(), advisorOpenshift.getName(), DAILY).isEmpty());
+            // App: cost-management
+            findAndCompileInstantEmailTemplate(missingCostModel.getId());
+            findAndCompileInstantEmailTemplate(costModelCreate.getId());
+            findAndCompileInstantEmailTemplate(costModelUpdate.getId());
+            findAndCompileInstantEmailTemplate(costModelRemove.getId());
+            findAndCompileInstantEmailTemplate(operatorStale.getId());
+            findAndCompileInstantEmailTemplate(operatorDataProcessed.getId());
+            findAndCompileInstantEmailTemplate(operatorDataReceived.getId());
+            assertTrue(templateRepository.findAggregationEmailTemplate(openshift.getName(), costManagement.getName(), DAILY).isEmpty());
 
             /*
              * Bundle: application-services

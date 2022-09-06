@@ -126,6 +126,46 @@ public class EmailTemplateMigrationService {
         );
 
         /*
+         * Former src/main/resources/templates/CostManagement folder.
+         */
+        getOrCreateTemplate(warnings, "CostManagement/insightsEmailBody", "html", "Cost Management Insights email body");
+        createInstantEmailTemplate(
+                warnings, "openshift", "cost-management", List.of("missing-cost-model"),
+                "CostManagement/MissingCostModelEmailTitle", "txt", "Cost Management missing cost model email title",
+                "CostManagement/MissingCostModelEmailBody", "html", "Cost Management missing cost model email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "openshift", "cost-management", List.of("cost-model-create"),
+                "CostManagement/CostModelCreateEmailTitle", "txt", "Cost Management cost model create email title",
+                "CostManagement/CostModelCreateEmailBody", "html", "Cost Management cost model create email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "openshift", "cost-management", List.of("cost-model-update"),
+                "CostManagement/CostModelUpdateEmailTitle", "txt", "Cost Management cost model update email title",
+                "CostManagement/CostModelUpdateEmailBody", "html", "Cost Management cost model update email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "openshift", "cost-management", List.of("cost-model-remove"),
+                "CostManagement/CostModelRemoveEmailTitle", "txt", "Cost Management cost model remove email title",
+                "CostManagement/CostModelRemoveEmailBody", "html", "Cost Management cost model remove email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "openshift", "cost-management", List.of("cm-operator-stale"),
+                "CostManagement/CmOperatorStaleEmailTitle", "txt", "Cost Management operator stale email title",
+                "CostManagement/CmOperatorStaleEmailBody", "html", "Cost Management operator stale email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "openshift", "cost-management", List.of("cm-operator-data-processed"),
+                "CostManagement/CmOperatorDataProcessedEmailTitle", "txt", "Cost Management operator data processed email title",
+                "CostManagement/CmOperatorDataProcessedEmailBody", "html", "Cost Management operator data processed email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "openshift", "cost-management", List.of("cm-operator-data-received"),
+                "CostManagement/CmOperatorDataReceivedEmailTitle", "txt", "Cost Management operator data received email title",
+                "CostManagement/CmOperatorDataReceivedEmailBody", "html", "Cost Management operator data received email body"
+        );
+
+        /*
          * Former src/main/resources/templates/Drift folder.
          */
         getOrCreateTemplate(warnings, "Drift/insightsEmailBody", "html", "Drift Insights email body");
