@@ -211,6 +211,16 @@ public class EmailTemplateMigrationService {
         );
 
         /*
+         * Former src/main/resources/templates/MalwareDetection folder.
+         */
+        getOrCreateTemplate(warnings, "MalwareDetection/insightsEmailBody", "html", "Malware Detection Insights email body");
+        createInstantEmailTemplate(
+                warnings, "rhel", "malware-detection", List.of("detected-malware"),
+                "MalwareDetection/detectedMalwareInstantEmailTitle", "txt", "Malware Detection detected malware email title",
+                "MalwareDetection/detectedMalwareInstantEmailBody", "html", "Malware Detection detected malware email body"
+        );
+
+        /*
         * Former src/main/resources/templates/Patch folder.
          */
         getOrCreateTemplate(warnings, "Patch/insightsEmailBody", "html", "Patch Insights email body");
