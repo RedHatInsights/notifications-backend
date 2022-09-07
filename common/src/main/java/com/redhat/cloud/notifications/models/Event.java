@@ -69,7 +69,7 @@ public class Event {
     public Event() { }
 
     public Event(EventType eventType, String payload, Action action) {
-        this((String) action.getAccountId(), action.getOrgId(), eventType, action.getId());
+        this(action.getAccountId(), action.getOrgId(), eventType, action.getId());
         this.payload = payload;
         this.action = action;
     }

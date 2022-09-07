@@ -44,11 +44,19 @@ public class Default implements EmailTemplate {
     }
 
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
-        return this.wrappedEmailTemplate.getTitle(eventType, type);
+        if (wrappedEmailTemplate.isSupported(eventType, type)) {
+            return this.wrappedEmailTemplate.getTitle(eventType, type);
+        }
+
+        return null;
     }
 
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
-        return this.wrappedEmailTemplate.getBody(eventType, type);
+        if (wrappedEmailTemplate.isSupported(eventType, type)) {
+            return this.wrappedEmailTemplate.getBody(eventType, type);
+        }
+
+        return null;
     }
 
     @CheckedTemplate(requireTypeSafeExpressions = false)
