@@ -23,12 +23,14 @@ import { useCreateInstantEmailTemplate } from '../services/EmailTemplates/Create
 import { useGetTemplates } from '../services/EmailTemplates/GetTemplates';
 import { useCreateEventType } from '../services/EventTypes/CreateEventTypes';
 import { useDeleteEventType } from '../services/EventTypes/DeleteEventType';
-import { useApplicationTypes } from '../services/EventTypes/GetApplication';
+import { useApplicationTypes } from '../pages/ApplicationPage/useApplicationTypes';
 import { getBundleAction  } from '../services/EventTypes/GetBundleAction';
-import { EventType, InstantTemplate } from '../types/Notifications';
+import { AggregationTemplate, EventType, InstantTemplate } from '../types/Notifications';
 import { useEventTypes } from './ApplicationPage/useEventTypes';
 import { EventTypeTable } from '../components/EventTypes/EventTypeTable';
 import { useSaveModal } from '../hooks/useSaveModal';
+import { AggregationTemplateModal } from '../components/EmailTemplates/Card/AggregationTemplateModal';
+import { useCreateAggregationEmailTemplate } from '../services/EmailTemplates/CreateAggregationTemplates';
 
 type ApplicationPageParams = {
     applicationId: string;
@@ -44,6 +46,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
 
     const getAllTemplates = useGetTemplates();
     const newInstantTemplate = useCreateInstantEmailTemplate();
+    const newAggregationTemplate = useCreateAggregationEmailTemplate();
+
 
     const [ eventTypes, setEventTypes ] = React.useState<Partial<EventType>>({});
 
@@ -51,7 +55,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
-    const templateSaveModal = useSaveModal<Partial<InstantTemplate>>();
+    const instantTemplateSaveModal = useSaveModal<Partial<InstantTemplate>>();
+    const aggregationTemplateSaveModal = useSaveModal<Partial<AggregationTemplate>>();
+
 
     const getBundleId = React.useMemo(() => {
         if (applicationTypesQuery.payload?.type === 'Application') {
@@ -115,14 +121,26 @@ export const ApplicationPage: React.FunctionComponent = () => {
     }, [ applicationId, eventTypesQuery.reload, newEvent.mutate ]);
 
     const handleInstantTemplateSubmit = React.useCallback((instantTemplate: InstantTemplate) => {
-        const close = templateSaveModal.close;
+        const close = instantTemplateSaveModal.close;
         const reload = eventTypesQuery.reload;
         const mutate = newInstantTemplate.mutate;
         mutate(instantTemplate).then(() => {
             close();
             reload();
         });
-    }, [ newInstantTemplate.mutate, templateSaveModal.close, eventTypesQuery.reload ]);
+    }, [ instantTemplateSaveModal.close, eventTypesQuery.reload, newInstantTemplate.mutate ]);
+
+
+    const handleAggregationTemplateSubmit = React.useCallback((aggregationTemplate: AggregationTemplate) => {
+        const close = aggregationTemplateSaveModal.close;
+        const reload = eventTypesQuery.reload;
+        const mutate = newAggregationTemplate.mutate;
+        mutate(aggregationTemplate).then(() => {
+            close();
+            reload();
+        });
+    }, [ aggregationTemplateSaveModal.close, eventTypesQuery.reload, newAggregationTemplate.mutate ]);
+
 
     const editEventType = (e: EventType) => {
         setShowModal(true);
@@ -131,7 +149,11 @@ export const ApplicationPage: React.FunctionComponent = () => {
     };
 
     const openInstantTemplateModal = (instantTemplate: Partial<InstantTemplate>) => {
-        templateSaveModal.open(instantTemplate, !!instantTemplate.id);
+        instantTemplateSaveModal.open(instantTemplate, !!instantTemplate.id);
+    };
+
+    const openAggregationTemplateModal = (aggregationTemplate: Partial<AggregationTemplate>) => {
+        aggregationTemplateSaveModal.open(aggregationTemplate, !!aggregationTemplate.id);
     };
 
     const handleDelete = React.useCallback(async () => {
@@ -194,6 +216,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 applicationName={ application?.displayName }
                 application={ application }
                 bundleName={ bundle?.display_name }
+                onUpdateAggregationTemplate={ openAggregationTemplateModal }
             />
             { isAdmin && application && <EmailTemplateTable application={ application } /> }
             <CreateEditModal
@@ -214,12 +237,20 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 bundleName={ bundle?.display_name }
             />
             <InstantTemplateModal
-                isEdit={ templateSaveModal.isEdit }
-                showModal={ templateSaveModal.isOpen }
-                onClose={ templateSaveModal.close }
+                isEdit={ instantTemplateSaveModal.isEdit }
+                showModal={ instantTemplateSaveModal.isOpen }
+                onClose={ instantTemplateSaveModal.close }
                 templates={ templates }
                 onSubmit={ handleInstantTemplateSubmit }
-                initialInstantTemplate={ templateSaveModal.template }
+                initialInstantTemplate={ instantTemplateSaveModal.template }
+            />
+            <AggregationTemplateModal
+                isEdit={ aggregationTemplateSaveModal.isEdit }
+                showModal={ aggregationTemplateSaveModal.isOpen }
+                onClose={ aggregationTemplateSaveModal.close }
+                templates={ templates }
+                onSubmit={ handleAggregationTemplateSubmit }
+                initialAggregationTemplate={ aggregationTemplateSaveModal.template }
             />
         </React.Fragment>
     );

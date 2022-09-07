@@ -13,9 +13,10 @@ const actionCreator =  (params: CreateAggregationTemplate) => {
     if (params.id === undefined) {
         return Operations.TemplateResourceCreateAggregationEmailTemplate.actionCreator({
             body: {
+                id: params.id,
                 application_id: params.applicationId,
                 subject_template_id: params.subjectTemplateId,
-                body_template_id: params.bodyTemplateId
+                body_template_id: params.bodyTemplateId,
             }
         });
     }
@@ -23,13 +24,14 @@ const actionCreator =  (params: CreateAggregationTemplate) => {
     return Operations.TemplateResourceUpdateAggregationEmailTemplate.actionCreator({
         templateId: params.id,
         body: {
+            id: params.id,
             application_id: params.applicationId,
             subject_template_id: params.subjectTemplateId,
-            body_template_id: params.bodyTemplateId
+            body_template_id: params.bodyTemplateId,
         }
     });
 };
 
-export const useCreateInstantEmailTemplate = () => {
+export const useCreateAggregationEmailTemplate = () => {
     return useMutation(actionCreator);
 };

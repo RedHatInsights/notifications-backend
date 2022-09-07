@@ -94,6 +94,6 @@ type AggregationEmailTemplateRow = {
     isLoading: false;
 } & Partial<AggregationTemplate>);
 
-export interface AggregationCardRow extends Application {
+export interface AggregationCardRow extends Application1 {
     aggregationEmail: AggregationEmailTemplateRow;
 }

@@ -3,16 +3,16 @@ import { useMemo } from 'react';
 import { useQuery } from 'react-fetching-library';
 
 import { Operations } from '../../generated/OpenapiInternal';
-import { Application } from '../../types/Notifications';
+import { Application1 } from '../../types/Notifications';
 
 const validateResponse = validationResponseTransformer(
     (payload: Operations.InternalResourceGetApplication.Payload) => {
         if (payload.status === 200) {
-            const applicationTypes: Application = {
+            const applicationTypes: Application1 = {
                 id: payload.value.id ?? '',
-                displayName: payload.value.display_name,
+                display_name: payload.value.display_name,
                 name: payload.value.name,
-                bundleId: payload.value.bundle_id };
+                bundle_id: payload.value.bundle_id };
 
             return validatedResponse(
                 'Application',
