@@ -16,7 +16,6 @@ objects:
     jobs:
     - name: job
       restartPolicy: Never
-      schedule: "0 0 * * *"
       podSpec:
         image: quay.io/app-sre/ubi8-ubi-minimal:8.6-902
         command: 
