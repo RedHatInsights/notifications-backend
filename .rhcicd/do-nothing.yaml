@@ -7,7 +7,7 @@ objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
   metadata:
-    name: notifications-do-nothing-job-${IMAGE_TAG}-${JOBID}
+    name: notifications-do-nothing-job-${IMAGE_TAG}
     annotations:
       ignore-check.kube-linter.io/unset-cpu-requirements : "Not required for this job that does nothing"  
       ignore-check.kube-linter.io/unset-memory-requirements : "Not required for this job that does nothing"  
@@ -26,6 +26,4 @@ parameters:
 - name: IMAGE_TAG
   value: ''
   required: true
-- name: JOBID
-  generate: expression
-  from: "[0-9a-f]{7}"
+
