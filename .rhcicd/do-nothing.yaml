@@ -7,14 +7,14 @@ objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
   metadata:
-    name: notifications-do-nothing-job-${IMAGE_TAG}
+    name: notifications-backend-do-nothing-${IMAGE_TAG}
     annotations:
       ignore-check.kube-linter.io/unset-cpu-requirements : "Not required for this job that does nothing"  
       ignore-check.kube-linter.io/unset-memory-requirements : "Not required for this job that does nothing"  
   spec:
     envName: ${ENV_NAME}
     jobs:
-    - name: do-nothing-backend
+    - name: job
       restartPolicy: Never
       schedule: "0 0 * * *"
       podSpec:
