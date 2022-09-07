@@ -12,6 +12,7 @@ objects:
       ignore-check.kube-linter.io/unset-cpu-requirements : "Not required for this job that does nothing"  
       ignore-check.kube-linter.io/unset-memory-requirements : "Not required for this job that does nothing"  
   spec:
+    envName: ${ENV_NAME}
     jobs:
     - name: do-nothing-backend
       restartPolicy: Never
@@ -23,7 +24,9 @@ objects:
           - -c 
           - exit 0
 parameters:
+- name: ENV_NAME
+  description: ClowdEnvironment name (ephemeral, stage, prod)
+  required: true
 - name: IMAGE_TAG
   value: ''
   required: true
-
