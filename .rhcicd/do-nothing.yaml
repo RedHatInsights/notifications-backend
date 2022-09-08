@@ -18,7 +18,7 @@ objects:
       restartPolicy: Never
       schedule: "0 0 * * *"
       podSpec:
-        image: registry.access.redhat.com/ubi8-minimal:8.6-902.1661794353
+        image: registry.redhat.io/ubi8-minimal:8.6-902.1661794353
         command: 
           - /bin/sh
           - -c 
