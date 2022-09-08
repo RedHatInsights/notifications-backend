@@ -44,7 +44,7 @@ const defaultPayload = JSON.stringify({
     application: 'policies',
     event_type: 'policy-triggered',
     timestamp: '2021-08-05T16:21:14.243',
-    account_id: '5758117',
+    org_id: '5758117',
     // eslint-disable-next-line max-len
     context: '{"inventory_id":"80f7e57d-a16a-4189-82af-1d68a747c8b3","system_check_in":"2021-08-05T16:21:12.953036","display_name":"cool display name"}',
     events: [
