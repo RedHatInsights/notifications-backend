@@ -16,6 +16,7 @@ objects:
     jobs:
     - name: job
       restartPolicy: Never
+      schedule: "0 0 * * *"
       podSpec:
         image: registry.redhat.io/ubi8-minimal:8.6-902.1661794353
         command: 
