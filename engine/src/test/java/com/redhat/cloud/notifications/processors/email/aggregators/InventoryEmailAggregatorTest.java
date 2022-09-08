@@ -42,7 +42,7 @@ public class InventoryEmailAggregatorTest {
 
         Assertions.assertFalse(errors.containsKey("foo"));
         Assertions.assertEquals(errors.size(), 2);
-        Assertions.assertEquals(errors.getString(InventoryTestHelpers.errorMessage1), InventoryTestHelpers.displayName1);
-        Assertions.assertEquals(errors.getString(InventoryTestHelpers.errorMessage2), InventoryTestHelpers.displayName2);
+        Assertions.assertEquals(errors.getString(InventoryTestHelpers.errorMessage1), InventoryTestHelpers.requestId1);
+        Assertions.assertEquals(errors.getString(InventoryTestHelpers.errorMessage2), InventoryTestHelpers.requestId2);
     }
 }

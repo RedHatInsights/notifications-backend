@@ -19,9 +19,9 @@ public class InventoryTestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
 
-    public static final String displayName1 = "system 1";
+    public static final String requestId1 = "random_id";
     public static final String errorMessage1 = "error 1";
-    public static final String displayName2 = "system 2";
+    public static final String requestId2 = "random_id2";
     public static final String errorMessage2 = "error 2";
 
     private static final Map<String, String> ERROR1 = Map.of(
@@ -61,7 +61,8 @@ public class InventoryTestHelpers {
                         .withPayload(
                                 new Payload.PayloadBuilder()
                                         .withAdditionalProperty("host_id", tenant)
-                                        .withAdditionalProperty("display_name", displayName1)
+                                        .withAdditionalProperty("display_name", "system 1")
+                                        .withAdditionalProperty("request_id", requestId1)
                                         .withAdditionalProperty("insights_id", "654321")
                                         .withAdditionalProperty("error", ERROR1)
                                         .build()
@@ -72,7 +73,8 @@ public class InventoryTestHelpers {
                         .withPayload(
                                 new Payload.PayloadBuilder()
                                         .withAdditionalProperty("host_id", tenant)
-                                        .withAdditionalProperty("display_name", displayName2)
+                                        .withAdditionalProperty("display_name", "system 2")
+                                        .withAdditionalProperty("request_id", requestId2)
                                         .withAdditionalProperty("insights_id", "654321")
                                         .withAdditionalProperty("error", ERROR2)
                                         .build()
@@ -106,7 +108,8 @@ public class InventoryTestHelpers {
                         .withPayload(
                                 new Payload.PayloadBuilder()
                                         .withAdditionalProperty("host_id", tenant)
-                                        .withAdditionalProperty("display_name", displayName1)
+                                        .withAdditionalProperty("display_name", "system 1")
+                                        .withAdditionalProperty("request_id", requestId1)
                                         .withAdditionalProperty("insights_id", "654321")
                                         .withAdditionalProperty("error", ERROR1)
                                         .build()
