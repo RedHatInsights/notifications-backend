@@ -23,7 +23,6 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
-import static java.lang.Boolean.TRUE;
 
 @ApplicationScoped
 public class ResourceHelpers {
@@ -90,13 +89,14 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public Endpoint createEndpoint(EndpointType type, String subType) {
+    public Endpoint createEndpoint(EndpointType type, String subType, boolean enabled, int serverErrors) {
         Endpoint endpoint = new Endpoint();
         endpoint.setType(type);
         endpoint.setSubType(subType);
         endpoint.setName("endpoint-" + new SecureRandom().nextInt());
         endpoint.setDescription("Endpoint description");
-        endpoint.setEnabled(TRUE);
+        endpoint.setEnabled(enabled);
+        endpoint.setServerErrors(serverErrors);
         entityManager.persist(endpoint);
         return endpoint;
     }

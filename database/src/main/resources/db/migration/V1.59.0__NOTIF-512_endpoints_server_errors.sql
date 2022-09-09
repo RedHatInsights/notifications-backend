@@ -1,0 +1,2 @@
+ALTER TABLE endpoints
+    ADD COLUMN server_errors INTEGER NOT NULL DEFAULT 0;
