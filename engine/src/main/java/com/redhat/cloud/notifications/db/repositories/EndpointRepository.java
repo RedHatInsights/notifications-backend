@@ -133,13 +133,13 @@ public class EndpointRepository {
             if (endpoint.get().getServerErrors() + 1 > maxServerErrors) {
                 /*
                  * The endpoint exceeded the max server errors allowed from configuration.
-                 * It is therefore disabled and the errors counter is reset.
+                 * It is therefore disabled.
                  */
-                String hql = "UPDATE Endpoint SET serverErrors = 0, enabled = FALSE WHERE id = :id";
-                statelessSessionFactory.getCurrentSession().createQuery(hql)
+                String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
+                int updated = statelessSessionFactory.getCurrentSession().createQuery(hql)
                         .setParameter("id", endpointId)
                         .executeUpdate();
-                return true;
+                return updated > 0;
             } else {
                 /*
                  * The endpoint did NOT exceed the max server errors allowed from configuration.
