@@ -6,14 +6,14 @@
         <table class="rh-data-table rh-m-bordered">
             <thead>
             <tr>
-                <th>System</th>
+                <th>Request ID</th>
                 <th>Error</th>
             </tr>
             </thead>
             <tbody>
             <tr>
                 <td>
-                    {#if action.events[0].payload.host_id != null}<a href="{environment.url}/insights/inventory/{action.events[0].payload.host_id}" target="_blank">{action.events[0].payload.display_name}</a>{#else}{action.events[0].payload.display_name}{/if}
+                    <a href="{environment.url}/insights/inventory/{action.events[0].payload.request_id}" target="_blank">{action.events[0].payload.request_id}</a>
                 </td>
                 <td>{action.events[0].payload.error.message}</td>
             </tr>
