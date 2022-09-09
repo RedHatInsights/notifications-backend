@@ -127,6 +127,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
         ep.setProperties(properties);
+        ep.setServerErrors(3);
 
         Response response = given()
                 .header(identityHeader)
@@ -142,6 +143,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(Endpoint.class);
         assertNotNull(responsePoint.getString("id"));
+        assertEquals(3, responsePoint.getInteger("server_errors"));
 
         // Fetch the list
         response = given()
@@ -188,6 +190,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertTrue(responsePointSingle.getBoolean("enabled"));
+        assertEquals(0, responsePointSingle.getInteger("server_errors"));
 
         // Delete
         body =
@@ -573,6 +576,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
         ep.setProperties(properties);
+        ep.setServerErrors(7);
 
         Response response = given()
                 .header(identityHeader)
@@ -588,6 +592,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(Endpoint.class);
         assertNotNull(responsePoint.getString("id"));
+        assertEquals(7, responsePoint.getInteger("server_errors"));
 
         // Fetch the list
         response = given()
@@ -641,6 +646,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         attrSingleUpdated.mapTo(WebhookProperties.class);
         assertEquals("endpoint found", updatedEndpoint.getString("name"));
         assertEquals("not-so-secret-anymore", attrSingleUpdated.getString("secret_token"));
+        assertEquals(0, updatedEndpoint.getInteger("server_errors"));
     }
 
     private static Stream<Arguments> testEndpointTypeQuery() {

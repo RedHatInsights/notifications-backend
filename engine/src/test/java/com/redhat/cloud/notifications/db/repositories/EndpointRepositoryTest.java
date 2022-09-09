@@ -58,7 +58,8 @@ public class EndpointRepositoryTest {
                 assertEquals(i > MAX_SERVER_ERRORS, endpointRepository.incrementEndpointServerErrors(endpoint.getId(), MAX_SERVER_ERRORS));
                 Endpoint ep = getEndpoint(endpoint.getId());
                 assertEquals(i <= MAX_SERVER_ERRORS, ep.isEnabled());
-                assertEquals(i > MAX_SERVER_ERRORS ? 0 : i, ep.getServerErrors());
+                // The server errors counter is not incremented on the last iteration. The endpoint is disabled instead.
+                assertEquals(i <= MAX_SERVER_ERRORS ? i : i - 1, ep.getServerErrors());
             }
         });
     }
