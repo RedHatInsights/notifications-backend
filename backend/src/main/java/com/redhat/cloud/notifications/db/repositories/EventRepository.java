@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -15,7 +14,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -26,20 +24,10 @@ public class EventRepository {
     @Inject
     EntityManager entityManager;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
-    private final Map<String, String> sortFields = Map.of(
-            "bundle", "e.bundleDisplayName",
-            "application", "e.applicationDisplayName",
-            "event", "e.eventTypeDisplayName",
-            "created", "e.created"
-    );
-
     public List<Event> getEvents(String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                       Set<Boolean> invocationResults, boolean fetchNotificationHistory, Query query) {
-        query.setSortFields(sortFields);
+        query.setSortFields(Event.SORT_FIELDS);
         query.setDefaultSortBy("created:DESC");
         Optional<Query.Sort> sort = query.getSort();
         List<UUID> eventIds = getEventIds(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, query);

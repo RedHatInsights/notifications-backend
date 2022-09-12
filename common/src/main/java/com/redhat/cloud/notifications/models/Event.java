@@ -14,6 +14,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -25,6 +26,13 @@ import static javax.persistence.FetchType.LAZY;
 @Entity
 @Table(name = "event")
 public class Event {
+
+    public static final Map<String, String> SORT_FIELDS = Map.of(
+            "bundle", "e.bundleDisplayName",
+            "application", "e.applicationDisplayName",
+            "event", "e.eventTypeDisplayName",
+            "created", "e.created"
+    );
 
     @Id
     private UUID id;
