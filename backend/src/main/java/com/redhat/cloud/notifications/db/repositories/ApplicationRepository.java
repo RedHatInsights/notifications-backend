@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 @ApplicationScoped
 public class ApplicationRepository {
 
-
     @Inject
     EntityManager entityManager;
 
