@@ -5,7 +5,7 @@ metadata:
   name: notifications-do-nothing
 objects:
 - apiVersion: cloud.redhat.com/v1alpha1
-  kind: ClowdApp
+  kind: ClowdJobInvocation
   metadata:
     name: notifications-backend-${IMAGE_TAG}
     annotations:
@@ -16,7 +16,6 @@ objects:
     jobs:
     - name: job
       restartPolicy: Never
-      schedule: "0 0 * * *"
       podSpec:
         image: quay.io/app-sre/ubi8-ubi-minimal:8.6-902
         command: 
