@@ -3,7 +3,7 @@
 set -exv
 
 source ./.rhcicd/pr_check_backend.sh
-docker build . -f docker/Dockerfile.notifications-engine.jvm
+source ./.rhcicd/pr_check_engine.sh
 docker build . -f docker/Dockerfile.notifications-aggregator.jvm
 docker build . -f docker/Dockerfile.notifications-camel-demo-log.jvm
 
