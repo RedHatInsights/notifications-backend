@@ -16,7 +16,7 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 public class Query {
 
     // NOTIF-674 Change to "^([a-z0-9_-]+)(:(asc|desc))?$" after the frontend has been updated
-    private static final Pattern SORT_BY_PATTERN = Pattern.compile("^([a-z0-9._-]+)(:(asc|desc))?$", CASE_INSENSITIVE);
+    private static final Pattern SORT_BY_PATTERN = Pattern.compile("^[a-z0-9._-]+(:(asc|desc))?$", CASE_INSENSITIVE);
 
     private static final int DEFAULT_RESULTS_PER_PAGE  = 20;
 
@@ -165,14 +165,14 @@ public class Query {
         }
 
         if (!SORT_BY_PATTERN.matcher(sortBy).matches()) {
-            throw new BadRequestException("Invalid 'sortBy' query parameter");
+            throw new BadRequestException("Invalid 'sort_by' query parameter");
         }
 
         String[] sortSplit = sortBy.split(":");
         Sort sort = new Sort(sortSplit[0]);
         if (!sortFields.containsKey(sort.sortColumn.toLowerCase())) {
             Log.warnf("NOTIF-674 Unknown sort field passed: ", sort.sortColumn);
-            throw new BadRequestException("Invalid sort by field: " + sort.sortColumn);
+            throw new BadRequestException("Invalid sort_by field: " + sort.sortColumn);
         } else {
             sort.sortColumn = sortFields.get(sort.sortColumn.toLowerCase());
         }
