@@ -37,7 +37,7 @@ public class EventType {
 
     public static final Map<String, String> SORT_FIELDS = Map.of(
             "name", "name",
-            "displayname", "e.displayName",
+            "display_name", "e.displayName",
             "application", "e.application.displayName",
             // NOTIF-674 Remove these entries after the frontend has been updated
             "e.application.displayname", "e.application.displayName",

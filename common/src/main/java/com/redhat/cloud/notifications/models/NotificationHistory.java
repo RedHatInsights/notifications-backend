@@ -27,10 +27,12 @@ public class NotificationHistory extends CreationTimestamped {
 
     public static final Map<String, String> SORT_FIELDS = Map.of(
             "created", "nh.created",
-            "invocationtime", "nh.invocationTime",
-            "invocationresult", "nh.invocationResult",
+            "invocation_time", "nh.invocationTime",
+            "invocation_result", "nh.invocationResult",
             // NOTIF-674 Delete after the frontend has been updated
-            "nh.created", "nh.created"
+            "nh.created", "nh.created",
+            "invocationtime", "nh.invocationTime",
+            "invocationresult", "nh.invocationResult"
     );
 
     @Id
