@@ -24,6 +24,8 @@ import javax.persistence.EntityManager;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.INTEGRATION_FAILED_EVENT_TYPE;
+import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -143,7 +145,8 @@ public class EmailTemplateMigrationServiceTest {
         Bundle console = findBundle("console");
         // App: notifications
         Application notifications = findApp("console", "notifications");
-        EventType failedIntegration = resourceHelpers.createEventType(notifications.getId(), "failed-integration");
+        EventType integrationFailed = resourceHelpers.findEventType(notifications.getId(), INTEGRATION_FAILED_EVENT_TYPE);
+        EventType integrationDisabled = resourceHelpers.createEventType(notifications.getId(), INTEGRATION_DISABLED_EVENT_TYPE);
         // App: sources
         Application sources = resourceHelpers.createApp(console.getId(), "sources");
         EventType availabilityStatus = resourceHelpers.createEventType(sources.getId(), "availability-status");
@@ -247,7 +250,8 @@ public class EmailTemplateMigrationServiceTest {
              * Bundle: console
              */
             // App: notifications
-            findAndCompileInstantEmailTemplate(failedIntegration.getId());
+            findAndCompileInstantEmailTemplate(integrationFailed.getId());
+            findAndCompileInstantEmailTemplate(integrationDisabled.getId());
             assertTrue(templateRepository.findAggregationEmailTemplate(console.getName(), notifications.getName(), DAILY).isEmpty());
             // App: sources
             findAndCompileInstantEmailTemplate(availabilityStatus.getId());

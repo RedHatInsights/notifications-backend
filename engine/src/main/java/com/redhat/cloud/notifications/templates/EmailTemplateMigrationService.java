@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.INTEGRATION_FAILED_EVENT_TYPE;
+import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -119,10 +121,16 @@ public class EmailTemplateMigrationService {
         /*
          * Former src/main/resources/templates/ConsoleNotifications folder.
          */
+        getOrCreateTemplate(warnings, "ConsoleNotifications/insightsEmailBody", "html", "Notifications Insights email body");
         createInstantEmailTemplate(
-                warnings, "console", "notifications", List.of("failed-integration"),
+                warnings, "console", "notifications", List.of(INTEGRATION_FAILED_EVENT_TYPE),
                 "ConsoleNotifications/failedIntegrationTitle", "txt", "Notifications failed integration email title",
                 "ConsoleNotifications/failedIntegrationBody", "txt", "Notifications failed integration email body"
+        );
+        createInstantEmailTemplate(
+                warnings, "console", "notifications", List.of(INTEGRATION_DISABLED_EVENT_TYPE),
+                "ConsoleNotifications/integrationDisabledTitle", "txt", "Notifications disabled integration email title",
+                "ConsoleNotifications/integrationDisabledBody", "html", "Notifications disabled integration email body"
         );
 
         /*

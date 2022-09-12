@@ -72,6 +72,14 @@ public class ResourceHelpers {
         return eventType;
     }
 
+    public EventType findEventType(UUID appId, String eventTypeName) {
+        String hql = "FROM EventType WHERE application.id = :applicationId AND name = :name";
+        return entityManager.createQuery(hql, EventType.class)
+                .setParameter("applicationId", appId)
+                .setParameter("name", eventTypeName)
+                .getSingleResult();
+    }
+
     @Transactional
     public Event createEvent(EventType eventType) {
         Event event = new Event();
