@@ -15,7 +15,7 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class Query {
 
-    // NOTIF-674 Change to "^([a-z0-9_-]+)(:(asc|desc))?$" after the frontend has been updated
+    // NOTIF-674 Change to "^[a-z0-9_-]+(:(asc|desc))?$" after the frontend has been updated
     private static final Pattern SORT_BY_PATTERN = Pattern.compile("^[a-z0-9._-]+(:(asc|desc))?$", CASE_INSENSITIVE);
 
     private static final int DEFAULT_RESULTS_PER_PAGE  = 20;
@@ -161,7 +161,6 @@ public class Query {
         if (sortFields == null) {
             Log.warnf("NOTIF-674 SortFields not set.");
             sortFields = Map.of();
-            throw new BadRequestException("Allowed sort fields not set for this query");
         }
 
         if (!SORT_BY_PATTERN.matcher(sortBy).matches()) {
@@ -172,7 +171,6 @@ public class Query {
         Sort sort = new Sort(sortSplit[0]);
         if (!sortFields.containsKey(sort.sortColumn.toLowerCase())) {
             Log.warnf("NOTIF-674 Unknown sort field passed: ", sort.sortColumn);
-            throw new BadRequestException("Invalid sort_by field: " + sort.sortColumn);
         } else {
             sort.sortColumn = sortFields.get(sort.sortColumn.toLowerCase());
         }
