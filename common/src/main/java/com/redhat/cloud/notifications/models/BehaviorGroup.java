@@ -35,10 +35,9 @@ import static javax.persistence.FetchType.LAZY;
 @JsonFilter(ApiResponseFilter.NAME)
 public class BehaviorGroup extends CreationUpdateTimestamped {
 
-    public static final String[] SORT_FIELDS = {
-            "display_name",
-            // NOTIF-674 Remove these entries after the frontend has been updated
-            "displayname"
+    public static final String[] SORT_FIELDS = {"display_name",
+        // NOTIF-674 Remove these entries after the frontend has been updated
+        "displayname"
     };
 
     @Id

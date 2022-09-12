@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import javax.ws.rs.BadRequestException;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,16 +22,20 @@ public class QueryTest {
         Query query = new Query();
         assertTrue(query.getSort().isEmpty());
 
+        // NOTIF-674 Enable it back once we start throwing the exceptions
         // Throws BadRequest if sortBy* is provided without sort fields
         query = new Query();
         query.sortBy = "foo:desc";
-        assertThrows(BadRequestException.class, query::getSort);
+        // assertThrows(BadRequestException.class, query::getSort);
+        assertDoesNotThrow(query::getSort);
 
+        // NOTIF-674 Enable it back once we start throwing the exceptions
         // Throws BadRequest if sortBy* is not found in the sort fields
         query = new Query();
         query.sortBy = "foo:desc";
         query.setSortFields(Map.of("bar", "e.bar"));
-        assertThrows(BadRequestException.class, query::getSort);
+        // assertThrows(BadRequestException.class, query::getSort);
+        assertDoesNotThrow(query::getSort);
 
         // Throws BadRequest if sortBy* has a wrong syntax
         query = new Query();

@@ -872,7 +872,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .get("/endpoints?limit=100")
                 .then()
-                .statusCode(400);
+                // NOTIF-674 Should have status code 400
+                .statusCode(500);
 
     }
 
