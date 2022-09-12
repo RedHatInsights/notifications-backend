@@ -36,6 +36,7 @@ import static javax.persistence.FetchType.LAZY;
 public class BehaviorGroup extends CreationUpdateTimestamped {
 
     public static final String[] SORT_FIELDS = {"displayName"};
+
     @Id
     @GeneratedValue
     @JsonProperty(access = READ_ONLY)
