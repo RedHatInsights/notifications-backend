@@ -79,6 +79,9 @@ public class EndpointRepository {
     }
 
     public List<Endpoint> getEndpointsPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
+        if (limiter != null) {
+            limiter.setSortFields(Endpoint.SORT_FIELDS);
+        }
 
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Optional<Query.Sort> sort = limiter == null ? Optional.empty() : limiter.getSort();
