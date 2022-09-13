@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.processors.webhooks;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.Notification;
@@ -34,10 +36,16 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
 
 @ApplicationScoped
 public class WebhookTypeProcessor implements EndpointTypeProcessor {
+
+    public static final String DISABLED_ENDPOINTS_COUNTER = "processor.webhook.disabled.endpoints";
+    public static final String ERROR_TYPE_TAG_KEY = "error_type";
+    public static final String CLIENT_TAG_VALUE = "client";
+    public static final String SERVER_TAG_VALUE = "server";
 
     private static final String TOKEN_HEADER = "X-Insight-Token";
     private static final String CONNECTION_CLOSED_MSG = "Connection was closed";
@@ -54,6 +62,9 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     @ConfigProperty(name = "processor.webhook.await-timeout", defaultValue = "60S")
     Duration awaitTimeout;
 
+    @ConfigProperty(name = "processor.webhook.max-server-errors", defaultValue = "10")
+    int maxServerErrors;
+
     @Inject
     @SslVerificationEnabled
     WebClient securedWebClient;
@@ -66,14 +77,24 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     BaseTransformer transformer;
 
     @Inject
+    FeatureFlipper featureFlipper;
+
+    @Inject
+    EndpointRepository endpointRepository;
+
+    @Inject
     MeterRegistry registry;
 
     private Counter processedCount;
+    private Counter disabledEndpointsClientErrorCount;
+    private Counter disabledEndpointsServerErrorCount;
     private RetryPolicy<Object> retryPolicy;
 
     @PostConstruct
     void postConstruct() {
         processedCount = registry.counter("processor.webhook.processed");
+        disabledEndpointsClientErrorCount = registry.counter(DISABLED_ENDPOINTS_COUNTER, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
+        disabledEndpointsServerErrorCount = registry.counter(DISABLED_ENDPOINTS_COUNTER, ERROR_TYPE_TAG_KEY, SERVER_TAG_VALUE);
         retryPolicy = RetryPolicy.builder()
                 .handleIf(this::shouldRetry)
                 .withBackoff(initialRetryBackOff, maxRetryBackOff)
@@ -133,21 +154,70 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                 HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
 
                 boolean serverError = false;
+                boolean isEmailEndpoint = item.getEndpoint().getType() == EMAIL_SUBSCRIPTION;
+                boolean shouldResetEndpointServerErrors = false;
                 if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
                     // Accepted
                     Log.debugf("Webhook request to %s was successful: %d", reqImpl.host(), resp.statusCode());
                     history.setInvocationResult(true);
+                    shouldResetEndpointServerErrors = true;
                 } else if (resp.statusCode() >= 500) {
                     // Temporary error, allow retry
                     serverError = true;
                     Log.debugf("Webhook request to %s failed: %d %s", reqImpl.host(), resp.statusCode(), resp.statusMessage());
                     history.setInvocationResult(false);
+                    if (featureFlipper.isDisableWebhookEndpointsOnFailure()) {
+                        if (!isEmailEndpoint) {
+                            /*
+                             * The target endpoint returned a 5xx status. That kind of error happens in case of remote
+                             * server failure, which is usually something temporary. Sending another notification to
+                             * the same endpoint may work in the future, so the endpoint is only disabled if the max
+                             * number of endpoint failures allowed from the configuration is exceeded.
+                             */
+                            boolean disabled = endpointRepository.incrementEndpointServerErrors(item.getEndpoint().getId(), maxServerErrors);
+                            if (disabled) {
+                                disabledEndpointsServerErrorCount.increment();
+                                Log.infof("Endpoint %s was disabled because we received too many 5xx status while calling it", item.getEndpoint().getId());
+                                // TODO NOTIF-512 Send a notification to the org admin explaining the situation.
+                            }
+                        }
+                    }
                 } else {
-                    // Disable the target endpoint, it's not working correctly for us (such as 400)
-                    // must be manually re-enabled
                     // Redirects etc should have been followed by the vertx (test this)
                     Log.debugf("Webhook request to %s failed: %d %s %s", reqImpl.host(), resp.statusCode(), resp.statusMessage(), payload);
                     history.setInvocationResult(false);
+                    // TODO NOTIF-512 Should we disable endpoints in case of 3xx status code?
+                    if (featureFlipper.isDisableWebhookEndpointsOnFailure()) {
+                        if (!isEmailEndpoint && resp.statusCode() >= 400 && resp.statusCode() < 500) {
+                            /*
+                             * The target endpoint returned a 4xx status. That kind of error requires an update of the
+                             * endpoint settings (URL, secret token...). The endpoint will most likely never return a
+                             * successful status code with the current settings, so it is disabled immediately.
+                             */
+                            boolean disabled = endpointRepository.disableEndpoint(item.getEndpoint().getId());
+                            if (disabled) {
+                                disabledEndpointsClientErrorCount.increment();
+                                Log.infof("Endpoint %s was disabled because we received a 4xx status while calling it", item.getEndpoint().getId());
+                                // TODO NOTIF-512 Send a notification to the org admin explaining the situation.
+                            }
+                        } else {
+                            /*
+                             * 3xx status codes may be considered has a failure soon, but first we need to confirm
+                             * that Vert.x is correctly following the redirections.
+                             */
+                            shouldResetEndpointServerErrors = true;
+                        }
+                    }
+                }
+
+                if (featureFlipper.isDisableWebhookEndpointsOnFailure()) {
+                    if (!isEmailEndpoint && shouldResetEndpointServerErrors) {
+                        // When a target endpoint is successfully called, its server errors counter is reset in the DB.
+                        boolean reset = endpointRepository.resetEndpointServerErrors(item.getEndpoint().getId());
+                        if (reset) {
+                            Log.tracef("The server errors counter of endpoint %s was just reset", item.getEndpoint().getId());
+                        }
+                    }
                 }
 
                 if (!history.isInvocationResult()) {

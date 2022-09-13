@@ -1,7 +1,10 @@
 package com.redhat.cloud.notifications.processors.webhook;
 
+import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -17,6 +20,8 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
@@ -25,11 +30,17 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.CLIENT_TAG_VALUE;
+import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.DISABLED_ENDPOINTS_COUNTER;
+import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.ERROR_TYPE_TAG_KEY;
+import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.SERVER_TAG_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpResponse.response;
@@ -43,14 +54,33 @@ public class WebhookTest {
     @Inject
     WebhookTypeProcessor webhookTypeProcessor;
 
-    private HttpRequest getMockHttpRequest(ExpectationResponseCallback verifyEmptyRequest) {
+    @Inject
+    StatelessSessionFactory statelessSessionFactory;
+
+    @Inject
+    MicrometerAssertionHelper micrometerAssertionHelper;
+
+    @Inject
+    FeatureFlipper featureFlipper;
+
+    @BeforeEach
+    void beforeEach() {
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(DISABLED_ENDPOINTS_COUNTER, ERROR_TYPE_TAG_KEY);
+    }
+
+    @AfterEach
+    void afterEach() {
+        micrometerAssertionHelper.clearSavedValues();
+    }
+
+    private HttpRequest getMockHttpRequest(String path, ExpectationResponseCallback expectationResponseCallback) {
         HttpRequest postReq = new HttpRequest()
-                .withPath("/foobar")
+                .withPath(path)
                 .withMethod("POST");
         MockServerLifecycleManager.getClient()
                 .withSecure(false)
                 .when(postReq)
-                .respond(verifyEmptyRequest);
+                .respond(expectationResponseCallback);
         return postReq;
     }
 
@@ -64,7 +94,7 @@ public class WebhookTest {
             return response().withStatusCode(200);
         };
 
-        HttpRequest postReq = getMockHttpRequest(verifyEmptyRequest);
+        HttpRequest postReq = getMockHttpRequest("/foobar", verifyEmptyRequest);
 
         Action webhookActionMessage = buildWebhookAction();
         Event event = new Event();
@@ -129,7 +159,7 @@ public class WebhookTest {
             }
         };
 
-        HttpRequest mockServerRequest = getMockHttpRequest(expectationResponseCallback);
+        HttpRequest mockServerRequest = getMockHttpRequest("/foobar", expectationResponseCallback);
         try {
             Action action = buildWebhookAction();
             Event event = new Event();
@@ -144,6 +174,75 @@ public class WebhookTest {
             // Remove expectations
             MockServerLifecycleManager.getClient().clear(mockServerRequest);
         }
+    }
+
+    @Test
+    void testDisableEndpointOnClientError() {
+        featureFlipper.setDisableWebhookEndpointsOnFailure(true);
+
+        HttpRequest mockServerRequest = getMockHttpRequest("/client-error", request -> response().withStatusCode(401));
+        try {
+            Action action = buildWebhookAction();
+            Event event = new Event();
+            event.setAction(action);
+            Endpoint ep = buildWebhookEndpoint(getMockServerUrl() + "/client-error");
+            persistEndpoint(ep);
+            assertTrue(ep.isEnabled());
+            statelessSessionFactory.withSession(statelessSession -> {
+                webhookTypeProcessor.process(event, List.of(ep));
+                micrometerAssertionHelper.assertCounterIncrement(DISABLED_ENDPOINTS_COUNTER, 1, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
+                assertFalse(getEndpoint(ep.getId()).isEnabled());
+            });
+        } finally {
+            // Remove expectations
+            MockServerLifecycleManager.getClient().clear(mockServerRequest);
+        }
+
+        featureFlipper.setDisableWebhookEndpointsOnFailure(false);
+    }
+
+    @Test
+    void testDisableEndpointOnServerError() {
+        featureFlipper.setDisableWebhookEndpointsOnFailure(true);
+
+        HttpRequest mockServerRequest = getMockHttpRequest("/server-error", request -> response().withStatusCode(503));
+        try {
+            Action action = buildWebhookAction();
+            Event event = new Event();
+            event.setAction(action);
+            Endpoint ep = buildWebhookEndpoint(getMockServerUrl() + "/server-error");
+            persistEndpoint(ep);
+            assertTrue(ep.isEnabled());
+            statelessSessionFactory.withSession(statelessSession -> {
+                for (int i = 0; i < 4; i++) {
+                    /*
+                     * The processor retries 3 times in case of server error,
+                     * so the endpoint will actually be called 12 times in this test.
+                     */
+                    webhookTypeProcessor.process(event, List.of(ep));
+                }
+                micrometerAssertionHelper.assertCounterIncrement(DISABLED_ENDPOINTS_COUNTER, 1, ERROR_TYPE_TAG_KEY, SERVER_TAG_VALUE);
+                assertFalse(getEndpoint(ep.getId()).isEnabled());
+            });
+        } finally {
+            // Remove expectations
+            MockServerLifecycleManager.getClient().clear(mockServerRequest);
+        }
+
+        featureFlipper.setDisableWebhookEndpointsOnFailure(false);
+    }
+
+    void persistEndpoint(Endpoint endpoint) {
+        statelessSessionFactory.withSession(statelessSession -> {
+            return statelessSession.insert(endpoint);
+        });
+    }
+
+    Endpoint getEndpoint(UUID id) {
+        String hql = "FROM Endpoint WHERE id = :id";
+        return statelessSessionFactory.getCurrentSession().createQuery(hql, Endpoint.class)
+                .setParameter("id", id)
+                .getSingleResult();
     }
 
     private static Action buildWebhookAction() {
@@ -196,6 +295,7 @@ public class WebhookTest {
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
         ep.setProperties(properties);
+        ep.setCreated(LocalDateTime.now());
 
         return ep;
     }

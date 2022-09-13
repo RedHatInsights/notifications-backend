@@ -12,6 +12,8 @@ import io.quarkus.logging.Log;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.NoResultException;
+import javax.transaction.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
+import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
 
 @ApplicationScoped
 public class EndpointRepository {
@@ -107,6 +110,95 @@ public class EndpointRepository {
                 .getResultList();
         loadProperties(endpoints);
         return endpoints;
+    }
+
+    /**
+     * Increments the server errors counter of the endpoint identified by the given ID.
+     * @param endpointId the endpoint ID
+     * @param maxServerErrors the maximum server errors allowed from the configuration
+     * @return {@code true} if the endpoint was disabled by this method, {@code false} otherwise
+     */
+    @Transactional
+    public boolean incrementEndpointServerErrors(UUID endpointId, int maxServerErrors) {
+        /*
+         * This method must be an atomic operation from a DB perspective. Otherwise, we could send multiple email
+         * notifications about the same disabled endpoint in case of failures happening on concurrent threads or pods.
+         */
+        Optional<Endpoint> endpoint = lockEndpoint(endpointId);
+        /*
+         * The endpoint should always be present unless it's been deleted recently from another thread or pod.
+         * It may or may not have been disabled already from the frontend or because of a 4xx error.
+         */
+        if (endpoint.isPresent() && endpoint.get().isEnabled()) {
+            if (endpoint.get().getServerErrors() + 1 > maxServerErrors) {
+                /*
+                 * The endpoint exceeded the max server errors allowed from configuration.
+                 * It is therefore disabled.
+                 */
+                String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
+                int updated = statelessSessionFactory.getCurrentSession().createQuery(hql)
+                        .setParameter("id", endpointId)
+                        .executeUpdate();
+                return updated > 0;
+            } else {
+                /*
+                 * The endpoint did NOT exceed the max server errors allowed from configuration.
+                 * The errors counter is therefore incremented.
+                 */
+                String hql = "UPDATE Endpoint SET serverErrors = serverErrors + 1 WHERE id = :id";
+                statelessSessionFactory.getCurrentSession().createQuery(hql)
+                        .setParameter("id", endpointId)
+                        .executeUpdate();
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    private Optional<Endpoint> lockEndpoint(UUID endpointId) {
+        String hql = "FROM Endpoint WHERE id = :id";
+        try {
+            Endpoint endpoint = statelessSessionFactory.getCurrentSession().createQuery(hql, Endpoint.class)
+                    .setParameter("id", endpointId)
+                    /*
+                     * The endpoint will be locked by a "SELECT FOR UPDATE", preventing other threads or pods
+                     * from updating it until the current transaction is complete.
+                     */
+                    .setLockMode(PESSIMISTIC_WRITE)
+                    .getSingleResult();
+            return Optional.of(endpoint);
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Resets the server errors DB counter of the endpoint identified by the given ID.
+     * @param endpointId the endpoint ID
+     * @return {@code true} if the counter was reset by this method, {@code false} otherwise
+     */
+    @Transactional
+    public boolean resetEndpointServerErrors(UUID endpointId) {
+        String hql = "UPDATE Endpoint SET serverErrors = 0 WHERE id = :id AND serverErrors > 0";
+        int updated = statelessSessionFactory.getCurrentSession().createQuery(hql)
+                .setParameter("id", endpointId)
+                .executeUpdate();
+        return updated > 0;
+    }
+
+    /**
+     * Disables the endpoint identified by the given ID.
+     * @param endpointId the endpoint ID
+     * @return {@code true} if the endpoint was disabled by this method, {@code false} otherwise
+     */
+    @Transactional
+    public boolean disableEndpoint(UUID endpointId) {
+        String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
+        int updated = statelessSessionFactory.getCurrentSession().createQuery(hql)
+                .setParameter("id", endpointId)
+                .executeUpdate();
+        return updated > 0;
     }
 
     private void loadProperties(List<Endpoint> endpoints) {
