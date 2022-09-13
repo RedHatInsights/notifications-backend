@@ -21,6 +21,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -33,7 +34,13 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @JsonNaming(SnakeCaseStrategy.class)
 public class Endpoint extends CreationUpdateTimestamped {
 
-    public static final String[] SORT_FIELDS = {"id", "name", "enabled", "endpoint_type", "created"};
+    public static final Map<String, String> SORT_FIELDS = Map.of(
+            "id", "e.id",
+            "name", "e.name",
+            "enabled", "e.enabled",
+            "type", "e.compositeType.type",
+            "created", "e.created"
+    );
 
     @Id
     @GeneratedValue

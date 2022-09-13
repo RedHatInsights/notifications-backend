@@ -5,7 +5,6 @@ import io.quarkus.logging.Log;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -40,11 +39,11 @@ public class Query {
     private String defaultSortBy;
     private Map<String, String> sortFields;
 
-    public void setSortFields(String[] sortFields) {
-        this.sortFields = new HashMap<>();
-        for (String sortField : sortFields) {
-            this.sortFields.put(sortField.toLowerCase(), sortField);
-        }
+    // Used by test
+    public static Query queryWithSortBy(String sortBy) {
+        Query query = new Query();
+        query.sortBy = sortBy;
+        return query;
     }
 
     public void setSortFields(Map<String, String> sortFields) {

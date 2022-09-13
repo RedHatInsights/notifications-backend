@@ -1,10 +1,17 @@
 package com.redhat.cloud.notifications;
 
+import com.redhat.cloud.notifications.db.Query;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
+
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestHelpers {
 
@@ -48,6 +55,46 @@ public class TestHelpers {
 
     public static Header createRHIdentityHeader(String encodedIdentityHeader) {
         return new Header(X_RH_IDENTITY_HEADER, encodedIdentityHeader);
+    }
+
+    /**
+     * Utility function to test sorting using the Query class
+     *
+     * @param sortField Field to sortBy
+     * @param producer Function that takes a query and returns the sorted list of elements
+     * @param testAdapter Function to transform the sorted list of elements into the expected sorting values
+     * @param defaultOrder Default order used when the order is not provided
+     * @param expectedDefault Expected default values
+     * @param <T> Element type being sorted
+     * @param <P> Expected element type
+     */
+    public static <T, P> void testSorting(
+            String sortField,
+            Function<Query, List<T>> producer,
+            Function<List<T>, List<P>> testAdapter,
+            Query.Sort.Order defaultOrder,
+            List<P> expectedDefault) {
+
+        List<P> asc = new ArrayList<>(expectedDefault);
+        List<P> desc = new ArrayList<>(expectedDefault);
+
+        if (defaultOrder == Query.Sort.Order.ASC) {
+            Collections.reverse(desc);
+        } else {
+            Collections.reverse(asc);
+        }
+
+        Query query = Query.queryWithSortBy(sortField);
+        List<T> values = producer.apply(query);
+        assertEquals(expectedDefault, testAdapter.apply(values));
+
+        query = Query.queryWithSortBy(sortField + ":asc");
+        values = producer.apply(query);
+        assertEquals(asc, testAdapter.apply(values));
+
+        query = Query.queryWithSortBy(sortField + ":desc");
+        values = producer.apply(query);
+        assertEquals(desc, testAdapter.apply(values));
     }
 
 }
