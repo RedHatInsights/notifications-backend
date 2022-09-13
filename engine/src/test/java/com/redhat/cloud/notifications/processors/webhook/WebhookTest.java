@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
+import com.redhat.cloud.notifications.events.IntegrationDisabledNotifier;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -18,6 +19,7 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterEach;
@@ -36,13 +38,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.CLIENT_TAG_VALUE;
-import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.DISABLED_ENDPOINTS_COUNTER;
+import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.DISABLED_WEBHOOKS_COUNTER;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.ERROR_TYPE_TAG_KEY;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.SERVER_TAG_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
@@ -63,9 +68,12 @@ public class WebhookTest {
     @Inject
     FeatureFlipper featureFlipper;
 
+    @InjectMock
+    IntegrationDisabledNotifier integrationDisabledNotifier;
+
     @BeforeEach
     void beforeEach() {
-        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(DISABLED_ENDPOINTS_COUNTER, ERROR_TYPE_TAG_KEY);
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY);
     }
 
     @AfterEach
@@ -190,7 +198,8 @@ public class WebhookTest {
             assertTrue(ep.isEnabled());
             statelessSessionFactory.withSession(statelessSession -> {
                 webhookTypeProcessor.process(event, List.of(ep));
-                micrometerAssertionHelper.assertCounterIncrement(DISABLED_ENDPOINTS_COUNTER, 1, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
+                micrometerAssertionHelper.assertCounterIncrement(DISABLED_WEBHOOKS_COUNTER, 1, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
+                verify(integrationDisabledNotifier, times(1)).clientError(eq(ep), eq(401));
                 assertFalse(getEndpoint(ep.getId()).isEnabled());
             });
         } finally {
@@ -221,7 +230,8 @@ public class WebhookTest {
                      */
                     webhookTypeProcessor.process(event, List.of(ep));
                 }
-                micrometerAssertionHelper.assertCounterIncrement(DISABLED_ENDPOINTS_COUNTER, 1, ERROR_TYPE_TAG_KEY, SERVER_TAG_VALUE);
+                micrometerAssertionHelper.assertCounterIncrement(DISABLED_WEBHOOKS_COUNTER, 1, ERROR_TYPE_TAG_KEY, SERVER_TAG_VALUE);
+                verify(integrationDisabledNotifier, times(1)).tooManyServerErrors(eq(ep), eq(10));
                 assertFalse(getEndpoint(ep.getId()).isEnabled());
             });
         } finally {

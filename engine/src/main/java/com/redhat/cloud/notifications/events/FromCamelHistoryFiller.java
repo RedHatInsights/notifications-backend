@@ -14,9 +14,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.annotations.Blocking;
-import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.Json;
-import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -32,9 +30,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * We sent data via Camel. Now Camel informs us about the outcome,
  * which we need to put into the notifications history.
@@ -46,6 +41,7 @@ public class FromCamelHistoryFiller {
     public static final String MESSAGES_ERROR_COUNTER_NAME = "camel.messages.error";
     public static final String MESSAGES_PROCESSED_COUNTER_NAME = "camel.messages.processed";
     public static final String EGRESS_CHANNEL = "egress";
+    public static final String INTEGRATION_FAILED_EVENT_TYPE = "integration-failed";
 
     @Inject
     NotificationHistoryRepository notificationHistoryRepository;
@@ -122,7 +118,7 @@ public class FromCamelHistoryFiller {
                 .withId(UUID.randomUUID())
                 .withBundle("console")
                 .withApplication("notifications")
-                .withEventType("integration-failed")
+                .withEventType(INTEGRATION_FAILED_EVENT_TYPE)
                 .withAccountId(ep != null ? ep.getAccountId() : "")
                 .withOrgId(ep != null && ep.getOrgId() != null ? ep.getOrgId() : "")
                 .withContext(contextBuilder.build())
@@ -137,21 +133,9 @@ public class FromCamelHistoryFiller {
 
         String ser = Parser.encode(action);
         // Add the message id in Kafka header for the de-duplicator
-        Message<String> message = buildMessageWithId(ser);
+        Message<String> message = KafkaMessageWithIdBuilder.build(ser);
         emitter.send(message);
     }
-
-
-    // Blindly copied from -gw.  Perhaps put this into Schema project
-    private static Message buildMessageWithId(String payload) {
-        byte[] messageId = UUID.randomUUID().toString().getBytes(UTF_8);
-        OutgoingKafkaRecordMetadata metadata = OutgoingKafkaRecordMetadata.builder()
-                .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, messageId))
-                .build();
-        return Message.of(payload).addMetadata(metadata);
-    }
-
-
 
     private Map<String, Object> decodeItem(String s) {
 

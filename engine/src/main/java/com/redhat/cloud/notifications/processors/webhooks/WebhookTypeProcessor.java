@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.processors.webhooks;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.events.IntegrationDisabledNotifier;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.Notification;
@@ -42,7 +43,7 @@ import static com.redhat.cloud.notifications.models.NotificationHistory.getHisto
 @ApplicationScoped
 public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
-    public static final String DISABLED_ENDPOINTS_COUNTER = "processor.webhook.disabled.endpoints";
+    public static final String DISABLED_WEBHOOKS_COUNTER = "processor.webhook.disabled.endpoints";
     public static final String ERROR_TYPE_TAG_KEY = "error_type";
     public static final String CLIENT_TAG_VALUE = "client";
     public static final String SERVER_TAG_VALUE = "server";
@@ -83,18 +84,21 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     EndpointRepository endpointRepository;
 
     @Inject
+    IntegrationDisabledNotifier integrationDisabledNotifier;
+
+    @Inject
     MeterRegistry registry;
 
     private Counter processedCount;
-    private Counter disabledEndpointsClientErrorCount;
-    private Counter disabledEndpointsServerErrorCount;
+    private Counter disabledWebhooksClientErrorCount;
+    private Counter disabledWebhooksServerErrorCount;
     private RetryPolicy<Object> retryPolicy;
 
     @PostConstruct
     void postConstruct() {
         processedCount = registry.counter("processor.webhook.processed");
-        disabledEndpointsClientErrorCount = registry.counter(DISABLED_ENDPOINTS_COUNTER, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
-        disabledEndpointsServerErrorCount = registry.counter(DISABLED_ENDPOINTS_COUNTER, ERROR_TYPE_TAG_KEY, SERVER_TAG_VALUE);
+        disabledWebhooksClientErrorCount = registry.counter(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
+        disabledWebhooksServerErrorCount = registry.counter(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY, SERVER_TAG_VALUE);
         retryPolicy = RetryPolicy.builder()
                 .handleIf(this::shouldRetry)
                 .withBackoff(initialRetryBackOff, maxRetryBackOff)
@@ -176,9 +180,9 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                              */
                             boolean disabled = endpointRepository.incrementEndpointServerErrors(item.getEndpoint().getId(), maxServerErrors);
                             if (disabled) {
-                                disabledEndpointsServerErrorCount.increment();
+                                disabledWebhooksServerErrorCount.increment();
                                 Log.infof("Endpoint %s was disabled because we received too many 5xx status while calling it", item.getEndpoint().getId());
-                                // TODO NOTIF-512 Send a notification to the org admin explaining the situation.
+                                integrationDisabledNotifier.tooManyServerErrors(item.getEndpoint(), maxServerErrors);
                             }
                         }
                     }
@@ -196,9 +200,9 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                              */
                             boolean disabled = endpointRepository.disableEndpoint(item.getEndpoint().getId());
                             if (disabled) {
-                                disabledEndpointsClientErrorCount.increment();
+                                disabledWebhooksClientErrorCount.increment();
                                 Log.infof("Endpoint %s was disabled because we received a 4xx status while calling it", item.getEndpoint().getId());
-                                // TODO NOTIF-512 Send a notification to the org admin explaining the situation.
+                                integrationDisabledNotifier.clientError(item.getEndpoint(), resp.statusCode());
                             }
                         } else {
                             /*
