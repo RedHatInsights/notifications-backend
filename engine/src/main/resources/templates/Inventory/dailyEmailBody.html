@@ -29,16 +29,18 @@
                 <table width:="" 100%;="" class="rh-data-table rh-m-bordered">
                 <thead>              
                     <tr>
+                        <th>Request ID</th>
                         <th>Error</th>
-                        <th>Hosts</th>
                     </tr>
                 </thead>
                 <tbody>
                     {#for key in action.context.inventory.errors.keySet()}
                     {#if key_count < 11}
                     <tr>
+                        <td>
+                            <a href="{environment.url}/insights/inventory/{action.context.inventory.errors.get(key)}" target="_blank">{action.context.inventory.errors.get(key)}</a>
+                        </td>
                         <td>{key}</td>
-                        <td>{action.context.inventory.errors.get(key)}</td>
                     </tr>
                     {/if}
                     {/for}

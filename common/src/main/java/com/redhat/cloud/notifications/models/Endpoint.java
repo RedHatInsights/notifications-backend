@@ -19,6 +19,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.Valid;
 import javax.validation.constraints.AssertTrue;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Objects;
@@ -63,6 +64,9 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Embedded
     @JsonIgnore
     private final CompositeEndpointType compositeType = new CompositeEndpointType();
+
+    @Min(0)
+    private int serverErrors;
 
     @Schema(oneOf = { WebhookProperties.class, EmailSubscriptionProperties.class, CamelProperties.class })
     @JsonTypeInfo(
@@ -200,6 +204,14 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.status = status;
     }
 
+    public int getServerErrors() {
+        return serverErrors;
+    }
+
+    public void setServerErrors(int serverErrors) {
+        this.serverErrors = serverErrors;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -232,6 +244,7 @@ public class Endpoint extends CreationUpdateTimestamped {
                 ", created=" + getCreated() +
                 ", updated=" + getUpdated() +
                 ", properties=" + properties +
+                ", serverErrors=" + serverErrors +
                 '}';
     }
 }

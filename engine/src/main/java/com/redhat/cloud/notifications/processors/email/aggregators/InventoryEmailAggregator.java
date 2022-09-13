@@ -19,7 +19,7 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
     private static final String PAYLOAD_KEY = "payload";
     private static final String ERROR_KEY = "error";
     private static final String MESSAGE_KEY = "message";
-    private static final String NAME_KEY = "display_name";
+    private static final String REQUEST_ID_KEY = "request_id";
 
     public InventoryEmailAggregator() {
         JsonObject inventory = new JsonObject();
@@ -44,9 +44,9 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
             JsonObject payload = event.getJsonObject(PAYLOAD_KEY);
             JsonObject error = payload.getJsonObject(ERROR_KEY);
             String errorMessage = error.getString(MESSAGE_KEY);
-            String displayName = payload.getString(NAME_KEY);
+            String requestId = payload.getString(REQUEST_ID_KEY);
 
-            inventory.getJsonObject(ERRORS).put(errorMessage, displayName);
+            inventory.getJsonObject(ERRORS).put(errorMessage, requestId);
         });
     }
 }

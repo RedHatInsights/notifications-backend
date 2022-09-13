@@ -203,7 +203,7 @@ public class EndpointRepository {
 
     @Transactional
     boolean modifyEndpointStatus(String orgId, UUID id, boolean enabled) {
-        String query = "UPDATE Endpoint SET enabled = :enabled WHERE orgId = :orgId AND id = :id";
+        String query = "UPDATE Endpoint SET enabled = :enabled, serverErrors = 0 WHERE orgId = :orgId AND id = :id";
         int rowCount = entityManager.createQuery(query)
                 .setParameter("id", id)
                 .setParameter("orgId", orgId)
@@ -216,7 +216,7 @@ public class EndpointRepository {
     public boolean updateEndpoint(Endpoint endpoint) {
         // TODO Update could fail because the item did not exist, throw 404 in that case?
         // TODO Fix transaction so that we don't end up with half the updates applied
-        String endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled " +
+        String endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled, serverErrors = 0 " +
                 "WHERE orgId = :orgId AND id = :id";
         String webhookQuery = "UPDATE WebhookProperties SET url = :url, method = :method, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";

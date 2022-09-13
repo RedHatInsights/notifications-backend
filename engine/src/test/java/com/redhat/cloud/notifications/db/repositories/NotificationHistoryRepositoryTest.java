@@ -92,7 +92,7 @@ public class NotificationHistoryRepositoryTest {
         Application app = resourceHelpers.createApp(bundle.getId(), "app-" + new SecureRandom().nextInt());
         EventType eventType = resourceHelpers.createEventType(app.getId(), "event-type-" + new SecureRandom().nextInt());
         Event event = resourceHelpers.createEvent(eventType);
-        Endpoint endpoint = resourceHelpers.createEndpoint(endpointType, endpointSubType);
+        Endpoint endpoint = resourceHelpers.createEndpoint(endpointType, endpointSubType, true, 0);
         return buildNotificationHistory(invocationTime, invocationResult, event, endpoint, details);
     }
 
