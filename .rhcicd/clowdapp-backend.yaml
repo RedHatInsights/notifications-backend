@@ -21,6 +21,14 @@ objects:
     testing:
       iqePlugin: notifications
     jobs:
+    - name: do-nothing
+      restartPolicy: Never
+      podSpec:
+        image: quay.io/app-sre/ubi8-ubi-minimal:8.6-902
+        command: 
+          - /bin/sh
+          - -c 
+          - exit 0
     - name: floorist
       schedule: ${FLOORIST_SCHEDULE}
       suspend: ${{FLOORIST_SUSPEND}}
