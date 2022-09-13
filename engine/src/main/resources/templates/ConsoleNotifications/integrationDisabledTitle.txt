@@ -1,1 +1,1 @@
-{action.timestamp.toUtcFormat()} - Integration '{action.payload.endpoint_name}' was disabled
+{action.timestamp.toUtcFormat()} - Integration '{action.context.endpoint_name}' was disabled

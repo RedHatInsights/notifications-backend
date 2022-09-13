@@ -83,17 +83,17 @@ public class IntegrationDisabledNotifierTest {
         assertEquals(NOTIFICATIONS_APP, action.getApplication());
         assertEquals(INTEGRATION_DISABLED_EVENT_TYPE, action.getEventType());
         assertEquals(endpoint.getOrgId(), action.getOrgId());
-        assertEquals(1, action.getEvents().size());
+        assertTrue(action.getEvents().isEmpty());
         assertTrue(action.getRecipients().get(0).getOnlyAdmins());
         assertTrue(action.getRecipients().get(0).getIgnoreUserPreferences());
 
-        Map<String, Object> additionalProperties = action.getEvents().get(0).getPayload().getAdditionalProperties();
-        assertEquals(expectedErrorType, additionalProperties.get(ERROR_TYPE_PROPERTY));
-        assertEquals(endpoint.getId().toString(), additionalProperties.get(ENDPOINT_ID_PROPERTY));
-        assertEquals(endpoint.getName(), additionalProperties.get(ENDPOINT_NAME_PROPERTY));
-        assertEquals(expectedErrorsCount, additionalProperties.get(ERRORS_COUNT_PROPERTY));
+        Map<String, Object> contextProperties = action.getContext().getAdditionalProperties();
+        assertEquals(expectedErrorType, contextProperties.get(ERROR_TYPE_PROPERTY));
+        assertEquals(endpoint.getId().toString(), contextProperties.get(ENDPOINT_ID_PROPERTY));
+        assertEquals(endpoint.getName(), contextProperties.get(ENDPOINT_NAME_PROPERTY));
+        assertEquals(expectedErrorsCount, contextProperties.get(ERRORS_COUNT_PROPERTY));
         if (expectedStatusCode > 0) {
-            assertEquals(expectedStatusCode, additionalProperties.get(STATUS_CODE_PROPERTY));
+            assertEquals(expectedStatusCode, contextProperties.get(STATUS_CODE_PROPERTY));
         }
     }
 

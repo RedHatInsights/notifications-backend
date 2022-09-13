@@ -1,9 +1,8 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Parser;
-import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Endpoint;
 import org.eclipse.microprofile.reactive.messaging.Channel;
@@ -44,19 +43,15 @@ public class IntegrationDisabledNotifier {
     }
 
     private void notify(Endpoint endpoint, String errorType, int statusCode, int errorsCount) {
-        Payload.PayloadBuilderBase payloadBuilder = new Payload.PayloadBuilder()
+        Context.ContextBuilderBase contextBuilder = new Context.ContextBuilder()
                 .withAdditionalProperty(ERROR_TYPE_PROPERTY, errorType)
                 .withAdditionalProperty(ENDPOINT_ID_PROPERTY, endpoint.getId())
                 .withAdditionalProperty(ENDPOINT_NAME_PROPERTY, endpoint.getName())
                 .withAdditionalProperty(ERRORS_COUNT_PROPERTY, errorsCount);
 
         if (statusCode > 0) {
-            payloadBuilder.withAdditionalProperty(STATUS_CODE_PROPERTY, statusCode);
+            contextBuilder.withAdditionalProperty(STATUS_CODE_PROPERTY, statusCode);
         }
-
-        Event event = new Event.EventBuilder()
-                .withPayload(payloadBuilder.build())
-                .build();
 
         Recipient recipients = new Recipient.RecipientBuilder()
                 .withOnlyAdmins(true)
@@ -70,7 +65,7 @@ public class IntegrationDisabledNotifier {
                 .withEventType(INTEGRATION_DISABLED_EVENT_TYPE)
                 .withOrgId(endpoint.getOrgId())
                 .withTimestamp(LocalDateTime.now(UTC))
-                .withEvents(List.of(event))
+                .withContext(contextBuilder.build())
                 .withRecipients(List.of(recipients))
                 .build();
         String encodedAction = Parser.encode(action);
