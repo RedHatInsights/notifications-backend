@@ -146,7 +146,7 @@ public class EmailTemplateMigrationServiceTest {
         // App: notifications
         Application notifications = findApp("console", "notifications");
         EventType integrationFailed = resourceHelpers.findEventType(notifications.getId(), INTEGRATION_FAILED_EVENT_TYPE);
-        EventType integrationDisabled = resourceHelpers.createEventType(notifications.getId(), INTEGRATION_DISABLED_EVENT_TYPE);
+        EventType integrationDisabled = resourceHelpers.findEventType(notifications.getId(), INTEGRATION_DISABLED_EVENT_TYPE);
         // App: sources
         Application sources = resourceHelpers.createApp(console.getId(), "sources");
         EventType availabilityStatus = resourceHelpers.createEventType(sources.getId(), "availability-status");
