@@ -1,24 +1,24 @@
 {#include ConsoleNotifications/insightsEmailBody}
-{#content-title}Integration '{action.payload.endpoint_name}' was disabled{/content-title}
+{#content-title}Integration '{action.context.endpoint_name}' was disabled{/content-title}
 {#content-body}
 <tr>
     <td class="rh-content__block">
-        {#if action.payload.error_type == "client"}
+        {#if action.context.error_type == "client"}
             <p>
-                Integration <a href="{environment.url}/settings/integrations?name={action.payload.endpoint_name}" target="_blank">{action.payload.endpoint_name}</a>
-                was disabled because the remote endpoint responded with an HTTP status code {action.payload.status_code}.
+                Integration <a href="{environment.url}/settings/integrations?name={action.context.endpoint_name}" target="_blank">{action.context.endpoint_name}</a>
+                was disabled because the remote endpoint responded with an HTTP status code {action.context.status_code}.
             </p>
             <p>
-                Please review the integration configuration from <a href="{environment.url}/settings/integrations?name={action.payload.endpoint_name}" target="_blank">Settings > Integrations</a>
+                Please review the integration configuration from <a href="{environment.url}/settings/integrations?name={action.context.endpoint_name}" target="_blank">Settings > Integrations</a>
                 to troubleshoot and re-enable the integration.
             </p>
         {#else}
             <p>
-                Integration <a href="{environment.url}/settings/integrations?name={action.payload.endpoint_name}" target="_blank">{action.payload.endpoint_name}</a>
-                was disabled because the remote endpoint responded {action.payload.errors_count} times with a server error (HTTP status code 5xx).
+                Integration <a href="{environment.url}/settings/integrations?name={action.context.endpoint_name}" target="_blank">{action.context.endpoint_name}</a>
+                was disabled because the remote endpoint responded {action.context.errors_count} times with a server error (HTTP status code 5xx).
             </p>
             <p>
-                Please re-enable the integration from <a href="{environment.url}/settings/integrations?name={action.payload.endpoint_name}" target="_blank">Settings > Integrations</a>
+                Please re-enable the integration from <a href="{environment.url}/settings/integrations?name={action.context.endpoint_name}" target="_blank">Settings > Integrations</a>
                 if the remote endpoint is ready to receive webhook calls.
             </p>
         {/if}
@@ -29,7 +29,7 @@
         <table align="center">
             <tr>
                 <td class="rh-cta-link" align="center">
-                    <a href="{environment.url}/settings/integrations?name={action.payload.endpoint_name}" target="_blank">
+                    <a href="{environment.url}/settings/integrations?name={action.context.endpoint_name}" target="_blank">
                         <span>Open Integrations</span>
                     </a>
                 </td>
