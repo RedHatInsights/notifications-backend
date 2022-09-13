@@ -4,7 +4,7 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 
-// Class name is the folder name in resources/templates/
+// Name needs to be "ConsoleNotifications" to read templates from resources/templates/ConsoleNotifications
 public class ConsoleNotifications implements EmailTemplate {
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
