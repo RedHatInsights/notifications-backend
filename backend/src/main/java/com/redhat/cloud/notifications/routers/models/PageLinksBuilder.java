@@ -1,9 +1,15 @@
 package com.redhat.cloud.notifications.routers.models;
 
+import com.redhat.cloud.notifications.db.Query;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class PageLinksBuilder {
+
+    public static Map<String, String> build(String apiPath, long count, Query query) {
+        return build(apiPath, count, query.getLimit().getLimit(), query.getLimit().getOffset());
+    }
 
     public static Map<String, String> build(String apiPath, long count, long limit, long currentOffset) {
         Map<String, String> links = new HashMap<>();

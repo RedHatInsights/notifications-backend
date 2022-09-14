@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -15,7 +16,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.BadRequestException;
-import javax.ws.rs.DefaultValue;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -28,21 +29,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS;
 import static com.redhat.cloud.notifications.routers.EventResource.PATH;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
-import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path(PATH)
 public class EventResource {
 
     public static final String PATH = API_NOTIFICATIONS_V_1_0 + "/notifications/events";
-    public static final Pattern SORT_BY_PATTERN = Pattern.compile("^([a-z0-9_-]+):(asc|desc)$", CASE_INSENSITIVE);
 
     @Inject
     EventRepository eventRepository;
@@ -50,17 +48,16 @@ public class EventResource {
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(RBAC_READ_NOTIFICATIONS_EVENTS)
-    @Operation(summary = "Retrieve the event log entries.")
+    @Operation(summary = "Retrieve the event log entries.", description =
+            "Allowed `sort_by` fields are `bundle`, `application`, `event` and `created`. The ordering can be optionally specified by appending `:asc` or `:desc` to the field, e.g. `bundle:desc`. Defaults to `desc` for the `created` field and to `asc` for all other fields."
+    )
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
-                                              @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
-                                              @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
-                                              @RestQuery @DefaultValue("10") int limit, @RestQuery @DefaultValue("0") int offset, @RestQuery String sortBy,
-                                              @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
-        if (limit < 1 || limit > 200) {
+                                         @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
+                                         @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
+                                         @BeanParam Query query,
+                                         @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
+        if (query.getLimit().getLimit() < 1 || query.getLimit().getLimit() > 200) {
             throw new BadRequestException("Invalid 'limit' query parameter, its value must be between 1 and 200");
-        }
-        if (sortBy != null && !SORT_BY_PATTERN.matcher(sortBy).matches()) {
-            throw new BadRequestException("Invalid 'sortBy' query parameter");
         }
 
         Set<EndpointType> basicTypes = Collections.emptySet();
@@ -85,7 +82,7 @@ public class EventResource {
         }
 
         String orgId = getOrgId(securityContext);
-        List<Event> events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, limit, offset, sortBy);
+        List<Event> events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, query);
         List<EventLogEntry> eventLogEntries = events.stream().map(event -> {
             List<EventLogEntryAction> actions;
             if (!includeActions) {
@@ -122,7 +119,7 @@ public class EventResource {
         Meta meta = new Meta();
         meta.setCount(count);
 
-        Map<String, String> links = PageLinksBuilder.build(PATH, count, limit, offset);
+        Map<String, String> links = PageLinksBuilder.build(PATH, count, query);
 
         Page<EventLogEntry> page = new Page<>();
         page.setData(eventLogEntries);

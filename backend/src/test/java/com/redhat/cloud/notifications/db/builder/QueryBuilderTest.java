@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.persistence.TypedQuery;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
@@ -193,7 +194,7 @@ public class QueryBuilderTest {
         assertEquals(
                 "SELECT o FROM Object o ORDER BY o.col ASC",
                 QueryBuilder.builder(Object.class).alias("o")
-                        .sort(new Query.Sort("o.col", Query.Sort.Order.ASC))
+                        .sort(Optional.of(new Query.Sort("o.col", Query.Sort.Order.ASC)))
                         .buildRawQuery()
         );
     }

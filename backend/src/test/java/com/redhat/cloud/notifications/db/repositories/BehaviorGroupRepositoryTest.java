@@ -1,8 +1,10 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
@@ -27,6 +29,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -40,6 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
+
+    private final String NOT_USED = "not-used";
 
     @Inject
     EntityManager entityManager;
@@ -390,6 +395,35 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         assertThrows(NotFoundException.class, () -> {
             updateAndCheckBehaviorGroupActions("unknownOrgId", bundle.getId(), behaviorGroup.getId(), endpoint.getId());
         });
+    }
+
+    @Test
+    void shouldSortByDisplayName() {
+        Bundle bundle = resourceHelpers.createBundle();
+        Application application = resourceHelpers.createApplication(bundle.getId());
+        EventType eventType = resourceHelpers.createEventType(application.getId(), NOT_USED, NOT_USED, NOT_USED);
+
+        for (int i = 0; i < 10; i++) {
+            BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, String.format("%d", i), bundle.getId());
+            behaviorGroupRepository.updateBehaviorEventTypes(DEFAULT_ORG_ID, behaviorGroup.getId(), Set.of(eventType.getId()));
+        }
+
+        TestHelpers.testSorting(
+                "display_name",
+                query -> behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ORG_ID, eventType.getId(), query),
+                behaviorGroups -> behaviorGroups.stream().map(BehaviorGroup::getDisplayName).collect(Collectors.toList()),
+                Query.Sort.Order.ASC,
+                IntStream.range(0, 10).boxed().map(Object::toString).collect(Collectors.toList())
+        );
+
+        // NOTIF-674 Remove these entries after the frontend has been updated
+        TestHelpers.testSorting(
+                "displayname",
+                query -> behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ORG_ID, eventType.getId(), query),
+                behaviorGroups -> behaviorGroups.stream().map(BehaviorGroup::getDisplayName).collect(Collectors.toList()),
+                Query.Sort.Order.ASC,
+                IntStream.range(0, 10).boxed().map(Object::toString).collect(Collectors.toList())
+        );
     }
 
     @Transactional

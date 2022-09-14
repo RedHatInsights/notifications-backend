@@ -1,8 +1,12 @@
 package com.redhat.cloud.notifications.db;
 
+import io.quarkus.logging.Log;
+
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -10,7 +14,9 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class Query {
 
-    private static final Pattern SORT_FIELD_PATTERN = Pattern.compile("^[a-z0-9._]+$", CASE_INSENSITIVE);
+    // NOTIF-674 Change to "^[a-z0-9_-]+(:(asc|desc))?$" after the frontend has been updated
+    private static final Pattern SORT_BY_PATTERN = Pattern.compile("^[a-z0-9._-]+(:(asc|desc))?$", CASE_INSENSITIVE);
+
     private static final int DEFAULT_RESULTS_PER_PAGE  = 20;
 
     @QueryParam("limit")
@@ -24,11 +30,38 @@ public class Query {
     private Integer offset;
 
     @QueryParam("sort_by")
-    private String sortBy;
+    String sortBy;
+
+    @QueryParam("sortBy")
+    @Deprecated
+    String sortByDeprecated;
+
+    private String defaultSortBy;
+    private Map<String, String> sortFields;
+
+    // Used by test
+    public static Query queryWithSortBy(String sortBy) {
+        Query query = new Query();
+        query.sortBy = sortBy;
+        return query;
+    }
+
+    public void setSortFields(Map<String, String> sortFields) {
+        sortFields.keySet().forEach(key -> {
+            if (!key.toLowerCase().equals(key)) {
+                throw new IllegalArgumentException("All keys of sort fields must be specified in lower case");
+            }
+        });
+        this.sortFields = Map.copyOf(sortFields);
+    }
+
+    public void setDefaultSortBy(String defaultSortBy) {
+        this.defaultSortBy = defaultSortBy;
+    }
 
     public static class Limit {
-        private int limit;
-        private int offset;
+        private final int limit;
+        private final int offset;
 
         public Limit(int limit, int offset) {
             this.limit = limit;
@@ -102,39 +135,63 @@ public class Query {
         }
     }
 
-    public Sort getSort() {
+    String getSortBy() {
+        if (sortBy != null) {
+            return sortBy;
+        } else if (sortByDeprecated != null) {
+            return sortByDeprecated;
+        }
+
+        return defaultSortBy;
+    }
+
+    public Optional<Sort> getSort() {
         // Endpoints: sort by: name, type, "last connection status" (?), enabled
         //      -> endpoint_id, name, endpoint_type, enabled are the accepted parameter names
         // TODO Should they be id, name, type, enabled for consistency and then modified in the actual query to Postgres?
         // And if it's not an accepted value? Throw exception?
 
+        String sortBy = getSortBy();
+
         if (sortBy == null || sortBy.length() < 1) {
-            return null;
+            return Optional.empty();
+        }
+
+        if (sortFields == null) {
+            Log.warnf("NOTIF-674 SortFields not set.");
+            sortFields = Map.of();
+        }
+
+        if (!SORT_BY_PATTERN.matcher(sortBy).matches()) {
+            throw new BadRequestException("Invalid 'sort_by' query parameter");
         }
 
         String[] sortSplit = sortBy.split(":");
-        if (!SORT_FIELD_PATTERN.matcher(sortSplit[0]).matches()) {
-            throw new BadRequestException("Invalid 'sort_by' query parameter");
+        Sort sort = new Sort(sortSplit[0]);
+        if (!sortFields.containsKey(sort.sortColumn.toLowerCase())) {
+            Log.warnf("NOTIF-674 Unknown sort field passed: ", sort.sortColumn);
         } else {
-            Sort sort = new Sort(sortSplit[0]);
-            if (sortSplit.length > 1) {
-                try {
-                    Sort.Order order = Sort.Order.valueOf(sortSplit[1].toUpperCase());
-                    sort.setSortOrder(order);
-                } catch (IllegalArgumentException | NullPointerException iae) {
-                }
-            }
-            return sort;
+            sort.sortColumn = sortFields.get(sort.sortColumn.toLowerCase());
         }
+
+        if (sortSplit.length > 1) {
+            try {
+                Sort.Order order = Sort.Order.valueOf(sortSplit[1].toUpperCase());
+                sort.setSortOrder(order);
+            } catch (IllegalArgumentException | NullPointerException iae) {
+            }
+        }
+
+        return Optional.of(sort);
     }
 
     public String getModifiedQuery(String basicQuery) {
         // Use the internal Query
         // What's the proper order? SORT first, then LIMIT? COUNT as last one?
         String query = basicQuery;
-        Sort sort = getSort();
-        if (sort != null) {
-            query = modifyWithSort(query, sort);
+        Optional<Sort> sort = getSort();
+        if (sort.isPresent()) {
+            query = modifyWithSort(query, sort.get());
         }
         return query;
     }

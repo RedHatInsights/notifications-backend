@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EndpointRepository {
-
     @Inject
     EntityManager entityManager;
 
@@ -80,9 +79,12 @@ public class EndpointRepository {
     }
 
     public List<Endpoint> getEndpointsPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
+        if (limiter != null) {
+            limiter.setSortFields(Endpoint.SORT_FIELDS);
+        }
 
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
-        Query.Sort sort = limiter == null ? null : limiter.getSort();
+        Optional<Query.Sort> sort = limiter == null ? Optional.empty() : limiter.getSort();
         List<Endpoint> endpoints = EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly)
                 .limit(limit)
                 .sort(sort)
@@ -148,8 +150,11 @@ public class EndpointRepository {
     }
 
     public List<Endpoint> getEndpoints(String orgId, @Nullable String name, Query limiter) {
+        if (limiter != null) {
+            limiter.setSortFields(Endpoint.SORT_FIELDS);
+        }
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
-        Query.Sort sort = limiter == null ? null : limiter.getSort();
+        Optional<Query.Sort> sort = limiter == null ? Optional.empty() : limiter.getSort();
 
         // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
         //      or should I just create a new method for it?

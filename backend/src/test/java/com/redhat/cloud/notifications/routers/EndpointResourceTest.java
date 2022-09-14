@@ -871,6 +871,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals("Endpoint 1", endpoints[endpoints.length - 1].getName());
         assertEquals("Endpoint 10", endpoints[endpoints.length - 2].getName());
         assertEquals("Endpoint 27", endpoints[0].getName());
+
+        given()
+                .header(identityHeader)
+                .queryParam("sort_by", "hulla:desc")
+                .when()
+                .get("/endpoints?limit=100")
+                .then()
+                // NOTIF-674 Should have status code 400
+                .statusCode(500);
+
     }
 
     @Test

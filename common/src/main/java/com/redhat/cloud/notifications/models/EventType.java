@@ -20,6 +20,7 @@ import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -33,6 +34,17 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @JsonNaming(SnakeCaseStrategy.class)
 @JsonFilter(ApiResponseFilter.NAME)
 public class EventType {
+
+    public static final Map<String, String> SORT_FIELDS = Map.of(
+            "name", "name",
+            "display_name", "e.displayName",
+            "application", "e.application.displayName",
+            // NOTIF-674 Remove these entries after the frontend has been updated
+            "e.application.displayname", "e.application.displayName",
+            "e.displayname", "e.displayName",
+            // NOTIF-674 Remove after IQE tests are updated
+            "e.name", "e.name"
+    );
 
     @Id
     @GeneratedValue

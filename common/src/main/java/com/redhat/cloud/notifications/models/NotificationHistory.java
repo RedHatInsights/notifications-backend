@@ -25,6 +25,16 @@ import static javax.persistence.FetchType.LAZY;
 @Table(name = "notification_history")
 public class NotificationHistory extends CreationTimestamped {
 
+    public static final Map<String, String> SORT_FIELDS = Map.of(
+            "created", "nh.created",
+            "invocation_time", "nh.invocationTime",
+            "invocation_result", "nh.invocationResult",
+            // NOTIF-674 Delete after the frontend has been updated
+            "nh.created", "nh.created",
+            "invocationtime", "nh.invocationTime",
+            "invocationresult", "nh.invocationResult"
+    );
+
     @Id
     // We can not use @GeneratedValue as the ID needs to be sent over to Camel
     @JsonProperty(access = READ_ONLY)
@@ -57,7 +67,7 @@ public class NotificationHistory extends CreationTimestamped {
     @NotNull
     @Embedded
     @JsonIgnore
-    private CompositeEndpointType compositeEndpointType = new CompositeEndpointType();
+    private final CompositeEndpointType compositeEndpointType = new CompositeEndpointType();
 
     @Convert(converter = NotificationHistoryDetailsConverter.class)
     private Map<String, Object> details;

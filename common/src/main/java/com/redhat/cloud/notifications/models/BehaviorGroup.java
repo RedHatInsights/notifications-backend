@@ -20,6 +20,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -34,6 +35,13 @@ import static javax.persistence.FetchType.LAZY;
 @JsonNaming(SnakeCaseStrategy.class)
 @JsonFilter(ApiResponseFilter.NAME)
 public class BehaviorGroup extends CreationUpdateTimestamped {
+
+    public static final Map<String, String> SORT_FIELDS = Map.of(
+            "display_name", "bg.displayName",
+
+            // NOTIF-674 Remove these entries after the frontend has been updated
+            "displayname", "bg.displayName"
+    );
 
     @Id
     @GeneratedValue

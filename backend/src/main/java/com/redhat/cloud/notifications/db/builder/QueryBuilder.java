@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.db.Query;
 
 import javax.persistence.TypedQuery;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 public class QueryBuilder<T> {
@@ -52,9 +53,9 @@ public class QueryBuilder<T> {
         return this;
     }
 
-    public QueryBuilder<T> sort(Query.Sort sort) {
-        if (sort != null) {
-            rawSort = " " + sort.getSortQuery();
+    public QueryBuilder<T> sort(Optional<Query.Sort> sort) {
+        if (sort.isPresent()) {
+            rawSort = " " + sort.get().getSortQuery();
         }
 
         return this;
