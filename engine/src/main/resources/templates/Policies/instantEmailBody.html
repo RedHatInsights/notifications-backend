@@ -9,7 +9,7 @@
 <tr>
     <td class="rh-content__block">
         <div class="rh-stack">
-            <a class="rh-url" href="https://console.redhat.com/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a>
+            <a class="rh-url" href="{environment.url}/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a>
         </div>
     </td>
 </tr>
@@ -25,7 +25,7 @@
                 {#if action.events.size() > 0}
                     {#each action.events}
                 <tr style="font-size: 14px;">
-                    <a href="https://console.redhat.com/insights/policies/policy/{it.payload.policy_id}" target="_blank">{it.payload.policy_name}</a>
+                    <a href="{environment.url}/insights/policies/policy/{it.payload.policy_id}" target="_blank">{it.payload.policy_name}</a>
                 </tr>
                     {/each}
                 {/if}
@@ -38,7 +38,7 @@
         <table align="center">
             <tr>
                 <td class="rh-cta-link" align="center">
-                    <a target="_blank" href="https://console.redhat.com/insights/policies">
+                    <a target="_blank" href="{environment.url}/insights/policies">
                                 <span>
                                   Open Policies in Insights
                                 </span>

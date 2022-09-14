@@ -3,10 +3,12 @@ package com.redhat.cloud.notifications.templates;
 import com.redhat.cloud.notifications.DriftTestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.processors.email.aggregators.DriftEmailPayloadAggregator;
+import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -16,6 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestDriftTemplate {
+
+    @Inject
+    Environment environment;
+
     private DriftEmailPayloadAggregator aggregator;
 
     @BeforeEach
@@ -27,6 +33,7 @@ public class TestDriftTemplate {
         Action action = DriftTestHelpers.createDriftAction("rhel", "drift", "host-01", "Machine 1");
         String result = Drift.Templates.newBaselineDriftInstantEmailTitle()
                 .data("action", action)
+                .data("environment", environment)
                 .render();
         assertTrue(result.contains("2 drifts from baseline detected on Machine 1"));
     }
@@ -36,6 +43,7 @@ public class TestDriftTemplate {
         Action action = DriftTestHelpers.createDriftAction("rhel", "drift", "host-01", "Machine 1");
         String result = Drift.Templates.newBaselineDriftInstantEmailBody()
                 .data("action", action)
+                .data("environment", environment)
                 .render();
         assertTrue(result.contains("baseline_01"));
         assertTrue(result.contains("Machine 1"));
@@ -57,6 +65,7 @@ public class TestDriftTemplate {
         drift.put("end_time", endTime.toString());
         String result = Drift.Templates.dailyEmailTitle()
                 .data("action", Map.of("context", drift))
+                .data("environment", environment)
                 .render();
         //writeEmailTemplate(result, "driftEmailMultMult.html");
         assertTrue(result.contains("3 drifts from baseline detected on 2 unique system"));
@@ -74,6 +83,7 @@ public class TestDriftTemplate {
         drift.put("end_time", endTime.toString());
         String result = Drift.Templates.dailyEmailBody()
                 .data("action", Map.of("context", drift))
+                .data("environment", environment)
                 .render();
         //writeEmailTemplate(result, "driftEmailOneOne.html");
         assertTrue(result.contains("baseline_01"));
@@ -94,6 +104,7 @@ public class TestDriftTemplate {
         drift.put("end_time", endTime.toString());
         String result = Drift.Templates.dailyEmailBody()
                 .data("action", Map.of("context", drift))
+                .data("environment", environment)
                 .render();
         //writeEmailTemplate(result, "drfitEmailMultOne.html");
         assertTrue(result.contains("baseline_01"));
@@ -116,6 +127,7 @@ public class TestDriftTemplate {
         drift.put("end_time", endTime.toString());
         String result = Drift.Templates.dailyEmailBody()
                 .data("action", Map.of("context", drift))
+                .data("environment", environment)
                 .render();
         //writeEmailTemplate(result, "driftEmailOneMult.html");
         assertTrue(result.contains("baseline_01"));
@@ -138,6 +150,7 @@ public class TestDriftTemplate {
         drift.put("end_time", endTime.toString());
         String result = Drift.Templates.dailyEmailBody()
                 .data("action", Map.of("context", drift))
+                .data("environment", environment)
                 .render();
         //writeEmailTemplate(result, "driftEmailMultMult.html");
         assertTrue(result.contains("baseline_01"));

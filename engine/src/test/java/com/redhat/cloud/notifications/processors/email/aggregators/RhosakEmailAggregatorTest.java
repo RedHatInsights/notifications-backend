@@ -7,12 +7,14 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.templates.Rhosak.Templates;
+import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -39,6 +41,9 @@ class RhosakEmailAggregatorTest {
     JsonObject context;
     JsonObject upgrades;
     JsonObject disruptions;
+
+    @Inject
+    Environment environment;
 
     @BeforeEach
     public void setup() {
@@ -189,9 +194,16 @@ class RhosakEmailAggregatorTest {
         aggregator.getContext().forEach(contextBuilder::withAdditionalProperty);
 
         emailActionMessage.setContext(contextBuilder.build());
-        String title = dailyTittleTemplateInstance.data("action", emailActionMessage).render();
+        String title = dailyTittleTemplateInstance
+                .data("action", emailActionMessage)
+                .data("environment", environment)
+                .render();
         assertTrue(title.contains("Red Hat OpenShift Streams for Apache Kafka Daily Report"), "Title must contain RHOSAK related digest info");
-        String body = dailyBodyTemplateInstance.data("action", emailActionMessage).data("user", Map.of("firstName", "machi1990", "lastName", "Last Name")).render();
+        String body = dailyBodyTemplateInstance
+                .data("action", emailActionMessage)
+                .data("user", Map.of("firstName", "machi1990", "lastName", "Last Name"))
+                .data("environment", environment)
+                .render();
         assertTrue(body.contains("The following table summarizes the OpenShift Streams instances affected by unexpected disruptions of the OpenShift Streams service."), "Body must contain service disruption summary");
         assertTrue(body.contains("The following table summarizes Kafka upgrade activity for your OpenShift Streams instances."), "Body must contain upgrades summary");
         assertTrue(body.contains("Hello machi1990."), "Body must contain greeting message");

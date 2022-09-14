@@ -78,7 +78,7 @@
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" class="rh-button-table">
                         <tr>
                             <td class="rh-cta-link" align="center">
-                                <a target="_blank" href="https://console.redhat.com/insights/drift/baselines">
+                                <a target="_blank" href="{environment.url}/insights/drift/baselines">
                                         <span>
                                           Go to Baselines
                                         </span>
@@ -114,7 +114,7 @@
                             {#for key in action.context.drift.keySet()}
                             <tr>
                                 <td>
-                                    <a href="https://console.redhat.com/insights/drift/baselines/{action.context.drift.get(key).baseline_id}">{action.context.drift.get(key).baseline_name}</a>
+                                    <a href="{environment.url}/insights/drift/baselines/{action.context.drift.get(key).baseline_id}">{action.context.drift.get(key).baseline_name}</a>
                                 </td>
                                 <td class="rh-severity">
                                     {action.context.drift.get(key).unique_system_count}
