@@ -149,30 +149,6 @@ public class EndpointRepository {
                 );
     }
 
-    public List<Endpoint> getEndpoints(String orgId, @Nullable String name, Query limiter) {
-        if (limiter != null) {
-            limiter.setSortFields(Endpoint.SORT_FIELDS);
-        }
-        Query.Limit limit = limiter == null ? null : limiter.getLimit();
-        Optional<Query.Sort> sort = limiter == null ? Optional.empty() : limiter.getSort();
-
-        // TODO Add the ability to modify the getEndpoints to return also with JOIN to application_eventtypes_endpoints link table
-        //      or should I just create a new method for it?
-        List<Endpoint> endpoints = getEndpointsQuery(orgId, name)
-                .limit(limit)
-                .sort(sort)
-                .build(entityManager::createQuery)
-                .getResultList();
-        loadProperties(endpoints);
-        return endpoints;
-    }
-
-    public Long getEndpointsCount(String orgId, @Nullable String name) {
-        return getEndpointsQuery(orgId, name)
-                .buildCount(entityManager::createQuery)
-                .getSingleResult();
-    }
-
     public Endpoint getEndpoint(String orgId, UUID id) {
         String query = "SELECT e FROM Endpoint e WHERE e.orgId = :orgId AND e.id = :id";
         try {

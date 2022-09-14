@@ -92,6 +92,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     BridgeHelper bridgeHelper;
 
     @Inject
+    ResourceHelpers resourceHelpers;
+
+    @Inject
     FeatureFlipper featureFlipper;
 
     @Test
@@ -1410,6 +1413,64 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     .contentType(JSON)
                     .extract().response();
         }
+    }
+
+    @Test
+    void testActive() {
+        String orgId = "queries-without-type";
+        String username = "user";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, orgId, username);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        // stats[0] is the count
+        // stats[1] are the inactive ones
+        int[] stats = resourceHelpers.createTestEndpoints(TestConstants.DEFAULT_ACCOUNT_ID, orgId, 10);
+
+        // Get all endpoints
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .get("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        assertEquals(stats[0], endpointPage.getMeta().getCount());
+        assertEquals(stats[0], endpointPage.getData().size());
+
+        // Only active
+        response = given()
+                .header(identityHeader)
+                .when()
+                .queryParam("active", "true")
+                .get("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        assertEquals(stats[0] - stats[1], endpointPage.getMeta().getCount());
+        assertEquals(stats[0] - stats[1], endpointPage.getData().size());
+
+        // Only inactive
+        response = given()
+                .header(identityHeader)
+                .when()
+                .queryParam("active", "true")
+                .get("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
+        assertEquals(stats[1], endpointPage.getMeta().getCount());
+        assertEquals(stats[1], endpointPage.getData().size());
+
     }
 
     @Test
