@@ -1,0 +1,26 @@
+name: Regular base image update check
+on:
+  schedule:
+    - cron: "5 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up skopeo
+        run: sudo apt-get install -y skopeo
+      - name: Check change
+        run: skopeo inspect docker://registry.access.redhat.com/ubi8/ubi-minimal:latest | grep Digest > .baseimage
+      - name: Do change if the digest changed
+        run: |
+          git config user.name 'Update-a-Bot'
+          git config user.email 'notifications-team@redhat.com'
+          git add -A
+          git commit -m "Update ubi-minimal:latest image digest" || echo "No changes to commit"
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          title: 'Update ubi-minimal:latest image digest'
