@@ -2,9 +2,11 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -13,11 +15,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestOpenshiftAdvisorTemplate {
 
+    @Inject
+    Environment environment;
+
     @Test
     public void testInstantEmailTitle() {
         Action action = TestHelpers.createAdvisorOpenshiftAction("123456", "new-recommendation");
         String result = AdvisorOpenshift.Templates.newRecommendationInstantEmailTitle()
                 .data("action", action)
+                .data("environment", environment)
                 .render();
 
         assertTrue(result.contains("OpenShift - Advisor Instant Notification - "));
@@ -29,6 +35,7 @@ public class TestOpenshiftAdvisorTemplate {
         Action action = TestHelpers.createAdvisorOpenshiftAction("123456", "new-recommendation");
         final String result = AdvisorOpenshift.Templates.newRecommendationInstantEmailBody()
                 .data("action", action)
+                .data("environment", environment)
                 .render();
 
         action.getEvents().forEach(event -> {
@@ -57,6 +64,7 @@ public class TestOpenshiftAdvisorTemplate {
         action.setEvents(action.getEvents().stream().filter(event -> event.getPayload().getAdditionalProperties().get("total_risk").equals("1")).collect(Collectors.toList()));
         String result2 = AdvisorOpenshift.Templates.newRecommendationInstantEmailBody()
                 .data("action", action)
+                .data("environment", environment)
                 .render();
 
         assertTrue(result2.contains("alt=\"Low severity\""), "Body 2 should contain low severity rule image");

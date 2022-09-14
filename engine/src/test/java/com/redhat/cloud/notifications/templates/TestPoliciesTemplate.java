@@ -2,9 +2,11 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,11 +17,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestPoliciesTemplate {
 
+    @Inject
+    Environment environment;
+
     @Test
     public void testInstantEmailTitle() {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
         String result = Policies.Templates.instantEmailTitle()
                 .data("action", action)
+                .data("environment", environment)
                 .render();
 
         assertTrue(result.contains("2"), "Title contains the number of policies triggered");
@@ -31,6 +37,7 @@ public class TestPoliciesTemplate {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
         String result = Policies.Templates.instantEmailBody()
                 .data("action", action)
+                .data("environment", environment)
                 .render();
 
         assertTrue(result.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
@@ -74,6 +81,7 @@ public class TestPoliciesTemplate {
 
         String result = Policies.Templates.dailyEmailTitle()
                 .data("action", Map.of("context", payload))
+                .data("environment", environment)
                 .render();
 
         assertEquals("22 Apr 2021 - 3 policies triggered on 3 unique systems", result);
@@ -101,6 +109,7 @@ public class TestPoliciesTemplate {
 
         String result = Policies.Templates.dailyEmailTitle()
                 .data("action", Map.of("context", payload))
+                .data("environment", environment)
                 .render();
 
         assertEquals("22 Apr 2021 - 1 policy triggered on 1 system", result);
@@ -140,6 +149,7 @@ public class TestPoliciesTemplate {
 
         String result = Policies.Templates.dailyEmailBody()
                 .data("action", Map.of("context", payload))
+                .data("environment", environment)
                 .render();
 
         assertTrue(result.contains("<b>3 policies</b> triggered on <b>3 unique systems</b>"));
@@ -167,6 +177,7 @@ public class TestPoliciesTemplate {
 
         String result = Policies.Templates.dailyEmailBody()
                 .data("action", Map.of("context", payload))
+                .data("environment", environment)
                 .render();
 
         assertTrue(result.contains("<b>1 policy</b> triggered on <b>1 system</b>"));

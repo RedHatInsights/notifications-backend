@@ -38,7 +38,7 @@
                         Hi,
                         <br>
                         <br>
-                        Your system <a class="rh-url" href="https://console.redhat.com/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a> has drifted from {action.events.size()} baseline{#if action.events.size() > 1}s{/if}
+                        Your system <a class="rh-url" href="{environment.url}/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a> has drifted from {action.events.size()} baseline{#if action.events.size() > 1}s{/if}
                     </p>
                 </td>
             </tr>
@@ -50,7 +50,7 @@
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" class="rh-button-table">
                         <tr>
                             <td class="rh-cta-link" align="center">
-                                <a target="_blank" href="https://console.redhat.com/insights/drift/baselines">
+                                <a target="_blank" href="{environment.url}/insights/drift/baselines">
                                         <span>
                                           Go to Baselines
                                         </span>
@@ -77,7 +77,7 @@
                 <td class="rh-content__block">
                   <div class="rh-card__header">
                     <h2>
-                      Baselines <a class="rh-url" href="https://console.redhat.com/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a> has drifted from
+                      Baselines <a class="rh-url" href="{environment.url}/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a> has drifted from
                     </h2>
                     <p></p>
                   </div>
@@ -92,7 +92,7 @@
                           {#each action.events}
                             <tr style="font-size: 14px;">
                               <td>
-                                <a href="https://console.redhat.com/insights/drift/baselines/{it.payload.baseline_id}" target="_blank">{it.payload.baseline_name}</a>
+                                <a href="{environment.url}/insights/drift/baselines/{it.payload.baseline_id}" target="_blank">{it.payload.baseline_name}</a>
                               </td>
                             </tr>
                                 {/each}
