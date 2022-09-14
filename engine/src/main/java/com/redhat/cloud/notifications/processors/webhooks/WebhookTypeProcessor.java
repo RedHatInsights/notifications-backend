@@ -21,7 +21,6 @@ import io.quarkus.logging.Log;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.impl.HttpRequestImpl;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
@@ -155,8 +154,6 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                 HttpResponse<Buffer> resp = req.sendJsonObject(payload).await().atMost(awaitTimeout);
                 NotificationHistory history = buildNotificationHistory(item, startTime);
 
-                HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
-
                 boolean serverError = false;
                 boolean isEmailEndpoint = item.getEndpoint().getType() == EMAIL_SUBSCRIPTION;
                 boolean shouldResetEndpointServerErrors = false;
@@ -226,10 +223,9 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
                 if (!history.isInvocationResult()) {
                     JsonObject details = new JsonObject();
-                    details.put("url", url); // TODO does this show http or https
+                    details.put("url", url);
                     details.put("method", method);
                     details.put("code", resp.statusCode());
-                    // This isn't async body reading, lets hope vertx handles it async underneath before calling this apply method
                     details.put("response_body", resp.bodyAsString());
                     history.setDetails(details.getMap());
                 }
@@ -246,13 +242,10 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
 
             NotificationHistory history = buildNotificationHistory(item, startTime);
 
-            HttpRequestImpl<Buffer> reqImpl = (HttpRequestImpl<Buffer>) req.getDelegate();
-
             Log.debugf("Failed: %s", e.getMessage());
 
-            // TODO Duplicate code with the error return code part
             JsonObject details = new JsonObject();
-            details.put("url", reqImpl.uri());
+            details.put("url", url);
             details.put("method", method);
             details.put("error_message", e.getMessage()); // TODO This message isn't always the most descriptive..
             history.setDetails(details.getMap());
