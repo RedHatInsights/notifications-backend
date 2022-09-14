@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
@@ -39,8 +40,6 @@ public class RbacRecipientUsersProviderTest {
     @ConfigProperty(name = "recipient-provider.it.max-results-per-page", defaultValue = "1000")
     int maxResultsPerPage;
 
-    private final String orgId = "test-org-id";
-
     @InjectMock
     @RestClient
     RbacServiceToService rbacServiceToService;
@@ -51,6 +50,39 @@ public class RbacRecipientUsersProviderTest {
 
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
+
+    @Test
+    void getGroupUsersShouldOnlyContainActiveUsers() {
+        RbacGroup defaultGroup = new RbacGroup();
+        defaultGroup.setPlatformDefault(false);
+        defaultGroup.setUuid(UUID.randomUUID());
+        mockGetGroup(defaultGroup);
+
+        List<RbacUser> users = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            RbacUser user = new RbacUser();
+            user.setEmail("my-email");
+            user.setActive(i % 2 == 0);
+            users.add(user);
+        }
+
+        assertTrue(users.stream().anyMatch(u -> !u.getActive()));
+        assertTrue(users.stream().anyMatch(RbacUser::getActive));
+
+        Meta meta = new Meta();
+        meta.setCount(10L);
+
+        Page<RbacUser> page = new Page<>();
+        page.setData(users);
+        page.setMeta(meta);
+
+        when(rbacServiceToService.getGroupUsers(any(), any(), any(), any())).thenReturn(page);
+
+        List<User> resolvedUsers = rbacRecipientUsersProvider.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, defaultGroup.getUuid());
+
+        assertEquals(5, resolvedUsers.size());
+        assertTrue(resolvedUsers.stream().allMatch(User::isActive));
+    }
 
     @Test
     void shouldBeAdminWhenResponseContainsAdminPermission() {
@@ -116,7 +148,7 @@ public class RbacRecipientUsersProviderTest {
         mockGetGroup(defaultGroup);
         mockGetUsers(elements, false);
 
-        List<User> users = rbacRecipientUsersProvider.getGroupUsers(orgId, false, defaultGroup.getUuid());
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, defaultGroup.getUuid());
         assertEquals(elements, users.size());
         for (int i = 0; i < elements; ++i) {
             assertEquals(String.format("username-%d", i), users.get(i).getUsername());
@@ -128,7 +160,7 @@ public class RbacRecipientUsersProviderTest {
         UUID nonExistentGroup = UUID.randomUUID();
         mockNotFoundGroup(nonExistentGroup);
 
-        List<User> users = rbacRecipientUsersProvider.getGroupUsers(orgId, false, nonExistentGroup);
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, nonExistentGroup);
         assertEquals(0, users.size());
     }
 
@@ -138,7 +170,7 @@ public class RbacRecipientUsersProviderTest {
         int updatedSize = 1323;
         mockGetUsers(initialSize, false);
 
-        List<User> users = rbacRecipientUsersProvider.getUsers(orgId, false);
+        List<User> users = rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, false);
         assertEquals(initialSize, users.size());
         for (int i = 0; i < initialSize; ++i) {
             assertEquals(String.format("username-%d", i), users.get(i).getUsername());
@@ -146,12 +178,12 @@ public class RbacRecipientUsersProviderTest {
 
         mockGetUsers(updatedSize, false);
 
-        users = rbacRecipientUsersProvider.getUsers(orgId, false);
+        users = rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, false);
         // Should still have the initial size because of the cache
         assertEquals(initialSize, users.size());
         clearCached();
 
-        users = rbacRecipientUsersProvider.getUsers(orgId, false);
+        users = rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, false);
         assertEquals(updatedSize, users.size());
     }
 
@@ -167,7 +199,7 @@ public class RbacRecipientUsersProviderTest {
         mockGetGroup(group);
         mockGetGroupUsers(initialSize, group.getUuid());
 
-        List<User> users = rbacRecipientUsersProvider.getGroupUsers(orgId, false, group.getUuid());
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, group.getUuid());
         assertEquals(initialSize, users.size());
         for (int i = 0; i < initialSize; ++i) {
             assertEquals(String.format("username-%d", i), users.get(i).getUsername());
@@ -175,12 +207,12 @@ public class RbacRecipientUsersProviderTest {
 
         mockGetGroupUsers(updatedSize, group.getUuid());
 
-        users = rbacRecipientUsersProvider.getGroupUsers(orgId, false, group.getUuid());
+        users = rbacRecipientUsersProvider.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, group.getUuid());
         // Should still have the initial size because of the cache
         assertEquals(initialSize, users.size());
         clearCached();
 
-        users = rbacRecipientUsersProvider.getGroupUsers(orgId, false, group.getUuid());
+        users = rbacRecipientUsersProvider.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, group.getUuid());
         assertEquals(updatedSize, users.size());
     }
 
@@ -192,21 +224,21 @@ public class RbacRecipientUsersProviderTest {
 
     private void mockGetGroup(RbacGroup group) {
         when(rbacServiceToService.getGroup(
-                Mockito.eq(orgId),
+                Mockito.eq(TestConstants.DEFAULT_ORG_ID),
                 Mockito.eq(group.getUuid())
         )).thenReturn(group);
     }
 
     private void mockNotFoundGroup(UUID groupId) {
         when(rbacServiceToService.getGroup(
-                Mockito.eq(orgId),
+                Mockito.eq(TestConstants.DEFAULT_ORG_ID),
                 Mockito.eq(groupId)
         )).thenThrow(new ClientWebApplicationException(404));
     }
 
     private void mockGetGroupUsers(int elements, UUID groupId) {
         when(rbacServiceToService.getGroupUsers(
-                Mockito.eq(orgId),
+                Mockito.eq(TestConstants.DEFAULT_ORG_ID),
                 Mockito.eq(groupId),
                 Mockito.anyInt(),
                 Mockito.anyInt()
