@@ -179,6 +179,10 @@ public class RbacRecipientUsersProvider {
                 getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "orgId", orgIdTag));
                 return rbacUsers;
             });
+
+            // Only include active users
+            users = users.stream().filter(User::isActive).collect(Collectors.toList());
+
             // getGroupUsers doesn't have an adminOnly param.
             if (adminOnly) {
                 users = users.stream().filter(User::isAdmin).collect(Collectors.toList());
