@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -10,7 +11,9 @@ public class RbacUser {
     private String email;
     private String firstName;
     private String lastName;
+    @JsonProperty(value = "is_active")
     private Boolean isActive;
+    @JsonProperty(value = "is_org_admin")
     private Boolean isOrgAdmin;
 
     public String getUsername() {
