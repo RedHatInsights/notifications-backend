@@ -16,6 +16,7 @@ import io.restassured.http.Header;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -58,6 +59,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     String adminRole;
 
     @InjectMock
+    @RestClient
     TemplateEngineClient templateEngineClient;
 
     @Test
