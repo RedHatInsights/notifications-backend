@@ -95,6 +95,8 @@ public class EmailTemplateMigrationServiceTest {
         // App: policies
         Application policies = findApp("rhel", "policies");
         EventType policyTriggered = findEventType("rhel", "policies", "policy-triggered");
+        // App: resource-optimization-service
+        Application resourceOptimizationService = resourceHelpers.createApp(rhel.getId(), "resource-optimization-service");
         // App: vulnerability
         Application vulnerability = resourceHelpers.createApp(rhel.getId(), "vulnerability");
         EventType newCveCvss = resourceHelpers.createEventType(vulnerability.getId(), "new-cve-cvss");
@@ -205,6 +207,8 @@ public class EmailTemplateMigrationServiceTest {
             // App: policies
             findAndCompileInstantEmailTemplate(policyTriggered.getId());
             findAndCompileAggregationEmailTemplate(rhel.getName(), policies.getName(), DAILY);
+            // App: resource-optimization-service
+            findAndCompileAggregationEmailTemplate(rhel.getName(), resourceOptimizationService.getName(), DAILY);
             // App: vulnerability
             findAndCompileInstantEmailTemplate(newCveCvss.getId());
             findAndCompileInstantEmailTemplate(newCveSecurityRule.getId());

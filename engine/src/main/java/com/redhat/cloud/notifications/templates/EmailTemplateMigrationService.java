@@ -329,6 +329,16 @@ public class EmailTemplateMigrationService {
         );
 
         /*
+         * Former src/main/resources/templates/ResourceOptimizationService folder.
+         */
+        getOrCreateTemplate(warnings, "ResourceOptimizationService/insightsEmailBody", "html", "Resource Optimization Service Insights email body");
+        createDailyEmailTemplate(
+                warnings, "rhel", "resource-optimization-service",
+                "ResourceOptimizationService/dailyEmailTitle", "txt", "Resource Optimization Service daily email title",
+                "ResourceOptimizationService/dailyEmailBody", "html", "Resource Optimization Service daily email body"
+        );
+
+        /*
          * Former src/main/resources/templates/Rhosak folder.
          */
         getOrCreateTemplate(warnings, "Rhosak/rhosakEmailBody", "html", "Rhosak email body");
