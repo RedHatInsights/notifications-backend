@@ -10,7 +10,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.WebApplicationException;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -19,11 +21,13 @@ import java.util.Map;
 @ApplicationScoped
 public class BridgeHelper {
 
+    public static final String CLOUD_PROVIDER = "aws";
+    public static final String CLOUD_REGION = "us-east-1";
     @Inject
     FeatureFlipper featureFlipper;
 
-    @ConfigProperty(name = "ob.bridge.uuid")
-    String ourBridge;
+    @ConfigProperty(name = "ob.bridge.name")
+    String ourBridgeName;
     @ConfigProperty(name = "ob.token.client.secret")
     String clientSecret;
     @ConfigProperty(name = "ob.token.client.id")
@@ -54,27 +58,35 @@ public class BridgeHelper {
         String token;
 
         try {
-            token = getAuthTokenInternal();
+            token = getAuthToken().getToken();
         } catch (Exception e) {
             Log.errorf("Failed to get an auth token: %s", e.getMessage());
             throw e;
         }
 
-        Map<String, String> bridgeMap;
+        BridgeItemList<Bridge> bridgeList = null;
         try {
-            bridgeMap = apiService.getBridgeById(ourBridge, token);
+            bridgeList = apiService.getBridgeByName(ourBridgeName, token);
         } catch (WebApplicationException e) {
             if (e.getResponse().getStatus() == 404) {
-                Log.errorf("Bridge with id %s not found in the OpenBridge instance. Did you create it?", ourBridge);
+                Log.errorf("Bridge with name %s not found in the OpenBridge instance. Did you create it?", ourBridgeName);
             }
-            throw e;
         }
 
-        String bid = bridgeMap.get("id");
-        String ep = bridgeMap.get("endpoint");
-        String name = bridgeMap.get("name");
+        // Bridge seems not yet created, so let's try to do so
+        if (bridgeList == null || bridgeList.getSize() == 0) {
+            Log.warnf("Bridge with name %s not found in the OpenBridge instance. We will try to create it", ourBridgeName);
+            try {
+                Bridge bridge = createBridgeNewBridge(token);
+                bridgeInstance = bridge;
+                return bridge;
+            } catch (Exception e) {
+                Log.error("Bridge creation failed:", e);
+                throw new NotFoundException("No bridge found");
+            }
+        }
 
-        Bridge bridge = new Bridge(bid, ep, name);
+        Bridge bridge = bridgeList.getItems().get(0);
         bridgeInstance = bridge;
 
         return bridge;
@@ -107,15 +119,30 @@ public class BridgeHelper {
         Log.debug("Fetching a new token from SSO");
 
         String body = "client_id=" + clientId
-                    + "&client_secret=" + clientSecret
-                    + "&grant_type=client_credentials";
+                + "&client_secret=" + clientSecret
+                + "&grant_type=client_credentials";
 
         Map<String, Object> tokenMap = authService.getTokenStructWithClientCredentials(body);
         String authToken = (String) tokenMap.get("access_token");
-        return "Bearer " + authToken;
+        return authToken;
     }
 
-    public void setOurBridge(String id) {
-        ourBridge = id;
+    Bridge createBridgeNewBridge(String token) {
+        BridgeRequest request = new BridgeRequest(ourBridgeName, CLOUD_PROVIDER, CLOUD_REGION);
+        Map<String, Object> handler = new HashMap<>();
+        handler.put("type", "endpoint"); // endpoint is using the poller
+        request.setErrorHandler(handler);
+
+        apiService.createBridge(token, request);
+        Log.warn("Bridge creation initiated. It may take a while until it is ready");
+        BridgeItemList<Bridge> bridgeList = apiService.getBridgeByName(ourBridgeName, token);
+
+        return bridgeList.getItems().get(0);
+    }
+
+    // Test helper
+    public void setOurBridgeName(String name) {
+        ourBridgeName = name;
+        bridgeInstance = null;
     }
 }

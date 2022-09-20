@@ -20,6 +20,7 @@ import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeHelper;
+import com.redhat.cloud.notifications.openbridge.BridgeItemList;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -38,6 +39,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -465,13 +467,19 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Now set up some mock OB endpoints (simulate valid bridge)
         Bridge bridge = new Bridge("321", "http://some.events/", "my bridge");
+        BridgeItemList<Bridge> bridgeList = new BridgeItemList<>();
+        bridgeList.setSize(1);
+        bridgeList.setTotal(1);
+        List<Bridge> items = new ArrayList<>();
+        items.add(bridge);
+        bridgeList.setItems(items);
         Map<String, String> auth = new HashMap<>();
         auth.put("access_token", "li-la-lu-token");
         Map<String, String> processor = new HashMap<>();
         processor.put("id", "p-my-id");
 
-        MockServerConfig.addOpenBridgeEndpoints(auth, bridge, processor);
-        bridgeHelper.setOurBridge("321");
+        MockServerConfig.addOpenBridgeEndpoints(auth, bridgeList, processor);
+        bridgeHelper.setOurBridgeName("my bridge");
 
         String responseBody = given()
                 .header(identityHeader)
