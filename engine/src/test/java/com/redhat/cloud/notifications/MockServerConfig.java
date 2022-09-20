@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.openbridge.Bridge;
+import com.redhat.cloud.notifications.openbridge.BridgeItemList;
 import io.vertx.core.json.JsonObject;
 import org.mockserver.model.ClearType;
 
@@ -14,9 +15,9 @@ import static org.mockserver.model.RegexBody.regex;
 
 public class MockServerConfig {
 
-    public static void addOpenBridgeEndpoints(Map<String, String> auth, Bridge bridge) {
+    public static void addOpenBridgeEndpoints(Map<String, String> auth, BridgeItemList<Bridge> bridgeList) {
         String authString = Json.encode(auth);
-        String bridgeString = Json.encode(bridge);
+        String bridgeString = Json.encode(bridgeList);
 
         getClient()
                 .when(request()
@@ -25,6 +26,17 @@ public class MockServerConfig {
                         .withStatusCode(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody(authString));
+
+        getClient()
+                .when(request()
+                        .withPath("/api/smartevents_mgmt/v1/bridges/.*")
+                        .withQueryStringParameter("name", "my bridge")
+                        .withMethod("GET")
+                )
+                .respond(response()
+                        .withStatusCode(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(bridgeString));
 
         getClient()
                 .when(request()

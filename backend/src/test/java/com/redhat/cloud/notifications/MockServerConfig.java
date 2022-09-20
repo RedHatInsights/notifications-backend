@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.openbridge.Bridge;
+import com.redhat.cloud.notifications.openbridge.BridgeItemList;
 import org.apache.commons.io.IOUtils;
 import org.mockserver.model.ClearType;
 import org.mockserver.model.HttpRequest;
@@ -76,9 +77,9 @@ public class MockServerConfig {
         );
     }
 
-    public static void addOpenBridgeEndpoints(Map<String, String> auth, Bridge bridge, Map<String, String> processor) {
+    public static void addOpenBridgeEndpoints(Map<String, String> auth, BridgeItemList<Bridge> bridgeList, Map<String, String> processor) {
         String authString = Json.encode(auth);
-        String bridgeString = Json.encode(bridge);
+        String bridgeString = Json.encode(bridgeList);
         String processorString = Json.encode(processor);
 
         getClient()
@@ -92,6 +93,17 @@ public class MockServerConfig {
         getClient()
                 .when(request()
                         .withPath("/api/smartevents_mgmt/v1/bridges/.*")
+                        .withMethod("GET")
+                )
+                .respond(response()
+                        .withStatusCode(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(bridgeString));
+
+        getClient()
+                .when(request()
+                        .withPath("/api/smartevents_mgmt/v1/bridges/.*")
+                        .withQueryStringParameter("name", "heiko-bridge")
                         .withMethod("GET")
                 )
                 .respond(response()
