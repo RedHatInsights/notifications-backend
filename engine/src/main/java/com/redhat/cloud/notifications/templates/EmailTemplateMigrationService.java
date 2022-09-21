@@ -329,13 +329,13 @@ public class EmailTemplateMigrationService {
         );
 
         /*
-         * Former src/main/resources/templates/ResourceOptimizationService folder.
+         * Former src/main/resources/templates/ResourceOptimization folder.
          */
-        getOrCreateTemplate(warnings, "ResourceOptimizationService/insightsEmailBody", "html", "Resource Optimization Service Insights email body");
+        getOrCreateTemplate(warnings, "ResourceOptimization/insightsEmailBody", "html", "Resource Optimization Insights email body");
         createDailyEmailTemplate(
-                warnings, "rhel", "resource-optimization-service",
-                "ResourceOptimizationService/dailyEmailTitle", "txt", "Resource Optimization Service daily email title",
-                "ResourceOptimizationService/dailyEmailBody", "html", "Resource Optimization Service daily email body"
+                warnings, "rhel", "resource-optimization",
+                "ResourceOptimization/dailyEmailTitle", "txt", "Resource Optimization daily email title",
+                "ResourceOptimization/dailyEmailBody", "html", "Resource Optimization daily email body"
         );
 
         /*

@@ -28,7 +28,7 @@ public class EmailTemplateFactory {
     private static final String PATCH = "patch";
     private static final String MALWARE_DETECTION = "malware-detection";
     private static final String INVENTORY = "inventory";
-    private static final String RESOURCE_OPTIMIZATION_SERVICE = "resource-optimization-service";
+    private static final String RESOURCE_OPTIMIZATION = "resource-optimization";
 
     private static final String BUNDLE_ANSIBLE = "ansible";
     private static final String APP_ANSIBLE_REPORTS = "reports";
@@ -65,8 +65,8 @@ public class EmailTemplateFactory {
                     return new MalwareDetection();
                 case INVENTORY:
                     return new Inventory();
-                case RESOURCE_OPTIMIZATION_SERVICE:
-                    return new ResourceOptimizationService();
+                case RESOURCE_OPTIMIZATION:
+                    return new ResourceOptimization();
                 default:
                     break;
             }
