@@ -1,1 +1,0 @@
-{action.timestamp.toUtcFormat()} - Insights Resource Optimization Service Daily Summary

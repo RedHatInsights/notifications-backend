@@ -4,8 +4,8 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 
-// Name needs to be "ResourceOptimizationService" to read templates from resources/templates/ResourceOptimizationService
-public class ResourceOptimizationService implements EmailTemplate {
+// Name needs to be "ResourceOptimization" to read templates from resources/templates/ResourceOptimization
+public class ResourceOptimization implements EmailTemplate {
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
