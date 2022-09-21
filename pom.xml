@@ -48,7 +48,7 @@
         <testcontainers.version>1.17.3</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
-        <failsafe.version>3.2.4</failsafe.version>
+        <failsafe.version>3.3.0</failsafe.version>
 
         <mockserver-netty-no-dependencies.version>5.14.0</mockserver-netty-no-dependencies.version>
 
