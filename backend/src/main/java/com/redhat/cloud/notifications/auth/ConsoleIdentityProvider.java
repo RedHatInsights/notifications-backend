@@ -19,6 +19,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.Json;
+import io.vertx.ext.web.RoutingContext;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
@@ -55,6 +56,9 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
     @RestClient
     RbacServer rbacServer;
 
+    @Inject
+    RoutingContext routingContext;
+
     @ConfigProperty(name = "rbac.enabled", defaultValue = "true")
     Boolean isRbacEnabled;
 
@@ -84,6 +88,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                 } catch (IllegalIdentityHeaderException e) {
                     return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
                 }
+                routingContext.put("x-rh-rbac-org-id", ((RhIdentity) identity).getOrgId());
             } else {
                 principal = ConsolePrincipal.noIdentity();
             }
@@ -146,6 +151,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                                                     if (rbacRaw.canWrite("integrations", "endpoints")) {
                                                         builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
                                                     }
+                                                    routingContext.put("x-rh-rbac-org-id", ((RhIdentity) identity).getOrgId());
                                                     return builder.build();
                                                 });
                                     } else if (identity instanceof TurnpikeSamlIdentity) {

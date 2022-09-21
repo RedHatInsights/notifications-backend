@@ -212,7 +212,7 @@ public class ResourceHelpers {
     }
 
     public List<Endpoint> findEndpointsByBehaviorGroupId(String orgId, UUID behaviorGroupId) {
-        String query = "SELECT bga.endpoint FROM BehaviorGroupAction bga WHERE bga.endpoint.orgId = :orgId AND bga.behaviorGroup.id = :behaviorGroupId";
+        String query = "SELECT bga.endpoint FROM BehaviorGroupAction bga WHERE bga.endpoint.orgId = :orgId AND bga.behaviorGroup.id = :behaviorGroupId ORDER BY bga.endpoint.created";
         return entityManager.createQuery(query, Endpoint.class)
                 .setParameter("orgId", orgId)
                 .setParameter("behaviorGroupId", behaviorGroupId)
