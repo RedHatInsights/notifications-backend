@@ -14,6 +14,7 @@ public class EmailPayloadAggregatorFactory {
     private static final String PATCH = "patch";
     private static final String VULNERABILITY = "vulnerability";
     private static final String INVENTORY = "inventory";
+    private static final String RESOURCE_OPTIMIZATION = "resource-optimization";
 
     private EmailPayloadAggregatorFactory() {
 
@@ -23,30 +24,42 @@ public class EmailPayloadAggregatorFactory {
         String bundle = aggregationKey.getBundle();
         String application = aggregationKey.getApplication();
 
-        if (bundle.equals(RHEL) && application.equals(POLICIES)) {
-            return new PoliciesEmailPayloadAggregator();
-        }
-        if (bundle.equals(RHEL) && application.equals(COMPLIANCE)) {
-            return new ComplianceEmailAggregator();
-        }
-        if (bundle.equals(RHEL) && application.equals(DRIFT)) {
-            return new DriftEmailPayloadAggregator();
-        }
-        if (bundle.equals(RHEL) && application.equals(PATCH)) {
-            return new PatchEmailPayloadAggregator();
-        }
-        if (bundle.equals(RHEL) && application.equals(VULNERABILITY)) {
-            return new VulnerabilityEmailPayloadAggregator();
-        }
-        if (bundle.equals(RHEL) && application.equals(INVENTORY)) {
-            return new InventoryEmailAggregator();
-        }
-        if (bundle.equals(APPLICATION_SERVICES) && application.equalsIgnoreCase(RHOSAK)) {
-            return new RhosakEmailAggregator();
-        }
-
-        if (bundle.equals(APPLICATION_SERVICES) && application.equalsIgnoreCase(ANSIBLE)) {
-            return new AnsibleEmailAggregator();
+        switch (bundle) {
+            case APPLICATION_SERVICES:
+                switch (application.toLowerCase()) { // TODO Remove toLowerCase if possible
+                    case ANSIBLE:
+                        return new AnsibleEmailAggregator();
+                    case RHOSAK:
+                        return new RhosakEmailAggregator();
+                    default:
+                        // Do nothing.
+                        break;
+                }
+                break;
+            case RHEL:
+                switch (application) {
+                    case COMPLIANCE:
+                        return new ComplianceEmailAggregator();
+                    case DRIFT:
+                        return new DriftEmailPayloadAggregator();
+                    case INVENTORY:
+                        return new InventoryEmailAggregator();
+                    case PATCH:
+                        return new PatchEmailPayloadAggregator();
+                    case POLICIES:
+                        return new PoliciesEmailPayloadAggregator();
+                    case RESOURCE_OPTIMIZATION:
+                        return new ResourceOptimizationPayloadAggregator();
+                    case VULNERABILITY:
+                        return new VulnerabilityEmailPayloadAggregator();
+                    default:
+                        // Do nothing
+                        break;
+                }
+                break;
+            default:
+                // Do nothing.
+                break;
         }
 
         return null;
