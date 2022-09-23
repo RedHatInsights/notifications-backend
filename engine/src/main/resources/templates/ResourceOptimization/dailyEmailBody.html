@@ -18,8 +18,8 @@
             <tbody>
             {#for key in action.context.ros.keySet()}
             <tr>
-                <td>{action.context.ros.get(key).state</td>
-                <td>{action.context.ros.get(key).system_count}</td>
+                <td>{key}</td>
+                <td>{action.context.ros.get(key)}</td>
             </tr>
             {/for}
             </tbody>
