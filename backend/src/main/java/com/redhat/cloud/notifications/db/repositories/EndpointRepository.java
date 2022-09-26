@@ -135,20 +135,6 @@ public class EndpointRepository {
                 .getSingleResult();
     }
 
-    public QueryBuilder<Endpoint> getEndpointsQuery(String orgId, @Nullable String name) {
-        return QueryBuilder.builder(Endpoint.class)
-                .alias("e")
-                .where(
-                        WhereBuilder.builder()
-                                .and("e.orgId = :orgId", "orgId", orgId)
-                                .ifAnd(
-                                        name != null && !name.isEmpty(),
-                                        "LOWER(e.name) LIKE :name",
-                                        "name", (Supplier<String>) () -> "%" + name.toLowerCase() + "%"
-                                )
-                );
-    }
-
     public Endpoint getEndpoint(String orgId, UUID id) {
         String query = "SELECT e FROM Endpoint e WHERE e.orgId = :orgId AND e.id = :id";
         try {

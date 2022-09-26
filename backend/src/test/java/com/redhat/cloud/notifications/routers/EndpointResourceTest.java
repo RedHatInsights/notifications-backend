@@ -1425,7 +1425,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // stats[0] is the count
         // stats[1] are the inactive ones
-        int[] stats = resourceHelpers.createTestEndpoints(TestConstants.DEFAULT_ACCOUNT_ID, orgId, 10);
+        int[] stats = resourceHelpers.createTestEndpoints(TestConstants.DEFAULT_ACCOUNT_ID, orgId, 11);
 
         // Get all endpoints
         Response response = given()
@@ -1460,7 +1460,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         response = given()
                 .header(identityHeader)
                 .when()
-                .queryParam("active", "true")
+                .queryParam("active", "false")
                 .get("/endpoints")
                 .then()
                 .statusCode(200)
