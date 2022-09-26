@@ -11,7 +11,6 @@ import { Link } from 'react-router-dom';
 import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
 import { useGetTemplates } from '../../services/EmailTemplates/GetTemplates';
-import { ViewTemplateModal } from './ViewEmailTemplateModal';
 import { Application } from '../../types/Notifications';
 
 interface EmailTemplateTableProps {
@@ -21,15 +20,6 @@ interface EmailTemplateTableProps {
 export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps> = props => {
     const { hasPermission } = useUserPermissions();
     const getAllTemplates = useGetTemplates();
-
-    const [ showViewModal, setShowViewModal ] = React.useState(false);
-    const viewModal = () => {
-        setShowViewModal(true);
-    };
-
-    const onClose = () => {
-        setShowViewModal(false);
-    };
 
     const columns = [ 'Email Templates' ];
 
@@ -55,11 +45,6 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
                                     <Button variant="primary" isDisabled={ !hasPermission(props.application.id) }
                                         component={ (props: any) =>
                                             <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Email Template</Button>
-                                    <ViewTemplateModal
-                                        showModal={ showViewModal }
-                                        applicationName={ props.application.displayName }
-                                        onClose={ onClose }
-                                    />
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
@@ -74,11 +59,12 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
                             <Tr key={ e.id }>
                                 <Td>{ e.name }</Td>
                                 <Td>
-                                    <Button className='view' type='button' variant='plain' onClick={ viewModal }
+                                    <Button className='view' type='button' variant='plain' isDisabled
                                     > { <EyeIcon /> } </Button></Td>
                                 <Td>
-                                    <Button className='edit' type='button' variant='plain'
-                                        isDisabled> { <PencilAltIcon /> } </Button></Td>
+                                    <Button className='edit' type='button' variant='plain' component={ (props: any) =>
+                                        <Link { ...props } to={ linkTo.emailTemplates(e.id) } /> }
+                                    > { <PencilAltIcon /> } </Button></Td>
                                 <Td>
                                     <Button className='delete' type='button' variant='plain'
                                         isDisabled>{ <TrashIcon /> } </Button></Td>
@@ -91,4 +77,3 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
 
     );
 };
-

@@ -62,7 +62,7 @@ export interface EventTypeRow extends EventType {
 export interface Template {
     data: string;
     description: string;
-    id?: UUID | undefined | null;
+    id: string;
     name: string;
 }
 
