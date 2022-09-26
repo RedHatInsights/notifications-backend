@@ -56,52 +56,46 @@ public class EndpointRepositoryTest {
                 CompositeEndpointType.fromString("email_subscription")
         );
 
-        List<Function<Query, List<Endpoint>>> testProviders = List.of(
-                query -> endpointRepository.getEndpoints(orgId, null, query),
-                query -> endpointRepository.getEndpointsPerCompositeType(orgId, null, compositeEndpointTypes, null, query)
+        Function<Query, List<Endpoint>> provider = query -> endpointRepository.getEndpointsPerCompositeType(orgId, null, compositeEndpointTypes, null, query);
+        TestHelpers.testSorting(
+                "id",
+                provider,
+                endpoints -> endpoints.stream().map(Endpoint::getId).collect(Collectors.toList()),
+                Query.Sort.Order.ASC,
+                createdEndpointList.stream().map(Endpoint::getId).map(UUID::toString).sorted().map(UUID::fromString).collect(Collectors.toList())
         );
 
-        for (Function<Query, List<Endpoint>> provider : testProviders) {
-            TestHelpers.testSorting(
-                    "id",
-                    provider,
-                    endpoints -> endpoints.stream().map(Endpoint::getId).collect(Collectors.toList()),
-                    Query.Sort.Order.ASC,
-                    createdEndpointList.stream().map(Endpoint::getId).map(UUID::toString).sorted().map(UUID::fromString).collect(Collectors.toList())
-            );
+        TestHelpers.testSorting(
+                "name",
+                provider,
+                endpoints -> endpoints.stream().map(Endpoint::getName).collect(Collectors.toList()),
+                Query.Sort.Order.ASC,
+                createdEndpointList.stream().map(Endpoint::getName).sorted().collect(Collectors.toList())
+        );
 
-            TestHelpers.testSorting(
-                    "name",
-                    provider,
-                    endpoints -> endpoints.stream().map(Endpoint::getName).collect(Collectors.toList()),
-                    Query.Sort.Order.ASC,
-                    createdEndpointList.stream().map(Endpoint::getName).sorted().collect(Collectors.toList())
-            );
+        TestHelpers.testSorting(
+                "enabled",
+                provider,
+                endpoints -> endpoints.stream().map(Endpoint::isEnabled).collect(Collectors.toList()),
+                Query.Sort.Order.ASC,
+                List.of(Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE)
+        );
 
-            TestHelpers.testSorting(
-                    "enabled",
-                    provider,
-                    endpoints -> endpoints.stream().map(Endpoint::isEnabled).collect(Collectors.toList()),
-                    Query.Sort.Order.ASC,
-                    List.of(Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE)
-            );
+        TestHelpers.testSorting(
+                "type",
+                provider,
+                endpoints -> endpoints.stream().map(Endpoint::getType).collect(Collectors.toList()),
+                Query.Sort.Order.ASC,
+                List.of(EndpointType.WEBHOOK, EndpointType.EMAIL_SUBSCRIPTION, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL)
+        );
 
-            TestHelpers.testSorting(
-                    "type",
-                    provider,
-                    endpoints -> endpoints.stream().map(Endpoint::getType).collect(Collectors.toList()),
-                    Query.Sort.Order.ASC,
-                    List.of(EndpointType.WEBHOOK, EndpointType.EMAIL_SUBSCRIPTION, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL)
-            );
-
-            TestHelpers.testSorting(
-                    "created",
-                    provider,
-                    endpoints -> endpoints.stream().map(Endpoint::getCreated).collect(Collectors.toList()),
-                    Query.Sort.Order.ASC,
-                    createdEndpointList.stream().map(Endpoint::getCreated).sorted().collect(Collectors.toList())
-            );
-        }
+        TestHelpers.testSorting(
+                "created",
+                provider,
+                endpoints -> endpoints.stream().map(Endpoint::getCreated).collect(Collectors.toList()),
+                Query.Sort.Order.ASC,
+                createdEndpointList.stream().map(Endpoint::getCreated).sorted().collect(Collectors.toList())
+        );
     }
 
     @Test

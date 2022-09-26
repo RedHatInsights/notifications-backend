@@ -155,21 +155,23 @@ public class EndpointResource {
         List<Endpoint> endpoints;
         Long count;
 
+        Set<CompositeEndpointType> compositeType;
+
         if (targetType != null && targetType.size() > 0) {
-            Set<CompositeEndpointType> compositeType = targetType.stream().map(s -> {
+            compositeType = targetType.stream().map(s -> {
                 try {
                     return CompositeEndpointType.fromString(s);
                 } catch (IllegalArgumentException e) {
                     throw new BadRequestException("Unknown endpoint type: [" + s + "]", e);
                 }
             }).collect(Collectors.toSet());
-            endpoints = endpointRepository
-                    .getEndpointsPerCompositeType(orgId, name, compositeType, activeOnly, query);
-            count = endpointRepository.getEndpointsCountPerCompositeType(orgId, name, compositeType, activeOnly);
         } else {
-            endpoints = endpointRepository.getEndpoints(orgId, name, query);
-            count = endpointRepository.getEndpointsCount(orgId, name);
+            compositeType = Set.of();
         }
+
+        endpoints = endpointRepository
+                .getEndpointsPerCompositeType(orgId, name, compositeType, activeOnly, query);
+        count = endpointRepository.getEndpointsCountPerCompositeType(orgId, name, compositeType, activeOnly);
 
         for (Endpoint endpoint: endpoints) {
             if (isForOpenBridge(endpoint)) {
