@@ -18,10 +18,12 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
 @Path(API_INTERNAL + "/validation")
 public class ValidationResource {
@@ -32,23 +34,28 @@ public class ValidationResource {
     ApplicationRepository applicationRepository;
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
     @Path("/baet")
+    @Produces(TEXT_PLAIN)
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "The bundle, application and event type triplet is valid"),
+        @APIResponse(responseCode = "400", description = "The bundle, application and event type triplet is unknown")
+    })
     public Response validate(@RestQuery String bundle, @RestQuery String application, @RestQuery String eventType) {
         EventType foundEventType = applicationRepository.getEventType(bundle, application, eventType);
         if (foundEventType == null) {
-            return convertToNotFoundResponse(bundle, application, eventType);
+            String message = String.format(EVENT_TYPE_NOT_FOUND_MSG, bundle, application, eventType);
+            return Response.status(BAD_REQUEST).entity(message).build();
+        } else {
+            return Response.ok().build();
         }
-
-        return convertToOkayResponse(foundEventType);
     }
 
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
     @APIResponses({
         @APIResponse(
                 content = @Content(
-                        mediaType = MediaType.APPLICATION_JSON,
+                        mediaType = APPLICATION_JSON,
                         schema = @Schema(
                                 implementation = MessageValidationResponse.class,
                                 required = true
@@ -56,7 +63,7 @@ public class ValidationResource {
                 ),
                 responseCode = "400"
             ),
-        @APIResponse(content = @Content(mediaType = MediaType.TEXT_PLAIN), responseCode = "200"),
+        @APIResponse(content = @Content(mediaType = TEXT_PLAIN), responseCode = "200"),
     })
     @Path("/message")
     public Response validateMessage(String action) {
@@ -67,17 +74,9 @@ public class ValidationResource {
             for (ValidationMessage message : parsingException.getValidationMessages()) {
                 responseMessage.addError(message.getPath(), message.getMessage());
             }
-            return Response.status(400).entity(responseMessage).build();
+            return Response.status(BAD_REQUEST).entity(responseMessage).build();
         }
 
-        return Response.ok().build();
-    }
-
-    private Response convertToNotFoundResponse(String bundle, String application, String eventType) {
-        return Response.status(404).entity(String.format(EVENT_TYPE_NOT_FOUND_MSG, bundle, application, eventType)).build();
-    }
-
-    private Response convertToOkayResponse(EventType e) {
         return Response.ok().build();
     }
 }
