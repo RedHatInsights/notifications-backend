@@ -225,6 +225,125 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
     }
 
+    @Test
+    void testRepeatedEndpointName() {
+        try {
+            featureFlipper.setEnforceIntegrationNameUnicity(true);
+            String orgId = "repeatEndpoint";
+            String userName = "user";
+
+            String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(orgId, orgId, userName);
+            Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+            MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+            // Endpoint1
+            WebhookProperties properties = new WebhookProperties();
+            properties.setMethod(HttpType.POST);
+            properties.setDisableSslVerification(false);
+            properties.setSecretToken("my-super-secret-token");
+            properties.setUrl(getMockServerUrl());
+
+            Endpoint endpoint1 = new Endpoint();
+            endpoint1.setType(EndpointType.WEBHOOK);
+            endpoint1.setName("Endpoint1");
+            endpoint1.setDescription("needle in the haystack");
+            endpoint1.setEnabled(true);
+            endpoint1.setProperties(properties);
+            endpoint1.setServerErrors(3);
+
+            Response response = given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(endpoint1))
+                    .post("/endpoints")
+                    .then()
+                    .statusCode(200)
+                    .extract().response();
+
+            String endpoint1Id = new JsonObject(response.getBody().asString()).getString("id");
+            assertNotNull(endpoint1Id);
+
+            // Trying to add the same endpoint name again results in a 400 error
+            given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(endpoint1))
+                    .post("/endpoints")
+                    .then()
+                    .statusCode(400);
+
+            // Endpoint2
+            Endpoint ep = new Endpoint();
+            ep.setType(EndpointType.WEBHOOK);
+            ep.setName("Endpoint2");
+            ep.setDescription("needle in the haystack");
+            ep.setEnabled(true);
+            ep.setProperties(properties);
+            ep.setServerErrors(3);
+
+            given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(ep))
+                    .post("/endpoints")
+                    .then()
+                    .statusCode(200);
+
+            // Different endpoint type with same name
+            CamelProperties camelProperties = new CamelProperties();
+            camelProperties.setSubType("stuff");
+            camelProperties.setBasicAuthentication(new BasicAuthentication());
+            camelProperties.setExtras(Map.of());
+            camelProperties.setSecretToken("secret");
+            camelProperties.setUrl("http://nowhere");
+
+            ep = new Endpoint();
+            ep.setType(EndpointType.WEBHOOK);
+            ep.setName("Endpoint1");
+            ep.setDescription("needle in the haystack");
+            ep.setEnabled(true);
+            ep.setProperties(camelProperties);
+            ep.setServerErrors(3);
+
+            given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(ep))
+                    .post("/endpoints")
+                    .then()
+                    .statusCode(400);
+
+            // Updating endpoint1 name is possible
+            endpoint1.setName("Endpoint1-updated");
+            given()
+                    .header(identityHeader)
+                    .contentType(JSON)
+                    .body(Json.encode(endpoint1))
+                    .when()
+                    .put("/endpoints/" + endpoint1Id)
+                    .then()
+                    .statusCode(200);
+
+            // Updating to the name of an already existing endpoint is not possible
+            endpoint1.setName("Endpoint2");
+            given()
+                    .header(identityHeader)
+                    .contentType(JSON)
+                    .body(Json.encode(endpoint1))
+                    .when()
+                    .put("/endpoints/" + endpoint1Id)
+                    .then()
+                    .statusCode(400);
+        } finally {
+            featureFlipper.setEnforceIntegrationNameUnicity(false);
+        }
+    }
+
     private JsonObject fetchSingle(String id, Header identityHeader) {
         Response response = given()
                 // Set header to x-rh-identity
@@ -710,7 +829,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Endpoint camelEp = new Endpoint();
         camelEp.setType(EndpointType.CAMEL);
         camelEp.setSubType("demo");
-        camelEp.setName("endpoint to find");
+        camelEp.setName("endpoint 2 to find");
         camelEp.setDescription("needle in the haystack");
         camelEp.setEnabled(true);
         camelEp.setProperties(camelProperties);
