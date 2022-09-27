@@ -1,22 +1,29 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
 
 public class ResourceOptimizationPayloadAggregator extends AbstractEmailPayloadAggregator {
 
     public static final String AGGREGATED_DATA = "aggregated_data";
     public static final String STATES = "states";
-    public static final String RULES_TRIGGERED = "rules_triggered";
+    public static final String SYSTEMS_TRIGGERED = "systems_triggered";
     public static final String SYSTEMS_WITH_SUGGESTIONS = "systems_with_suggestions";
     public static final String STATE = "state";
     public static final String SYSTEM_COUNT = "system_count";
 
+    private final Map</* inventory_id */ String, /* current_state */ String> currentStates = new HashMap<>();
+
     ResourceOptimizationPayloadAggregator() {
         context.put(AGGREGATED_DATA, new JsonObject());
-        context.getJsonObject(AGGREGATED_DATA).put(STATES, new JsonArray());
-        context.getJsonObject(AGGREGATED_DATA).put(RULES_TRIGGERED, 0);
     }
 
     /*
@@ -31,7 +38,6 @@ public class ResourceOptimizationPayloadAggregator extends AbstractEmailPayloadA
      */
     void processEmailAggregation(EmailAggregation aggregation) {
         JsonObject aggregatedData = context.getJsonObject(AGGREGATED_DATA);
-        JsonArray states = aggregatedData.getJsonArray(STATES);
 
         /*
          * The aggregated data used in the daily digest will always contain the latest
@@ -47,45 +53,38 @@ public class ResourceOptimizationPayloadAggregator extends AbstractEmailPayloadA
          * the events array.
          */
         for (int i = 0; i < events.size(); i++) {
-            JsonObject event = events.getJsonObject(i);
+            JsonObject payload = events.getJsonObject(i).getJsonObject("payload");
 
-            /*
-             * The number of daily rules triggered is incremented on each processed event.
-             */
-            aggregatedData.put(RULES_TRIGGERED, aggregatedData.getInteger(RULES_TRIGGERED) + 1);
-
-            /*
-             * The current_state field found in the event needs to be counted in the
-             * aggregated_data.states array. An entry for that state may or may not already exist.
-             */
-            String currentState = event.getJsonObject("payload").getString("current_state");
-            boolean found = false;
-
-            /*
-             * Let's try to find and update an existing entry.
-             */
-            for (int j = 0; j < states.size(); j++) {
-                JsonObject statesEntry = states.getJsonObject(j);
-                if (statesEntry.getString(STATE).equals(currentState)) {
-                    /*
-                     * The entry was found, its system_count field is incremented by 1.
-                     */
-                    found = true;
-                    statesEntry.put(SYSTEM_COUNT, statesEntry.getInteger(SYSTEM_COUNT) + 1);
-                    break;
-                }
+            String inventoryId = payload.getString("inventory_id");
+            if (inventoryId == null || inventoryId.isBlank()) {
+                Log.warn("Missing or blank inventory_id field found in resource-optimization aggregation payload");
             }
 
             /*
-             * The entry was not found, so it needs to be created with an initial
-             * system_count field value of 1.
+             * For each system, we'll only keep the latest current_state field value.
              */
-            if (!found) {
-                JsonObject statesEntry = new JsonObject();
-                statesEntry.put(STATE, currentState);
-                statesEntry.put(SYSTEM_COUNT, 1);
-                states.add(statesEntry);
-            }
+            currentStates.put(inventoryId, payload.getString("current_state"));
         }
+
+        aggregatedData.put(SYSTEMS_TRIGGERED, currentStates.keySet().size());
+
+        /*
+         * This transforms the currentStates map into another map where each state becomes a key
+         * and the associated value is the number of systems that currently are in that state.
+         */
+        Map<String, Long> stateSystemCounts = currentStates.entrySet().stream()
+                .collect(groupingBy(Map.Entry::getValue, counting()));
+
+        /*
+         * The states array is rebuilt on each invocation of this method.
+         */
+        JsonArray states = new JsonArray();
+        for (Map.Entry<String, Long> stateSystemCount : stateSystemCounts.entrySet()) {
+            JsonObject state = new JsonObject();
+            state.put(STATE, stateSystemCount.getKey());
+            state.put(SYSTEM_COUNT, stateSystemCount.getValue());
+            states.add(state);
+        }
+        aggregatedData.put(STATES, states);
     }
 }
