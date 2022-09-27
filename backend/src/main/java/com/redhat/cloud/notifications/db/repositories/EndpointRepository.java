@@ -41,7 +41,7 @@ public class EndpointRepository {
     @Inject
     FeatureFlipper featureFlipper;
 
-    public void checkEndpointDisplayNameDuplicate(Endpoint endpoint) {
+    public void checkEndpointNameDuplicate(Endpoint endpoint) {
         if (!featureFlipper.isEnforceIntegrationNameUnicity()) {
             // Check disabled from configuration
             return;
