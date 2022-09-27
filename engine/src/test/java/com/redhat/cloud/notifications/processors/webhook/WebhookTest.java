@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.events.IntegrationDisabledNotifier;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -25,6 +26,7 @@ import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
 
@@ -71,6 +73,9 @@ public class WebhookTest {
     @InjectMock
     IntegrationDisabledNotifier integrationDisabledNotifier;
 
+    @InjectMock
+    NotificationHistoryRepository notificationHistoryRepository;
+
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY);
@@ -110,8 +115,10 @@ public class WebhookTest {
         Endpoint ep = buildWebhookEndpoint(url);
 
         try {
-            List<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
-            NotificationHistory history = process.get(0);
+            webhookTypeProcessor.process(event, List.of(ep));
+            ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+            verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
+            NotificationHistory history = historyArgumentCaptor.getAllValues().get(0);
             assertTrue(history.isInvocationResult());
         } catch (Exception e) {
             e.printStackTrace();
@@ -173,8 +180,10 @@ public class WebhookTest {
             Event event = new Event();
             event.setAction(action);
             Endpoint ep = buildWebhookEndpoint(url);
-            List<NotificationHistory> process = webhookTypeProcessor.process(event, List.of(ep));
-            NotificationHistory history = process.get(0);
+            webhookTypeProcessor.process(event, List.of(ep));
+            ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+            verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
+            NotificationHistory history = historyArgumentCaptor.getAllValues().get(0);
 
             assertEquals(shouldSucceedEventually, history.isInvocationResult());
             assertEquals(MAX_RETRY_ATTEMPTS, callsCounter.get());

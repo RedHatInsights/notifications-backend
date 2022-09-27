@@ -18,7 +18,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.Blank;
@@ -38,7 +37,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -47,11 +45,10 @@ import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionT
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_ERROR_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_REJECTED_COUNTER_NAME;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -99,12 +96,14 @@ class EmailSubscriptionTypeProcessorTest {
 
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
-        assertTrue(testee.process(new Event(), null).isEmpty());
+        testee.process(new Event(), null);
+        verify(sender, never()).sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class));
     }
 
     @Test
     void shouldNotProcessWhenEndpointsAreEmpty() {
-        assertTrue(testee.process(new Event(), List.of()).isEmpty());
+        testee.process(new Event(), List.of());
+        verify(sender, never()).sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class));
     }
 
     @Test
@@ -206,7 +205,6 @@ class EmailSubscriptionTypeProcessorTest {
             .thenReturn(List.of(user1.getUsername(), user2.getUsername()));
         when(recipientResolver.recipientUsers(any(),  any(), any()))
             .thenReturn(Set.of(user1, user2));
-        when(sender.sendEmail(any(), any(), any(), any())).thenReturn(Optional.of(new NotificationHistory()));
 
         Event event = new Event();
         EventType eventType = new EventType();
@@ -239,10 +237,9 @@ class EmailSubscriptionTypeProcessorTest {
         endpoint.setProperties(new EmailSubscriptionProperties());
         endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
-        List<NotificationHistory> notifications = testee.process(event, List.of(
-                endpoint
-        ));
-        assertEquals(2, notifications.size());
+        testee.process(event, List.of(endpoint));
+        verify(sender, times(1)).sendEmail(eq(user1), eq(event), any(TemplateInstance.class), any(TemplateInstance.class));
+        verify(sender, times(1)).sendEmail(eq(user2), eq(event), any(TemplateInstance.class), any(TemplateInstance.class));
         featureFlipper.setUseDefaultTemplate(false);
     }
 

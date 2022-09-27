@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -25,6 +26,7 @@ import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
@@ -45,6 +47,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockserver.model.HttpResponse.response;
 
 //@QuarkusTest
@@ -68,6 +72,9 @@ public class EmailTest {
     // InjectSpy allows us to update the fields via reflection (Inject does not)
     @InjectSpy
     EmailSender emailSender;
+
+    @InjectMock
+    NotificationHistoryRepository notificationHistoryRepository;
 
     static final String BOP_TOKEN = "test-token";
     static final String BOP_ENV = "unitTest";
@@ -135,9 +142,12 @@ public class EmailTest {
         ep.setProperties(properties);
 
         try {
-            List<NotificationHistory> historyEntries = statelessSessionFactory.withSession(statelessSession -> {
-                return emailProcessor.process(event, List.of(ep));
+            statelessSessionFactory.withSession(statelessSession -> {
+                emailProcessor.process(event, List.of(ep));
             });
+            ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+            verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
+            List<NotificationHistory> historyEntries = historyArgumentCaptor.getAllValues();
 
             NotificationHistory history = historyEntries.get(0);
             assertTrue(history.isInvocationResult());
@@ -244,9 +254,12 @@ public class EmailTest {
         ep.setProperties(properties);
 
         try {
-            List<NotificationHistory> historyEntries = statelessSessionFactory.withSession(statelessSession -> {
-                return emailProcessor.process(event, List.of(ep));
+            statelessSessionFactory.withSession(statelessSession -> {
+                emailProcessor.process(event, List.of(ep));
             });
+            ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+            verify(notificationHistoryRepository, times(0)).createNotificationHistory(historyArgumentCaptor.capture());
+            List<NotificationHistory> historyEntries = historyArgumentCaptor.getAllValues();
 
             // The processor returns a null history value but Multi does not support null values so the resulting Multi is empty.
             assertTrue(historyEntries.isEmpty());

@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -20,6 +21,7 @@ import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeHelper;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.reactive.messaging.TracingMetadata;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
@@ -31,6 +33,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
@@ -59,6 +62,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -66,6 +72,7 @@ public class CamelTypeProcessorTest {
 
     public static final String SUB_TYPE_KEY = "subType";
     public static final String SUB_TYPE = "sub-type";
+
     @Inject
     @Any
     InMemoryConnector inMemoryConnector;
@@ -84,6 +91,9 @@ public class CamelTypeProcessorTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
+
+    @InjectMock
+    NotificationHistoryRepository notificationHistoryRepository;
 
     @BeforeEach
     void beforeEach() {
@@ -105,7 +115,10 @@ public class CamelTypeProcessorTest {
         Endpoint endpoint2 = buildCamelEndpoint(event.getAction().getAccountId());
 
         // Let's trigger the processing.
-        List<NotificationHistory> result = processor.process(event, List.of(endpoint1, endpoint2));
+        processor.process(event, List.of(endpoint1, endpoint2));
+        ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+        verify(notificationHistoryRepository, times(2)).createNotificationHistory(historyArgumentCaptor.capture());
+        List<NotificationHistory> result = historyArgumentCaptor.getAllValues();
 
         // Two endpoints should have been processed.
         assertEquals(2, result.size());
@@ -172,7 +185,10 @@ public class CamelTypeProcessorTest {
 
         // Let's trigger the processing.
         // First with 'random OB endpoints', so we expect this to fail
-        List<NotificationHistory> result = processor.process(event, List.of(endpoint));
+        processor.process(event, List.of(endpoint));
+        ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+        verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
+        List<NotificationHistory> result = historyArgumentCaptor.getAllValues();
 
         // One endpoint should have been processed.
         assertEquals(1, result.size());
@@ -208,7 +224,11 @@ public class CamelTypeProcessorTest {
         System.out.println("==> The bridge " + bridgeHelper.getBridgeIfNeeded());
 
         // Process again
-        result = processor.process(event, List.of(endpoint));
+        reset(notificationHistoryRepository); // TODO Using reset is bad, split this test instead
+        processor.process(event, List.of(endpoint));
+        historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+        verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
+        result = historyArgumentCaptor.getAllValues();
 
         // One endpoint should have been processed.
         assertEquals(1, result.size());
@@ -226,7 +246,11 @@ public class CamelTypeProcessorTest {
         // Now try again, but the remote throws an error
         event.getAction().setAccountId("something-random");
         event.getAction().setOrgId(DEFAULT_ORG_ID);
-        result = processor.process(event, List.of(endpoint));
+        reset(notificationHistoryRepository); // TODO Using reset is bad, split this test instead
+        processor.process(event, List.of(endpoint));
+        historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+        verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
+        result = historyArgumentCaptor.getAllValues();
         assertEquals(1, result.size());
         // Metrics should report the same thing.
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 3, SUB_TYPE_KEY, "slack");
