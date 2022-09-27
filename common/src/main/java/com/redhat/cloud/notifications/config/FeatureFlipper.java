@@ -42,6 +42,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.enforce-bg-name-unicity", defaultValue = "false")
     boolean enforceBehaviorGroupNameUnicity;
 
+    @ConfigProperty(name = "notifications.enforce-integration-name-unicity", defaultValue = "false")
+    boolean enforceIntegrationNameUnicity;
+
     @ConfigProperty(name = "ob.enabled", defaultValue = "false")
     boolean obEnabled;
 
@@ -63,6 +66,7 @@ public class FeatureFlipper {
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
+        Log.infof("The integrations unique name constraint is %s", enforceIntegrationNameUnicity ? "enabled" : "disabled");
         Log.infof("The RHOSE (OpenBridge) integration is %s", obEnabled ? "enabled" : "disabled");
         Log.infof("The actions reinjection in case of Camel integration error is %s", enableReInject ? "enabled" : "disabled");
         Log.infof("The Kafka outage detector is %s", kafkaConsumedTotalCheckerEnabled ? "enabled" : "disabled");
@@ -73,6 +77,15 @@ public class FeatureFlipper {
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
         return enforceBehaviorGroupNameUnicity;
+    }
+
+    public boolean isEnforceIntegrationNameUnicity() {
+        return enforceIntegrationNameUnicity;
+    }
+
+    public void setEnforceIntegrationNameUnicity(boolean enforceIntegrationNameUnicity) {
+        checkTestLaunchMode();
+        this.enforceIntegrationNameUnicity = enforceIntegrationNameUnicity;
     }
 
     public boolean isObEnabled() {

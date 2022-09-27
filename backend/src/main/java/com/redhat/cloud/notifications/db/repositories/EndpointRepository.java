@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.db.builder.WhereBuilder;
@@ -17,6 +18,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
@@ -36,8 +38,41 @@ public class EndpointRepository {
     @Inject
     EntityManager entityManager;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
+    public void checkEndpointDisplayNameDuplicate(Endpoint endpoint) {
+        if (!featureFlipper.isEnforceIntegrationNameUnicity()) {
+            // Check disabled from configuration
+            return;
+        }
+
+        if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
+            // This check does not apply for email subscriptions - as these are managed by us.
+            return;
+        }
+
+        String hql = "SELECT COUNT(*) FROM Endpoint WHERE name = :name AND orgId = :orgId";
+        if (endpoint.getId() != null) {
+            hql += " AND id != :endpointId";
+        }
+
+        TypedQuery<Long> query = entityManager.createQuery(hql, Long.class)
+                .setParameter("name", endpoint.getName())
+                .setParameter("orgId", endpoint.getOrgId());
+
+        if (endpoint.getId() != null) {
+            query.setParameter("endpointId", endpoint.getId());
+        }
+
+        if (query.getSingleResult() > 0) {
+            throw new BadRequestException("An endpoint with display name [" + endpoint.getName() + "] already exists");
+        }
+    }
+
     @Transactional
     public Endpoint createEndpoint(Endpoint endpoint) {
+        checkEndpointDisplayNameDuplicate(endpoint);
         // Todo: NOTIF-429 backward compatibility change - Remove soon.
         if (endpoint.getType() == EndpointType.CAMEL && endpoint.getProperties() != null) {
             CamelProperties properties = endpoint.getProperties(CamelProperties.class);
@@ -181,6 +216,7 @@ public class EndpointRepository {
 
     @Transactional
     public boolean updateEndpoint(Endpoint endpoint) {
+        checkEndpointDisplayNameDuplicate(endpoint);
         // TODO Update could fail because the item did not exist, throw 404 in that case?
         // TODO Fix transaction so that we don't end up with half the updates applied
         String endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled, serverErrors = 0 " +
