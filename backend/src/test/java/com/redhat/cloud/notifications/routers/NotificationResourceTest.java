@@ -51,7 +51,6 @@ import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_EVENT_TYPE_
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -563,13 +562,12 @@ public class NotificationResourceTest extends DbIsolatedTest {
         // Updating a behavior of other tenant yields false
         UpdateBehaviorGroupRequest behaviorGroupRequest = new UpdateBehaviorGroupRequest();
         behaviorGroupRequest.displayName = "My behavior group 1.0";
-        boolean response = updateBehaviorGroup(identityHeader, behaviorGroupIdOtherTenant, behaviorGroupRequest);
-        assertFalse(response);
+        updateBehaviorGroup(identityHeader, behaviorGroupIdOtherTenant, behaviorGroupRequest, 404);
         BehaviorGroup behaviorGroup = helpers.getBehaviorGroup(behaviorGroupIdOtherTenant);
         assertEquals("My behavior", behaviorGroup.getDisplayName()); // No change
 
         // Updating the behavior group displayName only
-        response = updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest);
+        boolean response = updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest);
         assertTrue(response);
         behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
         assertEquals("My behavior group 1.0", behaviorGroup.getDisplayName());
