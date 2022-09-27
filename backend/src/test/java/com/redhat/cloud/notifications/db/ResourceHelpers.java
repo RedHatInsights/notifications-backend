@@ -37,6 +37,7 @@ public class ResourceHelpers {
     public static final String TEST_APP_NAME_2 = "myothertester";
     public static final String TEST_EVENT_TYPE_FORMAT = "eventtype%d";
     public static final String TEST_BUNDLE_NAME = "testbundle";
+    public static final String TEST_BUNDLE_2_NAME = "testbundle2";
 
     @Inject
     EndpointRepository endpointRepository;

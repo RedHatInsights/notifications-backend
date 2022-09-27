@@ -63,6 +63,10 @@ public class BehaviorGroupRepository {
         return this.create(null, null, behaviorGroup, true);
     }
 
+    public BehaviorGroup get(UUID behaviorGroupId) {
+        return entityManager.find(BehaviorGroup.class, behaviorGroupId);
+    }
+
     @Transactional
     BehaviorGroup create(String accountId, String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
         checkBehaviorGroupDisplayNameDuplicate(orgId, behaviorGroup, isDefaultBehaviorGroup);
@@ -165,7 +169,7 @@ public class BehaviorGroupRepository {
             return;
         }
 
-        String hql = "SELECT COUNT(*) FROM BehaviorGroup WHERE displayName = :displayName";
+        String hql = "SELECT COUNT(*) FROM BehaviorGroup WHERE displayName = :displayName AND bundle.id = :bundleId";
         if (behaviorGroup.getId() != null) { // The behavior group already exists in the DB, it's being updated.
             hql += " AND id != :behaviorGroupId";
         }
@@ -176,7 +180,9 @@ public class BehaviorGroupRepository {
         }
 
         TypedQuery<Long> query = entityManager.createQuery(hql, Long.class)
-                .setParameter("displayName", behaviorGroup.getDisplayName());
+                .setParameter("displayName", behaviorGroup.getDisplayName())
+                .setParameter("bundleId", behaviorGroup.getBundleId());
+
         if (behaviorGroup.getId() != null) {
             query.setParameter("behaviorGroupId", behaviorGroup.getId());
         }

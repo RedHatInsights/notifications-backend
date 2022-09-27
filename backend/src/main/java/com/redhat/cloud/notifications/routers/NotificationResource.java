@@ -275,9 +275,15 @@ public class NotificationResource {
         String orgId = getOrgId(sec);
 
         if (request.displayName != null) {
+            BehaviorGroup databaseBehaviorGroup = behaviorGroupRepository.get(id);
+            if (databaseBehaviorGroup == null) {
+                throw new NotFoundException("Behavior group not found");
+            }
+
             BehaviorGroup behaviorGroup = new BehaviorGroup();
             behaviorGroup.setId(id);
             behaviorGroup.setDisplayName(request.displayName);
+            behaviorGroup.setBundleId(databaseBehaviorGroup.getBundleId());
 
             if (!behaviorGroupRepository.update(orgId, behaviorGroup)) {
                 return Response.status(200).type(APPLICATION_JSON).entity(false).build();
