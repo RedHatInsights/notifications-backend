@@ -72,7 +72,7 @@ public class EndpointRepository {
 
     @Transactional
     public Endpoint createEndpoint(Endpoint endpoint) {
-        checkEndpointDisplayNameDuplicate(endpoint);
+        checkEndpointNameDuplicate(endpoint);
         // Todo: NOTIF-429 backward compatibility change - Remove soon.
         if (endpoint.getType() == EndpointType.CAMEL && endpoint.getProperties() != null) {
             CamelProperties properties = endpoint.getProperties(CamelProperties.class);
@@ -216,7 +216,7 @@ public class EndpointRepository {
 
     @Transactional
     public boolean updateEndpoint(Endpoint endpoint) {
-        checkEndpointDisplayNameDuplicate(endpoint);
+        checkEndpointNameDuplicate(endpoint);
         // TODO Update could fail because the item did not exist, throw 404 in that case?
         // TODO Fix transaction so that we don't end up with half the updates applied
         String endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled, serverErrors = 0 " +
