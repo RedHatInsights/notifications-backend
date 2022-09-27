@@ -66,7 +66,7 @@ public class EndpointRepository {
         }
 
         if (query.getSingleResult() > 0) {
-            throw new BadRequestException("An endpoint with display name [" + endpoint.getName() + "] already exists");
+            throw new BadRequestException("An endpoint with name [" + endpoint.getName() + "] already exists");
         }
     }
 
