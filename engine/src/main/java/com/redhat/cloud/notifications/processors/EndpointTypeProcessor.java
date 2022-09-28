@@ -20,7 +20,7 @@ public abstract class EndpointTypeProcessor {
         try {
             notificationHistoryRepository.createNotificationHistory(history);
         } catch (Exception e) {
-            Log.errorf("Notification history creation failed for %s", history.getEndpoint());
+            Log.errorf(e, "Notification history creation failed for %s", history.getEndpoint());
         }
     }
 }

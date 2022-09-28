@@ -11,35 +11,48 @@ public class DelayedThrowerTest {
 
     @Test
     void test() {
-        AtomicInteger iterations = new AtomicInteger();
+        AtomicInteger outerIterations = new AtomicInteger();
+        AtomicInteger innerIterations = new AtomicInteger();
 
-        DelayedException exception = assertThrows(DelayedException.class, () -> {
-            DelayedThrower.throwEventually("Something went wrong", accumulator -> {
-                for (int i = 0; i < 6; i++) {
+        DelayedException delayedException = assertThrows(DelayedException.class, () -> {
+            DelayedThrower.throwEventually("Something went wrong", outerAccumulator -> {
+                for (int i = 0; i < 4; i++) {
                     try {
-                        iterations.incrementAndGet();
-                        switch (i % 3) {
+                        outerIterations.incrementAndGet();
+                        switch (i) {
                             case 0:
                                 throw new IllegalStateException();
                             case 1:
                                 throw new IllegalArgumentException();
+                            case 2:
+                                DelayedThrower.throwEventually("Something went even worse", innerAccumulator -> {
+                                    for (int j = 0; j < 2; j++) {
+                                        try {
+                                            innerIterations.incrementAndGet();
+                                            throw new UnsupportedOperationException();
+                                        } catch (Exception innerException) {
+                                            innerAccumulator.add(innerException);
+                                        }
+                                    }
+                                });
+                                break;
                             default:
                                 // Do nothing.
                                 break;
                         }
-                    } catch (Exception e) {
-                        accumulator.add(e);
+                    } catch (Exception outerException) {
+                        outerAccumulator.add(outerException);
                     }
                 }
             });
         });
 
-        assertEquals(6, iterations.get());
-        assertEquals(DelayedException.class, exception.getClass());
-        assertEquals(4, exception.getSuppressed().length);
-        assertEquals(IllegalStateException.class, exception.getSuppressed()[0].getClass());
-        assertEquals(IllegalArgumentException.class, exception.getSuppressed()[1].getClass());
-        assertEquals(IllegalStateException.class, exception.getSuppressed()[2].getClass());
-        assertEquals(IllegalArgumentException.class, exception.getSuppressed()[3].getClass());
+        assertEquals(4, outerIterations.get());
+        assertEquals(2, innerIterations.get());
+        assertEquals(4, delayedException.getSuppressed().length);
+        assertEquals(IllegalStateException.class, delayedException.getSuppressed()[0].getClass());
+        assertEquals(IllegalArgumentException.class, delayedException.getSuppressed()[1].getClass());
+        assertEquals(UnsupportedOperationException.class, delayedException.getSuppressed()[2].getClass());
+        assertEquals(UnsupportedOperationException.class, delayedException.getSuppressed()[3].getClass());
     }
 }

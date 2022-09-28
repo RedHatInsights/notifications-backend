@@ -80,11 +80,7 @@ public class EndpointProcessor {
             case EMAIL_SUBSCRIPTION:
                 return emails;
             default:
-                return new EndpointTypeProcessor() {
-                    @Override
-                    public void process(Event event, List<Endpoint> endpoints) {
-                    }
-                };
+                throw new IllegalArgumentException("Unexpected endpoint type: " + endpointType);
         }
     }
 }
