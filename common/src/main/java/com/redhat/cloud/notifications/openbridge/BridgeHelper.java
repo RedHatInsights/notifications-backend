@@ -45,7 +45,7 @@ public class BridgeHelper {
 
     private Bridge bridgeInstance;
 
-    @ApplicationScoped
+    @RequestScoped
     @Produces
     public Bridge getBridgeIfNeeded() {
 

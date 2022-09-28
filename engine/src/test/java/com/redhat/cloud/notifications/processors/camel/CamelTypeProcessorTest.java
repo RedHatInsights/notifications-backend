@@ -210,6 +210,7 @@ class CamelTypeProcessorTest {
         assertEquals(endpoint, historyItem.getEndpoint());
         assertEquals(CAMEL, historyItem.getEndpointType());
         assertEquals("slack", historyItem.getEndpointSubType());
+        assertNotNull(historyItem.getDetails());
         assertEquals(1, historyItem.getDetails().size());
         Map<String, Object> details = historyItem.getDetails();
         assertTrue(details.containsKey("failure"));
