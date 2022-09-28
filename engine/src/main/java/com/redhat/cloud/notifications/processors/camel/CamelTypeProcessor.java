@@ -1,13 +1,13 @@
 package com.redhat.cloud.notifications.processors.camel;
 
 import com.redhat.cloud.notifications.Base64Utils;
+import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
@@ -36,15 +36,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 // TODO NOTIF-603 Migrate to orgId (not started in this class)
 @ApplicationScoped
-public class CamelTypeProcessor implements EndpointTypeProcessor {
+public class CamelTypeProcessor extends EndpointTypeProcessor {
 
     public static final String TOCAMEL_CHANNEL = "toCamel";
     public static final String PROCESSED_COUNTER_NAME = "processor.camel.processed";
@@ -76,17 +76,19 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
     BridgeAuth bridgeAuth;
 
     @Override
-    public List<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
-        return endpoints.stream()
-                .map(endpoint -> {
-                    Notification notification = new Notification(event, endpoint);
-                    return process(notification);
-                })
-                .collect(Collectors.toList());
+    public void process(Event event, List<Endpoint> endpoints) {
+        DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
+            for (Endpoint endpoint : endpoints) {
+                try {
+                    process(event, endpoint);
+                } catch (Exception e) {
+                    accumulator.add(e);
+                }
+            }
+        });
     }
 
-    private NotificationHistory process(Notification item) {
-        Endpoint endpoint = item.getEndpoint();
+    private void process(Event event, Endpoint endpoint) {
         String subType = endpoint.getSubType();
 
         Counter processedCount = registry.counter(PROCESSED_COUNTER_NAME, "subType", subType);
@@ -116,26 +118,25 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         metaData.put("extras", new MapConverter().convertToDatabaseColumn(properties.getExtras()));
         String originalEventId = "-not provided-";
-        if (item.getEvent().getId() != null) {
-            originalEventId = item.getEvent().getId().toString();
+        if (event.getId() != null) {
+            originalEventId = event.getId().toString();
         }
         metaData.put("_originalId", originalEventId);
 
-        JsonObject payload = transformer.transform(item.getEvent().getAction());
+        JsonObject payload = transformer.transform(event.getAction());
         UUID historyId = UUID.randomUUID();
 
         JsonObject metadataAsJson = new JsonObject();
         payload.put(NOTIF_METADATA_KEY, metadataAsJson);
         metaData.forEach(metadataAsJson::put);
 
-        return callCamel(item, historyId, payload, originalEventId);
+        callCamel(event, endpoint, historyId, payload, originalEventId);
     }
 
-    public NotificationHistory callCamel(Notification item, UUID historyId, JsonObject payload, String originalEventId) {
+    public void callCamel(Event event, Endpoint endpoint, UUID historyId, JsonObject payload, String originalEventId) {
 
         final long startTime = System.currentTimeMillis();
 
-        Endpoint endpoint = item.getEndpoint();
         String accountId = endpoint.getAccountId();
         String orgId = endpoint.getOrgId();
         // the next could give a CCE, but we only come here when it is a camel endpoint anyway
@@ -145,7 +146,7 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
 
         if (subType.equals("slack")) { // OpenBridge
             long endTime;
-            NotificationHistory history = getHistoryStub(endpoint, item.getEvent(), 0L, historyId);
+            NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
             try {
                 callOpenBridge(payload, historyId, accountId, camelProperties, integrationName, originalEventId);
                 history.setInvocationResult(true);
@@ -160,14 +161,14 @@ public class CamelTypeProcessor implements EndpointTypeProcessor {
                 endTime = System.currentTimeMillis();
             }
             history.setInvocationTime(endTime - startTime);
-            return history;
+            persistNotificationHistory(history);
 
         } else {
             reallyCallCamel(payload, historyId, accountId, orgId, subType, integrationName, originalEventId);
             final long endTime = System.currentTimeMillis();
             // We only create a basic stub. The FromCamel filler will update it later
-            NotificationHistory history = getHistoryStub(endpoint, item.getEvent(), endTime - startTime, historyId);
-            return history;
+            NotificationHistory history = getHistoryStub(endpoint, event, endTime - startTime, historyId);
+            persistNotificationHistory(history);
         }
     }
 

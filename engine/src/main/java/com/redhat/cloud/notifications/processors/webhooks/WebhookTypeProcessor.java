@@ -1,11 +1,11 @@
 package com.redhat.cloud.notifications.processors.webhooks;
 
+import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.events.IntegrationDisabledNotifier;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.Notification;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
@@ -34,13 +34,13 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
 
 @ApplicationScoped
-public class WebhookTypeProcessor implements EndpointTypeProcessor {
+public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
     public static final String DISABLED_WEBHOOKS_COUNTER = "processor.webhook.disabled.endpoints";
     public static final String ERROR_TYPE_TAG_KEY = "error_type";
@@ -106,18 +106,20 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
     }
 
     @Override
-    public List<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
-        return endpoints.stream()
-                .map(endpoint -> {
-                    Notification notification = new Notification(event, endpoint);
-                    return process(notification);
-                })
-                .collect(Collectors.toList());
+    public void process(Event event, List<Endpoint> endpoints) {
+        DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
+            for (Endpoint endpoint : endpoints) {
+                try {
+                    process(event, endpoint);
+                } catch (Exception e) {
+                    accumulator.add(e);
+                }
+            }
+        });
     }
 
-    private NotificationHistory process(Notification item) {
+    private void process(Event event, Endpoint endpoint) {
         processedCount.increment();
-        Endpoint endpoint = item.getEndpoint();
         WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
 
         final HttpRequest<Buffer> req = getWebClient(properties.getDisableSslVerification())
@@ -131,9 +133,9 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
             req.basicAuthentication(properties.getBasicAuthentication().getUsername(), properties.getBasicAuthentication().getPassword());
         }
 
-        JsonObject payload = transformer.transform(item.getEvent().getAction());
+        JsonObject payload = transformer.transform(event.getAction());
 
-        return doHttpRequest(item, req, payload, properties.getMethod().name(), properties.getUrl());
+        doHttpRequest(event, endpoint, req, payload, properties.getMethod().name(), properties.getUrl());
     }
 
     private WebClient getWebClient(boolean disableSSLVerification) {
@@ -144,18 +146,18 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
         }
     }
 
-    public NotificationHistory doHttpRequest(Notification item, HttpRequest<Buffer> req, JsonObject payload, String method, String url) {
+    public void doHttpRequest(Event event, Endpoint endpoint, HttpRequest<Buffer> req, JsonObject payload, String method, String url) {
         final long startTime = System.currentTimeMillis();
 
         try {
-            return Failsafe.with(retryPolicy).get(() -> {
+            Failsafe.with(retryPolicy).run(() -> {
 
                 // TODO NOTIF-488 We may want to move to a non-reactive HTTP client in the future.
                 HttpResponse<Buffer> resp = req.sendJsonObject(payload).await().atMost(awaitTimeout);
-                NotificationHistory history = buildNotificationHistory(item, startTime);
+                NotificationHistory history = buildNotificationHistory(event, endpoint, startTime);
 
                 boolean serverError = false;
-                boolean isEmailEndpoint = item.getEndpoint().getType() == EMAIL_SUBSCRIPTION;
+                boolean isEmailEndpoint = endpoint.getType() == EMAIL_SUBSCRIPTION;
                 boolean shouldResetEndpointServerErrors = false;
                 if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
                     // Accepted
@@ -175,11 +177,11 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                              * the same endpoint may work in the future, so the endpoint is only disabled if the max
                              * number of endpoint failures allowed from the configuration is exceeded.
                              */
-                            boolean disabled = endpointRepository.incrementEndpointServerErrors(item.getEndpoint().getId(), maxServerErrors);
+                            boolean disabled = endpointRepository.incrementEndpointServerErrors(endpoint.getId(), maxServerErrors);
                             if (disabled) {
                                 disabledWebhooksServerErrorCount.increment();
-                                Log.infof("Endpoint %s was disabled because we received too many 5xx status while calling it", item.getEndpoint().getId());
-                                integrationDisabledNotifier.tooManyServerErrors(item.getEndpoint(), maxServerErrors);
+                                Log.infof("Endpoint %s was disabled because we received too many 5xx status while calling it", endpoint.getId());
+                                integrationDisabledNotifier.tooManyServerErrors(endpoint, maxServerErrors);
                             }
                         }
                     }
@@ -195,11 +197,11 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                              * endpoint settings (URL, secret token...). The endpoint will most likely never return a
                              * successful status code with the current settings, so it is disabled immediately.
                              */
-                            boolean disabled = endpointRepository.disableEndpoint(item.getEndpoint().getId());
+                            boolean disabled = endpointRepository.disableEndpoint(endpoint.getId());
                             if (disabled) {
                                 disabledWebhooksClientErrorCount.increment();
-                                Log.infof("Endpoint %s was disabled because we received a 4xx status while calling it", item.getEndpoint().getId());
-                                integrationDisabledNotifier.clientError(item.getEndpoint(), resp.statusCode());
+                                Log.infof("Endpoint %s was disabled because we received a 4xx status while calling it", endpoint.getId());
+                                integrationDisabledNotifier.clientError(endpoint, resp.statusCode());
                             }
                         } else {
                             /*
@@ -214,9 +216,9 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                 if (featureFlipper.isDisableWebhookEndpointsOnFailure()) {
                     if (!isEmailEndpoint && shouldResetEndpointServerErrors) {
                         // When a target endpoint is successfully called, its server errors counter is reset in the DB.
-                        boolean reset = endpointRepository.resetEndpointServerErrors(item.getEndpoint().getId());
+                        boolean reset = endpointRepository.resetEndpointServerErrors(endpoint.getId());
                         if (reset) {
-                            Log.tracef("The server errors counter of endpoint %s was just reset", item.getEndpoint().getId());
+                            Log.tracef("The server errors counter of endpoint %s was just reset", endpoint.getId());
                         }
                     }
                 }
@@ -233,30 +235,30 @@ public class WebhookTypeProcessor implements EndpointTypeProcessor {
                 if (serverError) {
                     throw new ServerErrorException(history);
                 }
-                return history;
+                persistNotificationHistory(history);
             });
         } catch (Exception e) {
+            NotificationHistory history;
             if (e instanceof ServerErrorException) {
-                return ((ServerErrorException) e).getNotificationHistory();
+                history = ((ServerErrorException) e).getNotificationHistory();
+            } else {
+                history = buildNotificationHistory(event, endpoint, startTime);
+
+                Log.debugf("Failed: %s", e.getMessage());
+
+                JsonObject details = new JsonObject();
+                details.put("url", url);
+                details.put("method", method);
+                details.put("error_message", e.getMessage()); // TODO This message isn't always the most descriptive..
+                history.setDetails(details.getMap());
             }
-
-            NotificationHistory history = buildNotificationHistory(item, startTime);
-
-            Log.debugf("Failed: %s", e.getMessage());
-
-            JsonObject details = new JsonObject();
-            details.put("url", url);
-            details.put("method", method);
-            details.put("error_message", e.getMessage()); // TODO This message isn't always the most descriptive..
-            history.setDetails(details.getMap());
-            return history;
+            persistNotificationHistory(history);
         }
     }
 
-
-    private NotificationHistory buildNotificationHistory(Notification item, long startTime) {
+    private NotificationHistory buildNotificationHistory(Event event, Endpoint endpoint, long startTime) {
         long invocationTime = System.currentTimeMillis() - startTime;
-        return getHistoryStub(item.getEndpoint(), item.getEvent(), invocationTime, UUID.randomUUID());
+        return getHistoryStub(endpoint, event, invocationTime, UUID.randomUUID());
     }
 
     /**

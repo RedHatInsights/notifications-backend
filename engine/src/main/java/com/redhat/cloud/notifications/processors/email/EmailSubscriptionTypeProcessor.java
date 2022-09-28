@@ -17,7 +17,6 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
-import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
@@ -44,7 +43,6 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,7 +52,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @ApplicationScoped
-public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
+public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
 
     public static final String AGGREGATION_CHANNEL = "aggregation";
     public static final String AGGREGATION_COMMAND_REJECTED_COUNTER_NAME = "aggregation.command.rejected";
@@ -118,10 +116,8 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
     }
 
     @Override
-    public List<NotificationHistory> process(Event event, List<Endpoint> endpoints) {
-        if (endpoints == null || endpoints.isEmpty()) {
-            return Collections.emptyList();
-        } else {
+    public void process(Event event, List<Endpoint> endpoints) {
+        if (endpoints != null && !endpoints.isEmpty()) {
             Action action = event.getAction();
             boolean shouldSaveAggregation;
             if (featureFlipper.isUseTemplatesFromDb()) {
@@ -143,11 +139,11 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                 emailAggregationRepository.addEmailAggregation(aggregation);
             }
 
-            return sendEmail(event, Set.copyOf(endpoints));
+            sendEmail(event, Set.copyOf(endpoints));
         }
     }
 
-    private List<NotificationHistory> sendEmail(Event event, Set<Endpoint> endpoints) {
+    private void sendEmail(Event event, Set<Endpoint> endpoints) {
         EmailSubscriptionType emailSubscriptionType = EmailSubscriptionType.INSTANT;
         processedEmailCount.increment();
         Action action = event.getAction();
@@ -159,7 +155,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
             Optional<InstantEmailTemplate> instantEmailTemplate = templateRepository
                     .findInstantEmailTemplate(event.getEventType().getId());
             if (instantEmailTemplate.isEmpty()) {
-                return Collections.emptyList();
+                return;
             } else {
                 String subjectData = instantEmailTemplate.get().getSubjectTemplate().getData();
                 subject = templateService.compileTemplate(subjectData, "subject");
@@ -169,7 +165,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         } else {
             EmailTemplate emailTemplate = emailTemplateFactory.get(action.getBundle(), action.getApplication());
             if (!emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
-                return Collections.emptyList();
+                return;
             }
 
             TemplateInstance fileTemplateSubject = emailTemplate.getTitle(action.getEventType(), emailSubscriptionType);
@@ -184,7 +180,7 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
                     fileTemplateBody = Default.getBody(fileTemplateSubject != null, fileTemplateBody != null);
                     fileTemplateSubject = Default.getTitle();
                 } else {
-                    return Collections.emptyList();
+                    return;
                 }
             }
 
@@ -200,13 +196,9 @@ public class EmailSubscriptionTypeProcessor implements EndpointTypeProcessor {
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
                 .getEmailSubscribersUserId(action.getOrgId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
 
-        return recipientResolver.recipientUsers(action.getOrgId(), requests, subscribers)
-                .stream()
-                .map(user -> emailSender.sendEmail(user, event, subject, body))
-                // The value may be an empty Optional in case of Qute template exception.
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toList());
+        for (User user : recipientResolver.recipientUsers(action.getOrgId(), requests, subscribers)) {
+            emailSender.sendEmail(user, event, subject, body);
+        }
     }
 
     @Incoming(AGGREGATION_CHANNEL)

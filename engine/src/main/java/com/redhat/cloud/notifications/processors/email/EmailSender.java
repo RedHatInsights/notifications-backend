@@ -4,8 +4,6 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.Notification;
-import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.webclient.BopWebClient;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
@@ -27,7 +25,6 @@ import javax.inject.Inject;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Optional;
 import java.util.Set;
 
 @ApplicationScoped
@@ -80,7 +77,7 @@ public class EmailSender {
         bopApiToken = LineBreakCleaner.clean(bopApiToken);
     }
 
-    public Optional<NotificationHistory> sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body) {
+    public void sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
         LocalDateTime start = LocalDateTime.now(UTC);
 
@@ -91,7 +88,6 @@ public class EmailSender {
         // uses canonical EmailSubscription
         try {
             Endpoint endpoint = endpointRepository.getOrCreateDefaultEmailSubscription(action.getAccountId(), action.getOrgId());
-            Notification notification = new Notification(event, endpoint);
 
             // TODO Add recipients processing from policies-notifications processing (failed recipients)
             //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)
@@ -99,19 +95,16 @@ public class EmailSender {
             // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
             //      also add metrics for these failures
 
-            NotificationHistory history = webhookSender.doHttpRequest(
-                    notification,
+            webhookSender.doHttpRequest(
+                    event, endpoint,
                     bopRequest,
                     getPayload(user, action, subject, body), "POST", bopUrl);
 
             processedTimer.stop(registry.timer("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication()));
 
             processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
-
-            return Optional.of(history);
         } catch (Exception e) {
             Log.info("Email sending failed", e);
-            return Optional.empty();
         }
     }
 
