@@ -113,6 +113,10 @@ public class ResourceHelpers {
         return bundle.getId();
     }
 
+    public Endpoint getEndpoint(String orgId, UUID id) {
+        return endpointRepository.getEndpoint(orgId, id);
+    }
+
     public Endpoint createEndpoint(String accountId, String orgId, EndpointType type) {
         return createEndpoint(accountId, orgId, type, "null");
     }
