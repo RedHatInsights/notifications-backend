@@ -25,8 +25,8 @@ import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.ENDPOINT_NAME_PROPERTY;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.ERRORS_COUNT_PROPERTY;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.ERROR_TYPE_PROPERTY;
+import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATIONS_APP;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
-import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.NOTIFICATIONS_APP;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.SERVER_ERROR_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.STATUS_CODE_PROPERTY;
 import static org.awaitility.Awaitility.await;
@@ -80,7 +80,7 @@ public class IntegrationDisabledNotifierTest {
 
         assertNotNull(action.getId());
         assertEquals(CONSOLE_BUNDLE, action.getBundle());
-        assertEquals(NOTIFICATIONS_APP, action.getApplication());
+        assertEquals(INTEGRATIONS_APP, action.getApplication());
         assertEquals(INTEGRATION_DISABLED_EVENT_TYPE, action.getEventType());
         assertEquals(endpoint.getOrgId(), action.getOrgId());
         assertTrue(action.getEvents().isEmpty());

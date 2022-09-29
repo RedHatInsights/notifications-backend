@@ -119,18 +119,18 @@ public class EmailTemplateMigrationService {
         );
 
         /*
-         * Former src/main/resources/templates/ConsoleNotifications folder.
+         * Former src/main/resources/templates/Integrations folder.
          */
-        getOrCreateTemplate(warnings, "ConsoleNotifications/insightsEmailBody", "html", "Notifications Insights email body");
+        getOrCreateTemplate(warnings, "Integrations/insightsEmailBody", "html", "Integrations Insights email body");
         createInstantEmailTemplate(
-                warnings, "console", "notifications", List.of(INTEGRATION_FAILED_EVENT_TYPE),
-                "ConsoleNotifications/failedIntegrationTitle", "txt", "Notifications failed integration email title",
-                "ConsoleNotifications/failedIntegrationBody", "txt", "Notifications failed integration email body"
+                warnings, "console", "integrations", List.of(INTEGRATION_FAILED_EVENT_TYPE),
+                "Integrations/failedIntegrationTitle", "txt", "Integrations failed integration email title",
+                "Integrations/failedIntegrationBody", "txt", "Integrations failed integration email body"
         );
         createInstantEmailTemplate(
-                warnings, "console", "notifications", List.of(INTEGRATION_DISABLED_EVENT_TYPE),
-                "ConsoleNotifications/integrationDisabledTitle", "txt", "Notifications disabled integration email title",
-                "ConsoleNotifications/integrationDisabledBody", "html", "Notifications disabled integration email body"
+                warnings, "console", "integrations", List.of(INTEGRATION_DISABLED_EVENT_TYPE),
+                "Integrations/integrationDisabledTitle", "txt", "Integrations disabled integration email title",
+                "Integrations/integrationDisabledBody", "html", "Integrations disabled integration email body"
         );
 
         /*

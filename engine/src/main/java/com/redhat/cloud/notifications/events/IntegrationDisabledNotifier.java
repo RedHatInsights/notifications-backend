@@ -23,7 +23,7 @@ public class IntegrationDisabledNotifier {
     public static final String CLIENT_ERROR_TYPE = "client";
     public static final String SERVER_ERROR_TYPE = "server";
     public static final String CONSOLE_BUNDLE = "console";
-    public static final String NOTIFICATIONS_APP = "notifications";
+    public static final String INTEGRATIONS_APP = "integrations";
     public static final String INTEGRATION_DISABLED_EVENT_TYPE = "integration-disabled";
     public static final String ERROR_TYPE_PROPERTY = "error_type";
     public static final String ENDPOINT_ID_PROPERTY = "endpoint_id";
@@ -61,7 +61,7 @@ public class IntegrationDisabledNotifier {
         Action action = new Action.ActionBuilder()
                 .withId(UUID.randomUUID())
                 .withBundle(CONSOLE_BUNDLE)
-                .withApplication(NOTIFICATIONS_APP)
+                .withApplication(INTEGRATIONS_APP)
                 .withEventType(INTEGRATION_DISABLED_EVENT_TYPE)
                 .withOrgId(endpoint.getOrgId())
                 .withTimestamp(LocalDateTime.now(UTC))
