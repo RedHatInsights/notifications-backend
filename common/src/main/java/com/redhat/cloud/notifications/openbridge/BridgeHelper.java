@@ -75,23 +75,27 @@ public class BridgeHelper {
             }
         }
 
-        // Bridge seems not yet created, so let's try to do so
-        if (bridgeList == null || bridgeList.getSize() == 0) {
-            Log.warnf("Bridge with name %s not found in the OpenBridge instance. We will try to create it", ourBridgeName);
-            try {
-                Bridge bridge = createBridgeNewBridge(token);
-                bridgeInstance = bridge;
-                return bridge;
-            } catch (Exception e) {
-                Log.error("Bridge creation failed:", e);
-                throw new NotFoundException("No bridge found");
+        // The name= query can return more than one instance, as it is a prefix match.
+        // See MGDOBR-1112
+        if (bridgeList != null) {
+            for (Bridge b : bridgeList.getItems()) {
+                if (b.getName().equals(ourBridgeName)) {
+                    bridgeInstance = b;
+                    return b;
+                }
             }
         }
 
-        Bridge bridge = bridgeList.getItems().get(0);
-        bridgeInstance = bridge;
-
-        return bridge;
+        // Bridge seems not yet created, so let's try to do so
+        Log.warnf("Bridge with name %s not found in the OpenBridge instance. We will try to create it", ourBridgeName);
+        try {
+            Bridge bridge = createBridgeNewBridge(token);
+            bridgeInstance = bridge;
+            return bridge;
+        } catch (Exception e) {
+            Log.error("Bridge creation failed:", e);
+            throw new NotFoundException("No bridge found");
+        }
     }
 
     @RequestScoped
