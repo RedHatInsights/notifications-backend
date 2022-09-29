@@ -20,7 +20,7 @@ public class EmailTemplateFactory {
     private static final String DRIFT = "drift";
     private static final String OPENSHIFT = "openshift";
     private static final String CONSOLE = "console";
-    private static final String NOTIFICATIONS = "notifications";
+    private static final String INTEGRATIONS = "integrations";
     private static final String RBAC = "rbac";
     private static final String SOURCES = "sources";
     private static final String VULNERABILITY = "vulnerability";
@@ -85,8 +85,8 @@ public class EmailTemplateFactory {
                 return new Ansible();
             }
         } else if (bundle.equalsIgnoreCase(CONSOLE)) {
-            if (application.equalsIgnoreCase(NOTIFICATIONS)) {
-                return new ConsoleNotifications();
+            if (application.equalsIgnoreCase(INTEGRATIONS)) {
+                return new Integrations();
             } else if (application.equalsIgnoreCase(SOURCES)) {
                 return new Sources();
             }

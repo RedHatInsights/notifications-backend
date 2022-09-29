@@ -117,7 +117,7 @@ public class FromCamelHistoryFiller {
         Action action = new Action.ActionBuilder()
                 .withId(UUID.randomUUID())
                 .withBundle("console")
-                .withApplication("notifications")
+                .withApplication("integrations")
                 .withEventType(INTEGRATION_FAILED_EVENT_TYPE)
                 .withAccountId(ep != null ? ep.getAccountId() : "")
                 .withOrgId(ep != null && ep.getOrgId() != null ? ep.getOrgId() : "")
