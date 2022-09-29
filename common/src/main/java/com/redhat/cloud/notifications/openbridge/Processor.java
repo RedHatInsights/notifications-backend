@@ -168,18 +168,17 @@ public class Processor {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("Filter{");
-            sb.append("'").append(key).append('\'');
-            sb.append(" '").append(type).append('\'');
-            sb.append(" '").append(value).append('\'');
-            sb.append('}');
-            return sb.toString();
+            String sb = "Filter{" + "'" + key + '\'' +
+                    " '" + type + '\'' +
+                    " '" + value + '\'' +
+                    '}';
+            return sb;
         }
     }
 
     public static class Action {
         public String type;
-        public Map<String, String> parameters;
+        public Map<String, Object> parameters;
 
         public Action() {
         }
@@ -196,37 +195,35 @@ public class Processor {
             this.type = type;
         }
 
-        public Map<String, String> getParameters() {
+        public Map<String, Object> getParameters() {
             if (parameters == null) {
                 parameters = new HashMap<>();
             }
             return parameters;
         }
 
-        public void setParameters(Map<String, String> parameters) {
+        public void setParameters(Map<String, Object> parameters) {
             this.parameters = parameters;
         }
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("Action{");
-            sb.append("type='").append(type).append('\'');
-            sb.append(", parameters=").append(parameters);
-            sb.append('}');
-            return sb.toString();
+            String sb = "Action{" + "type='" + type + '\'' +
+                    ", parameters=" + parameters +
+                    '}';
+            return sb;
         }
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Processor{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", id='").append(id).append('\'');
-        sb.append(", status='").append(status).append('\'');
-        sb.append(", filters=").append(filters);
-        sb.append(", transformationTemplate='").append(transformationTemplate).append('\'');
-        sb.append(", action=").append(action);
-        sb.append('}');
-        return sb.toString();
+        String sb = "Processor{" + "name='" + name + '\'' +
+                ", id='" + id + '\'' +
+                ", status='" + status + '\'' +
+                ", filters=" + filters +
+                ", transformationTemplate='" + transformationTemplate + '\'' +
+                ", action=" + action +
+                '}';
+        return sb;
     }
 }
