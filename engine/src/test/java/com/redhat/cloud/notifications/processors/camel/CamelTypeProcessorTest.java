@@ -100,6 +100,7 @@ class CamelTypeProcessorTest {
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
+        processor.reset();
     }
 
     @AfterEach
@@ -203,8 +204,6 @@ class CamelTypeProcessorTest {
 
         // Let's have a look at the first result entry fields.
         NotificationHistory historyItem = result.get(0);
-
-        System.out.println(historyItem);
 
         assertEquals(event, historyItem.getEvent());
         assertEquals(endpoint, historyItem.getEndpoint());

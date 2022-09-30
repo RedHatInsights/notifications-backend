@@ -1,11 +1,18 @@
 package com.redhat.cloud.notifications.openbridge;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import java.util.List;
 import java.util.StringJoiner;
+
+import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
 /**
  *
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(SnakeCaseStrategy.class)
 public class BridgeItemList<T> {
 
     private String kind;

@@ -1,25 +1,27 @@
 package com.redhat.cloud.notifications.openbridge;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
 
+import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
+
 /**
  *
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(SnakeCaseStrategy.class)
 public class ProcessingError {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ")
-    @JsonProperty("recorded_at")
     private ZonedDateTime recordedAt;
 
-    @JsonProperty("headers")
     private Map<String, String> headers;
 
-    @JsonProperty("payload")
     private JsonNode payload;
 
     public ZonedDateTime getRecordedAt() {

@@ -43,10 +43,13 @@ public class BridgeHelper {
     @RestClient
     BridgeAuthService authService;
 
+    @Inject
+    BridgeAuth bridgeAuth;
+
     private Bridge bridgeInstance;
 
-    @RequestScoped
     @Produces
+    @ApplicationScoped
     public Bridge getBridgeIfNeeded() {
 
         if (!featureFlipper.isObEnabled()) {
@@ -60,7 +63,7 @@ public class BridgeHelper {
         String token;
 
         try {
-            token = getAuthToken().getToken();
+            token = bridgeAuth.getToken();
         } catch (Exception e) {
             Log.errorf("Failed to get an auth token: %s", e.getMessage());
             throw e;
@@ -98,8 +101,8 @@ public class BridgeHelper {
         }
     }
 
-    @RequestScoped
     @Produces
+    @RequestScoped
     public BridgeAuth getAuthToken() {
         if (!featureFlipper.isObEnabled()) {
             return new BridgeAuth("- OB not enabled token -");

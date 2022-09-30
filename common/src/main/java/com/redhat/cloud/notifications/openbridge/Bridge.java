@@ -1,12 +1,17 @@
 package com.redhat.cloud.notifications.openbridge;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import java.util.Map;
+
+import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
 /**
  *
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(SnakeCaseStrategy.class)
 public class Bridge {
     /* ID of the bridge is a unique identifier */
     private String id;
@@ -19,15 +24,12 @@ public class Bridge {
 
     private String owner;
 
-    @JsonProperty("cloud_provider")
     private String cloudProvider;
 
     private String region;
 
-    @JsonProperty("status_message")
     private String statusMessage;
 
-    @JsonProperty("error_handler")
     private Map<String, Object> errorHandler;
 
     public Bridge() {

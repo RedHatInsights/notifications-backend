@@ -1,24 +1,25 @@
 package com.redhat.cloud.notifications.openbridge;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import java.util.Map;
+
+import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
 /**
  * Request for Bridge creation / update
  *
  */
+@JsonNaming(SnakeCaseStrategy.class)
 public class BridgeRequest {
     /* The name of the bridge. */
     private String name;
 
-    @JsonProperty("cloud_provider")
     private String cloudProvider;
 
     private String region;
 
 
-    @JsonProperty("error_handler")
     private Map<String, Object> errorHandler;
 
     public BridgeRequest(String name, String provider, String region) {
