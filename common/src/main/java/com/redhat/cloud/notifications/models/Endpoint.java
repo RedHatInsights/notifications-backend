@@ -102,9 +102,7 @@ public class Endpoint extends CreationUpdateTimestamped {
     @JsonIgnore
     @AssertTrue(message = "This type requires a subtype")
     private boolean isSubtypeOK() {
-        // Todo: NOTIF-429 backward compatibility change - Remove soon.
-        // Todo: Change to `return !compositeType.getType().requiresSubType || compositeType.getSubType() != null;` once users starts to send the subType
-        return true;
+        return !compositeType.getType().requiresSubType || compositeType.getSubType() != null;
     }
 
     public UUID getId() {

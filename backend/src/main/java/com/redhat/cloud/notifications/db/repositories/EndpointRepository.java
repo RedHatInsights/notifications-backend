@@ -73,24 +73,6 @@ public class EndpointRepository {
     @Transactional
     public Endpoint createEndpoint(Endpoint endpoint) {
         checkEndpointNameDuplicate(endpoint);
-        // Todo: NOTIF-429 backward compatibility change - Remove soon.
-        if (endpoint.getType() == EndpointType.CAMEL && endpoint.getProperties() != null) {
-            CamelProperties properties = endpoint.getProperties(CamelProperties.class);
-
-            if (endpoint.getSubType() == null && properties.getSubType() == null) {
-                throw new BadRequestException("endpoint.subtype must have a value");
-            }
-
-            if (endpoint.getSubType() != null && properties.getSubType() != null && !properties.getSubType().equals(endpoint.getSubType())) {
-                throw new BadRequestException("endpoint.subtype must be equal to endpoint.properties.subtype. Consider removing endpoint.properties.subtype as it is deprecated");
-            }
-
-            if (endpoint.getSubType() == null) {
-                endpoint.setSubType(properties.getSubType());
-            } else if (properties.getSubType() == null) {
-                properties.setSubType(endpoint.getSubType());
-            }
-        }
         entityManager.persist(endpoint);
         // If the endpoint properties are null, they won't be persisted.
         if (endpoint.getProperties() != null) {
@@ -298,10 +280,6 @@ public class EndpointRepository {
                 if (props != null) {
                     Endpoint endpoint = endpointsMap.get(props.getId());
                     endpoint.setProperties(props);
-                    // Todo: NOTIF-429 backward compatibility change - Remove soon.
-                    if (typedEndpointClass.equals(CamelProperties.class)) {
-                        endpoint.getProperties(CamelProperties.class).setSubType(endpoint.getSubType());
-                    }
                 }
             }
         }

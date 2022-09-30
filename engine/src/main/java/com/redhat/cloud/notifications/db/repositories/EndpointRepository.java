@@ -227,10 +227,6 @@ public class EndpointRepository {
                 if (props != null) {
                     Endpoint endpoint = endpointsMap.get(props.getId());
                     endpoint.setProperties(props);
-                    // Todo: NOTIF-429 backward compatibility change - Remove soon.
-                    if (typedEndpointClass.equals(CamelProperties.class)) {
-                        endpoint.getProperties(CamelProperties.class).setSubType(endpoint.getSubType());
-                    }
                 }
             }
         }
