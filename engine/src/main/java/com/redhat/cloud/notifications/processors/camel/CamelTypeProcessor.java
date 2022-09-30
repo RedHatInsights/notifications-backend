@@ -40,9 +40,9 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
+import static com.redhat.cloud.notifications.openbridge.BridgeHelper.ORG_ID_FILTER_NAME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-// TODO NOTIF-603 Migrate to orgId (not started in this class)
 @ApplicationScoped
 public class CamelTypeProcessor extends EndpointTypeProcessor {
 
@@ -148,7 +148,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
             long endTime;
             NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
             try {
-                callOpenBridge(payload, historyId, accountId, camelProperties, integrationName, originalEventId);
+                callOpenBridge(payload, historyId, orgId, camelProperties, integrationName, originalEventId);
                 history.setInvocationResult(true);
             } catch (Exception e) {
                 history.setInvocationResult(false);
@@ -194,7 +194,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
 
     }
 
-    private void callOpenBridge(JsonObject body, UUID id, String accountId, CamelProperties camelProperties, String integrationName, String originalEventId) {
+    private void callOpenBridge(JsonObject body, UUID id, String orgId, CamelProperties camelProperties, String integrationName, String originalEventId) {
 
         if (!featureFlipper.isObEnabled()) {
             Log.debug("Ob not enabled, doing nothing");
@@ -209,13 +209,13 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
         ce.put("source", "notifications"); // Source of original event?
         ce.put("specversion", "1.0");
         ce.put("type", "myType"); // Type of original event?
-        ce.put("rhaccount", accountId);
+        ce.put(ORG_ID_FILTER_NAME, orgId);
         ce.put(PROCESSORNAME, extras.get(PROCESSORNAME));
         ce.put("originaleventid", originalEventId);
         // TODO add dataschema
 
-        Log.infof("SE: Sending Event with historyId=%s, processorName=%s, processorId=%s, integration=%s, origId=%s",
-                id.toString(), extras.get(PROCESSORNAME), extras.get("processorId"), integrationName, originalEventId);
+        Log.infof("SE: Sending Event with historyId=%s, orgId=%s, processorName=%s, processorId=%s, integration=%s, origId=%s",
+                id.toString(), orgId, extras.get(PROCESSORNAME), extras.get("processorId"), integrationName, originalEventId);
 
         body.remove(NOTIF_METADATA_KEY); // Not needed on OB
         ce.put("data", body);

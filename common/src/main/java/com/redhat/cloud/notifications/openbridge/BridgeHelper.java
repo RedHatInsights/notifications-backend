@@ -19,6 +19,8 @@ import java.util.Map;
 @ApplicationScoped
 public class BridgeHelper {
 
+    public static final String ORG_ID_FILTER_NAME = "rhorgid";
+
     @Inject
     FeatureFlipper featureFlipper;
 

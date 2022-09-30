@@ -74,6 +74,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
+import static com.redhat.cloud.notifications.openbridge.BridgeHelper.ORG_ID_FILTER_NAME;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -215,7 +216,7 @@ public class EndpointResource {
                 String token = bridgeAuth.getToken();
                 CamelProperties cp = endpoint.getProperties(CamelProperties.class);
 
-                String processorName = "p-" + endpoint.getAccountId() + "-" + UUID.randomUUID();
+                String processorName = "p-" + UUID.randomUUID();
                 cp.getExtras().put(OB_PROCESSOR_NAME, processorName);
 
                 UnaryOperator<Processor> execFun = in -> bridgeApiService.addProcessor(bridgeId, token, in);
@@ -583,7 +584,7 @@ public class EndpointResource {
         }
 
         List<Processor.Filter> filters = out.getFilters();
-        filters.add(mkFilter("StringEquals", "rhaccount", endpoint.getAccountId()));
+        filters.add(mkFilter("StringEquals", ORG_ID_FILTER_NAME, endpoint.getOrgId()));
         filters.add(mkFilter("StringEquals", OB_PROCESSOR_NAME, processorName));
 
         // The next lines are specific per integration type and need to
