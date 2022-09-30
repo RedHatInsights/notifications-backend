@@ -49,6 +49,7 @@ public interface BridgeApiService {
     @GET
     @Path("/{bridgeId}/processors")
     Map<String, Object> getProcessors(@PathParam("bridgeId") String bridgeId,
+                                      @QueryParam("name") String name,
                                       @HeaderParam("Authorization") String bearerToken
     );
 
