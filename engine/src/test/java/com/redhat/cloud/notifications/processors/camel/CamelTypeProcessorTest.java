@@ -155,8 +155,6 @@ class CamelTypeProcessorTest {
         assertEquals(properties1.getDisableSslVerification().toString(), notifMetadata.getString("trustAll"));
         assertEquals(properties1.getUrl(), notifMetadata.getString("url"));
         assertEquals(endpoint1.getSubType(), notifMetadata.getString("type"));
-        // Todo: NOTIF-429 backward compatibility change - Remove soon.
-        assertEquals(properties1.getSubType(), notifMetadata.getString("type"));
 
         assertEquals(new MapConverter().convertToDatabaseColumn(properties1.getExtras()), notifMetadata.getString("extras"));
         assertEquals(properties1.getSecretToken(), notifMetadata.getString(TOKEN_HEADER));
@@ -338,8 +336,6 @@ class CamelTypeProcessorTest {
         properties.setSecretToken("top-secret");
         properties.setBasicAuthentication(basicAuth);
         properties.setExtras(Map.of("foo", "bar"));
-        // Todo: NOTIF-429 backward compatibility change - Remove soon.
-        properties.setSubType(SUB_TYPE);
 
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);

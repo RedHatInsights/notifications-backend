@@ -297,14 +297,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             // Different endpoint type with same name
             CamelProperties camelProperties = new CamelProperties();
-            camelProperties.setSubType("stuff");
             camelProperties.setBasicAuthentication(new BasicAuthentication());
             camelProperties.setExtras(Map.of());
             camelProperties.setSecretToken("secret");
             camelProperties.setUrl("http://nowhere");
 
             ep = new Endpoint();
-            ep.setType(EndpointType.WEBHOOK);
+            ep.setType(EndpointType.CAMEL);
+            ep.setSubType("stuff");
             ep.setName("Endpoint1");
             ep.setDescription("needle in the haystack");
             ep.setEnabled(true);
@@ -471,8 +471,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertNotNull(properties);
             assertTrue(endpoint.getBoolean("enabled"));
             assertEquals("ansible", endpoint.getString("sub_type"));
-            // Todo: NOTIF-429 backward compatibility change - Remove soon.
-            assertEquals("ansible", properties.getString("sub_type"));
             JsonObject extrasObject = properties.getJsonObject("extras");
             assertNotNull(extrasObject);
             String template  = extrasObject.getString("template");

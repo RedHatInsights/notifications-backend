@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.db.converters.MapConverter;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Map;
@@ -29,11 +28,6 @@ public class CamelProperties extends EndpointProperties {
 
     @Convert(converter = BasicAuthenticationConverter.class)
     private BasicAuthentication basicAuthentication;
-
-    // Todo: NOTIF-429 backward compatibility change - Remove soon.
-    @Transient
-    @Deprecated(forRemoval = true)
-    private String subType;
 
     @Convert(converter = MapConverter.class)
     private Map<String, String> extras;
@@ -70,18 +64,9 @@ public class CamelProperties extends EndpointProperties {
         this.basicAuthentication = basicAuthentication;
     }
 
-    public String getSubType() {
-        return subType;
-    }
-
-    public void setSubType(String subtype) {
-        this.subType = subtype;
-    }
-
     @Override
     public String toString() {
         return "CamelProperties{" +
-                "subType=" + subType +
                 ", url='" + url + '\'' +
                 ", disableSSLVerification=" + disableSslVerification +
                 '}';
