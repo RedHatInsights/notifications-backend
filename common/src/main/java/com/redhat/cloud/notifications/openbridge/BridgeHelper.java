@@ -92,7 +92,7 @@ public class BridgeHelper {
         // Bridge seems not yet created, so let's try to do so
         Log.warnf("Bridge with name %s not found in the OpenBridge instance. We will try to create it", ourBridgeName);
         try {
-            Bridge bridge = createBridgeNewBridge(token);
+            Bridge bridge = createNewBridge(token);
             bridgeInstance = bridge;
             return bridge;
         } catch (Exception e) {
@@ -136,7 +136,7 @@ public class BridgeHelper {
         return authToken;
     }
 
-    Bridge createBridgeNewBridge(String token) {
+    Bridge createNewBridge(String token) {
         BridgeRequest request = new BridgeRequest(ourBridgeName, CLOUD_PROVIDER, CLOUD_REGION);
         Map<String, Object> handler = new HashMap<>();
         handler.put("type", "endpoint"); // endpoint is using the poller
