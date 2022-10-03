@@ -63,6 +63,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.disable-webhook-endpoints-on-failure", defaultValue = "false")
     boolean disableWebhookEndpointsOnFailure;
 
+    @ConfigProperty(name = "ob.backchannel-filler.enabled", defaultValue = "false")
+    boolean obBackchannelFiller;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -73,6 +76,7 @@ public class FeatureFlipper {
         Log.infof("The use of default templates is %s", useDefaultTemplate ? "enabled" : "disabled");
         Log.infof("The use of templates from database is %s", useTemplatesFromDb ? "enabled" : "disabled");
         Log.infof("The deactivation of webhook endpoints on failure is %s", disableWebhookEndpointsOnFailure ? "enabled" : "disabled");
+        Log.infof("The OB backchannel filler is %s", obBackchannelFiller ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -135,6 +139,10 @@ public class FeatureFlipper {
     public void setDisableWebhookEndpointsOnFailure(boolean disableWebhookEndpointsOnFailure) {
         checkTestLaunchMode();
         this.disableWebhookEndpointsOnFailure = disableWebhookEndpointsOnFailure;
+    }
+
+    public boolean isObBackchannelFillerEnabled() {
+        return obBackchannelFiller;
     }
 
     /**

@@ -18,6 +18,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.context.Context;
 import io.quarkus.logging.Log;
+import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.reactive.messaging.TracingMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadataBuilder;
@@ -29,7 +30,9 @@ import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import java.net.URI;
 import java.util.HashMap;
@@ -41,6 +44,7 @@ import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EX
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
 import static com.redhat.cloud.notifications.openbridge.BridgeHelper.ORG_ID_FILTER_NAME;
+import static io.quarkus.runtime.LaunchMode.TEST;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
@@ -70,10 +74,32 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
     MeterRegistry registry;
 
     @Inject
-    Bridge bridge;
-
-    @Inject
     BridgeAuth bridgeAuth;
+
+    // TODO There must be a simpler way to deal with this.
+    @Inject
+    Instance<Bridge> bridgeInstance;
+
+    private Bridge bridge;
+
+    @PostConstruct
+    void postConstruct() {
+        bridge = bridgeInstance.get();
+    }
+
+    /**
+     * Resets the bridge instance. Invoking this method is only allowed when
+     * the Quarkus launch mode is {@link io.quarkus.runtime.LaunchMode#TEST TEST}.
+     */
+    public void reset() {
+        if (ProfileManager.getLaunchMode() != TEST) {
+            throw new IllegalStateException("Illegal bridge reset detected");
+        }
+        if (bridge != null) {
+            bridgeInstance.destroy(bridge);
+        }
+        postConstruct();
+    }
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {

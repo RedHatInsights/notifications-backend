@@ -590,7 +590,7 @@ public class EndpointResource {
         // The next lines are specific per integration type and need to
         // be changed accordingly for new types like Splunk or Tower or ...
         Processor.Action action = new Processor.Action(SLACK_ACTION);
-        Map<String, String> props = action.getParameters();
+        Map<String, Object> props = action.getParameters();
         props.put(SLACK_CHANNEL, properties.getExtras().getOrDefault("channel", "#general"));
         props.put(SLACK_WEBHOOK_URL, properties.getUrl());
 

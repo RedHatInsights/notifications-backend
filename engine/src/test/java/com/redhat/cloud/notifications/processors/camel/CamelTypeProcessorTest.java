@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeHelper;
+import com.redhat.cloud.notifications.openbridge.BridgeItemList;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -38,6 +39,7 @@ import org.mockito.ArgumentCaptor;
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +70,7 @@ import static org.mockito.Mockito.verify;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class CamelTypeProcessorTest {
+class CamelTypeProcessorTest {
 
     public static final String SUB_TYPE_KEY = "subType";
     public static final String SUB_TYPE = "sub-type";
@@ -98,6 +100,7 @@ public class CamelTypeProcessorTest {
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
+        processor.reset();
     }
 
     @AfterEach
@@ -172,7 +175,7 @@ public class CamelTypeProcessorTest {
     }
 
     @Test
-    void testOBEndpointProcessing() {
+    void oBEndpointProcessingBadBridge() {
 
         // We need input data for the test.
         Event event = buildEvent();
@@ -182,6 +185,7 @@ public class CamelTypeProcessorTest {
         endpoint.setSubType("slack");
 
         featureFlipper.setObEnabled(true);
+        bridgeHelper.setOurBridgeName(null);
 
         // Let's trigger the processing.
         // First with 'random OB endpoints', so we expect this to fail
@@ -200,25 +204,48 @@ public class CamelTypeProcessorTest {
 
         // Let's have a look at the first result entry fields.
         NotificationHistory historyItem = result.get(0);
+
         assertEquals(event, historyItem.getEvent());
         assertEquals(endpoint, historyItem.getEndpoint());
         assertEquals(CAMEL, historyItem.getEndpointType());
         assertEquals("slack", historyItem.getEndpointSubType());
+        assertNotNull(historyItem.getDetails());
         assertEquals(1, historyItem.getDetails().size());
         Map<String, Object> details = historyItem.getDetails();
         assertTrue(details.containsKey("failure"));
 
-        // Now set up some mock OB endpoints (simulate valid bridge)
+        featureFlipper.setObEnabled(false);
+    }
+
+    @Test
+    void oBEndpointProcessingGoodBridge() {
+
+        featureFlipper.setObEnabled(true);
+
+        // We need input data for the test.
+        Event event = buildEvent();
+        event.setAccountId("rhid123");
+        event.setOrgId(DEFAULT_ORG_ID);
+        Endpoint endpoint = buildCamelEndpoint(event.getAction().getAccountId());
+        endpoint.setSubType("slack");
+
+        // Set up some mock OB endpoints (simulate valid bridge)
         String eventsEndpoint = getMockServerUrl() + "/events";
         System.out.println("==> Setting events endpoint to " + eventsEndpoint);
         Bridge bridge = new Bridge("321", eventsEndpoint, "my bridge");
+        List<Bridge> items = new ArrayList<>();
+        items.add(bridge);
+        BridgeItemList<Bridge> bridgeList = new BridgeItemList<>();
+        bridgeList.setItems(items);
+        bridgeList.setSize(1);
+        bridgeList.setTotal(1);
         Map<String, String> auth = new HashMap<>();
         auth.put("access_token", "li-la-lu-token");
         Map<String, String> obProcessor = new HashMap<>();
         obProcessor.put("id", "p-my-id");
 
-        MockServerConfig.addOpenBridgeEndpoints(auth, bridge);
-        bridgeHelper.setOurBridge("321");
+        MockServerConfig.addOpenBridgeEndpoints(auth, bridgeList);
+        bridgeHelper.setOurBridgeName("my bridge");
 
         System.out.println("==> Auth token " + bridgeHelper.getAuthToken());
         System.out.println("==> The bridge " + bridgeHelper.getBridgeIfNeeded());
@@ -226,17 +253,17 @@ public class CamelTypeProcessorTest {
         // Process again
         reset(notificationHistoryRepository); // TODO Using reset is bad, split this test instead
         processor.process(event, List.of(endpoint));
-        historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+        ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
-        result = historyArgumentCaptor.getAllValues();
+        List<NotificationHistory> result = historyArgumentCaptor.getAllValues();
 
         // One endpoint should have been processed.
         assertEquals(1, result.size());
         // Metrics should report the same thing.
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2, SUB_TYPE_KEY, "slack");
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 1, SUB_TYPE_KEY, "slack");
 
         // Let's have a look at the first result entry fields.
-        historyItem = result.get(0);
+        NotificationHistory historyItem = result.get(0);
         assertEquals(event, historyItem.getEvent());
         assertEquals(endpoint, historyItem.getEndpoint());
         assertEquals(CAMEL, historyItem.getEndpointType());
@@ -253,13 +280,13 @@ public class CamelTypeProcessorTest {
         result = historyArgumentCaptor.getAllValues();
         assertEquals(1, result.size());
         // Metrics should report the same thing.
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 3, SUB_TYPE_KEY, "slack");
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2, SUB_TYPE_KEY, "slack");
 
         // Let's have a look at the first result entry fields.
         historyItem = result.get(0);
         assertEquals(event, historyItem.getEvent());
         assertEquals(1, historyItem.getDetails().size());
-        details = historyItem.getDetails();
+        Map<String, Object> details = historyItem.getDetails();
         assertTrue(details.containsKey("failure"));
 
         assertNotNull(historyItem.getInvocationTime());
