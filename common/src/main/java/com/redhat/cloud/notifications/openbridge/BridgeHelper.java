@@ -108,9 +108,7 @@ public class BridgeHelper {
             return new BridgeAuth("- OB not enabled token -");
         }
 
-        Log.debug("In getAuthToken()");
-
-        BridgeAuth ba = null;
+        BridgeAuth ba;
         try {
             ba = new BridgeAuth(getAuthTokenInternal());
         } catch (Exception e) {

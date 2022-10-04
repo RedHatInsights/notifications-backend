@@ -24,6 +24,7 @@ import javax.persistence.NoResultException;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
+import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy.PRE_PROCESSING;
 
 @ApplicationScoped
@@ -100,12 +101,11 @@ public class EventConsumer {
             }
             /*
              * The payload was successfully parsed. The resulting Action contains a bundle/app/eventType triplet which
-             * is logged.
+             * will be logged.
              */
             bundleName[0] = action.getBundle();
             appName[0] = action.getApplication();
             String eventTypeName = action.getEventType();
-            Log.infof("Processing received action (id=%s): (orgId=%s) %s/%s/%s", action.getId(), action.getOrgId(), bundleName[0], appName[0], eventTypeName);
             /*
              * Step 2
              * The message ID is extracted from the Kafka message headers. It can be null for now to give the onboarded
@@ -113,6 +113,9 @@ public class EventConsumer {
              * mandatory later. If so, we may want to throw an exception when it is null.
              */
             UUID messageId = kafkaMessageDeduplicator.findMessageId(bundleName[0], appName[0], message);
+            String msgId = messageId == null ? "null" : messageId.toString();
+            Log.infof("Processing received action [id=%s, %s=%s, orgId=%s, baet=%s/%s/%s]",
+                    action.getId(), MESSAGE_ID_HEADER, msgId, action.getOrgId(), bundleName[0], appName[0], eventTypeName);
             statelessSessionFactory.withSession(statelessSession -> {
                 /*
                  * Step 3
@@ -154,12 +157,10 @@ public class EventConsumer {
                      */
                     Event event = new Event(eventType, payload, action);
                     if (event.getId() == null) {
-                        // NOTIF-499 If there is no ID provided whatsoever we create one.
                         if (messageId != null) {
                             event.setId(messageId);
                         } else {
-                            Log.infof("NOID: Event with %s/%s/%s did not have an incoming id or messageId ",
-                                    bundleName[0], appName[0], eventTypeName);
+                            // NOTIF-499 If there is no ID provided whatsoever we create one.
                             event.setId(UUID.randomUUID());
                         }
                     }
