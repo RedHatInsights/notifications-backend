@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
@@ -149,6 +150,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         responsePoint.mapTo(Endpoint.class);
         assertNotNull(responsePoint.getString("id"));
         assertEquals(3, responsePoint.getInteger("server_errors"));
+        assertEquals(EndpointStatus.READY.toString(), responsePoint.getString("status"));
 
         // Fetch the list
         response = given()
@@ -168,6 +170,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertTrue(responsePointSingle.getBoolean("enabled"));
+        assertEquals(EndpointStatus.READY.toString(), responsePoint.getString("status"));
 
         // Disable and fetch
         String body =
@@ -572,6 +575,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setDescription("I guess the camel is slacking");
         ep.setEnabled(true);
         ep.setProperties(cAttr);
+        ep.setStatus(EndpointStatus.DELETING); // Trying to set other status
 
         featureFlipper.setObEnabled(true);
 
@@ -616,6 +620,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         responsePoint.mapTo(Endpoint.class);
         String id = responsePoint.getString("id");
         assertNotNull(id);
+        assertEquals(EndpointStatus.PROVISIONING.toString(), responsePoint.getString("status"));
 
         try {
             JsonObject endpoint = fetchSingle(id, identityHeader);

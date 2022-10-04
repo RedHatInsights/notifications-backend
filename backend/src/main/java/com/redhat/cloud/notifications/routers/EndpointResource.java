@@ -210,7 +210,7 @@ public class EndpointResource {
         }
 
         if (isForOpenBridge(endpoint)) {
-
+            endpoint.setStatus(EndpointStatus.UNKNOWN);
             try {
                 String bridgeId = bridge.getId();
                 String token = bridgeAuth.getToken();
@@ -229,6 +229,8 @@ public class EndpointResource {
                 Log.error("Adding a processor failed ", e);
                 throw new InternalServerErrorException();
             }
+        } else {
+            endpoint.setStatus(EndpointStatus.READY);
         }
 
         return endpointRepository.createEndpoint(endpoint);
