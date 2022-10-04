@@ -16,7 +16,7 @@ const actionCreator =  (params: CreateAggregationTemplate) => {
                 id: params.id,
                 application_id: params.applicationId,
                 subject_template_id: params.subjectTemplateId,
-                body_template_id: params.bodyTemplateId,
+                body_template_id: params.bodyTemplateId
             }
         });
     }
@@ -27,7 +27,7 @@ const actionCreator =  (params: CreateAggregationTemplate) => {
             id: params.id,
             application_id: params.applicationId,
             subject_template_id: params.subjectTemplateId,
-            body_template_id: params.bodyTemplateId,
+            body_template_id: params.bodyTemplateId
         }
     });
 };

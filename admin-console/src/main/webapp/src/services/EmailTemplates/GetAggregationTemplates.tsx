@@ -10,8 +10,8 @@ const validateResponse = validationResponseTransformer(
         if (payload.status === 200) {
             const aggregationTemplates: ReadonlyArray<AggregationTemplate> = payload.value.map(value => ({
                 id: value.id ?? '',
-                applicationId: value.application_id,
-                bodyTemplateId: value.body_template_id,
+                applicationId: value.application_id ?? '',
+                bodyTemplateId: value.body_template_id ?? '',
                 subjectTemplateId: value.subject_template_id
             }));
 

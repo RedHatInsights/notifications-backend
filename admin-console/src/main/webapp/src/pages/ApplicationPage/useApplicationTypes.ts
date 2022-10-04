@@ -28,27 +28,30 @@ export const useApplicationTypes = (applicationId: string): ApplicationControlle
 
     useEffect(() => {
         if (applicationTypesQuery.payload?.status === 200) {
-            const application = applicationTypesQuery.payload.value.map<AggregationCardRow>(e => ({
-                ...e,
+            const application = {
+                ...applicationTypesQuery.payload.value,
                 aggregationEmail: {
                     isLoading: true
                 }
-            }));
+            };
 
-            setAggregationRows(application);
+            setAggregationRows(aggregationRows);
 
-            application.forEach(row => {
+            if (application) {
+                let row;
                 query(Operations.TemplateResourceGetAggregationEmailTemplatesByApplication.actionCreator({
-                    appId: row.id
+                    appId: application.id ?? ''
                 }))
                 .then(result => {
                     if (result.payload?.status === 200 || result.payload?.status === 401) {
                         const value: Partial<AggregationTemplate> = result.payload.status === 200 ? {
-                            id: result.payload.value.id ?? undefined,
-                            bodyTemplateId: result.payload.value.body_template_id ?? undefined,
-                            subjectTemplateId: result.payload.value.subject_template_id ?? undefined,
+                            id: result.payload.value ?? undefined,
+                            bodyTemplateId: result.payload.value ?? undefined,
+                            subjectTemplateId: result.payload.value ?? undefined,
+                            applicationId: result.payload.value ?? application.id
+
                         } : {
-                            applicationId: row.id
+                            applicationId: application.id
                         };
                         setAggregationRows(produce(draft => {
                             const originalValue = original(draft);
@@ -64,9 +67,9 @@ export const useApplicationTypes = (applicationId: string): ApplicationControlle
                         }));
                     }
                 });
-            });
+            }
         }
-    }, [query, applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value, aggregationRows]);
+    }, [query, applicationTypesQuery.payload?.status, applicationTypesQuery.payload?.value, aggregationRows, applicationTypesQuery.payload]);
 
     return {
         payload: aggregationRows,
