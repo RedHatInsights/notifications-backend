@@ -187,7 +187,11 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                     }
                 } else {
                     // Redirects etc should have been followed by the vertx (test this)
-                    Log.debugf("Webhook request to %s failed: %d %s %s", url, resp.statusCode(), resp.statusMessage(), payload);
+                    if (isEmailEndpoint) {
+                        Log.warnf("Webhook request to %s failed: %d %s %s", url, resp.statusCode(), resp.statusMessage(), payload);
+                    } else {
+                        Log.debugf("Webhook request to %s failed: %d %s %s", url, resp.statusCode(), resp.statusMessage(), payload);
+                    }
                     history.setInvocationResult(false);
                     // TODO NOTIF-512 Should we disable endpoints in case of 3xx status code?
                     if (featureFlipper.isDisableWebhookEndpointsOnFailure()) {
