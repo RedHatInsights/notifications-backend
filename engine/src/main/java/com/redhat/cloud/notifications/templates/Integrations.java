@@ -11,8 +11,8 @@ import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTAN
 // Name needs to be "Integrations" to read templates from resources/templates/Integrations
 public class Integrations implements EmailTemplate {
 
-    private static final String NO_TITLE_FOUND_MSG = "No email title template found for ConsoleNotifications event_type: %s";
-    private static final String NO_BODY_FOUND_MSG = "No email body template found for ConsoleNotifications event_type: %s";
+    private static final String NO_TITLE_FOUND_MSG = "No email title template found for Integrations event_type: %s";
+    private static final String NO_BODY_FOUND_MSG = "No email body template found for Integrations event_type: %s";
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
