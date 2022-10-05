@@ -50,7 +50,11 @@ public class EndpointReadyChecker {
             "WHERE e.compositeType.type = :type AND e.compositeType.subType IN (:subTypes) " +
             "AND e.status NOT IN (:ready, :failed) ";
 
-    @Scheduled(concurrentExecution = SKIP, every = "${ob.ready-check.period:10s}")
+    /*
+     * This job is disabled by default for now because Smart Events isn't available yet on prod.
+     * TODO Replace "off" with a default period (10s?) when this runs on prod
+     */
+    @Scheduled(concurrentExecution = SKIP, every = "${ob.ready-check.period:off}")
     @Transactional
     public void execute() {
 
