@@ -186,6 +186,8 @@ objects:
           value: ${OB_ENABLED}
         - name: OB_BRIDGE_NAME
           value: ${OB_BRIDGE_NAME}
+        - name: OB_READY_CHECK_PERIOD
+          value: ${OB_READY_CHECK_PERIOD}
         - name: OB_TOKEN_CLIENT_ID
           value: ${OB_TOKEN_CLIENT_ID}
         - name: OB_TOKEN_CLIENT_SECRET
@@ -286,6 +288,9 @@ parameters:
 - name: OB_BRIDGE_NAME
   description: The name of the bridge to use.
   value: "notifications-bridge"
+- name: OB_READY_CHECK_PERIOD
+  description: Period between two executions of the EndpointReadyChecker
+  value: "off"
 - name: OB_TOKEN_CLIENT_ID
   description: Client id to get a token from SSO
   value: ob.token.client.id
