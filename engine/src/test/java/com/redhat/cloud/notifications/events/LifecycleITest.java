@@ -66,6 +66,7 @@ import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_EXCEPTION_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static org.awaitility.Awaitility.await;
@@ -287,6 +288,7 @@ public class LifecycleITest {
         endpoint.setName(name);
         endpoint.setDescription(description);
         endpoint.setProperties(properties);
+        endpoint.setStatus(READY);
         properties.setEndpoint(endpoint);
 
         entityManager.persist(endpoint);
