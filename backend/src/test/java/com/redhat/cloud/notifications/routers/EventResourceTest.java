@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
 import com.redhat.cloud.notifications.routers.models.Page;
@@ -106,11 +107,11 @@ public class EventResourceTest extends DbIsolatedTest {
         Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
         Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EMAIL_SUBSCRIPTION);
         Endpoint endpoint3 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, CAMEL, "SlAcK");
-        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, TRUE);
-        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, FALSE);
-        NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, TRUE);
-        NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, TRUE);
-        NotificationHistory history5 = resourceHelpers.createNotificationHistory(event3, endpoint3, TRUE);
+        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, NotificationStatus.SUCCESS);
+        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, NotificationStatus.FAILED_PROCESSING);
+        NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, NotificationStatus.SUCCESS);
+        NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, NotificationStatus.SUCCESS);
+        NotificationHistory history5 = resourceHelpers.createNotificationHistory(event3, endpoint3, NotificationStatus.SUCCESS);
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint1.getId());
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint2.getId());
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint3.getId());
@@ -585,6 +586,7 @@ public class EventResourceTest extends DbIsolatedTest {
                 assertEquals(historyEntry.get().getEndpointType(), eventLogEntryAction.getEndpointType());
                 assertEquals(historyEntry.get().getEndpointSubType(), eventLogEntryAction.getEndpointSubType());
                 assertEquals(historyEntry.get().isInvocationResult(), eventLogEntryAction.getInvocationResult());
+                assertEquals(historyEntry.get().getStatus(), eventLogEntryAction.getStatus());
             }
         }
     }

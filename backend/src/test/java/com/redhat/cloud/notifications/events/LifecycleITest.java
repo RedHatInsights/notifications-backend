@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
@@ -195,8 +196,8 @@ public class LifecycleITest extends DbIsolatedTest {
 
         // Before the notifications split, a Kafka message was sent here.
         Event event = createEvent(accountId, orgId, eventTypeId);
-        createNotificationHistory(event, endpointId1, true);
-        createNotificationHistory(event, endpointId2, true);
+        createNotificationHistory(event, endpointId1, NotificationStatus.SUCCESS);
+        createNotificationHistory(event, endpointId2, NotificationStatus.SUCCESS);
 
         // Let's check the notifications history.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 1, true, 200));
@@ -213,9 +214,9 @@ public class LifecycleITest extends DbIsolatedTest {
 
         // Before the notifications split, a Kafka message was sent here.
         event = createEvent(accountId, orgId, eventTypeId);
-        createNotificationHistory(event, endpointId1, true);
-        createNotificationHistory(event, endpointId2, true);
-        createNotificationHistory(event, endpointId3, false);
+        createNotificationHistory(event, endpointId1, NotificationStatus.SUCCESS);
+        createNotificationHistory(event, endpointId2, NotificationStatus.SUCCESS);
+        createNotificationHistory(event, endpointId3, NotificationStatus.FAILED_PROCESSING);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 2, true, 200));
@@ -228,10 +229,10 @@ public class LifecycleITest extends DbIsolatedTest {
 
         // Before the notifications split, a Kafka message was sent here.
         event = createEvent(accountId, orgId, eventTypeId);
-        createNotificationHistory(event, endpointId1, true);
-        createNotificationHistory(event, endpointId2, true);
-        createNotificationHistory(event, endpointId3, false);
-        createNotificationHistory(event, emailEndpoint, true);
+        createNotificationHistory(event, endpointId1, NotificationStatus.SUCCESS);
+        createNotificationHistory(event, endpointId2, NotificationStatus.SUCCESS);
+        createNotificationHistory(event, endpointId3, NotificationStatus.FAILED_PROCESSING);
+        createNotificationHistory(event, emailEndpoint, NotificationStatus.SUCCESS);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 3, true, 200));
@@ -247,10 +248,10 @@ public class LifecycleITest extends DbIsolatedTest {
 
         // Before the notifications split, a Kafka message was sent here.
         createEvent(accountId, orgId, eventTypeId);
-        createNotificationHistory(event, endpointId1, true);
-        createNotificationHistory(event, endpointId2, true);
-        createNotificationHistory(event, endpointId3, false);
-        createNotificationHistory(event, emailEndpoint, true);
+        createNotificationHistory(event, endpointId1, NotificationStatus.SUCCESS);
+        createNotificationHistory(event, endpointId2, NotificationStatus.SUCCESS);
+        createNotificationHistory(event, endpointId3, NotificationStatus.FAILED_PROCESSING);
+        createNotificationHistory(event, emailEndpoint, NotificationStatus.SUCCESS);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 4, true, 200));
@@ -445,7 +446,7 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     @Transactional
-    void createNotificationHistory(Event event, String endpointId, boolean invocationResult) {
+    void createNotificationHistory(Event event, String endpointId, NotificationStatus status) {
         Endpoint endpoint = entityManager.createQuery("FROM Endpoint WHERE id = :id", Endpoint.class)
                 .setParameter("id", UUID.fromString(endpointId))
                 .getSingleResult();
@@ -456,8 +457,8 @@ public class LifecycleITest extends DbIsolatedTest {
         history.setEndpoint(endpoint);
         history.setEndpointType(endpoint.getType());
         history.setInvocationTime(123L);
-        history.setInvocationResult(invocationResult);
-        if (!invocationResult) {
+        history.setStatus(status);
+        if (status == NotificationStatus.FAILED_PROCESSING) {
             history.setDetails(Map.of(
                     "code", 400,
                     "url", "https://www.foo.com",
@@ -682,6 +683,9 @@ public class LifecycleITest extends DbIsolatedTest {
             for (int i = 0; i < jsonEndpointHistory.size(); i++) {
                 JsonObject jsonNotificationHistory = jsonEndpointHistory.getJsonObject(i);
                 jsonNotificationHistory.mapTo(NotificationHistory.class);
+                if (expectedInvocationResult != jsonNotificationHistory.getBoolean("invocationResult").booleanValue()) {
+                    System.out.println("InvocationResult:" + jsonNotificationHistory.getBoolean("invocationResult"));
+                }
                 assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
 
                 if (!expectedInvocationResult) {

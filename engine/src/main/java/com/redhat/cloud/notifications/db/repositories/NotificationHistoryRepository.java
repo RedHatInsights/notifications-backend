@@ -10,7 +10,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
-import java.util.Map;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -26,14 +25,15 @@ public class NotificationHistoryRepository {
          * guarantee the endpoint will still exist in the DB at the time when the history is written. If it's gone, then
          * the subquery will return null.
          */
-        String hql = "INSERT INTO notification_history (id, invocation_time, invocation_result, details, event_id, endpoint_type, endpoint_sub_type, created, endpoint_id) " +
-                "VALUES (:id, :invocationTime, :invocationResult, :details, :eventId, :endpointType, :endpointSubType, :created, " +
+        String hql = "INSERT INTO notification_history (id, invocation_time, invocation_result, status, details, event_id, endpoint_type, endpoint_sub_type, created, endpoint_id) " +
+                "VALUES (:id, :invocationTime, :invocationResult, :status, :details, :eventId, :endpointType, :endpointSubType, :created, " +
                 "(SELECT id FROM endpoints WHERE id = :endpointId))";
         history.prePersist();
         statelessSessionFactory.getCurrentSession().createNativeQuery(hql)
                 .setParameter("id", history.getId())
                 .setParameter("invocationTime", history.getInvocationTime())
                 .setParameter("invocationResult", history.isInvocationResult())
+                .setParameter("status", history.getStatus().toString())
                 .setParameter("details", new NotificationHistoryDetailsConverter().convertToDatabaseColumn(history.getDetails()))
                 .setParameter("eventId", history.getEvent().getId())
                 .setParameter("endpointType", new EndpointTypeConverter().convertToDatabaseColumn(history.getEndpointType()))
@@ -51,31 +51,14 @@ public class NotificationHistoryRepository {
      * @see com.redhat.cloud.notifications.events.FromCamelHistoryFiller for the source of data
      */
     @Transactional
-    public boolean updateHistoryItem(Map<String, Object> jo) {
-
-        String historyId = (String) jo.get("historyId");
-
-        if (historyId == null || historyId.isBlank()) {
-            throw new IllegalArgumentException("History Id is null");
-        }
-
-        String outcome = (String) jo.get("outcome");
-        // TODO NOTIF-636 Remove oldResult after the Eventing team is done integrating with the new way to determine the success.
-        boolean oldResult = outcome != null && outcome.startsWith("Success");
-        boolean result = oldResult || jo.containsKey("successful") && ((Boolean) jo.get("successful"));
-        Map details = (Map) jo.get("details");
-        if (!details.containsKey("outcome")) {
-            details.put("outcome", outcome);
-        }
-
-        Integer duration = (Integer) jo.getOrDefault("duration", 0);
-
-        String updateQuery = "UPDATE NotificationHistory SET details = :details, invocationResult = :result, invocationTime= :invocationTime WHERE id = :id";
+    public boolean updateHistoryItem(NotificationHistory notificationHistory) {
+        String updateQuery = "UPDATE NotificationHistory SET details = :details, invocationResult = :result, status = :status, invocationTime = :invocationTime WHERE id = :id";
         int count = statelessSessionFactory.getCurrentSession().createQuery(updateQuery)
-                .setParameter("details", details)
-                .setParameter("result", result)
-                .setParameter("id", UUID.fromString(historyId))
-                .setParameter("invocationTime", (long) duration)
+                .setParameter("details", notificationHistory.getDetails())
+                .setParameter("result", notificationHistory.isInvocationResult())
+                .setParameter("status", notificationHistory.getStatus())
+                .setParameter("id", notificationHistory.getId())
+                .setParameter("invocationTime", notificationHistory.getInvocationTime())
                 .executeUpdate();
 
         if (count == 0) {

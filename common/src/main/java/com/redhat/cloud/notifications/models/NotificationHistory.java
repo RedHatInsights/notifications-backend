@@ -7,6 +7,8 @@ import com.redhat.cloud.notifications.db.converters.NotificationHistoryDetailsCo
 import javax.persistence.Convert;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -29,6 +31,7 @@ public class NotificationHistory extends CreationTimestamped {
             "created", "nh.created",
             "invocation_time", "nh.invocationTime",
             "invocation_result", "nh.invocationResult",
+            "status", "nh.status",
             // NOTIF-674 Delete after the frontend has been updated
             "nh.created", "nh.created",
             "invocationtime", "nh.invocationTime",
@@ -44,7 +47,11 @@ public class NotificationHistory extends CreationTimestamped {
     private Long invocationTime;
 
     @NotNull
+    @Deprecated
     private Boolean invocationResult;
+
+    @Enumerated(EnumType.STRING)
+    private NotificationStatus status;
 
     @NotNull
     @ManyToOne(fetch = LAZY, optional = false)
@@ -75,16 +82,17 @@ public class NotificationHistory extends CreationTimestamped {
     public NotificationHistory() {
     }
 
-    public NotificationHistory(UUID id, Long invocationTime, Boolean invocationResult, Endpoint endpoint, LocalDateTime created) {
+    public NotificationHistory(UUID id, Long invocationTime, NotificationStatus status, Endpoint endpoint, LocalDateTime created) {
         this.id = id;
         this.invocationTime = invocationTime;
-        this.invocationResult = invocationResult;
+        this.status = status;
+        this.invocationResult = invocationResultByStatus(status);
         this.endpoint = endpoint;
         setCreated(created);
     }
 
-    public NotificationHistory(UUID id, Long invocationTime, Boolean invocationResult, Endpoint endpoint, LocalDateTime created, Map<String, Object> details) {
-        this(id, invocationTime, invocationResult, endpoint, created);
+    public NotificationHistory(UUID id, Long invocationTime, NotificationStatus status, Endpoint endpoint, LocalDateTime created, Map<String, Object> details) {
+        this(id, invocationTime, status, endpoint, created);
         this.details = details;
     }
 
@@ -108,8 +116,13 @@ public class NotificationHistory extends CreationTimestamped {
         return invocationResult;
     }
 
-    public void setInvocationResult(Boolean invocationResult) {
-        this.invocationResult = invocationResult;
+    public NotificationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(NotificationStatus status) {
+        this.status = status;
+        this.invocationResult = invocationResultByStatus(status);
     }
 
     public Event getEvent() {
@@ -187,9 +200,13 @@ public class NotificationHistory extends CreationTimestamped {
         history.setEndpointType(endpoint.getType());
         history.setEndpointSubType(endpoint.getSubType());
         history.setEvent(event);
-        history.setInvocationResult(false);
+        history.setStatus(NotificationStatus.FAILED_CREATION);
         history.setId(historyId);
         return history;
+    }
+
+    private Boolean invocationResultByStatus(NotificationStatus status) {
+        return status != null ? status.toInvocationResult() : Boolean.FALSE;
     }
 
 }

@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -171,11 +172,11 @@ public class ResourceHelpers {
         return statsValues;
     }
 
-    public NotificationHistory createNotificationHistory(Event event, Endpoint endpoint, Boolean invocationResult) {
+    public NotificationHistory createNotificationHistory(Event event, Endpoint endpoint, NotificationStatus status) {
         NotificationHistory history = new NotificationHistory();
         history.setId(UUID.randomUUID());
         history.setInvocationTime(1L);
-        history.setInvocationResult(invocationResult);
+        history.setStatus(status);
         history.setEvent(event);
         history.setEndpoint(endpoint);
         history.setEndpointType(endpoint.getType());

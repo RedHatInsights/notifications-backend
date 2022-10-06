@@ -3,6 +3,8 @@ package com.redhat.cloud.notifications.routers.models;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,6 +35,7 @@ public class EventLogEntry {
     private String payload;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     private List<EventLogEntryAction> actions;
 
     public UUID getId() {

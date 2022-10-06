@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.Template;
 import io.vertx.core.json.JsonObject;
 
@@ -157,5 +158,17 @@ public class ResourceHelpers {
         entityManager.createQuery("DELETE FROM Endpoint WHERE id = :id")
                 .setParameter("id", id)
                 .executeUpdate();
+    }
+
+    @Transactional
+    public NotificationHistory getNotificationHistory(UUID id) {
+        return  entityManager.createQuery("FROM NotificationHistory WHERE  id = :id", NotificationHistory.class)
+                .setParameter("id", id)
+                .getSingleResult();
+    }
+
+    @Transactional
+    public void persistEndpoint(Endpoint endpoint) {
+        this.entityManager.persist(endpoint);
     }
 }

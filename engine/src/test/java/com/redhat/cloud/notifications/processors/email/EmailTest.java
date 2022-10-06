@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
@@ -151,6 +152,7 @@ public class EmailTest {
 
             NotificationHistory history = historyEntries.get(0);
             assertTrue(history.isInvocationResult());
+            assertEquals(NotificationStatus.SUCCESS, history.getStatus());
 
             assertEquals(3, bodyRequests.size());
             List<JsonObject> emailRequests = emailRequestIsOK(bodyRequests, usernames);

@@ -68,6 +68,9 @@ public class FromOpenBridgeHistoryFiller {
     @Inject
     RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
 
+    @Inject
+    CamelHistoryFillerHelper camelHistoryFillerHelper;
+
     private Counter messagesWithError;
 
     @CacheName("from-open-bridge-history-filler")
@@ -114,7 +117,7 @@ public class FromOpenBridgeHistoryFiller {
                 Map<String, Object> decodedPayload = decodeItem(pe);
                 // TODO reinjectIf needed (?)
                 try {
-                    notificationHistoryRepository.updateHistoryItem(decodedPayload);
+                    camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
                     messagesWithError.increment();
                 } catch (Exception e) {
                     Log.warn("|  History update failed", e);
