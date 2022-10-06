@@ -181,7 +181,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
             NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
             try {
                 callOpenBridge(payload, historyId, orgId, camelProperties, integrationName, originalEventId);
-                // Todo: We discussed about having PROCESSING here and change it to success after 5 minutes of no errors
+                // Todo: We discussed about having PROCESSING here and change it to success after 5 minutes without any error
                 history.setStatus(NotificationStatus.SUCCESS);
             } catch (Exception e) {
                 e.printStackTrace();

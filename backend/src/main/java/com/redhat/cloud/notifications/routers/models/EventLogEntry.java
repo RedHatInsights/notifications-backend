@@ -34,7 +34,6 @@ public class EventLogEntry {
 
     private String payload;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
     private List<EventLogEntryAction> actions;
 

@@ -683,9 +683,6 @@ public class LifecycleITest extends DbIsolatedTest {
             for (int i = 0; i < jsonEndpointHistory.size(); i++) {
                 JsonObject jsonNotificationHistory = jsonEndpointHistory.getJsonObject(i);
                 jsonNotificationHistory.mapTo(NotificationHistory.class);
-                if (expectedInvocationResult != jsonNotificationHistory.getBoolean("invocationResult").booleanValue()) {
-                    System.out.println("InvocationResult:" + jsonNotificationHistory.getBoolean("invocationResult"));
-                }
                 assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
 
                 if (!expectedInvocationResult) {
