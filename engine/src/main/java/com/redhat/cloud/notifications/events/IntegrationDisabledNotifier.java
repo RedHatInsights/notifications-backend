@@ -43,6 +43,13 @@ public class IntegrationDisabledNotifier {
     }
 
     private void notify(Endpoint endpoint, String errorType, int statusCode, int errorsCount) {
+        Action action = buildIntegrationDisabledAction(endpoint, errorType, statusCode, errorsCount);
+        String encodedAction = Parser.encode(action);
+        Message<String> message = KafkaMessageWithIdBuilder.build(encodedAction);
+        emitter.send(message);
+    }
+
+    public static Action buildIntegrationDisabledAction(Endpoint endpoint, String errorType, int statusCode, int errorsCount) {
         Context.ContextBuilderBase contextBuilder = new Context.ContextBuilder()
                 .withAdditionalProperty(ERROR_TYPE_PROPERTY, errorType)
                 .withAdditionalProperty(ENDPOINT_ID_PROPERTY, endpoint.getId())
@@ -58,7 +65,7 @@ public class IntegrationDisabledNotifier {
                 .withIgnoreUserPreferences(true)
                 .build();
 
-        Action action = new Action.ActionBuilder()
+        return new Action.ActionBuilder()
                 .withId(UUID.randomUUID())
                 .withBundle(CONSOLE_BUNDLE)
                 .withApplication(INTEGRATIONS_APP)
@@ -68,9 +75,5 @@ public class IntegrationDisabledNotifier {
                 .withContext(contextBuilder.build())
                 .withRecipients(List.of(recipients))
                 .build();
-        String encodedAction = Parser.encode(action);
-
-        Message<String> message = KafkaMessageWithIdBuilder.build(encodedAction);
-        emitter.send(message);
     }
 }
