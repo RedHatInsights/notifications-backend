@@ -10,8 +10,9 @@
                 <td class="rh-content__block">
                     <p>
                         Red Hat Insights has identified {action.context.inventory.errors.size()} host{#if action.context.inventory.errors.size() > 1}s{/if} that presented a validation error.
-                        Please review the <a class="rh-url" href="{environment.url}/insights/inventory/">Insights Inventory service</a> to further assess and determine next steps.
+                        For errors in updating hosts, please review the <a class="rh-url" href="{environment.url}/insights/inventory/">Insights Inventory service</a> to further assess and determine next steps.
                     </p>
+                    <p>If no hosts were created by {#if action.context.inventory.errors.size() > 1}these changes, these errors{#else}this change, this error{/if} will not appear in the service.</p>
                 </td>
             </tr>
             <!-- end content block -->
@@ -37,9 +38,7 @@
                     {#for key in action.context.inventory.errors.keySet()}
                     {#if key_count < 11}
                     <tr>
-                        <td>
-                            <a href="{environment.url}/insights/inventory/{action.context.inventory.errors.get(key)}" target="_blank">{action.context.inventory.errors.get(key)}</a>
-                        </td>
+                        <td>{action.context.inventory.errors.get(key)}</td>
                         <td>{key}</td>
                     </tr>
                     {/if}
