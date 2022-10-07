@@ -33,6 +33,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
+
 @ApplicationScoped
 public class EndpointRepository {
     @Inject
@@ -142,6 +144,7 @@ public class EndpointRepository {
         endpoint.setDescription("System email endpoint");
         endpoint.setName("Email endpoint");
         endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        endpoint.setStatus(READY);
 
         return createEndpoint(endpoint);
     }

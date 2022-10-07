@@ -23,6 +23,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -66,6 +67,7 @@ public class EndpointRepository {
         endpoint.setDescription("System email endpoint");
         endpoint.setName("Email endpoint");
         endpoint.setType(EMAIL_SUBSCRIPTION);
+        endpoint.setStatus(READY);
         endpoint.prePersist();
         properties.setEndpoint(endpoint);
 
