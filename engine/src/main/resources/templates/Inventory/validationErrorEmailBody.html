@@ -6,13 +6,13 @@
         <table class="rh-data-table rh-m-bordered">
             <thead>
             <tr>
-                <th>Request ID</th>
+                <th>Host Name</th>
                 <th>Error</th>
             </tr>
             </thead>
             <tbody>
             <tr>
-                <td>{action.events[0].payload.request_id}</td>
+                <td>{#if action.events[0].payload.display_name}{action.events[0].payload.display_name}{#else}Not available{/if}</td>
                 <td>{action.events[0].payload.error.message}</td>
             </tr>
             </tbody>
@@ -34,6 +34,16 @@
         </table>
     </td>
 </tr>
-<p>If no hosts were created by this change, the error will not appear in the service.</p>
+<tr>
+    <td class="rh-content__block">
+        <table align="center">
+            <tr>
+                <td>
+                    <p>If no hosts were created by this change, the error will not appear in the service.</p>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
 {/content-body}
 {/include}
