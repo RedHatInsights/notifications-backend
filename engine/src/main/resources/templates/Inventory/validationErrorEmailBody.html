@@ -12,9 +12,7 @@
             </thead>
             <tbody>
             <tr>
-                <td>
-                    <a href="{environment.url}/insights/inventory/{action.events[0].payload.request_id}" target="_blank">{action.events[0].payload.request_id}</a>
-                </td>
+                <td>{action.events[0].payload.request_id}</td>
                 <td>{action.events[0].payload.error.message}</td>
             </tr>
             </tbody>
@@ -36,5 +34,6 @@
         </table>
     </td>
 </tr>
+<p>If no hosts were created by this change, the error will not appear in the service.</p>
 {/content-body}
 {/include}
