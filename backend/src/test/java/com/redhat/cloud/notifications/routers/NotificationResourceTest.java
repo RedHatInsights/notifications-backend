@@ -51,6 +51,7 @@ import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_EVENT_TYPE_
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -562,7 +563,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         // Updating a behavior of other tenant yields false
         UpdateBehaviorGroupRequest behaviorGroupRequest = new UpdateBehaviorGroupRequest();
         behaviorGroupRequest.displayName = "My behavior group 1.0";
-        updateBehaviorGroup(identityHeader, behaviorGroupIdOtherTenant, behaviorGroupRequest, 404);
+        assertFalse(updateBehaviorGroup(identityHeader, behaviorGroupIdOtherTenant, behaviorGroupRequest));
         BehaviorGroup behaviorGroup = helpers.getBehaviorGroup(behaviorGroupIdOtherTenant);
         assertEquals("My behavior", behaviorGroup.getDisplayName()); // No change
 
@@ -955,16 +956,16 @@ public class NotificationResourceTest extends DbIsolatedTest {
             // Cannot update Behavior Group 1 name to "BehaviorGroup2"  as it already exists
             UpdateBehaviorGroupRequest updateBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
             updateBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_2_NAME;
-            updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 400);
+            assertFalse(updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest));
 
             // Can update other properties without changing the name
             updateBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_1_NAME;
             updateBehaviorGroupRequest.eventTypeIds = Set.of();
-            updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 200);
+            assertTrue(updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest));
 
             // Can use other name
             updateBehaviorGroupRequest.displayName = "OtherName";
-            updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 200);
+            assertTrue(updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest));
 
         } finally {
             featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
@@ -992,8 +993,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
         return createBehaviorGroup(identityHeader, request, 200).get();
     }
 
-    private Optional<Boolean> updateBehaviorGroup(Header identityHeader, UUID behaviorGroupId, UpdateBehaviorGroupRequest request, int expectedStatusCode) {
-        ValidatableResponse validatableResponse = given()
+    private Boolean updateBehaviorGroup(Header identityHeader, UUID behaviorGroupId, UpdateBehaviorGroupRequest request) {
+        return given()
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
@@ -1001,17 +1002,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .pathParam("behaviorGroupId", behaviorGroupId)
                 .put("/notifications/behaviorGroups/{behaviorGroupId}")
                 .then()
-                .statusCode(expectedStatusCode);
-
-        if (expectedStatusCode == 200) {
-            return Optional.of(validatableResponse.extract().as(Boolean.class));
-        }
-
-        return Optional.empty();
-    }
-
-    private Boolean updateBehaviorGroup(Header identityHeader, UUID behaviorGroupId, UpdateBehaviorGroupRequest request) {
-        return updateBehaviorGroup(identityHeader, behaviorGroupId, request, 200).get();
+                .statusCode(200)
+                .extract().as(Boolean.class);
     }
 
     private List<UUID> getEndpointsIds(String orgId, UUID behaviorGroupId) {

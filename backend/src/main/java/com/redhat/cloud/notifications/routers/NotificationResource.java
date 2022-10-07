@@ -275,14 +275,21 @@ public class NotificationResource {
         String orgId = getOrgId(sec);
 
         if (request.displayName != null) {
-            BehaviorGroup behaviorGroup = behaviorGroupRepository.get(id);
-            if (behaviorGroup == null || !Objects.equals(behaviorGroup.getOrgId(), orgId)) {
-                throw new NotFoundException("Behavior group not found");
+            UUID bundleId = behaviorGroupRepository.getBundleId(id);
+            BehaviorGroup behaviorGroup = new BehaviorGroup();
+            behaviorGroup.setId(id);
+            behaviorGroup.setDisplayName(request.displayName);
+            behaviorGroup.setBundleId(bundleId);
+
+            boolean didUpdate;
+            try {
+                didUpdate = behaviorGroupRepository.update(orgId, behaviorGroup);
+            } catch (BadRequestException badRequestException) {
+                // The duplicate name in bundle id validation failed - keep the responses consistent by returning false.
+                didUpdate = false;
             }
 
-            behaviorGroup.setDisplayName(request.displayName);
-
-            if (!behaviorGroupRepository.update(orgId, behaviorGroup)) {
+            if (!didUpdate) {
                 return Response.status(200).type(APPLICATION_JSON).entity(false).build();
             }
         }

@@ -63,8 +63,14 @@ public class BehaviorGroupRepository {
         return this.create(null, null, behaviorGroup, true);
     }
 
-    public BehaviorGroup get(UUID behaviorGroupId) {
-        return entityManager.find(BehaviorGroup.class, behaviorGroupId);
+    public UUID getBundleId(UUID behaviorGroupId) {
+        try {
+            return entityManager.createQuery("SELECT bundle.id FROM BehaviorGroup WHERE id = :id", UUID.class)
+                    .setParameter("id", behaviorGroupId)
+                    .getSingleResult();
+        } catch (NoResultException nre) {
+            throw new NotFoundException("Behavior group not found", nre);
+        }
     }
 
     @Transactional
