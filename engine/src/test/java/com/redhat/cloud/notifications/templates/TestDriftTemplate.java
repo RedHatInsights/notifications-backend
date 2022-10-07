@@ -44,6 +44,7 @@ public class TestDriftTemplate {
         String result = Drift.Templates.newBaselineDriftInstantEmailBody()
                 .data("action", action)
                 .data("environment", environment)
+                .data("user", Map.of("firstName", "Drift User", "lastName", "RHEL"))
                 .render();
         assertTrue(result.contains("baseline_01"));
         assertTrue(result.contains("Machine 1"));
@@ -84,6 +85,7 @@ public class TestDriftTemplate {
         String result = Drift.Templates.dailyEmailBody()
                 .data("action", Map.of("context", drift))
                 .data("environment", environment)
+                .data("user", Map.of("firstName", "Drift User", "lastName", "RHEL"))
                 .render();
         //writeEmailTemplate(result, "driftEmailOneOne.html");
         assertTrue(result.contains("baseline_01"));
@@ -105,6 +107,7 @@ public class TestDriftTemplate {
         String result = Drift.Templates.dailyEmailBody()
                 .data("action", Map.of("context", drift))
                 .data("environment", environment)
+                .data("user", Map.of("firstName", "Drift User", "lastName", "RHEL"))
                 .render();
         //writeEmailTemplate(result, "drfitEmailMultOne.html");
         assertTrue(result.contains("baseline_01"));
@@ -128,6 +131,7 @@ public class TestDriftTemplate {
         String result = Drift.Templates.dailyEmailBody()
                 .data("action", Map.of("context", drift))
                 .data("environment", environment)
+                .data("user", Map.of("firstName", "Drift User", "lastName", "RHEL"))
                 .render();
         //writeEmailTemplate(result, "driftEmailOneMult.html");
         assertTrue(result.contains("baseline_01"));
@@ -151,6 +155,7 @@ public class TestDriftTemplate {
         String result = Drift.Templates.dailyEmailBody()
                 .data("action", Map.of("context", drift))
                 .data("environment", environment)
+                .data("user", Map.of("firstName", "Drift User", "lastName", "RHEL"))
                 .render();
         //writeEmailTemplate(result, "driftEmailMultMult.html");
         assertTrue(result.contains("baseline_01"));
