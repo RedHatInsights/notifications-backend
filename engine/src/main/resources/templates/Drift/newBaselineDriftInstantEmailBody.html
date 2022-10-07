@@ -32,10 +32,7 @@
             <tr>
                 <td class="rh-content__block">
                     <p>
-                        <!-- Hi {{user.first_name}},
-                        <br>
-                        <br> -->
-                        Hi,
+                        Hi {user.firstName},
                         <br>
                         <br>
                         Your system <a class="rh-url" href="{environment.url}/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a> has drifted from {action.events.size()} baseline{#if action.events.size() > 1}s{/if}
