@@ -36,7 +36,7 @@ public class TestInventoryTemplate {
                 .data("environment", environment)
                 .render();
 
-        assertTrue(result.contains(InventoryTestHelpers.requestId1), "Body should contain host display name" + InventoryTestHelpers.requestId1);
+        assertTrue(result.contains(InventoryTestHelpers.displayName1), "Body should contain host display name" + InventoryTestHelpers.displayName1);
         assertTrue(result.contains(InventoryTestHelpers.errorMessage1), "Body should contain error message" + InventoryTestHelpers.errorMessage1);
 
         // Event name
