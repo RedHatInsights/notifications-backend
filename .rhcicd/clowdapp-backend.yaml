@@ -189,9 +189,15 @@ objects:
         - name: OB_READY_CHECK_PERIOD
           value: ${OB_READY_CHECK_PERIOD}
         - name: OB_TOKEN_CLIENT_ID
-          value: ${OB_TOKEN_CLIENT_ID}
+          valueFrom:
+            secretKeyRef:
+              name: rhose
+              key: token_client_id
         - name: OB_TOKEN_CLIENT_SECRET
-          value: ${OB_TOKEN_CLIENT_SECRET}
+          valueFrom:
+            secretKeyRef:
+              name: rhose
+              key: token_client_secret
         - name: QUARKUS_REST_CLIENT_OB_URL
           value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
@@ -291,12 +297,6 @@ parameters:
 - name: OB_READY_CHECK_PERIOD
   description: Period between two executions of the EndpointReadyChecker
   value: "off"
-- name: OB_TOKEN_CLIENT_ID
-  description: Client id to get a token from SSO
-  value: ob.token.client.id
-- name: OB_TOKEN_CLIENT_SECRET
-  description: Client Secret to get a Token from SSO
-  value: ob.token.client.secret
 - name: QUARKUS_REST_CLIENT_OB_URL
   description: URL of the OpenBridge fleet manager
   value: "http://addMe"
