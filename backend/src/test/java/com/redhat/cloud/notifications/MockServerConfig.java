@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeItemList;
+import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;
 import org.mockserver.model.ClearType;
 import org.mockserver.model.HttpRequest;
@@ -139,6 +140,20 @@ public class MockServerConfig {
                         .withHeader("Content-Type", "application/json")
                         .withBody(processorString));
 
+    }
+
+    public static void mockBadRequestStatusWithBody() {
+        JsonObject body = new JsonObject();
+        body.put("cause", "something went wrong");
+        body.put("solution", "abort mission");
+        getClient()
+                .when(request()
+                        .withPath("/api/smartevents_mgmt/v1/bridges/.*/errors")
+                        .withMethod("GET")
+                )
+                .respond(response()
+                        .withStatusCode(400)
+                        .withBody(body.encode()));
     }
 
     public static void clearOpenBridgeEndpoints(Bridge bridge) {
