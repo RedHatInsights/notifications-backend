@@ -1,9 +1,14 @@
 import {
     ActionGroup,
     Button,
+    HelperText,
+    HelperTextItem,
     PageSection,
+    Spinner,
     Split,
     SplitItem,
+    Stack,
+    StackItem,
     Title
 } from '@patternfly/react-core';
 import * as React from 'react';
@@ -14,6 +19,7 @@ import { Template } from '../types/Notifications';
 import { useGetTemplate } from '../services/EmailTemplates/GetTemplate';
 import { EmailTemplateForm } from '../components/EmailTemplates/EmailTemplateForm';
 import { useEffect } from 'react';
+import { useRenderEmailRequest } from '../services/RenderEmailRequest';
 
 const defaultContentTemplate = `
 Important email to {user.firstName} from MyCoolApp!
@@ -39,6 +45,46 @@ Important email to {user.firstName} from MyCoolApp!
 {/if}
 `.trimLeft();
 
+type RenderedTemplateProps = {
+    isLoading: true;
+} | {
+   isLoading: false;
+   succeeded: true;
+   subject: string;
+   body: string;
+} | {
+    isLoading: false;
+    succeeded: false;
+    error: string;
+};
+
+const RenderedTemplate: React.FunctionComponent<RenderedTemplateProps> = props => {
+    if (props.isLoading) {
+        return <Spinner />;
+    }
+
+    if (props.succeeded) {
+        return (
+            <>
+                <StackItem>
+                    <strong>Content:</strong>
+                </StackItem>
+                <StackItem>
+                    <iframe width="100%" srcDoc={ props.body } />
+                </StackItem>
+            </>
+        );
+    }
+
+    return (
+        <StackItem>
+            <HelperText>
+                <HelperTextItem variant="error">{ props.error }</HelperTextItem>
+            </HelperText>
+        </StackItem>
+    );
+};
+
 type EmailPageParams = {
     templateId: string;
 }
@@ -52,6 +98,7 @@ const isNewTemplate = (partialTemplate: Partial<Template>): partialTemplate is N
 export const EmailTemplatePage: React.FunctionComponent = () => {
     const { isAdmin } = useUserPermissions();
     const { templateId } = useParams<EmailPageParams>();
+    const emailTemplate = useRenderEmailRequest();
 
     const originalTemplate = useGetTemplate(templateId);
 
@@ -63,6 +110,17 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
     const [ template, setTemplate ] = React.useState<Partial<Template>>({
         data: defaultContentTemplate
     });
+
+    React.useEffect(() => {
+        const mutate = emailTemplate.mutate;
+        mutate({
+            subject: template.name ?? '',
+            body: template.data ?? '',
+            payload: template.data ?? ''
+        });
+        // We only want to activate this once
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ ]);
 
     const updateTemplate = (updateTemplate: Partial<Template>) => {
         setTemplate(prev => ({
@@ -96,6 +154,42 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
         }
     }, [templateId, originalTemplate.loading, originalTemplate.payload]);
 
+    const onRender = React.useCallback(() => {
+        const mutate = emailTemplate.mutate;
+        mutate({
+            subject: template.name ?? '' ,
+            body: template.data ?? '',
+            payload: template.data ?? ''
+        });
+    }, [emailTemplate.mutate, template.data, template.name]);
+
+    let renderedProps: RenderedTemplateProps;
+
+    if (emailTemplate.loading) {
+        renderedProps = {
+            isLoading: true
+        };
+    } else if (emailTemplate.payload?.status === 200) {
+        renderedProps = {
+            isLoading: false,
+            succeeded: true,
+            subject: emailTemplate.payload.value.subject ?? '',
+            body: emailTemplate.payload.value.body ?? ''
+        };
+    } else if (emailTemplate.payload?.status === 400) {
+        renderedProps = {
+            isLoading: false,
+            succeeded: false,
+            error: emailTemplate.payload.value.message ?? 'Unknown error'
+        };
+    } else {
+        renderedProps = {
+            isLoading: false,
+            succeeded: false,
+            error: 'Unknown error'
+        };
+    }
+
     return (
         <>{ isAdmin &&
             <><PageSection>
@@ -103,8 +197,20 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                     <SplitItem isFilled>
                         <Title headingLevel="h1">{ templateId ? 'Update' : 'Create'} an Email Template</Title>
                     </SplitItem>
+                    <SplitItem>
+                        <Button onClick={ onRender }>Render</Button>
+                    </SplitItem>
                 </Split>
-            </PageSection><PageSection>
+            </PageSection>
+            <PageSection>
+                <Stack>
+                    <StackItem>
+                        <Title headingLevel="h2">Result</Title>
+                    </StackItem>
+                    <RenderedTemplate { ...renderedProps }  />
+                </Stack>
+            </PageSection>
+            <PageSection>
                 <EmailTemplateForm
                     isLoading={ originalTemplate.loading }
                     template={template}
