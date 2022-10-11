@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.openbridge;
 
+import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import javax.ws.rs.Consumes;
@@ -15,6 +16,7 @@ import java.util.Map;
  */
 @RegisterRestClient(configKey = "kc")
 @Path("/auth/realms/redhat-external/protocol/openid-connect/token")
+@RegisterProvider(RhoseResponseExceptionMapper.class)
 public interface BridgeAuthService {
 
     @POST

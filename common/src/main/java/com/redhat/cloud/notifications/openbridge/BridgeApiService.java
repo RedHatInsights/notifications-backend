@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.openbridge;
 
+import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import javax.ws.rs.Consumes;
@@ -21,6 +22,7 @@ import java.util.Map;
 @Path("/api/smartevents_mgmt/v1/bridges")
 @Produces(MediaType.APPLICATION_JSON)
 @RegisterRestClient(configKey = "ob")
+@RegisterProvider(RhoseResponseExceptionMapper.class)
 public interface BridgeApiService {
 
     @GET
