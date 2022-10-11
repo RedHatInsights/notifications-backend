@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Arrays;
@@ -24,7 +25,7 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
     public InventoryEmailAggregator() {
         JsonObject inventory = new JsonObject();
 
-        inventory.put(ERRORS, new JsonObject());
+        inventory.put(ERRORS, new JsonArray());
 
         context.put(INVENTORY_KEY, inventory);
     }
@@ -42,11 +43,16 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
         notificationJson.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
             JsonObject event = (JsonObject) eventObject;
             JsonObject payload = event.getJsonObject(PAYLOAD_KEY);
-            JsonObject error = payload.getJsonObject(ERROR_KEY);
-            String errorMessage = error.getString(MESSAGE_KEY);
+            JsonObject receivedErrorObject = payload.getJsonObject(ERROR_KEY);
+            String errorMessage = receivedErrorObject.getString(MESSAGE_KEY);
             String displayName = payload.getString(DISPLAY_NAME_KEY);
 
-            inventory.getJsonObject(ERRORS).put(errorMessage, displayName);
+            JsonObject error = new JsonObject();
+
+            error.put("message", errorMessage);
+            error.put("display_name", displayName);
+
+            inventory.getJsonArray(ERRORS).add(error);
         });
     }
 }
