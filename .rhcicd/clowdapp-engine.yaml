@@ -179,9 +179,15 @@ objects:
         - name: OB_BRIDGE_NAME
           value: ${OB_BRIDGE_NAME}
         - name: OB_TOKEN_CLIENT_ID
-          value: ${OB_TOKEN_CLIENT_ID}
+          valueFrom:
+            secretKeyRef:
+              name: rhose
+              key: token_client_id
         - name: OB_TOKEN_CLIENT_SECRET
-          value: ${OB_TOKEN_CLIENT_SECRET}
+          valueFrom:
+            secretKeyRef:
+              name: rhose
+              key: token_client_secret
         - name: QUARKUS_REST_CLIENT_OB_URL
           value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
@@ -257,12 +263,6 @@ parameters:
 - name: OB_BRIDGE_NAME
   description: The name of the bridge to use.
   value: "notifications-bridge"
-- name: OB_TOKEN_CLIENT_ID
-  description: Client id to get a token from SSO
-  value: ob.token.client.id
-- name: OB_TOKEN_CLIENT_SECRET
-  description: Client Secret to get a Token from SSO
-  value: ob.token.client.secret
 - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
   description: Period between two batch executions. Defaults to 5s.
   value: 5s
