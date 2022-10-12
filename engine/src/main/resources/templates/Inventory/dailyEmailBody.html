@@ -28,14 +28,14 @@
             <tr>
             <td class="rh-content__block">
                 <table width:="" 100%;="" class="rh-data-table rh-m-bordered">
-                <thead>              
+                <thead>
                     <tr>
                         <th>Host Name</th>
                         <th>Error</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {#each action.context.inventory.errors.take(10)}
+                    {#each action.context.inventory.errors.take(action.context.inventory.errors.size() > 10 ? 10 : action.context.inventory.errors.size())}
                     <tr>
                         <td>{#if it.display_name}{it.display_name}{#else}Not available{/if}</td>
                         <td>{it.message}</td>
