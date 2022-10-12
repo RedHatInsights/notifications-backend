@@ -229,16 +229,16 @@ public class ResourceHelpers {
         return behaviorGroupRepository.findBehaviorGroupsByEndpointId(DEFAULT_ORG_ID, endpointId);
     }
 
-    public Boolean updateBehaviorGroup(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.update(DEFAULT_ORG_ID, behaviorGroup);
+    public void updateBehaviorGroup(BehaviorGroup behaviorGroup) {
+        behaviorGroupRepository.update(DEFAULT_ORG_ID, behaviorGroup);
     }
 
     public Boolean deleteBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupRepository.delete(DEFAULT_ORG_ID, behaviorGroupId);
     }
 
-    public Boolean updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.updateDefault(behaviorGroup);
+    public void updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
+        behaviorGroupRepository.updateDefault(behaviorGroup);
     }
 
     public Boolean deleteDefaultBehaviorGroup(UUID behaviorGroupId) {

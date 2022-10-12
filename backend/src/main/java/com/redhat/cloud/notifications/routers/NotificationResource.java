@@ -281,17 +281,7 @@ public class NotificationResource {
             behaviorGroup.setDisplayName(request.displayName);
             behaviorGroup.setBundleId(bundleId);
 
-            boolean didUpdate;
-            try {
-                didUpdate = behaviorGroupRepository.update(orgId, behaviorGroup);
-            } catch (BadRequestException badRequestException) {
-                // The duplicate name in bundle id validation failed - keep the responses consistent by returning false.
-                didUpdate = false;
-            }
-
-            if (!didUpdate) {
-                return Response.status(200).type(APPLICATION_JSON).entity(false).build();
-            }
+            behaviorGroupRepository.update(orgId, behaviorGroup);
         }
 
         if (request.endpointIds != null) {

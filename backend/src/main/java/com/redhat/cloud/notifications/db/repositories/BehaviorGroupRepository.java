@@ -137,16 +137,16 @@ public class BehaviorGroupRepository {
         return behaviorGroups;
     }
 
-    public boolean update(String orgId, BehaviorGroup behaviorGroup) {
-        return this.update(orgId, behaviorGroup, false);
+    public void update(String orgId, BehaviorGroup behaviorGroup) {
+        this.update(orgId, behaviorGroup, false);
     }
 
-    public boolean updateDefault(BehaviorGroup behaviorGroup) {
-        return this.update(null, behaviorGroup, true);
+    public void updateDefault(BehaviorGroup behaviorGroup) {
+        this.update(null, behaviorGroup, true);
     }
 
     @Transactional
-    boolean update(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehavior) {
+    void update(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehavior) {
         checkBehaviorGroupDisplayNameDuplicate(orgId, behaviorGroup, isDefaultBehavior);
 
         checkBehaviorGroup(behaviorGroup.getId(), isDefaultBehavior);
@@ -166,7 +166,9 @@ public class BehaviorGroupRepository {
             q = q.setParameter("orgId", orgId);
         }
 
-        return q.executeUpdate() > 0;
+        if (q.executeUpdate() == 0) {
+            throw new BadRequestException("Behavior group not updated - probably the behavior group was not part of the orgId");
+        }
     }
 
     private void checkBehaviorGroupDisplayNameDuplicate(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {

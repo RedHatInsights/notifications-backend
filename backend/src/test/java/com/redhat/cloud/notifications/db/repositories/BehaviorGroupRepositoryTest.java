@@ -35,6 +35,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -189,7 +190,7 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         assertNotNull(bundle.getCreated());
 
         // Update behavior group.
-        assertTrue(updateBehaviorGroup(behaviorGroup.getId(), newDisplayName));
+        assertDoesNotThrow(() -> updateBehaviorGroup(behaviorGroup.getId(), newDisplayName));
         entityManager.clear(); // We need to clear the session L1 cache before checking the update result.
 
         behaviorGroups = behaviorGroupRepository.findByBundleId(DEFAULT_ORG_ID, bundle.getId());
@@ -222,7 +223,7 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         assertNotNull(bundle.getCreated());
 
         // Update behavior group.
-        assertTrue(updateDefaultBehaviorGroup(behaviorGroup.getId(), newDisplayName));
+        assertDoesNotThrow(() -> updateDefaultBehaviorGroup(behaviorGroup.getId(), newDisplayName));
         entityManager.clear(); // We need to clear the session L1 cache before checking the update result.
 
         behaviorGroups = behaviorGroupRepository.findByBundleId(DEFAULT_ORG_ID, bundle.getId());
@@ -445,20 +446,20 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         assertTrue(Pattern.compile("property path: [a-zA-Z0-9.]+displayName").matcher(e.getMessage()).find());
     }
 
-    private Boolean updateBehaviorGroup(UUID behaviorGroupId, String displayName) {
+    private void updateBehaviorGroup(UUID behaviorGroupId, String displayName) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setId(behaviorGroupId);
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(UUID.randomUUID()); // This should not have any effect, the bundle is not updatable.
-        return resourceHelpers.updateBehaviorGroup(behaviorGroup);
+        resourceHelpers.updateBehaviorGroup(behaviorGroup);
     }
 
-    private Boolean updateDefaultBehaviorGroup(UUID behaviorGroupId, String displayName) {
+    private void updateDefaultBehaviorGroup(UUID behaviorGroupId, String displayName) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setId(behaviorGroupId);
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(UUID.randomUUID()); // This should not have any effect, the bundle is not updatable.
-        return resourceHelpers.updateDefaultBehaviorGroup(behaviorGroup);
+        resourceHelpers.updateDefaultBehaviorGroup(behaviorGroup);
     }
 
     @Transactional
