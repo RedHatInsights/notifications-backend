@@ -1,9 +1,12 @@
 package com.redhat.cloud.notifications.models;
 
+import javax.validation.constraints.NotBlank;
 import java.util.Objects;
 
 public class BasicAuthentication {
+    @NotBlank
     private String username;
+    @NotBlank
     private String password;
 
     public BasicAuthentication() { }
