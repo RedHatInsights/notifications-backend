@@ -17,6 +17,6 @@ public enum NotificationStatus {
     SUCCESS;
 
     public Boolean toInvocationResult() {
-        return this == SUCCESS || this === SENT;
+        return this == SUCCESS || this == SENT;
     }
 }
