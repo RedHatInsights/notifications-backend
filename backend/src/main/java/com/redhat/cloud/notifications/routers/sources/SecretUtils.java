@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -69,6 +70,7 @@ public class SecretUtils {
                 secret.username = basicAuth.getUsername();
 
                 final Secret createdSecret = this.sourcesService.create(secret);
+                Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources", endpoint.getId(), secret.id);
 
                 props.setBasicAuthenticationSourcesId(createdSecret.id);
             }
@@ -81,6 +83,7 @@ public class SecretUtils {
                 secret.password = secretToken;
 
                 final Secret createdSecret = this.sourcesService.create(secret);
+                Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources", endpoint.getId(), secret.id);
 
                 props.setSecretTokenSourcesId(createdSecret.id);
             }
@@ -137,11 +140,13 @@ public class SecretUtils {
             final long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId > 0) {
                 this.sourcesService.delete(basicAuthId);
+                Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources", endpoint.getId(), basicAuthId);
             }
 
             final long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId > 0) {
                 this.sourcesService.delete(secretTokenId);
+                Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources", endpoint.getId(), secretTokenId);
             }
         }
     }
