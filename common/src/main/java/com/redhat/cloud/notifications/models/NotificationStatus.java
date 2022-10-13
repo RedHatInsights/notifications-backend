@@ -11,10 +11,12 @@ public enum NotificationStatus {
     PROCESSING_TIMEOUT,
     // the notification failed to be processed
     FAILED_PROCESSING,
+    // The notification was sent to the processor - but we have no way to tell if it was processed succesfully or if it has failed (yet)
+    SENT,
     // the notification processed successfully - either locally or by a different processor
     SUCCESS;
 
     public Boolean toInvocationResult() {
-        return this == SUCCESS;
+        return this == SUCCESS || this === SENT;
     }
 }
