@@ -3,11 +3,7 @@
 ALTER TABLE
     endpoint_webhooks
 ADD COLUMN
-    basic_authentication_id BIGINT
-;
-
-ALTER TABLE
-    endpoint_webhooks
+    basic_authentication_id BIGINT,
 ADD COLUMN
     secret_token_id BIGINT
 ;
@@ -15,11 +11,7 @@ ADD COLUMN
 ALTER TABLE
     camel_properties
 ADD COLUMN
-    basic_authentication_id BIGINT
-;
-
-ALTER TABLE
-    camel_properties
+    basic_authentication_id BIGINT,
 ADD COLUMN
     secret_token_id BIGINT
 ;
