@@ -18,7 +18,7 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @Entity
 @Table(name = "endpoint_webhooks")
 @JsonNaming(SnakeCaseStrategy.class)
-public class WebhookProperties extends EndpointProperties {
+public class WebhookProperties extends EndpointProperties implements SourcesSecretable {
     @NotNull
     private String url;
 

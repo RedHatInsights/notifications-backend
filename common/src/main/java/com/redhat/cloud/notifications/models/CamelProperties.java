@@ -17,7 +17,7 @@ import java.util.Map;
 @Entity
 @Table(name = "camel_properties")
 @JsonNaming(SnakeCaseStrategy.class)
-public class CamelProperties extends EndpointProperties {
+public class CamelProperties extends EndpointProperties implements SourcesSecretable {
 
     @NotNull
     private String url;
