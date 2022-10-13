@@ -1,10 +1,12 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.BasicAuthenticationConverter;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 
+import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -26,8 +28,22 @@ public class CamelProperties extends EndpointProperties {
     @Size(max = 255)
     private String secretToken; // TODO Should be optional
 
+    /**
+     * The ID of the "secret token" secret in the Sources backend.
+     */
+    @Column(name = "secret_token_id")
+    @JsonIgnore
+    private long secretTokenSourcesId;
+
     @Convert(converter = BasicAuthenticationConverter.class)
     private BasicAuthentication basicAuthentication;
+
+    /**
+     * The ID of the "basic authentication" secret in the Sources backend.
+     */
+    @Column(name = "basic_authentication_id")
+    @JsonIgnore
+    private long basicAuthenticationSourcesId;
 
     @Convert(converter = MapConverter.class)
     private Map<String, String> extras;
@@ -56,12 +72,28 @@ public class CamelProperties extends EndpointProperties {
         return secretToken;
     }
 
+    public long getSecretTokenSourcesId() {
+        return secretTokenSourcesId;
+    }
+
+    public void setSecretTokenSourcesId(long secretTokenSourcesId) {
+        this.secretTokenSourcesId = secretTokenSourcesId;
+    }
+
     public BasicAuthentication getBasicAuthentication() {
         return basicAuthentication;
     }
 
     public void setBasicAuthentication(BasicAuthentication basicAuthentication) {
         this.basicAuthentication = basicAuthentication;
+    }
+
+    public long getBasicAuthenticationSourcesId() {
+        return basicAuthenticationSourcesId;
+    }
+
+    public void setBasicAuthenticationSourcesId(long basicAuthenticationSourcesId) {
+        this.basicAuthenticationSourcesId = basicAuthenticationSourcesId;
     }
 
     @Override
