@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.openbridge.Processor;
+import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -19,6 +20,7 @@ import javax.transaction.Transactional;
 import javax.ws.rs.WebApplicationException;
 import java.util.List;
 
+import static com.redhat.cloud.notifications.openbridge.BridgeApiService.BASE_PATH;
 import static io.quarkus.scheduler.Scheduled.ConcurrentExecution.SKIP;
 import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
 import static org.hibernate.LockOptions.SKIP_LOCKED;
@@ -45,6 +47,9 @@ public class EndpointReadyChecker {
 
     @Inject
     BridgeAuth bridgeAuth;
+
+    @Inject
+    RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
 
     String endpointQueryString = "SELECT e FROM Endpoint e " +
             "WHERE e.compositeType.type = :type AND e.compositeType.subType IN (:subTypes) " +
@@ -83,6 +88,8 @@ public class EndpointReadyChecker {
                     ep.setStatus(EndpointStatus.FAILED);
                 }
             } catch (WebApplicationException wae) {
+                String path = "GET " + BASE_PATH + "/{bridgeId}/processors/{processorId}";
+                rhoseErrorMetricsRecorder.record(path, wae);
                 Log.warn("Getting data from OB failed", wae);
                 ep.setStatus(EndpointStatus.FAILED);
             }

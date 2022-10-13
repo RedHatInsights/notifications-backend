@@ -16,14 +16,18 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.openbridge.BridgeApiService.BASE_PATH;
+
 /**
  * Talk to the OpenBridge manager API to set up processors etc
  */
-@Path("/api/smartevents_mgmt/v1/bridges")
+@Path(BASE_PATH)
 @Produces(MediaType.APPLICATION_JSON)
 @RegisterRestClient(configKey = "ob")
 @RegisterProvider(RhoseResponseExceptionMapper.class)
 public interface BridgeApiService {
+
+    String BASE_PATH = "/api/smartevents_mgmt/v1/bridges";
 
     @GET
     @Path("/")
