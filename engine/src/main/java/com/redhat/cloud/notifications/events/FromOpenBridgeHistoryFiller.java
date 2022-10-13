@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.openbridge.BridgeItemList;
 import com.redhat.cloud.notifications.openbridge.ProcessingError;
+import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.cache.Cache;
@@ -20,12 +21,14 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import javax.ws.rs.WebApplicationException;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.redhat.cloud.notifications.openbridge.BridgeApiService.BASE_PATH;
 import static io.quarkus.scheduler.Scheduled.ConcurrentExecution.SKIP;
 
 /**
@@ -62,6 +65,9 @@ public class FromOpenBridgeHistoryFiller {
     @Inject
     MeterRegistry meterRegistry;
 
+    @Inject
+    RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
+
     private Counter messagesWithError;
 
     @CacheName("from-open-bridge-history-filler")
@@ -80,7 +86,14 @@ public class FromOpenBridgeHistoryFiller {
             return;
         }
 
-        BridgeItemList<ProcessingError> errorList = bridgeApiService.getProcessingErrors(bridge.getId(), bridgeAuth.getToken());
+        BridgeItemList<ProcessingError> errorList;
+        try {
+            errorList = bridgeApiService.getProcessingErrors(bridge.getId(), bridgeAuth.getToken());
+        } catch (WebApplicationException e) {
+            String path = "GET " + BASE_PATH + "/{bridgeId}/errors";
+            rhoseErrorMetricsRecorder.record(path, e);
+            throw e;
+        }
 
         // OB offers us a list of items that represent the last X errors
         // We may have seen individual items before

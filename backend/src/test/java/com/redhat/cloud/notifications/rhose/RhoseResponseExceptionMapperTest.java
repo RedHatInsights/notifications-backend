@@ -1,6 +1,7 @@
-package com.redhat.cloud.notifications.openbridge;
+package com.redhat.cloud.notifications.rhose;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.eclipse.microprofile.rest.client.inject.RestClient;

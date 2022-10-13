@@ -26,6 +26,7 @@ import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.openbridge.Processor;
+import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
@@ -61,6 +62,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -74,6 +76,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
+import static com.redhat.cloud.notifications.openbridge.BridgeApiService.BASE_PATH;
 import static com.redhat.cloud.notifications.openbridge.BridgeHelper.ORG_ID_FILTER_NAME;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
@@ -126,6 +129,9 @@ public class EndpointResource {
 
     @Inject
     BridgeAuth bridgeAuth;
+
+    @Inject
+    RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -219,7 +225,15 @@ public class EndpointResource {
                 String processorName = "p-" + UUID.randomUUID();
                 cp.getExtras().put(OB_PROCESSOR_NAME, processorName);
 
-                UnaryOperator<Processor> execFun = in -> bridgeApiService.addProcessor(bridgeId, token, in);
+                UnaryOperator<Processor> execFun = in -> {
+                    try {
+                        return bridgeApiService.addProcessor(bridgeId, token, in);
+                    } catch (WebApplicationException e) {
+                        String path = "POST " + BASE_PATH + "/{bridgeId}/processors";
+                        rhoseErrorMetricsRecorder.record(path, e);
+                        throw e;
+                    }
+                };
                 UnaryOperator<Processor> updateFun = in -> { endpoint.setStatus(EndpointStatus.PROVISIONING); return in; };
                 Processor out = executeObAction(endpoint, updateFun, execFun);
                 // We need to record the id of that processor, as we need it later
@@ -302,7 +316,13 @@ public class EndpointResource {
 
             try {
                 UnaryOperator<Processor> execFun = in -> {
-                    bridgeApiService.deleteProcessor(bridge.getId(), in.getId(), bridgeAuth.getToken());
+                    try {
+                        bridgeApiService.deleteProcessor(bridge.getId(), in.getId(), bridgeAuth.getToken());
+                    } catch (WebApplicationException e) {
+                        String path = "DELETE " + BASE_PATH + "/{bridgeId}/processors/{processorId}";
+                        rhoseErrorMetricsRecorder.record(path, e);
+                        throw e;
+                    }
                     return null;
                 };
                 ep.setStatus(EndpointStatus.DELETING);
@@ -395,7 +415,15 @@ public class EndpointResource {
                     in.getAction().getParameters().put(SLACK_WEBHOOK_URL, ref.url);
                     return in;
                 };
-                UnaryOperator<Processor> execFun = in -> bridgeApiService.updateProcessor(bridge.getId(), in.getId(), bridgeAuth.getToken(), in);
+                UnaryOperator<Processor> execFun = in -> {
+                    try {
+                        return bridgeApiService.updateProcessor(bridge.getId(), in.getId(), bridgeAuth.getToken(), in);
+                    } catch (WebApplicationException e) {
+                        String path = "PUT " + BASE_PATH + "/{bridgeId}/processors/{processorId}";
+                        rhoseErrorMetricsRecorder.record(path, e);
+                        throw e;
+                    }
+                };
                 ep.setStatus(EndpointStatus.PROVISIONING);
                 Processor out = executeObAction(ep, updateFun, execFun);
                 Log.infof("Endpoint updated to processor %s ", out.toString());

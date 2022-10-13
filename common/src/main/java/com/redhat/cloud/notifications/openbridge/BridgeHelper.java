@@ -15,6 +15,8 @@ import javax.ws.rs.WebApplicationException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.openbridge.BridgeApiService.BASE_PATH;
+
 /**
  *
  */
@@ -46,6 +48,9 @@ public class BridgeHelper {
     @Inject
     BridgeAuth bridgeAuth;
 
+    @Inject
+    RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
+
     private Bridge bridgeInstance;
 
     @Produces
@@ -73,8 +78,12 @@ public class BridgeHelper {
         try {
             bridgeList = apiService.getBridgeByName(ourBridgeName, token);
         } catch (WebApplicationException e) {
+            String path = "GET " + BASE_PATH + "?name";
+            rhoseErrorMetricsRecorder.record(path, e);
             if (e.getResponse().getStatus() == 404) {
                 Log.errorf("Bridge with name %s not found in the OpenBridge instance. Did you create it?", ourBridgeName);
+            } else {
+                throw e;
             }
         }
 
@@ -140,9 +149,23 @@ public class BridgeHelper {
         handler.put("type", "endpoint"); // endpoint is using the poller
         request.setErrorHandler(handler);
 
-        apiService.createBridge(token, request);
+        try {
+            apiService.createBridge(token, request);
+        } catch (WebApplicationException e) {
+            String path = "POST " + BASE_PATH;
+            rhoseErrorMetricsRecorder.record(path, e);
+            throw e;
+        }
         Log.warn("Bridge creation initiated. It may take a while until it is ready");
-        BridgeItemList<Bridge> bridgeList = apiService.getBridgeByName(ourBridgeName, token);
+
+        BridgeItemList<Bridge> bridgeList;
+        try {
+            bridgeList = apiService.getBridgeByName(ourBridgeName, token);
+        } catch (WebApplicationException e) {
+            String path = "GET " + BASE_PATH + "?name";
+            rhoseErrorMetricsRecorder.record(path, e);
+            throw e;
+        }
 
         return bridgeList.getItems().get(0);
     }

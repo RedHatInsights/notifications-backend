@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.openbridge.BridgeEventService;
+import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
@@ -34,6 +35,7 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
+import javax.ws.rs.WebApplicationException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -79,6 +81,9 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
     // TODO There must be a simpler way to deal with this.
     @Inject
     Instance<Bridge> bridgeInstance;
+
+    @Inject
+    RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
 
     private Bridge bridge;
 
@@ -251,7 +256,13 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
                 .build(BridgeEventService.class);
 
         JsonObject payload = JsonObject.mapFrom(ce);
-        evtSvc.sendEvent(payload, bridgeAuth.getToken());
+        try {
+            evtSvc.sendEvent(payload, bridgeAuth.getToken());
+        } catch (WebApplicationException e) {
+            String path = "POST " + bridge.getEndpoint();
+            rhoseErrorMetricsRecorder.record(path, e);
+            throw e;
+        }
     }
 
 
