@@ -30,6 +30,7 @@ import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
+import com.redhat.cloud.notifications.routers.sources.SecretUtils;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -133,6 +134,12 @@ public class EndpointResource {
     @Inject
     RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
 
+    /**
+     * Used to create the secrets in Sources and update the endpoint's properties' IDs.
+     */
+    @Inject
+    SecretUtils secretUtils;
+
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
@@ -186,6 +193,11 @@ public class EndpointResource {
                 CamelProperties cp = endpoint.getProperties(CamelProperties.class);
                 cp.getExtras().remove(OB_PROCESSOR_ID);
                 cp.getExtras().remove(OB_PROCESSOR_NAME);
+            }
+
+            // Fetch the secrets from Sources.
+            if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+                this.secretUtils.getSecretsForEndpoint(endpoint);
             }
         }
 
@@ -250,6 +262,11 @@ public class EndpointResource {
             endpoint.setStatus(EndpointStatus.READY);
         }
 
+        // Create the secrets in Sources.
+        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            this.secretUtils.createSecretsForEndpoint(endpoint);
+        }
+
         return endpointRepository.createEndpoint(endpoint);
     }
 
@@ -300,6 +317,12 @@ public class EndpointResource {
                 cp.getExtras().remove(OB_PROCESSOR_ID);
                 cp.getExtras().remove(OB_PROCESSOR_NAME);
             }
+
+            // Fetch the secrets from Sources.
+            if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+                this.secretUtils.getSecretsForEndpoint(endpoint);
+            }
+
             return endpoint;
         }
     }
@@ -335,6 +358,11 @@ public class EndpointResource {
             }
         }
         endpointRepository.deleteEndpoint(orgId, id);
+
+        // Clean up the secrets in Sources.
+        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            this.secretUtils.deleteSecretsForEndpoint(ep);
+        }
 
         return Response.noContent().build();
     }
@@ -438,6 +466,11 @@ public class EndpointResource {
         }
 
         endpointRepository.updateEndpoint(endpoint);
+
+        // Update the secrets in Sources.
+        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            this.secretUtils.updateSecretsForEndpoint(endpoint);
+        }
 
         return Response.ok().build();
     }
