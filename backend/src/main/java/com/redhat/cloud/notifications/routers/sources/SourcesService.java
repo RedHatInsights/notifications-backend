@@ -3,13 +3,13 @@ package com.redhat.cloud.notifications.routers.sources;
 import io.quarkus.rest.client.reactive.ClientExceptionMapper;
 import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+import org.jboss.resteasy.reactive.RestPath;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
 
 /**
@@ -40,7 +40,7 @@ public interface SourcesService {
      */
     @GET
     @Path("/internal/v2.0/secrets/{id}")
-    Secret getById(@PathParam("id") long id);
+    Secret getById(@RestPath long id);
 
     /**
      * Create a secret on the Sources backend.
@@ -58,7 +58,7 @@ public interface SourcesService {
      */
     @Path("/api/sources/v3.1/secrets/{id}")
     @PATCH
-    Secret update(@PathParam("id") long id, Secret secret);
+    Secret update(@RestPath long id, Secret secret);
 
     /**
      * Delete a secret on the Sources backend.
@@ -66,7 +66,7 @@ public interface SourcesService {
      */
     @DELETE
     @Path("/api/sources/v3.1/secrets/{id}")
-    void delete(@PathParam("id") long id);
+    void delete(@RestPath long id);
 
     /**
      * Throws a runtime exception with the client's response for an easier debugging.
