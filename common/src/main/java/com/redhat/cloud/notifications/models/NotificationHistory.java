@@ -50,6 +50,7 @@ public class NotificationHistory extends CreationTimestamped {
     @Deprecated
     private Boolean invocationResult;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     private NotificationStatus status;
 
@@ -200,7 +201,6 @@ public class NotificationHistory extends CreationTimestamped {
         history.setEndpointType(endpoint.getType());
         history.setEndpointSubType(endpoint.getSubType());
         history.setEvent(event);
-        history.setStatus(NotificationStatus.FAILED_INTERNAL);
         history.setId(historyId);
         return history;
     }
