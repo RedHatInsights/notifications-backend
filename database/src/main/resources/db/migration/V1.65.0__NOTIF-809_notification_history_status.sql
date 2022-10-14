@@ -3,5 +3,5 @@ ALTER TABLE notification_history
 
 UPDATE notification_history SET status = CASE
     WHEN invocation_result IS true THEN 'SUCCESS'
-    ELSE 'FAILED_PROCESSING'
+    ELSE 'FAILED_INTERNAL'
     END;
