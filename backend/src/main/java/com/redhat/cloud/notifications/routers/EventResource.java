@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
 import com.redhat.cloud.notifications.routers.models.Meta;
@@ -54,6 +55,7 @@ public class EventResource {
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
                                          @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
                                          @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
+                                         @RestQuery Set<NotificationStatus> status,
                                          @BeanParam Query query,
                                          @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
         if (query.getLimit().getLimit() < 1 || query.getLimit().getLimit() > 200) {
@@ -82,7 +84,7 @@ public class EventResource {
         }
 
         String orgId = getOrgId(securityContext);
-        List<Event> events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, query);
+        List<Event> events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, status, query);
         List<EventLogEntry> eventLogEntries = events.stream().map(event -> {
             List<EventLogEntryAction> actions;
             if (!includeActions) {
@@ -95,6 +97,7 @@ public class EventResource {
                     action.setEndpointType(historyEntry.getEndpointType());
                     action.setEndpointSubType(historyEntry.getEndpointSubType());
                     action.setInvocationResult(historyEntry.isInvocationResult());
+                    action.setStatus(historyEntry.getStatus());
                     if (includeDetails) {
                         action.setDetails(historyEntry.getDetails());
                     }
@@ -114,7 +117,7 @@ public class EventResource {
             }
             return entry;
         }).collect(Collectors.toList());
-        Long count = eventRepository.count(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults);
+        Long count = eventRepository.count(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, status);
 
         Meta meta = new Meta();
         meta.setCount(count);

@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeHelper;
 import com.redhat.cloud.notifications.openbridge.BridgeItemList;
@@ -137,6 +138,7 @@ class CamelTypeProcessorTest {
         assertNotNull(result.get(0).getInvocationTime());
         // The invocation will be complete when the response from Camel has been received.
         assertFalse(result.get(0).isInvocationResult());
+        assertEquals(NotificationStatus.PROCESSING, result.get(0).getStatus());
 
         // Now let's check the Kafka messages sent to the outgoing channel.
         InMemorySink<String> inMemorySink = inMemoryConnector.sink(TOCAMEL_CHANNEL);
@@ -290,6 +292,7 @@ class CamelTypeProcessorTest {
         assertNotNull(historyItem.getInvocationTime());
         // The invocation will be complete when the response from Camel has been received.
         assertFalse(historyItem.isInvocationResult());
+        assertEquals(NotificationStatus.FAILED_INTERNAL, result.get(0).getStatus());
 
         MockServerConfig.clearOpenBridgeEndpoints(bridge);
         featureFlipper.setObEnabled(false);

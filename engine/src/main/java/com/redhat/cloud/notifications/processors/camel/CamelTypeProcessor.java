@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.openbridge.BridgeEventService;
@@ -180,9 +181,9 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
             NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
             try {
                 callOpenBridge(payload, historyId, orgId, camelProperties, integrationName, originalEventId);
-                history.setInvocationResult(true);
+                history.setStatus(NotificationStatus.SENT);
             } catch (Exception e) {
-                history.setInvocationResult(false);
+                history.setStatus(NotificationStatus.FAILED_INTERNAL);
                 Map<String, Object> details = new HashMap<>();
                 details.put("failure", e.getMessage());
                 history.setDetails(details);
@@ -199,6 +200,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
             final long endTime = System.currentTimeMillis();
             // We only create a basic stub. The FromCamel filler will update it later
             NotificationHistory history = getHistoryStub(endpoint, event, endTime - startTime, historyId);
+            history.setStatus(NotificationStatus.PROCESSING);
             persistNotificationHistory(history);
         }
     }

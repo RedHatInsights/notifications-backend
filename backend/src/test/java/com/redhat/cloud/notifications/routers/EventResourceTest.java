@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
 import com.redhat.cloud.notifications.routers.models.Page;
@@ -106,11 +107,11 @@ public class EventResourceTest extends DbIsolatedTest {
         Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
         Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EMAIL_SUBSCRIPTION);
         Endpoint endpoint3 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, CAMEL, "SlAcK");
-        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, TRUE);
-        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, FALSE);
-        NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, TRUE);
-        NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, TRUE);
-        NotificationHistory history5 = resourceHelpers.createNotificationHistory(event3, endpoint3, TRUE);
+        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, NotificationStatus.SUCCESS);
+        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, NotificationStatus.FAILED_INTERNAL);
+        NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, NotificationStatus.SUCCESS);
+        NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, NotificationStatus.SUCCESS);
+        NotificationHistory history5 = resourceHelpers.createNotificationHistory(event3, endpoint3, NotificationStatus.SUCCESS);
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint1.getId());
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint2.getId());
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint3.getId());
@@ -121,7 +122,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Request: No filter
          * Expected response: All event log entries from DEFAULT_ACCOUNT_ID should be returned
          */
-        Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, false, true);
+        Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
@@ -136,7 +137,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Request: No filter
          * Expected response: All event log entries from OTHER_ACCOUNT_ID should be returned
          */
-        page = getEventLogPage(otherIdentityHeader, null, null, null, null, null, null, null, null, null, null, false, true);
+        page = getEventLogPage(otherIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event4);
@@ -148,7 +149,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Unknown bundle
          */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(randomUUID()), null, null, null, null, null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, Set.of(randomUUID()), null, null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(0, page.getMeta().getCount());
         assertTrue(page.getData().isEmpty());
         assertLinks(page.getLinks(), "first", "last");
@@ -158,7 +159,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: One existing bundle
          */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId()), null, null, null, null, null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId()), null, null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event1, history1, history2);
@@ -170,7 +171,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Multiple existing bundles, sort by ascending bundle names
          */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId(), bundle2.getId()), null, null, null, null, null, null, null, null, "bundle:asc", false, true);
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId(), bundle2.getId()), null, null, null, null, null, null, null, null, null, "bundle:asc", false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(0), event1, history1, history2);
@@ -184,7 +185,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Unknown application
          */
-        page = getEventLogPage(defaultIdentityHeader, null, Set.of(randomUUID()), null, null, null, null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, Set.of(randomUUID()), null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(0, page.getMeta().getCount());
         assertTrue(page.getData().isEmpty());
         assertLinks(page.getLinks(), "first", "last");
@@ -194,7 +195,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: One existing application
          */
-        page = getEventLogPage(defaultIdentityHeader, null, Set.of(app2.getId()), null, null, null, null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, Set.of(app2.getId()), null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(2, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
@@ -207,7 +208,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Multiple existing applications, sort by ascending application names
          */
-        page = getEventLogPage(defaultIdentityHeader, null, Set.of(app1.getId(), app2.getId()), null, null, null, null, null, null, null, "application:asc", false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, Set.of(app1.getId(), app2.getId()), null, null, null, null, null, null, null, null, "application:asc", false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(0), event1, history1, history2);
@@ -221,7 +222,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Unknown event type
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, "unknown", null, null, null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, "unknown", null, null, null, null, null, null, null, null, false, true);
         assertEquals(0, page.getMeta().getCount());
         assertTrue(page.getData().isEmpty());
         assertLinks(page.getLinks(), "first", "last");
@@ -231,7 +232,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Existing event type
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, eventType1.getDisplayName().substring(2).toUpperCase(), null, null, null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, eventType1.getDisplayName().substring(2).toUpperCase(), null, null, null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event1, history1, history2);
@@ -243,7 +244,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Start date three days in the past
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), null, null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), null, null, null, null, null, null, null, false, true);
         assertEquals(2, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
@@ -256,7 +257,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: End date three days in the past
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, NOW.minusDays(3L), null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, NOW.minusDays(3L), null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event1, history1, history2);
@@ -268,7 +269,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Both start and end date are set
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), NOW.minusDays(1L), null, null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), NOW.minusDays(1L), null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event3, history4, history5);
@@ -280,7 +281,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Let's try all request params at once!
          */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle2.getId()), Set.of(app2.getId()), eventType2.getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), Set.of(EMAIL_SUBSCRIPTION.name()), Set.of(TRUE), 10, 0, "created:desc", true, true);
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle2.getId()), Set.of(app2.getId()), eventType2.getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), Set.of(EMAIL_SUBSCRIPTION.name()), Set.of(TRUE), null, 10, 0, "created:desc", true, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event3, history4, history5);
@@ -292,7 +293,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: No filter, limit without offset
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, 2, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, 2, null, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
@@ -305,7 +306,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: No filter, limit with offset
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, 1, 2, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, 1, 2, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event1, history1, history2);
@@ -317,7 +318,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: No filter, sort by ascending event names
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, "event:asc", false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, "event:asc", false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(0), event1, history1, history2);
@@ -331,7 +332,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: WEBHOOK endpoints
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(WEBHOOK.name()), null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(WEBHOOK.name()), null, null, null, null, null, false, true);
         assertEquals(2, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
@@ -344,7 +345,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Invocation succeeded
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, Set.of(TRUE), null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, Set.of(TRUE), null, null, null, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
@@ -358,7 +359,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: EMAIL_SUBSCRIPTION endpoints and invocation failed
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(EMAIL_SUBSCRIPTION.name()), Set.of(FALSE), null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(EMAIL_SUBSCRIPTION.name()), Set.of(FALSE), null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event1, history1, history2);
@@ -371,7 +372,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Request: No filter
          * Expected response: All event log entries from DEFAULT_ACCOUNT_ID should be returned without actions
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, false, false);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(0), event2);
@@ -385,7 +386,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: CAMEL endpoints
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(CAMEL.name()), null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(CAMEL.name()), null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event3, history4, history5);
@@ -397,7 +398,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: CAMEL:SPLUNK endpoints
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of("camel:splunk"), null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of("camel:splunk"), null, null, null, null, null, false, true);
         assertEquals(0, page.getMeta().getCount());
         assertEquals(0, page.getData().size());
         assertLinks(page.getLinks(), "first", "last");
@@ -407,7 +408,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: CAMEL:SLACK endpoints
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of("camel:slack"), null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of("camel:slack"), null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event3, history4, history5);
@@ -419,7 +420,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: CAMEL:SLACK and EMAIL endpoints
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of("camel:SLACK", EMAIL_SUBSCRIPTION.name()), null, null, null, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of("camel:SLACK", EMAIL_SUBSCRIPTION.name()), null, null, null, null, null, false, true);
         assertEquals(2, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
         assertSameEvent(page.getData().get(0), event3, history4, history5);
@@ -432,12 +433,46 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Mixing bundle and an app from a different bundle
          */
-        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId()), Set.of(app2.getId()), null, null, null, null, null, 10, 0, null, true, true);
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId()), Set.of(app2.getId()), null, null, null, null, null, null, 10, 0, null, true, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
         assertSameEvent(page.getData().get(1), event3, history4, history5);
         assertSameEvent(page.getData().get(2), event1, history1, history2);
+        assertLinks(page.getLinks(), "first", "last");
+
+        /*
+         * Test #27
+         * Account: DEFAULT_ACCOUNT_ID
+         * Request: Using status = SUCCESS
+         */
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(NotificationStatus.SUCCESS), 10, 0, null, false, true);
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(3, page.getData().size());
+        assertSameEvent(page.getData().get(2), event1, history1, history2);
+        assertSameEvent(page.getData().get(0), event2, history3);
+        assertSameEvent(page.getData().get(1), event3, history4, history5);
+        assertLinks(page.getLinks(), "first", "last");
+
+        /*
+         * Test #28
+         * Account: DEFAULT_ACCOUNT_ID
+         * Request: Using status = FAILED_INTERNAL
+         */
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(NotificationStatus.FAILED_INTERNAL), 10, 0, null, false, true);
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(1, page.getData().size());
+        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertLinks(page.getLinks(), "first", "last");
+
+        /*
+         * Test #29
+         * Account: DEFAULT_ACCOUNT_ID
+         * Request: Using status = PROCESSING
+         */
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(NotificationStatus.PROCESSING), 10, 0, null, false, true);
+        assertEquals(0, page.getMeta().getCount());
+        assertEquals(0, page.getData().size());
         assertLinks(page.getLinks(), "first", "last");
     }
 
@@ -519,7 +554,8 @@ public class EventResourceTest extends DbIsolatedTest {
 
     private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                                        LocalDateTime startDate, LocalDateTime endDate, Set<String> endpointTypes,
-                                                       Set<Boolean> invocationResults, Integer limit, Integer offset, String sortBy, boolean includePayload, boolean includeActions) {
+                                                       Set<Boolean> invocationResults, Set<NotificationStatus> status, Integer limit,
+                                                       Integer offset, String sortBy, boolean includePayload, boolean includeActions) {
         RequestSpecification request = given()
                 .header(identityHeader);
         if (bundleIds != null) {
@@ -542,6 +578,9 @@ public class EventResourceTest extends DbIsolatedTest {
         }
         if (invocationResults != null) {
             request.param("invocationResults", invocationResults);
+        }
+        if (status != null) {
+            request.param("status", status);
         }
         if (limit != null) {
             request.param("limit", limit);
@@ -585,6 +624,7 @@ public class EventResourceTest extends DbIsolatedTest {
                 assertEquals(historyEntry.get().getEndpointType(), eventLogEntryAction.getEndpointType());
                 assertEquals(historyEntry.get().getEndpointSubType(), eventLogEntryAction.getEndpointSubType());
                 assertEquals(historyEntry.get().isInvocationResult(), eventLogEntryAction.getInvocationResult());
+                assertEquals(historyEntry.get().getStatus(), eventLogEntryAction.getStatus());
             }
         }
     }

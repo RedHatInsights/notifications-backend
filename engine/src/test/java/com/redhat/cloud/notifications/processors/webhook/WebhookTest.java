@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -120,6 +121,7 @@ public class WebhookTest {
             verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
             NotificationHistory history = historyArgumentCaptor.getAllValues().get(0);
             assertTrue(history.isInvocationResult());
+            assertEquals(NotificationStatus.SUCCESS, history.getStatus());
         } catch (Exception e) {
             e.printStackTrace();
             fail(e);
@@ -186,6 +188,7 @@ public class WebhookTest {
             NotificationHistory history = historyArgumentCaptor.getAllValues().get(0);
 
             assertEquals(shouldSucceedEventually, history.isInvocationResult());
+            assertEquals(shouldSucceedEventually ? NotificationStatus.SUCCESS : NotificationStatus.FAILED_INTERNAL, history.getStatus());
             assertEquals(MAX_RETRY_ATTEMPTS, callsCounter.get());
         } finally {
             // Remove expectations

@@ -52,6 +52,9 @@ public class FromCamelHistoryFiller {
     @Inject
     MeterRegistry meterRegistry;
 
+    @Inject
+    CamelHistoryFillerHelper camelHistoryFillerHelper;
+
     private Counter messagesProcessedCounter;
     private Counter messagesErrorCounter;
 
@@ -77,7 +80,7 @@ public class FromCamelHistoryFiller {
             statelessSessionFactory.withSession(statelessSession -> {
                 reinjectIfNeeded(decodedPayload);
                 try {
-                    notificationHistoryRepository.updateHistoryItem(decodedPayload);
+                    camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
                 } catch (Exception e) {
                     Log.info("|  Update Fail", e);
                 }

@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.events.IntegrationDisabledNotifier;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
@@ -162,13 +163,13 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                 if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
                     // Accepted
                     Log.debugf("Webhook request to %s was successful: %d", url, resp.statusCode());
-                    history.setInvocationResult(true);
+                    history.setStatus(NotificationStatus.SUCCESS);
                     shouldResetEndpointServerErrors = true;
                 } else if (resp.statusCode() >= 500) {
                     // Temporary error, allow retry
                     serverError = true;
                     Log.debugf("Webhook request to %s failed: %d %s", url, resp.statusCode(), resp.statusMessage());
-                    history.setInvocationResult(false);
+                    history.setStatus(NotificationStatus.FAILED_INTERNAL);
                     if (featureFlipper.isDisableWebhookEndpointsOnFailure()) {
                         if (!isEmailEndpoint) {
                             /*
@@ -192,7 +193,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                     } else {
                         Log.debugf("Webhook request to %s failed: %d %s %s", url, resp.statusCode(), resp.statusMessage(), payload);
                     }
-                    history.setInvocationResult(false);
+                    history.setStatus(NotificationStatus.FAILED_INTERNAL);
                     // TODO NOTIF-512 Should we disable endpoints in case of 3xx status code?
                     if (featureFlipper.isDisableWebhookEndpointsOnFailure()) {
                         if (!isEmailEndpoint && resp.statusCode() >= 400 && resp.statusCode() < 500) {
@@ -227,7 +228,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                     }
                 }
 
-                if (!history.isInvocationResult()) {
+                if (history.getStatus() == NotificationStatus.FAILED_INTERNAL) {
                     JsonObject details = new JsonObject();
                     details.put("url", url);
                     details.put("method", method);
