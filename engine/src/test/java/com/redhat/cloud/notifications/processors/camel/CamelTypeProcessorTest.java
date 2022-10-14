@@ -111,7 +111,6 @@ class CamelTypeProcessorTest {
     }
 
     @Test
-    @Transactional
     void testCamelEndpointProcessing() {
 
         // We need input data for the test.
