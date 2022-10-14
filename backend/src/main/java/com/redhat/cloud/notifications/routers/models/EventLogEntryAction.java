@@ -28,6 +28,7 @@ public class EventLogEntryAction {
     @Deprecated
     private Boolean invocationResult;
 
+    @NotNull
     private NotificationStatus status;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
