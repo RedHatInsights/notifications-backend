@@ -1,17 +1,14 @@
 package com.redhat.cloud.notifications.models;
 
 public enum NotificationStatus {
-    // The notification failed to be created for processing
-    // This could happen when sending the notification to a different processor and it was rejected before entering a processing phase
-    FAILED_CREATION,
+    // For any error that happens in Notifications, including when we fail to send an event to a different processor (i.e. RHOSE)
+    FAILED_INTERNAL,
+    // The notification failed to be processed and the processor returned us an error
+    FAILED_EXTERNAL,
     // The notification is being processed
     // A notification was sent to a different processor and we are waiting for it's output
     PROCESSING,
-    // The notification has been in processing state for too long
-    PROCESSING_TIMEOUT,
-    // the notification failed to be processed
-    FAILED_PROCESSING,
-    // The notification was sent to the processor - but we have no way to tell if it was processed succesfully or if it has failed (yet)
+    // The notification was sent to the processor - but we have no way to tell if it was processed successfully or if it has failed (yet)
     SENT,
     // the notification processed successfully - either locally or by a different processor
     SUCCESS;
