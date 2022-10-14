@@ -21,10 +21,10 @@ public class SecretUtils {
     SourcesService sourcesService;
 
     /**
-     * Gets the endpoint's secrets from Sources.
+     * Loads the endpoint's secrets from Sources.
      * @param endpoint the endpoint to get the secrets from.
      */
-    public void getSecretsForEndpoint(Endpoint endpoint) {
+    public void loadSecretsForEndpoint(Endpoint endpoint) {
         EndpointProperties endpointProperties = endpoint.getProperties();
 
         if (endpointProperties instanceof SourcesSecretable) {

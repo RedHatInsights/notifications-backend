@@ -59,7 +59,7 @@ public class SecretUtilsTest {
         endpoint.setProperties(webhookProperties);
 
         // Call the function under test.
-        this.secretUtils.getSecretsForEndpoint(endpoint);
+        this.secretUtils.loadSecretsForEndpoint(endpoint);
 
         // Check that the endpoint properties are of the expected type.
         final var endpointProperties = endpoint.getProperties();

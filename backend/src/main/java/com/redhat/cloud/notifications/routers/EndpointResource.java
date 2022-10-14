@@ -198,7 +198,7 @@ public class EndpointResource {
 
             // Fetch the secrets from Sources.
             if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-                this.secretUtils.getSecretsForEndpoint(endpoint);
+                this.secretUtils.loadSecretsForEndpoint(endpoint);
             }
         }
 
@@ -321,7 +321,7 @@ public class EndpointResource {
 
             // Fetch the secrets from Sources.
             if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-                this.secretUtils.getSecretsForEndpoint(endpoint);
+                this.secretUtils.loadSecretsForEndpoint(endpoint);
             }
 
             return endpoint;
