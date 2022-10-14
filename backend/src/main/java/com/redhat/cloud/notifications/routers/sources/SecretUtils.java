@@ -30,8 +30,8 @@ public class SecretUtils {
         if (endpointProperties instanceof SourcesSecretable) {
             var props = (SourcesSecretable) endpointProperties;
 
-            final long basicAuthSourcesId = props.getBasicAuthenticationSourcesId();
-            if (basicAuthSourcesId > 0) {
+            final Long basicAuthSourcesId = props.getBasicAuthenticationSourcesId();
+            if (basicAuthSourcesId != null && basicAuthSourcesId > 0) {
                 final Secret secret = this.sourcesService.getById(basicAuthSourcesId);
 
                 props.setBasicAuthentication(
@@ -42,8 +42,8 @@ public class SecretUtils {
                 );
             }
 
-            final long secretTokenSourcesId = props.getSecretTokenSourcesId();
-            if (secretTokenSourcesId > 0) {
+            final Long secretTokenSourcesId = props.getSecretTokenSourcesId();
+            if (secretTokenSourcesId != null && secretTokenSourcesId > 0) {
                 final Secret secret = this.sourcesService.getById(secretTokenSourcesId);
 
                 props.setSecretToken(secret.password);
@@ -102,8 +102,8 @@ public class SecretUtils {
             var props = (SourcesSecretable) endpointProperties;
 
             final BasicAuthentication basicAuth = props.getBasicAuthentication();
-            final long basicAuthId = props.getBasicAuthenticationSourcesId();
-            if (basicAuth != null && basicAuthId > 0) {
+            final Long basicAuthId = props.getBasicAuthenticationSourcesId();
+            if (basicAuth != null && basicAuthId != null && basicAuthId > 0) {
                 Secret secret = new Secret();
 
                 secret.password = basicAuth.getPassword();
@@ -114,8 +114,8 @@ public class SecretUtils {
             }
 
             final String secretToken = props.getSecretToken();
-            final long secretTokenId = props.getSecretTokenSourcesId();
-            if (secretToken != null && secretTokenId > 0) {
+            final Long secretTokenId = props.getSecretTokenSourcesId();
+            if (secretToken != null && secretTokenId != null && secretTokenId > 0) {
                 Secret secret = new Secret();
 
                 secret.password = secretToken;
@@ -137,14 +137,14 @@ public class SecretUtils {
         if (endpointProperties instanceof SourcesSecretable) {
             var props = (SourcesSecretable) endpointProperties;
 
-            final long basicAuthId = props.getBasicAuthenticationSourcesId();
-            if (basicAuthId > 0) {
+            final Long basicAuthId = props.getBasicAuthenticationSourcesId();
+            if (basicAuthId != null && basicAuthId > 0) {
                 this.sourcesService.delete(basicAuthId);
                 Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources", endpoint.getId(), basicAuthId);
             }
 
-            final long secretTokenId = props.getSecretTokenSourcesId();
-            if (secretTokenId > 0) {
+            final Long secretTokenId = props.getSecretTokenSourcesId();
+            if (secretTokenId != null && secretTokenId > 0) {
                 this.sourcesService.delete(secretTokenId);
                 Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources", endpoint.getId(), secretTokenId);
             }

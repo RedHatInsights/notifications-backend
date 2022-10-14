@@ -40,7 +40,7 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
      */
     @Column(name = "secret_token_id")
     @JsonIgnore
-    private long secretTokenSourcesId;
+    private Long secretTokenSourcesId;
 
     @Convert(converter = BasicAuthenticationConverter.class)
     @JsonProperty("basic_authentication")
@@ -52,7 +52,7 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
      */
     @Column(name = "basic_authentication_id")
     @JsonIgnore
-    private long basicAuthenticationSourcesId;
+    private Long basicAuthenticationSourcesId;
 
     public String getUrl() {
         return url;
@@ -86,11 +86,11 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
         this.secretToken = secretToken;
     }
 
-    public long getSecretTokenSourcesId() {
+    public Long getSecretTokenSourcesId() {
         return secretTokenSourcesId;
     }
 
-    public void setSecretTokenSourcesId(long secretTokenSourcesId) {
+    public void setSecretTokenSourcesId(Long secretTokenSourcesId) {
         this.secretTokenSourcesId = secretTokenSourcesId;
     }
 
@@ -102,11 +102,11 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
         this.basicAuthentication = basicAuthentication;
     }
 
-    public long getBasicAuthenticationSourcesId() {
+    public Long getBasicAuthenticationSourcesId() {
         return basicAuthenticationSourcesId;
     }
 
-    public void setBasicAuthenticationSourcesId(long basicAuthenticationSourcesId) {
+    public void setBasicAuthenticationSourcesId(Long basicAuthenticationSourcesId) {
         this.basicAuthenticationSourcesId = basicAuthenticationSourcesId;
     }
 }

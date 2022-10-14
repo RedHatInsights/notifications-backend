@@ -34,7 +34,7 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
      */
     @Column(name = "secret_token_id")
     @JsonIgnore
-    private long secretTokenSourcesId;
+    private Long secretTokenSourcesId;
 
     @Convert(converter = BasicAuthenticationConverter.class)
     @Valid
@@ -45,7 +45,7 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
      */
     @Column(name = "basic_authentication_id")
     @JsonIgnore
-    private long basicAuthenticationSourcesId;
+    private Long basicAuthenticationSourcesId;
 
     @Convert(converter = MapConverter.class)
     private Map<String, String> extras;
@@ -74,11 +74,11 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
         return secretToken;
     }
 
-    public long getSecretTokenSourcesId() {
+    public Long getSecretTokenSourcesId() {
         return secretTokenSourcesId;
     }
 
-    public void setSecretTokenSourcesId(long secretTokenSourcesId) {
+    public void setSecretTokenSourcesId(Long secretTokenSourcesId) {
         this.secretTokenSourcesId = secretTokenSourcesId;
     }
 
@@ -90,11 +90,11 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
         this.basicAuthentication = basicAuthentication;
     }
 
-    public long getBasicAuthenticationSourcesId() {
+    public Long getBasicAuthenticationSourcesId() {
         return basicAuthenticationSourcesId;
     }
 
-    public void setBasicAuthenticationSourcesId(long basicAuthenticationSourcesId) {
+    public void setBasicAuthenticationSourcesId(Long basicAuthenticationSourcesId) {
         this.basicAuthenticationSourcesId = basicAuthenticationSourcesId;
     }
 

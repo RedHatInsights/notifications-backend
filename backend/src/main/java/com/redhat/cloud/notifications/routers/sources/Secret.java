@@ -17,7 +17,7 @@ public final class Secret {
     public static final String TYPE_SECRET_TOKEN = "notifications-secret-token";
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Integer id;
+    public Long id;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String name;
 

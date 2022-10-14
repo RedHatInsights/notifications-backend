@@ -16,11 +16,11 @@ import javax.inject.Inject;
 @QuarkusTest
 public class SecretUtilsTest {
 
-    static final int BASIC_AUTH_SOURCES_ID = 50;
+    static final Long BASIC_AUTH_SOURCES_ID = 50L;
     static final String BASIC_AUTH_PASSWORD = "basic-auth-test-password";
     static final String BASIC_AUTH_USERNAME = "basic-auth-test-username";
     static final String SECRET_TOKEN = "secret-token";
-    static final int SECRET_TOKEN_SOURCES_ID = 100;
+    static final Long SECRET_TOKEN_SOURCES_ID = 100L;
 
     @InjectMock
     @RestClient
@@ -298,8 +298,8 @@ public class SecretUtilsTest {
         // Assert that the underlying "update" function was called exactly two times, since we are expecting that both
         // the "basic authentication" and the "secret token" secrets were successfully updated.
         final int wantedNumberOfInvocationsUpdate = 1;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(BASIC_AUTH_SOURCES_ID, Mockito.any());
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(SECRET_TOKEN_SOURCES_ID, Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(Mockito.eq(BASIC_AUTH_SOURCES_ID), Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(Mockito.eq(SECRET_TOKEN_SOURCES_ID), Mockito.any());
     }
 
     /**
@@ -355,7 +355,7 @@ public class SecretUtilsTest {
         // Assert that the underlying "update" function was called exactly two times, since only the "secret token"
         // secret should be updated.
         final int wantedNumberOfInvocations = 2;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).update(SECRET_TOKEN_SOURCES_ID, Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).update(Mockito.eq(SECRET_TOKEN_SOURCES_ID), Mockito.any());
     }
 
     /**
@@ -422,7 +422,7 @@ public class SecretUtilsTest {
         // Assert that the underlying "update" function was called exactly two times, since only the "basic
         // authentication" secret should be updated.
         final int wantedNumberOfInvocationsUpdate = 2;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(BASIC_AUTH_SOURCES_ID, Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(Mockito.eq(BASIC_AUTH_SOURCES_ID), Mockito.any());
     }
 
     /**
