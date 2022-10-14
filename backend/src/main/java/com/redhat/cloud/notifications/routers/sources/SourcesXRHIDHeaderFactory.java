@@ -23,6 +23,11 @@ public class SourcesXRHIDHeaderFactory implements ClientHeadersFactory {
     @Override
     public MultivaluedMap<String, String> update(final MultivaluedMap<String, String> incomingHeaders, final MultivaluedMap<String, String> outgoingHeaders) {
         final var headers = new MultivaluedHashMap<String, String>();
+
+        // Include all the outgoing headers just to be safe. If anything changes about the outgoing headers, we will be
+        // including them here too, and we won't have to come back to check this Header Factory.
+        headers.putAll(outgoingHeaders);
+
         headers.add(Constants.X_RH_IDENTITY_HEADER, incomingHeaders.getFirst(Constants.X_RH_IDENTITY_HEADER));
 
         return headers;
