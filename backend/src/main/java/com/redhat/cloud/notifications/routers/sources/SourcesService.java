@@ -16,9 +16,9 @@ import javax.ws.rs.core.Response;
  * <p>REST Client for the Sources API. The OpenAPI spec is available at:</p>
  *
  * <ul>
- *  <li><a href="https://console.stage.redhat.com/api/sources/v3.1/openapi.json">OpenApi v3.1 in the stage environment.</a></li>
- *  <li><a href="https://console.redhat.com/api/sources/v3.1/openapi.json">OpenApi v3.1 in the production environment.</a></li>
- *  <li><a href="https://github.com/RedHatInsights/sources-api-go/blob/main/public/openapi-3-v3.1.json">OpenApi v3.1 on GitHub.</a></li>
+ *  <li><a href="https://console.stage.redhat.com/docs/api/sources/v3.1">OpenApi v3.1 in the stage environment.</a></li>
+ *  <li><a href="https://console.redhat.com/docs/api/sources/v3.1">OpenApi v3.1 in the production environment.</a></li>
+ *  <li><a href="https://github.com/RedHatInsights/sources-api-go/blob/main/public/openapi-3-v3.1.json">OpenApi v3.1 JSON file on GitHub.</a></li>
  * </ul>
  *
  * <p>Please be aware of the following:</p>
