@@ -22,6 +22,7 @@ import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
@@ -469,6 +470,14 @@ public class EndpointResource {
 
         // Update the secrets in Sources.
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            // In order to be able to update the secrets in Sources, we need to grab the IDs of these secrets from the
+            // database endpoint, since the client won't be sending those IDs.
+            var incomingEndpointProps = (SourcesSecretable) endpoint.getProperties();
+            var databaseEndpointProps = (SourcesSecretable) ep.getProperties();
+
+            incomingEndpointProps.setBasicAuthenticationSourcesId(databaseEndpointProps.getBasicAuthenticationSourcesId());
+            incomingEndpointProps.setSecretTokenSourcesId(databaseEndpointProps.getSecretTokenSourcesId());
+
             this.secretUtils.updateSecretsForEndpoint(endpoint);
         }
 
