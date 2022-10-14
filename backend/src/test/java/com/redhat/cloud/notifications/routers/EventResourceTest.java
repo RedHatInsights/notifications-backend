@@ -457,7 +457,7 @@ public class EventResourceTest extends DbIsolatedTest {
         /*
          * Test #28
          * Account: DEFAULT_ACCOUNT_ID
-         * Request: Using status = FAILED_PROCESSING
+         * Request: Using status = FAILED_INTERNAL
          */
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(NotificationStatus.FAILED_INTERNAL), 10, 0, null, false, true);
         assertEquals(1, page.getMeta().getCount());
