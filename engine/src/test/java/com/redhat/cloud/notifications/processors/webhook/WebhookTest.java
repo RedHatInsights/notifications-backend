@@ -188,7 +188,7 @@ public class WebhookTest {
             NotificationHistory history = historyArgumentCaptor.getAllValues().get(0);
 
             assertEquals(shouldSucceedEventually, history.isInvocationResult());
-            assertEquals(shouldSucceedEventually ? NotificationStatus.SUCCESS : NotificationStatus.FAILED_PROCESSING, history.getStatus());
+            assertEquals(shouldSucceedEventually ? NotificationStatus.SUCCESS : NotificationStatus.FAILED_INTERNAL, history.getStatus());
             assertEquals(MAX_RETRY_ATTEMPTS, callsCounter.get());
         } finally {
             // Remove expectations

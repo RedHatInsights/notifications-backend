@@ -200,7 +200,7 @@ public class NotificationHistory extends CreationTimestamped {
         history.setEndpointType(endpoint.getType());
         history.setEndpointSubType(endpoint.getSubType());
         history.setEvent(event);
-        history.setStatus(NotificationStatus.FAILED_CREATION);
+        history.setStatus(NotificationStatus.FAILED_INTERNAL);
         history.setId(historyId);
         return history;
     }

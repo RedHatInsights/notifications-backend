@@ -38,7 +38,7 @@ public class CamelHistoryFillerHelper {
             details.put("outcome", outcome);
         }
 
-        NotificationStatus status = result ? NotificationStatus.SUCCESS : NotificationStatus.FAILED_PROCESSING;
+        NotificationStatus status = result ? NotificationStatus.SUCCESS : NotificationStatus.FAILED_EXTERNAL;
 
         Integer duration = (Integer) jo.getOrDefault("duration", 0);
 

@@ -169,7 +169,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                     // Temporary error, allow retry
                     serverError = true;
                     Log.debugf("Webhook request to %s failed: %d %s", url, resp.statusCode(), resp.statusMessage());
-                    history.setStatus(NotificationStatus.FAILED_PROCESSING);
+                    history.setStatus(NotificationStatus.FAILED_INTERNAL);
                     if (featureFlipper.isDisableWebhookEndpointsOnFailure()) {
                         if (!isEmailEndpoint) {
                             /*
@@ -193,7 +193,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                     } else {
                         Log.debugf("Webhook request to %s failed: %d %s %s", url, resp.statusCode(), resp.statusMessage(), payload);
                     }
-                    history.setStatus(NotificationStatus.FAILED_PROCESSING);
+                    history.setStatus(NotificationStatus.FAILED_INTERNAL);
                     // TODO NOTIF-512 Should we disable endpoints in case of 3xx status code?
                     if (featureFlipper.isDisableWebhookEndpointsOnFailure()) {
                         if (!isEmailEndpoint && resp.statusCode() >= 400 && resp.statusCode() < 500) {
@@ -228,7 +228,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                     }
                 }
 
-                if (history.getStatus() == NotificationStatus.FAILED_PROCESSING) {
+                if (history.getStatus() == NotificationStatus.FAILED_INTERNAL) {
                     JsonObject details = new JsonObject();
                     details.put("url", url);
                     details.put("method", method);

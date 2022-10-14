@@ -109,7 +109,7 @@ public class FromCamelHistoryFillerTest {
         ArgumentCaptor<Map<String, Object>> decodedPayload = ArgumentCaptor.forClass(Map.class);
         verify(camelHistoryFillerHelper).updateHistoryItem(decodedPayload.capture());
 
-        assertEquals(NotificationStatus.FAILED_PROCESSING, nhUpdate.getValue().getStatus());
+        assertEquals(NotificationStatus.FAILED_EXTERNAL, nhUpdate.getValue().getStatus());
 
         assertEquals(expectedHistoryId, decodedPayload.getValue().get("historyId"));
         assertEquals(expectedDuration, decodedPayload.getValue().get("duration"));

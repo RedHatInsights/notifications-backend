@@ -216,7 +216,7 @@ public class LifecycleITest extends DbIsolatedTest {
         event = createEvent(accountId, orgId, eventTypeId);
         createNotificationHistory(event, endpointId1, NotificationStatus.SUCCESS);
         createNotificationHistory(event, endpointId2, NotificationStatus.SUCCESS);
-        createNotificationHistory(event, endpointId3, NotificationStatus.FAILED_PROCESSING);
+        createNotificationHistory(event, endpointId3, NotificationStatus.FAILED_INTERNAL);
 
         // Let's check the notifications history again.
         retry(() -> checkEndpointHistory(identityHeader, endpointId1, 2, true, 200));
@@ -231,7 +231,7 @@ public class LifecycleITest extends DbIsolatedTest {
         event = createEvent(accountId, orgId, eventTypeId);
         createNotificationHistory(event, endpointId1, NotificationStatus.SUCCESS);
         createNotificationHistory(event, endpointId2, NotificationStatus.SUCCESS);
-        createNotificationHistory(event, endpointId3, NotificationStatus.FAILED_PROCESSING);
+        createNotificationHistory(event, endpointId3, NotificationStatus.FAILED_INTERNAL);
         createNotificationHistory(event, emailEndpoint, NotificationStatus.SUCCESS);
 
         // Let's check the notifications history again.
@@ -250,7 +250,7 @@ public class LifecycleITest extends DbIsolatedTest {
         createEvent(accountId, orgId, eventTypeId);
         createNotificationHistory(event, endpointId1, NotificationStatus.SUCCESS);
         createNotificationHistory(event, endpointId2, NotificationStatus.SUCCESS);
-        createNotificationHistory(event, endpointId3, NotificationStatus.FAILED_PROCESSING);
+        createNotificationHistory(event, endpointId3, NotificationStatus.FAILED_INTERNAL);
         createNotificationHistory(event, emailEndpoint, NotificationStatus.SUCCESS);
 
         // Let's check the notifications history again.
@@ -458,7 +458,7 @@ public class LifecycleITest extends DbIsolatedTest {
         history.setEndpointType(endpoint.getType());
         history.setInvocationTime(123L);
         history.setStatus(status);
-        if (status == NotificationStatus.FAILED_PROCESSING) {
+        if (status == NotificationStatus.FAILED_INTERNAL || status == NotificationStatus.FAILED_EXTERNAL) {
             history.setDetails(Map.of(
                     "code", 400,
                     "url", "https://www.foo.com",
