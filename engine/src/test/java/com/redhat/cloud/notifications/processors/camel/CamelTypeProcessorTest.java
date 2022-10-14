@@ -294,7 +294,7 @@ class CamelTypeProcessorTest {
         assertNotNull(historyItem.getInvocationTime());
         // The invocation will be complete when the response from Camel has been received.
         assertFalse(historyItem.isInvocationResult());
-        assertEquals(NotificationStatus.FAILED_CREATION, result.get(0).getStatus());
+        assertEquals(NotificationStatus.FAILED_INTERNAL, result.get(0).getStatus());
 
         MockServerConfig.clearOpenBridgeEndpoints(bridge);
         featureFlipper.setObEnabled(false);

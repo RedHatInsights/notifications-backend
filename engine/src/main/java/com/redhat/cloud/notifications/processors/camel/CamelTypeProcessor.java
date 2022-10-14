@@ -183,7 +183,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
                 callOpenBridge(payload, historyId, orgId, camelProperties, integrationName, originalEventId);
                 history.setStatus(NotificationStatus.SENT);
             } catch (Exception e) {
-                history.setStatus(NotificationStatus.FAILED_CREATION);
+                history.setStatus(NotificationStatus.FAILED_INTERNAL);
                 Map<String, Object> details = new HashMap<>();
                 details.put("failure", e.getMessage());
                 history.setDetails(details);

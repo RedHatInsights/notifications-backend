@@ -23,7 +23,7 @@ public class NotificationRepository {
     EntityManager entityManager;
 
     public List<NotificationHistory> getNotificationHistory(String orgId, UUID endpoint, boolean includeDetails, Query limiter) {
-        String query = "SELECT NEW NotificationHistory(nh.id, nh.invocationTime, nh.status, nh.endpoint, nh.created";
+        String query = "SELECT NEW NotificationHistory(nh.id, nh.invocationTime, nh.invocationResult, nh.status, nh.endpoint, nh.created";
         if (includeDetails) {
             query += ", nh.details";
         }

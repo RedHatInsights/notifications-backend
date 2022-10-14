@@ -47,7 +47,7 @@ public class NotificationHistoryRepositoryTest {
     @Test
     void testCreateHistoryWithExistingEndpoint() {
         Map<String, Object> details = Map.of("alpha", "bravo", "charlie", Map.of("delta", "echo"));
-        NotificationHistory history = initData(123L, NotificationStatus.FAILED_CREATION, WEBHOOK, null, details);
+        NotificationHistory history = initData(123L, NotificationStatus.FAILED_INTERNAL, WEBHOOK, null, details);
 
         statelessSessionFactory.withSession(statelessSession -> {
             repository.createNotificationHistory(history);
