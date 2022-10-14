@@ -470,15 +470,20 @@ public class EndpointResource {
 
         // Update the secrets in Sources.
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-            // In order to be able to update the secrets in Sources, we need to grab the IDs of these secrets from the
-            // database endpoint, since the client won't be sending those IDs.
-            var incomingEndpointProps = (SourcesSecretable) endpoint.getProperties();
-            var databaseEndpointProps = (SourcesSecretable) ep.getProperties();
+            var endpointProperties = endpoint.getProperties();
+            var databaseEndpointProperties = ep.getProperties();
 
-            incomingEndpointProps.setBasicAuthenticationSourcesId(databaseEndpointProps.getBasicAuthenticationSourcesId());
-            incomingEndpointProps.setSecretTokenSourcesId(databaseEndpointProps.getSecretTokenSourcesId());
+            if (endpointProperties instanceof SourcesSecretable && databaseEndpointProperties instanceof SourcesSecretable) {
+                // In order to be able to update the secrets in Sources, we need to grab the IDs of these secrets from the
+                // database endpoint, since the client won't be sending those IDs.
+                var incomingEndpointProps = (SourcesSecretable) endpointProperties;
+                var databaseEndpointProps = (SourcesSecretable) databaseEndpointProperties;
 
-            this.secretUtils.updateSecretsForEndpoint(endpoint);
+                incomingEndpointProps.setBasicAuthenticationSourcesId(databaseEndpointProps.getBasicAuthenticationSourcesId());
+                incomingEndpointProps.setSecretTokenSourcesId(databaseEndpointProps.getSecretTokenSourcesId());
+
+                this.secretUtils.updateSecretsForEndpoint(endpoint);
+            }
         }
 
         return Response.ok().build();
