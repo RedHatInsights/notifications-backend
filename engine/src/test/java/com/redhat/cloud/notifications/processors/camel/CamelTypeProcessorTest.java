@@ -39,7 +39,6 @@ import org.mockito.ArgumentCaptor;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
