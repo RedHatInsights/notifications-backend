@@ -4,7 +4,6 @@ import io.quarkus.rest.client.reactive.ClientExceptionMapper;
 import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PATCH;
@@ -29,7 +28,6 @@ import javax.ws.rs.core.Response;
  *     <li>On the other hand, if sources is using the AWS Secrets Manager, then the whole secret will get encrypted.</li>
  * </ul>
  */
-@ApplicationScoped
 @RegisterClientHeaders(SourcesXRHIDHeaderFactory.class)
 @RegisterRestClient(configKey = "sources")
 public interface SourcesService {
