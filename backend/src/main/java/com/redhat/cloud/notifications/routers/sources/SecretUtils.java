@@ -127,7 +127,7 @@ public class SecretUtils {
     }
 
     /**
-     * Deletes the endpoint's secrets. It requires for the properties to have a "basic authentication" ID and "secret
+     * Deletes the endpoint's secrets. It requires for the properties to have a "basic authentication" ID or "secret
      * token" ID on the database.
      * @param endpoint the endpoint to delete the secrets from.
      */
