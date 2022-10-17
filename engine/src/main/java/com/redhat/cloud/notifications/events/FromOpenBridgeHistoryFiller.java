@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
@@ -15,6 +17,7 @@ import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheName;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.annotation.PostConstruct;
@@ -26,6 +29,7 @@ import javax.ws.rs.WebApplicationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.redhat.cloud.notifications.openbridge.BridgeApiService.BASE_PATH;
@@ -71,6 +75,14 @@ public class FromOpenBridgeHistoryFiller {
     @Inject
     CamelHistoryFillerHelper camelHistoryFillerHelper;
 
+    // TODO NOTIF-832 For debugging purposes, remove this ASAP!
+    @ConfigProperty(name = "env.name")
+    Optional<String> environment;
+
+    // TODO NOTIF-832 For debugging purposes, remove this ASAP!
+    @Inject
+    ObjectMapper objectMapper;
+
     private Counter messagesWithError;
 
     @CacheName("from-open-bridge-history-filler")
@@ -106,6 +118,15 @@ public class FromOpenBridgeHistoryFiller {
         }
 
         for (ProcessingError pe : items) {
+
+            // TODO NOTIF-832 For debugging purposes, remove this ASAP!
+            if (environment.isPresent() && "stage".equals(environment.get())) {
+                try {
+                    Log.infof("Received processing error: %s", objectMapper.writeValueAsString(pe));
+                } catch (JsonProcessingException e) {
+                    Log.errorf("Failed to serialize processing error", e);
+                }
+            }
 
             // We may have seen an item before, skip it
             String historyId = pe.getHeaders().get(RHOSE_ORIGINAL_EVENT_ID_HEADER);
