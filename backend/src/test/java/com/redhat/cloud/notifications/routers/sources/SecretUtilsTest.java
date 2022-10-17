@@ -303,126 +303,99 @@ public class SecretUtilsTest {
     }
 
     /**
-     * Tests that when the "basic authentication" object is {@code NULL} or its Sources ID is zero —which implies that
-     * there is no ID for that object—, the "update" function gets called only for the "secret token" property.
+     * Tests that when the user provides a {@code null} "basic authentication" and "secret token" secret for an
+     * endpoint which has secrets stored in Sources, the deletion process for those secrets is triggered.
      */
     @Test
-    void updateSecretsForEndpointBasicAuthNullZeroIdsTest() {
-        // Create a "secret token" secret mock.
-        final Secret secretTokenMock = new Secret();
-        secretTokenMock.password = SECRET_TOKEN;
+    void updateSecretsForEndpointDeleteTest() {
+        // Create an endpoint that contains the expected data by the function under test.
+        Endpoint endpoint = new Endpoint();
+        WebhookProperties webhookProperties = new WebhookProperties();
 
-        // Set up the mock call to return the "secret token" secret which is supposed to be updated.
-        Mockito.when(this.sourcesServiceMock.getById(SECRET_TOKEN_SOURCES_ID)).thenReturn(secretTokenMock);
+        // Simulate that we are sending an empty "basic authentication" and "secret token", but that we have those
+        // IDs on the database. This should trigger the deletion of these secrets on Sources.
+        webhookProperties.setBasicAuthenticationSourcesId(BASIC_AUTH_SOURCES_ID);
+        webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
 
-        final BasicAuthentication[] basicAuthTestValues = {null, new BasicAuthentication()};
-        for (final BasicAuthentication tv : basicAuthTestValues) {
-            // Create an endpoint that contains the expected data by the function under test.
-            Endpoint endpoint = new Endpoint();
-            WebhookProperties webhookProperties = new WebhookProperties();
+        endpoint.setProperties(webhookProperties);
 
-            // Set the updated fields of the "secret token" field so that the function under test's logic picks it
-            // up for an update.
-            final String updatedSecretToken = String.format("%s-updated", SECRET_TOKEN);
+        // Call the function under test.
+        this.secretUtils.updateSecretsForEndpoint(endpoint);
 
-            webhookProperties.setBasicAuthentication(tv);
+        // The IDs of the properties should be null now.
+        Assertions.assertNull(webhookProperties.getBasicAuthenticationSourcesId(), "the basic authentication's Sources ID isn't null");
+        Assertions.assertNull(webhookProperties.getSecretTokenSourcesId(), "the secret token's Sources ID isn't null");
 
-            webhookProperties.setSecretToken(updatedSecretToken);
-            webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
-
-            endpoint.setProperties(webhookProperties);
-
-            // Call the function under test.
-            this.secretUtils.updateSecretsForEndpoint(endpoint);
-
-            // Check that the endpoint properties are of the expected type.
-            final var endpointProperties = endpoint.getProperties();
-            if (!(endpointProperties instanceof SourcesSecretable)) {
-                Assertions.fail("unexpected type of the properties found. Want " + SourcesSecretable.class + ", got " + endpointProperties.getClass());
-            }
-
-            final var props = (SourcesSecretable) endpoint.getProperties();
-
-            // Assert the results.
-            final String secretToken = props.getSecretToken();
-            Assertions.assertEquals(updatedSecretToken, secretToken, "the updated secret token doesn't match");
-
-            // Reset the "secret token" secret's password to the previous value, so that an update operation is
-            // simulated again.
-            secretTokenMock.password = SECRET_TOKEN;
-        }
-
-        // Assert that the underlying "update" function was called exactly two times, since only the "secret token"
-        // secret should be updated.
-        final int wantedNumberOfInvocations = 2;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).update(Mockito.eq(SECRET_TOKEN_SOURCES_ID), Mockito.any());
+        // It should have triggered two "delete" calls to Sources to delete both of the secrets.
+        final int wantedNumberOfInvocations = 1;
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.eq(BASIC_AUTH_SOURCES_ID));
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.eq(SECRET_TOKEN_SOURCES_ID));
     }
 
     /**
-     * Tests that when the "secret token" property is {@code NULL} or its Sources ID is zero —which implies that there
-     * is no ID for that property—, the "update" function gets called only for the "basic authentication" property.
+     * Tests that when the client updates an endpoint, but there are no secrets stored in Sources, or no secrets
+     * provided by the client, basically a NOP happens.
      */
     @Test
-    void updateSecretsForEndpointSecretTokenNullZeroIdsTest() {
-        // Create a "Basic Authentication" secret mock.
+    void updateSecretsForEndpointNopTest() {
+        // Create an endpoint that contains the expected data by the function under test.
+        Endpoint endpoint = new Endpoint();
+        WebhookProperties webhookProperties = new WebhookProperties();
+        endpoint.setProperties(webhookProperties);
+
+        this.secretUtils.updateSecretsForEndpoint(endpoint);
+
+        final int wantedNumberOfInvocations = 0;
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(Mockito.anyLong());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).update(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.anyLong());
+    }
+
+    @Test
+    void updateSecretsForEndpointCreateTest() {
+        // Set the ID for the basic authentication secret that is supposed that is created in Sources.
         final Secret basicAuthenticationMock = new Secret();
-        basicAuthenticationMock.password = BASIC_AUTH_PASSWORD;
-        basicAuthenticationMock.username = BASIC_AUTH_USERNAME;
+        basicAuthenticationMock.id = BASIC_AUTH_SOURCES_ID;
 
-        // Create a "secret token" secret mock.
+        // Set the ID for the secret token secret that is supposed that is created in Sources.
         final Secret secretTokenMock = new Secret();
-        secretTokenMock.password = SECRET_TOKEN;
+        secretTokenMock.id = SECRET_TOKEN_SOURCES_ID;
 
-        // Set up the mock calls to return the "basic authentication" and the "secret token" secrets which are supposed
-        // to be updated.
-        Mockito.when(this.sourcesServiceMock.getById(BASIC_AUTH_SOURCES_ID)).thenReturn(basicAuthenticationMock);
-        Mockito.when(this.sourcesServiceMock.getById(SECRET_TOKEN_SOURCES_ID)).thenReturn(secretTokenMock);
+        // Set up the mock calls for the "create" calls from the REST Client. Make sure we return the basic
+        // authentication's ID first, and the secret token's ID second, since we are expecting a successful create
+        // operation.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.any())).thenReturn(basicAuthenticationMock, secretTokenMock);
 
-        final String[] secretTokenTestValues = {null, SECRET_TOKEN};
-        for (final String tv : secretTokenTestValues) {
-            // Create an endpoint that contains the expected data by the function under test.
-            Endpoint endpoint = new Endpoint();
-            WebhookProperties webhookProperties = new WebhookProperties();
+        // Create an endpoint that contains the expected data by the function under test.
+        Endpoint endpoint = new Endpoint();
+        WebhookProperties webhookProperties = new WebhookProperties();
+        BasicAuthentication basicAuth = new BasicAuthentication(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
 
-            // Set the updated fields of the "basic authentication" object so that the function under test's logic picks it
-            // up for an update.
-            final String updatedUsername = String.format("%s-updated", BASIC_AUTH_USERNAME);
-            final String updatedPassword = String.format("%s-updated", BASIC_AUTH_PASSWORD);
+        webhookProperties.setBasicAuthentication(basicAuth);
+        webhookProperties.setSecretToken(SECRET_TOKEN);
 
-            BasicAuthentication basicAuth = new BasicAuthentication(updatedUsername, updatedPassword);
-            webhookProperties.setBasicAuthentication(basicAuth);
-            webhookProperties.setBasicAuthenticationSourcesId(BASIC_AUTH_SOURCES_ID);
+        endpoint.setProperties(webhookProperties);
 
-            webhookProperties.setSecretToken(tv);
+        // Call the function under test.
+        this.secretUtils.updateSecretsForEndpoint(endpoint);
 
-            endpoint.setProperties(webhookProperties);
-
-            // Call the function under test.
-            this.secretUtils.updateSecretsForEndpoint(endpoint);
-
-            // Check that the endpoint properties are of the expected type.
-            final var endpointProperties = endpoint.getProperties();
-            if (!(endpointProperties instanceof SourcesSecretable)) {
-                Assertions.fail("unexpected type of the properties found. Want " + SourcesSecretable.class + ", got " + endpointProperties.getClass());
-            }
-
-            final var props = (SourcesSecretable) endpoint.getProperties();
-
-            // Assert the results.
-            final BasicAuthentication basicAuthResult = props.getBasicAuthentication();
-            Assertions.assertEquals(updatedPassword, basicAuthResult.getPassword(), "the updated basic authentication's password doesn't match");
-            Assertions.assertEquals(updatedUsername, basicAuthResult.getUsername(), "the updated basic authentication's username doesn't match");
-
-            // Reset the "basic authentication" secret's password and username fields to the previous values, so that
-            // an update operation is simulated again.
-            basicAuthenticationMock.password = BASIC_AUTH_PASSWORD;
-            basicAuthenticationMock.username = BASIC_AUTH_USERNAME;
+        // Check that the endpoint properties are of the expected type.
+        final var endpointProperties = endpoint.getProperties();
+        if (!(endpointProperties instanceof SourcesSecretable)) {
+            Assertions.fail("unexpected type of the properties found. Want " + SourcesSecretable.class + ", got " + endpointProperties.getClass());
         }
 
-        // Assert that the underlying "update" function was called exactly two times, since only the "basic
-        // authentication" secret should be updated.
-        final int wantedNumberOfInvocationsUpdate = 2;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(Mockito.eq(BASIC_AUTH_SOURCES_ID), Mockito.any());
+        final var props = (WebhookProperties) endpointProperties;
+
+        // Assert the results.
+        Assertions.assertEquals(BASIC_AUTH_SOURCES_ID, props.getBasicAuthenticationSourcesId(), "the ID of the basic authentication secret from Sources doesn't match");
+        Assertions.assertEquals(SECRET_TOKEN_SOURCES_ID, props.getSecretTokenSourcesId(), "the ID of the secret token's secret from Sources doesn't match");
+
+        // Assert that the underlying function was called exactly two times, since we are expecting that both the
+        // "basic authentication" and the "secret token" secrets were created.
+        final int wantedNumberOfInvocations = 2;
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
     }
 
     /**

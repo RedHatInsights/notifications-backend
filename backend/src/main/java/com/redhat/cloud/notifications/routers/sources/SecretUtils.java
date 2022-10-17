@@ -63,36 +63,36 @@ public class SecretUtils {
 
             final BasicAuthentication basicAuth = props.getBasicAuthentication();
             if (basicAuth != null) {
-                Secret secret = new Secret();
+                final long id = this.createBasicAuthentication(basicAuth);
 
-                secret.authenticationType = Secret.TYPE_BASIC_AUTH;
-                secret.password = basicAuth.getPassword();
-                secret.username = basicAuth.getUsername();
+                Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources", endpoint.getId(), id);
 
-                final Secret createdSecret = this.sourcesService.create(secret);
-                Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources", endpoint.getId(), secret.id);
-
-                props.setBasicAuthenticationSourcesId(createdSecret.id);
+                props.setBasicAuthenticationSourcesId(id);
             }
 
             final String secretToken = props.getSecretToken();
             if (secretToken != null) {
-                Secret secret = new Secret();
+                final long id = this.createSecretTokenSecret(secretToken);
 
-                secret.authenticationType = Secret.TYPE_SECRET_TOKEN;
-                secret.password = secretToken;
+                Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources", endpoint.getId(), id);
 
-                final Secret createdSecret = this.sourcesService.create(secret);
-                Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources", endpoint.getId(), secret.id);
-
-                props.setSecretTokenSourcesId(createdSecret.id);
+                props.setSecretTokenSourcesId(id);
             }
         }
     }
 
     /**
-     * Updates the endpoint's secrets in Sources. It doesn't send the update request if the secret stored in Sources
-     * and the updated secret are the same.
+     * <p>Updates the endpoint's secrets in Sources. However a few cases are covered for the secrets:</p>
+     * <ul>
+     *  <li>If the endpoint has an ID for the secret, and the incoming secret is {@code null}, it is assumed that the
+     *  user wants the secret to be deleted.</li>
+     *  <li>If the endpoint has an ID for the secret, and the incoming secret isn't {@code null}, then the secret is
+     *  updated</li>
+     *  <li>If the endpoint doesn't have an ID for the secret, and the incoming secret is {@code null}, it's basically
+     *  a NOP — although the attempt is logged for debugging purposes.</li>
+     *  <li>If the endpoint doesn't have an ID for the secret, and the incoming secret isn't {@code null}, it is
+     *  assumed that the user wants the secret to be created.</li>
+     * </ul>
      * @param endpoint the endpoint to update the secrets from.
      */
     public void updateSecretsForEndpoint(Endpoint endpoint) {
@@ -103,25 +103,63 @@ public class SecretUtils {
 
             final BasicAuthentication basicAuth = props.getBasicAuthentication();
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
-            if (basicAuth != null && basicAuthId != null && basicAuthId > 0) {
-                Secret secret = new Secret();
+            // If the object is null, we simply assume that the user decided to delete the secret, since an update
+            // operation requires the user to send the full object.
+            //
+            // If it isn't null, then we
+            if (basicAuthId != null && basicAuthId > 0) {
+                if (basicAuth == null) {
+                    this.sourcesService.delete(basicAuthId);
+                    Log.infof("[endpoint_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId());
 
-                secret.password = basicAuth.getPassword();
-                secret.username = basicAuth.getUsername();
+                    props.setBasicAuthenticationSourcesId(null);
+                } else {
+                    Secret secret = new Secret();
 
-                this.sourcesService.update(basicAuthId, secret);
-                Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources", endpoint.getId(), basicAuthId);
+                    secret.password = basicAuth.getPassword();
+                    secret.username = basicAuth.getUsername();
+
+                    this.sourcesService.update(basicAuthId, secret);
+                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
+                }
+            } else {
+                if (basicAuth == null) {
+                    Log.infof("[endpoint_id: %s] Basic authentication secret not created in Sources: the basic authentication object is null", endpoint.getId());
+                } else {
+                    final long id = this.createBasicAuthentication(basicAuth);
+                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources during an endpoint update operation", endpoint.getId(), id);
+
+                    props.setBasicAuthenticationSourcesId(id);
+                }
             }
 
             final String secretToken = props.getSecretToken();
             final Long secretTokenId = props.getSecretTokenSourcesId();
-            if (secretToken != null && secretTokenId != null && secretTokenId > 0) {
-                Secret secret = new Secret();
+            if (secretTokenId != null && secretTokenId > 0) {
+                if (secretToken == null) {
+                    this.sourcesService.delete(secretTokenId);
 
-                secret.password = secretToken;
+                    props.setSecretTokenSourcesId(null);
 
-                this.sourcesService.update(secretTokenId, secret);
-                Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret updated in Sources", endpoint.getId(), secretTokenId);
+                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources during an endpoint update operation", endpoint.getId(), secretTokenId);
+                } else {
+                    Secret secret = new Secret();
+
+                    secret.password = secretToken;
+
+                    this.sourcesService.update(secretTokenId, secret);
+                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret updated in Sources", endpoint.getId(), secretTokenId);
+                }
+            } else {
+                if (secretToken == null) {
+                    Log.infof("[endpoint_id: %s] Secret token secret not created in Sources: the secret token object is null", endpoint.getId());
+                } else {
+                    final long id = this.createSecretTokenSecret(secretToken);
+
+                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources during an endpoint update operation", endpoint.getId(), id);
+
+                    props.setSecretTokenSourcesId(id);
+                }
             }
         }
     }
@@ -149,5 +187,38 @@ public class SecretUtils {
                 Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources", endpoint.getId(), secretTokenId);
             }
         }
+    }
+
+    /**
+     * Creates a "basic authentication" secret in Sources.
+     * @param basicAuthentication the contents of the "basic authentication" secret.
+     * @return the id of the created secret.
+     */
+    private long createBasicAuthentication(final BasicAuthentication basicAuthentication) {
+        Secret secret = new Secret();
+
+        secret.authenticationType = Secret.TYPE_BASIC_AUTH;
+        secret.password = basicAuthentication.getPassword();
+        secret.username = basicAuthentication.getUsername();
+
+        final Secret createdSecret = this.sourcesService.create(secret);
+
+        return createdSecret.id;
+    }
+
+    /**
+     * Creates a "secret token" secret in Sources.
+     * @param secretToken the "secret token"'s contents.
+     * @return the id of the created secret.
+     */
+    private long createSecretTokenSecret(final String secretToken) {
+        Secret secret = new Secret();
+
+        secret.authenticationType = Secret.TYPE_SECRET_TOKEN;
+        secret.password = secretToken;
+
+        final Secret createdSecret = this.sourcesService.create(secret);
+
+        return createdSecret.id;
     }
 }
