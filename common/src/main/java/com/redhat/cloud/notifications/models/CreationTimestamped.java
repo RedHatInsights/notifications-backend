@@ -29,7 +29,7 @@ public abstract class CreationTimestamped {
     }
 
     @PrePersist
-    public void prePersist() {
+    public final void prePersist() {
         // The 'created' field value can be set in tests.
         if (created == null) {
             created = LocalDateTime.now(UTC);
