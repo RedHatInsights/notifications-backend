@@ -80,7 +80,8 @@ public class EndpointReadyChecker {
             try {
                 Processor processor = bridgeApiService.getProcessorById(bridge.getId(), processorId, bridgeAuth.getToken());
                 String status = processor.getStatus();
-                Log.debugf("  Status reported by OB for processor %s : %s", processorId, status);
+                String statusMessage = processor.getStatus_message();
+                Log.debugf("Processor[id=%s, status=%s, status_message=%s]", processorId, status, statusMessage);
                 if ("ready".equals(status)) {
                     ep.setStatus(EndpointStatus.READY);
                 }

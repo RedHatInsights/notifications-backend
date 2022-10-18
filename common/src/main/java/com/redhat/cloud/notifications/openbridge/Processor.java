@@ -45,6 +45,8 @@ public class Processor {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String status;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    public String status_message;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String href;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String submitted_at;
@@ -92,6 +94,14 @@ public class Processor {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getStatus_message() {
+        return status_message;
+    }
+
+    public void setStatus_message(String status_message) {
+        this.status_message = status_message;
     }
 
     public String getHref() {
