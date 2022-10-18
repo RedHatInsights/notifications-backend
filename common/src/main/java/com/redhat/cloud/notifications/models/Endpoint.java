@@ -12,7 +12,6 @@ import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -43,8 +42,8 @@ public class Endpoint extends CreationUpdateTimestamped {
             "created", "e.created"
     );
 
+    // This field is generated (when needed) from the additionalPrePersist method.
     @Id
-    @GeneratedValue
     @JsonProperty(access = READ_ONLY)
     private UUID id;
 
@@ -103,6 +102,18 @@ public class Endpoint extends CreationUpdateTimestamped {
     @AssertTrue(message = "This type requires a subtype")
     private boolean isSubtypeOK() {
         return !compositeType.getType().requiresSubType || compositeType.getSubType() != null;
+    }
+
+    @Override
+    protected void additionalPrePersist() {
+        /*
+         * Depending on the endpoint type, the id field may or may not already contain a value when the entity
+         * is first persisted. In particular, RHOSE endpoints will already contain an id value because we need
+         * to know that value when the RHOSE processor is created, before the endpoint is persisted on our side.
+         */
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
     }
 
     public UUID getId() {
