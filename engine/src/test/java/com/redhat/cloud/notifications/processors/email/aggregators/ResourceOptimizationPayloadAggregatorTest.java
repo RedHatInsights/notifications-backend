@@ -84,7 +84,7 @@ public class ResourceOptimizationPayloadAggregatorTest {
         aggregation.setBundleName("rhel");
         aggregation.setApplicationName("resource-optimization");
         aggregation.setOrgId(DEFAULT_ORG_ID);
-        aggregation.setPayload(new BaseTransformer().transform(action));
+        aggregation.setPayload(new BaseTransformer().toJsonObject(action));
         return aggregation;
     }
 

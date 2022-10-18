@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 class BaseTransformerTest {
 
-    private final BaseTransformer testee = new BaseTransformer();
+    private final BaseTransformer baseTransformer = new BaseTransformer();
 
     @Test
     void shouldContainOrgId() {
@@ -19,7 +19,7 @@ class BaseTransformerTest {
         action.setOrgId("someOrgId");
         action.setTimestamp(LocalDateTime.of(2022, 12, 24, 12, 0));
 
-        final JsonObject jsonObject = testee.toJsonObject(action);
+        final JsonObject jsonObject = baseTransformer.toJsonObject(action);
 
         assertEquals("someOrgId", jsonObject.getString("org_id"));
     }

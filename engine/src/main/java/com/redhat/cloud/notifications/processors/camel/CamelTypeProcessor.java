@@ -155,7 +155,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
         }
         metaData.put("_originalId", originalEventId);
 
-        JsonObject payload = transformer.transform(event.getAction());
+        JsonObject payload = transformer.toJsonObject(event.getAction());
         UUID historyId = UUID.randomUUID();
 
         JsonObject metadataAsJson = new JsonObject();

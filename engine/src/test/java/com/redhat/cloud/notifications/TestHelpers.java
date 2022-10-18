@@ -60,7 +60,7 @@ public class TestHelpers {
 
         emailActionMessage.setOrgId(orgId);
 
-        JsonObject payload = baseTransformer.transform(emailActionMessage);
+        JsonObject payload = baseTransformer.toJsonObject(emailActionMessage);
         aggregation.setPayload(payload);
 
         return aggregation;
