@@ -55,6 +55,7 @@ import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.routers.EndpointResource.OB_PROCESSOR_NAME;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -632,6 +633,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertNotNull(extrasObject);
             String channel  = extrasObject.getString("channel");
             assertEquals("#notifications", channel);
+            assertEquals(responsePoint.getString("id"), extrasObject.getString(OB_PROCESSOR_NAME));
 
             ep.getProperties(CamelProperties.class).getExtras().put("channel", "#updated");
             // Now update

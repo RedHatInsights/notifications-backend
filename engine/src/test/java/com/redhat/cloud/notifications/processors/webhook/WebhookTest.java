@@ -255,6 +255,7 @@ public class WebhookTest {
     }
 
     void persistEndpoint(Endpoint endpoint) {
+        endpoint.prePersist();
         statelessSessionFactory.withSession(statelessSession -> {
             return statelessSession.insert(endpoint);
         });

@@ -34,5 +34,13 @@ public abstract class CreationTimestamped {
         if (created == null) {
             created = LocalDateTime.now(UTC);
         }
+        additionalPrePersist();
+    }
+
+    /**
+     * This method can be overridden from an entity to add additional instructions that should be
+     * executed before the entity is first persisted.
+     */
+    protected void additionalPrePersist() {
     }
 }

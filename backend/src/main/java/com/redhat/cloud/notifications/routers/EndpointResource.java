@@ -216,14 +216,17 @@ public class EndpointResource {
         }
 
         if (isForOpenBridge(endpoint)) {
+            /*
+             * We need to include the endpoint id in the processor definition before the endpoint is persisted
+             * on our side. That's why the id is generated here.
+             */
+            endpoint.setId(UUID.randomUUID());
             endpoint.setStatus(EndpointStatus.UNKNOWN);
             try {
                 String bridgeId = bridge.getId();
                 String token = bridgeAuth.getToken();
                 CamelProperties cp = endpoint.getProperties(CamelProperties.class);
-
-                String processorName = "p-" + UUID.randomUUID();
-                cp.getExtras().put(OB_PROCESSOR_NAME, processorName);
+                cp.getExtras().put(OB_PROCESSOR_NAME, endpoint.getId().toString());
 
                 UnaryOperator<Processor> execFun = in -> {
                     try {
