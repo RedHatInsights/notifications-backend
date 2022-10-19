@@ -77,7 +77,7 @@ public class EmailSender {
         bopApiToken = LineBreakCleaner.clean(bopApiToken);
     }
 
-    public void sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body) {
+    public void sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body, boolean persistHistory) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
         LocalDateTime start = LocalDateTime.now(UTC);
 
@@ -98,7 +98,7 @@ public class EmailSender {
             webhookSender.doHttpRequest(
                     event, endpoint,
                     bopRequest,
-                    getPayload(user, action, subject, body), "POST", bopUrl);
+                    getPayload(user, action, subject, body), "POST", bopUrl, persistHistory);
 
             processedTimer.stop(registry.timer("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication()));
 
