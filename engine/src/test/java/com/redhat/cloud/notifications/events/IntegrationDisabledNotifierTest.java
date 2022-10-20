@@ -83,7 +83,7 @@ public class IntegrationDisabledNotifierTest {
         assertEquals(INTEGRATIONS_APP, action.getApplication());
         assertEquals(INTEGRATION_DISABLED_EVENT_TYPE, action.getEventType());
         assertEquals(endpoint.getOrgId(), action.getOrgId());
-        assertTrue(action.getEvents().isEmpty());
+        assertEquals(1, action.getEvents().size());
         assertTrue(action.getRecipients().get(0).getOnlyAdmins());
         assertTrue(action.getRecipients().get(0).getIgnoreUserPreferences());
 

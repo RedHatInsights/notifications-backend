@@ -2,7 +2,9 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
+import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Parser;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Endpoint;
 import org.eclipse.microprofile.reactive.messaging.Channel;
@@ -60,6 +62,10 @@ public class IntegrationDisabledNotifier {
             contextBuilder.withAdditionalProperty(STATUS_CODE_PROPERTY, statusCode);
         }
 
+        Event event = new Event.EventBuilder()
+                .withPayload(new Payload.PayloadBuilder().build())
+                .build();
+
         Recipient recipients = new Recipient.RecipientBuilder()
                 .withOnlyAdmins(true)
                 .withIgnoreUserPreferences(true)
@@ -73,6 +79,7 @@ public class IntegrationDisabledNotifier {
                 .withOrgId(endpoint.getOrgId())
                 .withTimestamp(LocalDateTime.now(UTC))
                 .withContext(contextBuilder.build())
+                .withEvents(List.of(event))
                 .withRecipients(List.of(recipients))
                 .build();
     }
