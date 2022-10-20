@@ -197,7 +197,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
                 .getEmailSubscribersUserId(action.getOrgId(), action.getBundle(), action.getApplication(), emailSubscriptionType));
 
         for (User user : recipientResolver.recipientUsers(action.getOrgId(), requests, subscribers)) {
-            emailSender.sendEmail(user, event, subject, body);
+            emailSender.sendEmail(user, event, subject, body, true);
         }
     }
 
@@ -276,7 +276,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
                 event.setId(UUID.randomUUID());
                 event.setAction(action);
 
-                emailSender.sendEmail(aggregation.getKey(), event, subject, body);
+                emailSender.sendEmail(aggregation.getKey(), event, subject, body, false);
             }
         }
 

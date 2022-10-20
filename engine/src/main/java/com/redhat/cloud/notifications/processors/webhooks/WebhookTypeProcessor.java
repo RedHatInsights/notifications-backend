@@ -136,7 +136,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
         JsonObject payload = transformer.transform(event.getAction());
 
-        doHttpRequest(event, endpoint, req, payload, properties.getMethod().name(), properties.getUrl());
+        doHttpRequest(event, endpoint, req, payload, properties.getMethod().name(), properties.getUrl(), true);
     }
 
     private WebClient getWebClient(boolean disableSSLVerification) {
@@ -147,7 +147,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
         }
     }
 
-    public void doHttpRequest(Event event, Endpoint endpoint, HttpRequest<Buffer> req, JsonObject payload, String method, String url) {
+    public void doHttpRequest(Event event, Endpoint endpoint, HttpRequest<Buffer> req, JsonObject payload, String method, String url, boolean persistHistory) {
         final long startTime = System.currentTimeMillis();
 
         try {
@@ -240,7 +240,9 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                 if (serverError) {
                     throw new ServerErrorException(history);
                 }
-                persistNotificationHistory(history);
+                if (persistHistory) {
+                    persistNotificationHistory(history);
+                }
             });
         } catch (Exception e) {
             NotificationHistory history;
@@ -257,7 +259,9 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                 details.put("error_message", e.getMessage()); // TODO This message isn't always the most descriptive..
                 history.setDetails(details.getMap());
             }
-            persistNotificationHistory(history);
+            if (persistHistory) {
+                persistNotificationHistory(history);
+            }
         }
     }
 
