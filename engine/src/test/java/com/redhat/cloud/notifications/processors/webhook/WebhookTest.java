@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
+import dev.failsafe.Failsafe;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
 
@@ -48,7 +50,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockserver.model.HttpResponse.response;
@@ -162,6 +166,27 @@ public class WebhookTest {
     @Test
     void testRetryWithFinalFailure() {
         testRetry(false);
+    }
+
+    @Test
+    void testFailuresAsException() {
+        // Mocks the static Failsafe method "with" to trigger a synthetic runtime exception
+        try (MockedStatic<Failsafe> failsafeMockedStatic = mockStatic(Failsafe.class)) {
+            failsafeMockedStatic.when(() -> Failsafe.with(any())).thenThrow(new RuntimeException());
+            String url = getMockServerUrl() + "/foobar";
+            Action action = buildWebhookAction();
+            Event event = new Event();
+            event.setAction(action);
+            Endpoint ep = buildWebhookEndpoint(url);
+            webhookTypeProcessor.process(event, List.of(ep));
+
+            ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+            verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
+            NotificationHistory history = historyArgumentCaptor.getAllValues().get(0);
+
+            assertFalse(history.isInvocationResult());
+            assertEquals(NotificationStatus.FAILED_INTERNAL, history.getStatus());
+        }
     }
 
     private void testRetry(boolean shouldSucceedEventually) {
