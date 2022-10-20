@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers.models;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.NotificationStatus;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -29,7 +28,7 @@ public class EventLogEntryAction {
     private Boolean invocationResult;
 
     @NotNull
-    private NotificationStatus status;
+    private EventLogEntryActionStatus status;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private UUID endpointId;
@@ -69,11 +68,11 @@ public class EventLogEntryAction {
         this.invocationResult = invocationResult;
     }
 
-    public NotificationStatus getStatus() {
+    public EventLogEntryActionStatus getStatus() {
         return status;
     }
 
-    public void setStatus(NotificationStatus status) {
+    public void setStatus(EventLogEntryActionStatus status) {
         this.status = status;
     }
 

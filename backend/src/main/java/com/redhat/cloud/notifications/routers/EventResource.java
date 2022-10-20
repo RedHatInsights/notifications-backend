@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
+import com.redhat.cloud.notifications.routers.models.EventLogEntryActionStatus;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
@@ -97,7 +98,7 @@ public class EventResource {
                     action.setEndpointType(historyEntry.getEndpointType());
                     action.setEndpointSubType(historyEntry.getEndpointSubType());
                     action.setInvocationResult(historyEntry.isInvocationResult());
-                    action.setStatus(historyEntry.getStatus());
+                    action.setStatus(EventLogEntryActionStatus.fromNotificationStatus(historyEntry.getStatus()));
                     if (includeDetails) {
                         action.setDetails(historyEntry.getDetails());
                     }
