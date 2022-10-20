@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.routers.models.EventLogEntryActionStatus;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.RestQuery;
 
@@ -56,7 +57,7 @@ public class EventResource {
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
                                          @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
                                          @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
-                                         @RestQuery Set<NotificationStatus> status,
+                                         @RestQuery Set<EventLogEntryActionStatus> status,
                                          @BeanParam Query query,
                                          @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
         if (query.getLimit().getLimit() < 1 || query.getLimit().getLimit() > 200) {
@@ -65,6 +66,7 @@ public class EventResource {
 
         Set<EndpointType> basicTypes = Collections.emptySet();
         Set<CompositeEndpointType> compositeTypes = Collections.emptySet();
+        Set<NotificationStatus> notificationStatusSet = fromEventLogEntryActionStatus(status);
 
         if (endpointTypes != null && endpointTypes.size() > 0) {
             basicTypes = new HashSet<>();
@@ -85,7 +87,7 @@ public class EventResource {
         }
 
         String orgId = getOrgId(securityContext);
-        List<Event> events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, status, query);
+        List<Event> events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, query);
         List<EventLogEntry> eventLogEntries = events.stream().map(event -> {
             List<EventLogEntryAction> actions;
             if (!includeActions) {
@@ -98,7 +100,7 @@ public class EventResource {
                     action.setEndpointType(historyEntry.getEndpointType());
                     action.setEndpointSubType(historyEntry.getEndpointSubType());
                     action.setInvocationResult(historyEntry.isInvocationResult());
-                    action.setStatus(EventLogEntryActionStatus.fromNotificationStatus(historyEntry.getStatus()));
+                    action.setStatus(fromNotificationStatus(historyEntry.getStatus()));
                     if (includeDetails) {
                         action.setDetails(historyEntry.getDetails());
                     }
@@ -118,7 +120,7 @@ public class EventResource {
             }
             return entry;
         }).collect(Collectors.toList());
-        Long count = eventRepository.count(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, status);
+        Long count = eventRepository.count(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet);
 
         Meta meta = new Meta();
         meta.setCount(count);
@@ -130,5 +132,45 @@ public class EventResource {
         page.setMeta(meta);
         page.setLinks(links);
         return page;
+    }
+
+    static EventLogEntryActionStatus fromNotificationStatus(NotificationStatus status) {
+        switch (status) {
+            case SENT:
+                return EventLogEntryActionStatus.SENT;
+            case SUCCESS:
+                return EventLogEntryActionStatus.SUCCESS;
+            case PROCESSING:
+                return EventLogEntryActionStatus.PROCESSING;
+            case FAILED_EXTERNAL:
+            case FAILED_INTERNAL:
+                return EventLogEntryActionStatus.FAILED;
+            default:
+                Log.warnf("Uncovered status found:[%s]. This is a bug", status);
+                return EventLogEntryActionStatus.UNKNOWN;
+        }
+    }
+
+    static Set<NotificationStatus> fromEventLogEntryActionStatus(Set<EventLogEntryActionStatus> statusSet) {
+        Set<NotificationStatus> notificationStatusSet = new HashSet<>();
+        statusSet.forEach(status -> {
+            switch (status) {
+                case SUCCESS:
+                    notificationStatusSet.add(NotificationStatus.SUCCESS);
+                case SENT:
+                    notificationStatusSet.add(NotificationStatus.SENT);
+                case FAILED:
+                    notificationStatusSet.add(NotificationStatus.FAILED_EXTERNAL);
+                    notificationStatusSet.add(NotificationStatus.FAILED_INTERNAL);
+                case PROCESSING:
+                    notificationStatusSet.add(NotificationStatus.PROCESSING);
+                case UNKNOWN:
+                    throw new BadRequestException("Unable to filter by 'Unknown' status");
+                default:
+                    throw new BadRequestException(String.format("Unsupported filter value: [%s]", status));
+            }
+        });
+
+        return notificationStatusSet;
     }
 }

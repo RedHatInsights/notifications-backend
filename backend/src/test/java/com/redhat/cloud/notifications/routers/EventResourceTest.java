@@ -529,6 +529,34 @@ public class EventResourceTest extends DbIsolatedTest {
                 .contentType(JSON);
     }
 
+    @Test
+    public void fromNotificationStatusTest() {
+        assertEquals(
+                EventLogEntryActionStatus.SENT,
+                EventResource.fromNotificationStatus(NotificationStatus.SENT)
+        );
+
+        assertEquals(
+                EventLogEntryActionStatus.SUCCESS,
+                EventResource.fromNotificationStatus(NotificationStatus.SUCCESS)
+        );
+
+        assertEquals(
+                EventLogEntryActionStatus.PROCESSING,
+                EventResource.fromNotificationStatus(NotificationStatus.PROCESSING)
+        );
+
+        assertEquals(
+                EventLogEntryActionStatus.FAILED,
+                EventResource.fromNotificationStatus(NotificationStatus.FAILED_INTERNAL)
+        );
+
+        assertEquals(
+                EventLogEntryActionStatus.FAILED,
+                EventResource.fromNotificationStatus(NotificationStatus.FAILED_EXTERNAL)
+        );
+    }
+
     @Transactional
     Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created) {
         Event event = new Event();
@@ -625,7 +653,7 @@ public class EventResourceTest extends DbIsolatedTest {
                 assertEquals(historyEntry.get().getEndpointType(), eventLogEntryAction.getEndpointType());
                 assertEquals(historyEntry.get().getEndpointSubType(), eventLogEntryAction.getEndpointSubType());
                 assertEquals(historyEntry.get().isInvocationResult(), eventLogEntryAction.getInvocationResult());
-                assertEquals(EventLogEntryActionStatus.fromNotificationStatus(historyEntry.get().getStatus()), eventLogEntryAction.getStatus());
+                assertEquals(EventResource.fromNotificationStatus(historyEntry.get().getStatus()), eventLogEntryAction.getStatus());
             }
         }
     }
