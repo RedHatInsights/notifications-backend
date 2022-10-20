@@ -250,6 +250,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                 history = ((ServerErrorException) e).getNotificationHistory();
             } else {
                 history = buildNotificationHistory(event, endpoint, startTime);
+                history.setStatus(NotificationStatus.FAILED_INTERNAL);
 
                 Log.debugf("Failed: %s", e.getMessage());
 
