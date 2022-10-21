@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.camel;
 import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -12,6 +13,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
+import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -21,6 +23,8 @@ import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeHelper;
 import com.redhat.cloud.notifications.openbridge.BridgeItemList;
+import com.redhat.cloud.notifications.templates.models.Environment;
+import io.quarkus.logging.Log;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -30,15 +34,20 @@ import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
 import io.vertx.core.json.JsonObject;
+import org.apache.http.HttpStatus;
 import org.apache.kafka.common.header.Headers;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockserver.model.ClearType;
+import org.mockserver.model.HttpRequest;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
+import javax.ws.rs.HttpMethod;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,7 +67,6 @@ import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.PROCESSED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.TOKEN_HEADER;
-import static java.lang.Boolean.TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -68,6 +76,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -75,6 +85,35 @@ class CamelTypeProcessorTest {
 
     public static final String SUB_TYPE_KEY = "subType";
     public static final String SUB_TYPE = "sub-type";
+
+    /**
+     * Action fixtures for the {@link #buildEvent()} function.
+     */
+    private static final String FIXTURE_ACTION_APP = "app";
+    private static final String FIXTURE_ACTION_VERSION = "v1.0.0";
+    private static final String FIXTURE_ACTION_BUNDLE = "bundle";
+    private static final String FIXTURE_ACTION_EVENT_TYPE = "event-type";
+    private static final LocalDateTime FIXTURE_ACTION_TIMESTAMP = LocalDateTime.now();
+    private static final String FIXTURE_ACTION_ACCOUNT_ID = "account-id";
+    private static final List<Recipient> FIXTURE_ACTION_RECIPIENTS = List.of();
+    private static final Context FIXTURE_ACTION_CONTEXT = new Context.ContextBuilder().build();
+    private static final String FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY = "k1";
+    private static final String FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_VALUE = "v1";
+    private static final String FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2 = "k2";
+    private static final String FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2_VALUE = "v2";
+    private static final String FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3 = "k3";
+    private static final String FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3_VALUE = "v3";
+
+    /**
+     * Camel endpoint fixtures for the {@link #buildCamelEndpoint(String)} function.
+     */
+    private static final String FIXTURE_CAMEL_URL = "https://redhat.com";
+    private static final Boolean FIXTURE_CAMEL_SSL_VERIFICATION = true;
+    private static final String FIXTURE_CAMEL_SECRET_TOKEN = "top-secret";
+    private static final String FIXTURE_CAMEL_BASIC_AUTH_USERNAME = "john";
+    private static final String FIXTURE_CAMEL_BASIC_AUTH_PASSWORD = "doe";
+    private static final String FIXTURE_CAMEL_EXTRAS_KEY = "foo";
+    private static final String FIXTURE_CAMEL_EXTRAS_VALUE = "bar";
 
     @Inject
     @Any
@@ -97,6 +136,12 @@ class CamelTypeProcessorTest {
 
     @InjectMock
     NotificationHistoryRepository notificationHistoryRepository;
+
+    /**
+     * Used to test that the environment's URL is properly set when sending events to Open Bridge.
+     */
+    @Inject
+    Environment environment;
 
     @BeforeEach
     void beforeEach() {
@@ -299,26 +344,110 @@ class CamelTypeProcessorTest {
 
     }
 
+    /**
+     * Tests that the payload sent to Open Bridge is the one that is expected.
+     */
+    @Test
+    void callOpenBridgeExpectedJson() {
+        // Set "Open Bridge" feature enabled to be able to test this.
+        this.featureFlipper.setObEnabled(true);
+
+        // The path that will be set up in the Mock Server, and that will be used as the Bridge's endpoint.
+        final String testMockServerPath = "/events/slack/json-output-check";
+
+        // Create a request expectation for when the Open Bridge sends the request. It is created separately because
+        // it is needed later to retrieve the requests that match with this expectation.
+        final HttpRequest expectedRequest = HttpRequest.request().withPath(testMockServerPath).withMethod(HttpMethod.POST);
+        MockServerLifecycleManager.getClient().when(expectedRequest).respond(
+            response().withStatusCode(HttpStatus.SC_NO_CONTENT)
+        );
+
+        // Create the input data for the test.
+        Event event = buildEvent();
+        event.setAccountId("rhid123");
+        event.setOrgId(DEFAULT_ORG_ID);
+
+        Endpoint endpoint = buildCamelEndpoint(event.getAction().getAccountId());
+        endpoint.setSubType("slack");
+
+        // Set up some mock Open Bridge endpoints (simulate a valid bridge)
+        final String eventsEndpoint = MockServerLifecycleManager.getMockServerUrl() + testMockServerPath;
+        Log.infof("The event's endpoint is set to %s", eventsEndpoint);
+
+        // Create the bridge.
+        final Bridge bridge = new Bridge("321", eventsEndpoint, "my bridge");
+
+
+        List<Bridge> items = new ArrayList<>();
+        items.add(bridge);
+
+        // Create the Bridge list for the Mock Server Configuration.
+        BridgeItemList<Bridge> bridgeList = new BridgeItemList<>();
+        bridgeList.setItems(items);
+        bridgeList.setSize(1);
+        bridgeList.setTotal(1);
+
+        // Create an authentication token for the Bridge.
+        Map<String, String> auth = new HashMap<>();
+        auth.put("access_token", "li-la-lu-token");
+
+        // Add the Bridge and add a name for it.
+        MockServerConfig.addOpenBridgeEndpoints(auth, bridgeList);
+        this.bridgeHelper.setOurBridgeName("my bridge");
+
+        Log.infof("Authentication token for the bridge helper: %s", this.bridgeHelper.getAuthToken());
+        Log.infof("Used bridge for the test: %s", this.bridgeHelper.getBridgeIfNeeded());
+
+        // Call the function under test.
+        this.processor.process(event, List.of(endpoint));
+
+        // Get the recorded requests from the Mock Server.
+        final HttpRequest[] recordedRequests = MockServerLifecycleManager.getClient().retrieveRecordedRequests(expectedRequest);
+
+        // We are expecting one call to the Bridge Event Service, so anything different from that should be noted as an
+        // error.
+        if (recordedRequests.length != 1) {
+            Assertions.fail(String.format("the number of recorded requests doesn't match the expected one. Want %d, got %d", 1, recordedRequests.length));
+        }
+
+        // Get the request's JSON body.
+        final HttpRequest req = recordedRequests[0];
+        final JsonObject json = new JsonObject(req.getBodyAsString());
+
+        // Assert the results.
+        Assertions.assertTrue(json.containsKey("environment_url"), "the expected 'environment_url' key is not present");
+        Assertions.assertEquals(this.environment.url(), json.getString("environment_url"), "the environment URL isn't the same");
+
+        // Clear the path from the Mock Server since this won't be used by any other test.
+        MockServerLifecycleManager.getClient().clear(request().withPath("/events/slack/json-output-check"), ClearType.ALL);
+
+        // Clear also the Open Bridge endpoints for this test.
+        MockServerConfig.clearOpenBridgeEndpoints(bridge);
+
+        // Reset the feature flag to false in order to avoid affecting any other tests.
+        featureFlipper.setObEnabled(false);
+    }
+
     private static Event buildEvent() {
         Action action = new Action();
-        action.setVersion("v1.0.0");
-        action.setBundle("bundle");
-        action.setApplication("app");
-        action.setEventType("event-type");
-        action.setTimestamp(LocalDateTime.now());
-        action.setAccountId("account-id");
+        action.setVersion(FIXTURE_ACTION_VERSION);
+        action.setBundle(FIXTURE_ACTION_BUNDLE);
+        action.setApplication(FIXTURE_ACTION_APP);
+        action.setEventType(FIXTURE_ACTION_EVENT_TYPE);
+        action.setTimestamp(FIXTURE_ACTION_TIMESTAMP);
+        action.setAccountId(FIXTURE_ACTION_ACCOUNT_ID);
         action.setOrgId(DEFAULT_ORG_ID);
-        action.setRecipients(List.of());
-        action.setContext(new Context.ContextBuilder().build());
+        action.setRecipients(FIXTURE_ACTION_RECIPIENTS);
+        action.setContext(FIXTURE_ACTION_CONTEXT);
         action.setEvents(
                 List.of(
                         new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
                                 .withMetadata(new Metadata.MetadataBuilder().build())
                                 .withPayload(
                                         new Payload.PayloadBuilder()
-                                                .withAdditionalProperty("k1", "v1")
-                                                .withAdditionalProperty("k2", "v2")
-                                                .withAdditionalProperty("k3", "v3")
+                                                .withAdditionalProperty(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY, FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_VALUE)
+                                                .withAdditionalProperty(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2, FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2_VALUE)
+                                                .withAdditionalProperty(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3, FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3_VALUE)
                                                 .build()
                                 )
                                 .build()
@@ -331,14 +460,14 @@ class CamelTypeProcessorTest {
     }
 
     private static Endpoint buildCamelEndpoint(String accountId) {
-        BasicAuthentication basicAuth = new BasicAuthentication("john", "doe");
+        BasicAuthentication basicAuth = new BasicAuthentication(FIXTURE_CAMEL_BASIC_AUTH_USERNAME, FIXTURE_CAMEL_BASIC_AUTH_PASSWORD);
 
         CamelProperties properties = new CamelProperties();
-        properties.setUrl("https://redhat.com");
-        properties.setDisableSslVerification(TRUE);
-        properties.setSecretToken("top-secret");
+        properties.setUrl(FIXTURE_CAMEL_URL);
+        properties.setDisableSslVerification(FIXTURE_CAMEL_SSL_VERIFICATION);
+        properties.setSecretToken(FIXTURE_CAMEL_SECRET_TOKEN);
         properties.setBasicAuthentication(basicAuth);
-        properties.setExtras(Map.of("foo", "bar"));
+        properties.setExtras(Map.of(FIXTURE_CAMEL_EXTRAS_KEY, FIXTURE_CAMEL_EXTRAS_VALUE));
 
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);

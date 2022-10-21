@@ -15,6 +15,7 @@ import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.openbridge.BridgeEventService;
 import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.templates.models.Environment;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -85,6 +86,12 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
 
     @Inject
     RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
+
+    /**
+     * Used to send the environment's URL on OpenBridge events.
+     */
+    @Inject
+    Environment environment;
 
     private Bridge bridge;
 
@@ -256,6 +263,9 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
         BridgeEventService evtSvc = RestClientBuilder.newBuilder()
                 .baseUri(URI.create(bridge.getEndpoint()))
                 .build(BridgeEventService.class);
+
+        // Include the environment's URL when sending the event.
+        ce.put("environment_url", this.environment.url());
 
         JsonObject payload = JsonObject.mapFrom(ce);
         try {
