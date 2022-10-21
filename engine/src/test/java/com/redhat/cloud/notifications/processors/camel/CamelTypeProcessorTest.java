@@ -33,6 +33,7 @@ import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.http.HttpStatus;
 import org.apache.kafka.common.header.Headers;
@@ -87,6 +88,19 @@ class CamelTypeProcessorTest {
     public static final String SUB_TYPE = "sub-type";
 
     /**
+     * The following constants are hard coded in {@link CamelTypeProcessor#callOpenBridge(JsonObject, UUID, String, CamelProperties, String, String)}.
+     */
+    private static final String FIXTURE_TYPE = "myType";
+    private static final String FIXTURE_SOURCE = "notifications";
+    private static final String FIXTURE_SPEC_VERSION = "1.0";
+
+    /**
+     * Endpoint fixtures for the {@link #buildEvent()} function.
+     */
+    private static final UUID FIXTURE_EVENT_ORIGINAL_UUID = UUID.randomUUID();
+    private static final String FIXTURE_ACTION_ORG_ID = "test-event-org-id";
+
+    /**
      * Action fixtures for the {@link #buildEvent()} function.
      */
     private static final String FIXTURE_ACTION_APP = "app";
@@ -96,7 +110,8 @@ class CamelTypeProcessorTest {
     private static final LocalDateTime FIXTURE_ACTION_TIMESTAMP = LocalDateTime.now();
     private static final String FIXTURE_ACTION_ACCOUNT_ID = "account-id";
     private static final List<Recipient> FIXTURE_ACTION_RECIPIENTS = List.of();
-    private static final Context FIXTURE_ACTION_CONTEXT = new Context.ContextBuilder().build();
+    private static final String FIXTURE_ACTION_CONTEXT = "context-key";
+    private static final String FIXTURE_ACTION_CONTEXT_VALUE = "context-value";
     private static final String FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY = "k1";
     private static final String FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_VALUE = "v1";
     private static final String FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2 = "k2";
@@ -112,8 +127,7 @@ class CamelTypeProcessorTest {
     private static final String FIXTURE_CAMEL_SECRET_TOKEN = "top-secret";
     private static final String FIXTURE_CAMEL_BASIC_AUTH_USERNAME = "john";
     private static final String FIXTURE_CAMEL_BASIC_AUTH_PASSWORD = "doe";
-    private static final String FIXTURE_CAMEL_EXTRAS_KEY = "foo";
-    private static final String FIXTURE_CAMEL_EXTRAS_VALUE = "bar";
+    private static final String FIXTURE_CAMEL_EXTRAS_PROCESSOR_NAME = "test-custom-processor-name";
 
     @Inject
     @Any
@@ -377,7 +391,6 @@ class CamelTypeProcessorTest {
         // Create the bridge.
         final Bridge bridge = new Bridge("321", eventsEndpoint, "my bridge");
 
-
         List<Bridge> items = new ArrayList<>();
         items.add(bridge);
 
@@ -414,12 +427,77 @@ class CamelTypeProcessorTest {
         final HttpRequest req = recordedRequests[0];
         final JsonObject json = new JsonObject(req.getBodyAsString());
 
-        // Assert the results.
-        Assertions.assertTrue(json.containsKey("environment_url"), "the expected 'environment_url' key is not present");
+        // Assert the results for the top level fields.
+        Assertions.assertTrue(json.containsKey("rhorgid"), "the expected \"rhorgid\" field is not present");
+        Assertions.assertTrue(json.containsKey("specversion"), "the expected \"specversion\" field is not present");
+        Assertions.assertTrue(json.containsKey("id"), "the expected \"id\" field is not present");
+        Assertions.assertTrue(json.containsKey("source"), "the expected \"source|\" field is not present");
+        Assertions.assertTrue(json.containsKey("processorname"), "the expected \"processorname\" field is not present");
+        Assertions.assertTrue(json.containsKey("type"), "the expected \"type\" field is not present");
+        Assertions.assertTrue(json.containsKey("originaleventid"), "the expected \"originaleventid\" field is not present");
+        Assertions.assertTrue(json.containsKey("environment_url"), "the expected \"environment_url\" key is not present");
+        Assertions.assertTrue(json.containsKey("data"), "the expected \"data\" field is not present");
         Assertions.assertEquals(this.environment.url(), json.getString("environment_url"), "the environment URL isn't the same");
 
+        // Assert the values for the top level fields.
+        Assertions.assertEquals(DEFAULT_ORG_ID, json.getString("rhorgid"), "the \"rhorgid\" values don't match");
+        Assertions.assertEquals(FIXTURE_SPEC_VERSION, json.getString("specversion"), "the \"specversion\" values don't match");
+        // The UUID is randomly generated, so the only way to test that the ID is valid is to check if it is a valid
+        // UUID.
+        UUID.fromString(json.getString("id"));
+        Assertions.assertEquals(FIXTURE_SOURCE, json.getString("source"), "the \"source\" values don't match");
+        Assertions.assertEquals(FIXTURE_CAMEL_EXTRAS_PROCESSOR_NAME, json.getString("processorname"), "the \"processorname\" values don't match");
+        Assertions.assertEquals(FIXTURE_TYPE, json.getString("type"), "the \"type\" values don't match");
+        Assertions.assertEquals(this.environment.url(), json.getString("environment_url"), "the \"environment_url\" values don't match");
+        Assertions.assertEquals(FIXTURE_EVENT_ORIGINAL_UUID.toString(), json.getString("originaleventid"), "the \"originaleventid\" values don't match");
+
+        // Assert the results for the fields in the "data" object.
+        final JsonObject data = json.getJsonObject("data");
+        Assertions.assertTrue(data.containsKey("account_id"), "the \"account_id\" field is not present");
+        Assertions.assertTrue(data.containsKey("application"), "the \"application\" field is not present");
+        Assertions.assertTrue(data.containsKey("bundle"), "the \"bundle\" field is not present");
+        Assertions.assertTrue(data.containsKey("context"), "the \"context\" field is not present");
+        Assertions.assertTrue(data.containsKey("event_type"), "the \"event_type\" field is not present");
+        Assertions.assertTrue(data.containsKey("events"), "the \"events\" field is not present");
+        Assertions.assertTrue(data.containsKey("org_id"), "the \"org_id\" field is not present");
+        Assertions.assertTrue(data.containsKey("timestamp"), "the \"timestamp\" field is not present");
+
+        // Assert the values for the fields in the "data" object.
+        Assertions.assertEquals(FIXTURE_ACTION_ACCOUNT_ID, data.getString("account_id"), "the \"account_id\" values don't match");
+        Assertions.assertEquals(FIXTURE_ACTION_APP, data.getString("application"), "the \"application\" values don't match");
+        Assertions.assertEquals(FIXTURE_ACTION_BUNDLE, data.getString("bundle"), "the \"bundle\" values don't match");
+        Assertions.assertEquals(FIXTURE_ACTION_EVENT_TYPE, data.getString("event_type"), "the \"event_type\" values don't match");
+        Assertions.assertEquals(FIXTURE_ACTION_ORG_ID, data.getString("org_id"), "the \"org_id\" values don't match");
+        Assertions.assertEquals(FIXTURE_ACTION_TIMESTAMP.toString(), data.getString("timestamp"), "the \"timestamp\" values don't match");
+
+        // Assert the fields and the values in the "context" object.
+        final JsonObject context = data.getJsonObject("context");
+        Assertions.assertTrue(context.containsKey(FIXTURE_ACTION_CONTEXT), String.format("the expected \"%s\" context field is not present", FIXTURE_ACTION_CONTEXT));
+        Assertions.assertEquals(FIXTURE_ACTION_CONTEXT_VALUE, context.getString(FIXTURE_ACTION_CONTEXT), String.format("the \"%s\" context values don't match", FIXTURE_ACTION_CONTEXT_VALUE));
+
+        // Assert the "events" array.
+        final JsonArray events = data.getJsonArray("events");
+        if (events.size() != 1) {
+            Assertions.fail(String.format("the events array has an unexpected number of elements. Want %s, got %s", 1, events.size()));
+        }
+
+        final JsonObject eventResult = events.getJsonObject(0);
+
+        Assertions.assertTrue(eventResult.containsKey("metadata"), "the \"metadata\" field is not present");
+        Assertions.assertTrue(eventResult.containsKey("payload"), "the \"payload\" field is not present");
+
+        // Assert the "payload" object in the event.
+        final JsonObject payload = eventResult.getJsonObject("payload");
+        Assertions.assertTrue(payload.containsKey(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY), String.format("the \"%s\" payload field is not present", FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY));
+        Assertions.assertTrue(payload.containsKey(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2), String.format("the \"%s\" payload field is not present", FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2));
+        Assertions.assertTrue(payload.containsKey(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3), String.format("the \"%s\" payload field is not present", FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3));
+
+        Assertions.assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY), "the payload's additional property value doesn't match");
+        Assertions.assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2), "the payload's additional property value doesn't match");
+        Assertions.assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3), "the payload's additional property value doesn't match");
+
         // Clear the path from the Mock Server since this won't be used by any other test.
-        MockServerLifecycleManager.getClient().clear(request().withPath("/events/slack/json-output-check"), ClearType.ALL);
+        MockServerLifecycleManager.getClient().clear(request().withPath(testMockServerPath), ClearType.ALL);
 
         // Clear also the Open Bridge endpoints for this test.
         MockServerConfig.clearOpenBridgeEndpoints(bridge);
@@ -436,25 +514,30 @@ class CamelTypeProcessorTest {
         action.setEventType(FIXTURE_ACTION_EVENT_TYPE);
         action.setTimestamp(FIXTURE_ACTION_TIMESTAMP);
         action.setAccountId(FIXTURE_ACTION_ACCOUNT_ID);
-        action.setOrgId(DEFAULT_ORG_ID);
+        action.setOrgId(FIXTURE_ACTION_ORG_ID);
         action.setRecipients(FIXTURE_ACTION_RECIPIENTS);
-        action.setContext(FIXTURE_ACTION_CONTEXT);
+
+        Context context = new Context.ContextBuilder().build();
+        context.setAdditionalProperty(FIXTURE_ACTION_CONTEXT, FIXTURE_ACTION_CONTEXT_VALUE);
+        action.setContext(context);
+
         action.setEvents(
-                List.of(
-                        new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
-                                .withMetadata(new Metadata.MetadataBuilder().build())
-                                .withPayload(
-                                        new Payload.PayloadBuilder()
-                                                .withAdditionalProperty(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY, FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_VALUE)
-                                                .withAdditionalProperty(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2, FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2_VALUE)
-                                                .withAdditionalProperty(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3, FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3_VALUE)
-                                                .build()
-                                )
-                                .build()
-                )
+            List.of(
+                new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                    .withMetadata(new Metadata.MetadataBuilder().build())
+                    .withPayload(
+                        new Payload.PayloadBuilder()
+                            .withAdditionalProperty(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY, FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_VALUE)
+                            .withAdditionalProperty(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2, FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2_VALUE)
+                            .withAdditionalProperty(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3, FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3_VALUE)
+                            .build()
+                    )
+                .build()
+            )
         );
 
         Event event = new Event();
+        event.setId(FIXTURE_EVENT_ORIGINAL_UUID);
         event.setAction(action);
         return event;
     }
@@ -467,7 +550,7 @@ class CamelTypeProcessorTest {
         properties.setDisableSslVerification(FIXTURE_CAMEL_SSL_VERIFICATION);
         properties.setSecretToken(FIXTURE_CAMEL_SECRET_TOKEN);
         properties.setBasicAuthentication(basicAuth);
-        properties.setExtras(Map.of(FIXTURE_CAMEL_EXTRAS_KEY, FIXTURE_CAMEL_EXTRAS_VALUE));
+        properties.setExtras(Map.of(CamelTypeProcessor.PROCESSORNAME, FIXTURE_CAMEL_EXTRAS_PROCESSOR_NAME));
 
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
