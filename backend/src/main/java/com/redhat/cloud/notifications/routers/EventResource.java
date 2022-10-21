@@ -66,7 +66,7 @@ public class EventResource {
 
         Set<EndpointType> basicTypes = Collections.emptySet();
         Set<CompositeEndpointType> compositeTypes = Collections.emptySet();
-        Set<NotificationStatus> notificationStatusSet = fromEventLogEntryActionStatus(status);
+        Set<NotificationStatus> notificationStatusSet = status == null ? Set.of() : toNotificationStatus(status);
 
         if (endpointTypes != null && endpointTypes.size() > 0) {
             basicTypes = new HashSet<>();
@@ -151,19 +151,23 @@ public class EventResource {
         }
     }
 
-    static Set<NotificationStatus> fromEventLogEntryActionStatus(Set<EventLogEntryActionStatus> statusSet) {
+    static Set<NotificationStatus> toNotificationStatus(Set<EventLogEntryActionStatus> statusSet) {
         Set<NotificationStatus> notificationStatusSet = new HashSet<>();
         statusSet.forEach(status -> {
             switch (status) {
                 case SUCCESS:
                     notificationStatusSet.add(NotificationStatus.SUCCESS);
+                    break;
                 case SENT:
                     notificationStatusSet.add(NotificationStatus.SENT);
+                    break;
                 case FAILED:
                     notificationStatusSet.add(NotificationStatus.FAILED_EXTERNAL);
                     notificationStatusSet.add(NotificationStatus.FAILED_INTERNAL);
+                    break;
                 case PROCESSING:
                     notificationStatusSet.add(NotificationStatus.PROCESSING);
+                    break;
                 case UNKNOWN:
                     throw new BadRequestException("Unable to filter by 'Unknown' status");
                 default:

@@ -447,7 +447,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Using status = SUCCESS
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(NotificationStatus.SUCCESS), 10, 0, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(EventLogEntryActionStatus.SUCCESS), 10, 0, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(2), event1, history1, history2);
@@ -460,7 +460,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Using status = FAILED_INTERNAL
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(NotificationStatus.FAILED_INTERNAL), 10, 0, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(EventLogEntryActionStatus.FAILED), 10, 0, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event1, history1, history2);
@@ -471,7 +471,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Using status = PROCESSING
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(NotificationStatus.PROCESSING), 10, 0, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(EventLogEntryActionStatus.PROCESSING), 10, 0, null, false, true);
         assertEquals(0, page.getMeta().getCount());
         assertEquals(0, page.getData().size());
         assertLinks(page.getLinks(), "first", "last");
@@ -583,7 +583,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
     private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                                        LocalDateTime startDate, LocalDateTime endDate, Set<String> endpointTypes,
-                                                       Set<Boolean> invocationResults, Set<NotificationStatus> status, Integer limit,
+                                                       Set<Boolean> invocationResults, Set<EventLogEntryActionStatus> status, Integer limit,
                                                        Integer offset, String sortBy, boolean includePayload, boolean includeActions) {
         RequestSpecification request = given()
                 .header(identityHeader);
