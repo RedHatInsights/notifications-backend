@@ -420,19 +420,8 @@ class CamelTypeProcessorTest {
         final HttpRequest req = recordedRequests[0];
         final JsonObject json = new JsonObject(req.getBodyAsString());
 
-        // Assert the results for the top level fields.
-        Assertions.assertTrue(json.containsKey("rhorgid"), "the expected \"rhorgid\" field is not present");
-        Assertions.assertTrue(json.containsKey("specversion"), "the expected \"specversion\" field is not present");
-        Assertions.assertTrue(json.containsKey("id"), "the expected \"id\" field is not present");
-        Assertions.assertTrue(json.containsKey("source"), "the expected \"source|\" field is not present");
-        Assertions.assertTrue(json.containsKey("processorname"), "the expected \"processorname\" field is not present");
-        Assertions.assertTrue(json.containsKey("type"), "the expected \"type\" field is not present");
-        Assertions.assertTrue(json.containsKey("originaleventid"), "the expected \"originaleventid\" field is not present");
-        Assertions.assertTrue(json.containsKey("environment_url"), "the expected \"environment_url\" key is not present");
-        Assertions.assertTrue(json.containsKey("data"), "the expected \"data\" field is not present");
-        Assertions.assertEquals(this.environment.url(), json.getString("environment_url"), "the environment URL isn't the same");
-
         // Assert the values for the top level fields.
+        Assertions.assertEquals(this.environment.url(), json.getString("environment_url"), "the environment URL isn't the same");
         Assertions.assertEquals(DEFAULT_ORG_ID, json.getString("rhorgid"), "the \"rhorgid\" values don't match");
         Assertions.assertEquals(CamelTypeProcessor.SPEC_VERSION, json.getString("specversion"), "the \"specversion\" values don't match");
         // The UUID is randomly generated, so the only way to test that the ID is valid is to check if it is a valid
@@ -444,16 +433,13 @@ class CamelTypeProcessorTest {
         Assertions.assertEquals(this.environment.url(), json.getString("environment_url"), "the \"environment_url\" values don't match");
         Assertions.assertEquals(FIXTURE_EVENT_ORIGINAL_UUID.toString(), json.getString("originaleventid"), "the \"originaleventid\" values don't match");
 
+        // Assert that the "data" object is present.
+        Assertions.assertTrue(json.containsKey("data"), "the expected \"data\" field is not present");
+
         // Assert the results for the fields in the "data" object.
         final JsonObject data = json.getJsonObject("data");
-        Assertions.assertTrue(data.containsKey("account_id"), "the \"account_id\" field is not present");
-        Assertions.assertTrue(data.containsKey("application"), "the \"application\" field is not present");
-        Assertions.assertTrue(data.containsKey("bundle"), "the \"bundle\" field is not present");
         Assertions.assertTrue(data.containsKey("context"), "the \"context\" field is not present");
-        Assertions.assertTrue(data.containsKey("event_type"), "the \"event_type\" field is not present");
         Assertions.assertTrue(data.containsKey("events"), "the \"events\" field is not present");
-        Assertions.assertTrue(data.containsKey("org_id"), "the \"org_id\" field is not present");
-        Assertions.assertTrue(data.containsKey("timestamp"), "the \"timestamp\" field is not present");
 
         // Assert the values for the fields in the "data" object.
         Assertions.assertEquals(FIXTURE_ACTION_ACCOUNT_ID, data.getString("account_id"), "the \"account_id\" values don't match");

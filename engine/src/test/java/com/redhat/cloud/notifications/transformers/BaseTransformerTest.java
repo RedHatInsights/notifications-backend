@@ -83,21 +83,16 @@ class BaseTransformerTest {
         // Call the function under test.
         JsonObject result = this.baseTransformer.toJsonObject(action);
 
-        // Assert that all the properties from the Action are present in the JSON object.
-        assertTrue(result.containsKey(BaseTransformer.ACCOUNT_ID), "the account id is missing from the resulting JSON object");
-        assertTrue(result.containsKey(BaseTransformer.APPLICATION), "the application is missing from the resulting JSON object");
-        assertTrue(result.containsKey(BaseTransformer.BUNDLE), "the bundle is missing from the resulting JSON object");
-        assertTrue(result.containsKey(BaseTransformer.CONTEXT), "the context is missing from the resulting JSON object");
-        assertTrue(result.containsKey(BaseTransformer.EVENT_TYPE), "the event type is missing from the resulting JSON object");
-        assertTrue(result.containsKey(BaseTransformer.EVENTS), "the events is missing from the resulting JSON object");
-        assertTrue(result.containsKey(BaseTransformer.ORG_ID), "the org id is missing from the resulting JSON object");
-        assertTrue(result.containsKey(BaseTransformer.TIMESTAMP), "the timestamp is missing from the resulting JSON object");
-
         // Assert the values.
         assertEquals(FIXTURE_ACCOUNT_ID, result.getString(BaseTransformer.ACCOUNT_ID), "the account id isn't the same");
         assertEquals(FIXTURE_APPLICATION, result.getString(BaseTransformer.APPLICATION), "the application isn't the same");
         assertEquals(FIXTURE_BUNDLE, result.getString(BaseTransformer.BUNDLE), "the bundle isn't the same");
         assertEquals(FIXTURE_EVENT_TYPE, result.getString(BaseTransformer.EVENT_TYPE), "the event type isn't the same");
+
+        // Assert that the keys that contain inner JSON arrays or objects are present.
+        assertTrue(result.containsKey(BaseTransformer.CONTEXT), "the context is missing from the resulting JSON object");
+        assertTrue(result.containsKey(BaseTransformer.EVENTS), "the events is missing from the resulting JSON object");
+        assertTrue(result.containsKey(BaseTransformer.ORG_ID), "the org id is missing from the resulting JSON object");
 
         final JsonArray events = result.getJsonArray(BaseTransformer.EVENTS);
         if (events.size() != FIXTURE_EVENTS.size()) {
