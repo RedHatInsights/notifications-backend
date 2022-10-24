@@ -559,10 +559,10 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         Set<UUID> eventTypes = apps.stream().findFirst().get().getEventTypes().stream().map(EventType::getId).collect(Collectors.toSet());
 
-        // Updating a behavior of other tenant yields 400
+        // Updating a behavior of other tenant yields 404 - i.e. can't find the behavior group
         UpdateBehaviorGroupRequest behaviorGroupRequest = new UpdateBehaviorGroupRequest();
         behaviorGroupRequest.displayName = "My behavior group 1.0";
-        updateBehaviorGroup(identityHeader, behaviorGroupIdOtherTenant, behaviorGroupRequest, 400);
+        updateBehaviorGroup(identityHeader, behaviorGroupIdOtherTenant, behaviorGroupRequest, 404);
         BehaviorGroup behaviorGroup = helpers.getBehaviorGroup(behaviorGroupIdOtherTenant);
         assertEquals("My behavior", behaviorGroup.getDisplayName()); // No change
 
