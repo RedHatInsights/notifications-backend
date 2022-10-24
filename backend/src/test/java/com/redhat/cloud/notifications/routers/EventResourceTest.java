@@ -15,6 +15,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
+import com.redhat.cloud.notifications.routers.models.EventLogEntryActionStatus;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -26,9 +27,11 @@ import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
+import javax.ws.rs.BadRequestException;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -45,6 +48,7 @@ import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.routers.EventResource.PATH;
+import static com.redhat.cloud.notifications.routers.EventResource.toNotificationStatus;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static java.lang.Boolean.FALSE;
@@ -53,6 +57,7 @@ import static java.time.ZoneOffset.UTC;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -446,7 +451,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Using status = SUCCESS
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(NotificationStatus.SUCCESS), 10, 0, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(EventLogEntryActionStatus.SUCCESS), 10, 0, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(2), event1, history1, history2);
@@ -459,7 +464,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Using status = FAILED_INTERNAL
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(NotificationStatus.FAILED_INTERNAL), 10, 0, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(EventLogEntryActionStatus.FAILED), 10, 0, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event1, history1, history2);
@@ -470,7 +475,7 @@ public class EventResourceTest extends DbIsolatedTest {
          * Account: DEFAULT_ACCOUNT_ID
          * Request: Using status = PROCESSING
          */
-        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(NotificationStatus.PROCESSING), 10, 0, null, false, true);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(EventLogEntryActionStatus.PROCESSING), 10, 0, null, false, true);
         assertEquals(0, page.getMeta().getCount());
         assertEquals(0, page.getData().size());
         assertLinks(page.getLinks(), "first", "last");
@@ -528,6 +533,82 @@ public class EventResourceTest extends DbIsolatedTest {
                 .contentType(JSON);
     }
 
+    @Test
+    public void fromNotificationStatusTest() {
+        assertEquals(
+                EventLogEntryActionStatus.SENT,
+                EventResource.fromNotificationStatus(NotificationStatus.SENT)
+        );
+
+        assertEquals(
+                EventLogEntryActionStatus.SUCCESS,
+                EventResource.fromNotificationStatus(NotificationStatus.SUCCESS)
+        );
+
+        assertEquals(
+                EventLogEntryActionStatus.PROCESSING,
+                EventResource.fromNotificationStatus(NotificationStatus.PROCESSING)
+        );
+
+        assertEquals(
+                EventLogEntryActionStatus.FAILED,
+                EventResource.fromNotificationStatus(NotificationStatus.FAILED_INTERNAL)
+        );
+
+        assertEquals(
+                EventLogEntryActionStatus.FAILED,
+                EventResource.fromNotificationStatus(NotificationStatus.FAILED_EXTERNAL)
+        );
+    }
+
+    @Test
+    public void toNotificationStatusTest() {
+        // Single status
+        assertEquals(
+                Set.of(NotificationStatus.SENT),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.SENT))
+        );
+
+        assertEquals(
+                Set.of(NotificationStatus.SUCCESS),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.SUCCESS))
+        );
+
+        assertEquals(
+                Set.of(NotificationStatus.PROCESSING),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.PROCESSING))
+        );
+
+        assertEquals(
+                Set.of(NotificationStatus.FAILED_INTERNAL, NotificationStatus.FAILED_EXTERNAL),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.FAILED))
+        );
+
+        // Multiple status
+        assertEquals(
+                Set.of(NotificationStatus.SENT, NotificationStatus.SUCCESS, NotificationStatus.PROCESSING, NotificationStatus.FAILED_EXTERNAL, NotificationStatus.FAILED_INTERNAL),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.SENT, EventLogEntryActionStatus.SUCCESS, EventLogEntryActionStatus.PROCESSING, EventLogEntryActionStatus.FAILED))
+        );
+
+        assertEquals(
+                Set.of(NotificationStatus.FAILED_EXTERNAL, NotificationStatus.FAILED_INTERNAL),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.FAILED))
+        );
+
+        // Faulty status
+
+        // includes null
+        HashSet<EventLogEntryActionStatus> setWithNull = new HashSet<>();
+        setWithNull.add(EventLogEntryActionStatus.SUCCESS);
+        setWithNull.add(null);
+
+        assertThrows(BadRequestException.class, () -> toNotificationStatus(setWithNull));
+
+        // includes UNKNOWN
+        assertThrows(BadRequestException.class, () -> toNotificationStatus(Set.of(EventLogEntryActionStatus.UNKNOWN, EventLogEntryActionStatus.SUCCESS)));
+
+    }
+
     @Transactional
     Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created) {
         Event event = new Event();
@@ -554,7 +635,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
     private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                                        LocalDateTime startDate, LocalDateTime endDate, Set<String> endpointTypes,
-                                                       Set<Boolean> invocationResults, Set<NotificationStatus> status, Integer limit,
+                                                       Set<Boolean> invocationResults, Set<EventLogEntryActionStatus> status, Integer limit,
                                                        Integer offset, String sortBy, boolean includePayload, boolean includeActions) {
         RequestSpecification request = given()
                 .header(identityHeader);
@@ -624,7 +705,7 @@ public class EventResourceTest extends DbIsolatedTest {
                 assertEquals(historyEntry.get().getEndpointType(), eventLogEntryAction.getEndpointType());
                 assertEquals(historyEntry.get().getEndpointSubType(), eventLogEntryAction.getEndpointSubType());
                 assertEquals(historyEntry.get().isInvocationResult(), eventLogEntryAction.getInvocationResult());
-                assertEquals(historyEntry.get().getStatus(), eventLogEntryAction.getStatus());
+                assertEquals(EventResource.fromNotificationStatus(historyEntry.get().getStatus()), eventLogEntryAction.getStatus());
             }
         }
     }
