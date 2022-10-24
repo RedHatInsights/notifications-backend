@@ -27,9 +27,11 @@ import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
+import javax.ws.rs.BadRequestException;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -46,6 +48,7 @@ import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.routers.EventResource.PATH;
+import static com.redhat.cloud.notifications.routers.EventResource.toNotificationStatus;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static java.lang.Boolean.FALSE;
@@ -54,6 +57,7 @@ import static java.time.ZoneOffset.UTC;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -555,6 +559,54 @@ public class EventResourceTest extends DbIsolatedTest {
                 EventLogEntryActionStatus.FAILED,
                 EventResource.fromNotificationStatus(NotificationStatus.FAILED_EXTERNAL)
         );
+    }
+
+    @Test
+    public void toNotificationStatusTest() {
+        // Single status
+        assertEquals(
+                Set.of(NotificationStatus.SENT),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.SENT))
+        );
+
+        assertEquals(
+                Set.of(NotificationStatus.SUCCESS),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.SUCCESS))
+        );
+
+        assertEquals(
+                Set.of(NotificationStatus.PROCESSING),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.PROCESSING))
+        );
+
+        assertEquals(
+                Set.of(NotificationStatus.FAILED_INTERNAL, NotificationStatus.FAILED_EXTERNAL),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.FAILED))
+        );
+
+        // Multiple status
+        assertEquals(
+                Set.of(NotificationStatus.SENT, NotificationStatus.SUCCESS, NotificationStatus.PROCESSING, NotificationStatus.FAILED_EXTERNAL, NotificationStatus.FAILED_INTERNAL),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.SENT, EventLogEntryActionStatus.SUCCESS, EventLogEntryActionStatus.PROCESSING, EventLogEntryActionStatus.FAILED))
+        );
+
+        assertEquals(
+                Set.of(NotificationStatus.FAILED_EXTERNAL, NotificationStatus.FAILED_INTERNAL),
+                toNotificationStatus(Set.of(EventLogEntryActionStatus.FAILED))
+        );
+
+        // Faulty status
+
+        // includes null
+        HashSet<EventLogEntryActionStatus> setWithNull = new HashSet<>();
+        setWithNull.add(EventLogEntryActionStatus.SUCCESS);
+        setWithNull.add(null);
+
+        assertThrows(BadRequestException.class, () -> toNotificationStatus(setWithNull));
+
+        // includes UNKNOWN
+        assertThrows(BadRequestException.class, () -> toNotificationStatus(Set.of(EventLogEntryActionStatus.UNKNOWN, EventLogEntryActionStatus.SUCCESS)));
+
     }
 
     @Transactional
