@@ -168,9 +168,7 @@ public class BehaviorGroupRepository {
             q = q.setParameter("orgId", orgId);
         }
 
-        if (q.executeUpdate() == 0) {
-            throw new BadRequestException("Behavior group not updated - probably the behavior group was not part of the orgId");
-        }
+        q.executeUpdate();
     }
 
     private void checkBehaviorGroupDisplayNameDuplicate(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
