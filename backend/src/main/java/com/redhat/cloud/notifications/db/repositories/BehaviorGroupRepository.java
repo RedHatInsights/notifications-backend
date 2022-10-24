@@ -69,7 +69,7 @@ public class BehaviorGroupRepository {
                     .setParameter("id", behaviorGroupId)
                     .getSingleResult();
         } catch (NoResultException nre) {
-            throw new NotFoundException("Behavior group not found", nre);
+            throw new NotFoundException("Behavior group not found");
         }
     }
 
