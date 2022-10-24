@@ -15,6 +15,7 @@ import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -63,10 +64,11 @@ public class BehaviorGroupRepository {
         return this.create(null, null, behaviorGroup, true);
     }
 
-    public UUID getBundleId(UUID behaviorGroupId) {
+    public UUID getBundleId(String orgId, UUID behaviorGroupId) {
         try {
-            return entityManager.createQuery("SELECT bundle.id FROM BehaviorGroup WHERE id = :id", UUID.class)
+            return entityManager.createQuery("SELECT bundle.id FROM BehaviorGroup WHERE id = :id and orgId = :orgId", UUID.class)
                     .setParameter("id", behaviorGroupId)
+                    .setParameter("orgId", orgId)
                     .getSingleResult();
         } catch (NoResultException nre) {
             throw new NotFoundException("Behavior group not found");

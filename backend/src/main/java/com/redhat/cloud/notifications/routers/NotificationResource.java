@@ -275,7 +275,7 @@ public class NotificationResource {
         String orgId = getOrgId(sec);
 
         if (request.displayName != null) {
-            UUID bundleId = behaviorGroupRepository.getBundleId(id);
+            UUID bundleId = behaviorGroupRepository.getBundleId(orgId, id);
             BehaviorGroup behaviorGroup = new BehaviorGroup();
             behaviorGroup.setId(id);
             behaviorGroup.setDisplayName(request.displayName);
