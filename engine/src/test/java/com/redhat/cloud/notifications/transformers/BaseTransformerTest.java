@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -75,27 +74,6 @@ class BaseTransformerTest {
 
         events.add(event);
         FIXTURE_EVENTS = events;
-    }
-
-    @Test
-    void shouldContainOrgId() {
-        Action action = new Action();
-        action.setOrgId("someOrgId");
-        action.setTimestamp(LocalDateTime.of(2022, 12, 24, 12, 0));
-
-        final JsonObject jsonObject = baseTransformer.toJsonObject(action);
-
-        assertEquals("someOrgId", jsonObject.getString(ORG_ID));
-    }
-
-    @Test
-    void shouldNotRaiseAnExceptionWhenOrgIdIsMissing() {
-        Action action = new Action();
-        action.setTimestamp(LocalDateTime.of(2022, 12, 24, 12, 0));
-
-        final JsonObject jsonObject = baseTransformer.toJsonObject(action);
-
-        assertNull(jsonObject.getString(ORG_ID));
     }
 
     /**
