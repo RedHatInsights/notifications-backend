@@ -88,7 +88,7 @@ class CamelTypeProcessorTest {
     public static final String SUB_TYPE = "sub-type";
 
     /**
-     * Endpoint fixtures for the {@link #buildEvent()} function.
+     * Event fixtures for the {@link #buildEvent()} function.
      */
     private static final UUID FIXTURE_EVENT_ORIGINAL_UUID = UUID.randomUUID();
     private static final String FIXTURE_ACTION_ORG_ID = "test-event-org-id";
