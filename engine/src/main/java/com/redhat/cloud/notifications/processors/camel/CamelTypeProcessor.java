@@ -272,7 +272,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
                 .build(BridgeEventService.class);
 
         // Include the environment's URL when sending the event.
-        ce.put("environment_url", this.environment.url());
+        body.put("environment_url", this.environment.url());
 
         JsonObject payload = JsonObject.mapFrom(ce);
         try {

@@ -421,7 +421,6 @@ class CamelTypeProcessorTest {
         final JsonObject json = new JsonObject(req.getBodyAsString());
 
         // Assert the values for the top level fields.
-        Assertions.assertEquals(this.environment.url(), json.getString("environment_url"), "the environment URL isn't the same");
         Assertions.assertEquals(DEFAULT_ORG_ID, json.getString("rhorgid"), "the \"rhorgid\" values don't match");
         Assertions.assertEquals(CamelTypeProcessor.SPEC_VERSION, json.getString("specversion"), "the \"specversion\" values don't match");
         // The UUID is randomly generated, so the only way to test that the ID is valid is to check if it is a valid
@@ -439,6 +438,7 @@ class CamelTypeProcessorTest {
         final JsonObject data = json.getJsonObject("data");
 
         // Assert the values for the fields in the "data" object.
+        Assertions.assertEquals(this.environment.url(), data.getString("environment_url"), "the environment URL isn't the same");
         Assertions.assertEquals(FIXTURE_ACTION_ACCOUNT_ID, data.getString("account_id"), "the \"account_id\" values don't match");
         Assertions.assertEquals(FIXTURE_ACTION_APP, data.getString("application"), "the \"application\" values don't match");
         Assertions.assertEquals(FIXTURE_ACTION_BUNDLE, data.getString("bundle"), "the \"bundle\" values don't match");
