@@ -430,7 +430,6 @@ class CamelTypeProcessorTest {
         Assertions.assertEquals(CamelTypeProcessor.SOURCE, json.getString("source"), "the \"source\" values don't match");
         Assertions.assertEquals(FIXTURE_CAMEL_EXTRAS_PROCESSOR_NAME, json.getString("processorname"), "the \"processorname\" values don't match");
         Assertions.assertEquals(CamelTypeProcessor.TYPE, json.getString("type"), "the \"type\" values don't match");
-        Assertions.assertEquals(this.environment.url(), json.getString("environment_url"), "the \"environment_url\" values don't match");
         Assertions.assertEquals(FIXTURE_EVENT_ORIGINAL_UUID.toString(), json.getString("originaleventid"), "the \"originaleventid\" values don't match");
 
         // Assert that the "data" object is present.
@@ -438,8 +437,6 @@ class CamelTypeProcessorTest {
 
         // Assert the results for the fields in the "data" object.
         final JsonObject data = json.getJsonObject("data");
-        Assertions.assertTrue(data.containsKey("context"), "the \"context\" field is not present");
-        Assertions.assertTrue(data.containsKey("events"), "the \"events\" field is not present");
 
         // Assert the values for the fields in the "data" object.
         Assertions.assertEquals(FIXTURE_ACTION_ACCOUNT_ID, data.getString("account_id"), "the \"account_id\" values don't match");
@@ -450,11 +447,12 @@ class CamelTypeProcessorTest {
         Assertions.assertEquals(FIXTURE_ACTION_TIMESTAMP.toString(), data.getString("timestamp"), "the \"timestamp\" values don't match");
 
         // Assert the fields and the values in the "context" object.
+        Assertions.assertTrue(data.containsKey("context"), "the \"context\" field is not present");
         final JsonObject context = data.getJsonObject("context");
-        Assertions.assertTrue(context.containsKey(FIXTURE_ACTION_CONTEXT), String.format("the expected \"%s\" context field is not present", FIXTURE_ACTION_CONTEXT));
         Assertions.assertEquals(FIXTURE_ACTION_CONTEXT_VALUE, context.getString(FIXTURE_ACTION_CONTEXT), String.format("the \"%s\" context values don't match", FIXTURE_ACTION_CONTEXT_VALUE));
 
         // Assert the "events" array.
+        Assertions.assertTrue(data.containsKey("events"), "the \"events\" field is not present");
         final JsonArray events = data.getJsonArray("events");
         if (events.size() != 1) {
             Assertions.fail(String.format("the events array has an unexpected number of elements. Want %s, got %s", 1, events.size()));
@@ -467,10 +465,6 @@ class CamelTypeProcessorTest {
 
         // Assert the "payload" object in the event.
         final JsonObject payload = eventResult.getJsonObject("payload");
-        Assertions.assertTrue(payload.containsKey(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY), String.format("the \"%s\" payload field is not present", FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY));
-        Assertions.assertTrue(payload.containsKey(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2), String.format("the \"%s\" payload field is not present", FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2));
-        Assertions.assertTrue(payload.containsKey(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3), String.format("the \"%s\" payload field is not present", FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3));
-
         Assertions.assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY), "the payload's additional property value doesn't match");
         Assertions.assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2), "the payload's additional property value doesn't match");
         Assertions.assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3), "the payload's additional property value doesn't match");
