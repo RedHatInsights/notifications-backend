@@ -88,7 +88,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
     RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
 
     /**
-     * Used to send the environment's URL on OpenBridge events.
+     * Used to send the environment's URL on RHOSE events.
      */
     @Inject
     Environment environment;

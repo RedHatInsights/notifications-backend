@@ -152,7 +152,7 @@ class CamelTypeProcessorTest {
     NotificationHistoryRepository notificationHistoryRepository;
 
     /**
-     * Used to test that the environment's URL is properly set when sending events to Open Bridge.
+     * Used to test that the environment's URL is properly set when sending events to RHOSE.
      */
     @Inject
     Environment environment;
@@ -359,17 +359,17 @@ class CamelTypeProcessorTest {
     }
 
     /**
-     * Tests that the payload sent to Open Bridge is the one that is expected.
+     * Tests that the payload sent to RHOSE is the one that is expected.
      */
     @Test
     void callOpenBridgeExpectedJson() {
-        // Set "Open Bridge" feature enabled to be able to test this.
+        // Set "RHOSE" feature enabled to be able to test this.
         this.featureFlipper.setObEnabled(true);
 
         // The path that will be set up in the Mock Server, and that will be used as the Bridge's endpoint.
         final String testMockServerPath = "/events/slack/json-output-check";
 
-        // Create a request expectation for when the Open Bridge sends the request. It is created separately because
+        // Create a request expectation for when the RHOSE sends the request. It is created separately because
         // it is needed later to retrieve the requests that match with this expectation.
         final HttpRequest expectedRequest = HttpRequest.request().withPath(testMockServerPath).withMethod(HttpMethod.POST);
         MockServerLifecycleManager.getClient().when(expectedRequest).respond(
@@ -384,7 +384,7 @@ class CamelTypeProcessorTest {
         Endpoint endpoint = buildCamelEndpoint(event.getAction().getAccountId());
         endpoint.setSubType("slack");
 
-        // Set up some mock Open Bridge endpoints (simulate a valid bridge)
+        // Set up some mock RHOSE endpoints (simulate a valid bridge)
         final String eventsEndpoint = MockServerLifecycleManager.getMockServerUrl() + testMockServerPath;
         Log.infof("The event's endpoint is set to %s", eventsEndpoint);
 
@@ -499,7 +499,7 @@ class CamelTypeProcessorTest {
         // Clear the path from the Mock Server since this won't be used by any other test.
         MockServerLifecycleManager.getClient().clear(request().withPath(testMockServerPath), ClearType.ALL);
 
-        // Clear also the Open Bridge endpoints for this test.
+        // Clear also the RHOSE endpoints for this test.
         MockServerConfig.clearOpenBridgeEndpoints(bridge);
 
         // Reset the feature flag to false in order to avoid affecting any other tests.
