@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class BaseTransformerTest {
@@ -84,31 +83,82 @@ class BaseTransformerTest {
         JsonObject result = this.baseTransformer.toJsonObject(action);
 
         // Assert the values.
-        assertEquals(FIXTURE_ACCOUNT_ID, result.getString(BaseTransformer.ACCOUNT_ID), "the account id isn't the same");
-        assertEquals(FIXTURE_APPLICATION, result.getString(BaseTransformer.APPLICATION), "the application isn't the same");
-        assertEquals(FIXTURE_BUNDLE, result.getString(BaseTransformer.BUNDLE), "the bundle isn't the same");
-        assertEquals(FIXTURE_EVENT_TYPE, result.getString(BaseTransformer.EVENT_TYPE), "the event type isn't the same");
+        assertEquals(action.getAccountId(), result.getString(BaseTransformer.ACCOUNT_ID), "the account id isn't the same");
+        assertEquals(action.getApplication(), result.getString(BaseTransformer.APPLICATION), "the application isn't the same");
+        assertEquals(action.getBundle(), result.getString(BaseTransformer.BUNDLE), "the bundle isn't the same");
+        assertEquals(action.getEventType(), result.getString(BaseTransformer.EVENT_TYPE), "the event type isn't the same");
+        assertEquals(action.getOrgId(), result.getString(BaseTransformer.ORG_ID), "the org id isn't the same");
+        assertEquals(action.getTimestamp(), LocalDateTime.parse(result.getString(BaseTransformer.TIMESTAMP)), "the timestamp isn't the same");
 
-        // Assert that the keys that contain inner JSON arrays or objects are present.
-        assertTrue(result.containsKey(BaseTransformer.CONTEXT), "the context is missing from the resulting JSON object");
-        assertTrue(result.containsKey(BaseTransformer.EVENTS), "the events is missing from the resulting JSON object");
-        assertTrue(result.containsKey(BaseTransformer.ORG_ID), "the org id is missing from the resulting JSON object");
-
-        final JsonArray events = result.getJsonArray(BaseTransformer.EVENTS);
-        if (events.size() != FIXTURE_EVENTS.size()) {
-            fail("the number of events in the JSON file is different from the test data");
+        // Assert that the expected context is present in the JSON output.
+        if (!result.containsKey(BaseTransformer.CONTEXT)) {
+            fail("the context is missing from the resulting JSON object");
         }
 
-        final JsonObject event = events.getJsonObject(0);
-        final JsonObject metadata = event.getJsonObject(BaseTransformer.METADATA);
-        assertTrue(metadata.containsKey(FIXTURE_METADATA_ADDITIONAL_PROPERTY), "the metadata object doesn't contain the additional property's key");
-        assertEquals(FIXTURE_METADATA_ADDITIONAL_PROPERTY_VALUE, metadata.getString(FIXTURE_METADATA_ADDITIONAL_PROPERTY), "the metadata's additional property's value isn't the same");
+        // Assert that the expected context and the context in the JSON output are the same.
+        final JsonObject context = result.getJsonObject(BaseTransformer.CONTEXT);
+        for (final var contextProperty : action.getContext().getAdditionalProperties().entrySet()) {
+            assertEquals(
+                contextProperty.getValue(),
+                context.getString(contextProperty.getKey()),
+                String.format(
+                    "the resulting JSON does not contain the expected key value pair for the context. Want \"%s\" and \"%s\", got value \"%s\" in the JSON file",
+                    contextProperty.getKey(),
+                    contextProperty.getValue(),
+                    context.getString(contextProperty.getKey())
+                )
+            );
+        }
 
-        final JsonObject payload = event.getJsonObject(BaseTransformer.PAYLOAD);
-        assertTrue(payload.containsKey(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY));
-        assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY), "the payload's additional property's value isn't the same");
+        // Check that the events are present in the JSON object.
+        if (!result.containsKey(BaseTransformer.EVENTS)) {
+            fail("the events field is missing from the resulting JSON object");
+        }
 
-        assertEquals(FIXTURE_ORG_ID, result.getString(BaseTransformer.ORG_ID), "the org id isn't the same");
-        assertEquals(FIXTURE_TIMESTAMP, LocalDateTime.parse(result.getString(BaseTransformer.TIMESTAMP)), "the timestamp isn't the same");
+        // Grab the expected events and the events from the JSON output.
+        final List<Event> actionEvents = action.getEvents();
+        final JsonArray events = result.getJsonArray(BaseTransformer.EVENTS);
+
+        // The size should be the same for both!
+        assertEquals(actionEvents.size(), events.size(), "the number of events in the JSON file is different from the test data");
+
+        // Loop through the expected events.
+        for (int i = 0; i < actionEvents.size(); i++) {
+            final Event expectedEvent = actionEvents.get(i);
+            final JsonObject jsonEvent = events.getJsonObject(i);
+
+            // Start by checking the expected metadata object, and the one from the JSON output.
+            final Metadata expectedMetadata = expectedEvent.getMetadata();
+            final JsonObject metadata = jsonEvent.getJsonObject(BaseTransformer.METADATA);
+
+            for (final var property : expectedMetadata.getAdditionalProperties().entrySet()) {
+                assertEquals(
+                    property.getValue(),
+                    metadata.getString(property.getKey()),
+                    String.format(
+                        "the resulting JSON does not contain the expected key value pair for the metadata. Want \"%s\" and \"%s\", got value \"%s\" in the JSON file",
+                        property.getKey(),
+                        property.getValue(),
+                        metadata.getString(property.getKey())
+                    )
+                );
+            }
+
+            // After that check that both payloads are also the same!
+            final Payload expectedPayload = expectedEvent.getPayload();
+            final JsonObject payload = jsonEvent.getJsonObject(BaseTransformer.PAYLOAD);
+            for (final var property : expectedPayload.getAdditionalProperties().entrySet()) {
+                assertEquals(
+                    property.getValue(),
+                    payload.getString(property.getKey()),
+                    String.format(
+                        "the resulting JSON does not contain the expected key value pair for the payload. Want \"%s\" and \"%s\", got value \"%s\" in the JSON file",
+                        property.getKey(),
+                        property.getValue(),
+                        payload.getString(property.getKey())
+                    )
+                );
+            }
+        }
     }
 }
