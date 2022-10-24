@@ -63,6 +63,13 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     public static final String CAMEL_SUBTYPE_HEADER = "CAMEL_SUBTYPE";
     public static final String PROCESSORNAME = "processorname";
+    /**
+     * Constants for the {@link CamelTypeProcessor#callOpenBridge(JsonObject, UUID, String, CamelProperties, String, String)}.
+     * function.
+     */
+    public static final String SOURCE = "notifications";
+    public static final String SPEC_VERSION = "1.0";
+    public static final String TYPE = "myType";
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -246,9 +253,9 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
         Map<String, Object> ce = new HashMap<>();
 
         ce.put("id", id);
-        ce.put("source", "notifications"); // Source of original event?
-        ce.put("specversion", "1.0");
-        ce.put("type", "myType"); // Type of original event?
+        ce.put("source", SOURCE); // Source of original event?
+        ce.put("specversion", SPEC_VERSION);
+        ce.put("type", TYPE); // Type of original event?
         ce.put(ORG_ID_FILTER_NAME, orgId);
         ce.put(PROCESSORNAME, extras.get(PROCESSORNAME));
         ce.put("originaleventid", originalEventId);

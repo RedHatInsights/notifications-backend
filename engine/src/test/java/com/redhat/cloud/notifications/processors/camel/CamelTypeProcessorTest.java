@@ -88,13 +88,6 @@ class CamelTypeProcessorTest {
     public static final String SUB_TYPE = "sub-type";
 
     /**
-     * The following constants are hard coded in {@link CamelTypeProcessor#callOpenBridge(JsonObject, UUID, String, CamelProperties, String, String)}.
-     */
-    private static final String FIXTURE_TYPE = "myType";
-    private static final String FIXTURE_SOURCE = "notifications";
-    private static final String FIXTURE_SPEC_VERSION = "1.0";
-
-    /**
      * Endpoint fixtures for the {@link #buildEvent()} function.
      */
     private static final UUID FIXTURE_EVENT_ORIGINAL_UUID = UUID.randomUUID();
@@ -441,13 +434,13 @@ class CamelTypeProcessorTest {
 
         // Assert the values for the top level fields.
         Assertions.assertEquals(DEFAULT_ORG_ID, json.getString("rhorgid"), "the \"rhorgid\" values don't match");
-        Assertions.assertEquals(FIXTURE_SPEC_VERSION, json.getString("specversion"), "the \"specversion\" values don't match");
+        Assertions.assertEquals(CamelTypeProcessor.SPEC_VERSION, json.getString("specversion"), "the \"specversion\" values don't match");
         // The UUID is randomly generated, so the only way to test that the ID is valid is to check if it is a valid
         // UUID.
         UUID.fromString(json.getString("id"));
-        Assertions.assertEquals(FIXTURE_SOURCE, json.getString("source"), "the \"source\" values don't match");
+        Assertions.assertEquals(CamelTypeProcessor.SOURCE, json.getString("source"), "the \"source\" values don't match");
         Assertions.assertEquals(FIXTURE_CAMEL_EXTRAS_PROCESSOR_NAME, json.getString("processorname"), "the \"processorname\" values don't match");
-        Assertions.assertEquals(FIXTURE_TYPE, json.getString("type"), "the \"type\" values don't match");
+        Assertions.assertEquals(CamelTypeProcessor.TYPE, json.getString("type"), "the \"type\" values don't match");
         Assertions.assertEquals(this.environment.url(), json.getString("environment_url"), "the \"environment_url\" values don't match");
         Assertions.assertEquals(FIXTURE_EVENT_ORIGINAL_UUID.toString(), json.getString("originaleventid"), "the \"originaleventid\" values don't match");
 
