@@ -42,7 +42,6 @@ public class DuplicateNameMigrationResource {
 
     @GET
     @Produces(APPLICATION_JSON)
-    @Transactional
     public DuplicateNameMigrationReport migrateDuplicateNames(@QueryParam("key") String key) {
         if (!Objects.equals(this.key, key)) {
             throw new BadRequestException("Invalid key provided");
@@ -82,7 +81,7 @@ public class DuplicateNameMigrationResource {
     }
 
     @Transactional
-    private int updateEndpoints(Object[] repeatedValue) {
+    int updateEndpoints(Object[] repeatedValue) {
         List<UUID> ids = Arrays.stream(repeatedValue[0].toString().split(","))
                 .map(UUID::fromString)
                 // Dropping the first element - we are not going to update it's name.
@@ -102,7 +101,7 @@ public class DuplicateNameMigrationResource {
     }
 
     @Transactional
-    private int updateBehaviorGroups(Object[] repeatedValue) {
+    int updateBehaviorGroups(Object[] repeatedValue) {
         List<UUID> ids = Arrays.stream(repeatedValue[0].toString().split(","))
                 .map(UUID::fromString)
                 // Dropping the first element - we are not going to update it's name.
