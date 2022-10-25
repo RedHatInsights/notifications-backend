@@ -29,53 +29,78 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path(API_INTERNAL + "/duplicate-name-migration")
 public class DuplicateNameMigrationResource {
 
-    String key;
+    final String ack = "i-am-sure-i-want-to-run-the-migration";
 
     @Inject
     EntityManager entityManager;
 
     @PostConstruct
     public void initialize() {
-        key = UUID.randomUUID().toString();
-        Log.infof("Duplicate name migration resource key with value [%s]", key);
+        Log.infof("Duplicate name migration resource ack with value [%s]", ack);
     }
 
     @GET
     @Produces(APPLICATION_JSON)
-    public DuplicateNameMigrationReport migrateDuplicateNames(@QueryParam("key") String key) {
-        if (!Objects.equals(this.key, key)) {
-            throw new BadRequestException("Invalid key provided");
+    public DuplicateNameMigrationReport migrateDuplicateNames(@QueryParam("ack") String ack) {
+        if (!Objects.equals(this.ack, ack)) {
+            throw new BadRequestException(String.format("Invalid ack provided - should be [%s]", ack));
         }
 
         DuplicateNameMigrationReport migrationReport = new DuplicateNameMigrationReport();
 
         Log.infof("Starting migration for duplicated names on behavior groups and integrations.");
 
+        while (true) {
+            DuplicateNameMigrationReport localReport = runMigrationStep();
+            migrationReport.updatedIntegrations += localReport.updatedIntegrations;
+            migrationReport.updatedBehaviorGroups += localReport.updatedBehaviorGroups;
+
+            if (localReport.updatedBehaviorGroups == 0 && localReport.updatedIntegrations == 0) {
+                break;
+            }
+        }
+
+        Log.infof("Finished updating duplicates names for behavior groups");
+
+        return migrationReport;
+    }
+
+    DuplicateNameMigrationReport runMigrationStep() {
+        DuplicateNameMigrationReport migrationReport = new DuplicateNameMigrationReport();
+
+        Log.infof("Running a migration step");
+
         List<Object[]> repeatedIntegrationValues = entityManager.createNativeQuery(
-                // string_agg concatenates all the grouped values with the delimiter (, in this case)
-                "SELECT string_agg(CAST(id as character varying), ','), name FROM endpoints WHERE endpoint_type != :endpoint_type_email GROUP BY name, org_id HAVING count(*) > 1"
-        )
-            .setParameter("endpoint_type_email", EndpointType.EMAIL_SUBSCRIPTION.ordinal())
-            .getResultList();
-        Log.infof("%d organizations needs to migrate their integration names", repeatedIntegrationValues.size());
+                        // string_agg concatenates all the grouped values with the delimiter (, in this case)
+                        "SELECT string_agg(CAST(id as character varying), ','), name FROM endpoints WHERE endpoint_type != :endpoint_type_email GROUP BY name, org_id HAVING count(*) > 1"
+                )
+                .setParameter("endpoint_type_email", EndpointType.EMAIL_SUBSCRIPTION.ordinal())
+                .getResultList();
+        Log.infof(
+                "Found %d different integration names across the  organizations that needs updating - each name could be used by multiple integrations",
+                repeatedIntegrationValues.size()
+        );
 
         for (Object[] repeatedValue : repeatedIntegrationValues) {
             migrationReport.updatedIntegrations += updateEndpoints(repeatedValue);
         }
 
-        Log.infof("Finished updating duplicates names for integrations");
+        Log.infof("Finished step updating duplicates names for integrations");
 
         List<Object[]> repeatedBehaviorGroupValues = entityManager.createNativeQuery(
                 // string_agg concatenates all the grouped values with the delimiter (, in this case)
                 "SELECT string_agg(CAST(id as character varying), ',') as ids, display_name FROM behavior_group GROUP BY display_name, org_id, bundle_id HAVING count(*) > 1"
         ).getResultList();
-        Log.infof("%d organizations-bundles needs to migrate their behavior group display name", repeatedIntegrationValues.size());
+        Log.infof(
+                "Found %d different behavior group names across the orgIds/bundles that needs updating - each group could have multiple behavior groups",
+                repeatedBehaviorGroupValues.size()
+        );
 
         for (Object[] repeatedValue: repeatedBehaviorGroupValues) {
             migrationReport.updatedBehaviorGroups += updateBehaviorGroups(repeatedValue);
         }
 
-        Log.infof("Finished updating duplicates names for behavior groups");
+        Log.infof("Finished step updating duplicates names for behavior groups");
 
         return migrationReport;
     }

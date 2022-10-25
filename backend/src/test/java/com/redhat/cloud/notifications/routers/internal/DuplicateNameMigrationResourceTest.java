@@ -220,7 +220,41 @@ public class DuplicateNameMigrationResourceTest extends DbIsolatedTest {
         assertBehaviorGroupList(duplicated3, true);
         assertBehaviorGroupList(duplicated4, true);
         assertBehaviorGroupList(notDuplicated, false);
+    }
 
+    @Test
+    public void mightRequireMultipleSteps() {
+        UUID bundle1 = resourceHelpers.createBundle().getId();
+        List<Endpoint> duplicatedEndpoints = new ArrayList<>();
+        List<BehaviorGroup> duplicatedBehaviorGroups = new ArrayList<>();
+
+        createEndpoint(orgId1, EndpointType.WEBHOOK, nameA, duplicatedEndpoints);
+        createEndpoint(orgId1, EndpointType.WEBHOOK, nameA, duplicatedEndpoints);
+        createEndpoint(orgId1, EndpointType.WEBHOOK, nameA, duplicatedEndpoints);
+
+        // This will be a duplicate on the first run
+        createEndpoint(orgId1, EndpointType.WEBHOOK, "name-a 2", duplicatedEndpoints);
+        createEndpoint(orgId1, EndpointType.WEBHOOK, "name-a 3", duplicatedEndpoints);
+
+        // This will be a duplicate on the second run
+        createEndpoint(orgId1, EndpointType.WEBHOOK, "name-a 2 2", duplicatedEndpoints);
+
+        createBehaviorGroup(orgId1, bundle1, nameA, duplicatedBehaviorGroups);
+        createBehaviorGroup(orgId1, bundle1, nameA, duplicatedBehaviorGroups);
+        createBehaviorGroup(orgId1, bundle1, nameA, duplicatedBehaviorGroups);
+        createBehaviorGroup(orgId1, bundle1, nameA, duplicatedBehaviorGroups);
+
+        // This will be a duplicate on the first run
+        createBehaviorGroup(orgId1, bundle1, "name-a 2", duplicatedBehaviorGroups);
+        createBehaviorGroup(orgId1, bundle1, "name-a 4", duplicatedBehaviorGroups);
+
+        // This will be a duplicate on the second run
+        createBehaviorGroup(orgId1, bundle1, "name-a 2 2", duplicatedBehaviorGroups);
+
+        DuplicateNameMigrationReport report = runMigration();
+
+        assertEquals(6, report.updatedBehaviorGroups); // 3 first step, 2 second step, 1 third step
+        assertEquals(5, report.updatedIntegrations); // 2 first step, 2 second step and 1 in third step
     }
 
     private void createBehaviorGroup(String orgId, UUID bundleId, String name, List<BehaviorGroup> behaviorGroupList) {
@@ -300,7 +334,7 @@ public class DuplicateNameMigrationResourceTest extends DbIsolatedTest {
 
         return given()
                 .header(turnpikeAdminHeader)
-                .queryParam("key", duplicateNameMigrationResource.key)
+                .queryParam("ack", duplicateNameMigrationResource.ack)
                 .get("/internal/duplicate-name-migration")
                 .then()
                 .contentType(JSON)
