@@ -359,7 +359,8 @@ public class InternalResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean updateDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
         behaviorGroup.setId(id);
-        return behaviorGroupRepository.updateDefault(behaviorGroup);
+        behaviorGroupRepository.updateDefault(behaviorGroup);
+        return true;
     }
 
     @DELETE

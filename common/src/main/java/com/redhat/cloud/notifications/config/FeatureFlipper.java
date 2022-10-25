@@ -83,6 +83,11 @@ public class FeatureFlipper {
         return enforceBehaviorGroupNameUnicity;
     }
 
+    public void setEnforceBehaviorGroupNameUnicity(boolean enforceBehaviorGroupNameUnicity) {
+        checkTestLaunchMode();
+        this.enforceBehaviorGroupNameUnicity = enforceBehaviorGroupNameUnicity;
+    }
+
     public boolean isEnforceIntegrationNameUnicity() {
         return enforceIntegrationNameUnicity;
     }

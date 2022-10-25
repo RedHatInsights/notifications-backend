@@ -37,6 +37,7 @@ public class ResourceHelpers {
     public static final String TEST_APP_NAME_2 = "myothertester";
     public static final String TEST_EVENT_TYPE_FORMAT = "eventtype%d";
     public static final String TEST_BUNDLE_NAME = "testbundle";
+    public static final String TEST_BUNDLE_2_NAME = "testbundle2";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -228,16 +229,16 @@ public class ResourceHelpers {
         return behaviorGroupRepository.findBehaviorGroupsByEndpointId(DEFAULT_ORG_ID, endpointId);
     }
 
-    public Boolean updateBehaviorGroup(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.update(DEFAULT_ORG_ID, behaviorGroup);
+    public void updateBehaviorGroup(BehaviorGroup behaviorGroup) {
+        behaviorGroupRepository.update(DEFAULT_ORG_ID, behaviorGroup);
     }
 
     public Boolean deleteBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupRepository.delete(DEFAULT_ORG_ID, behaviorGroupId);
     }
 
-    public Boolean updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.updateDefault(behaviorGroup);
+    public void updateDefaultBehaviorGroup(BehaviorGroup behaviorGroup) {
+        behaviorGroupRepository.updateDefault(behaviorGroup);
     }
 
     public Boolean deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
