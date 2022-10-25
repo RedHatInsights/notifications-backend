@@ -29,6 +29,7 @@ import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -87,6 +88,11 @@ public class NotificationResourceTest extends DbIsolatedTest {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
         MockServerConfig.clearRbac();
         featureFlipper.setEnforceBehaviorGroupNameUnicity(true);
+    }
+
+    @AfterEach
+    void afterEach() {
+        featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
     }
 
     private Header initRbacMock(String accountId, String orgId, String username, RbacAccess access) {
