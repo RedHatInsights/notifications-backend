@@ -44,7 +44,7 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
                                 <ToolbarItem>
                                     <Button variant="primary" isDisabled={ !hasPermission(props.application.id) }
                                         component={ (props: any) =>
-                                            <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Email Template</Button>
+                                            <Link { ...props } to={ linkTo.newEmailTemplate() } /> }>Create Email Template</Button>
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>

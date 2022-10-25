@@ -91,10 +91,10 @@ const RenderedTemplate: React.FunctionComponent<RenderedTemplateProps> = props =
         return (
             <>
                 <StackItem>
-                    <span><strong>Subject:</strong> { props.subject }</span>
+                    <strong>Content:</strong>
                 </StackItem>
                 <StackItem>
-                    <strong>Body:</strong>
+                    { props.subject }
                 </StackItem>
                 <StackItem>
                     <iframe width="100%" srcDoc={ props.body } />
@@ -212,7 +212,7 @@ export const EmailTemplateForm: React.FunctionComponent<EmailTemplateFormProps> 
                     </SkeletonIfLoading>
                 </FormGroup>
                 <FormGroup
-                    label="Subject"
+                    label="Content"
                     isRequired
                 >
                     <SkeletonIfLoading isLoading={props.isLoading} height="50px">
@@ -226,7 +226,7 @@ export const EmailTemplateForm: React.FunctionComponent<EmailTemplateFormProps> 
                     </SkeletonIfLoading>
                 </FormGroup>
                 <FormGroup
-                    label="Body"
+                    label="Content"
                     isRequired
                 >
                     <SkeletonIfLoading isLoading={props.isLoading} height="300px">
@@ -240,7 +240,7 @@ export const EmailTemplateForm: React.FunctionComponent<EmailTemplateFormProps> 
                     </SkeletonIfLoading>
                 </FormGroup>
                 <FormGroup
-                    label="Payload"
+                    label="Template parameters"
                     isRequired
                 >
                     <SkeletonIfLoading isLoading={props.isLoading} height="200px">
