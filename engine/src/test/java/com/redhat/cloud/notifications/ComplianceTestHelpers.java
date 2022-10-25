@@ -56,7 +56,7 @@ public class ComplianceTestHelpers {
 
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
-        JsonObject payload = baseTransformer.transform(emailActionMessage);
+        JsonObject payload = baseTransformer.toJsonObject(emailActionMessage);
         aggregation.setPayload(payload);
 
         return aggregation;

@@ -15,6 +15,7 @@ import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.openbridge.BridgeEventService;
 import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.templates.models.Environment;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -62,6 +63,13 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     public static final String CAMEL_SUBTYPE_HEADER = "CAMEL_SUBTYPE";
     public static final String PROCESSORNAME = "processorname";
+    /**
+     * Constants for the {@link CamelTypeProcessor#callOpenBridge(JsonObject, UUID, String, CamelProperties, String, String)}.
+     * function.
+     */
+    public static final String SOURCE = "notifications";
+    public static final String SPEC_VERSION = "1.0";
+    public static final String TYPE = "myType";
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -85,6 +93,12 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
 
     @Inject
     RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
+
+    /**
+     * Used to send the environment's URL on RHOSE events.
+     */
+    @Inject
+    Environment environment;
 
     private Bridge bridge;
 
@@ -155,7 +169,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
         }
         metaData.put("_originalId", originalEventId);
 
-        JsonObject payload = transformer.transform(event.getAction());
+        JsonObject payload = transformer.toJsonObject(event.getAction());
         UUID historyId = UUID.randomUUID();
 
         JsonObject metadataAsJson = new JsonObject();
@@ -239,9 +253,9 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
         Map<String, Object> ce = new HashMap<>();
 
         ce.put("id", id);
-        ce.put("source", "notifications"); // Source of original event?
-        ce.put("specversion", "1.0");
-        ce.put("type", "myType"); // Type of original event?
+        ce.put("source", SOURCE); // Source of original event?
+        ce.put("specversion", SPEC_VERSION);
+        ce.put("type", TYPE); // Type of original event?
         ce.put(ORG_ID_FILTER_NAME, orgId);
         ce.put(PROCESSORNAME, extras.get(PROCESSORNAME));
         ce.put("originaleventid", originalEventId);
@@ -256,6 +270,9 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
         BridgeEventService evtSvc = RestClientBuilder.newBuilder()
                 .baseUri(URI.create(bridge.getEndpoint()))
                 .build(BridgeEventService.class);
+
+        // Include the environment's URL when sending the event.
+        body.put("environment_url", this.environment.url());
 
         JsonObject payload = JsonObject.mapFrom(ce);
         try {
