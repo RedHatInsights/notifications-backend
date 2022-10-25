@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.routers.internal;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.openbridge.Bridge;
@@ -28,18 +30,22 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.routers.EndpointResource.SLACK_ACTION;
 import static com.redhat.cloud.notifications.routers.EndpointResource.SLACK_CHANNEL;
 import static com.redhat.cloud.notifications.routers.EndpointResource.SLACK_WEBHOOK_URL;
+import static com.redhat.cloud.notifications.routers.internal.RhoseTestHelper.BASE_PATH;
 
 /**
- * This class can be used from a dev machine to test RHOSE and call some of its REST endpoints.
- * It is only available when the Quarkus build profile is 'dev'.
- * All environments variables required to call RHOSE must be set on the machine before calling any endpoint of this class.
+ * This class can be used from a dev machine to test RHOSE and call some of its REST endpoints. It is only
+ * available when the Quarkus build profile is 'dev'. All environments variables required to call RHOSE must
+ * be set on the machine before calling any endpoint of this class.
  */
 @IfBuildProfile("dev")
-@Path("/internal/dev/rhose")
-public class RhoseTest {
+@Path(BASE_PATH)
+public class RhoseTestHelper {
+
+    public static final String BASE_PATH = API_INTERNAL + "/dev/rhose";
 
     @Inject
     @RestClient
@@ -54,32 +60,32 @@ public class RhoseTest {
     @Inject
     TemplateRepository templateRepository;
 
+    @Inject
+    ObjectMapper objectMapper;
+
     @GET
-    public String getOurBridge() {
-        return bridge.toString();
+    public String printOurBridge() {
+        return prettyPrint(bridge);
     }
 
     @GET
     @Path("/bridges")
-    public String getBridges() {
+    public String printAllBridges() {
         String bearerToken = bridgeAuth.getToken();
         Map<String, Object> bridges = apiService.getBridges(bearerToken);
-        return bridges.toString();
+        return prettyPrint(bridges);
     }
 
     @GET
     @Path("/processors")
-    public String getProcessorsForBridge() {
+    public String printOurProcessors() {
         String bridgeId = bridge.getId();
         String bearerToken = bridgeAuth.getToken();
-
         if (!bridge.getStatus().equals("ready")) {
             return "Bridge is not yet ready, but " + bridge.getStatus();
         }
-
         Map<String, Object> processors = apiService.getProcessors(bridgeId, "", bearerToken);
-
-        return processors.toString();
+        return prettyPrint(processors);
     }
 
     /*
@@ -145,10 +151,11 @@ public class RhoseTest {
 
     @GET
     @Path("/processors/{id}")
-    public Processor getProcessorById(@PathParam("id") String processorId) {
+    public String printProcessorById(@PathParam("id") String processorId) {
         String bridgeId = bridge.getId();
         String bearerToken = bridgeAuth.getToken();
-        return apiService.getProcessorById(bridgeId, processorId, bearerToken);
+        Processor processor = apiService.getProcessorById(bridgeId, processorId, bearerToken);
+        return prettyPrint(processor);
     }
 
     @DELETE
@@ -230,5 +237,13 @@ public class RhoseTest {
         evtSvc.sendEvent(jsonObject, bearerToken);
 
         return uuid;
+    }
+
+    private String prettyPrint(Object object) {
+        try {
+            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Pretty print failed", e);
+        }
     }
 }
