@@ -29,6 +29,7 @@ import com.redhat.cloud.notifications.openbridge.Processor;
 import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
+import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
@@ -512,11 +513,14 @@ public class EndpointResource {
     })
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
-        // TODO We need globally limitations (Paging support and limits etc)
-        String orgId = getOrgId(sec);
-        boolean doDetail = includeDetail != null && includeDetail;
-        return notificationRepository.getNotificationHistory(orgId, id, doDetail, query);
+    public Page<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
+        final String orgId = getOrgId(sec);
+        final boolean doDetail = includeDetail != null && includeDetail;
+
+        final List<NotificationHistory> notificationHistory = notificationRepository.getNotificationHistory(orgId, id, doDetail, query);
+        final long notificationHistoryCount = this.notificationRepository.countNotificationHistoryElements(id, orgId);
+
+        return new Page<>(notificationHistory, new HashMap<>(), new Meta(notificationHistoryCount));
     }
 
     @GET

@@ -54,6 +54,31 @@ public class NotificationRepository {
                 .getResultList();
     }
 
+    /**
+     * Counts the number of notification history elements for the given Endpoint ID and OrgId.
+     * @param endpointId the endpoint's ID the notifications will be filtered with.
+     * @param orgId the event's OrgId the notifications will be filtered with.
+     * @return the number of notification history elements.
+     */
+    public long countNotificationHistoryElements(UUID endpointId, String orgId) {
+        final String query =
+            "SELECT " +
+                "count(nh) " +
+            "FROM " +
+                "NotificationHistory AS nh " +
+            "WHERE " +
+                "nh.endpoint.id = :endpointId " +
+            "AND " +
+                "nh.event.orgId = :orgId";
+
+        final var historyQuery = this.entityManager.createQuery(query);
+
+        historyQuery.setParameter("endpointId", endpointId);
+        historyQuery.setParameter("orgId", orgId);
+
+        return (long) historyQuery.getSingleResult();
+    }
+
     public JsonObject getNotificationDetails(String orgId, UUID endpoint, UUID historyId) {
         String query = "SELECT details FROM NotificationHistory WHERE event.orgId = :orgId AND endpoint.id = :endpointId AND id = :historyId";
         try {
