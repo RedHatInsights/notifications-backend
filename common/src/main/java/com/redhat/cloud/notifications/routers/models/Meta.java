@@ -2,8 +2,7 @@ package com.redhat.cloud.notifications.routers.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 @JsonSerialize
 @JsonIgnoreProperties(ignoreUnknown = true)

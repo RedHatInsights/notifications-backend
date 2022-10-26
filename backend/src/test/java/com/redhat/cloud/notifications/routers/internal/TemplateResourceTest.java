@@ -15,12 +15,11 @@ import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import jakarta.ws.rs.BadRequestException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import javax.ws.rs.BadRequestException;
 
 import java.util.UUID;
 

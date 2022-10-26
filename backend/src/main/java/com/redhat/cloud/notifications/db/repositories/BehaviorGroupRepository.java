@@ -6,16 +6,16 @@ import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
-import javax.transaction.Transactional;
-import javax.validation.Valid;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
+import static jakarta.persistence.LockModeType.PESSIMISTIC_WRITE;
 import static org.hibernate.jpa.QueryHints.HINT_PASS_DISTINCT_THROUGH;
 
 @ApplicationScoped
@@ -159,7 +159,7 @@ public class BehaviorGroupRepository {
             query += " AND orgId = :orgId";
         }
 
-        javax.persistence.Query q = entityManager.createQuery(query)
+        jakarta.persistence.Query q = entityManager.createQuery(query)
                 .setParameter("displayName", behaviorGroup.getDisplayName())
                 .setParameter("id", behaviorGroup.getId());
 
@@ -220,7 +220,7 @@ public class BehaviorGroupRepository {
             query += " AND orgId = :orgId";
         }
 
-        javax.persistence.Query q = entityManager.createQuery(query)
+        jakarta.persistence.Query q = entityManager.createQuery(query)
                 .setParameter("id", behaviorGroupId);
 
         if (orgId != null) {

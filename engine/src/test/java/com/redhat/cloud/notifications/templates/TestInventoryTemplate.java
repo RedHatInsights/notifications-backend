@@ -6,14 +6,13 @@ import com.redhat.cloud.notifications.processors.email.aggregators.InventoryEmai
 import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
-import javax.inject.Inject;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 
 @QuarkusTest
 public class TestInventoryTemplate {

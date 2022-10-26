@@ -38,14 +38,14 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
+import jakarta.enterprise.inject.Any;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockserver.model.HttpRequest;
 
-import javax.enterprise.inject.Any;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;

@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.db.builder;
 
 import com.redhat.cloud.notifications.db.Query;
+import jakarta.persistence.TypedQuery;
 import org.junit.jupiter.api.Test;
 
-import javax.persistence.TypedQuery;
 import java.util.Map;
 import java.util.Optional;
 

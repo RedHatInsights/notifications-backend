@@ -5,12 +5,12 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
 import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;

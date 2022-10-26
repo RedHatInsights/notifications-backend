@@ -14,10 +14,10 @@ import io.quarkus.qute.ReflectionValueResolver;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.ValueResolver;
 import io.quarkus.scheduler.Scheduled;
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.function.BiFunction;
 import java.util.function.Function;

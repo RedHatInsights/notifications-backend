@@ -1,14 +1,14 @@
 package com.redhat.cloud.notifications.models;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Objects;
-
 
 @Entity
 @Table(name = "aggregation_org_config")

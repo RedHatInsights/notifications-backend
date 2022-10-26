@@ -3,15 +3,15 @@ package com.redhat.cloud.notifications.openbridge;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.WebApplicationException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import static javax.ws.rs.core.Response.Status.Family;
+import static jakarta.ws.rs.core.Response.Status.Family;
 
 @ApplicationScoped
 public class RhoseErrorMetricsRecorder {

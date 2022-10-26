@@ -6,10 +6,10 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import io.quarkus.security.ForbiddenException;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.SecurityContext;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.core.SecurityContext;
 import java.util.List;
 import java.util.UUID;
 

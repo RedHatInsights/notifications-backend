@@ -6,13 +6,13 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.NoResultException;
 import org.apache.kafka.common.header.Header;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.persistence.NoResultException;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.UUID;

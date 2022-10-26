@@ -1,11 +1,10 @@
 package com.redhat.cloud.notifications.openbridge;
 
 import io.vertx.core.json.JsonObject;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 
 /**
  * Deliver events to the OpenBridge ingress.

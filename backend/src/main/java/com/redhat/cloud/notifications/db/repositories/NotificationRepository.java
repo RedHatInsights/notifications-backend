@@ -4,12 +4,12 @@ import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;

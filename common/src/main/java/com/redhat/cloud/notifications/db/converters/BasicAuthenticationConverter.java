@@ -3,9 +3,8 @@ package com.redhat.cloud.notifications.db.converters;
 import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import io.vertx.core.json.Json;
-
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
 @Converter
 public class BasicAuthenticationConverter implements AttributeConverter<BasicAuthentication, String> {

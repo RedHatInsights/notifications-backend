@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.routers.models;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.validation.constraints.NotNull;
 
-import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 

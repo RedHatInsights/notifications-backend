@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.routers.internal.models;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

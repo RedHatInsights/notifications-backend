@@ -1,7 +1,8 @@
 package com.redhat.cloud.notifications.models.validation;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;

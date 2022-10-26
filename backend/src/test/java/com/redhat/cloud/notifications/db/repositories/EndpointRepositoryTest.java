@@ -7,10 +7,10 @@ import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import jakarta.persistence.TypedQuery;
 import org.junit.jupiter.api.Test;
 
-import javax.inject.Inject;
-import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;

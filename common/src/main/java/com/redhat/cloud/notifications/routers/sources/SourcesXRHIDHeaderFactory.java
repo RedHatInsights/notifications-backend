@@ -1,10 +1,9 @@
 package com.redhat.cloud.notifications.routers.sources;
 
 import com.redhat.cloud.notifications.Constants;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory;
-
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
 
 /**
  * This class will grab the incoming "x-rh-identity" header and forward it along when sending requests to Sources. We

@@ -16,9 +16,9 @@ import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings
 import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;

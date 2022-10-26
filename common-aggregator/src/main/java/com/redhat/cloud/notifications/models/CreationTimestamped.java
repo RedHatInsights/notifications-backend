@@ -2,9 +2,9 @@ package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
 
-import javax.persistence.MappedSuperclass;
-import javax.persistence.PrePersist;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 

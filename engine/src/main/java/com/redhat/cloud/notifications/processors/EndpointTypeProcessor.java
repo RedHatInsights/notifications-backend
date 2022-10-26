@@ -5,8 +5,8 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.quarkus.logging.Log;
+import jakarta.inject.Inject;
 
-import javax.inject.Inject;
 import java.util.List;
 
 public abstract class EndpointTypeProcessor {

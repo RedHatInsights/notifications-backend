@@ -1,9 +1,8 @@
 package com.redhat.cloud.notifications.openbridge;
 
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.rest.client.ext.ResponseExceptionMapper;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
 
 public class RhoseResponseExceptionMapper implements ResponseExceptionMapper<RuntimeException> {
 

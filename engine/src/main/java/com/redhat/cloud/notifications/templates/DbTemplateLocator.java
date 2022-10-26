@@ -5,10 +5,10 @@ import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateLocator;
 import io.quarkus.qute.Variant;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.NoResultException;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.persistence.NoResultException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Optional;

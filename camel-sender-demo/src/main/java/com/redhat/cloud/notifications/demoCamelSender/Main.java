@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.demoCamelSender;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 
 /**

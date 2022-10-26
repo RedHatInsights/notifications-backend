@@ -11,18 +11,18 @@ import com.redhat.cloud.notifications.openbridge.Processor;
 import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-import javax.ws.rs.WebApplicationException;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.openbridge.BridgeApiService.BASE_PATH;
 import static io.quarkus.scheduler.Scheduled.ConcurrentExecution.SKIP;
-import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
+import static jakarta.persistence.LockModeType.PESSIMISTIC_WRITE;
 import static org.hibernate.LockOptions.SKIP_LOCKED;
 
 /**
@@ -71,7 +71,7 @@ public class EndpointReadyChecker {
                 // DB rows will be locked when they are processed by this scheduled job, preventing other pods from accessing them.
                 .setLockMode(PESSIMISTIC_WRITE)
                 // Postgres will skip the DB rows that were locked by another pod so that this scheduled job will never be waiting for locks.
-                .setHint("javax.persistence.lock.timeout", SKIP_LOCKED)
+                .setHint("jakarta.persistence.lock.timeout", SKIP_LOCKED)
                 .getResultList();
 
         for (Endpoint ep : endpoints) {

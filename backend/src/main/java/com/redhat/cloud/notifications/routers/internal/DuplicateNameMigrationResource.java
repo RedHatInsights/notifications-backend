@@ -4,17 +4,16 @@ import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.routers.internal.models.DuplicateNameMigrationReport;
 import io.quarkus.logging.Log;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.security.RolesAllowed;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +22,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL + "/duplicate-name-migration")
