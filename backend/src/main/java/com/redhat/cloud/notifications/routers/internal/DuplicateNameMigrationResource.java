@@ -109,9 +109,17 @@ public class DuplicateNameMigrationResource {
     int updateEndpoints(Object[] repeatedValue) {
         List<UUID> ids = Arrays.stream(repeatedValue[0].toString().split(","))
                 .map(UUID::fromString)
+                .collect(Collectors.toList());
+
+        // order by creation date
+        ids = entityManager.createQuery("SELECT id FROM Endpoint WHERE id IN (:ids) ORDER BY created ASC", UUID.class)
+                .setParameter("ids", ids)
+                .getResultList()
+                .stream()
                 // Dropping the first element - we are not going to update it's name.
                 .skip(1)
                 .collect(Collectors.toList());
+
         String baseName = repeatedValue[1].toString();
 
         for (int i = 0; i < ids.size(); ++i) {
@@ -129,10 +137,17 @@ public class DuplicateNameMigrationResource {
     int updateBehaviorGroups(Object[] repeatedValue) {
         List<UUID> ids = Arrays.stream(repeatedValue[0].toString().split(","))
                 .map(UUID::fromString)
+                .collect(Collectors.toList());
+        String baseName = repeatedValue[1].toString();
+
+        // order by creation date
+        ids = entityManager.createQuery("SELECT id FROM BehaviorGroup WHERE id IN (:ids) ORDER BY created ASC", UUID.class)
+                .setParameter("ids", ids)
+                .getResultList()
+                .stream()
                 // Dropping the first element - we are not going to update it's name.
                 .skip(1)
                 .collect(Collectors.toList());
-        String baseName = repeatedValue[1].toString();
 
         for (int i = 0; i < ids.size(); ++i) {
             UUID id = ids.get(i);

@@ -21,6 +21,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -122,7 +123,7 @@ public class ResourceHelpers {
     }
 
     public Endpoint createEndpoint(String accountId, String orgId, EndpointType type, String subType) {
-        return createEndpoint(accountId, orgId, type, subType, "name", "description", null, FALSE);
+        return createEndpoint(accountId, orgId, type, subType, "name", "description", null, FALSE, null);
     }
 
     public UUID createWebhookEndpoint(String accountId, String orgId) {
@@ -130,11 +131,15 @@ public class ResourceHelpers {
         properties.setMethod(HttpType.POST);
         properties.setUrl("https://localhost");
         String name = "Endpoint " + UUID.randomUUID();
-        return createEndpoint(accountId, orgId, WEBHOOK, null, name, "Automatically generated", properties, TRUE)
+        return createEndpoint(accountId, orgId, WEBHOOK, null, name, "Automatically generated", properties, TRUE, null)
                 .getId();
     }
 
     public Endpoint createEndpoint(String accountId, String orgId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled) {
+        return createEndpoint(accountId, orgId, type, subType, name, description, properties, enabled, null);
+    }
+
+    public Endpoint createEndpoint(String accountId, String orgId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled, LocalDateTime created) {
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
         endpoint.setOrgId(orgId);
@@ -144,6 +149,7 @@ public class ResourceHelpers {
         endpoint.setDescription(description);
         endpoint.setProperties(properties);
         endpoint.setEnabled(enabled);
+        endpoint.setCreated(created);
         return endpointRepository.createEndpoint(endpoint);
     }
 
@@ -196,9 +202,14 @@ public class ResourceHelpers {
     }
 
     public BehaviorGroup createBehaviorGroup(String accountId, String orgId, String displayName, UUID bundleId) {
+        return createBehaviorGroup(accountId, orgId, displayName, bundleId, null);
+    }
+
+    public BehaviorGroup createBehaviorGroup(String accountId, String orgId, String displayName, UUID bundleId, LocalDateTime created) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
+        behaviorGroup.setCreated(created);
         return behaviorGroupRepository.create(accountId, orgId, behaviorGroup);
     }
 

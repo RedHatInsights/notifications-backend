@@ -15,6 +15,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -87,41 +88,41 @@ public class DuplicateNameMigrationResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    public void duplicateEndpointsAreNamedIncrementally() {
+    public void duplicateEndpointsAreNamedIncrementallyOnCreationDate() {
         List<Endpoint> duplicatedEndpoints1 = new ArrayList<>();
-        createEndpoint(orgId1, EndpointType.WEBHOOK, nameA, duplicatedEndpoints1);
-        createEndpoint(orgId1, EndpointType.WEBHOOK, nameA, duplicatedEndpoints1);
-        createEndpoint(orgId1, EndpointType.WEBHOOK, nameA, duplicatedEndpoints1);
-        createEndpoint(orgId1, EndpointType.WEBHOOK, nameA, duplicatedEndpoints1);
+        createEndpoint(orgId1, EndpointType.WEBHOOK, nameA, LocalDateTime.now().plusDays(2), duplicatedEndpoints1); // 2
+        createEndpoint(orgId1, EndpointType.WEBHOOK, nameA, LocalDateTime.now().plusDays(3), duplicatedEndpoints1); // 3
+        createEndpoint(orgId1, EndpointType.WEBHOOK, nameA, LocalDateTime.now().plusDays(1), duplicatedEndpoints1); // 1
+        createEndpoint(orgId1, EndpointType.WEBHOOK, nameA, LocalDateTime.now().plusDays(4), duplicatedEndpoints1); // 4
 
         DuplicateNameMigrationReport report = runMigration();
         assertEquals(0, report.updatedBehaviorGroups);
         assertEquals(3, report.updatedIntegrations); // 1 of each group of duplicates is not updated
 
-        assertEquals("name-a", getUpdatedEndpointName(duplicatedEndpoints1.get(0)));
-        assertEquals("name-a 2", getUpdatedEndpointName(duplicatedEndpoints1.get(1)));
-        assertEquals("name-a 3", getUpdatedEndpointName(duplicatedEndpoints1.get(2)));
+        assertEquals("name-a 2", getUpdatedEndpointName(duplicatedEndpoints1.get(0)));
+        assertEquals("name-a 3", getUpdatedEndpointName(duplicatedEndpoints1.get(1)));
+        assertEquals("name-a", getUpdatedEndpointName(duplicatedEndpoints1.get(2)));
         assertEquals("name-a 4", getUpdatedEndpointName(duplicatedEndpoints1.get(3)));
     }
 
     @Test
-    public void duplicateBehaviorGroupsAreNamedIncrementally() {
+    public void duplicateBehaviorGroupsAreNamedIncrementallyOnCreationDate() {
         UUID bundle1 = resourceHelpers.createBundle().getId();
 
         List<BehaviorGroup> duplicatedBehaviorGroups1 = new ArrayList<>();
-        createBehaviorGroup(orgId1, bundle1, nameA, duplicatedBehaviorGroups1);
-        createBehaviorGroup(orgId1, bundle1, nameA, duplicatedBehaviorGroups1);
-        createBehaviorGroup(orgId1, bundle1, nameA, duplicatedBehaviorGroups1);
-        createBehaviorGroup(orgId1, bundle1, nameA, duplicatedBehaviorGroups1);
+        createBehaviorGroup(orgId1, bundle1, nameA, LocalDateTime.now().plusDays(3), duplicatedBehaviorGroups1); // 3
+        createBehaviorGroup(orgId1, bundle1, nameA, LocalDateTime.now().plusDays(2), duplicatedBehaviorGroups1); // 2
+        createBehaviorGroup(orgId1, bundle1, nameA, LocalDateTime.now().plusDays(4), duplicatedBehaviorGroups1); // 4
+        createBehaviorGroup(orgId1, bundle1, nameA, LocalDateTime.now().plusDays(1), duplicatedBehaviorGroups1); // 1
 
         DuplicateNameMigrationReport report = runMigration();
         assertEquals(3, report.updatedBehaviorGroups);
         assertEquals(0, report.updatedIntegrations); // 1 of each group of duplicates is not updated
 
-        assertEquals("name-a", getUpdatedBehaviorGroupName(duplicatedBehaviorGroups1.get(0)));
+        assertEquals("name-a 3", getUpdatedBehaviorGroupName(duplicatedBehaviorGroups1.get(0)));
         assertEquals("name-a 2", getUpdatedBehaviorGroupName(duplicatedBehaviorGroups1.get(1)));
-        assertEquals("name-a 3", getUpdatedBehaviorGroupName(duplicatedBehaviorGroups1.get(2)));
-        assertEquals("name-a 4", getUpdatedBehaviorGroupName(duplicatedBehaviorGroups1.get(3)));
+        assertEquals("name-a 4", getUpdatedBehaviorGroupName(duplicatedBehaviorGroups1.get(2)));
+        assertEquals("name-a", getUpdatedBehaviorGroupName(duplicatedBehaviorGroups1.get(3)));
     }
 
     @Test
@@ -258,7 +259,11 @@ public class DuplicateNameMigrationResourceTest extends DbIsolatedTest {
     }
 
     private void createBehaviorGroup(String orgId, UUID bundleId, String name, List<BehaviorGroup> behaviorGroupList) {
-        BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(UNUSED, orgId, name, bundleId);
+        createBehaviorGroup(orgId, bundleId, name, null, behaviorGroupList);
+    }
+
+    private void createBehaviorGroup(String orgId, UUID bundleId, String name, LocalDateTime created, List<BehaviorGroup> behaviorGroupList) {
+        BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(UNUSED, orgId, name, bundleId, created);
         if (behaviorGroupList != null) {
             behaviorGroupList.add(behaviorGroup);
         }
@@ -293,14 +298,18 @@ public class DuplicateNameMigrationResourceTest extends DbIsolatedTest {
     }
 
     private void createEndpoint(String orgId, EndpointType endpointType, String name, List<Endpoint> endpointList) {
-        Endpoint endpoint = resourceHelpers.createEndpoint(UNUSED, orgId, endpointType, null, name, UNUSED, null, true);
+        createEndpoint(orgId, endpointType, name, null, endpointList);
+    }
+
+    private void createEndpoint(String orgId, EndpointType endpointType, String name, LocalDateTime created, List<Endpoint> endpointList) {
+        Endpoint endpoint = resourceHelpers.createEndpoint(UNUSED, orgId, endpointType, null, name, UNUSED, null, true, created);
         if (endpointList != null) {
             endpointList.add(endpoint);
         }
     }
 
     private void createEndpoint(String orgId, EndpointType endpointType, String name) {
-        createEndpoint(orgId, endpointType, name, null);
+        createEndpoint(orgId, endpointType, name, null, null);
     }
 
     private String getUpdatedEndpointName(Endpoint endpoint) {
