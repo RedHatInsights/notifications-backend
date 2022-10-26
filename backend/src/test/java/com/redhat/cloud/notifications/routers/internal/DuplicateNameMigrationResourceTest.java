@@ -292,7 +292,7 @@ public class DuplicateNameMigrationResourceTest extends DbIsolatedTest {
         } else {
             for (BehaviorGroup behaviorGroup : behaviorGroupList) {
                 BehaviorGroup other = resourceHelpers.getBehaviorGroup(behaviorGroup.getId());
-                assertEquals(other.getDisplayName(), other.getDisplayName());
+                assertEquals(behaviorGroup.getDisplayName(), other.getDisplayName());
             }
         }
     }
