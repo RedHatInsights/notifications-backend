@@ -10,29 +10,18 @@ import javax.validation.constraints.NotNull;
 public class RenderEmailTemplateRequest {
 
     @NotNull
-    private String subjectTemplate;
-
-    @NotNull
-    private String bodyTemplate;
+    private String[] template;
 
     @NotNull
     @NotEmpty
     private String payload;
 
-    public String getSubjectTemplate() {
-        return subjectTemplate;
+    public String[] getTemplate() {
+        return template;
     }
 
-    public void setSubjectTemplate(String subjectTemplate) {
-        this.subjectTemplate = subjectTemplate;
-    }
-
-    public String getBodyTemplate() {
-        return bodyTemplate;
-    }
-
-    public void setBodyTemplate(String bodyTemplate) {
-        this.bodyTemplate = bodyTemplate;
+    public void setTemplate(String[] template) {
+        this.template = template;
     }
 
     public String getPayload() {

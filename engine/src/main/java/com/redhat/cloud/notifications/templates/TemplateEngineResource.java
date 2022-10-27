@@ -64,15 +64,15 @@ public class TemplateEngineResource {
         try {
             Action action = actionParser.fromJsonString(payload);
 
-            TemplateInstance subjectTemplate = templateService
-                    .compileTemplate(renderEmailTemplateRequest.getSubjectTemplate(), "subject");
-            String subject = templateService.renderTemplate(user, action, subjectTemplate);
+            String[] templateContent = renderEmailTemplateRequest.getTemplate();
+            String[] renderedTemplate = new String[templateContent.length];
 
-            TemplateInstance bodyTemplate = templateService
-                    .compileTemplate(renderEmailTemplateRequest.getBodyTemplate(), "body");
-            String body = templateService.renderTemplate(user, action, bodyTemplate);
+            for (int i = 0; i < templateContent.length; i++) {
+                TemplateInstance template = templateService.compileTemplate(templateContent[i], String.format("rendered-template-%d", i));
+                renderedTemplate[i] = templateService.renderTemplate(user, action, template);
+            }
 
-            return Response.ok(new RenderEmailTemplateResponse.Success(subject, body)).build();
+            return Response.ok(new RenderEmailTemplateResponse.Success(renderedTemplate)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(e.getMessage())).build();
         }

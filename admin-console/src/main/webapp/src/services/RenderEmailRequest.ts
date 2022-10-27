@@ -10,8 +10,7 @@ export type RenderEmailRequest = {
 
 const actionCreator = (params: RenderEmailRequest) => Operations.TemplateResourceRenderEmailTemplate.actionCreator({
     body: {
-        subject_template: params.subject,
-        body_template: params.body,
+        template: [ params.subject, params.body ],
         payload: params.payload
     }
 });

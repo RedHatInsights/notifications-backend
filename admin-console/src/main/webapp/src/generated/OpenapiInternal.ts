@@ -2,14 +2,14 @@
 /**
  * Generated code, DO NOT modify directly.
  */
+import * as z from 'zod';
 import { ValidatedResponse } from 'openapi2typescript';
+import { Action } from 'react-fetching-library';
 import { ValidateRule } from 'openapi2typescript';
 import {
     actionBuilder,
-    ActionValidatableConfig
+    ActionValidatableConfig,
 } from 'openapi2typescript/react-fetching-library';
-import { Action } from 'react-fetching-library';
-import * as z from 'zod';
 
 export namespace Schemas {
   export const AddAccessRequest = zodSchemaAddAccessRequest();
@@ -32,12 +32,12 @@ export namespace Schemas {
     application_id?: UUID | undefined | null;
     body_template?: Template | undefined | null;
     body_template_id: UUID;
-    created?: string | undefined | null;
+    created?: LocalDateTime | undefined | null;
     id?: UUID | undefined | null;
     subject_template?: Template | undefined | null;
     subject_template_id: UUID;
     subscription_type: EmailSubscriptionType;
-    updated?: string | undefined | null;
+    updated?: LocalDateTime | undefined | null;
   };
 
   export const Application = zodSchemaApplication();
@@ -49,11 +49,11 @@ export namespace Schemas {
   export const Application1 = zodSchemaApplication1();
   export type Application1 = {
     bundle_id: UUID;
-    created?: string | undefined | null;
+    created?: LocalDateTime | undefined | null;
     display_name: string;
     id?: UUID | undefined | null;
     name: string;
-    updated?: string | undefined | null;
+    updated?: LocalDateTime | undefined | null;
   };
 
   export const BasicAuthentication = zodSchemaBasicAuthentication();
@@ -65,18 +65,19 @@ export namespace Schemas {
   export const BehaviorGroup = zodSchemaBehaviorGroup();
   export type BehaviorGroup = {
     actions?: Array<BehaviorGroupAction> | undefined | null;
+    behaviors?: Array<EventTypeBehavior> | undefined | null;
     bundle?: Bundle | undefined | null;
     bundle_id: UUID;
-    created?: string | undefined | null;
+    created?: LocalDateTime | undefined | null;
     default_behavior?: boolean | undefined | null;
     display_name: string;
     id?: UUID | undefined | null;
-    updated?: string | undefined | null;
+    updated?: LocalDateTime | undefined | null;
   };
 
   export const BehaviorGroupAction = zodSchemaBehaviorGroupAction();
   export type BehaviorGroupAction = {
-    created?: string | undefined | null;
+    created?: LocalDateTime | undefined | null;
     endpoint?: Endpoint | undefined | null;
     id?: BehaviorGroupActionId | undefined | null;
   };
@@ -89,11 +90,11 @@ export namespace Schemas {
 
   export const Bundle = zodSchemaBundle();
   export type Bundle = {
-    created?: string | undefined | null;
+    created?: LocalDateTime | undefined | null;
     display_name: string;
     id?: UUID | undefined | null;
     name: string;
-    updated?: string | undefined | null;
+    updated?: LocalDateTime | undefined | null;
   };
 
   export const CamelProperties = zodSchemaCamelProperties();
@@ -107,15 +108,41 @@ export namespace Schemas {
       | undefined
       | null;
     secret_token?: string | undefined | null;
-    sub_type?: string | undefined | null;
     url: string;
+  };
+
+  export const CreateBehaviorGroupRequest =
+    zodSchemaCreateBehaviorGroupRequest();
+  export type CreateBehaviorGroupRequest = {
+    bundle_id: UUID;
+    display_name: string;
+    endpoint_ids?: Array<string> | undefined | null;
+    event_type_ids?: Array<string> | undefined | null;
+  };
+
+  export const CreateBehaviorGroupResponse =
+    zodSchemaCreateBehaviorGroupResponse();
+  export type CreateBehaviorGroupResponse = {
+    bundle_id: UUID;
+    created: LocalDateTime;
+    display_name: string;
+    endpoints: Array<string>;
+    event_types: Array<string>;
+    id: UUID;
   };
 
   export const CurrentStatus = zodSchemaCurrentStatus();
   export type CurrentStatus = {
-    end_time?: string | undefined | null;
-    start_time?: string | undefined | null;
+    end_time?: LocalDateTime | undefined | null;
+    start_time?: LocalDateTime | undefined | null;
     status: Status;
+  };
+
+  export const DuplicateNameMigrationReport =
+    zodSchemaDuplicateNameMigrationReport();
+  export type DuplicateNameMigrationReport = {
+    updatedBehaviorGroups?: number | undefined | null;
+    updatedIntegrations?: number | undefined | null;
   };
 
   export const EmailSubscriptionProperties =
@@ -131,7 +158,7 @@ export namespace Schemas {
 
   export const Endpoint = zodSchemaEndpoint();
   export type Endpoint = {
-    created?: string | undefined | null;
+    created?: LocalDateTime | undefined | null;
     description: string;
     enabled?: boolean | undefined | null;
     id?: UUID | undefined | null;
@@ -140,9 +167,11 @@ export namespace Schemas {
       | (WebhookProperties | EmailSubscriptionProperties | CamelProperties)
       | undefined
       | null;
+    server_errors?: number | undefined | null;
+    status?: EndpointStatus | undefined | null;
     sub_type?: string | undefined | null;
     type: EndpointType;
-    updated?: string | undefined | null;
+    updated?: LocalDateTime | undefined | null;
   };
 
   export const EndpointPage = zodSchemaEndpointPage();
@@ -156,6 +185,15 @@ export namespace Schemas {
 
   export const EndpointProperties = zodSchemaEndpointProperties();
   export type EndpointProperties = unknown;
+
+  export const EndpointStatus = zodSchemaEndpointStatus();
+  export type EndpointStatus =
+    | 'READY'
+    | 'UNKNOWN'
+    | 'NEW'
+    | 'PROVISIONING'
+    | 'DELETING'
+    | 'FAILED';
 
   export const EndpointType = zodSchemaEndpointType();
   export type EndpointType =
@@ -172,7 +210,7 @@ export namespace Schemas {
     actions: Array<EventLogEntryAction>;
     application: string;
     bundle: string;
-    created: string;
+    created: LocalDateTime;
     event_type: string;
     id: UUID;
     payload?: string | undefined | null;
@@ -191,7 +229,16 @@ export namespace Schemas {
     endpoint_type: EndpointType;
     id: UUID;
     invocation_result: boolean;
+    status: EventLogEntryActionStatus;
   };
+
+  export const EventLogEntryActionStatus = zodSchemaEventLogEntryActionStatus();
+  export type EventLogEntryActionStatus =
+    | 'SENT'
+    | 'SUCCESS'
+    | 'PROCESSING'
+    | 'FAILED'
+    | 'UNKNOWN';
 
   export const EventType = zodSchemaEventType();
   export type EventType = {
@@ -201,6 +248,19 @@ export namespace Schemas {
     display_name: string;
     id?: UUID | undefined | null;
     name: string;
+  };
+
+  export const EventTypeBehavior = zodSchemaEventTypeBehavior();
+  export type EventTypeBehavior = {
+    created?: LocalDateTime | undefined | null;
+    event_type?: EventType | undefined | null;
+    id?: EventTypeBehaviorId | undefined | null;
+  };
+
+  export const EventTypeBehaviorId = zodSchemaEventTypeBehaviorId();
+  export type EventTypeBehaviorId = {
+    behaviorGroupId: UUID;
+    eventTypeId: UUID;
   };
 
   export const Facet = zodSchemaFacet();
@@ -218,13 +278,13 @@ export namespace Schemas {
   export type InstantEmailTemplate = {
     body_template?: Template | undefined | null;
     body_template_id: UUID;
-    created?: string | undefined | null;
+    created?: LocalDateTime | undefined | null;
     event_type?: EventType | undefined | null;
     event_type_id?: UUID | undefined | null;
     id?: UUID | undefined | null;
     subject_template?: Template | undefined | null;
     subject_template_id: UUID;
-    updated?: string | undefined | null;
+    updated?: LocalDateTime | undefined | null;
   };
 
   export const InternalApplicationUserPermission =
@@ -249,6 +309,12 @@ export namespace Schemas {
     roles: Array<string>;
   };
 
+  export const LocalDate = zodSchemaLocalDate();
+  export type LocalDate = string;
+
+  export const LocalDateTime = zodSchemaLocalDateTime();
+  export type LocalDateTime = string;
+
   export const MessageValidationResponse = zodSchemaMessageValidationResponse();
   export type MessageValidationResponse = {
     errors: {
@@ -263,7 +329,7 @@ export namespace Schemas {
 
   export const NotificationHistory = zodSchemaNotificationHistory();
   export type NotificationHistory = {
-    created?: string | undefined | null;
+    created?: LocalDateTime | undefined | null;
     details?:
       | {
           [x: string]: unknown;
@@ -276,7 +342,16 @@ export namespace Schemas {
     id?: UUID | undefined | null;
     invocationResult: boolean;
     invocationTime: number;
+    status: NotificationStatus;
   };
+
+  export const NotificationStatus = zodSchemaNotificationStatus();
+  export type NotificationStatus =
+    | 'FAILED_INTERNAL'
+    | 'FAILED_EXTERNAL'
+    | 'PROCESSING'
+    | 'SENT'
+    | 'SUCCESS';
 
   export const PageEventLogEntry = zodSchemaPageEventLogEntry();
   export type PageEventLogEntry = {
@@ -299,9 +374,8 @@ export namespace Schemas {
   export const RenderEmailTemplateRequest =
     zodSchemaRenderEmailTemplateRequest();
   export type RenderEmailTemplateRequest = {
-    body_template: string;
     payload: string;
-    subject_template: string;
+    template: Array<string>;
   };
 
   export const RequestDefaultBehaviorGroupPropertyList =
@@ -328,16 +402,24 @@ export namespace Schemas {
 
   export const Template = zodSchemaTemplate();
   export type Template = {
-    created?: string | undefined | null;
+    created?: LocalDateTime | undefined | null;
     data: string;
     description: string;
     id?: UUID | undefined | null;
     name: string;
-    updated?: string | undefined | null;
+    updated?: LocalDateTime | undefined | null;
   };
 
   export const UUID = zodSchemaUUID();
   export type UUID = string;
+
+  export const UpdateBehaviorGroupRequest =
+    zodSchemaUpdateBehaviorGroupRequest();
+  export type UpdateBehaviorGroupRequest = {
+    display_name?: string | undefined | null;
+    endpoint_ids?: Array<string> | undefined | null;
+    event_type_ids?: Array<string> | undefined | null;
+  };
 
   export const WebhookProperties = zodSchemaWebhookProperties();
   export type WebhookProperties = {
@@ -355,7 +437,7 @@ export namespace Schemas {
       return z
       .object({
           application_id: zodSchemaUUID().optional().nullable(),
-          role: z.string().optional().nullable()
+          role: z.string().optional().nullable(),
       })
       .nonstrict();
   }
@@ -366,7 +448,7 @@ export namespace Schemas {
           bundle_id: zodSchemaUUID(),
           display_name: z.string(),
           name: z.string(),
-          owner_role: z.string().optional().nullable()
+          owner_role: z.string().optional().nullable(),
       })
       .nonstrict();
   }
@@ -378,12 +460,12 @@ export namespace Schemas {
           application_id: zodSchemaUUID().optional().nullable(),
           body_template: zodSchemaTemplate().optional().nullable(),
           body_template_id: zodSchemaUUID(),
-          created: z.string().optional().nullable(),
+          created: zodSchemaLocalDateTime().optional().nullable(),
           id: zodSchemaUUID().optional().nullable(),
           subject_template: zodSchemaTemplate().optional().nullable(),
           subject_template_id: zodSchemaUUID(),
           subscription_type: zodSchemaEmailSubscriptionType(),
-          updated: z.string().optional().nullable()
+          updated: zodSchemaLocalDateTime().optional().nullable(),
       })
       .nonstrict();
   }
@@ -392,7 +474,7 @@ export namespace Schemas {
       return z
       .object({
           display_name: z.string(),
-          id: zodSchemaUUID()
+          id: zodSchemaUUID(),
       })
       .nonstrict();
   }
@@ -401,11 +483,11 @@ export namespace Schemas {
       return z
       .object({
           bundle_id: zodSchemaUUID(),
-          created: z.string().optional().nullable(),
+          created: zodSchemaLocalDateTime().optional().nullable(),
           display_name: z.string(),
           id: zodSchemaUUID().optional().nullable(),
           name: z.string(),
-          updated: z.string().optional().nullable()
+          updated: zodSchemaLocalDateTime().optional().nullable(),
       })
       .nonstrict();
   }
@@ -414,7 +496,7 @@ export namespace Schemas {
       return z
       .object({
           password: z.string().optional().nullable(),
-          username: z.string().optional().nullable()
+          username: z.string().optional().nullable(),
       })
       .nonstrict();
   }
@@ -423,13 +505,14 @@ export namespace Schemas {
       return z
       .object({
           actions: z.array(zodSchemaBehaviorGroupAction()).optional().nullable(),
+          behaviors: z.array(zodSchemaEventTypeBehavior()).optional().nullable(),
           bundle: zodSchemaBundle().optional().nullable(),
           bundle_id: zodSchemaUUID(),
-          created: z.string().optional().nullable(),
+          created: zodSchemaLocalDateTime().optional().nullable(),
           default_behavior: z.boolean().optional().nullable(),
           display_name: z.string(),
           id: zodSchemaUUID().optional().nullable(),
-          updated: z.string().optional().nullable()
+          updated: zodSchemaLocalDateTime().optional().nullable(),
       })
       .nonstrict();
   }
@@ -437,9 +520,9 @@ export namespace Schemas {
   function zodSchemaBehaviorGroupAction() {
       return z
       .object({
-          created: z.string().optional().nullable(),
+          created: zodSchemaLocalDateTime().optional().nullable(),
           endpoint: zodSchemaEndpoint().optional().nullable(),
-          id: zodSchemaBehaviorGroupActionId().optional().nullable()
+          id: zodSchemaBehaviorGroupActionId().optional().nullable(),
       })
       .nonstrict();
   }
@@ -448,7 +531,7 @@ export namespace Schemas {
       return z
       .object({
           behaviorGroupId: zodSchemaUUID(),
-          endpointId: zodSchemaUUID()
+          endpointId: zodSchemaUUID(),
       })
       .nonstrict();
   }
@@ -456,11 +539,11 @@ export namespace Schemas {
   function zodSchemaBundle() {
       return z
       .object({
-          created: z.string().optional().nullable(),
+          created: zodSchemaLocalDateTime().optional().nullable(),
           display_name: z.string(),
           id: zodSchemaUUID().optional().nullable(),
           name: z.string(),
-          updated: z.string().optional().nullable()
+          updated: zodSchemaLocalDateTime().optional().nullable(),
       })
       .nonstrict();
   }
@@ -474,8 +557,31 @@ export namespace Schemas {
           disable_ssl_verification: z.boolean(),
           extras: z.record(z.string()).optional().nullable(),
           secret_token: z.string().optional().nullable(),
-          sub_type: z.string().optional().nullable(),
-          url: z.string()
+          url: z.string(),
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaCreateBehaviorGroupRequest() {
+      return z
+      .object({
+          bundle_id: zodSchemaUUID(),
+          display_name: z.string(),
+          endpoint_ids: z.array(z.string()).optional().nullable(),
+          event_type_ids: z.array(z.string()).optional().nullable(),
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaCreateBehaviorGroupResponse() {
+      return z
+      .object({
+          bundle_id: zodSchemaUUID(),
+          created: zodSchemaLocalDateTime(),
+          display_name: z.string(),
+          endpoints: z.array(z.string()),
+          event_types: z.array(z.string()),
+          id: zodSchemaUUID(),
       })
       .nonstrict();
   }
@@ -483,9 +589,18 @@ export namespace Schemas {
   function zodSchemaCurrentStatus() {
       return z
       .object({
-          end_time: z.string().optional().nullable(),
-          start_time: z.string().optional().nullable(),
-          status: zodSchemaStatus()
+          end_time: zodSchemaLocalDateTime().optional().nullable(),
+          start_time: zodSchemaLocalDateTime().optional().nullable(),
+          status: zodSchemaStatus(),
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaDuplicateNameMigrationReport() {
+      return z
+      .object({
+          updatedBehaviorGroups: z.number().int().optional().nullable(),
+          updatedIntegrations: z.number().int().optional().nullable(),
       })
       .nonstrict();
   }
@@ -495,19 +610,19 @@ export namespace Schemas {
       .object({
           group_id: zodSchemaUUID().optional().nullable(),
           ignore_preferences: z.boolean(),
-          only_admins: z.boolean()
+          only_admins: z.boolean(),
       })
       .nonstrict();
   }
 
   function zodSchemaEmailSubscriptionType() {
-      return z.enum([ 'INSTANT', 'DAILY' ]);
+      return z.enum(['INSTANT', 'DAILY']);
   }
 
   function zodSchemaEndpoint() {
       return z
       .object({
-          created: z.string().optional().nullable(),
+          created: zodSchemaLocalDateTime().optional().nullable(),
           description: z.string(),
           enabled: z.boolean().optional().nullable(),
           id: zodSchemaUUID().optional().nullable(),
@@ -516,13 +631,15 @@ export namespace Schemas {
           .union([
               zodSchemaWebhookProperties(),
               zodSchemaEmailSubscriptionProperties(),
-              zodSchemaCamelProperties()
+              zodSchemaCamelProperties(),
           ])
           .optional()
           .nullable(),
+          server_errors: z.number().int().optional().nullable(),
+          status: zodSchemaEndpointStatus().optional().nullable(),
           sub_type: z.string().optional().nullable(),
           type: zodSchemaEndpointType(),
-          updated: z.string().optional().nullable()
+          updated: zodSchemaLocalDateTime().optional().nullable(),
       })
       .nonstrict();
   }
@@ -532,7 +649,7 @@ export namespace Schemas {
       .object({
           data: z.array(zodSchemaEndpoint()),
           links: z.record(z.string()),
-          meta: zodSchemaMeta()
+          meta: zodSchemaMeta(),
       })
       .nonstrict();
   }
@@ -541,12 +658,23 @@ export namespace Schemas {
       return z.unknown();
   }
 
+  function zodSchemaEndpointStatus() {
+      return z.enum([
+          'READY',
+          'UNKNOWN',
+          'NEW',
+          'PROVISIONING',
+          'DELETING',
+          'FAILED',
+      ]);
+  }
+
   function zodSchemaEndpointType() {
-      return z.enum([ 'webhook', 'email_subscription', 'default', 'camel' ]);
+      return z.enum(['webhook', 'email_subscription', 'default', 'camel']);
   }
 
   function zodSchemaEnvironment() {
-      return z.enum([ 'PROD', 'STAGE', 'EPHEMERAL', 'LOCAL_SERVER' ]);
+      return z.enum(['PROD', 'STAGE', 'EPHEMERAL', 'LOCAL_SERVER']);
   }
 
   function zodSchemaEventLogEntry() {
@@ -555,10 +683,10 @@ export namespace Schemas {
           actions: z.array(zodSchemaEventLogEntryAction()),
           application: z.string(),
           bundle: z.string(),
-          created: z.string(),
+          created: zodSchemaLocalDateTime(),
           event_type: z.string(),
           id: zodSchemaUUID(),
-          payload: z.string().optional().nullable()
+          payload: z.string().optional().nullable(),
       })
       .nonstrict();
   }
@@ -571,9 +699,14 @@ export namespace Schemas {
           endpoint_sub_type: z.string().optional().nullable(),
           endpoint_type: zodSchemaEndpointType(),
           id: zodSchemaUUID(),
-          invocation_result: z.boolean()
+          invocation_result: z.boolean(),
+          status: zodSchemaEventLogEntryActionStatus(),
       })
       .nonstrict();
+  }
+
+  function zodSchemaEventLogEntryActionStatus() {
+      return z.enum(['SENT', 'SUCCESS', 'PROCESSING', 'FAILED', 'UNKNOWN']);
   }
 
   function zodSchemaEventType() {
@@ -584,7 +717,26 @@ export namespace Schemas {
           description: z.string().optional().nullable(),
           display_name: z.string(),
           id: zodSchemaUUID().optional().nullable(),
-          name: z.string()
+          name: z.string(),
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaEventTypeBehavior() {
+      return z
+      .object({
+          created: zodSchemaLocalDateTime().optional().nullable(),
+          event_type: zodSchemaEventType().optional().nullable(),
+          id: zodSchemaEventTypeBehaviorId().optional().nullable(),
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaEventTypeBehaviorId() {
+      return z
+      .object({
+          behaviorGroupId: zodSchemaUUID(),
+          eventTypeId: zodSchemaUUID(),
       })
       .nonstrict();
   }
@@ -598,13 +750,13 @@ export namespace Schemas {
           .nullable(),
           displayName: z.string(),
           id: z.string(),
-          name: z.string()
+          name: z.string(),
       })
       .nonstrict();
   }
 
   function zodSchemaHttpType() {
-      return z.enum([ 'GET', 'POST', 'PUT' ]);
+      return z.enum(['GET', 'POST', 'PUT']);
   }
 
   function zodSchemaInstantEmailTemplate() {
@@ -612,13 +764,13 @@ export namespace Schemas {
       .object({
           body_template: zodSchemaTemplate().optional().nullable(),
           body_template_id: zodSchemaUUID(),
-          created: z.string().optional().nullable(),
+          created: zodSchemaLocalDateTime().optional().nullable(),
           event_type: zodSchemaEventType().optional().nullable(),
           event_type_id: zodSchemaUUID().optional().nullable(),
           id: zodSchemaUUID().optional().nullable(),
           subject_template: zodSchemaTemplate().optional().nullable(),
           subject_template_id: zodSchemaUUID(),
-          updated: z.string().optional().nullable()
+          updated: zodSchemaLocalDateTime().optional().nullable(),
       })
       .nonstrict();
   }
@@ -628,7 +780,7 @@ export namespace Schemas {
       .object({
           application_display_name: z.string(),
           application_id: zodSchemaUUID(),
-          role: z.string()
+          role: z.string(),
       })
       .nonstrict();
   }
@@ -638,7 +790,7 @@ export namespace Schemas {
       .object({
           application_id: zodSchemaUUID(),
           id: zodSchemaUUID().optional().nullable(),
-          role: z.string()
+          role: z.string(),
       })
       .nonstrict();
   }
@@ -648,15 +800,23 @@ export namespace Schemas {
       .object({
           applications: z.array(zodSchemaApplication()),
           is_admin: z.boolean(),
-          roles: z.array(z.string())
+          roles: z.array(z.string()),
       })
       .nonstrict();
+  }
+
+  function zodSchemaLocalDate() {
+      return z.string();
+  }
+
+  function zodSchemaLocalDateTime() {
+      return z.string();
   }
 
   function zodSchemaMessageValidationResponse() {
       return z
       .object({
-          errors: z.record(z.array(z.string()))
+          errors: z.record(z.array(z.string())),
       })
       .nonstrict();
   }
@@ -664,7 +824,7 @@ export namespace Schemas {
   function zodSchemaMeta() {
       return z
       .object({
-          count: z.number().int()
+          count: z.number().int(),
       })
       .nonstrict();
   }
@@ -672,16 +832,27 @@ export namespace Schemas {
   function zodSchemaNotificationHistory() {
       return z
       .object({
-          created: z.string().optional().nullable(),
+          created: zodSchemaLocalDateTime().optional().nullable(),
           details: z.record(z.unknown()).optional().nullable(),
           endpointId: zodSchemaUUID().optional().nullable(),
           endpointSubType: z.string().optional().nullable(),
           endpointType: zodSchemaEndpointType().optional().nullable(),
           id: zodSchemaUUID().optional().nullable(),
           invocationResult: z.boolean(),
-          invocationTime: z.number().int()
+          invocationTime: z.number().int(),
+          status: zodSchemaNotificationStatus(),
       })
       .nonstrict();
+  }
+
+  function zodSchemaNotificationStatus() {
+      return z.enum([
+          'FAILED_INTERNAL',
+          'FAILED_EXTERNAL',
+          'PROCESSING',
+          'SENT',
+          'SUCCESS',
+      ]);
   }
 
   function zodSchemaPageEventLogEntry() {
@@ -689,7 +860,7 @@ export namespace Schemas {
       .object({
           data: z.array(zodSchemaEventLogEntry()),
           links: z.record(z.string()),
-          meta: zodSchemaMeta()
+          meta: zodSchemaMeta(),
       })
       .nonstrict();
   }
@@ -699,7 +870,7 @@ export namespace Schemas {
       .object({
           data: z.array(zodSchemaEventType()),
           links: z.record(z.string()),
-          meta: zodSchemaMeta()
+          meta: zodSchemaMeta(),
       })
       .nonstrict();
   }
@@ -707,9 +878,8 @@ export namespace Schemas {
   function zodSchemaRenderEmailTemplateRequest() {
       return z
       .object({
-          body_template: z.string(),
           payload: z.string(),
-          subject_template: z.string()
+          template: z.array(z.string()),
       })
       .nonstrict();
   }
@@ -718,7 +888,7 @@ export namespace Schemas {
       return z
       .object({
           ignore_preferences: z.boolean(),
-          only_admins: z.boolean()
+          only_admins: z.boolean(),
       })
       .nonstrict();
   }
@@ -727,7 +897,7 @@ export namespace Schemas {
       return z
       .object({
           group_id: zodSchemaUUID().optional().nullable(),
-          only_admins: z.boolean()
+          only_admins: z.boolean(),
       })
       .nonstrict();
   }
@@ -735,30 +905,40 @@ export namespace Schemas {
   function zodSchemaServerInfo() {
       return z
       .object({
-          environment: zodSchemaEnvironment().optional().nullable()
+          environment: zodSchemaEnvironment().optional().nullable(),
       })
       .nonstrict();
   }
 
   function zodSchemaStatus() {
-      return z.enum([ 'UP', 'MAINTENANCE' ]);
+      return z.enum(['UP', 'MAINTENANCE']);
   }
 
   function zodSchemaTemplate() {
       return z
       .object({
-          created: z.string().optional().nullable(),
+          created: zodSchemaLocalDateTime().optional().nullable(),
           data: z.string(),
           description: z.string(),
           id: zodSchemaUUID().optional().nullable(),
           name: z.string(),
-          updated: z.string().optional().nullable()
+          updated: zodSchemaLocalDateTime().optional().nullable(),
       })
       .nonstrict();
   }
 
   function zodSchemaUUID() {
       return z.string();
+  }
+
+  function zodSchemaUpdateBehaviorGroupRequest() {
+      return z
+      .object({
+          display_name: z.string().optional().nullable(),
+          endpoint_ids: z.array(z.string()).optional().nullable(),
+          event_type_ids: z.array(z.string()).optional().nullable(),
+      })
+      .nonstrict();
   }
 
   function zodSchemaWebhookProperties() {
@@ -770,7 +950,7 @@ export namespace Schemas {
           disable_ssl_verification: z.boolean(),
           method: zodSchemaHttpType(),
           secret_token: z.string().optional().nullable(),
-          url: z.string()
+          url: z.string(),
       })
       .nonstrict();
   }
@@ -798,8 +978,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 204),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -823,8 +1003,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -855,8 +1035,8 @@ export namespace Operations {
                     200
                 ),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -886,8 +1066,8 @@ export namespace Operations {
                     200
                 ),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -907,7 +1087,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './access/{internalRoleAccessId}'.replace(
             '{internalRoleAccessId}',
-            params.internalRoleAccessId.toString()
+            params['internalRoleAccessId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('DELETE', path)
@@ -916,8 +1096,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 204),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -939,8 +1119,8 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './admin';
         const query = {} as Record<string, any>;
-        if (params.rhid !== undefined) {
-            query.rhid = params.rhid;
+        if (params['rhid'] !== undefined) {
+            query['rhid'] = params['rhid'];
         }
 
         return actionBuilder('GET', path)
@@ -949,8 +1129,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -972,8 +1152,8 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './admin/status';
         const query = {} as Record<string, any>;
-        if (params.status !== undefined) {
-            query.status = params.status;
+        if (params['status'] !== undefined) {
+            query['status'] = params['status'];
         }
 
         return actionBuilder('POST', path)
@@ -982,8 +1162,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1005,8 +1185,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 204),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1028,8 +1208,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 204),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1056,8 +1236,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.Application1, 'Application1', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1077,7 +1257,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './applications/{appId}'.replace(
             '{appId}',
-            params.appId.toString()
+            params['appId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
@@ -1086,8 +1266,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.Application1, 'Application1', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1108,7 +1288,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './applications/{appId}'.replace(
             '{appId}',
-            params.appId.toString()
+            params['appId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
@@ -1118,8 +1298,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1141,7 +1321,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './applications/{appId}'.replace(
             '{appId}',
-            params.appId.toString()
+            params['appId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('DELETE', path)
@@ -1150,8 +1330,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1173,7 +1353,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './applications/{appId}/eventTypes'.replace(
             '{appId}',
-            params.appId.toString()
+            params['appId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
@@ -1182,8 +1362,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1207,8 +1387,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1235,8 +1415,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.BehaviorGroup, 'BehaviorGroup', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1262,7 +1442,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './behaviorGroups/default/{behaviorGroupId}/actions'.replace(
             '{behaviorGroupId}',
-            params.behaviorGroupId.toString()
+            params['behaviorGroupId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
@@ -1272,8 +1452,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1297,8 +1477,8 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path =
         './behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}'
-        .replace('{behaviorGroupId}', params.behaviorGroupId.toString())
-        .replace('{eventTypeId}', params.eventTypeId.toString());
+        .replace('{behaviorGroupId}', params['behaviorGroupId'].toString())
+        .replace('{eventTypeId}', params['eventTypeId'].toString());
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
         .queryParams(query)
@@ -1306,8 +1486,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1331,8 +1511,8 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path =
         './behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}'
-        .replace('{behaviorGroupId}', params.behaviorGroupId.toString())
-        .replace('{eventTypeId}', params.eventTypeId.toString());
+        .replace('{behaviorGroupId}', params['behaviorGroupId'].toString())
+        .replace('{eventTypeId}', params['eventTypeId'].toString());
         const query = {} as Record<string, any>;
         return actionBuilder('DELETE', path)
         .queryParams(query)
@@ -1340,8 +1520,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1365,7 +1545,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './behaviorGroups/default/{id}'.replace(
             '{id}',
-            params.id.toString()
+            params['id'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
@@ -1375,8 +1555,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1399,7 +1579,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './behaviorGroups/default/{id}'.replace(
             '{id}',
-            params.id.toString()
+            params['id'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('DELETE', path)
@@ -1408,8 +1588,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1433,8 +1613,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1461,8 +1641,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.Bundle, 'Bundle', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1482,7 +1662,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './bundles/{bundleId}'.replace(
             '{bundleId}',
-            params.bundleId.toString()
+            params['bundleId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
@@ -1491,8 +1671,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.Bundle, 'Bundle', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1513,7 +1693,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './bundles/{bundleId}'.replace(
             '{bundleId}',
-            params.bundleId.toString()
+            params['bundleId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
@@ -1523,8 +1703,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1546,7 +1726,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './bundles/{bundleId}'.replace(
             '{bundleId}',
-            params.bundleId.toString()
+            params['bundleId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('DELETE', path)
@@ -1555,8 +1735,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1578,7 +1758,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './bundles/{bundleId}/applications'.replace(
             '{bundleId}',
-            params.bundleId.toString()
+            params['bundleId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
@@ -1587,8 +1767,276 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
+        })
+        .build();
+    };
+  }
+  // GET /dev/rhose
+  export namespace RhoseTestHelperPrintOurBridge {
+    const Response200 = z.string();
+    type Response200 = string;
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './dev/rhose';
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [new ValidateRule(Response200, 'unknown', 200)],
+        })
+        .build();
+    };
+  }
+  // GET /dev/rhose/bridges
+  export namespace RhoseTestHelperPrintAllBridges {
+    const Response200 = z.string();
+    type Response200 = string;
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './dev/rhose/bridges';
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [new ValidateRule(Response200, 'unknown', 200)],
+        })
+        .build();
+    };
+  }
+  // POST /dev/rhose/events/{accountId}/{pn}
+  export namespace RhoseTestHelperSendEvent {
+    const AccountId = z.string();
+    type AccountId = string;
+    const Pn = z.string();
+    type Pn = string;
+    const Response200 = z.string();
+    type Response200 = string;
+    export interface Params {
+      accountId: AccountId;
+      pn: Pn;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './dev/rhose/events/{accountId}/{pn}'
+        .replace('{accountId}', params['accountId'].toString())
+        .replace('{pn}', params['pn'].toString());
+        const query = {} as Record<string, any>;
+        return actionBuilder('POST', path)
+        .queryParams(query)
+        .config({
+            rules: [new ValidateRule(Response200, 'unknown', 200)],
+        })
+        .build();
+    };
+  }
+  // GET /dev/rhose/processors
+  export namespace RhoseTestHelperPrintOurProcessors {
+    const Response200 = z.string();
+    type Response200 = string;
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './dev/rhose/processors';
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [new ValidateRule(Response200, 'unknown', 200)],
+        })
+        .build();
+    };
+  }
+  // GET /dev/rhose/processors/{id}
+  export namespace RhoseTestHelperPrintProcessorById {
+    const Id = z.string();
+    type Id = string;
+    const Response200 = z.string();
+    type Response200 = string;
+    export interface Params {
+      id: Id;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './dev/rhose/processors/{id}'.replace(
+            '{id}',
+            params['id'].toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [new ValidateRule(Response200, 'unknown', 200)],
+        })
+        .build();
+    };
+  }
+  // PUT /dev/rhose/processors/{id}
+  export namespace RhoseTestHelperUpdateProcessor {
+    const Id = z.string();
+    type Id = string;
+    const Response200 = z.string();
+    type Response200 = string;
+    export interface Params {
+      id: Id;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './dev/rhose/processors/{id}'.replace(
+            '{id}',
+            params['id'].toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('PUT', path)
+        .queryParams(query)
+        .config({
+            rules: [new ValidateRule(Response200, 'unknown', 200)],
+        })
+        .build();
+    };
+  }
+  // DELETE /dev/rhose/processors/{id}
+  export namespace RhoseTestHelperDeleteProcessor {
+    const Id = z.string();
+    type Id = string;
+    const Response200 = z.string();
+    type Response200 = string;
+    export interface Params {
+      id: Id;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './dev/rhose/processors/{id}'.replace(
+            '{id}',
+            params['id'].toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('DELETE', path)
+        .queryParams(query)
+        .config({
+            rules: [new ValidateRule(Response200, 'unknown', 200)],
+        })
+        .build();
+    };
+  }
+  // POST /dev/rhose/processors/{name}
+  export namespace RhoseTestHelperAddProcessor {
+    const Name = z.string();
+    type Name = string;
+    const Response200 = z.string();
+    type Response200 = string;
+    export interface Params {
+      name: Name;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './dev/rhose/processors/{name}'.replace(
+            '{name}',
+            params['name'].toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('POST', path)
+        .queryParams(query)
+        .config({
+            rules: [new ValidateRule(Response200, 'unknown', 200)],
+        })
+        .build();
+    };
+  }
+  // DELETE /dev/rhose/processors/{name}
+  export namespace RhoseTestHelperDeleteProcessorsByNamePrefix {
+    const Name = z.string();
+    type Name = string;
+    const Response200 = z.string();
+    type Response200 = string;
+    export interface Params {
+      name: Name;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './dev/rhose/processors/{name}'.replace(
+            '{name}',
+            params['name'].toString()
+        );
+        const query = {} as Record<string, any>;
+        return actionBuilder('DELETE', path)
+        .queryParams(query)
+        .config({
+            rules: [new ValidateRule(Response200, 'unknown', 200)],
+        })
+        .build();
+    };
+  }
+  // GET /duplicate-name-migration
+  export namespace DuplicateNameMigrationResourceMigrateDuplicateNames {
+    const Ack = z.string();
+    type Ack = string;
+    export interface Params {
+      ack?: Ack;
+    }
+
+    export type Payload =
+      | ValidatedResponse<
+          'DuplicateNameMigrationReport',
+          200,
+          Schemas.DuplicateNameMigrationReport
+        >
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './duplicate-name-migration';
+        const query = {} as Record<string, any>;
+        if (params['ack'] !== undefined) {
+            query['ack'] = params['ack'];
+        }
+
+        return actionBuilder('GET', path)
+        .queryParams(query)
+        .config({
+            rules: [
+                new ValidateRule(
+                    Schemas.DuplicateNameMigrationReport,
+                    'DuplicateNameMigrationReport',
+                    200
+                ),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1615,8 +2063,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.EventType, 'EventType', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1637,7 +2085,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './eventTypes/{eventTypeId}'.replace(
             '{eventTypeId}',
-            params.eventTypeId.toString()
+            params['eventTypeId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
@@ -1647,8 +2095,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1670,7 +2118,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './eventTypes/{eventTypeId}'.replace(
             '{eventTypeId}',
-            params.eventTypeId.toString()
+            params['eventTypeId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('DELETE', path)
@@ -1679,8 +2127,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1702,8 +2150,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.ServerInfo, 'ServerInfo', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1730,8 +2178,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 204),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1755,8 +2203,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1783,8 +2231,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.Template, 'Template', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1808,8 +2256,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1844,8 +2292,8 @@ export namespace Operations {
                     200
                 ),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1867,7 +2315,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/email/aggregation/application/{appId}'.replace(
             '{appId}',
-            params.appId.toString()
+            params['appId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
@@ -1876,8 +2324,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1901,7 +2349,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/email/aggregation/{templateId}'.replace(
             '{templateId}',
-            params.templateId.toString()
+            params['templateId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
@@ -1914,8 +2362,8 @@ export namespace Operations {
                     200
                 ),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1936,7 +2384,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/email/aggregation/{templateId}'.replace(
             '{templateId}',
-            params.templateId.toString()
+            params['templateId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
@@ -1946,8 +2394,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -1969,7 +2417,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/email/aggregation/{templateId}'.replace(
             '{templateId}',
-            params.templateId.toString()
+            params['templateId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('DELETE', path)
@@ -1978,8 +2426,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -2001,8 +2449,8 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/email/instant';
         const query = {} as Record<string, any>;
-        if (params.applicationId !== undefined) {
-            query.applicationId = params.applicationId;
+        if (params['applicationId'] !== undefined) {
+            query['applicationId'] = params['applicationId'];
         }
 
         return actionBuilder('GET', path)
@@ -2011,8 +2459,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -2047,8 +2495,8 @@ export namespace Operations {
                     200
                 ),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -2075,7 +2523,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/email/instant/eventType/{eventTypeId}'.replace(
             '{eventTypeId}',
-            params.eventTypeId.toString()
+            params['eventTypeId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
@@ -2089,8 +2537,8 @@ export namespace Operations {
                 ),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
                 new ValidateRule(Schemas.__Empty, '__Empty', 403),
-                new ValidateRule(Response404, 'unknown', 404)
-            ]
+                new ValidateRule(Response404, 'unknown', 404),
+            ],
         })
         .build();
     };
@@ -2114,7 +2562,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/email/instant/{templateId}'.replace(
             '{templateId}',
-            params.templateId.toString()
+            params['templateId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
@@ -2127,8 +2575,8 @@ export namespace Operations {
                     200
                 ),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -2149,7 +2597,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/email/instant/{templateId}'.replace(
             '{templateId}',
-            params.templateId.toString()
+            params['templateId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
@@ -2159,8 +2607,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -2182,7 +2630,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/email/instant/{templateId}'.replace(
             '{templateId}',
-            params.templateId.toString()
+            params['templateId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('DELETE', path)
@@ -2191,8 +2639,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -2201,17 +2649,15 @@ export namespace Operations {
   export namespace TemplateResourceRenderEmailTemplate {
     const Response200 = z
     .object({
-        body: z.string().optional().nullable(),
-        subject: z.string().optional().nullable()
+        result: z.array(z.string()).optional().nullable(),
     })
     .nonstrict();
     type Response200 = {
-      body?: string | undefined | null;
-      subject?: string | undefined | null;
+      result?: Array<string> | undefined | null;
     };
     const Response400 = z
     .object({
-        message: z.string().optional().nullable()
+        message: z.string().optional().nullable(),
     })
     .nonstrict();
     type Response400 = {
@@ -2239,8 +2685,8 @@ export namespace Operations {
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Response400, 'unknown', 400),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -2260,7 +2706,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/{templateId}'.replace(
             '{templateId}',
-            params.templateId.toString()
+            params['templateId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
@@ -2269,8 +2715,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.Template, 'Template', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -2291,7 +2737,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/{templateId}'.replace(
             '{templateId}',
-            params.templateId.toString()
+            params['templateId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
@@ -2301,8 +2747,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -2324,7 +2770,7 @@ export namespace Operations {
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './templates/{templateId}'.replace(
             '{templateId}',
-            params.templateId.toString()
+            params['templateId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('DELETE', path)
@@ -2333,8 +2779,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -2355,27 +2801,31 @@ export namespace Operations {
 
     export type Payload =
       | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 400, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
         const path = './validation/baet';
         const query = {} as Record<string, any>;
-        if (params.application !== undefined) {
-            query.application = params.application;
+        if (params['application'] !== undefined) {
+            query['application'] = params['application'];
         }
 
-        if (params.bundle !== undefined) {
-            query.bundle = params.bundle;
+        if (params['bundle'] !== undefined) {
+            query['bundle'] = params['bundle'];
         }
 
-        if (params.eventType !== undefined) {
-            query.eventType = params.eventType;
+        if (params['eventType'] !== undefined) {
+            query['eventType'] = params['eventType'];
         }
 
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
-            rules: [ new ValidateRule(Schemas.__Empty, '__Empty', 200) ]
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 400),
+            ],
         })
         .build();
     };
@@ -2410,8 +2860,8 @@ export namespace Operations {
                     Schemas.MessageValidationResponse,
                     'MessageValidationResponse',
                     400
-                )
-            ]
+                ),
+            ],
         })
         .build();
     };
@@ -2435,8 +2885,8 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Response200, 'unknown', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
-                new ValidateRule(Schemas.__Empty, '__Empty', 403)
-            ]
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };

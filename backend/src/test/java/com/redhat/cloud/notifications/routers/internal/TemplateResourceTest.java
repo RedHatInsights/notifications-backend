@@ -367,8 +367,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         RenderEmailTemplateRequest request = new RenderEmailTemplateRequest();
         request.setPayload("I am invalid!");
-        request.setSubjectTemplate(""); // Not important, won't be used.
-        request.setBodyTemplate(""); // Not important, won't be used.
+        request.setTemplate(new String[]{"", ""}); // Not important, won't be used.
 
         JsonObject exceptionMessage = new JsonObject();
         exceptionMessage.put("message", "Action parsing failed for payload: I am invalid!");
