@@ -666,7 +666,7 @@ public class LifecycleITest extends DbIsolatedTest {
     private boolean checkEndpointHistory(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
         try {
 
-            String responseBody = given()
+            String rawResponseBody = given()
                     .basePath(API_INTEGRATIONS_V_1_0)
                     .header(identityHeader)
                     .pathParam("endpointId", endpointId)
@@ -677,7 +677,10 @@ public class LifecycleITest extends DbIsolatedTest {
                     .contentType(JSON)
                     .extract().body().asString();
 
-            JsonArray jsonEndpointHistory = new JsonArray(responseBody);
+            // The response body contains the meta information about the history collection. We need to access the
+            // "data" array to access the elements.
+            final JsonObject responseBodyJson = new JsonObject(rawResponseBody);
+            final JsonArray jsonEndpointHistory = responseBodyJson.getJsonArray("data");
             assertEquals(expectedHistoryEntries, jsonEndpointHistory.size());
 
             for (int i = 0; i < jsonEndpointHistory.size(); i++) {
@@ -686,7 +689,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
 
                 if (!expectedInvocationResult) {
-                    responseBody = given()
+                    rawResponseBody = given()
                             .basePath(API_INTEGRATIONS_V_1_0)
                             .header(identityHeader)
                             .pathParam("endpointId", endpointId)
@@ -698,7 +701,7 @@ public class LifecycleITest extends DbIsolatedTest {
                             .contentType(JSON)
                             .extract().body().asString();
 
-                    JsonObject jsonDetails = new JsonObject(responseBody);
+                    JsonObject jsonDetails = new JsonObject(rawResponseBody);
                     assertFalse(jsonDetails.isEmpty());
                     assertEquals(expectedHttpStatus, jsonDetails.getInteger("code"));
                     assertNotNull(jsonDetails.getString("url"));
