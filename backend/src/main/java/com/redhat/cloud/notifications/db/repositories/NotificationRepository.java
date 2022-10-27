@@ -71,12 +71,11 @@ public class NotificationRepository {
             "AND " +
                 "nh.event.orgId = :orgId";
 
-        final var historyQuery = this.entityManager.createQuery(query);
-
-        historyQuery.setParameter("endpointId", endpointId);
-        historyQuery.setParameter("orgId", orgId);
-
-        return (long) historyQuery.getSingleResult();
+        return this.entityManager
+            .createQuery(query, Long.class)
+            .setParameter("endpointId", endpointId)
+            .setParameter("orgId", orgId)
+            .getSingleResult();
     }
 
     public JsonObject getNotificationDetails(String orgId, UUID endpoint, UUID historyId) {
