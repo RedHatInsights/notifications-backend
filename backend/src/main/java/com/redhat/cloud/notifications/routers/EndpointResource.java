@@ -30,6 +30,7 @@ import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
+import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
@@ -67,6 +68,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -513,14 +515,24 @@ public class EndpointResource {
     })
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public Page<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
+    public Page<NotificationHistory> getEndpointHistory(
+            @Context SecurityContext sec,
+            @Context UriInfo uriInfo,
+            @PathParam("id") UUID id,
+            @QueryParam("includeDetail") Boolean includeDetail,
+            @BeanParam Query query
+    ) {
         final String orgId = getOrgId(sec);
         final boolean doDetail = includeDetail != null && includeDetail;
 
         final List<NotificationHistory> notificationHistory = notificationRepository.getNotificationHistory(orgId, id, doDetail, query);
         final long notificationHistoryCount = this.notificationRepository.countNotificationHistoryElements(id, orgId);
 
-        return new Page<>(notificationHistory, new HashMap<>(), new Meta(notificationHistoryCount));
+        return new Page<>(
+                notificationHistory,
+                PageLinksBuilder.build(uriInfo.getPath(), notificationHistoryCount, query.getLimit().getLimit(), query.getLimit().getOffset()),
+                new Meta(notificationHistoryCount)
+        );
     }
 
     @GET
