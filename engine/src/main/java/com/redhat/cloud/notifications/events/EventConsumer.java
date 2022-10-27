@@ -18,6 +18,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
 
@@ -76,6 +77,7 @@ public class EventConsumer {
     @Incoming(INGRESS_CHANNEL)
     @Acknowledgment(PRE_PROCESSING)
     @Blocking
+    @ActivateRequestContext
     public CompletionStage<Void> process(Message<String> message) {
         // This timer will have dynamic tag values based on the action parsed from the received message.
         Timer.Sample consumedTimer = Timer.start(registry);
