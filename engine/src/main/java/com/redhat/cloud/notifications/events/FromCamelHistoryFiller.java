@@ -23,6 +23,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -73,6 +74,7 @@ public class FromCamelHistoryFiller {
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
     @Incoming(FROMCAMEL_CHANNEL)
     @Blocking
+    @ActivateRequestContext
     public void processAsync(String payload) {
         try {
             Log.infof("Processing return from camel: %s", payload);

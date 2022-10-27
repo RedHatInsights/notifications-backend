@@ -39,6 +39,7 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -204,6 +205,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
     @Incoming(AGGREGATION_CHANNEL)
     @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
     @Blocking
+    @ActivateRequestContext
     public void consumeEmailAggregations(String aggregationCommandJson) {
         AggregationCommand aggregationCommand;
         try {
