@@ -169,7 +169,7 @@ objects:
         - name: QUARKUS_LOG_SENTRY
           value: ${SENTRY_ENABLED}
         - name: QUARKUS_LOG_SENTRY_DSN
-          value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
+          value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
         - name: OB_ENABLED
@@ -302,6 +302,8 @@ parameters:
 - name: RECIPIENT_PROVIDER_USE_IT_IMPL
   description: Temporary recipients retrieval switch between RBAC and IT
   value: "false"
+- name: SENTRY_DSN
+  description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
