@@ -17,7 +17,7 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.EmailSubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

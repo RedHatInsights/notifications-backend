@@ -30,11 +30,11 @@ public class BridgeHelper {
     @Inject
     FeatureFlipper featureFlipper;
 
-    @ConfigProperty(name = "ob.bridge.name")
+    @ConfigProperty(name = "ob.bridge.name", defaultValue = "<name-of-the-bridge instance>")
     String ourBridgeName;
-    @ConfigProperty(name = "ob.token.client.secret")
+    @ConfigProperty(name = "ob.token.client.secret", defaultValue = "<id of the service account>")
     String clientSecret;
-    @ConfigProperty(name = "ob.token.client.id")
+    @ConfigProperty(name = "ob.token.client.id", defaultValue = "<secret of the service account>")
     String clientId;
 
     @Inject
