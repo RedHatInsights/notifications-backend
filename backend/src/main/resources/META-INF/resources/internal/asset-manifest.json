@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "./static/css/main.a2bbab57.css",
-    "main.js": "./static/js/main.140e52f1.js",
+    "main.js": "./static/js/main.d924d7c1.js",
     "static/css/527.30eb7e4f.chunk.css": "./static/css/527.30eb7e4f.chunk.css",
     "static/js/527.7da1a851.chunk.js": "./static/js/527.7da1a851.chunk.js",
     "static/css/152.3fe81e03.chunk.css": "./static/css/152.3fe81e03.chunk.css",
@@ -153,7 +153,7 @@
     "static/media/redhat-logo.svg": "./static/media/redhat-logo.f7405300d685531f8e1fe267c90cecee.svg",
     "index.html": "./index.html",
     "main.a2bbab57.css.map": "./static/css/main.a2bbab57.css.map",
-    "main.140e52f1.js.map": "./static/js/main.140e52f1.js.map",
+    "main.d924d7c1.js.map": "./static/js/main.d924d7c1.js.map",
     "527.30eb7e4f.chunk.css.map": "./static/css/527.30eb7e4f.chunk.css.map",
     "527.7da1a851.chunk.js.map": "./static/js/527.7da1a851.chunk.js.map",
     "152.3fe81e03.chunk.css.map": "./static/css/152.3fe81e03.chunk.css.map",
@@ -233,6 +233,6 @@
   },
   "entrypoints": [
     "static/css/main.a2bbab57.css",
-    "static/js/main.140e52f1.js"
+    "static/js/main.d924d7c1.js"
   ]
 }
