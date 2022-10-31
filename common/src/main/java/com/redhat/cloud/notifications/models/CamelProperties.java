@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.BasicAuthenticationConverter;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
+import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class CamelProperties extends EndpointProperties implements SourcesSecretable {
 
     @NotNull
+    @ValidNonPrivateUrl
     private String url;
 
     @NotNull
