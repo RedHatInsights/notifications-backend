@@ -135,8 +135,8 @@ export const RenderEmailPage: React.FunctionComponent = () => {
         renderedProps = {
             isLoading: false,
             succeeded: true,
-            subject: emailTemplate.payload.value.subject ?? '',
-            body: emailTemplate.payload.value.body ?? ''
+            subject: emailTemplate.payload.value.result ? emailTemplate.payload.value.result[0] : '',
+            body: emailTemplate.payload.value.result ? emailTemplate.payload.value.result[1] : ''
         };
     } else if (emailTemplate.payload?.status === 400) {
         renderedProps = {
