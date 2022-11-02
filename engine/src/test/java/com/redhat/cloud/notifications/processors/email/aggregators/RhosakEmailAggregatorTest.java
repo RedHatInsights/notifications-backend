@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
+import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -21,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.TestHelpers.baseTransformer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -242,8 +242,7 @@ class RhosakEmailAggregatorTest {
         emailActionMessage.setAccountId(ACCOUNT_ID);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
-        JsonObject payload = baseTransformer.toJsonObject(emailActionMessage);
-        aggregation.setPayload(payload);
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
 
         return aggregation;
     }
@@ -281,8 +280,7 @@ class RhosakEmailAggregatorTest {
         emailActionMessage.setAccountId(ACCOUNT_ID);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
-        JsonObject payload = baseTransformer.toJsonObject(emailActionMessage);
-        aggregation.setPayload(payload);
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
 
         return aggregation;
     }

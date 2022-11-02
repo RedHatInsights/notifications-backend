@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.processors.email.aggregators.ResourceOptim
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -29,7 +30,6 @@ public class TestHelpers {
 
     public static final String HCC_LOGO_TARGET = "Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB.png";
 
-    public static BaseTransformer baseTransformer = new BaseTransformer();
     public static final String policyId1 = "abcd-efghi-jkl-lmn";
     public static final String policyName1 = "Foobar";
     public static final String policyId2 = "0123-456-789-5721f";
@@ -72,8 +72,7 @@ public class TestHelpers {
 
         emailActionMessage.setOrgId(orgId);
 
-        JsonObject payload = baseTransformer.toJsonObject(emailActionMessage);
-        aggregation.setPayload(payload);
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
 
         return aggregation;
     }
@@ -650,5 +649,22 @@ public class TestHelpers {
             System.out.println("An error occurred");
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Helper that wraps the given action in a
+     * {@link com.redhat.cloud.notifications.models.Event} type of event and
+     * returns the {@link JsonObject} representation of it. This wrapper is
+     * helpful to make certain tests compliant with the signature of the
+     * {@link BaseTransformer#toJsonObject(com.redhat.cloud.notifications.models.Event)}
+     * function.
+     * @param action the action to be wrapped and transformed.
+     * @return the {@link JsonObject} representation of the wrapped action.
+     */
+    public static JsonObject wrapActionToJsonObject(final Action action) {
+        com.redhat.cloud.notifications.models.Event event = new com.redhat.cloud.notifications.models.Event();
+        event.setAction(action);
+
+        return new BaseTransformer().toJsonObject(event);
     }
 }
