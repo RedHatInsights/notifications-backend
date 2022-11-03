@@ -3,9 +3,9 @@ import { useMutation } from 'react-fetching-library';
 import { Operations } from '../generated/OpenapiInternal';
 
 export type RenderEmailRequest = {
+    payload: string;
     subject: string;
     body: string;
-    payload: string;
 }
 
 const actionCreator = (params: RenderEmailRequest) => Operations.TemplateResourceRenderEmailTemplate.actionCreator({

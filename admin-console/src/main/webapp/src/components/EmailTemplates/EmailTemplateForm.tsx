@@ -19,32 +19,6 @@ const SkeletonIfLoading: React.FunctionComponent<SkeletonIfLoading> = props => (
     props.isLoading ? <Skeleton { ...props } /> : <> { props.children } </>
 );
 
-const defaultSubjectTemplate = `
-Important email to {user.firstName} from MyCoolApp!
-`.trimLeft();
-
-const defaultBodyTemplate = `
-<div>Hello {user.firstName} {user.lastName},</div>
-<div>We have some important news for you, MyApp has a notification for you</div>
-<div>As a reminder, current user: {user.username}: is active? {user.isActive}; is admin? {user.isAdmin}</div>
-<div>
-    System with name <strong>{action.context.display_name}</strong> (<strong>{action.context.inventory_id}</strong>) 
-    did a check in at {action.context.system_check_in.toUtcFormat()}. 
-    It was about {action.context.system_check_in.toTimeAgo()}
-</div>
-<div>This is a loop:</div>
-{#if action.events.size() > 0}
-<ul>
-    {#each action.events}
-        <li>
-            <a href="http://google.com?q={it.payload.my_id}" target="_blank">{it.payload.my_name}</a>
-        </li>
-    {/each}
-</ul>
-<div>Have a nice day!</div>
-{/if}
-`.trimLeft();
-
 const defaultPayload = JSON.stringify({
     bundle: 'rhel',
     application: 'policies',
@@ -74,8 +48,7 @@ type RenderedTemplateProps = {
 } | {
    isLoading: false;
    succeeded: true;
-   subject: string;
-   body: string;
+   template: Array<string>;
 } | {
     isLoading: false;
     succeeded: false;
@@ -94,10 +67,7 @@ const RenderedTemplate: React.FunctionComponent<RenderedTemplateProps> = props =
                     <strong>Content:</strong>
                 </StackItem>
                 <StackItem>
-                    { props.subject }
-                </StackItem>
-                <StackItem>
-                    <iframe width="100%" srcDoc={ props.body } />
+                    <iframe width="100%" srcDoc={ props.template } />
                 </StackItem>
             </>
         );
@@ -113,18 +83,15 @@ const RenderedTemplate: React.FunctionComponent<RenderedTemplateProps> = props =
 };
 
 export const EmailTemplateForm: React.FunctionComponent<EmailTemplateFormProps> = props => {
-
     const emailTemplate = useRenderEmailRequest();
-    const [ subjectTemplate, setSubjectTemplate ] = React.useState<string | undefined>(defaultSubjectTemplate);
-    const [ bodyTemplate, setBodyTemplate ] = React.useState<string | undefined>(defaultBodyTemplate);
     const [ payload, setPayload ] = React.useState<string | undefined>(defaultPayload);
 
     React.useEffect(() => {
         const mutate = emailTemplate.mutate;
         mutate({
-            subject: subjectTemplate ?? '',
-            body: bodyTemplate ?? '',
-            payload: payload ?? ''
+            payload: payload ?? '',
+            subject: props.template.data ?? '',
+            body: props.template.data ?? ''
         });
         // We only want to activate this once
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -140,8 +107,7 @@ export const EmailTemplateForm: React.FunctionComponent<EmailTemplateFormProps> 
         renderedProps = {
             isLoading: false,
             succeeded: true,
-            subject: emailTemplate.payload.value.subject ?? '',
-            body: emailTemplate.payload.value.body ?? ''
+            template: emailTemplate.payload.value.result ?? [],
         };
     } else if (emailTemplate.payload?.status === 400) {
         renderedProps = {
@@ -160,13 +126,12 @@ export const EmailTemplateForm: React.FunctionComponent<EmailTemplateFormProps> 
     const onRender = React.useCallback(() => {
         const mutate = emailTemplate.mutate;
         mutate({
-            subject: subjectTemplate ?? '',
-            body: bodyTemplate ?? '',
+            subject: props.template.data ?? '',
+            body: props.template.data ?? '',
             payload: payload ?? ''
         });
-    }, [ emailTemplate.mutate, subjectTemplate, bodyTemplate, payload ]);
+    }, [ emailTemplate.mutate, payload, props.template.data ]);
 
-    
     return (
         <>
             <PageSection>
@@ -215,26 +180,12 @@ export const EmailTemplateForm: React.FunctionComponent<EmailTemplateFormProps> 
                     label="Content"
                     isRequired
                 >
-                    <SkeletonIfLoading isLoading={props.isLoading} height="50px">
-                        <CodeEditor
-                            isLineNumbersVisible
-                            code={ defaultSubjectTemplate }
-                            onChange={ setSubjectTemplate }
-                            isMinimapVisible={ false }
-                            height="50px"
-                        />
-                    </SkeletonIfLoading>
-                </FormGroup>
-                <FormGroup
-                    label="Content"
-                    isRequired
-                >
                     <SkeletonIfLoading isLoading={props.isLoading} height="300px">
                         <CodeEditor
                             isLineNumbersVisible
                             code={ props.template?.data ?? '' }
                             isMinimapVisible={ false }
-                            onChange={ setBodyTemplate }
+                            onChange={ data => props.updateTemplate({ data }) }
                             height="300px"
                         />
                     </SkeletonIfLoading>
