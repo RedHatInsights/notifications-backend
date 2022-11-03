@@ -109,8 +109,6 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                     template={template}
                     updateTemplate={ updateTemplate }
                 />
-            </PageSection>
-            <PageSection>
                 <ActionGroup>
                     <Split hasGutter>
                         <SplitItem>
