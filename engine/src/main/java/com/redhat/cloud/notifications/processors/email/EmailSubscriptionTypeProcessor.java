@@ -8,9 +8,7 @@ import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.models.AggregationCommand;
-import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -26,7 +24,9 @@ import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettin
 import com.redhat.cloud.notifications.templates.Default;
 import com.redhat.cloud.notifications.templates.EmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
+import com.redhat.cloud.notifications.templates.Policies;
 import com.redhat.cloud.notifications.templates.TemplateService;
+import com.redhat.cloud.notifications.templates.models.Environment;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -40,14 +40,15 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -101,6 +102,9 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    Environment environment;
 
     private Counter processedEmailCount;
     private Counter rejectedAggregationCommandCount;
@@ -234,50 +238,37 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
     }
 
     private void processAggregateEmailsByAggregationKey(EmailAggregationKey aggregationKey, LocalDateTime startTime, LocalDateTime endTime, EmailSubscriptionType emailSubscriptionType, boolean delete) {
-        TemplateInstance subject = null;
-        TemplateInstance body = null;
+        Set<String> subscribers = emailAggregator.getEmailSubscribers(aggregationKey, emailSubscriptionType);
 
-        if (featureFlipper.isUseTemplatesFromDb()) {
-            Optional<AggregationEmailTemplate> aggregationEmailTemplate = templateRepository
-                    .findAggregationEmailTemplate(aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType);
-            if (aggregationEmailTemplate.isPresent()) {
-                String subjectData = aggregationEmailTemplate.get().getSubjectTemplate().getData();
-                subject = templateService.compileTemplate(subjectData, "subject");
-                String bodyData = aggregationEmailTemplate.get().getBodyTemplate().getData();
-                body = templateService.compileTemplate(bodyData, "body");
-            }
-        } else {
-            EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
-            if (emailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
-                subject = emailTemplate.getTitle(null, emailSubscriptionType);
-                body = emailTemplate.getBody(null, emailSubscriptionType);
-            }
-        }
+        for (String user: subscribers) {
+            emailAggregator.getAggregated(aggregationKey, user, startTime, endTime)
+                    .ifPresent(aggregatedData -> {
+                        String result = aggregatedData.aggregatedDataByApplication
+                                .entrySet()
+                                .stream()
+                                .map(
+                                        entry -> emailAggregator.getTemplate(aggregationKey.getBundle(), entry.getKey(), emailSubscriptionType)
+                                                .map(template -> emailAggregator.resolveTemplates(aggregatedData.user, aggregationKey, entry.getKey(), template, entry.getValue()))
+                                )
+                                .filter(Optional::isPresent)
+                                .map(Optional::get)
+                                .collect(Collectors.joining(""));
 
-        if (subject != null && body != null) {
-            for (Map.Entry<User, Map<String, Object>> aggregation :
-                    emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime).entrySet()) {
+                        // Send email
 
-                Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
-                aggregation.getValue().forEach(contextBuilder::withAdditionalProperty);
+                        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File("/tmp/daily")))) {
+                            writer.write(
+                                    Policies.Templates.insightsEmailBody()
+                                            .data("content", result)
+                                            .data("environment", environment)
+                                            .render()
+                            );
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
 
-                Action action = new Action();
-                action.setContext(contextBuilder.build());
-                action.setEvents(List.of());
-                action.setOrgId(aggregationKey.getOrgId());
-                action.setApplication(aggregationKey.getApplication());
-                action.setBundle(aggregationKey.getBundle());
-
-                // We don't have an event type as this aggregates over multiple event types
-                action.setEventType(null);
-                action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
-
-                Event event = new Event();
-                event.setId(UUID.randomUUID());
-                event.setAction(action);
-
-                emailSender.sendEmail(aggregation.getKey(), event, subject, body, false);
-            }
+                        System.out.printf("Sending email to %s%n", aggregatedData.user.getUsername());
+                    });
         }
 
         if (delete) {

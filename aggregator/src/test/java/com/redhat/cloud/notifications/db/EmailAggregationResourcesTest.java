@@ -46,19 +46,18 @@ public class EmailAggregationResourcesTest {
         addEmailAggregation(ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
         addEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
 
-        EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME, APP_NAME);
+        EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME);
 
         List<EmailAggregationKey> keys = emailAggregationResources.getApplicationsWithPendingAggregation(start, end);
-        assertEquals(4, keys.size());
+        assertEquals(3, keys.size());
         assertEquals(ORG_ID, keys.get(0).getOrgId());
         assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
-        assertEquals(APP_NAME, keys.get(0).getApplication());
 
         Integer purged = resourceHelpers.purgeOldAggregation(key, end);
-        assertEquals(2, purged);
+        assertEquals(3, purged);
 
         keys = emailAggregationResources.getApplicationsWithPendingAggregation(start, end);
-        assertEquals(3, keys.size());
+        assertEquals(2, keys.size());
     }
 
     private void addEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {

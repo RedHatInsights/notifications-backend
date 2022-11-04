@@ -35,6 +35,16 @@ public class RecipientResolver {
 
     private Set<User> recipientUsers(String orgId, RecipientSettings request, Set<String> subscribers) {
         List<User> rbacUsers;
+
+        return subscribers.stream().map(s -> {
+            User u = new User();
+            u.setUsername(s);
+            u.setFirstName(s);
+            u.setLastName(s);
+            return u;
+        }).collect(Collectors.toSet());
+
+        /*
         if (request.getGroupId() == null) {
             rbacUsers = rbacRecipientUsersProvider.getUsers(orgId, request.isOnlyAdmins());
         } else {
@@ -62,7 +72,7 @@ public class RecipientResolver {
 
         updateUsersUsedGauge(users.size());
 
-        return users;
+        return users;*/
     }
 
     private Set<User> filterUsers(Set<User> users, Set<String> target) {

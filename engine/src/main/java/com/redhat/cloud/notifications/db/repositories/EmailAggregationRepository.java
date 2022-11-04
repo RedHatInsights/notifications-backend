@@ -29,11 +29,10 @@ public class EmailAggregationRepository {
     }
 
     public List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
-        String query = "FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
+        String query = "FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND created > :start AND created <= :end ORDER BY created";
         return statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
                 .setParameter("orgId", key.getOrgId())
                 .setParameter("bundleName", key.getBundle())
-                .setParameter("applicationName", key.getApplication())
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getResultList();
@@ -41,11 +40,10 @@ public class EmailAggregationRepository {
 
     @Transactional
     public int purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        String query = "DELETE FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
+        String query = "DELETE FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND created <= :created";
         return statelessSessionFactory.getCurrentSession().createQuery(query)
                 .setParameter("orgId", key.getOrgId())
                 .setParameter("bundleName", key.getBundle())
-                .setParameter("applicationName", key.getApplication())
                 .setParameter("created", lastUsedTime)
                 .executeUpdate();
     }

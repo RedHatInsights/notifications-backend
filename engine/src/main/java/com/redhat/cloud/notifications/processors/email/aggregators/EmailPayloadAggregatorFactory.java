@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
+import java.time.LocalDateTime;
 
 public class EmailPayloadAggregatorFactory {
 
@@ -20,10 +20,17 @@ public class EmailPayloadAggregatorFactory {
 
     }
 
-    public static AbstractEmailPayloadAggregator by(EmailAggregationKey aggregationKey) {
-        String bundle = aggregationKey.getBundle();
-        String application = aggregationKey.getApplication();
+    public static AbstractEmailPayloadAggregator by(String bundle, String application, LocalDateTime start, LocalDateTime end) {
+        AbstractEmailPayloadAggregator aggregator = byApplication(bundle, application);
+        if (aggregator != null) {
+            aggregator.setStartTime(start);
+            aggregator.setEndTimeKey(end);
+        }
 
+        return aggregator;
+    }
+
+    private static AbstractEmailPayloadAggregator byApplication(String bundle, String application) {
         switch (bundle) {
             case APPLICATION_SERVICES:
                 switch (application.toLowerCase()) { // TODO Remove toLowerCase if possible

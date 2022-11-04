@@ -1,6 +1,3 @@
-{#include Policies/insightsEmailBody}
-{#content-title}Daily Policy Summary - {action.context.start_time.toStringFormat()}{/content-title}
-{#content-body}
 <tr>
     <td class="rh-content__block">
         <p>Daily policy summary for <b>{action.context.start_time.toStringFormat()}</b> from Red Hat Insights. <b>{action.context.policies.size()} {#if action.context.policies.size() == 1}policy{#else}policies{/if}</b> triggered on <b>{action.context.unique_system_count} {#if action.context.unique_system_count == 1}system{#else}unique systems{/if}</b>.</p>
@@ -41,5 +38,3 @@
         </table>
     </td>
 </tr>
-{/content-body}
-{/include}

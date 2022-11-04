@@ -13,6 +13,16 @@ public class EmailSubscriptionRepository {
     @Inject
     StatelessSessionFactory statelessSessionFactory;
 
+    public List<String> getBundleEmailSubscribersUserId(String orgId, String bundleName, EmailSubscriptionType subscriptionType) {
+        String query = "SELECT es.id.userId FROM EmailSubscription es WHERE id.orgId = :orgId AND application.bundle.name = :bundleName " +
+                "AND id.subscriptionType = :subscriptionType";
+        return statelessSessionFactory.getCurrentSession().createQuery(query, String.class)
+                .setParameter("orgId", orgId)
+                .setParameter("bundleName", bundleName)
+                .setParameter("subscriptionType", subscriptionType)
+                .getResultList();
+    }
+
     public List<String> getEmailSubscribersUserId(String orgId, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "SELECT es.id.userId FROM EmailSubscription es WHERE id.orgId = :orgId AND application.bundle.name = :bundleName " +
                 "AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";

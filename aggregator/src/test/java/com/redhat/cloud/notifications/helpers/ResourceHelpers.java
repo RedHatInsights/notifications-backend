@@ -33,11 +33,10 @@ public class ResourceHelpers {
 
     @Transactional
     public Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        String query = "DELETE FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
+        String query = "DELETE FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND created <= :created";
         return session.createQuery(query)
                 .setParameter("orgId", key.getOrgId())
                 .setParameter("bundleName", key.getBundle())
-                .setParameter("applicationName", key.getApplication())
                 .setParameter("created", lastUsedTime)
                 .executeUpdate();
     }

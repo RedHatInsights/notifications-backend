@@ -48,7 +48,7 @@ public class EmailAggregationRepositoryTest {
     void testAllMethods() {
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
-        EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME, APP_NAME);
+        EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME);
 
         statelessSessionFactory.withSession(statelessSession -> {
             clearEmailAggregations();
@@ -71,7 +71,6 @@ public class EmailAggregationRepositoryTest {
             assertEquals(ORG_ID, aggregations.get(0).getOrgId());
             assertEquals("other-org-id", keys.get(0).getOrgId());
             assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
-            assertEquals(APP_NAME, keys.get(0).getApplication());
 
             assertEquals(2, emailAggregationRepository.purgeOldAggregation(key, end));
             assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end).size());

@@ -48,7 +48,7 @@ class DailyEmailAggregationJobTest {
 
     @Test
     @TestTransaction
-    void shouldSentTwoAggregationsToKafkaTopic() {
+    void shouldSendOneAggregationsToKafkaTopic() {
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
 
@@ -56,19 +56,12 @@ class DailyEmailAggregationJobTest {
 
         InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL);
 
-        assertEquals(2, results.received().size());
+        assertEquals(1, results.received().size());
 
         final String firstAggregation = results.received().get(0).getPayload();
         assertTrue(firstAggregation.contains("orgId\":\"someOrgId"));
         assertTrue(firstAggregation.contains("bundle\":\"rhel"));
-        assertTrue(firstAggregation.contains("application\":\"policies"));
         assertTrue(firstAggregation.contains("subscriptionType\":\"DAILY"));
-
-        final String secondAggregation = results.received().get(1).getPayload();
-        assertTrue(firstAggregation.contains("orgId\":\"someOrgId"));
-        assertTrue(secondAggregation.contains("bundle\":\"rhel"));
-        assertTrue(secondAggregation.contains("application\":\"unknown-application"));
-        assertTrue(secondAggregation.contains("subscriptionType\":\"DAILY"));
     }
 
     @Test
@@ -82,7 +75,7 @@ class DailyEmailAggregationJobTest {
         testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
         final Gauge pairsProcessed = testee.getPairsProcessed();
 
-        assertEquals(4.0, pairsProcessed.get());
+        assertEquals(2.0, pairsProcessed.get());
     }
 
     @Test
@@ -95,7 +88,7 @@ class DailyEmailAggregationJobTest {
 
         final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), new CollectorRegistry());
 
-        assertEquals(4, emailAggregations.size());
+        assertEquals(2, emailAggregations.size());
     }
 
     @Test
@@ -111,7 +104,6 @@ class DailyEmailAggregationJobTest {
         final AggregationCommand aggregationCommand = emailAggregations.get(0);
         assertEquals("someOrgId", aggregationCommand.getAggregationKey().getOrgId());
         assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
-        assertEquals("policies", aggregationCommand.getAggregationKey().getApplication());
         assertEquals(DAILY, aggregationCommand.getSubscriptionType());
     }
 
