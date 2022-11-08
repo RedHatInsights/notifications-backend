@@ -89,9 +89,9 @@ export const EmailTemplateForm: React.FunctionComponent<EmailTemplateFormProps> 
     React.useEffect(() => {
         const mutate = emailTemplate.mutate;
         mutate({
-            payload: payload ?? '',
-            subject: props.template.data ?? '',
-            body: props.template.data ?? ''
+            subject: '',
+            body: props.template.data ?? '',
+            payload: payload ?? ''
         });
         // We only want to activate this once
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,7 +126,7 @@ export const EmailTemplateForm: React.FunctionComponent<EmailTemplateFormProps> 
     const onRender = React.useCallback(() => {
         const mutate = emailTemplate.mutate;
         mutate({
-            subject: props.template.data ?? '',
+            subject: '',
             body: props.template.data ?? '',
             payload: payload ?? ''
         });
