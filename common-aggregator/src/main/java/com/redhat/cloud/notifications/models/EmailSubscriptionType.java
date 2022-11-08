@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications;
+package com.redhat.cloud.notifications.models;
 
 public enum EmailSubscriptionType {
     DAILY

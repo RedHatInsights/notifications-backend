@@ -23,6 +23,11 @@
         <!-- notifications modules -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
+            <artifactId>notifications-common-aggregator</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.redhat.cloud.notifications</groupId>
             <artifactId>notifications-database</artifactId>
             <version>${project.version}</version>
         </dependency>
