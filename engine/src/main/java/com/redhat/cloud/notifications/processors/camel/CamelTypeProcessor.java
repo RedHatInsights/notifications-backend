@@ -194,7 +194,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
             long endTime;
             NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
             try {
-                callOpenBridge(payload, historyId, orgId, camelProperties, integrationName, originalEventId);
+                callOpenBridge(payload, historyId, orgId, camelProperties, endpoint.getSubType(), originalEventId);
                 history.setStatus(NotificationStatus.SENT);
             } catch (Exception e) {
                 history.setStatus(NotificationStatus.FAILED_INTERNAL);
@@ -241,7 +241,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
 
     }
 
-    private void callOpenBridge(JsonObject body, UUID id, String orgId, CamelProperties camelProperties, String integrationName, String originalEventId) {
+    private void callOpenBridge(JsonObject body, UUID id, String orgId, CamelProperties camelProperties, String endpointSubType, String originalEventId) {
 
         if (!featureFlipper.isObEnabled()) {
             Log.debug("Ob not enabled, doing nothing");
@@ -261,8 +261,8 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
         ce.put("originaleventid", originalEventId);
         // TODO add dataschema
 
-        Log.infof("SE: Sending Event with historyId=%s, orgId=%s, processorName=%s, processorId=%s, integration=%s, origId=%s",
-                id.toString(), orgId, extras.get(PROCESSORNAME), extras.get("processorId"), integrationName, originalEventId);
+        Log.infof("SE: Sending Event with historyId=%s, orgId=%s, processorName=%s, processorId=%s, action=%s, origId=%s",
+                id.toString(), orgId, extras.get(PROCESSORNAME), extras.get("processorId"), endpointSubType, originalEventId);
 
         body.remove(NOTIF_METADATA_KEY); // Not needed on OB
         ce.put("data", body);
