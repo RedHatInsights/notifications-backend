@@ -9,6 +9,11 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -30,6 +35,8 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
+import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
+import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +45,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -97,6 +106,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Any
+    @Inject
+    InMemoryConnector connector;
+
+    @Inject
+    EndpointRepository endpointRepository;
 
     @Test
     void testEndpointAdding() {
@@ -2010,6 +2026,107 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .post("/endpoints")
                 .then()
                 .statusCode(400);
+    }
+
+    /**
+     * Tests that when sending a payload to the "/test" REST endpoint, a Kafka message is sent with a test event for
+     * that endpoint.
+     */
+    @Test
+    void testEndpointTest() {
+        // These test values will be used later, so we define them in variables.
+        final UUID endpointUuid = UUID.randomUUID();
+        final String orgId = "empty";
+
+        // Create an endpoint fixture to be able to call the "/test" path on it.
+        Endpoint endpoint = new Endpoint();
+        endpoint.setId(endpointUuid);
+        endpoint.setType(EndpointType.CAMEL);
+        endpoint.setSubType("slack");
+        endpoint.setEnabled(true);
+        endpoint.setName("fixture test");
+        endpoint.setDescription("fixture test description");
+        endpoint.setEnabled(true);
+        endpoint.setCreated(LocalDateTime.now());
+        endpoint.setServerErrors(0);
+        endpoint.setOrgId(orgId);
+
+        this.endpointRepository.createEndpoint(endpoint);
+
+        // Create the mocked RBAC identity.
+        final String accountId = "empty";
+        final String userName = "user";
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        // Call the endpoint under test.
+        final String path = String.format("/endpoints/%s/test", endpointUuid);
+        given()
+            .header(identityHeader)
+            .when()
+            .post(path)
+            .then()
+            .statusCode(204);
+
+        // We should receive the action triggered by the REST call.
+        InMemorySink<Action> actionsOut = this.connector.sink("ingress");
+        final var actionsList = actionsOut.received();
+
+        // Only one test action should have been sent to Kafka.
+        final var expectedActionsCount = 1;
+        Assertions.assertEquals(expectedActionsCount, actionsList.size(), "unexpected number of actions sent to Kafka");
+
+        final var kafkaAction = actionsList.get(0).getPayload();
+
+        // Check that the top level values coincide.
+        Assertions.assertEquals(EndpointResource.TEST_ACTION_VERSION, kafkaAction.getVersion(), "unexpected version in the test action");
+        Assertions.assertEquals(EndpointResource.TEST_ACTION_BUNDLE, kafkaAction.getBundle(), "unexpected bundle in the test action");
+        Assertions.assertEquals(EndpointResource.TEST_ACTION_APPLICATION, kafkaAction.getApplication(), "unexpected application in the test action");
+        Assertions.assertEquals(EndpointResource.TEST_ACTION_EVENT_TYPE, kafkaAction.getEventType(), "unexpected event type in the test action");
+        Assertions.assertEquals(orgId, kafkaAction.getOrgId(), "unexpected org id in the test action");
+
+        // Check the recipients and its users.
+        final var expectedRecipientsCount = 1;
+        final var recipients = kafkaAction.getRecipients();
+
+        Assertions.assertEquals(expectedRecipientsCount, recipients.size(), "unexpected number of recipients in the test action");
+
+        final var recipient = recipients.get(0);
+        final var users = recipient.getUsers();
+
+        Assertions.assertEquals(expectedRecipientsCount, users.size(), "unexpected number of test action users");
+
+        final var user = users.get(0);
+
+        Assertions.assertEquals(EndpointResource.TEST_ACTION_RECIPIENT, user, "unexpected user in the test action");
+
+        // Check the events, their metadata and their payload.
+        final var events = kafkaAction.getEvents();
+
+        final var expectedEventsCount = 1;
+        Assertions.assertEquals(expectedEventsCount, events.size(), "unexpected number of test action events");
+
+        final Event event = events.get(0);
+        final Metadata metadata = event.getMetadata();
+        final Map<String, Object> metaAdditionalProperties = metadata.getAdditionalProperties();
+
+        final var expectedMetadataAdditionalPropertiesCount = 1;
+        Assertions.assertEquals(expectedMetadataAdditionalPropertiesCount, metaAdditionalProperties.size(), "unexpected number of metadata additional properties");
+
+        final String metadataValue = (String) metaAdditionalProperties.get(EndpointResource.TEST_ACTION_METADATA_KEY);
+        Assertions.assertEquals(EndpointResource.TEST_ACTION_METADATA_VALUE, metadataValue, "unexpected event metadata value");
+
+        final Payload payload = event.getPayload();
+        final Map<String, Object> payloadAdditionalProperties = payload.getAdditionalProperties();
+
+        final var expectedPayloadAdditionalPropertiesCount = 1;
+        Assertions.assertEquals(expectedPayloadAdditionalPropertiesCount, payloadAdditionalProperties.size(), "unexpected number of payload additional properties");
+
+        final String payloadValue = (String) payload.getAdditionalProperties().get(EndpointResource.TEST_ACTION_PAYLOAD_KEY);
+
+        Assertions.assertEquals(EndpointResource.TEST_ACTION_PAYLOAD_VALUE, payloadValue, "unexpected event payload value");
     }
 
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {

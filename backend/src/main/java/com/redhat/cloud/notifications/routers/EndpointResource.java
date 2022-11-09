@@ -11,6 +11,11 @@ import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepositor
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
+import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
@@ -45,7 +50,10 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.resteasy.reactive.RestPath;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -69,6 +77,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +111,18 @@ public class EndpointResource {
     public static final String SLACK = "slack";
     public static final String SLACK_WEBHOOK_URL = "slack_webhook_url";
     public static final String EMPTY_SLACK_CHANNEL_ERROR = "The channel field is required";
+
+    // The channel name we will send Kafka messages to for the "/test" endpoint.
+    public static final String INGRESS_CHANNEL = "ingress";
+    public static final String TEST_ACTION_METADATA_KEY = "test-metadata-key";
+    public static final String TEST_ACTION_METADATA_VALUE = "test-metadata-value";
+    public static final String TEST_ACTION_PAYLOAD_KEY = "test-payload-key";
+    public static final String TEST_ACTION_PAYLOAD_VALUE = "test-payload-value";
+    public static final String TEST_ACTION_RECIPIENT = "test-recipient-1";
+    public static final String TEST_ACTION_EVENT_TYPE = "policy-triggered";
+    public static final String TEST_ACTION_BUNDLE = "rhel";
+    public static final String TEST_ACTION_APPLICATION = "policies";
+    public static final String TEST_ACTION_VERSION = "0.0.0";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -142,6 +163,13 @@ public class EndpointResource {
      */
     @Inject
     SecretUtils secretUtils;
+
+    /**
+     * Used to send test events to Kafka.
+     */
+    @Inject
+    @Channel("ingress")
+    Emitter<Action> emitter;
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -658,6 +686,36 @@ public class EndpointResource {
         }
     }
 
+    /**
+     * Sends a test event via the specified endpoint.
+     * @param uuid the {@link UUID} of the endpoint to test.
+     * @return a "no content" response on success.
+     */
+    @POST
+    @Path("/{uuid}/test")
+    @Parameters({
+        @Parameter(
+                name = "uuid",
+                in = ParameterIn.PATH,
+                description = "The UUID of the endpoint to test",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
+    public Response testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid) {
+        final String orgId = SecurityContextUtil.getOrgId(sec);
+
+        final Endpoint endpoint = this.endpointRepository.getEndpoint(orgId, uuid);
+        if (endpoint == null) {
+            throw new NotFoundException();
+        }
+
+        this.sendTestEvent(orgId);
+
+        return Response.noContent().build();
+    }
+
     private static void checkSystemEndpoint(EndpointType endpointType) {
         if (systemEndpointType.contains(endpointType)) {
             throw new BadRequestException(String.format(
@@ -728,5 +786,38 @@ public class EndpointResource {
                 endpoint.getType().equals(EndpointType.CAMEL) &&
                 endpoint.getSubType() != null &&
                 endpoint.getSubType().equals(SLACK);
+    }
+
+    /**
+     * Sends a test action to the "ingress" queue on Kafka.
+     */
+    protected void sendTestEvent(final String orgId) {
+        Action testAction = new Action();
+
+        Event testEvent = new Event();
+
+        Metadata metadata = new Metadata();
+        metadata.setAdditionalProperty(TEST_ACTION_METADATA_KEY, TEST_ACTION_METADATA_VALUE);
+
+        Payload payload = new Payload();
+        payload.setAdditionalProperty(TEST_ACTION_PAYLOAD_KEY, TEST_ACTION_PAYLOAD_VALUE);
+
+        testEvent.setMetadata(metadata);
+        testEvent.setPayload(payload);
+
+        Recipient recipient = new Recipient();
+        recipient.setUsers(List.of(TEST_ACTION_RECIPIENT));
+
+        testAction.setId(UUID.randomUUID());
+        testAction.setEvents(List.of(testEvent));
+        testAction.setRecipients(List.of(recipient));
+        testAction.setEventType(TEST_ACTION_EVENT_TYPE);
+        testAction.setOrgId(orgId);
+        testAction.setTimestamp(LocalDateTime.now());
+        testAction.setBundle(TEST_ACTION_BUNDLE);
+        testAction.setApplication(TEST_ACTION_APPLICATION);
+        testAction.setVersion(TEST_ACTION_VERSION);
+
+        this.emitter.send(testAction);
     }
 }
