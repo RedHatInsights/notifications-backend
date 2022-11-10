@@ -119,9 +119,9 @@ public class EndpointResource {
     public static final String TEST_ACTION_PAYLOAD_KEY = "test-payload-key";
     public static final String TEST_ACTION_PAYLOAD_VALUE = "test-payload-value";
     public static final String TEST_ACTION_RECIPIENT = "test-recipient-1";
-    public static final String TEST_ACTION_EVENT_TYPE = "policy-triggered";
-    public static final String TEST_ACTION_BUNDLE = "rhel";
-    public static final String TEST_ACTION_APPLICATION = "policies";
+    public static final String TEST_ACTION_EVENT_TYPE = "test-event-type";
+    public static final String TEST_ACTION_BUNDLE = "test-actions-events-bundle";
+    public static final String TEST_ACTION_APPLICATION = "test-actions-events-application";
     public static final String TEST_ACTION_VERSION = "0.0.0";
 
     @Inject
