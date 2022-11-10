@@ -14,6 +14,7 @@ import { Template } from '../types/Notifications';
 import { useGetTemplate } from '../services/EmailTemplates/GetTemplate';
 import { EmailTemplateForm } from '../components/EmailTemplates/EmailTemplateForm';
 import { useEffect } from 'react';
+import { RenderEmailTemplateForm } from '../components/EmailTemplates/RenderEmailTemplate';
 
 const defaultContentTemplate = `
 <div>Hello {user.firstName} {user.lastName},</div>
@@ -104,11 +105,18 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                 </Split>
             </PageSection>
             <PageSection>
-                <EmailTemplateForm
-                    isLoading={ originalTemplate.loading }
-                    template={template}
-                    updateTemplate={ updateTemplate }
-                />
+                {templateId ? 
+                    <EmailTemplateForm
+                        isLoading={ originalTemplate.loading }
+                        template={template}
+                        updateTemplate={ updateTemplate }
+                    /> 
+                    : 
+                    <RenderEmailTemplateForm
+                        isLoading={ originalTemplate.loading }
+                        template={template}
+                        updateTemplate={ updateTemplate } />
+                }
                 <ActionGroup>
                     <Split hasGutter>
                         <SplitItem>
