@@ -28,6 +28,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
+import com.redhat.cloud.notifications.models.event.TestEventConstants;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
@@ -114,15 +115,6 @@ public class EndpointResource {
 
     // The channel name we will send Kafka messages to for the "/test" endpoint.
     public static final String INGRESS_CHANNEL = "ingress";
-    public static final String TEST_ACTION_METADATA_KEY = "test-metadata-key";
-    public static final String TEST_ACTION_METADATA_VALUE = "test-metadata-value";
-    public static final String TEST_ACTION_PAYLOAD_KEY = "test-payload-key";
-    public static final String TEST_ACTION_PAYLOAD_VALUE = "test-payload-value";
-    public static final String TEST_ACTION_RECIPIENT = "test-recipient-1";
-    public static final String TEST_ACTION_EVENT_TYPE = "test-event-type";
-    public static final String TEST_ACTION_BUNDLE = "test-actions-events-bundle";
-    public static final String TEST_ACTION_APPLICATION = "test-actions-events-application";
-    public static final String TEST_ACTION_VERSION = "0.0.0";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -794,29 +786,35 @@ public class EndpointResource {
     protected void sendTestEvent(final String orgId) {
         Action testAction = new Action();
 
+        /*
+         * Create a test event which will be sent along with the action.
+         */
         Event testEvent = new Event();
 
         Metadata metadata = new Metadata();
-        metadata.setAdditionalProperty(TEST_ACTION_METADATA_KEY, TEST_ACTION_METADATA_VALUE);
+        metadata.setAdditionalProperty(TestEventConstants.TEST_ACTION_METADATA_KEY, TestEventConstants.TEST_ACTION_METADATA_VALUE);
 
         Payload payload = new Payload();
-        payload.setAdditionalProperty(TEST_ACTION_PAYLOAD_KEY, TEST_ACTION_PAYLOAD_VALUE);
+        payload.setAdditionalProperty(TestEventConstants.TEST_ACTION_PAYLOAD_KEY, TestEventConstants.TEST_ACTION_PAYLOAD_VALUE);
 
         testEvent.setMetadata(metadata);
         testEvent.setPayload(payload);
 
         Recipient recipient = new Recipient();
-        recipient.setUsers(List.of(TEST_ACTION_RECIPIENT));
+        recipient.setUsers(List.of(TestEventConstants.TEST_ACTION_RECIPIENT));
 
-        testAction.setId(UUID.randomUUID());
+        /*
+         * Set the rest of the action's members.
+         */
+        testAction.setApplication(TestEventConstants.TEST_ACTION_APPLICATION);
+        testAction.setBundle(TestEventConstants.TEST_ACTION_BUNDLE);
         testAction.setEvents(List.of(testEvent));
+        testAction.setEventType(TestEventConstants.TEST_ACTION_EVENT_TYPE);
+        testAction.setId(UUID.randomUUID());
         testAction.setRecipients(List.of(recipient));
-        testAction.setEventType(TEST_ACTION_EVENT_TYPE);
         testAction.setOrgId(orgId);
         testAction.setTimestamp(LocalDateTime.now());
-        testAction.setBundle(TEST_ACTION_BUNDLE);
-        testAction.setApplication(TEST_ACTION_APPLICATION);
-        testAction.setVersion(TEST_ACTION_VERSION);
+        testAction.setVersion(TestEventConstants.TEST_ACTION_VERSION);
 
         this.emitter.send(testAction);
     }
