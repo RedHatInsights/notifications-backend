@@ -87,7 +87,7 @@ public class SecretUtils {
      *  <li>If the endpoint has an ID for the secret, and the incoming secret is {@code null}, it is assumed that the
      *  user wants the secret to be deleted.</li>
      *  <li>If the endpoint has an ID for the secret, and the incoming secret isn't {@code null}, then the secret is
-     *  updated</li>
+     *  updated.</li>
      *  <li>If the endpoint doesn't have an ID for the secret, and the incoming secret is {@code null}, it's basically
      *  a NOP — although the attempt is logged for debugging purposes.</li>
      *  <li>If the endpoint doesn't have an ID for the secret, and the incoming secret isn't {@code null}, it is
@@ -103,11 +103,6 @@ public class SecretUtils {
 
             final BasicAuthentication basicAuth = props.getBasicAuthentication();
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
-            // If the object is null, we simply assume that the user decided to delete the secret, since an update
-            // operation requires the user to send the full object.
-            //
-            // If it isn't null, then we create the secret in sources, since we assume that the user decided that they
-            // want to create the secret.
             if (basicAuthId != null) {
                 if (basicAuth == null) {
                     this.sourcesService.delete(basicAuthId);
