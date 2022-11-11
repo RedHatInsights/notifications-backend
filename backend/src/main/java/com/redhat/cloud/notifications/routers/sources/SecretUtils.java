@@ -106,7 +106,8 @@ public class SecretUtils {
             // If the object is null, we simply assume that the user decided to delete the secret, since an update
             // operation requires the user to send the full object.
             //
-            // If it isn't null, then we
+            // If it isn't null, then we create the secret in sources, since we assume that the user decided that they
+            // want to create the secret.
             if (basicAuthId != null) {
                 if (basicAuth == null) {
                     this.sourcesService.delete(basicAuthId);
