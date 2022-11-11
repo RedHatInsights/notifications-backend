@@ -11,6 +11,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
 /**
@@ -82,6 +83,6 @@ public interface SourcesService {
     static RuntimeException toException(final Response response) {
         final var errMessage = String.format("Sources responded with a %s status: %s", response.getStatus(), response.readEntity(String.class));
 
-        throw new RuntimeException(errMessage);
+        throw new WebApplicationException(errMessage, response);
     }
 }
