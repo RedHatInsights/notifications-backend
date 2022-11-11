@@ -136,7 +136,7 @@ public class SecretUtils {
             final String secretToken = props.getSecretToken();
             final Long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId != null) {
-                if (secretToken == null) {
+                if (secretToken == null || secretToken.isBlank()) {
                     this.sourcesService.delete(secretTokenId);
 
                     props.setSecretTokenSourcesId(null);
@@ -151,8 +151,8 @@ public class SecretUtils {
                     Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret updated in Sources", endpoint.getId(), secretTokenId);
                 }
             } else {
-                if (secretToken == null) {
-                    Log.infof("[endpoint_id: %s] Secret token secret not created in Sources: the secret token object is null", endpoint.getId());
+                if (secretToken == null || secretToken.isBlank()) {
+                    Log.infof("[endpoint_id: %s] Secret token secret not created in Sources: the secret token object is null or blank", endpoint.getId());
                 } else {
                     final long id = this.createSecretTokenSecret(secretToken);
 

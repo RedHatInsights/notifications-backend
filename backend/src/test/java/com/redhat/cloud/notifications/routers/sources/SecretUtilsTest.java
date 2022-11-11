@@ -333,8 +333,9 @@ public class SecretUtilsTest {
     }
 
     /**
-     * Tests that when the client updates an endpoint, but there are no secrets stored in Sources, or no secrets
-     * provided by the client, basically a NOP happens.
+     * Tests that when the client updates an endpoint, but there are no secrets stored in Sources, or no valid secrets
+     * provided by the client, basically a NOP happens. For a valid secret we understand it as a secret token that is
+     * not blank.
      */
     @Test
     void updateSecretsForEndpointNopTest() {
@@ -346,6 +347,15 @@ public class SecretUtilsTest {
         this.secretUtils.updateSecretsForEndpoint(endpoint);
 
         final int wantedNumberOfInvocations = 0;
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(Mockito.anyLong());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).update(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.anyLong());
+
+        // Set the secret token as a blank value. It should also be a NOOP.
+        webhookProperties.setSecretToken("     ");
+        this.secretUtils.updateSecretsForEndpoint(endpoint);
+
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(Mockito.anyLong());
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).update(Mockito.anyLong(), Mockito.any());
