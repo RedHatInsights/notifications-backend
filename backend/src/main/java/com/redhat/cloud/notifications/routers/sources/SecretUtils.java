@@ -31,7 +31,7 @@ public class SecretUtils {
             var props = (SourcesSecretable) endpointProperties;
 
             final Long basicAuthSourcesId = props.getBasicAuthenticationSourcesId();
-            if (basicAuthSourcesId != null && basicAuthSourcesId > 0) {
+            if (basicAuthSourcesId != null) {
                 final Secret secret = this.sourcesService.getById(basicAuthSourcesId);
 
                 props.setBasicAuthentication(
@@ -43,7 +43,7 @@ public class SecretUtils {
             }
 
             final Long secretTokenSourcesId = props.getSecretTokenSourcesId();
-            if (secretTokenSourcesId != null && secretTokenSourcesId > 0) {
+            if (secretTokenSourcesId != null) {
                 final Secret secret = this.sourcesService.getById(secretTokenSourcesId);
 
                 props.setSecretToken(secret.password);
@@ -107,7 +107,7 @@ public class SecretUtils {
             // operation requires the user to send the full object.
             //
             // If it isn't null, then we
-            if (basicAuthId != null && basicAuthId > 0) {
+            if (basicAuthId != null) {
                 if (basicAuth == null) {
                     this.sourcesService.delete(basicAuthId);
                     Log.infof("[endpoint_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId());
@@ -135,7 +135,7 @@ public class SecretUtils {
 
             final String secretToken = props.getSecretToken();
             final Long secretTokenId = props.getSecretTokenSourcesId();
-            if (secretTokenId != null && secretTokenId > 0) {
+            if (secretTokenId != null) {
                 if (secretToken == null) {
                     this.sourcesService.delete(secretTokenId);
 
@@ -176,13 +176,13 @@ public class SecretUtils {
             var props = (SourcesSecretable) endpointProperties;
 
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
-            if (basicAuthId != null && basicAuthId > 0) {
+            if (basicAuthId != null) {
                 this.sourcesService.delete(basicAuthId);
                 Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources", endpoint.getId(), basicAuthId);
             }
 
             final Long secretTokenId = props.getSecretTokenSourcesId();
-            if (secretTokenId != null && secretTokenId > 0) {
+            if (secretTokenId != null) {
                 this.sourcesService.delete(secretTokenId);
                 Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources", endpoint.getId(), secretTokenId);
             }
