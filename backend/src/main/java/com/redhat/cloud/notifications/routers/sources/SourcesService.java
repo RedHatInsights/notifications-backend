@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers.sources;
 
 import io.quarkus.rest.client.reactive.ClientExceptionMapper;
 import org.eclipse.microprofile.faulttolerance.Retry;
-import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.reactive.RestPath;
@@ -43,7 +42,6 @@ public interface SourcesService {
     @GET
     @Path("/internal/v2.0/secrets/{id}")
     @Retry(maxRetries = 3)
-    @Timeout(1000)
     Secret getById(@RestPath long id);
 
     /**
@@ -54,7 +52,6 @@ public interface SourcesService {
     @Path("/api/sources/v3.1/secrets")
     @POST
     @Retry(maxRetries = 3)
-    @Timeout(1000)
     Secret create(Secret secret);
 
     /**
@@ -65,7 +62,6 @@ public interface SourcesService {
     @Path("/api/sources/v3.1/secrets/{id}")
     @PATCH
     @Retry(maxRetries = 3)
-    @Timeout(1000)
     Secret update(@RestPath long id, Secret secret);
 
     /**
@@ -75,7 +71,6 @@ public interface SourcesService {
     @DELETE
     @Path("/api/sources/v3.1/secrets/{id}")
     @Retry(maxRetries = 3)
-    @Timeout(1000)
     void delete(@RestPath long id);
 
     /**
