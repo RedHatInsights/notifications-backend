@@ -194,6 +194,52 @@ public class SecretUtilsTest {
     }
 
     /**
+     * Tests that when there is a non-{@code NULL} "basic authentication" object with its fields with blank values, the
+     * function under test calls "create" upon Sources just for the "secret token" secret, and that the ID for that
+     * secret is properly set on the endpoint's properties.
+     */
+    @Test
+    void createSecretsForEndpointBasicAuthBlankFieldsTest() {
+        // Set the ID for the secret token secret that is supposed that is created in Sources.
+        final Secret secretTokenMock = new Secret();
+        secretTokenMock.id = SECRET_TOKEN_SOURCES_ID;
+
+        // Set up the mock call for the "create" call from the REST Client. In this case, since the basic
+        // authentication is null, only the secret token should be created.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.any())).thenReturn(secretTokenMock);
+
+        // Create an endpoint that contains the expected data by the function under test.
+        Endpoint endpoint = new Endpoint();
+        WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setSecretToken(SECRET_TOKEN);
+
+        endpoint.setProperties(webhookProperties);
+
+        // Create a basic authentication with blank fields.
+        BasicAuthentication basicAuthentication = new BasicAuthentication("     ", "     ");
+        webhookProperties.setBasicAuthentication(basicAuthentication);
+
+        // Call the function under test.
+        this.secretUtils.createSecretsForEndpoint(endpoint);
+
+        // Check that the endpoint properties are of the expected type.
+        final var endpointProperties = endpoint.getProperties();
+        if (!(endpointProperties instanceof SourcesSecretable)) {
+            Assertions.fail("unexpected type of the properties found. Want " + SourcesSecretable.class + ", got " + endpointProperties.getClass());
+        }
+
+        final var props = (SourcesSecretable) endpoint.getProperties();
+
+        // Assert the results.
+        Assertions.assertEquals(SECRET_TOKEN_SOURCES_ID, props.getSecretTokenSourcesId(), "the ID of the secret token's secret from Sources doesn't match");
+
+        // Assert that the underlying function was called exactly one time: just for the "secret token"'s secret
+        // creation.
+        final int wantedNumberOfInvocations = 1;
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
+    }
+
+    /**
      * Tests that when there is a {@code NULL} "secret token" property on the endpoint's properties, the function under
      * test only calls "create" on Sources just for the "basic authentication", and that the returned ID is properly
      * assigned to the endpoint's properties.
@@ -347,6 +393,16 @@ public class SecretUtilsTest {
         this.secretUtils.updateSecretsForEndpoint(endpoint);
 
         final int wantedNumberOfInvocations = 0;
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(Mockito.anyLong());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).update(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.anyLong());
+
+        // Set the basic authentication as having blank values. It should also be a NOOP.
+        final BasicAuthentication basicAuthentication = new BasicAuthentication("     ", "     ");
+        webhookProperties.setBasicAuthentication(basicAuthentication);
+        this.secretUtils.updateSecretsForEndpoint(endpoint);
+
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(Mockito.anyLong());
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).update(Mockito.anyLong(), Mockito.any());

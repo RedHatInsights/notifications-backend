@@ -62,7 +62,7 @@ public class SecretUtils {
             var props = (SourcesSecretable) endpointProperties;
 
             final BasicAuthentication basicAuth = props.getBasicAuthentication();
-            if (basicAuth != null) {
+            if (!this.isBasicAuthNullOrBlank(basicAuth)) {
                 final long id = this.createBasicAuthentication(basicAuth);
 
                 Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources", endpoint.getId(), id);
@@ -104,7 +104,7 @@ public class SecretUtils {
             final BasicAuthentication basicAuth = props.getBasicAuthentication();
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
-                if (basicAuth == null) {
+                if (this.isBasicAuthNullOrBlank(basicAuth)) {
                     this.sourcesService.delete(basicAuthId);
                     Log.infof("[endpoint_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId());
 
@@ -119,7 +119,7 @@ public class SecretUtils {
                     Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
                 }
             } else {
-                if (basicAuth == null) {
+                if (this.isBasicAuthNullOrBlank(basicAuth)) {
                     Log.infof("[endpoint_id: %s] Basic authentication secret not created in Sources: the basic authentication object is null", endpoint.getId());
                 } else {
                     final long id = this.createBasicAuthentication(basicAuth);
@@ -216,5 +216,20 @@ public class SecretUtils {
         final Secret createdSecret = this.sourcesService.create(secret);
 
         return createdSecret.id;
+    }
+
+    /**
+     * Checks whether the provided {@link BasicAuthentication} object is null, or if its inner password and username
+     * fields are blank. If any of the username or password fields contain a non-blank string, then it is assumed that
+     * the object is not blank.
+     * @param basicAuthentication the object to check.
+     * @return {@code true} if the object is null, or if the password and the username are blank.
+     */
+    private boolean isBasicAuthNullOrBlank(final BasicAuthentication basicAuthentication) {
+        if (basicAuthentication == null) {
+            return true;
+        }
+
+        return basicAuthentication.getUsername().isBlank() && basicAuthentication.getPassword().isBlank();
     }
 }
