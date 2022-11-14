@@ -263,7 +263,15 @@ public class EndpointResource {
             endpoint.setStatus(EndpointStatus.READY);
         }
 
-        // Create the secrets in Sources.
+        /*
+         * Create the secrets in Sources.
+         *
+         * TODO: if there's a failure in the "createEndpoint" function below,
+         * we might end up with dangling secrets in Sources. Using a "try/catch"
+         * block wouldn't do it here because of the "@Transactional" annotation
+         * above. Check <a href="https://issues.redhat.com/browse/RHCLOUD-22971">RHCLOUD-22971</a>
+         * for more details.
+         */
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
             this.secretUtils.createSecretsForEndpoint(endpoint);
         }
