@@ -71,7 +71,7 @@ public class SecretUtils {
             }
 
             final String secretToken = props.getSecretToken();
-            if (secretToken != null) {
+            if (secretToken != null && !secretToken.isBlank()) {
                 final long id = this.createSecretTokenSecret(secretToken);
 
                 Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources", endpoint.getId(), id);

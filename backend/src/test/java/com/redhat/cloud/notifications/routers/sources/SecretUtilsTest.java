@@ -284,6 +284,53 @@ public class SecretUtilsTest {
     }
 
     /**
+     * Tests that when there is a non-{@code NULL} "secret token" property which is blank on the endpoint's properties,
+     * the function under test only calls "create" on Sources just for the "basic authentication", and that the
+     * returned ID is properly assigned to the endpoint's properties.
+     */
+    @Test
+    void createSecretsForEndpointSecretTokenBlankTest() {
+        // Set the ID for the basic authentication secret that is supposed that is created in Sources.
+        final Secret basicAuthenticationMock = new Secret();
+        basicAuthenticationMock.id = BASIC_AUTH_SOURCES_ID;
+
+        // Set up the mock call for the "create" call from the REST Client. Since only the "basic authentication"
+        // secret is supposed to be created, that's the one we are expecting to get from the mocked service.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.any())).thenReturn(basicAuthenticationMock);
+
+        // Create an endpoint that contains the expected data by the function under test.
+        Endpoint endpoint = new Endpoint();
+        WebhookProperties webhookProperties = new WebhookProperties();
+        BasicAuthentication basicAuth = new BasicAuthentication(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
+
+        webhookProperties.setBasicAuthentication(basicAuth);
+
+        endpoint.setProperties(webhookProperties);
+
+        // Set the secret token to blank.
+        webhookProperties.setSecretToken("     ");
+
+        // Call the function under test.
+        this.secretUtils.createSecretsForEndpoint(endpoint);
+
+        // Check that the endpoint properties are of the expected type.
+        final var endpointProperties = endpoint.getProperties();
+        if (!(endpointProperties instanceof SourcesSecretable)) {
+            Assertions.fail("unexpected type of the properties found. Want " + SourcesSecretable.class + ", got " + endpointProperties.getClass());
+        }
+
+        final var props = (SourcesSecretable) endpoint.getProperties();
+
+        // Assert the results.
+        Assertions.assertEquals(BASIC_AUTH_SOURCES_ID, props.getBasicAuthenticationSourcesId(), "the ID of the basic authentication's secret from Sources doesn't match");
+
+        // Assert that the underlying function was called exactly one time: just for the "basic authentication"'s
+        // secret creation.
+        final int wantedNumberOfInvocations = 1;
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
+    }
+
+    /**
      * Tests that the function under test calls "update" upon Sources two times, one for the "basic authentication" and
      * another one for the "secret token". It also checks that the responses are properly marshalled into the right
      * endpoint properties.
