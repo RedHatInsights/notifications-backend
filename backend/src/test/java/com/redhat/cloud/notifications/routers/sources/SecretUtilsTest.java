@@ -96,8 +96,7 @@ public class SecretUtilsTest {
         endpoint.setProperties(webhookProperties);
 
         // Assert that the "get by id" function wasn't called, since the properties didn't have a positive ID.
-        final int wantedNumberOfInvocations = 0;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(Mockito.anyInt());
+        Mockito.verifyNoInteractions(this.sourcesServiceMock);
     }
 
     /**
@@ -439,30 +438,20 @@ public class SecretUtilsTest {
 
         this.secretUtils.updateSecretsForEndpoint(endpoint);
 
-        final int wantedNumberOfInvocations = 0;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(Mockito.anyLong());
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).update(Mockito.anyLong(), Mockito.any());
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.anyLong());
+        Mockito.verifyNoInteractions(this.sourcesServiceMock);
 
         // Set the basic authentication as having blank values. It should also be a NOOP.
         final BasicAuthentication basicAuthentication = new BasicAuthentication("     ", "     ");
         webhookProperties.setBasicAuthentication(basicAuthentication);
         this.secretUtils.updateSecretsForEndpoint(endpoint);
 
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(Mockito.anyLong());
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).update(Mockito.anyLong(), Mockito.any());
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.anyLong());
+        Mockito.verifyNoInteractions(this.sourcesServiceMock);
 
         // Set the secret token as a blank value. It should also be a NOOP.
         webhookProperties.setSecretToken("     ");
         this.secretUtils.updateSecretsForEndpoint(endpoint);
 
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(Mockito.anyLong());
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).update(Mockito.anyLong(), Mockito.any());
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.anyLong());
+        Mockito.verifyNoInteractions(this.sourcesServiceMock);
     }
 
     @Test
@@ -551,8 +540,7 @@ public class SecretUtilsTest {
         this.secretUtils.deleteSecretsForEndpoint(endpoint);
 
         // Assert that the underlying "delete" function wasn't called at all, since neither the "basic authentication"
-        // nor the "secret token" have valid IDs set.s
-        final int wantedNumberOfInvocations = 0;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.anyInt());
+        // nor the "secret token" have valid IDs set.
+        Mockito.verifyNoInteractions(this.sourcesServiceMock);
     }
 }
