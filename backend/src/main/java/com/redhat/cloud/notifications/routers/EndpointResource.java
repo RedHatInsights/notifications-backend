@@ -22,6 +22,7 @@ import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
@@ -30,6 +31,7 @@ import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
+import com.redhat.cloud.notifications.routers.sources.SecretUtils;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -133,6 +135,12 @@ public class EndpointResource {
     @Inject
     RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
 
+    /**
+     * Used to create the secrets in Sources and update the endpoint's properties' IDs.
+     */
+    @Inject
+    SecretUtils secretUtils;
+
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
@@ -186,6 +194,11 @@ public class EndpointResource {
                 CamelProperties cp = endpoint.getProperties(CamelProperties.class);
                 cp.getExtras().remove(OB_PROCESSOR_ID);
                 cp.getExtras().remove(OB_PROCESSOR_NAME);
+            }
+
+            // Fetch the secrets from Sources.
+            if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+                this.secretUtils.loadSecretsForEndpoint(endpoint);
             }
         }
 
@@ -250,6 +263,19 @@ public class EndpointResource {
             endpoint.setStatus(EndpointStatus.READY);
         }
 
+        /*
+         * Create the secrets in Sources.
+         *
+         * TODO: if there's a failure in the "createEndpoint" function below,
+         * we might end up with dangling secrets in Sources. Using a "try/catch"
+         * block wouldn't do it here because of the "@Transactional" annotation
+         * above. Check <a href="https://issues.redhat.com/browse/RHCLOUD-22971">RHCLOUD-22971</a>
+         * for more details.
+         */
+        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            this.secretUtils.createSecretsForEndpoint(endpoint);
+        }
+
         return endpointRepository.createEndpoint(endpoint);
     }
 
@@ -300,6 +326,12 @@ public class EndpointResource {
                 cp.getExtras().remove(OB_PROCESSOR_ID);
                 cp.getExtras().remove(OB_PROCESSOR_NAME);
             }
+
+            // Fetch the secrets from Sources.
+            if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+                this.secretUtils.loadSecretsForEndpoint(endpoint);
+            }
+
             return endpoint;
         }
     }
@@ -335,6 +367,11 @@ public class EndpointResource {
             }
         }
         endpointRepository.deleteEndpoint(orgId, id);
+
+        // Clean up the secrets in Sources.
+        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            this.secretUtils.deleteSecretsForEndpoint(ep);
+        }
 
         return Response.noContent().build();
     }
@@ -438,6 +475,24 @@ public class EndpointResource {
         }
 
         endpointRepository.updateEndpoint(endpoint);
+
+        // Update the secrets in Sources.
+        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            var endpointProperties = endpoint.getProperties();
+            var databaseEndpointProperties = ep.getProperties();
+
+            if (endpointProperties instanceof SourcesSecretable && databaseEndpointProperties instanceof SourcesSecretable) {
+                // In order to be able to update the secrets in Sources, we need to grab the IDs of these secrets from the
+                // database endpoint, since the client won't be sending those IDs.
+                var incomingEndpointProps = (SourcesSecretable) endpointProperties;
+                var databaseEndpointProps = (SourcesSecretable) databaseEndpointProperties;
+
+                incomingEndpointProps.setBasicAuthenticationSourcesId(databaseEndpointProps.getBasicAuthenticationSourcesId());
+                incomingEndpointProps.setSecretTokenSourcesId(databaseEndpointProps.getSecretTokenSourcesId());
+
+                this.secretUtils.updateSecretsForEndpoint(endpoint);
+            }
+        }
 
         return Response.ok().build();
     }
