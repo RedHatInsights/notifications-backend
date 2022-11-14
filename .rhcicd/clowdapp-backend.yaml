@@ -203,6 +203,8 @@ objects:
           value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
           value: ${QUARKUS_REST_CLIENT_KC_URL}
+        - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
+          value: ${SOURCES_ENABLED}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -337,3 +339,6 @@ parameters:
 - name: FLOORIST_LOGLEVEL
   description: Floorist loglevel config
   value: 'INFO'
+- name: SOURCES_ENABLED
+  description: Is the Sources integration enabled? This makes the backend store the endpoint properties' secrets there.
+  value: "false"
