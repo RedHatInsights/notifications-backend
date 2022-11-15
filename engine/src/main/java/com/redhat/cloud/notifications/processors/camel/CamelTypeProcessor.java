@@ -15,6 +15,7 @@ import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.openbridge.BridgeEventService;
 import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.routers.sources.SecretUtils;
 import com.redhat.cloud.notifications.templates.models.Environment;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
@@ -94,6 +95,9 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
     @Inject
     RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
 
+    @Inject
+    SecretUtils secretUtils;
+
     /**
      * Used to send the environment's URL on RHOSE events.
      */
@@ -148,6 +152,13 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
 
         metaData.put("url", properties.getUrl());
         metaData.put("type", subType);
+
+        /*
+         * Get the basic authentication and secret token secrets from Sources.
+         */
+        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            this.secretUtils.loadSecretsForEndpoint(endpoint);
+        }
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
             metaData.put(TOKEN_HEADER, properties.getSecretToken());
