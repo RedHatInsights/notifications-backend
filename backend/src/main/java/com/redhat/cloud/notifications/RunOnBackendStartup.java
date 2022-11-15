@@ -16,6 +16,7 @@ public class RunOnBackendStartup {
         startupUtils.initAccessLogFilter();
         startupUtils.logGitProperties();
         startupUtils.logExternalServiceUrl("quarkus.rest-client.rbac-authentication.url");
+        startupUtils.logExternalServiceUrl("quarkus.rest-client.sources.url");
         startupUtils.disableRestClientContextualErrors();
     }
 }
