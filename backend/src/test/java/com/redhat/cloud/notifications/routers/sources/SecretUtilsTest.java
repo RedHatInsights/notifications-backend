@@ -13,6 +13,14 @@ import org.mockito.Mockito;
 
 import javax.inject.Inject;
 
+/**
+ * <p>The test class for {@link SecretUtils} is here instead of being in the "common" package because moving this class
+ * there triggers the error below. And since we don't want to overcomplicate the "common" package just for the tests,
+ * we keep this class in the "backend" package. The error in question is the following one:</p>
+ * <p>{@code ConfigurationException: Model classes are defined for the default persistence unit, but no default datasource was
+ * found. The default EntityManagerFactory will not be created. To solve this, configure the default datasource. Refer
+ * to https://quarkus.io/guides/datasource for guidance.}</p>
+ */
 @QuarkusTest
 public class SecretUtilsTest {
 
