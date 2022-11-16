@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.mockito.InjectMock;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
@@ -13,15 +14,8 @@ import org.mockito.Mockito;
 
 import javax.inject.Inject;
 
-/**
- * <p>The test class for {@link SecretUtils} is here instead of being in the "common" package because moving this class
- * there triggers the error below. And since we don't want to overcomplicate the "common" package just for the tests,
- * we keep this class in the "backend" package. The error in question is the following one:</p>
- * <p>{@code ConfigurationException: Model classes are defined for the default persistence unit, but no default datasource was
- * found. The default EntityManagerFactory will not be created. To solve this, configure the default datasource. Refer
- * to https://quarkus.io/guides/datasource for guidance.}</p>
- */
 @QuarkusTest
+@TestProfile(SecretsUtilsTestProfile.class)
 public class SecretUtilsTest {
 
     static final Long BASIC_AUTH_SOURCES_ID = 50L;
