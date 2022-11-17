@@ -662,7 +662,7 @@ public class EndpointResource {
      * endpoint.
      */
     @WithSpan
-    private Processor createProcessor(Endpoint endpoint) {
+    Processor createProcessor(Endpoint endpoint) {
 
         CamelProperties properties = endpoint.getProperties(CamelProperties.class);
         String processorName = properties.getExtras().get(OB_PROCESSOR_NAME);
