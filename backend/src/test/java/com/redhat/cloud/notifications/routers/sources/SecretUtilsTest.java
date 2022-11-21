@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.mockito.InjectMock;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
@@ -15,7 +14,6 @@ import org.mockito.Mockito;
 import javax.inject.Inject;
 
 @QuarkusTest
-@TestProfile(SecretsUtilsTestProfile.class)
 public class SecretUtilsTest {
 
     static final Long BASIC_AUTH_SOURCES_ID = 50L;
