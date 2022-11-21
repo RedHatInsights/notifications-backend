@@ -16,8 +16,7 @@ public class SecretsUtilsTestProfile implements QuarkusTestProfile {
     public Map<String, String> getConfigOverrides() {
         final var config = new HashMap<String, String>();
         // Set up an H2 database.
-        config.put("quarkus.datasource.db-kind", "h2");
-        config.put("quarkus.datasource.username", "username-default");
+        config.put("quarkus.datasource.db-kind", "postgresql");
         config.put("quarkus.datasource.jdbc.url", "jdbc:h2:mem:default");
 
         // Required for Quarkus to run, as otherwise complains about not having these values.
