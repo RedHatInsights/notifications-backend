@@ -65,7 +65,7 @@ public class SecretUtils {
             if (!this.isBasicAuthNullOrBlank(basicAuth)) {
                 final long id = this.createBasicAuthentication(basicAuth);
 
-                Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources", endpoint.getId(), id);
+                Log.infof("[secret_id: %s] Basic authentication secret created in Sources", id);
 
                 props.setBasicAuthenticationSourcesId(id);
             }
@@ -74,7 +74,7 @@ public class SecretUtils {
             if (secretToken != null && !secretToken.isBlank()) {
                 final long id = this.createSecretTokenSecret(secretToken);
 
-                Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources", endpoint.getId(), id);
+                Log.infof("[secret_id: %s] Secret token secret created in Sources", id);
 
                 props.setSecretTokenSourcesId(id);
             }
