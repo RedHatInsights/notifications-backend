@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationEnabled;
+import com.redhat.cloud.notifications.routers.sources.SecretUtils;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
@@ -89,6 +90,9 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
     @Inject
     MeterRegistry registry;
 
+    @Inject
+    SecretUtils secretUtils;
+
     private Counter processedCount;
     private Counter disabledWebhooksClientErrorCount;
     private Counter disabledWebhooksServerErrorCount;
@@ -125,6 +129,13 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
         final HttpRequest<Buffer> req = getWebClient(properties.getDisableSslVerification())
                 .requestAbs(HttpMethod.valueOf(properties.getMethod().name()), properties.getUrl());
+
+        /*
+         * Get the basic authentication and secret token secrets from Sources.
+         */
+        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            this.secretUtils.loadSecretsForEndpoint(endpoint);
+        }
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
             req.putHeader(TOKEN_HEADER, properties.getSecretToken());
