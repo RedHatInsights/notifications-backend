@@ -106,7 +106,7 @@ public class SecretUtils {
             if (basicAuthId != null) {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
                     this.sourcesService.delete(basicAuthId);
-                    Log.infof("[endpoint_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId());
+                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
 
                     props.setBasicAuthenticationSourcesId(null);
                 } else {
