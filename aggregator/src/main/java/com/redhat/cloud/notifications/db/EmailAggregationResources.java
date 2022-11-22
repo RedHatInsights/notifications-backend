@@ -2,9 +2,11 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.CronJobRun;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import org.hibernate.Session;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,14 +17,39 @@ import static java.util.stream.Collectors.toList;
 public class EmailAggregationResources {
 
     @Inject
-    Session session;
+    EntityManager entityManager;
+
+    private static final String DEFAULT_ORG_ID = "NA";
+
+    public List<EmailAggregationKey> getApplicationsWithPendingAggregation(String orgIdToAggregate, LocalDateTime start, LocalDateTime end) {
+        String orgIdCriteria = "ea.org_id = :orgId AND acj.org_id IS NOT NULL";
+        if (DEFAULT_ORG_ID.equals(orgIdToAggregate)) {
+            orgIdCriteria = "acj.org_id IS NULL";
+        }
+        String query = "SELECT DISTINCT ea.org_id, ea.bundle, ea.application FROM email_aggregation ea "
+                + "LEFT JOIN aggregation_cronjob_parameter acj ON ea.org_id = acj.org_id "
+                + " WHERE " + orgIdCriteria + " AND ea.created > :start AND ea.created <= :end";
+
+        Query nativeQuery = entityManager.createNativeQuery(query)
+                .setParameter("start", start)
+                .setParameter("end", end);
+        if (!DEFAULT_ORG_ID.equals(orgIdToAggregate)) {
+            nativeQuery.setParameter("orgId", orgIdToAggregate);
+        }
+
+        List<Object[]> records = nativeQuery.getResultList();
+        return records.stream()
+                .map(record -> new EmailAggregationKey((String) record[0], (String) record[1], (String) record[2]))
+                .collect(toList());
+    }
 
     public List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
         String query = "SELECT DISTINCT org_id, bundle, application FROM email_aggregation WHERE created > :start AND created <= :end";
-        List<Object[]> records = session.createNativeQuery(query)
+        List<Object[]> records = entityManager.createNativeQuery(query)
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getResultList();
+
         return records.stream()
                 .map(record -> new EmailAggregationKey((String) record[0], (String) record[1], (String) record[2]))
                 .collect(toList());
@@ -30,14 +57,15 @@ public class EmailAggregationResources {
 
     public CronJobRun getLastCronJobRun() {
         String query = "FROM CronJobRun";
-        return session.createQuery(query, CronJobRun.class).getSingleResult();
+        return entityManager.createQuery(query, CronJobRun.class).getSingleResult();
     }
 
     @Transactional
     public void updateLastCronJobRun(LocalDateTime lastRun) {
         String query = "UPDATE CronJobRun SET lastRun = :lastRun";
-        session.createQuery(query)
+        entityManager.createQuery(query)
                 .setParameter("lastRun", lastRun)
                 .executeUpdate();
     }
+
 }

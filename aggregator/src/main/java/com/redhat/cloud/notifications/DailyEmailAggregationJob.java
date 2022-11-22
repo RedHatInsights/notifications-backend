@@ -2,16 +2,21 @@ package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.db.AggregationCronjobParameterRepository;
 import com.redhat.cloud.notifications.db.EmailAggregationResources;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.AggregationCronjobParameters;
 import com.redhat.cloud.notifications.models.CronJobRun;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
 import io.quarkus.logging.Log;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -33,6 +38,9 @@ public class DailyEmailAggregationJob {
     public static final String AGGREGATION_CHANNEL = "aggregation";
 
     private final EmailAggregationResources emailAggregationResources;
+
+    private final AggregationCronjobParameterRepository aggregationCronjobParameterRepository;
+
     private final ObjectMapper objectMapper;
 
     @ConfigProperty(name = "prometheus.pushgateway.url")
@@ -42,11 +50,15 @@ public class DailyEmailAggregationJob {
     @Channel(AGGREGATION_CHANNEL)
     Emitter<String> emitter;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     private Gauge pairsProcessed;
 
-    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper) {
+    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper, AggregationCronjobParameterRepository aggregationCronjobParameterRepository) {
         this.emailAggregationResources = emailAggregationResources;
         this.objectMapper = objectMapper;
+        this.aggregationCronjobParameterRepository = aggregationCronjobParameterRepository;
     }
 
     @ActivateRequestContext
@@ -61,8 +73,14 @@ public class DailyEmailAggregationJob {
 
         try {
             LocalDateTime now = LocalDateTime.now(UTC);
-
-            List<AggregationCommand> aggregationCommands = processAggregateEmails(now, registry);
+            List<AggregationCronjobParameters> listOrgIdToProceed = null;
+            List<AggregationCommand> aggregationCommands = null;
+            if (featureFlipper.isAggregatorAccordingOrgPref()) {
+                listOrgIdToProceed = findOrgIdToProceed(now.getHour());
+                aggregationCommands = processAggregateEmails(now, listOrgIdToProceed, registry);
+            } else {
+                aggregationCommands = processAggregateEmails(now, registry);
+            }
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             for (AggregationCommand aggregationCommand : aggregationCommands) {
                 try {
@@ -80,7 +98,11 @@ public class DailyEmailAggregationJob {
                 }
             }
 
-            emailAggregationResources.updateLastCronJobRun(now);
+            if (featureFlipper.isAggregatorAccordingOrgPref()) {
+                listOrgIdToProceed.stream().forEach(me -> me.setLastRun(now));
+            } else {
+                emailAggregationResources.updateLastCronJobRun(now);
+            }
 
             Gauge lastSuccess = Gauge
                     .build()
@@ -88,6 +110,8 @@ public class DailyEmailAggregationJob {
                     .help("Last time the aggregator job succeeded.")
                     .register(registry);
             lastSuccess.setToCurrentTime();
+        } catch (Exception ex) {
+            Log.error(ExceptionUtils.getStackTrace(ex));
         } finally {
             durationTimer.setDuration();
             PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
@@ -99,7 +123,50 @@ public class DailyEmailAggregationJob {
         }
     }
 
+    List<AggregationCronjobParameters> findOrgIdToProceed(int currentHour) {
+        return aggregationCronjobParameterRepository.getOrdIdToProceed(currentHour);
+    }
+
+    List<AggregationCommand> processAggregateEmails(LocalDateTime endTime, final List<AggregationCronjobParameters> listOrgIdToProceed, CollectorRegistry registry) {
+
+        final List<AggregationCommand> pendingAggregationCommands = listOrgIdToProceed.stream().map(aggregationParameters -> {
+            final LocalDateTime startTime = aggregationParameters.getLastRun();
+            final String orgIdToAggregate = aggregationParameters.getOrgId();
+            Log.infof("Collecting email aggregation for orgId %s, for period (%s, %s) and type %s",
+                    orgIdToAggregate,
+                    startTime,
+                    endTime,
+                    DAILY);
+
+            final List<AggregationCommand> pendingAggregationCommandsForOrgId =
+                    emailAggregationResources.getApplicationsWithPendingAggregation(orgIdToAggregate, startTime, endTime)
+                            .stream()
+                            .map(aggregationKey -> new AggregationCommand(aggregationKey, startTime, endTime, DAILY))
+                            .collect(Collectors.toList());
+            Log.infof(
+                    "Finished collecting email aggregations for period (%s, %s) and type %s after %d seconds. %d (orgIds, applications) pairs were processed",
+                    startTime,
+                    endTime,
+                    DAILY,
+                    SECONDS.between(endTime, LocalDateTime.now(UTC)),
+                    pendingAggregationCommandsForOrgId.size()
+            );
+            return pendingAggregationCommandsForOrgId;
+
+        }).flatMap(List::stream).collect(Collectors.toList());
+
+        pairsProcessed = Gauge
+                .build()
+                .name("aggregator_job_orgid_application_pairs_processed")
+                .help("Number of orgId and application pairs processed.")
+                .register(registry);
+        pairsProcessed.set(pendingAggregationCommands.size());
+
+        return pendingAggregationCommands;
+    }
+
     List<AggregationCommand> processAggregateEmails(LocalDateTime endTime, CollectorRegistry registry) {
+
         final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
         LocalDateTime startTime = lastCronJobRun.getLastRun();
 
