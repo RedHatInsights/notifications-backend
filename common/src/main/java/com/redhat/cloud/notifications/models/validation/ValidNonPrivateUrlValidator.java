@@ -12,11 +12,10 @@ import java.net.UnknownHostException;
 public class ValidNonPrivateUrlValidator implements ConstraintValidator<ValidNonPrivateUrl, String> {
 
     // Error messages.
-    public static final String INVALID_SCHEME = "The provided URL does not contain a valid scheme. It should be either \"http\" or \"https\"";
-    public static final String INVALID_URI = "The provided URL cannot be converted to a valid URI";
-    public static final String INVALID_URL = "The provided URL is invalid";
-    public static final String PRIVATE_IP = "The provided URL's hostname resolves to a private IP";
-    public static final String UNKNOWN_HOST = "The IP address of the provided host cannot be determined";
+    public static final String INVALID_SCHEME = "The endpoint URL must start with \"http\" or \"https\"";
+    public static final String INVALID_URL = "The endpoint's URL is invalid";
+    public static final String PRIVATE_IP = "The host of the endpoint's URL host resolves to a private IP";
+    public static final String UNKNOWN_HOST = "The IP address of the endpoint URL's host cannot be determined";
 
     // Allowed protocol schemes.
     private static final String SCHEME_HTTP = "http";
@@ -50,12 +49,8 @@ public class ValidNonPrivateUrlValidator implements ConstraintValidator<ValidNon
             url = new URL(rawUrl);
             // May throw a URISyntaxException...
             uri = url.toURI();
-        } catch (final MalformedURLException e) {
+        } catch (final MalformedURLException | URISyntaxException e) {
             this.replaceDefaultMessage(constraintValidatorContext, INVALID_URL);
-
-            return false;
-        } catch (final URISyntaxException e) {
-            this.replaceDefaultMessage(constraintValidatorContext, INVALID_URI);
 
             return false;
         }

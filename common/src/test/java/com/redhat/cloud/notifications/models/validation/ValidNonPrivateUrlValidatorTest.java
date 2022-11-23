@@ -87,7 +87,7 @@ public class ValidNonPrivateUrlValidatorTest {
             Assertions.assertEquals(expectedNumberConstraintViolations, constraintViolations.size(), "unexpected number of constraint violations");
 
             for (final var cv : constraintViolations) {
-                Assertions.assertEquals(ValidNonPrivateUrlValidator.INVALID_URI, cv.getMessage(), "unexpected error message received");
+                Assertions.assertEquals(ValidNonPrivateUrlValidator.INVALID_URL, cv.getMessage(), "unexpected error message received");
             }
         }
     }
