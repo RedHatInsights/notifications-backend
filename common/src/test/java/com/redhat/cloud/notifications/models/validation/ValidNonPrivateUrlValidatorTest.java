@@ -10,6 +10,13 @@ import javax.validation.ValidatorFactory;
 
 public class ValidNonPrivateUrlValidatorTest {
 
+    public static final String[] internalHosts = {"https://192.168.0.1", "https://172.16.0.1", "https://10.0.0.1", "https://192.168.0.1", "https://172.16.0.1", "https://10.0.0.1"};
+    public static final String[] invalidSchemes = {"ftp://redhat.com"};
+    public static final String[] malformedUris = {"https://example.com /hello", "https:/\\/example.com"};
+    public static final String[] malformedUrls = {"htt:/example.com", "redhat.com", "redhat"};
+    public static final String[] validUrls = new String[]{"http://redhat.com", "https://redhat.com"};
+    public static final String[] unknownHosts = {"https://non-existing-webpage-test-one-two-three.com", "http://another-non-existing-webpage.com"};
+
     private static Validator validator;
 
     /**
@@ -41,8 +48,6 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @Test
     public void validUrlTest() {
-        final var validUrls = new String[]{"http://redhat.com", "https://redhat.com"};
-
         for (final var url : validUrls) {
             final var validUrl = new SimpleDto(url);
 
@@ -57,8 +62,6 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @Test
     public void malformedUrlsTest() {
-        final String[] malformedUrls = {"htt:/example.com", "redhat.com", "redhat"};
-
         final var expectedNumberConstraintViolations = 1;
         for (final var malformedUrl : malformedUrls) {
             final var invalid = new SimpleDto(malformedUrl);
@@ -77,8 +80,6 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @Test
     public void malformedUrisTest() {
-        final String[] malformedUris = {"https://example.com /hello", "https:/\\/example.com"};
-
         final var expectedNumberConstraintViolations = 1;
         for (final var malformedUri : malformedUris) {
             final var invalid = new SimpleDto(malformedUri);
@@ -97,8 +98,6 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @Test
     public void invalidSchemesTest() {
-        final String[] invalidSchemes = {"ftp://redhat.com"};
-
         for (final var scheme : invalidSchemes) {
             final var invalidScheme = new SimpleDto(scheme);
 
@@ -119,8 +118,6 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @Test
     public void internalHostsTest() {
-        final String[] internalHosts = {"https://192.168.0.1", "https://172.16.0.1", "https://10.0.0.1", "https://192.168.0.1", "https://172.16.0.1", "https://10.0.0.1"};
-
         for (final var internalHost : internalHosts) {
             final var internal = new SimpleDto(internalHost);
 
@@ -142,8 +139,6 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @Test
     public void unknownHostTest() {
-        final String[] unknownHosts = {"https://non-existing-webpage-test-one-two-three.com", "http://another-non-existing-webpage.com"};
-
         final var expectedNumberConstraintViolations = 1;
         for (final var unknownHost : unknownHosts) {
             final var invalid = new SimpleDto(unknownHost);
