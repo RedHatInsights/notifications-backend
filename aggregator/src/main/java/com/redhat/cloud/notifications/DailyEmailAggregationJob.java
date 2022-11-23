@@ -76,7 +76,7 @@ public class DailyEmailAggregationJob {
             List<AggregationCronjobParameters> listOrgIdToProceed = null;
             List<AggregationCommand> aggregationCommands = null;
             if (featureFlipper.isAggregatorAccordingOrgPref()) {
-                listOrgIdToProceed = findOrgIdToProceed(now.getHour());
+                listOrgIdToProceed = findOrgIdToProceed(now);
                 aggregationCommands = processAggregateEmails(now, listOrgIdToProceed, registry);
             } else {
                 aggregationCommands = processAggregateEmails(now, registry);
@@ -99,7 +99,7 @@ public class DailyEmailAggregationJob {
             }
 
             if (featureFlipper.isAggregatorAccordingOrgPref()) {
-                listOrgIdToProceed.stream().forEach(me -> me.setLastRun(now));
+                listOrgIdToProceed.stream().forEach(orgPref -> orgPref.setLastRun(now));
             } else {
                 emailAggregationResources.updateLastCronJobRun(now);
             }
@@ -112,6 +112,7 @@ public class DailyEmailAggregationJob {
             lastSuccess.setToCurrentTime();
         } catch (Exception ex) {
             Log.error(ExceptionUtils.getStackTrace(ex));
+            throw ex;
         } finally {
             durationTimer.setDuration();
             PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
@@ -123,7 +124,7 @@ public class DailyEmailAggregationJob {
         }
     }
 
-    List<AggregationCronjobParameters> findOrgIdToProceed(int currentHour) {
+    List<AggregationCronjobParameters> findOrgIdToProceed(LocalDateTime currentHour) {
         return aggregationCronjobParameterRepository.getOrdIdToProceed(currentHour);
     }
 

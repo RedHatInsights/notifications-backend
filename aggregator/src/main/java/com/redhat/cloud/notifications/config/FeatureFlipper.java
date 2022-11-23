@@ -43,6 +43,7 @@ public class FeatureFlipper {
     boolean aggregatorAccordingOrgPref;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
+        Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The aggregator use org id time preference is %s", aggregatorAccordingOrgPref ? "enabled" : "disabled");
     }
 

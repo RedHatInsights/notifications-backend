@@ -39,7 +39,7 @@ public class EmailAggregationResources {
 
         List<Object[]> records = nativeQuery.getResultList();
         return records.stream()
-                .map(record -> new EmailAggregationKey((String) record[0], (String) record[1], (String) record[2]))
+                .map(emailAggregationRecord -> new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2]))
                 .collect(toList());
     }
 
@@ -51,7 +51,7 @@ public class EmailAggregationResources {
                 .getResultList();
 
         return records.stream()
-                .map(record -> new EmailAggregationKey((String) record[0], (String) record[1], (String) record[2]))
+                .map(emailAggregationRecord -> new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2]))
                 .collect(toList());
     }
 

@@ -24,8 +24,4 @@ public class CronJobRun {
     public LocalDateTime getLastRun() {
         return lastRun;
     }
-
-    public void setLastRun(LocalDateTime lastRun) {
-        this.lastRun = lastRun;
-    }
 }
