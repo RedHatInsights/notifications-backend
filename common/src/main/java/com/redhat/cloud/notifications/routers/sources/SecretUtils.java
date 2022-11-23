@@ -65,7 +65,7 @@ public class SecretUtils {
             if (!this.isBasicAuthNullOrBlank(basicAuth)) {
                 final long id = this.createBasicAuthentication(basicAuth);
 
-                Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources", endpoint.getId(), id);
+                Log.infof("[secret_id: %s] Basic authentication secret created in Sources", id);
 
                 props.setBasicAuthenticationSourcesId(id);
             }
@@ -74,7 +74,7 @@ public class SecretUtils {
             if (secretToken != null && !secretToken.isBlank()) {
                 final long id = this.createSecretTokenSecret(secretToken);
 
-                Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources", endpoint.getId(), id);
+                Log.infof("[secret_id: %s] Secret token secret created in Sources", id);
 
                 props.setSecretTokenSourcesId(id);
             }
@@ -106,7 +106,7 @@ public class SecretUtils {
             if (basicAuthId != null) {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
                     this.sourcesService.delete(basicAuthId);
-                    Log.infof("[endpoint_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId());
+                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
 
                     props.setBasicAuthenticationSourcesId(null);
                 } else {
@@ -120,7 +120,7 @@ public class SecretUtils {
                 }
             } else {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
-                    Log.infof("[endpoint_id: %s] Basic authentication secret not created in Sources: the basic authentication object is null", endpoint.getId());
+                    Log.debugf("[endpoint_id: %s] Basic authentication secret not created in Sources: the basic authentication object is null", endpoint.getId());
                 } else {
                     final long id = this.createBasicAuthentication(basicAuth);
                     Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources during an endpoint update operation", endpoint.getId(), id);
@@ -148,7 +148,7 @@ public class SecretUtils {
                 }
             } else {
                 if (secretToken == null || secretToken.isBlank()) {
-                    Log.infof("[endpoint_id: %s] Secret token secret not created in Sources: the secret token object is null or blank", endpoint.getId());
+                    Log.debugf("[endpoint_id: %s] Secret token secret not created in Sources: the secret token object is null or blank", endpoint.getId());
                 } else {
                     final long id = this.createSecretTokenSecret(secretToken);
 
