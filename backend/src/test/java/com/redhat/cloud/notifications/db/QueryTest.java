@@ -4,9 +4,9 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.InternalServerErrorException;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -16,65 +16,86 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class QueryTest {
 
     @Test
-    public void testSort() {
-
+    public void testEmptySort() {
         // Sort is empty if nothing is provided
         Query query = new Query();
         assertTrue(query.getSort().isEmpty());
+    }
 
-        // NOTIF-674 Enable it back once we start throwing the exceptions
-        // Throws BadRequest if sortBy* is provided without sort fields
-        query = new Query();
+    @Test
+    public void testSortWithoutSortFields() {
+        // Throws InternalServerError if sortBy* is provided without sort fields
+        Query query = new Query();
         query.sortBy = "foo:desc";
-        // assertThrows(BadRequestException.class, query::getSort);
-        assertDoesNotThrow(query::getSort);
+        assertThrows(InternalServerErrorException.class, query::getSort);
+    }
 
-        // NOTIF-674 Enable it back once we start throwing the exceptions
-        // Throws BadRequest if sortBy* is not found in the sort fields
-        query = new Query();
+    @Test
+    public void testUnknownSort() {
+        Query query = new Query();
         query.sortBy = "foo:desc";
         query.setSortFields(Map.of("bar", "e.bar"));
-        // assertThrows(BadRequestException.class, query::getSort);
-        assertDoesNotThrow(query::getSort);
+        assertThrows(BadRequestException.class, query::getSort);
+    }
 
+    @Test
+    void testInvalidSortBy() {
         // Throws BadRequest if sortBy* has a wrong syntax
-        query = new Query();
+        Query query = new Query();
         query.sortBy = "i am not a valid sortby::";
         query.setSortFields(Map.of("bar", "e.bar"));
         assertThrows(BadRequestException.class, query::getSort);
+    }
 
+    @Test
+    void testDefaultOrder() {
         // sortBy defaults to order asc if not specified
-        query = new Query();
+        Query query = new Query();
         query.sortBy = "bar";
         query.setSortFields(Map.of("bar", "e.bar"));
         Query.Sort sort = query.getSort().get();
         assertEquals("e.bar", sort.getSortColumn());
         assertEquals(Query.Sort.Order.ASC, sort.getSortOrder());
+    }
 
+    @Test
+    void testInvalidOrder() {
         // throws BadRequest if the order is not valid
-        query = new Query();
+        Query query = new Query();
         query.sortBy = "bar:foo";
         query.setSortFields(Map.of("bar", "e.bar"));
         assertThrows(BadRequestException.class, query::getSort);
+    }
 
+    @Test
+    void testSortByDeprecated() {
         // sortBy (sortByDeprecated) is used if sort_by is not specified
-        query = new Query();
+        Query query = new Query();
         query.sortByDeprecated = "foo";
         assertEquals("foo", query.getSortBy());
+    }
 
+    @Test
+    void preferSnakeCase() {
         // sort_by has higher preference that sortBy query param
-        query = new Query();
+        Query query = new Query();
         query.sortBy = "foo";
         query.sortByDeprecated = "bar";
         assertEquals("foo", query.getSortBy());
+    }
 
+    @Test
+    void testDefaultSortBy() {
         // default sortBy is used if none of the sortBy* were specified
-        query = new Query();
+        Query query = new Query();
         query.setDefaultSortBy("foo");
         assertEquals("foo", query.getSortBy());
+    }
 
+    @Test
+    void testNoDefaultAndNothingProvided() {
         // null if provided if no default or any sortBy* is used
-        query = new Query();
+        Query query = new Query();
         assertNull(query.getSortBy());
     }
 

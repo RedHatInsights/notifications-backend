@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.db;
 
 import io.quarkus.logging.Log;
+import io.sentry.Sentry;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.QueryParam;
 import java.util.Map;
 import java.util.Optional;
@@ -158,8 +160,9 @@ public class Query {
         }
 
         if (sortFields == null) {
-            Log.warnf("NOTIF-674 SortFields not set.");
-            sortFields = Map.of();
+            InternalServerErrorException isee = new InternalServerErrorException("SortFields are not set");
+            Sentry.captureException(isee);
+            throw isee;
         }
 
         if (!SORT_BY_PATTERN.matcher(sortBy).matches()) {
@@ -169,7 +172,7 @@ public class Query {
         String[] sortSplit = sortBy.split(":");
         Sort sort = new Sort(sortSplit[0]);
         if (!sortFields.containsKey(sort.sortColumn.toLowerCase())) {
-            Log.warnf("NOTIF-674 Unknown sort field passed: %s", sort.sortColumn);
+            throw new BadRequestException("Unknown sort field specified: " + sort.sortColumn);
         } else {
             sort.sortColumn = sortFields.get(sort.sortColumn.toLowerCase());
         }
