@@ -416,15 +416,6 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
                 Query.Sort.Order.ASC,
                 IntStream.range(0, 10).boxed().map(Object::toString).collect(Collectors.toList())
         );
-
-        // NOTIF-674 Remove these entries after the frontend has been updated
-        TestHelpers.testSorting(
-                "displayname",
-                query -> behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ORG_ID, eventType.getId(), query),
-                behaviorGroups -> behaviorGroups.stream().map(BehaviorGroup::getDisplayName).collect(Collectors.toList()),
-                Query.Sort.Order.ASC,
-                IntStream.range(0, 10).boxed().map(Object::toString).collect(Collectors.toList())
-        );
     }
 
     @Transactional

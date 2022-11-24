@@ -39,9 +39,6 @@ public class EventType {
             "name", "name",
             "display_name", "e.displayName",
             "application", "e.application.displayName",
-            // NOTIF-674 Remove these entries after the frontend has been updated
-            "e.application.displayname", "e.application.displayName",
-            "e.displayname", "e.displayName",
             // NOTIF-674 Remove after IQE tests are updated
             "e.name", "e.name"
     );
