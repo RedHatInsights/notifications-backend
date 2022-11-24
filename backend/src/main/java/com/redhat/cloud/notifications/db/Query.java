@@ -169,7 +169,7 @@ public class Query {
         String[] sortSplit = sortBy.split(":");
         Sort sort = new Sort(sortSplit[0]);
         if (!sortFields.containsKey(sort.sortColumn.toLowerCase())) {
-            Log.warnf("NOTIF-674 Unknown sort field passed: ", sort.sortColumn);
+            Log.warnf("NOTIF-674 Unknown sort field passed: %s", sort.sortColumn);
         } else {
             sort.sortColumn = sortFields.get(sort.sortColumn.toLowerCase());
         }
