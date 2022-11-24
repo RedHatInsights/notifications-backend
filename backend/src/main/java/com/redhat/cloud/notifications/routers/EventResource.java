@@ -18,6 +18,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.validation.Valid;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
@@ -59,12 +60,8 @@ public class EventResource {
                                          @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
                                          @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                          @RestQuery Set<EventLogEntryActionStatus> status,
-                                         @BeanParam Query query,
+                                         @BeanParam @Valid Query query,
                                          @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
-        if (query.getLimit().getLimit() < 1 || query.getLimit().getLimit() > 200) {
-            throw new BadRequestException("Invalid 'limit' query parameter, its value must be between 1 and 200");
-        }
-
         Set<EndpointType> basicTypes = Collections.emptySet();
         Set<CompositeEndpointType> compositeTypes = Collections.emptySet();
         Set<NotificationStatus> notificationStatusSet = status == null ? Set.of() : toNotificationStatus(status);

@@ -1,19 +1,25 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import io.restassured.http.Header;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.validation.Validation;
+import javax.inject.Inject;
 import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
+import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -22,14 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class QueryTest {
 
-    private Validator validator;
-
-    @BeforeEach
-    protected void setUp() {
-        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
-            this.validator = validatorFactory.getValidator();
-        }
-    }
+    @Inject
+    Validator validator;
 
     @Test
     public void testEmptySort() {
@@ -117,32 +117,16 @@ public class QueryTest {
 
     /**
      * Tests that no constraint is violated when the {@link Query#offset}, {@link Query#pageNumber} and
-     * {@link Query#pageSize} fields contain a valid value. Reflection is used to grab the values from the annotations
-     * and to generate a valid value that shouldn't trigger any errors.
-     * @throws NoSuchFieldException if the field doesn't exist in the object.
+     * {@link Query#pageSize} fields contain a valid value.
      */
     @Test
-    public void validMinimumFieldsTest() throws NoSuchFieldException {
-        // Get the annotation's values from the "offset" field of the "Query" class.
-        final long minQueryOffsetValue = this.getMinValueFromAnnotation("offset");
-
-        // Get the annotation's values from the "pageNumber" field of the "Query" class.
-        final long minQueryPageNumberValue = this.getMinValueFromAnnotation("pageNumber");
-
-        // Get the annotation's values from the "pageSize" field of the "Query" class.
-        final long maxQueryPageSizeValue = this.getMaxValueFromAnnotation("pageSize");
-        final long minQueryPageSizeValue = this.getMinValueFromAnnotation("pageSize");
-
-        // Get a random number that will be used for the validation. The number must be between the "min" and "max"
-        // values of these annotations, so make sure we generate one that satisfies that constraint.
-        final int minRand = (int) Math.min(minQueryOffsetValue, Math.min(minQueryPageNumberValue, minQueryPageSizeValue));
-        final int validValue = ThreadLocalRandom.current().nextInt(minRand, (int) maxQueryPageSizeValue);
-
+    public void validMinimumFieldsTest() {
         final Query query = new Query();
 
-        query.offset = validValue;
-        query.pageNumber = validValue;
-        query.pageSize = validValue;
+        // Set a valid value for the collection parameters.
+        query.offset = 50;
+        query.pageNumber = 50;
+        query.pageSize = 50;
 
         // Test if the validation works as intended.
         final var constraintViolations = this.validator.validate(query);
@@ -229,6 +213,93 @@ public class QueryTest {
 
         // Test that the returned error template from the validation match the one expected.
         this.testValidationTemplate(query, "The collection limit cannot be lower than {value}");
+    }
+
+    /**
+     * Tests that the resources or handlers return a proper error message when the collection limits, page number and
+     * offset have invalid values. The maximum and minimum values to test are taken directly from the {@link Query} class
+     * annotations by using reflection.
+     * @throws NoSuchFieldException if the fields from the {@link Query} class cannot be accessed.
+     */
+    @Test
+    public void queryTestResources() throws NoSuchFieldException {
+        // Get the annotation's values from the "pageSize" field of the "Query" class.
+        final long maxQueryPageSizeValue = this.getMaxValueFromAnnotation("pageSize");
+        final long minQueryPageSizeValue = this.getMinValueFromAnnotation("pageSize");
+
+        // Get the annotation's values from the "pageNumber" field of the "Query" class.
+        final long minQueryPageNumberValue = this.getMinValueFromAnnotation("pageNumber");
+
+        // Get the annotation's values from the "offset" field of the "Query" class.
+        final long minQueryOffsetValue = this.getMinValueFromAnnotation("offset");
+
+        // Set up the RBAC access for the test.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("endpoint-invalid-urls", "endpoint-invalid-urls", "user");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        // Declare the test values and the expected error messages we should be getting.
+        final Map<Long, String> limitValuesErrorMessages = Map.of(
+            maxQueryPageSizeValue + 1, String.format("The collection limit cannot be greater than %s", maxQueryPageSizeValue),
+            minQueryPageSizeValue - 1, String.format("The collection limit cannot be lower than %s", minQueryPageSizeValue)
+        );
+
+        final Map<Long, String> pageNumberValuesErrorMessages = Map.of(
+            minQueryPageNumberValue - 1, String.format("The page number cannot be lower than %s", minQueryPageNumberValue)
+        );
+
+        final Map<Long, String> offsetValuesErrorMessages = Map.of(
+            minQueryOffsetValue - 1, String.format("The offset cannot be lower than %s", minQueryOffsetValue)
+        );
+
+        // Link the query parameters with the test cases we want to run.
+        final Map<String, Map<Long, String>> collectionLimitParameters = Map.of(
+            "limit", limitValuesErrorMessages,
+            "pageNumber", pageNumberValuesErrorMessages,
+            "offset", offsetValuesErrorMessages
+        );
+
+        // Declare the URLs that will be tested.
+        final List<String> urls = new ArrayList<>();
+        urls.add("/api/integrations/v1.0/endpoints");
+        urls.add("/api/integrations/v1.0/endpoints/467431eb-5fd5-49f8-a47a-b35165f9cc3f/history");
+        urls.add("/api/notifications/v1.0/notifications/events");
+        urls.add("/api/notifications/v1.0/notifications/eventTypes");
+        urls.add("/api/notifications/v1.0/notifications/eventTypes/467431eb-5fd5-49f8-a47a-b35165f9cc3f/behaviorGroups");
+
+        // For each url...
+        for (final var url : urls) {
+            // ... get the query parameter groups...
+            for (final var queryParamGroup : collectionLimitParameters.entrySet()) {
+                // ... and for each group get the test value and the expected error message.
+                for (final var queryParam : queryParamGroup.getValue().entrySet()) {
+                    final String response = given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(ContentType.JSON)
+                        .queryParam(queryParamGroup.getKey(), queryParam.getKey())
+                        .get(url)
+                        .then()
+                        .statusCode(400)
+                        .extract()
+                        .asString();
+
+                    final String constraintViolation = TestHelpers.extractConstraintViolationFromResponse(response);
+
+                    Assertions.assertEquals(
+                        queryParam.getValue(),
+                        constraintViolation,
+                        String.format(
+                            "unexpected error message received for query parameter \"%s\" with value \"%s\" for url \"%s\"",
+                            queryParamGroup.getKey(),
+                            queryParam.getKey(),
+                            url
+                        )
+                    );
+                }
+            }
+        }
     }
 
     /**
