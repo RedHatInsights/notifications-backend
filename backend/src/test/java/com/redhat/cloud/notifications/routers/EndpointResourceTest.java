@@ -1729,7 +1729,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setEnabled(true);
         endpoint.setName("endpoint-invalid-urls-name");
         endpoint.setServerErrors(0);
-        endpoint.setSubType("slack");
 
         // Create a simple class to make testing easier.
         final class TestCase {
@@ -1772,6 +1771,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             for (final var url : testCase.testUrls) {
                 // Test with a camel endpoint.
                 camelProperties.setUrl(url);
+                endpoint.setSubType("slack");
                 endpoint.setType(EndpointType.CAMEL);
                 endpoint.setProperties(camelProperties);
 
@@ -1793,6 +1793,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
                 // Test with a webhook endpoint.
                 webhookProperties.setUrl(url);
+                // Reset the subtype since it doesn't make sense a "slack" subtype for webhook endpoints.
+                endpoint.setSubType(null);
                 endpoint.setType(EndpointType.WEBHOOK);
                 endpoint.setProperties(webhookProperties);
 
