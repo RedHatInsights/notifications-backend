@@ -60,17 +60,7 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @Test
     public void malformedUrlsTest() {
-        final var expectedNumberConstraintViolations = 1;
-        for (final var malformedUrl : malformedUrls) {
-            final var invalid = new SimpleDto(malformedUrl);
-
-            final var constraintViolations = validator.validate(invalid);
-            Assertions.assertEquals(expectedNumberConstraintViolations, constraintViolations.size(), "unexpected number of constraint violations");
-
-            for (final var cv : constraintViolations) {
-                Assertions.assertEquals(ValidNonPrivateUrlValidator.INVALID_URL, cv.getMessage(), "unexpected error message received");
-            }
-        }
+        this.testHosts(malformedUrls, ValidNonPrivateUrlValidator.INVALID_URL);
     }
 
     /**
@@ -78,17 +68,7 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @Test
     public void malformedUrisTest() {
-        final var expectedNumberConstraintViolations = 1;
-        for (final var malformedUri : malformedUris) {
-            final var invalid = new SimpleDto(malformedUri);
-
-            final var constraintViolations = validator.validate(invalid);
-            Assertions.assertEquals(expectedNumberConstraintViolations, constraintViolations.size(), "unexpected number of constraint violations");
-
-            for (final var cv : constraintViolations) {
-                Assertions.assertEquals(ValidNonPrivateUrlValidator.INVALID_URL, cv.getMessage(), "unexpected error message received");
-            }
-        }
+        this.testHosts(malformedUris, ValidNonPrivateUrlValidator.INVALID_URL);
     }
 
     /**
@@ -96,16 +76,7 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @Test
     public void invalidSchemesTest() {
-        for (final var scheme : invalidSchemes) {
-            final var invalidScheme = new SimpleDto(scheme);
-
-            final var constraintViolations = validator.validate(invalidScheme);
-            Assertions.assertEquals(1, constraintViolations.size(), "unexpected constraint violations:" + constraintViolations);
-
-            for (final var cv : constraintViolations) {
-                Assertions.assertEquals(ValidNonPrivateUrlValidator.INVALID_SCHEME, cv.getMessage(), "unexpected error message received");
-            }
-        }
+        this.testHosts(invalidSchemes, ValidNonPrivateUrlValidator.INVALID_SCHEME);
     }
 
     /**
@@ -116,20 +87,7 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @Test
     public void internalHostsTest() {
-        for (final var internalHost : internalHosts) {
-            final var internal = new SimpleDto(internalHost);
-
-            final var constraintViolations = validator.validate(internal);
-            Assertions.assertEquals(
-                    1,
-                    constraintViolations.size(),
-                    String.format("unexpected constraint violations for host \"%s\": %s", internalHost, constraintViolations)
-            );
-
-            for (final var cv : constraintViolations) {
-                Assertions.assertEquals(ValidNonPrivateUrlValidator.PRIVATE_IP, cv.getMessage(), "unexpected error message received");
-            }
-        }
+        this.testHosts(internalHosts, ValidNonPrivateUrlValidator.PRIVATE_IP);
     }
 
     /**
@@ -137,15 +95,25 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @Test
     public void unknownHostTest() {
+        this.testHosts(unknownHosts, ValidNonPrivateUrlValidator.UNKNOWN_HOST);
+    }
+
+    /**
+     * Tests the given host to only return one single constraint validation, and of the expected error message.
+     * @param urls the URLs to validate.
+     * @param expectedErrorMessage the expected error message it should be returned by the validator.
+     */
+    private void testHosts(final String[] urls, final String expectedErrorMessage) {
         final var expectedNumberConstraintViolations = 1;
-        for (final var unknownHost : unknownHosts) {
-            final var invalid = new SimpleDto(unknownHost);
+
+        for (final var url : urls) {
+            final var invalid = new SimpleDto(url);
 
             final var constraintViolations = validator.validate(invalid);
             Assertions.assertEquals(expectedNumberConstraintViolations, constraintViolations.size(), "unexpected number of constraint violations");
 
             for (final var cv : constraintViolations) {
-                Assertions.assertEquals(ValidNonPrivateUrlValidator.UNKNOWN_HOST, cv.getMessage(), "unexpected error message received");
+                Assertions.assertEquals(expectedErrorMessage, cv.getMessage(), "unexpected error message received");
             }
         }
     }
