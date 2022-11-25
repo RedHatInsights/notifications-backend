@@ -659,6 +659,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     .when().delete("/endpoints/" + id)
                     .then()
                     .statusCode(204);
+
+            Endpoint endpoint = given()
+                    .header(identityHeader)
+                    .contentType(JSON)
+                    .body(Json.encode(ep))
+                    .when()
+                    .get("/endpoints/" + id)
+                    .then()
+                    .statusCode(200)
+                    .extract().as(Endpoint.class);
+
+            assertEquals(EndpointStatus.DELETING, endpoint.getStatus());
         }
 
         MockServerConfig.clearOpenBridgeEndpoints(bridge);

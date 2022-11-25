@@ -88,6 +88,9 @@ public class EndpointReadyChecker {
                 if ("failed".equals(status)) {
                     ep.setStatus(EndpointStatus.FAILED);
                 }
+                if ("deleted".equals(status)) {
+                    em.remove(ep);
+                }
             } catch (WebApplicationException wae) {
                 String path = "GET " + BASE_PATH + "/{bridgeId}/processors/{processorId}";
                 rhoseErrorMetricsRecorder.record(path, wae);

@@ -365,8 +365,9 @@ public class EndpointResource {
             } catch (Exception ex) {
                 Log.warn("Deletion of processor failed: ", ex);
             }
+        } else {
+            endpointRepository.deleteEndpoint(orgId, id);
         }
-        endpointRepository.deleteEndpoint(orgId, id);
 
         // Clean up the secrets in Sources.
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
