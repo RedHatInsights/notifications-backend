@@ -38,9 +38,7 @@ public class EventType {
     public static final Map<String, String> SORT_FIELDS = Map.of(
             "name", "name",
             "display_name", "e.displayName",
-            "application", "e.application.displayName",
-            // NOTIF-674 Remove after IQE tests are updated
-            "e.name", "e.name"
+            "application", "e.application.displayName"
     );
 
     @Id
