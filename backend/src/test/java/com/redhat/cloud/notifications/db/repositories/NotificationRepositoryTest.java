@@ -36,7 +36,8 @@ public class NotificationRepositoryTest {
 
     /**
      * Tests that the {@link NotificationRepository#countNotificationHistoryElements(UUID, String)} function returns
-     * the expected number of elements. For that, fixtures are created all the way until a
+     * the expected number of elements. For that, fixtures are created all the way until a "notification history"
+     * element is created, which then it is expected to be counted.
      */
     @Test
     @Transactional
