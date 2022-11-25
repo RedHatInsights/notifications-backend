@@ -1706,46 +1706,30 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testEndpointInvalidUrls() {
         // Set up the RBAC access for the test.
-        final String orgId = "endpoint-invalid-urls";
-        final String userName = "user";
-
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(orgId, orgId, userName);
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("endpoint-invalid-urls", "endpoint-invalid-urls", "user");
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
-        // Set up the fixture data.
-        final var disableSslVerification = false;
-        final HttpType method = HttpType.POST;
-        final String password = "endpoint-invalid-urls-basic-authentication-password";
-        final String username = "endpoint-invalid-urls-basic-authentication-username";
-        final String secretToken = "endpoint-invalid-urls-secret-token";
-
         // Create the properties for the endpoint. Leave the URL so that we can set it afterwards.
         final var camelProperties = new CamelProperties();
-        camelProperties.setBasicAuthentication(new BasicAuthentication(username, password));
-        camelProperties.setDisableSslVerification(disableSslVerification);
-        camelProperties.setSecretToken(secretToken);
+        camelProperties.setBasicAuthentication(new BasicAuthentication("endpoint-invalid-urls-basic-authentication-username", "endpoint-invalid-urls-basic-authentication-password"));
+        camelProperties.setDisableSslVerification(false);
+        camelProperties.setSecretToken("endpoint-invalid-urls-secret-token");
 
         final var webhookProperties = new WebhookProperties();
-        webhookProperties.setBasicAuthentication(new BasicAuthentication(username, password));
-        webhookProperties.setDisableSslVerification(disableSslVerification);
-        webhookProperties.setMethod(method);
-        webhookProperties.setSecretToken(secretToken);
+        webhookProperties.setBasicAuthentication(new BasicAuthentication("endpoint-invalid-urls-basic-authentication-username", "endpoint-invalid-urls-basic-authentication-password"));
+        webhookProperties.setDisableSslVerification(false);
+        webhookProperties.setMethod(HttpType.POST);
+        webhookProperties.setSecretToken("endpoint-invalid-urls-secret-token");
 
         // Create an endpoint without the type and the properties set.
-        final var name = "endpoint-invalid-urls-name";
-        final var description = "endpoint-invalid-urls-description";
-        final var enabled = true;
-        final var serverErrors = 0;
-        final var subType = "slack";
-
         final var endpoint = new Endpoint();
-        endpoint.setDescription(description);
-        endpoint.setEnabled(enabled);
-        endpoint.setName(name);
-        endpoint.setServerErrors(serverErrors);
-        endpoint.setSubType(subType);
+        endpoint.setDescription("endpoint-invalid-urls-description");
+        endpoint.setEnabled(true);
+        endpoint.setName("endpoint-invalid-urls-name");
+        endpoint.setServerErrors(0);
+        endpoint.setSubType("slack");
 
         // Create a simple class to make testing easier.
         final class TestCase {
