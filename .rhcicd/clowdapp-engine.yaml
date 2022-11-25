@@ -16,6 +16,7 @@ objects:
     - ingress
     - notifications-backend
     - rbac
+    - sources-api
     database:
       sharedDbAppName: notifications-backend
     kafkaTopics:
