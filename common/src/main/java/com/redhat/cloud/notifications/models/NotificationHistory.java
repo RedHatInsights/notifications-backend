@@ -36,12 +36,13 @@ public class NotificationHistory extends CreationTimestamped {
             // NOTIF-674 Delete after the frontend has been updated
             "nh.created", "nh.created",
             "invocationtime", "nh.invocationTime",
-            "invocationresult", "nh.invocationResult"
+            "invocationresult", "nh.invocationResult",
+            "endpoint_id", "endpoint_id"
     );
 
     // NOTIF-674 Delete after confirming all deprecated fields are no longer used
     public static final Set<String> DEPRECATED_SORT_FIELDS = Set.of(
-            "nh.created", "invocationtime", "invocationresult"
+            "nh.created", "invocationtime", "invocationresult", "endpoint_id"
     );
 
     @Id
