@@ -97,4 +97,22 @@ public class TestHelpers {
         assertEquals(desc, testAdapter.apply(values));
     }
 
+    /**
+     * Extracts the constraint violation from the returned response.
+     * @param response the response to extract the constraint violation from.
+     * @return the extracted constraint violation message, or an invalid message instead, intended to make the
+     * assertions fail.
+     */
+    public static String extractConstraintViolationFromResponse(final String response) {
+        final var json = new JsonObject(response);
+
+        final JsonArray constraintViolations = json.getJsonArray("violations");
+        if (constraintViolations.size() != 1) {
+            return String.format("one constraint violation expected, more were returned in the payload: %s", response);
+        }
+
+        final JsonObject arrayElement = constraintViolations.getJsonObject(0);
+
+        return arrayElement.getString("message");
+    }
 }

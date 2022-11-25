@@ -19,6 +19,8 @@ import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
+import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeHelper;
 import com.redhat.cloud.notifications.openbridge.BridgeItemList;
@@ -31,6 +33,7 @@ import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1695,6 +1698,204 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(0, endpointPage.getData().size());
     }
 
+    /**
+     * Tests that when an invalid URL is provided via the endpoint's properties, regardless if those properties are
+     * {@link CamelProperties} or {@link WebhookProperties}, the proper constraint violation message is returned from
+     * the handler.
+     */
+    @Test
+    void testEndpointInvalidUrls() {
+        // Set up the RBAC access for the test.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("endpoint-invalid-urls", "endpoint-invalid-urls", "user");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        // Create the properties for the endpoint. Leave the URL so that we can set it afterwards.
+        final var camelProperties = new CamelProperties();
+        camelProperties.setBasicAuthentication(new BasicAuthentication("endpoint-invalid-urls-basic-authentication-username", "endpoint-invalid-urls-basic-authentication-password"));
+        camelProperties.setDisableSslVerification(false);
+        camelProperties.setSecretToken("endpoint-invalid-urls-secret-token");
+
+        final var webhookProperties = new WebhookProperties();
+        webhookProperties.setBasicAuthentication(new BasicAuthentication("endpoint-invalid-urls-basic-authentication-username", "endpoint-invalid-urls-basic-authentication-password"));
+        webhookProperties.setDisableSslVerification(false);
+        webhookProperties.setMethod(HttpType.POST);
+        webhookProperties.setSecretToken("endpoint-invalid-urls-secret-token");
+
+        // Create an endpoint without the type and the properties set.
+        final var endpoint = new Endpoint();
+        endpoint.setDescription("endpoint-invalid-urls-description");
+        endpoint.setEnabled(true);
+        endpoint.setName("endpoint-invalid-urls-name");
+        endpoint.setServerErrors(0);
+
+        // Create a simple class to make testing easier.
+        final class TestCase {
+            public final String expectedErrorMessage;
+            public final String[] testUrls;
+
+            TestCase(final String expectedErrorMessage, final String[] testUrls) {
+                this.expectedErrorMessage = expectedErrorMessage;
+                this.testUrls = testUrls;
+            }
+        }
+
+        // Create all the test cases we will be testing in this test.
+        final List<TestCase> testCases = new ArrayList<>();
+        testCases.add(
+            new TestCase(ValidNonPrivateUrlValidator.INVALID_URL, ValidNonPrivateUrlValidatorTest.malformedUrls)
+        );
+
+        testCases.add(
+            new TestCase(ValidNonPrivateUrlValidator.INVALID_URL, ValidNonPrivateUrlValidatorTest.malformedUris)
+        );
+
+        testCases.add(
+            new TestCase(ValidNonPrivateUrlValidator.INVALID_SCHEME, ValidNonPrivateUrlValidatorTest.invalidSchemes)
+        );
+
+        testCases.add(
+            new TestCase(ValidNonPrivateUrlValidator.PRIVATE_IP, ValidNonPrivateUrlValidatorTest.internalHosts)
+        );
+
+        testCases.add(
+            new TestCase(
+                ValidNonPrivateUrlValidator.UNKNOWN_HOST,
+                ValidNonPrivateUrlValidatorTest.unknownHosts
+            )
+        );
+
+        // Test the URLs with both camel and webhook endpoints.
+        for (final var testCase : testCases) {
+            for (final var url : testCase.testUrls) {
+                // Test with a camel endpoint.
+                camelProperties.setUrl(url);
+                endpoint.setSubType("slack");
+                endpoint.setType(EndpointType.CAMEL);
+                endpoint.setProperties(camelProperties);
+
+                final String camelResponse =
+                    given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(JSON)
+                        .body(Json.encode(endpoint))
+                        .post("/endpoints")
+                        .then()
+                        .statusCode(400)
+                        .extract()
+                        .asString();
+
+                final String camelConstraintViolation = TestHelpers.extractConstraintViolationFromResponse(camelResponse);
+
+                Assertions.assertEquals(testCase.expectedErrorMessage, camelConstraintViolation, String.format("unexpected constraint violation for url \"%s\"", url));
+
+                // Test with a webhook endpoint.
+                webhookProperties.setUrl(url);
+                // Reset the subtype since it doesn't make sense a "slack" subtype for webhook endpoints.
+                endpoint.setSubType(null);
+                endpoint.setType(EndpointType.WEBHOOK);
+                endpoint.setProperties(webhookProperties);
+
+                final String webhookResponse =
+                    given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(JSON)
+                        .body(Json.encode(endpoint))
+                        .post("/endpoints")
+                        .then()
+                        .statusCode(400)
+                        .extract()
+                        .asString();
+
+                final String webhookConstraintViolation = TestHelpers.extractConstraintViolationFromResponse(webhookResponse);
+
+                Assertions.assertEquals(testCase.expectedErrorMessage, webhookConstraintViolation, String.format("unexpected constraint violation for url \"%s\"", url));
+            }
+        }
+    }
+
+    /**
+     * Tests that when a valid URL is provided via the endpoint's properties, regardless if those properties are
+     * {@link CamelProperties} or {@link WebhookProperties}, no constraint violations are raised.
+     */
+    @Test
+    void testEndpointValidUrls() {
+        // Set up the RBAC access for the test.
+        final String orgId = "endpoint-invalid-urls";
+        final String userName = "user";
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(orgId, orgId, userName);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        // Set up the fixture data.
+        final var disableSslVerification = false;
+        final HttpType method = HttpType.POST;
+        final String password = "endpoint-invalid-urls-basic-authentication-password";
+        final String username = "endpoint-invalid-urls-basic-authentication-username";
+        final String secretToken = "endpoint-invalid-urls-secret-token";
+
+        // Create the properties for the endpoint. Leave the URL so that we can set it afterwards.
+        final var camelProperties = new CamelProperties();
+        camelProperties.setBasicAuthentication(new BasicAuthentication(username, password));
+        camelProperties.setDisableSslVerification(disableSslVerification);
+        camelProperties.setSecretToken(secretToken);
+
+        final var webhookProperties = new WebhookProperties();
+        webhookProperties.setBasicAuthentication(new BasicAuthentication(username, password));
+        webhookProperties.setDisableSslVerification(disableSslVerification);
+        webhookProperties.setMethod(method);
+        webhookProperties.setSecretToken(secretToken);
+
+        // Create an endpoint without the type and the properties set.
+        final var name = "endpoint-invalid-urls-name";
+        final var description = "endpoint-invalid-urls-description";
+        final var enabled = true;
+        final var serverErrors = 0;
+        final var subType = "slack";
+
+        final var endpoint = new Endpoint();
+        endpoint.setDescription(description);
+        endpoint.setEnabled(enabled);
+        endpoint.setName(name);
+        endpoint.setServerErrors(serverErrors);
+        endpoint.setSubType(subType);
+
+        for (final var url : ValidNonPrivateUrlValidatorTest.validUrls) {
+            // Test with a camel endpoint.
+            camelProperties.setUrl(url);
+            endpoint.setType(EndpointType.CAMEL);
+            endpoint.setProperties(camelProperties);
+
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .post("/endpoints")
+                .then()
+                .statusCode(200);
+
+            // Test with a webhook endpoint.
+            webhookProperties.setUrl(url);
+            endpoint.setType(EndpointType.WEBHOOK);
+            endpoint.setProperties(webhookProperties);
+
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .post("/endpoints")
+                .then()
+                .statusCode(200);
+        }
+    }
+
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
         assertTrue(message.contains(String.format(
                 "Is not possible to create or alter endpoint with type %s, check API for alternatives",
@@ -1734,5 +1935,4 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertNotNull(responsePoint.getString("id"));
         }
     }
-
 }

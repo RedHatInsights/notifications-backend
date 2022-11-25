@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.BasicAuthenticationConverter;
 import com.redhat.cloud.notifications.db.converters.HttpTypeConverter;
+import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -20,7 +21,9 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @Table(name = "endpoint_webhooks")
 @JsonNaming(SnakeCaseStrategy.class)
 public class WebhookProperties extends EndpointProperties implements SourcesSecretable {
+
     @NotNull
+    @ValidNonPrivateUrl
     private String url;
 
     @NotNull
