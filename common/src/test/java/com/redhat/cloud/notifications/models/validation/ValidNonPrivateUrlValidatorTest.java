@@ -24,11 +24,9 @@ public class ValidNonPrivateUrlValidatorTest {
      */
     @BeforeAll
     public static void setUp() {
-        final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
-
-        validator = validatorFactory.getValidator();
-
-        validatorFactory.close();
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
+            validator = validatorFactory.getValidator();
+        }
     }
 
     /**
