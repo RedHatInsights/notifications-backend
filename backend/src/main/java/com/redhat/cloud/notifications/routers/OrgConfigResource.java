@@ -1,18 +1,18 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
+import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.db.repositories.AggregationCronjobParametersRepository;
 import com.redhat.cloud.notifications.models.AggregationCronjobParameters;
 import com.redhat.cloud.notifications.routers.models.DailyDigestTimeSettings;
 import io.quarkus.logging.Log;
-import org.eclipse.microprofile.openapi.annotations.Operation;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -37,8 +37,8 @@ public class OrgConfigResource {
     @Path("/notification-daily-digest-time-preference")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(hidden = true)
     @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Response saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull @Valid DailyDigestTimeSettings dailyDigestTimePreference) {
         String orgId = getOrgId(sec);
         LocalTime expectedTime = null;
@@ -53,21 +53,10 @@ public class OrgConfigResource {
         return Response.ok().build();
     }
 
-    @DELETE
-    @Path("/notification-daily-digest-time-preference")
-    @Produces(APPLICATION_JSON)
-    @Operation(hidden = true)
-    @Transactional
-    public Response deleteBehaviorGroup(@Context SecurityContext sec) {
-        String orgId = getOrgId(sec);
-        aggregationCronjobParametersRepository.deleteDailyDigestPreference(orgId);
-        return Response.ok().build();
-    }
-
     @GET
     @Path("/notification-daily-digest-time-preference")
     @Produces(APPLICATION_JSON)
-    @Operation(hidden = true)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Response getDailyDigestTimePreference(@Context SecurityContext sec) {
         String orgId = getOrgId(sec);
         Log.infof("Delete daily digest time preference for orgId %s", orgId);

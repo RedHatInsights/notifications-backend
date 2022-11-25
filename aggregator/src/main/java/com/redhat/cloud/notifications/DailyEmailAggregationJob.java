@@ -12,7 +12,6 @@ import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
 import io.quarkus.logging.Log;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -37,11 +36,14 @@ public class DailyEmailAggregationJob {
 
     public static final String AGGREGATION_CHANNEL = "aggregation";
 
-    private final EmailAggregationResources emailAggregationResources;
+    @Inject
+    EmailAggregationResources emailAggregationResources;
 
-    private final AggregationCronjobParameterRepository aggregationCronjobParameterRepository;
+    @Inject
+    AggregationCronjobParameterRepository aggregationCronjobParameterRepository;
 
-    private final ObjectMapper objectMapper;
+    @Inject
+    ObjectMapper objectMapper;
 
     @ConfigProperty(name = "prometheus.pushgateway.url")
     String prometheusPushGatewayUrl;
@@ -54,12 +56,6 @@ public class DailyEmailAggregationJob {
     FeatureFlipper featureFlipper;
 
     private Gauge pairsProcessed;
-
-    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper, AggregationCronjobParameterRepository aggregationCronjobParameterRepository) {
-        this.emailAggregationResources = emailAggregationResources;
-        this.objectMapper = objectMapper;
-        this.aggregationCronjobParameterRepository = aggregationCronjobParameterRepository;
-    }
 
     @ActivateRequestContext
     public void processDailyEmail() {
@@ -75,7 +71,7 @@ public class DailyEmailAggregationJob {
             LocalDateTime now = LocalDateTime.now(UTC);
             List<AggregationCronjobParameters> listOrgIdToProceed = null;
             List<AggregationCommand> aggregationCommands = null;
-            if (featureFlipper.isAggregatorAccordingOrgPref()) {
+            if (featureFlipper.isAggregatorOrgPrefEnabled()) {
                 listOrgIdToProceed = findOrgIdToProceed(now);
                 aggregationCommands = processAggregateEmails(now, listOrgIdToProceed, registry);
             } else {
@@ -98,7 +94,7 @@ public class DailyEmailAggregationJob {
                 }
             }
 
-            if (featureFlipper.isAggregatorAccordingOrgPref()) {
+            if (featureFlipper.isAggregatorOrgPrefEnabled()) {
                 listOrgIdToProceed.stream().forEach(orgPref -> orgPref.setLastRun(now));
             } else {
                 emailAggregationResources.updateLastCronJobRun(now);
@@ -111,7 +107,7 @@ public class DailyEmailAggregationJob {
                     .register(registry);
             lastSuccess.setToCurrentTime();
         } catch (Exception ex) {
-            Log.error(ExceptionUtils.getStackTrace(ex));
+            Log.error("Daily aggregation job failed", ex);
             throw ex;
         } finally {
             durationTimer.setDuration();
@@ -125,7 +121,7 @@ public class DailyEmailAggregationJob {
     }
 
     List<AggregationCronjobParameters> findOrgIdToProceed(LocalDateTime currentHour) {
-        return aggregationCronjobParameterRepository.getOrdIdToProceed(currentHour);
+        return aggregationCronjobParameterRepository.getOrgIdToProceed(currentHour);
     }
 
     List<AggregationCommand> processAggregateEmails(LocalDateTime endTime, final List<AggregationCronjobParameters> listOrgIdToProceed, CollectorRegistry registry) {
@@ -166,6 +162,7 @@ public class DailyEmailAggregationJob {
         return pendingAggregationCommands;
     }
 
+    @Deprecated(forRemoval = true)
     List<AggregationCommand> processAggregateEmails(LocalDateTime endTime, CollectorRegistry registry) {
 
         final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();

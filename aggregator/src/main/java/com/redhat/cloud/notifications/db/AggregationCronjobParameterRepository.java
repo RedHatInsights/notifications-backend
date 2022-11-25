@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.AggregationCronjobParameters;
-import org.hibernate.Session;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -14,16 +13,13 @@ import java.util.List;
 public class AggregationCronjobParameterRepository {
 
     @Inject
-    Session session;
-
-    @Inject
     EntityManager entityManager;
 
-    public List<AggregationCronjobParameters> getOrdIdToProceed(LocalDateTime now) {
+    public List<AggregationCronjobParameters> getOrgIdToProceed(LocalDateTime now) {
         LocalTime currentHour = LocalTime.of(now.getHour(), 0, 0);
         String query = "SELECT acp FROM AggregationCronjobParameters acp WHERE acp.expectedRunningTime = :currentHour";
 
-        return session.createQuery(query, AggregationCronjobParameters.class)
+        return entityManager.createQuery(query, AggregationCronjobParameters.class)
                 .setParameter("currentHour", currentHour)
                 .getResultList();
     }

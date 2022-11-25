@@ -55,16 +55,6 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testDeleteDailyDigestTimePreference() {
-        // check delete unsetted preference
-        deleteDailyDigestTimePreference();
-        // create preference
-        recordDefaultDailyDigestTimePreference();
-        // check delete preference
-        deleteDailyDigestTimePreference();
-    }
-
-    @Test
     void testGetDailyDigestTimePreference() {
 
         given()

@@ -57,14 +57,14 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
 
     @BeforeEach
     void setUp() {
-        featureFlipper.setAggregatorAccordingOrgPref(true);
+        featureFlipper.setAggregatorOrgPrefEnabled(true);
         helpers.purgeEmailAggregations();
         initAggregationParameters();
     }
 
     @AfterEach
     void tearDown() {
-        featureFlipper.setAggregatorAccordingOrgPref(false);
+        featureFlipper.setAggregatorOrgPrefEnabled(false);
         helpers.purgeEmailAggregations();
         connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
     }
