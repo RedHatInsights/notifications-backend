@@ -525,7 +525,7 @@ public class EndpointResource {
         final String orgId = getOrgId(sec);
         final boolean doDetail = includeDetail != null && includeDetail;
 
-        final List<NotificationHistory> notificationHistory = notificationRepository.getNotificationHistory(orgId, id, doDetail, query);
+        final List<NotificationHistory> notificationHistory = this.notificationRepository.getNotificationHistory(orgId, id, doDetail, query);
         final long notificationHistoryCount = this.notificationRepository.countNotificationHistoryElements(id, orgId);
 
         return new Page<>(
