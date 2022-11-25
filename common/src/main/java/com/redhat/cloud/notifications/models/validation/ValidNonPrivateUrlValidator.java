@@ -14,7 +14,7 @@ public class ValidNonPrivateUrlValidator implements ConstraintValidator<ValidNon
     // Error messages.
     public static final String INVALID_SCHEME = "The endpoint URL must start with \"http\" or \"https\"";
     public static final String INVALID_URL = "The endpoint's URL is invalid";
-    public static final String PRIVATE_IP = "The host of the endpoint's URL host resolves to a private IP";
+    public static final String PRIVATE_IP = "The host of the endpoint's URL resolves to a private IP";
     public static final String UNKNOWN_HOST = "The IP address of the endpoint URL's host cannot be determined";
 
     // Allowed protocol schemes.
