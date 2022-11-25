@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import io.quarkus.logging.Log;
 import io.sentry.Sentry;
 
 import javax.ws.rs.BadRequestException;
@@ -8,6 +9,7 @@ import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.QueryParam;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -17,7 +19,7 @@ public class Query {
 
     private static final Pattern SORT_BY_PATTERN = Pattern.compile("^[a-z0-9_-]+(:(asc|desc))?$", CASE_INSENSITIVE);
 
-    private static final int DEFAULT_RESULTS_PER_PAGE  = 20;
+    private static final int DEFAULT_RESULTS_PER_PAGE = 20;
 
     @QueryParam("limit")
     @DefaultValue(DEFAULT_RESULTS_PER_PAGE + "")
@@ -38,6 +40,7 @@ public class Query {
 
     private String defaultSortBy;
     private Map<String, String> sortFields;
+    private Set<String> deprecatedSortFields;
 
     // Used by test
     public static Query queryWithSortBy(String sortBy) {
@@ -47,12 +50,24 @@ public class Query {
     }
 
     public void setSortFields(Map<String, String> sortFields) {
+        setSortFields(sortFields, null);
+    }
+
+    public void setSortFields(Map<String, String> sortFields, Set<String> deprecatedSortFields) {
         sortFields.keySet().forEach(key -> {
             if (!key.toLowerCase().equals(key)) {
                 throw new IllegalArgumentException("All keys of sort fields must be specified in lower case");
             }
         });
         this.sortFields = Map.copyOf(sortFields);
+        if (deprecatedSortFields != null) {
+            deprecatedSortFields.forEach(key -> {
+                if (!sortFields.containsKey(key)) {
+                    throw new IllegalArgumentException("Deprecated field not found in sort fields: " + key);
+                }
+            });
+            this.deprecatedSortFields = Set.copyOf(deprecatedSortFields);
+        }
     }
 
     public void setDefaultSortBy(String defaultSortBy) {
@@ -169,10 +184,16 @@ public class Query {
 
         String[] sortSplit = sortBy.split(":");
         Sort sort = new Sort(sortSplit[0]);
-        if (!sortFields.containsKey(sort.sortColumn.toLowerCase())) {
+        final String lowerCaseSortColumn = sort.sortColumn.toLowerCase();
+        if (!sortFields.containsKey(lowerCaseSortColumn)) {
             throw new BadRequestException("Unknown sort field specified: " + sort.sortColumn);
         } else {
-            sort.sortColumn = sortFields.get(sort.sortColumn.toLowerCase());
+            // NOTIF-674 Delete after confirming all deprecated fields are no longer used
+            if (deprecatedSortFields != null && deprecatedSortFields.contains(lowerCaseSortColumn)) {
+                Log.warnf("NOTIF-674 Using deprecated sort field: %s", lowerCaseSortColumn);
+            }
+
+            sort.sortColumn = sortFields.get(lowerCaseSortColumn);
         }
 
         if (sortSplit.length > 1) {

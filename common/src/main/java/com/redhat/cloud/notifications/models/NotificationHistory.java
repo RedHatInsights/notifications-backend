@@ -18,6 +18,7 @@ import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
@@ -31,7 +32,16 @@ public class NotificationHistory extends CreationTimestamped {
             "created", "nh.created",
             "invocation_time", "nh.invocationTime",
             "invocation_result", "nh.invocationResult",
-            "status", "nh.status"
+            "status", "nh.status",
+            // NOTIF-674 Delete after the frontend has been updated
+            "nh.created", "nh.created",
+            "invocationtime", "nh.invocationTime",
+            "invocationresult", "nh.invocationResult"
+    );
+
+    // NOTIF-674 Delete after confirming all deprecated fields are no longer used
+    public static final Set<String> DEPRECATED_SORT_FIELDS = Set.of(
+            "nh.created", "invocationtime", "invocationresult"
     );
 
     @Id

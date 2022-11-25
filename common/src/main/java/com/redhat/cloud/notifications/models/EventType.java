@@ -38,7 +38,17 @@ public class EventType {
     public static final Map<String, String> SORT_FIELDS = Map.of(
             "name", "name",
             "display_name", "e.displayName",
-            "application", "e.application.displayName"
+            "application", "e.application.displayName",
+            // NOTIF-674 Remove these entries after the frontend has been updated
+            "e.application.displayname", "e.application.displayName",
+            "e.displayname", "e.displayName",
+            // NOTIF-674 Remove after IQE tests are updated
+            "e.name", "e.name"
+    );
+
+    // NOTIF-674 Delete after confirming all deprecated fields are no longer used
+    public static final Set<String> DEPRECATED_SORT_FIELDS = Set.of(
+            "e.application.displayname", "e.displayname", "e.name"
     );
 
     @Id

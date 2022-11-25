@@ -30,7 +30,7 @@ public class NotificationRepository {
         query += ") FROM NotificationHistory nh WHERE nh.endpoint.id = :endpointId AND nh.event.orgId = :orgId";
 
         if (limiter != null) {
-            limiter.setSortFields(NotificationHistory.SORT_FIELDS);
+            limiter.setSortFields(NotificationHistory.SORT_FIELDS, NotificationHistory.DEPRECATED_SORT_FIELDS);
             query = limiter.getModifiedQuery(query);
         }
 
