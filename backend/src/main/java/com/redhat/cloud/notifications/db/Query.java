@@ -17,7 +17,8 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class Query {
 
-    private static final Pattern SORT_BY_PATTERN = Pattern.compile("^[a-z0-9_-]+(:(asc|desc))?$", CASE_INSENSITIVE);
+    // NOTIF-674 Change to "^[a-z0-9_-]+(:(asc|desc))?$" after the frontend has been updated
+    private static final Pattern SORT_BY_PATTERN = Pattern.compile("^[a-z0-9._-]+(:(asc|desc))?$", CASE_INSENSITIVE);
 
     private static final int DEFAULT_RESULTS_PER_PAGE = 20;
 
