@@ -14,7 +14,7 @@ public class ValidNonPrivateUrlValidatorTest {
     public static final String[] invalidSchemes = {"ftp://redhat.com"};
     public static final String[] malformedUris = {"https://example.com /hello", "https:/\\/example.com"};
     public static final String[] malformedUrls = {"htt:/example.com", "redhat.com", "redhat"};
-    public static final String[] validUrls = new String[]{"http://redhat.com", "https://redhat.com"};
+    public static final String[] validUrls = {"http://redhat.com", "https://redhat.com"};
     public static final String[] unknownHosts = {"https://non-existing-webpage-test-one-two-three.com", "http://another-non-existing-webpage.com"};
 
     private static Validator validator;
