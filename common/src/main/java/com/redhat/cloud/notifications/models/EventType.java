@@ -46,6 +46,11 @@ public class EventType {
             "e.name", "e.name"
     );
 
+    // NOTIF-674 Delete after confirming all deprecated fields are no longer used
+    public static final Set<String> DEPRECATED_SORT_FIELDS = Set.of(
+            "e.application.displayname", "e.displayname", "e.name"
+    );
+
     @Id
     @GeneratedValue
     @JsonProperty(access = READ_ONLY)
