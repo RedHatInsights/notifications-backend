@@ -174,9 +174,8 @@ public class Query {
         }
 
         if (sortFields == null) {
-            InternalServerErrorException isee = new InternalServerErrorException("SortFields are not set");
-            Sentry.captureException(isee);
-            throw isee;
+            Log.errorf("Sort fields are not set - this mean that an API is using sorting without specifying what sort values are allowed");
+            throw new InternalServerErrorException("SortFields are not set");
         }
 
         if (!SORT_BY_PATTERN.matcher(sortBy).matches()) {
