@@ -174,7 +174,7 @@ public class Query {
         }
 
         if (sortFields == null) {
-            Log.errorf("Sort fields are not set - this mean that an API is using sorting without specifying what sort values are allowed");
+            Log.error("Sort fields are not set - this means that an API is using sorting without specifying what sort values are allowed");
             throw new InternalServerErrorException("SortFields are not set");
         }
 
