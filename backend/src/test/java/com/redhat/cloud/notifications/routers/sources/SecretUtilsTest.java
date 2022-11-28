@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 
 @QuarkusTest
 public class SecretUtilsTest {
@@ -542,5 +543,37 @@ public class SecretUtilsTest {
         // Assert that the underlying "delete" function wasn't called at all, since neither the "basic authentication"
         // nor the "secret token" have valid IDs set.
         Mockito.verifyNoInteractions(this.sourcesServiceMock);
+    }
+
+    /**
+     * Tests that when a valid "basic authentication" object is passed, the function returns that it isn't blank.
+     */
+    @Test
+    void isBasicAuthNullOrBlankTest() {
+        final var basicAuth = new BasicAuthentication("username", "password");
+
+        Assertions.assertFalse(this.secretUtils.isBasicAuthNullOrBlank(basicAuth), "the basic authentication should have not been considered as blank");
+    }
+
+    /**
+     * Tests that when a blank "password" and "username" combination is given, the "basic authentication" object is
+     * considered blank.
+     */
+    @Test
+    void itIsBasicAuthNullOrBlankTest() {
+        final var blankBasicAuths = new ArrayList<BasicAuthentication>();
+
+        blankBasicAuths.add(new BasicAuthentication());
+        blankBasicAuths.add(new BasicAuthentication(null, null));
+        blankBasicAuths.add(new BasicAuthentication(null, ""));
+        blankBasicAuths.add(new BasicAuthentication("", null));
+        blankBasicAuths.add(new BasicAuthentication("", ""));
+        blankBasicAuths.add(new BasicAuthentication(null, "     "));
+        blankBasicAuths.add(new BasicAuthentication("     ", null));
+        blankBasicAuths.add(new BasicAuthentication("     ", "     "));
+
+        for (final var basicAuth : blankBasicAuths) {
+            Assertions.assertTrue(this.secretUtils.isBasicAuthNullOrBlank(basicAuth), "the basic authentication should have been considered as blank");
+        }
     }
 }
