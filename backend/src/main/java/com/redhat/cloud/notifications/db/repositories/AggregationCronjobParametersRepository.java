@@ -28,14 +28,6 @@ public class AggregationCronjobParametersRepository {
         }
     }
 
-    @Transactional
-    public void deleteDailyDigestPreference(String orgId) {
-        AggregationCronjobParameters cronjobParameters = findJobAggregationCronjobParameters(orgId);
-        if (cronjobParameters != null) {
-            entityManager.remove(cronjobParameters);
-        }
-    }
-
     public AggregationCronjobParameters findJobAggregationCronjobParameters(String orgId) {
         return entityManager.find(AggregationCronjobParameters.class, orgId);
     }

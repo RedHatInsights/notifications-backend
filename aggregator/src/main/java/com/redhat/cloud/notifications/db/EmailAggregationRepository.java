@@ -14,28 +14,20 @@ import java.util.List;
 import static java.util.stream.Collectors.toList;
 
 @ApplicationScoped
-public class EmailAggregationResources {
+public class EmailAggregationRepository {
 
     @Inject
     EntityManager entityManager;
 
-    private static final String DEFAULT_ORG_ID = "NA";
-
     public List<EmailAggregationKey> getApplicationsWithPendingAggregation(String orgIdToAggregate, LocalDateTime start, LocalDateTime end) {
-        String orgIdCriteria = "ea.org_id = :orgId AND acj.org_id IS NOT NULL";
-        if (DEFAULT_ORG_ID.equals(orgIdToAggregate)) {
-            orgIdCriteria = "acj.org_id IS NULL";
-        }
+
         String query = "SELECT DISTINCT ea.org_id, ea.bundle, ea.application FROM email_aggregation ea "
-                + "LEFT JOIN aggregation_cronjob_parameter acj ON ea.org_id = acj.org_id "
-                + " WHERE " + orgIdCriteria + " AND ea.created > :start AND ea.created <= :end";
+                + " WHERE ea.org_id = :orgId AND ea.created > :start AND ea.created <= :end";
 
         Query nativeQuery = entityManager.createNativeQuery(query)
                 .setParameter("start", start)
-                .setParameter("end", end);
-        if (!DEFAULT_ORG_ID.equals(orgIdToAggregate)) {
-            nativeQuery.setParameter("orgId", orgIdToAggregate);
-        }
+                .setParameter("end", end)
+                .setParameter("orgId", orgIdToAggregate);
 
         List<Object[]> records = nativeQuery.getResultList();
         return records.stream()

@@ -28,7 +28,7 @@ class EmailAggregationResourcesTest {
     private static final JsonObject PAYLOAD2 = new JsonObject("{\"hello\":\"world\"}");
 
     @Inject
-    EmailAggregationResources emailAggregationResources;
+    EmailAggregationRepository emailAggregationResources;
 
     @Inject
     ResourceHelpers resourceHelpers;

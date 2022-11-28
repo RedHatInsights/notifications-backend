@@ -1,8 +1,5 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -12,12 +9,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Objects;
 
-import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
-import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
 @Entity
 @Table(name = "aggregation_cronjob_parameter")
-@JsonNaming(SnakeCaseStrategy.class)
 public class AggregationCronjobParameters {
 
     @Id
@@ -25,10 +19,8 @@ public class AggregationCronjobParameters {
     @Size(max = 50)
     public String orgId;
 
-    @JsonFormat(shape = STRING)
     private LocalTime expectedRunningTime;
 
-    @JsonFormat(shape = STRING)
     private LocalDateTime lastRun;
 
     public AggregationCronjobParameters() {

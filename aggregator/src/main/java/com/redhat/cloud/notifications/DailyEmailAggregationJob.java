@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.AggregationCronjobParameterRepository;
-import com.redhat.cloud.notifications.db.EmailAggregationResources;
+import com.redhat.cloud.notifications.db.EmailAggregationRepository;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationCronjobParameters;
 import com.redhat.cloud.notifications.models.CronJobRun;
@@ -37,7 +37,7 @@ public class DailyEmailAggregationJob {
     public static final String AGGREGATION_CHANNEL = "aggregation";
 
     @Inject
-    EmailAggregationResources emailAggregationResources;
+    EmailAggregationRepository emailAggregationResources;
 
     @Inject
     AggregationCronjobParameterRepository aggregationCronjobParameterRepository;
@@ -47,6 +47,9 @@ public class DailyEmailAggregationJob {
 
     @ConfigProperty(name = "prometheus.pushgateway.url")
     String prometheusPushGatewayUrl;
+
+    @ConfigProperty(name = "notification.default.daily.digest.hour", defaultValue = "0")
+    int defaultDailyDigestHour;
 
     @Inject
     @Channel(AGGREGATION_CHANNEL)
@@ -121,6 +124,8 @@ public class DailyEmailAggregationJob {
     }
 
     List<AggregationCronjobParameters> findOrgIdToProceed(LocalDateTime currentHour) {
+        // create missing default configuration if needed
+        aggregationCronjobParameterRepository.createMissingDefaultConfiguration(defaultDailyDigestHour);
         return aggregationCronjobParameterRepository.getOrgIdToProceed(currentHour);
     }
 
@@ -197,5 +202,10 @@ public class DailyEmailAggregationJob {
 
     Gauge getPairsProcessed() {
         return pairsProcessed;
+    }
+
+    // For automatic tests purpose
+    protected void setDefaultDailyDigestHour(int defaultDailyDigestHour) {
+        this.defaultDailyDigestHour = defaultDailyDigestHour;
     }
 }
