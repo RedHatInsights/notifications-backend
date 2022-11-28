@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
 import io.quarkus.logging.Log;
-import io.sentry.Sentry;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
