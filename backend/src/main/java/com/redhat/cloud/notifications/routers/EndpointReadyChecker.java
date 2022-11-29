@@ -92,10 +92,16 @@ public class EndpointReadyChecker {
                     em.remove(ep);
                 }
             } catch (WebApplicationException wae) {
-                String path = "GET " + BASE_PATH + "/{bridgeId}/processors/{processorId}";
-                rhoseErrorMetricsRecorder.record(path, wae);
-                Log.warn("Getting data from OB failed", wae);
-                ep.setStatus(EndpointStatus.FAILED);
+                // 404 means that the processor could not be found - but we were deleting an endpoint.
+                // This means is no longer there and we can finish with the delete process
+                if (wae.getResponse().getStatus() == 404 && ep.getStatus().equals(EndpointStatus.DELETING)) {
+                    em.remove(ep);
+                } else {
+                    String path = "GET " + BASE_PATH + "/{bridgeId}/processors/{processorId}";
+                    rhoseErrorMetricsRecorder.record(path, wae);
+                    Log.warn("Getting data from OB failed", wae);
+                    ep.setStatus(EndpointStatus.FAILED);
+                }
             }
         }
     }
