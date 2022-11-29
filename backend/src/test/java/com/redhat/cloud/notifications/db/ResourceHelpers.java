@@ -13,13 +13,16 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -258,5 +261,28 @@ public class ResourceHelpers {
 
     public Boolean deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupRepository.deleteDefault(behaviorGroupId);
+    }
+
+    @Transactional
+    public void setupTransformationTemplate() {
+        // Set up the transformationTemplate in the DB if needed
+        try {
+            entityManager.createQuery("FROM IntegrationTemplate WHERE templateKind = :templateKind", IntegrationTemplate.class)
+                    .setParameter("templateKind", IntegrationTemplate.TemplateKind.DEFAULT)
+                    .getSingleResult();
+        } catch (NoResultException nre) {
+            // Not found, creating one
+            Template template = new Template();
+            template.setName("aTemplate");
+            template.setDescription("what's this?");
+            template.setData("Li la lu");
+            entityManager.persist(template);
+
+            IntegrationTemplate gt = new IntegrationTemplate();
+            gt.setTemplateKind(IntegrationTemplate.TemplateKind.DEFAULT);
+            gt.setIntegrationType("slack");
+            gt.setTheTemplate(template);
+            entityManager.persist(gt);
+        }
     }
 }

@@ -68,14 +68,16 @@ public class EndpointReadyCheckerTest {
     }
 
     private final String UNUSED = "UNUSED";
+    private final String ORG_ACCOUNT_ID = "ENDPOINT_READY_CHECKER_ID";
 
     @Test
     public void testAddingReady() {
         final String PROCESSOR_ID = "processor-add-ready";
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(UNUSED, UNUSED, UNUSED);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(ORG_ACCOUNT_ID, ORG_ACCOUNT_ID, UNUSED);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        resourceHelpers.setupTransformationTemplate();
 
         mockBridge();
         mockAddProcessor(PROCESSOR_ID);
@@ -90,7 +92,7 @@ public class EndpointReadyCheckerTest {
         mockProcessor(PROCESSOR_ID, processor);
 
         endpointReadyChecker.execute();
-        Endpoint endpoint = resourceHelpers.getEndpoint(UNUSED, UUID.fromString(jsonEndpoint.get("id").toString()));
+        Endpoint endpoint = resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint.get("id").toString()));
 
         assertEquals(EndpointStatus.READY, endpoint.getStatus());
     }
@@ -99,9 +101,10 @@ public class EndpointReadyCheckerTest {
     public void testAddingFailed() {
         final String PROCESSOR_ID = "processor-add-failed";
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(UNUSED, UNUSED, UNUSED);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(ORG_ACCOUNT_ID, ORG_ACCOUNT_ID, UNUSED);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        resourceHelpers.setupTransformationTemplate();
 
         mockBridge();
         mockAddProcessor(PROCESSOR_ID);
@@ -116,7 +119,7 @@ public class EndpointReadyCheckerTest {
         mockProcessor(PROCESSOR_ID, processor);
 
         endpointReadyChecker.execute();
-        Endpoint endpoint = resourceHelpers.getEndpoint(UNUSED, UUID.fromString(jsonEndpoint.get("id").toString()));
+        Endpoint endpoint = resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint.get("id").toString()));
 
         assertEquals(EndpointStatus.FAILED, endpoint.getStatus());
     }
@@ -125,9 +128,10 @@ public class EndpointReadyCheckerTest {
     public void testDeleting() {
         final String PROCESSOR_ID = "processor-deleting";
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(UNUSED, UNUSED, UNUSED);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(ORG_ACCOUNT_ID, ORG_ACCOUNT_ID, UNUSED);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        resourceHelpers.setupTransformationTemplate();
 
         mockBridge();
         mockAddProcessor(PROCESSOR_ID);
@@ -147,22 +151,23 @@ public class EndpointReadyCheckerTest {
         deleteEndpoint(identityHeader, jsonEndpoint.get("id").toString());
 
         // Verify it's marked for deletion
-        Endpoint endpoint = resourceHelpers.getEndpoint(UNUSED, UUID.fromString(jsonEndpoint.get("id").toString()));
+        Endpoint endpoint = resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint.get("id").toString()));
         assertEquals(EndpointStatus.DELETING, endpoint.getStatus());
 
         processor.setStatus("deleted");
         processor.setStatus_message("What processor?");
         endpointReadyChecker.execute();
 
-        endpoint = resourceHelpers.getEndpoint(UNUSED, UUID.fromString(jsonEndpoint.get("id").toString()));
+        endpoint = resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint.get("id").toString()));
         assertNull(endpoint);
     }
 
     @Test
     public void multipleEndpointsAtOnce() {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(UNUSED, UNUSED, UNUSED);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(ORG_ACCOUNT_ID, ORG_ACCOUNT_ID, UNUSED);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        resourceHelpers.setupTransformationTemplate();
 
         mockBridge();
 
@@ -226,27 +231,27 @@ public class EndpointReadyCheckerTest {
         endpointReadyChecker.execute();
 
         // Endpoint1 - deleted
-        assertNull(resourceHelpers.getEndpoint(UNUSED, UUID.fromString(jsonEndpoint1.get("id").toString())));
+        assertNull(resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint1.get("id").toString())));
 
         // Endpoint2 - deleted
-        assertNull(resourceHelpers.getEndpoint(UNUSED, UUID.fromString(jsonEndpoint2.get("id").toString())));
+        assertNull(resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint2.get("id").toString())));
 
         // Endpoint3 - ready
         assertEquals(
                 EndpointStatus.READY,
-                resourceHelpers.getEndpoint(UNUSED, UUID.fromString(jsonEndpoint3.get("id").toString())).getStatus()
+                resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint3.get("id").toString())).getStatus()
         );
 
         // Endpoint4 - ready
         assertEquals(
                 EndpointStatus.READY,
-                resourceHelpers.getEndpoint(UNUSED, UUID.fromString(jsonEndpoint4.get("id").toString())).getStatus()
+                resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint4.get("id").toString())).getStatus()
         );
 
         // Endpoint5 - failed
         assertEquals(
                 EndpointStatus.FAILED,
-                resourceHelpers.getEndpoint(UNUSED, UUID.fromString(jsonEndpoint5.get("id").toString())).getStatus()
+                resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint5.get("id").toString())).getStatus()
         );
     }
 
