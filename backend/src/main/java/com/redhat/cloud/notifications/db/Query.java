@@ -26,7 +26,7 @@ public class Query {
     @QueryParam("limit")
     @DefaultValue(DEFAULT_RESULTS_PER_PAGE + "")
     @Min(value = 1, message = "The collection limit cannot be lower than {value}")
-    @Max(value = 100, message = "The collection limit cannot be greater than {value}")
+    @Max(value = 200, message = "The collection limit cannot be greater than {value}")
     Integer pageSize;
 
     @QueryParam("pageNumber")
