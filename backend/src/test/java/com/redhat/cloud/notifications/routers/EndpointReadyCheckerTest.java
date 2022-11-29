@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import javax.inject.Inject;
+import javax.ws.rs.WebApplicationException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -125,7 +126,33 @@ public class EndpointReadyCheckerTest {
     }
 
     @Test
-    public void testDeleting() {
+    public void testAddingFailedBecauseOfHttpError() {
+        final String PROCESSOR_ID = "processor-add-failed";
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(ORG_ACCOUNT_ID, ORG_ACCOUNT_ID, UNUSED);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        resourceHelpers.setupTransformationTemplate();
+
+        mockBridge();
+        mockAddProcessor(PROCESSOR_ID);
+
+        Map<String, Object> jsonEndpoint = createEndpoint(identityHeader);
+
+        assertEquals("PROVISIONING", jsonEndpoint.get("status"));
+        mockProcessorHttpCode(PROCESSOR_ID, 404);
+
+        endpointReadyChecker.execute();
+        Endpoint endpoint = resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint.get("id").toString()));
+
+        assertEquals(EndpointStatus.FAILED, endpoint.getStatus());
+    }
+
+    @Test
+    public void testDeletingWithStatus() {
+        // When this was written, the openapi had the "deleted" status - but the server was returning 404 on this case
+        // We are covering and testing both cases
+
         final String PROCESSOR_ID = "processor-deleting";
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(ORG_ACCOUNT_ID, ORG_ACCOUNT_ID, UNUSED);
@@ -157,6 +184,46 @@ public class EndpointReadyCheckerTest {
         // Update the response to deleted
         processor.setStatus("deleted");
         processor.setStatus_message("What processor?");
+        endpointReadyChecker.execute();
+
+        endpoint = resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint.get("id").toString()));
+        assertNull(endpoint);
+    }
+
+    @Test
+    public void testDeletingWith404() {
+        // When this was written, the openapi had the "deleted" status - but the server was returning 404 on this case
+        // We are covering and testing both cases
+
+        final String PROCESSOR_ID = "processor-deleting-404";
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(ORG_ACCOUNT_ID, ORG_ACCOUNT_ID, UNUSED);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        resourceHelpers.setupTransformationTemplate();
+
+        mockBridge();
+        mockAddProcessor(PROCESSOR_ID);
+
+        Map<String, Object> jsonEndpoint = createEndpoint(identityHeader);
+
+        assertEquals("PROVISIONING", jsonEndpoint.get("status"));
+
+        Processor processor = new Processor(UNUSED);
+        processor.setStatus("ready");
+        processor.setStatus_message("It is ready!");
+        mockProcessor(PROCESSOR_ID, processor);
+
+        endpointReadyChecker.execute();
+
+        // delete it now
+        deleteEndpoint(identityHeader, jsonEndpoint.get("id").toString());
+
+        // Verify it's marked for deletion
+        Endpoint endpoint = resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint.get("id").toString()));
+        assertEquals(EndpointStatus.DELETING, endpoint.getStatus());
+
+        mockProcessorHttpCode(PROCESSOR_ID, 404);
         endpointReadyChecker.execute();
 
         endpoint = resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint.get("id").toString()));
@@ -201,7 +268,7 @@ public class EndpointReadyCheckerTest {
         processor1.setStatus("deleted");
 
         deleteEndpoint(identityHeader, jsonEndpoint2.get("id").toString());
-        processor2.setStatus("deleted");
+        mockProcessorHttpCode(PROCESSOR_2, 404);
 
         // Continue creating other processors
 
@@ -231,10 +298,10 @@ public class EndpointReadyCheckerTest {
 
         endpointReadyChecker.execute();
 
-        // Endpoint1 - deleted
+        // Endpoint1 - deleted via status
         assertNull(resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint1.get("id").toString())));
 
-        // Endpoint2 - deleted
+        // Endpoint2 - deleted via http 404
         assertNull(resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint2.get("id").toString())));
 
         // Endpoint3 - ready
@@ -319,6 +386,14 @@ public class EndpointReadyCheckerTest {
                 Mockito.eq(processorId),
                 Mockito.anyString()
         )).thenReturn(processor);
+    }
+
+    private void mockProcessorHttpCode(String processorId, int statusCode) {
+        Mockito.when(bridgeApiService.getProcessorById(
+                Mockito.anyString(),
+                Mockito.eq(processorId),
+                Mockito.anyString()
+        )).thenThrow(new WebApplicationException(statusCode));
     }
 
 }
