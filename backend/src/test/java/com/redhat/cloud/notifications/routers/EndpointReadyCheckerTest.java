@@ -154,6 +154,7 @@ public class EndpointReadyCheckerTest {
         Endpoint endpoint = resourceHelpers.getEndpoint(ORG_ACCOUNT_ID, UUID.fromString(jsonEndpoint.get("id").toString()));
         assertEquals(EndpointStatus.DELETING, endpoint.getStatus());
 
+        // Update the response to deleted
         processor.setStatus("deleted");
         processor.setStatus_message("What processor?");
         endpointReadyChecker.execute();
@@ -183,7 +184,7 @@ public class EndpointReadyCheckerTest {
         mockAddProcessor(PROCESSOR_2);
         Map<String, Object> jsonEndpoint2 = createEndpoint(identityHeader);
 
-        // We are going to delete the first 2 processors - fishing their lifecycle to have them as ready.
+        // We are going to delete the first 2 processors - finishing their lifecycle to have them as ready.
         Processor processor1 = new Processor(UNUSED);
         processor1.setStatus("ready");
         processor1.setStatus_message("It is ready!");
