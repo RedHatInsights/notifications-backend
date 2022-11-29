@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import io.quarkus.logging.Log;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -225,11 +226,12 @@ public class SecretUtils {
      * @param basicAuthentication the object to check.
      * @return {@code true} if the object is null, or if the password and the username are blank.
      */
-    private boolean isBasicAuthNullOrBlank(final BasicAuthentication basicAuthentication) {
+    protected boolean isBasicAuthNullOrBlank(final BasicAuthentication basicAuthentication) {
         if (basicAuthentication == null) {
             return true;
         }
 
-        return basicAuthentication.getUsername().isBlank() && basicAuthentication.getPassword().isBlank();
+        // We use StringUtils instead of calling directly "isBlank" on the fields to avoid null pointer exceptions.
+        return StringUtils.isBlank(basicAuthentication.getPassword()) && StringUtils.isBlank(basicAuthentication.getUsername());
     }
 }
