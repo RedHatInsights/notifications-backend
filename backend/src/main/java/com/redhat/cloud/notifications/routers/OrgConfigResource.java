@@ -2,16 +2,13 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
-import com.redhat.cloud.notifications.db.repositories.AggregationCronjobParametersRepository;
-import com.redhat.cloud.notifications.models.AggregationCronjobParameters;
-import com.redhat.cloud.notifications.routers.models.DailyDigestTimeSettings;
+import com.redhat.cloud.notifications.db.repositories.AggregationOrgConfigRepository;
+import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import io.quarkus.logging.Log;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -21,52 +18,49 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
 public class OrgConfigResource {
 
     @Inject
-    AggregationCronjobParametersRepository aggregationCronjobParametersRepository;
+    AggregationOrgConfigRepository aggregationOrgConfigRepository;
 
     @PUT
-    @Path("/notification-daily-digest-time-preference")
-    @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
+    @Path("/daily-digest/time-preference")
+    @Consumes(TEXT_PLAIN)
+    @Produces(TEXT_PLAIN)
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    public Response saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull @Valid DailyDigestTimeSettings dailyDigestTimePreference) {
+    public Response saveDailyDigestTimePreference(@Context SecurityContext sec, String dailyDigestTimePreference) {
         String orgId = getOrgId(sec);
         LocalTime expectedTime = null;
         try {
-            expectedTime = LocalTime.parse(dailyDigestTimePreference.dailyDigestTimePreference);
+            expectedTime = LocalTime.parse(dailyDigestTimePreference);
         } catch (DateTimeParseException ex) {
-            Log.infof("Error parsing '%s' as time for orgId %s", dailyDigestTimePreference.dailyDigestTimePreference, orgId);
+            Log.infof("Error parsing '%s' as time for orgId %s", dailyDigestTimePreference, orgId);
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
-        Log.infof("Update daily digest time preference for orgId %s at %s", orgId, dailyDigestTimePreference.dailyDigestTimePreference);
-        aggregationCronjobParametersRepository.createOrUpdateDailyDigestPreference(orgId, expectedTime);
+        Log.infof("Update daily digest time preference for orgId %s at %s", orgId, dailyDigestTimePreference);
+        aggregationOrgConfigRepository.createOrUpdateDailyDigestPreference(orgId, expectedTime);
         return Response.ok().build();
     }
 
     @GET
-    @Path("/notification-daily-digest-time-preference")
-    @Produces(APPLICATION_JSON)
+    @Path("/daily-digest/time-preference")
+    @Produces(TEXT_PLAIN)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Response getDailyDigestTimePreference(@Context SecurityContext sec) {
         String orgId = getOrgId(sec);
         Log.infof("Delete daily digest time preference for orgId %s", orgId);
-        AggregationCronjobParameters storedParameters = aggregationCronjobParametersRepository.findJobAggregationCronjobParameters(orgId);
+        AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findJobAggregationOrgConfig(orgId);
         if (null != storedParameters) {
-            DailyDigestTimeSettings dailyDigestTimePreference = new DailyDigestTimeSettings();
-            dailyDigestTimePreference.dailyDigestTimePreference = storedParameters.getExpectedRunningTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-            return Response.ok(dailyDigestTimePreference).build();
+            return Response.ok(storedParameters.getScheduledExecutionTime()).build();
         } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.ok(LocalTime.MIDNIGHT).build();
         }
     }
 }

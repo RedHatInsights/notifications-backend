@@ -5,26 +5,27 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.routers.models.DailyDigestTimeSettings;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import javax.ws.rs.core.Response;
+import java.time.LocalTime;
 
+import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
+import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_ACCESS;
 import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 class OrgConfigResourceTest extends DbIsolatedTest {
 
-    static final String TIME = "10:10:00";
-    public static final String ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL = "/org-config/notification-daily-digest-time-preference";
+    static final String TIME = "10:00";
+    public static final String ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL = "/org-config/daily-digest/time-preference";
     String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "empty", "user");
     Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
@@ -39,16 +40,14 @@ class OrgConfigResourceTest extends DbIsolatedTest {
         // check regular parameter
         recordDefaultDailyDigestTimePreference();
         // check request with wrong parameter
-        recordDailyDigestTimePreference(null, Response.Status.BAD_REQUEST.getStatusCode());
-        // check request with wrong parameter
         recordDailyDigestTimePreference("abc", Response.Status.BAD_REQUEST.getStatusCode());
         // check request with wrong parameter
-        recordDailyDigestTimePreference("25:00:00", Response.Status.BAD_REQUEST.getStatusCode());
+        recordDailyDigestTimePreference("25:00", Response.Status.BAD_REQUEST.getStatusCode());
         // check request without body
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(JSON)
+                .contentType(TEXT)
                 .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
                 .then()
                 .statusCode(Response.Status.BAD_REQUEST.getStatusCode());
@@ -57,31 +56,35 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     @Test
     void testGetDailyDigestTimePreference() {
 
-        given()
+        String foundedPreference = given()
                 .header(identityHeader)
                 .when()
-                .contentType(JSON)
+                .contentType(TEXT)
                 .get(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
                 .then()
-                .statusCode(Response.Status.NOT_FOUND.getStatusCode());
+                .statusCode(Response.Status.OK.getStatusCode())
+                .extract().asString();
+        assertEquals(LocalTime.MIDNIGHT.toString(), foundedPreference);
 
         recordDefaultDailyDigestTimePreference();
 
-        DailyDigestTimeSettings foundedPreference = given()
+        foundedPreference = given()
                 .header(identityHeader)
                 .when()
-                .contentType(JSON)
+                .contentType(TEXT)
                 .get(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
                 .then()
-                .statusCode(Response.Status.OK.getStatusCode()).extract().as(DailyDigestTimeSettings.class);
-        assertEquals(TIME, foundedPreference.dailyDigestTimePreference);
+                .statusCode(Response.Status.OK.getStatusCode())
+                .contentType(TEXT)
+                .extract().asString();
+        assertEquals(TIME, foundedPreference);
     }
 
     private void deleteDailyDigestTimePreference() {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(JSON)
+                .contentType(TEXT)
                 .delete(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
                 .then()
                 .statusCode(Response.Status.OK.getStatusCode());
@@ -92,17 +95,53 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     }
 
     private void recordDailyDigestTimePreference(String time, int expectedReturnCode) {
-        DailyDigestTimeSettings dayDailyDigestTimeSettings = new DailyDigestTimeSettings();
-        dayDailyDigestTimeSettings.dailyDigestTimePreference = time;
-
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(JSON)
-                .body(dayDailyDigestTimeSettings)
+                .contentType(TEXT)
+                .body(time)
                 .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
                 .then()
                 .statusCode(expectedReturnCode);
     }
 
+    @Test
+    void testInsufficientPrivileges() {
+        Header noAccessIdentityHeader = initRbacMock("tenant", "orgId", "noAccess", NO_ACCESS);
+        Header readAccessIdentityHeader = initRbacMock("tenant", "orgId", "readAccess", READ_ACCESS);
+
+        given()
+            .header(noAccessIdentityHeader)
+            .when()
+            .get(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
+            .then()
+            .statusCode(403);
+
+        given()
+            .header(noAccessIdentityHeader)
+            .when()
+            .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
+            .then()
+            .statusCode(403);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .when()
+            .get(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
+            .then()
+            .statusCode(200);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .when()
+            .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
+            .then()
+            .statusCode(403);
+    }
+
+    private Header initRbacMock(String accountId, String orgId, String username, MockServerConfig.RbacAccess access) {
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
+        return TestHelpers.createRHIdentityHeader(identityHeaderValue);
+    }
 }

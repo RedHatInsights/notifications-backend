@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
-import com.redhat.cloud.notifications.models.AggregationCronjobParameters;
+import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.quarkus.test.TestTransaction;
@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
@@ -47,11 +46,11 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
     @Inject
     FeatureFlipper featureFlipper;
 
-    final AggregationCronjobParameters someOrgIdToProceed = new AggregationCronjobParameters("someOrgId", //
+    final AggregationOrgConfig someOrgIdToProceed = new AggregationOrgConfig("someOrgId", //
             LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), 0), //
             LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
 
-    final AggregationCronjobParameters anotherOrgIdToProceed = new AggregationCronjobParameters("anotherOrgId", //
+    final AggregationOrgConfig anotherOrgIdToProceed = new AggregationOrgConfig("anotherOrgId", //
             LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), 0), //
             LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
 
@@ -70,7 +69,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
     }
 
     void initAggregationParameters() {
-        helpers.purgeAggregationCronjobParameters();
+        helpers.purgeAggregationOrgConfig();
         testee.defaultDailyDigestHour = LocalTime.now(ZoneOffset.UTC).getHour();
     }
 
@@ -122,8 +121,8 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         helpers.addEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         testee.setDefaultDailyDigestHour(LocalTime.now(ZoneOffset.UTC).getHour());
-        someOrgIdToProceed.setExpectedRunningTime(LocalTime.of(LocalTime.now(ZoneOffset.UTC).minusHours(2).getHour(), 0));
-        helpers.addAggregationCronjobParameters(someOrgIdToProceed);
+        someOrgIdToProceed.setScheduledExecutionTime(LocalTime.of(LocalTime.now(ZoneOffset.UTC).minusHours(2).getHour(), 0));
+        helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
         // Because we added time preferences for orgId someOrgId two hours in the past, those messages must me ignored
         testee.processDailyEmail();
@@ -144,7 +143,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         assertTrue(fourthAggregation.contains("subscriptionType\":\"DAILY"));
 
         // remove all preferences, and set default hour in the past, nothing should be processed
-        helpers.purgeAggregationCronjobParameters();
+        helpers.purgeAggregationOrgConfig();
         testee.setDefaultDailyDigestHour(LocalTime.now(ZoneOffset.UTC).getHour() - 2);
         connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
 
@@ -154,12 +153,12 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         assertEquals(0, results.received().size());
 
         // Finally add preferences for org id someOrgId at the right Time
-        helpers.purgeAggregationCronjobParameters();
-        someOrgIdToProceed.setExpectedRunningTime(LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), 0));
-        helpers.addAggregationCronjobParameters(someOrgIdToProceed);
+        helpers.purgeAggregationOrgConfig();
+        someOrgIdToProceed.setScheduledExecutionTime(LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), 0));
+        helpers.addAggregationOrgConfig(someOrgIdToProceed);
         LocalDateTime lastRun = someOrgIdToProceed.getLastRun();
         testee.processDailyEmail();
-        AggregationCronjobParameters parameters = helpers.findAggregationCronjobParametersByOrgId(someOrgIdToProceed.getOrgId());
+        AggregationOrgConfig parameters = helpers.findAggregationOrgConfigByOrgId(someOrgIdToProceed.getOrgId());
         assertNotNull(parameters);
         assertTrue(lastRun.isBefore(parameters.getLastRun()));
 
@@ -187,9 +186,9 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         helpers.addEmailAggregation("shouldBeIgnoredOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "unknown-bundle", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
-        helpers.addAggregationCronjobParameters(someOrgIdToProceed);
+        helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        testee.processAggregateEmails(LocalDateTime.now(UTC), Arrays.asList(someOrgIdToProceed), new CollectorRegistry());
+        testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
         final Gauge pairsProcessed = testee.getPairsProcessed();
 
         assertEquals(4.0, pairsProcessed.get());
@@ -203,10 +202,10 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         helpers.addEmailAggregation("anotherOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "unknown-bundle", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
-        helpers.addAggregationCronjobParameters(someOrgIdToProceed);
-        helpers.addAggregationCronjobParameters(anotherOrgIdToProceed);
+        helpers.addAggregationOrgConfig(someOrgIdToProceed);
+        helpers.addAggregationOrgConfig(anotherOrgIdToProceed);
 
-        testee.processAggregateEmails(LocalDateTime.now(UTC), Arrays.asList(anotherOrgIdToProceed, someOrgIdToProceed), new CollectorRegistry());
+        testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         final Gauge pairsProcessed = testee.getPairsProcessed();
 
@@ -221,9 +220,9 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         helpers.addEmailAggregation("shouldBeIgnoredOrgId", "unknown-bundle", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "unknown-bundle", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
-        helpers.addAggregationCronjobParameters(someOrgIdToProceed);
+        helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), Arrays.asList(someOrgIdToProceed), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(4, emailAggregations.size());
     }
@@ -234,9 +233,9 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("shouldBeIgnoredOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
-        helpers.addAggregationCronjobParameters(someOrgIdToProceed);
+        helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), Arrays.asList(someOrgIdToProceed), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
 
@@ -253,9 +252,9 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         helpers.addEmailAggregation("someOrgId", "someRhel", "somePolicies", "policyId1", "someHostId");
         helpers.addEmailAggregation("someOrgId", "someRhel", "somePolicies", "policyId2", "someHostId");
         helpers.addEmailAggregation("shouldBeIgnoredOrgId", "someRhel", "somePolicies", "policyId1", "someHostId");
-        helpers.addAggregationCronjobParameters(someOrgIdToProceed);
+        helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), Arrays.asList(someOrgIdToProceed), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
     }
@@ -266,18 +265,18 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         helpers.addEmailAggregation("someOrgId", "someRhel", "somePolicies", "somePolicyId", "hostId1");
         helpers.addEmailAggregation("someOrgId", "someRhel", "somePolicies", "somePolicyId", "hostId2");
         helpers.addEmailAggregation("shouldBeIgnoredOrgId", "someRhel", "somePolicies", "somePolicyId", "hostId2");
-        helpers.addAggregationCronjobParameters(someOrgIdToProceed);
+        helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
         List<AggregationCommand> emailAggregations = null;
-        emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), Arrays.asList(someOrgIdToProceed), new CollectorRegistry());
+        emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
         assertEquals(1, emailAggregations.size());
     }
 
     @Test
     @TestTransaction
     void shouldProcessZeroAggregations() {
-        helpers.addAggregationCronjobParameters(someOrgIdToProceed);
-        final List<AggregationCommand> emailAggregations = testee.processAggregateEmails(LocalDateTime.now(UTC), Arrays.asList(someOrgIdToProceed), new CollectorRegistry());
+        helpers.addAggregationOrgConfig(someOrgIdToProceed);
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(0, emailAggregations.size());
     }

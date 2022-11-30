@@ -1,6 +1,6 @@
-CREATE TABLE aggregation_cronjob_parameter
+CREATE TABLE aggregation_org_config
 (
     org_id                TEXT PRIMARY KEY,
-    expected_running_time time DEFAULT '00:00:00' NOT NULL,
+    scheduled_execution_time time DEFAULT '00:00:00' NOT NULL,
     last_run              timestamp
 );

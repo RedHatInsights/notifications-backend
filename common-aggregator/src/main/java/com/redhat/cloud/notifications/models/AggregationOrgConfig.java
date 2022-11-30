@@ -11,29 +11,29 @@ import java.util.Objects;
 
 
 @Entity
-@Table(name = "aggregation_cronjob_parameter")
-public class AggregationCronjobParameters {
+@Table(name = "aggregation_org_config")
+public class AggregationOrgConfig {
 
     @Id
     @NotNull
     @Size(max = 50)
     public String orgId;
 
-    private LocalTime expectedRunningTime;
+    private LocalTime scheduledExecutionTime;
 
     private LocalDateTime lastRun;
 
-    public AggregationCronjobParameters() {
+    public AggregationOrgConfig() {
     }
 
-    public AggregationCronjobParameters(String orgId, LocalTime expectedRunningTime) {
+    public AggregationOrgConfig(String orgId, LocalTime scheduledExecutionTime) {
         this.orgId = orgId;
-        this.expectedRunningTime = expectedRunningTime;
+        this.scheduledExecutionTime = scheduledExecutionTime;
     }
 
-    public AggregationCronjobParameters(String orgId, LocalTime expectedRunningTime, LocalDateTime lastRun) {
+    public AggregationOrgConfig(String orgId, LocalTime scheduledExecutionTime, LocalDateTime lastRun) {
         this.orgId = orgId;
-        this.expectedRunningTime = expectedRunningTime;
+        this.scheduledExecutionTime = scheduledExecutionTime;
         this.lastRun = lastRun;
     }
 
@@ -45,12 +45,12 @@ public class AggregationCronjobParameters {
         this.orgId = orgId;
     }
 
-    public LocalTime getExpectedRunningTime() {
-        return expectedRunningTime;
+    public LocalTime getScheduledExecutionTime() {
+        return scheduledExecutionTime;
     }
 
-    public void setExpectedRunningTime(LocalTime expectedRunningTime) {
-        this.expectedRunningTime = expectedRunningTime;
+    public void setScheduledExecutionTime(LocalTime expectedRunningTime) {
+        this.scheduledExecutionTime = expectedRunningTime;
     }
 
     public LocalDateTime getLastRun() {
@@ -69,12 +69,12 @@ public class AggregationCronjobParameters {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AggregationCronjobParameters that = (AggregationCronjobParameters) o;
-        return Objects.equals(orgId, that.orgId) && Objects.equals(expectedRunningTime, that.expectedRunningTime) && Objects.equals(lastRun, that.lastRun);
+        AggregationOrgConfig that = (AggregationOrgConfig) o;
+        return Objects.equals(orgId, that.orgId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(orgId, expectedRunningTime, lastRun);
+        return Objects.hash(orgId);
     }
 }

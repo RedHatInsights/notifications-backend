@@ -3,10 +3,10 @@ package com.redhat.cloud.notifications;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.AggregationCronjobParameterRepository;
+import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.EmailAggregationRepository;
 import com.redhat.cloud.notifications.models.AggregationCommand;
-import com.redhat.cloud.notifications.models.AggregationCronjobParameters;
+import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.CronJobRun;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
@@ -40,7 +40,7 @@ public class DailyEmailAggregationJob {
     EmailAggregationRepository emailAggregationResources;
 
     @Inject
-    AggregationCronjobParameterRepository aggregationCronjobParameterRepository;
+    AggregationOrgConfigRepository aggregationOrgConfigRepository;
 
     @Inject
     ObjectMapper objectMapper;
@@ -72,11 +72,10 @@ public class DailyEmailAggregationJob {
 
         try {
             LocalDateTime now = LocalDateTime.now(UTC);
-            List<AggregationCronjobParameters> listOrgIdToProceed = null;
             List<AggregationCommand> aggregationCommands = null;
             if (featureFlipper.isAggregatorOrgPrefEnabled()) {
-                listOrgIdToProceed = findOrgIdToProceed(now);
-                aggregationCommands = processAggregateEmails(now, listOrgIdToProceed, registry);
+                aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestHour);
+                aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
             } else {
                 aggregationCommands = processAggregateEmails(now, registry);
             }
@@ -98,7 +97,7 @@ public class DailyEmailAggregationJob {
             }
 
             if (featureFlipper.isAggregatorOrgPrefEnabled()) {
-                listOrgIdToProceed.stream().forEach(orgPref -> orgPref.setLastRun(now));
+                emailAggregationResources.updateLastCronJobRunAccordingOrgPref(now);
             } else {
                 emailAggregationResources.updateLastCronJobRun(now);
             }
@@ -123,40 +122,10 @@ public class DailyEmailAggregationJob {
         }
     }
 
-    List<AggregationCronjobParameters> findOrgIdToProceed(LocalDateTime currentHour) {
-        // create missing default configuration if needed
-        aggregationCronjobParameterRepository.createMissingDefaultConfiguration(defaultDailyDigestHour);
-        return aggregationCronjobParameterRepository.getOrgIdToProceed(currentHour);
-    }
+    List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
 
-    List<AggregationCommand> processAggregateEmails(LocalDateTime endTime, final List<AggregationCronjobParameters> listOrgIdToProceed, CollectorRegistry registry) {
-
-        final List<AggregationCommand> pendingAggregationCommands = listOrgIdToProceed.stream().map(aggregationParameters -> {
-            final LocalDateTime startTime = aggregationParameters.getLastRun();
-            final String orgIdToAggregate = aggregationParameters.getOrgId();
-            Log.infof("Collecting email aggregation for orgId %s, for period (%s, %s) and type %s",
-                    orgIdToAggregate,
-                    startTime,
-                    endTime,
-                    DAILY);
-
-            final List<AggregationCommand> pendingAggregationCommandsForOrgId =
-                    emailAggregationResources.getApplicationsWithPendingAggregation(orgIdToAggregate, startTime, endTime)
-                            .stream()
-                            .map(aggregationKey -> new AggregationCommand(aggregationKey, startTime, endTime, DAILY))
-                            .collect(Collectors.toList());
-            Log.infof(
-                    "Finished collecting email aggregations for period (%s, %s) and type %s after %d seconds. %d (orgIds, applications) pairs were processed",
-                    startTime,
-                    endTime,
-                    DAILY,
-                    SECONDS.between(endTime, LocalDateTime.now(UTC)),
-                    pendingAggregationCommandsForOrgId.size()
-            );
-            return pendingAggregationCommandsForOrgId;
-
-        }).flatMap(List::stream).collect(Collectors.toList());
-
+        final List<AggregationCommand> pendingAggregationCommands =
+                    emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrfPref(endTime);
         pairsProcessed = Gauge
                 .build()
                 .name("aggregator_job_orgid_application_pairs_processed")

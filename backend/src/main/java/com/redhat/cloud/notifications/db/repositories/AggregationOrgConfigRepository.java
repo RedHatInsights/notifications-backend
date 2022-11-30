@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.models.AggregationCronjobParameters;
+import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -10,25 +10,25 @@ import java.time.LocalTime;
 
 
 @ApplicationScoped
-public class AggregationCronjobParametersRepository {
+public class AggregationOrgConfigRepository {
 
     @Inject
     EntityManager entityManager;
 
     @Transactional
     public void createOrUpdateDailyDigestPreference(String orgId, LocalTime expectedTime) {
-        AggregationCronjobParameters cronjobParameters = findJobAggregationCronjobParameters(orgId);
+        AggregationOrgConfig cronjobParameters = findJobAggregationOrgConfig(orgId);
 
         if (cronjobParameters != null) {
-            cronjobParameters.setExpectedRunningTime(expectedTime);
+            cronjobParameters.setScheduledExecutionTime(expectedTime);
             entityManager.merge(cronjobParameters);
         } else {
-            cronjobParameters = new AggregationCronjobParameters(orgId, expectedTime);
+            cronjobParameters = new AggregationOrgConfig(orgId, expectedTime);
             entityManager.persist(cronjobParameters);
         }
     }
 
-    public AggregationCronjobParameters findJobAggregationCronjobParameters(String orgId) {
-        return entityManager.find(AggregationCronjobParameters.class, orgId);
+    public AggregationOrgConfig findJobAggregationOrgConfig(String orgId) {
+        return entityManager.find(AggregationOrgConfig.class, orgId);
     }
 }

@@ -1,8 +1,9 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.CronJobRun;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-
+import io.quarkus.logging.Log;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -11,7 +12,9 @@ import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static java.util.stream.Collectors.toList;
+
 
 @ApplicationScoped
 public class EmailAggregationRepository {
@@ -19,19 +22,23 @@ public class EmailAggregationRepository {
     @Inject
     EntityManager entityManager;
 
-    public List<EmailAggregationKey> getApplicationsWithPendingAggregation(String orgIdToAggregate, LocalDateTime start, LocalDateTime end) {
+    public List<AggregationCommand> getApplicationsWithPendingAggregationAccordinfOrfPref(LocalDateTime end) {
+        String query = "SELECT DISTINCT ea.orgId, ea.bundleName, ea.applicationName, acp.lastRun FROM EmailAggregation ea, AggregationOrgConfig acp WHERE " +
+            "ea.orgId = acp.orgId AND ea.created > acp.lastRun AND ea.created <= :end " +
+            "AND hour(acp.scheduledExecutionTime) = :runningHour";
 
-        String query = "SELECT DISTINCT ea.org_id, ea.bundle, ea.application FROM email_aggregation ea "
-                + " WHERE ea.org_id = :orgId AND ea.created > :start AND ea.created <= :end";
+        Query hqlQuery = entityManager.createQuery(query)
+                .setParameter("runningHour", end.getHour())
+                .setParameter("end", end);
 
-        Query nativeQuery = entityManager.createNativeQuery(query)
-                .setParameter("start", start)
-                .setParameter("end", end)
-                .setParameter("orgId", orgIdToAggregate);
-
-        List<Object[]> records = nativeQuery.getResultList();
+        List<Object[]> records = hqlQuery.getResultList();
         return records.stream()
-                .map(emailAggregationRecord -> new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2]))
+                .map(emailAggregationRecord -> new AggregationCommand(
+                    new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2]),
+                    (LocalDateTime) emailAggregationRecord[3],
+                    end,
+                    DAILY
+                ))
                 .collect(toList());
     }
 
@@ -58,6 +65,21 @@ public class EmailAggregationRepository {
         entityManager.createQuery(query)
                 .setParameter("lastRun", lastRun)
                 .executeUpdate();
+    }
+
+    @Transactional
+    public void updateLastCronJobRunAccordingOrgPref(LocalDateTime end) {
+
+        String hqlQuery = "UPDATE AggregationOrgConfig ac SET ac.lastRun=:end WHERE ac.orgId IN " +
+            "(SELECT DISTINCT ea.orgId FROM EmailAggregation ea, AggregationOrgConfig acp WHERE " +
+            "ea.orgId = acp.orgId AND ea.created > acp.lastRun AND ea.created <= :end " +
+            "AND hour(acp.scheduledExecutionTime) = :runningHour)";
+        Query nativeQuery = entityManager.createQuery(hqlQuery)
+            .setParameter("runningHour", end.getHour())
+            .setParameter("end", end);
+
+        int nbUpdatedRecords = nativeQuery.executeUpdate();
+        Log.infof("Last run date was updated for %s orgId", nbUpdatedRecords);
     }
 
 }

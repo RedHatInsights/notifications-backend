@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.helpers;
 
-import com.redhat.cloud.notifications.models.AggregationCronjobParameters;
+import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 
@@ -23,19 +23,20 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public void addAggregationCronjobParameters(AggregationCronjobParameters aggregationCronjobParameters) {
-        entityManager.persist(aggregationCronjobParameters);
+    public void addAggregationOrgConfig(AggregationOrgConfig aggregationOrgConfig) {
+        entityManager.persist(aggregationOrgConfig);
     }
 
-    public AggregationCronjobParameters findAggregationCronjobParametersByOrgId(String orgId) {
-        return entityManager.createQuery("SELECT acp FROM AggregationCronjobParameters acp WHERE acp.orgId =:orgId", AggregationCronjobParameters.class) //
-                .setParameter("orgId", orgId) //
+    public AggregationOrgConfig findAggregationOrgConfigByOrgId(String orgId) {
+        entityManager.clear();
+        return entityManager.createQuery("SELECT acp FROM AggregationOrgConfig acp WHERE acp.orgId =:orgId", AggregationOrgConfig.class)
+                .setParameter("orgId", orgId)
                 .getSingleResult();
     }
 
     @Transactional
-    public void purgeAggregationCronjobParameters() {
-        entityManager.createQuery("DELETE FROM AggregationCronjobParameters").executeUpdate();
+    public void purgeAggregationOrgConfig() {
+        entityManager.createQuery("DELETE FROM AggregationOrgConfig").executeUpdate();
         entityManager.clear();
     }
 
