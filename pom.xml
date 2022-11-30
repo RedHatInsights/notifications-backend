@@ -10,7 +10,6 @@
     <packaging>pom</packaging>
 
     <modules>
-
         <module>aggregator</module>
         <module>backend</module>
         <module>camel-sender-demo</module>
