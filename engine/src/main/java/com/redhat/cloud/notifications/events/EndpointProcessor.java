@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.rhose.RhoseTypeProcessor;
@@ -17,6 +18,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -94,6 +96,37 @@ public class EndpointProcessor {
                     accumulator.add(e);
                 }
             }
+        });
+    }
+
+    /**
+     * Processes the test event with the given endpoint's UUID.
+     * @param event the event to process.
+     * @param endpointUuid the endpoint's UUID.
+     */
+    public void processTestEvent(final Event event, final UUID endpointUuid) {
+        processedItems.increment();
+
+        final Endpoint endpoint = this.endpointRepository.findByUuid(endpointUuid);
+
+        DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
+            final EndpointTypeProcessor processor;
+
+            switch (endpoint.getType()) {
+                case CAMEL:
+                    processor = camelProcessor;
+                    break;
+                case WEBHOOK:
+                    processor = webhookProcessor;
+                    break;
+                case EMAIL_SUBSCRIPTION:
+                    processor = emailProcessor;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected endpoint type: " + endpoint.getType());
+            }
+
+            processor.process(event, List.of(endpoint));
         });
     }
 }

@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -130,5 +131,25 @@ public class EndpointRepositoryTest {
         return statelessSessionFactory.getCurrentSession().createQuery(hql, Endpoint.class)
                 .setParameter("id", id)
                 .getSingleResult();
+    }
+
+    /**
+     * Tests that the "findByUuid" function works as expected. The test creates an endpoint first, and then fetches
+     * it to ensure that the function works.
+     */
+    @Test
+    void findByUuidTest() {
+        final Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, true, 12);
+
+        final Endpoint[] dbEndpoint = new Endpoint[1];
+
+        this.statelessSessionFactory.withSession(statelessSession -> {
+            dbEndpoint[0] = this.endpointRepository.findByUuid(endpoint.getId());
+        });
+
+        Assertions.assertEquals(endpoint.getId(), dbEndpoint[0].getId(), "unexpected id from the fetched endpoint");
+        Assertions.assertEquals(endpoint.getType(), dbEndpoint[0].getType(), "unexpected endpoint type from the fetched endpoint");
+        Assertions.assertTrue(dbEndpoint[0].isEnabled(), "unexpected enabled value from the fetched endpoint");
+        Assertions.assertEquals(12, dbEndpoint[0].getServerErrors(), "unexpected server errors value from the fetched endpoint");
     }
 }

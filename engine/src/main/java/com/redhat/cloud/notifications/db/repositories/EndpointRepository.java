@@ -160,6 +160,27 @@ public class EndpointRepository {
         }
     }
 
+    /**
+     * Gets the endpoint by its UUID.
+     * @param endpointUuid the UUID of the endpoint.
+     * @return the endpoint found.
+     */
+    public Endpoint findByUuid(final UUID endpointUuid) {
+        final String query =
+                "SELECT " +
+                    "e " +
+                "FROM " +
+                    "Endpoint AS e " +
+                "WHERE " +
+                    "id = :uuid";
+
+        return this.statelessSessionFactory
+            .getCurrentSession()
+            .createQuery(query, Endpoint.class)
+            .setParameter("uuid", endpointUuid)
+            .uniqueResult();
+    }
+
     private Optional<Endpoint> lockEndpoint(UUID endpointId) {
         String hql = "FROM Endpoint WHERE id = :id";
         try {
