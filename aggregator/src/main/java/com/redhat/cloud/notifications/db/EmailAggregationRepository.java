@@ -22,7 +22,7 @@ public class EmailAggregationRepository {
     @Inject
     EntityManager entityManager;
 
-    public List<AggregationCommand> getApplicationsWithPendingAggregationAccordinfOrfPref(LocalDateTime end) {
+    public List<AggregationCommand> getApplicationsWithPendingAggregationAccordinfOrgPref(LocalDateTime end) {
         String query = "SELECT DISTINCT ea.orgId, ea.bundleName, ea.applicationName, acp.lastRun FROM EmailAggregation ea, AggregationOrgConfig acp WHERE " +
             "ea.orgId = acp.orgId AND ea.created > acp.lastRun AND ea.created <= :end " +
             "AND hour(acp.scheduledExecutionTime) = :runningHour";
@@ -68,14 +68,11 @@ public class EmailAggregationRepository {
     }
 
     @Transactional
-    public void updateLastCronJobRunAccordingOrgPref(LocalDateTime end) {
+    public void updateLastCronJobRunAccordingOrgPref(List<String> orgIdsToUpdate, LocalDateTime end) {
 
-        String hqlQuery = "UPDATE AggregationOrgConfig ac SET ac.lastRun=:end WHERE ac.orgId IN " +
-            "(SELECT DISTINCT ea.orgId FROM EmailAggregation ea, AggregationOrgConfig acp WHERE " +
-            "ea.orgId = acp.orgId AND ea.created > acp.lastRun AND ea.created <= :end " +
-            "AND hour(acp.scheduledExecutionTime) = :runningHour)";
+        String hqlQuery = "UPDATE AggregationOrgConfig ac SET ac.lastRun=:end WHERE ac.orgId IN :orgIdsToUpdate";
         Query nativeQuery = entityManager.createQuery(hqlQuery)
-            .setParameter("runningHour", end.getHour())
+            .setParameter("orgIdsToUpdate", orgIdsToUpdate)
             .setParameter("end", end);
 
         int nbUpdatedRecords = nativeQuery.executeUpdate();

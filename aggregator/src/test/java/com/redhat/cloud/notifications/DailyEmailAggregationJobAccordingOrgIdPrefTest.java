@@ -11,6 +11,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
+import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,30 +88,29 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL);
         assertEquals(4, results.received().size());
 
-        final String firstAggregation = results.received().get(2).getPayload();
-        assertTrue(firstAggregation.contains("orgId\":\"someOrgId"));
-        assertTrue(firstAggregation.contains("bundle\":\"rhel"));
-        assertTrue(firstAggregation.contains("application\":\"policies"));
-        assertTrue(firstAggregation.contains("subscriptionType\":\"DAILY"));
+        final JsonObject firstAggregation = new JsonObject(results.received().get(2).getPayload());
+        assertEquals("someOrgId", firstAggregation.getJsonObject("aggregationKey").getString("orgId"));
+        assertEquals("rhel", firstAggregation.getJsonObject("aggregationKey").getString("bundle"));
+        assertEquals("policies", firstAggregation.getJsonObject("aggregationKey").getString("application"));
+        assertEquals("DAILY", firstAggregation.getString("subscriptionType"));
 
-        final String secondAggregation = results.received().get(0).getPayload();
-        assertTrue(secondAggregation.contains("orgId\":\"anotherOrgId"));
-        assertTrue(secondAggregation.contains("bundle\":\"rhel"));
-        assertTrue(secondAggregation.contains("application\":\"policies"));
-        assertTrue(secondAggregation.contains("subscriptionType\":\"DAILY"));
+        final JsonObject secondAggregation = new JsonObject(results.received().get(0).getPayload());
+        assertEquals("anotherOrgId", secondAggregation.getJsonObject("aggregationKey").getString("orgId"));
+        assertEquals("rhel", secondAggregation.getJsonObject("aggregationKey").getString("bundle"));
+        assertEquals("policies", secondAggregation.getJsonObject("aggregationKey").getString("application"));
+        assertEquals("DAILY", secondAggregation.getString("subscriptionType"));
 
-        final String thirdAggregation = results.received().get(3).getPayload();
-        assertTrue(thirdAggregation.contains("orgId\":\"someOrgId"));
-        assertTrue(thirdAggregation.contains("bundle\":\"rhel"));
-        assertTrue(thirdAggregation.contains("application\":\"unknown-application"));
-        assertTrue(thirdAggregation.contains("subscriptionType\":\"DAILY"));
+        final JsonObject thirdAggregation = new JsonObject(results.received().get(3).getPayload());
+        assertEquals("someOrgId", thirdAggregation.getJsonObject("aggregationKey").getString("orgId"));
+        assertEquals("rhel", thirdAggregation.getJsonObject("aggregationKey").getString("bundle"));
+        assertEquals("unknown-application", thirdAggregation.getJsonObject("aggregationKey").getString("application"));
+        assertEquals("DAILY", thirdAggregation.getString("subscriptionType"));
 
-        final String fourthAggregation = results.received().get(1).getPayload();
-        assertTrue(fourthAggregation.contains("orgId\":\"anotherOrgId"));
-        assertTrue(fourthAggregation.contains("bundle\":\"rhel"));
-        assertTrue(fourthAggregation.contains("application\":\"unknown-application"));
-        assertTrue(fourthAggregation.contains("subscriptionType\":\"DAILY"));
-
+        final JsonObject fourthAggregation = new JsonObject(results.received().get(1).getPayload());
+        assertEquals("anotherOrgId", fourthAggregation.getJsonObject("aggregationKey").getString("orgId"));
+        assertEquals("rhel", fourthAggregation.getJsonObject("aggregationKey").getString("bundle"));
+        assertEquals("unknown-application", fourthAggregation.getJsonObject("aggregationKey").getString("application"));
+        assertEquals("DAILY", fourthAggregation.getString("subscriptionType"));
     }
 
     @Test
@@ -130,17 +130,17 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL);
         assertEquals(2, results.received().size());
 
-        final String secondAggregation = results.received().get(0).getPayload();
-        assertTrue(secondAggregation.contains("orgId\":\"anotherOrgId"));
-        assertTrue(secondAggregation.contains("bundle\":\"rhel"));
-        assertTrue(secondAggregation.contains("application\":\"policies"));
-        assertTrue(secondAggregation.contains("subscriptionType\":\"DAILY"));
+        final JsonObject secondAggregation = new JsonObject(results.received().get(0).getPayload());
+        assertEquals("anotherOrgId", secondAggregation.getJsonObject("aggregationKey").getString("orgId"));
+        assertEquals("rhel", secondAggregation.getJsonObject("aggregationKey").getString("bundle"));
+        assertEquals("policies", secondAggregation.getJsonObject("aggregationKey").getString("application"));
+        assertEquals("DAILY", secondAggregation.getString("subscriptionType"));
 
-        final String fourthAggregation = results.received().get(1).getPayload();
-        assertTrue(fourthAggregation.contains("orgId\":\"anotherOrgId"));
-        assertTrue(fourthAggregation.contains("bundle\":\"rhel"));
-        assertTrue(fourthAggregation.contains("application\":\"unknown-application"));
-        assertTrue(fourthAggregation.contains("subscriptionType\":\"DAILY"));
+        final JsonObject fourthAggregation = new JsonObject(results.received().get(1).getPayload());
+        assertEquals("anotherOrgId", fourthAggregation.getJsonObject("aggregationKey").getString("orgId"));
+        assertEquals("rhel", fourthAggregation.getJsonObject("aggregationKey").getString("bundle"));
+        assertEquals("unknown-application", fourthAggregation.getJsonObject("aggregationKey").getString("application"));
+        assertEquals("DAILY", fourthAggregation.getString("subscriptionType"));
 
         // remove all preferences, and set default hour in the past, nothing should be processed
         helpers.purgeAggregationOrgConfig();
@@ -149,7 +149,6 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
 
         testee.processDailyEmail();
 
-        results = connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL);
         assertEquals(0, results.received().size());
 
         // Finally add preferences for org id someOrgId at the right Time
@@ -165,17 +164,17 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         results = connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL);
         assertEquals(2, results.received().size());
 
-        final String firstAggregation = results.received().get(0).getPayload();
-        assertTrue(firstAggregation.contains("orgId\":\"someOrgId"));
-        assertTrue(firstAggregation.contains("bundle\":\"rhel"));
-        assertTrue(firstAggregation.contains("application\":\"policies"));
-        assertTrue(firstAggregation.contains("subscriptionType\":\"DAILY"));
+        final JsonObject firstAggregation = new JsonObject(results.received().get(0).getPayload());
+        assertEquals("someOrgId", firstAggregation.getJsonObject("aggregationKey").getString("orgId"));
+        assertEquals("rhel", firstAggregation.getJsonObject("aggregationKey").getString("bundle"));
+        assertEquals("policies", firstAggregation.getJsonObject("aggregationKey").getString("application"));
+        assertEquals("DAILY", firstAggregation.getString("subscriptionType"));
 
-        final String thirdAggregation = results.received().get(1).getPayload();
-        assertTrue(thirdAggregation.contains("orgId\":\"someOrgId"));
-        assertTrue(thirdAggregation.contains("bundle\":\"rhel"));
-        assertTrue(thirdAggregation.contains("application\":\"unknown-application"));
-        assertTrue(thirdAggregation.contains("subscriptionType\":\"DAILY"));
+        final JsonObject thirdAggregation = new JsonObject(results.received().get(1).getPayload());
+        assertEquals("someOrgId", thirdAggregation.getJsonObject("aggregationKey").getString("orgId"));
+        assertEquals("rhel", thirdAggregation.getJsonObject("aggregationKey").getString("bundle"));
+        assertEquals("unknown-application", thirdAggregation.getJsonObject("aggregationKey").getString("application"));
+        assertEquals("DAILY", thirdAggregation.getString("subscriptionType"));
     }
 
     @Test

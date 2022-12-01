@@ -96,7 +96,8 @@ public class DailyEmailAggregationJob {
             }
 
             if (featureFlipper.isAggregatorOrgPrefEnabled()) {
-                emailAggregationResources.updateLastCronJobRunAccordingOrgPref(now);
+                List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getAggregationKey().getOrgId()).collect(Collectors.toList());
+                emailAggregationResources.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
             } else {
                 emailAggregationResources.updateLastCronJobRun(now);
             }
@@ -124,7 +125,7 @@ public class DailyEmailAggregationJob {
     List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
 
         final List<AggregationCommand> pendingAggregationCommands =
-                    emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrfPref(endTime);
+                    emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);
         pairsProcessed = Gauge
                 .build()
                 .name("aggregator_job_orgid_application_pairs_processed")
