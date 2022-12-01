@@ -17,6 +17,7 @@ import java.time.LocalTime;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_ACCESS;
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -24,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @QuarkusTestResource(TestLifecycleManager.class)
 class OrgConfigResourceTest extends DbIsolatedTest {
 
-    static final String TIME = "10:00";
+    static final LocalTime TIME = LocalTime.of(10, 00);
+
     public static final String ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL = "/org-config/daily-digest/time-preference";
     String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "empty", "user");
     Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -39,15 +41,12 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     void testSaveDailyDigestTimePreference() {
         // check regular parameter
         recordDefaultDailyDigestTimePreference();
-        // check request with wrong parameter
-        recordDailyDigestTimePreference("abc", Response.Status.BAD_REQUEST.getStatusCode());
-        // check request with wrong parameter
-        recordDailyDigestTimePreference("25:00", Response.Status.BAD_REQUEST.getStatusCode());
+
         // check request without body
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(TEXT)
+                .contentType(JSON)
                 .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
                 .then()
                 .statusCode(Response.Status.BAD_REQUEST.getStatusCode());
@@ -55,16 +54,15 @@ class OrgConfigResourceTest extends DbIsolatedTest {
 
     @Test
     void testGetDailyDigestTimePreference() {
-
-        String foundedPreference = given()
+        LocalTime foundedPreference = given()
                 .header(identityHeader)
                 .when()
                 .contentType(TEXT)
                 .get(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
                 .then()
                 .statusCode(Response.Status.OK.getStatusCode())
-                .extract().asString();
-        assertEquals(LocalTime.MIDNIGHT.toString(), foundedPreference);
+                .extract().as(LocalTime.class);
+        assertEquals(LocalTime.MIDNIGHT, foundedPreference);
 
         recordDefaultDailyDigestTimePreference();
 
@@ -75,30 +73,20 @@ class OrgConfigResourceTest extends DbIsolatedTest {
                 .get(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
                 .then()
                 .statusCode(Response.Status.OK.getStatusCode())
-                .contentType(TEXT)
-                .extract().asString();
+                .contentType(JSON)
+                .extract().as(LocalTime.class);
         assertEquals(TIME, foundedPreference);
-    }
-
-    private void deleteDailyDigestTimePreference() {
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(TEXT)
-                .delete(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
-                .then()
-                .statusCode(Response.Status.OK.getStatusCode());
     }
 
     private void recordDefaultDailyDigestTimePreference() {
         recordDailyDigestTimePreference(TIME, Response.Status.OK.getStatusCode());
     }
 
-    private void recordDailyDigestTimePreference(String time, int expectedReturnCode) {
+    private void recordDailyDigestTimePreference(LocalTime time, int expectedReturnCode) {
         given()
                 .header(identityHeader)
                 .when()
-                .contentType(TEXT)
+                .contentType(JSON)
                 .body(time)
                 .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
                 .then()
