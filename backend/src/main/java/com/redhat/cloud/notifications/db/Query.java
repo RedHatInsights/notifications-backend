@@ -2,6 +2,8 @@ package com.redhat.cloud.notifications.db;
 
 import io.quarkus.logging.Log;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.InternalServerErrorException;
@@ -23,13 +25,17 @@ public class Query {
 
     @QueryParam("limit")
     @DefaultValue(DEFAULT_RESULTS_PER_PAGE + "")
-    private Integer pageSize;
+    @Min(value = 1, message = "The collection limit cannot be lower than {value}")
+    @Max(value = 200, message = "The collection limit cannot be greater than {value}")
+    Integer pageSize;
 
     @QueryParam("pageNumber")
-    private Integer pageNumber;
+    @Min(value = 1, message = "The page number cannot be lower than {value}")
+    Integer pageNumber;
 
     @QueryParam("offset")
-    private Integer offset;
+    @Min(value = 0, message = "The offset cannot be lower than {value}")
+    Integer offset;
 
     @QueryParam("sort_by")
     String sortBy;

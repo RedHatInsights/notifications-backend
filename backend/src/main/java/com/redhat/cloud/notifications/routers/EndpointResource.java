@@ -161,7 +161,7 @@ public class EndpointResource {
     })
     public EndpointPage getEndpoints(
             @Context SecurityContext sec,
-            @BeanParam Query query,
+            @BeanParam @Valid Query query,
             @QueryParam("type") List<String> targetType,
             @QueryParam("active") Boolean activeOnly,
             @QueryParam("name") String name) {
@@ -568,7 +568,7 @@ public class EndpointResource {
     })
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
+    public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam @Valid Query query) {
         // TODO We need globally limitations (Paging support and limits etc)
         String orgId = getOrgId(sec);
         boolean doDetail = includeDetail != null && includeDetail;
