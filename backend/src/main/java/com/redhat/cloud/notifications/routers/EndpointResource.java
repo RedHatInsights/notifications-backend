@@ -703,7 +703,7 @@ public class EndpointResource {
             throw new NotFoundException();
         }
 
-        this.sendTestEvent(orgId);
+        this.sendTestEvent(uuid, orgId);
 
         return Response.noContent().build();
     }
@@ -782,9 +782,16 @@ public class EndpointResource {
 
     /**
      * Sends a test action to the "ingress" queue on Kafka.
+     * @param endpointId the ID of the endpoint to set in the action's context.
+     * @param orgId the org id to be set in the action.
      */
-    protected void sendTestEvent(final String orgId) {
+    protected void sendTestEvent(final UUID endpointId, final String orgId) {
         Action testAction = new Action();
+
+        final var context = new com.redhat.cloud.notifications.ingress.Context();
+        context.setAdditionalProperty(TestEventConstants.TEST_ACTION_CONTEXT_TEST_EVENT, TestEventConstants.TEST_ACTION_CONTEXT_TEST_EVENT_VALUE);
+        context.setAdditionalProperty(TestEventConstants.TEST_ACTION_CONTEXT_ENDPOINT_ID, endpointId);
+        testAction.setContext(context);
 
         /*
          * Create a test event which will be sent along with the action.

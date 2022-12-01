@@ -8,15 +8,11 @@ package com.redhat.cloud.notifications.models.event;
  */
 public class TestEventConstants {
     /**
-     * These context keys and values will help us discern which events are test
-     * events.
-     */
-    public static final String TEST_ACTION_CONTEXT_KEY = "notifications-test-action-context";
-    public static final String TEST_ACTION_CONTEXT_VALUE = "notifications-test-action-context-value";
-
-    /**
      * Regular action test data.
      */
+    public static final String TEST_ACTION_CONTEXT_TEST_EVENT = "test-action-context-test-event";
+    public static final boolean TEST_ACTION_CONTEXT_TEST_EVENT_VALUE = true;
+    public static final String TEST_ACTION_CONTEXT_ENDPOINT_ID = "test-action-context-endpoint-id";
     public static final String TEST_ACTION_METADATA_KEY = "test-metadata-key";
     public static final String TEST_ACTION_METADATA_VALUE = "test-metadata-value";
     public static final String TEST_ACTION_PAYLOAD_KEY = "test-payload-key";

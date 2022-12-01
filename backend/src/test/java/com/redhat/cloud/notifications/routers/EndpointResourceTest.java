@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
@@ -2087,6 +2088,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Assertions.assertEquals(TestEventConstants.TEST_ACTION_APPLICATION, kafkaAction.getApplication(), "unexpected application in the test action");
         Assertions.assertEquals(TestEventConstants.TEST_ACTION_EVENT_TYPE, kafkaAction.getEventType(), "unexpected event type in the test action");
         Assertions.assertEquals(orgId, kafkaAction.getOrgId(), "unexpected org id in the test action");
+
+        final Context context = kafkaAction.getContext();
+        Map<String, Object> contextProperties = context.getAdditionalProperties();
+        Assertions.assertTrue((boolean) contextProperties.get(TestEventConstants.TEST_ACTION_CONTEXT_TEST_EVENT), "unexpected test action flag value received in the action's context");
+        Assertions.assertEquals(endpointUuid, contextProperties.get(TestEventConstants.TEST_ACTION_CONTEXT_ENDPOINT_ID), "unexpected endpoint ID received in the action's context");
 
         // Check the recipients and its users.
         final var expectedRecipientsCount = 1;
