@@ -36,7 +36,7 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 public class EventType {
 
     public static final Map<String, String> SORT_FIELDS = Map.of(
-            "name", "name",
+            "name", "e.name",
             "display_name", "e.displayName",
             "application", "e.application.displayName",
             // NOTIF-674 Remove these entries after the frontend has been updated
