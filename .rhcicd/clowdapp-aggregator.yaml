@@ -61,6 +61,8 @@ objects:
           value: ${ENV_NAME}
         - name: PROMETHEUS_PUSHGATEWAY_URL
           value: ${PROMETHEUS_PUSHGATEWAY}
+        - name: NOTIFICATIONS_AGGREGATOR_ORG_PREF_ENABLED
+          value: ${NOTIFICATIONS_AGGREGATOR_ORG_PREF_ENABLED}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -101,4 +103,7 @@ parameters:
   value: "300"
 - name: SUSPEND_AGGREGATION_JOB
   description: Should the aggregation cron job be disabled?
+  value: "false"
+- name: NOTIFICATIONS_AGGREGATOR_ORG_PREF_ENABLED
+  description: Should use Org id preferences for daily digest ?
   value: "false"

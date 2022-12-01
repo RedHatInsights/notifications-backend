@@ -2,7 +2,9 @@ package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.db.EmailAggregationResources;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
+import com.redhat.cloud.notifications.db.EmailAggregationRepository;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.CronJobRun;
 import io.prometheus.client.CollectorRegistry;
@@ -12,6 +14,7 @@ import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -32,22 +35,29 @@ public class DailyEmailAggregationJob {
 
     public static final String AGGREGATION_CHANNEL = "aggregation";
 
-    private final EmailAggregationResources emailAggregationResources;
-    private final ObjectMapper objectMapper;
+    @Inject
+    EmailAggregationRepository emailAggregationResources;
+
+    @Inject
+    AggregationOrgConfigRepository aggregationOrgConfigRepository;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @ConfigProperty(name = "prometheus.pushgateway.url")
     String prometheusPushGatewayUrl;
+
+    @ConfigProperty(name = "notification.default.daily.digest.hour", defaultValue = "0")
+    int defaultDailyDigestHour;
 
     @Inject
     @Channel(AGGREGATION_CHANNEL)
     Emitter<String> emitter;
 
-    private Gauge pairsProcessed;
+    @Inject
+    FeatureFlipper featureFlipper;
 
-    public DailyEmailAggregationJob(EmailAggregationResources emailAggregationResources, ObjectMapper objectMapper) {
-        this.emailAggregationResources = emailAggregationResources;
-        this.objectMapper = objectMapper;
-    }
+    private Gauge pairsProcessed;
 
     @ActivateRequestContext
     public void processDailyEmail() {
@@ -61,8 +71,13 @@ public class DailyEmailAggregationJob {
 
         try {
             LocalDateTime now = LocalDateTime.now(UTC);
-
-            List<AggregationCommand> aggregationCommands = processAggregateEmails(now, registry);
+            List<AggregationCommand> aggregationCommands = null;
+            if (featureFlipper.isAggregatorOrgPrefEnabled()) {
+                aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestHour);
+                aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
+            } else {
+                aggregationCommands = processAggregateEmails(now, registry);
+            }
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             for (AggregationCommand aggregationCommand : aggregationCommands) {
                 try {
@@ -80,7 +95,12 @@ public class DailyEmailAggregationJob {
                 }
             }
 
-            emailAggregationResources.updateLastCronJobRun(now);
+            if (featureFlipper.isAggregatorOrgPrefEnabled()) {
+                List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getAggregationKey().getOrgId()).collect(Collectors.toList());
+                emailAggregationResources.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
+            } else {
+                emailAggregationResources.updateLastCronJobRun(now);
+            }
 
             Gauge lastSuccess = Gauge
                     .build()
@@ -88,6 +108,9 @@ public class DailyEmailAggregationJob {
                     .help("Last time the aggregator job succeeded.")
                     .register(registry);
             lastSuccess.setToCurrentTime();
+        } catch (Exception ex) {
+            Log.error("Daily aggregation job failed", ex);
+            throw ex;
         } finally {
             durationTimer.setDuration();
             PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
@@ -99,7 +122,23 @@ public class DailyEmailAggregationJob {
         }
     }
 
+    List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
+
+        final List<AggregationCommand> pendingAggregationCommands =
+                    emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);
+        pairsProcessed = Gauge
+                .build()
+                .name("aggregator_job_orgid_application_pairs_processed")
+                .help("Number of orgId and application pairs processed.")
+                .register(registry);
+        pairsProcessed.set(pendingAggregationCommands.size());
+
+        return pendingAggregationCommands;
+    }
+
+    @Deprecated(forRemoval = true)
     List<AggregationCommand> processAggregateEmails(LocalDateTime endTime, CollectorRegistry registry) {
+
         final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
         LocalDateTime startTime = lastCronJobRun.getLastRun();
 
@@ -132,5 +171,10 @@ public class DailyEmailAggregationJob {
 
     Gauge getPairsProcessed() {
         return pairsProcessed;
+    }
+
+    // For automatic tests purpose
+    protected void setDefaultDailyDigestHour(int defaultDailyDigestHour) {
+        this.defaultDailyDigestHour = defaultDailyDigestHour;
     }
 }

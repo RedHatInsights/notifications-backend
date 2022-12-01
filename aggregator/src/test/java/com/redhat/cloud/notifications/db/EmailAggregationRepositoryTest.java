@@ -10,7 +10,6 @@ import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
-
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -19,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class EmailAggregationResourcesTest {
+class EmailAggregationRepositoryTest {
 
     private static final ZoneId UTC = ZoneId.of("UTC");
     private static final String ORG_ID = "987654321";
@@ -29,7 +28,7 @@ public class EmailAggregationResourcesTest {
     private static final JsonObject PAYLOAD2 = new JsonObject("{\"hello\":\"world\"}");
 
     @Inject
-    EmailAggregationResources emailAggregationResources;
+    EmailAggregationRepository emailAggregationResources;
 
     @Inject
     ResourceHelpers resourceHelpers;

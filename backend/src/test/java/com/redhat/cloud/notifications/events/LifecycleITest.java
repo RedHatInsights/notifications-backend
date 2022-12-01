@@ -97,7 +97,7 @@ public class LifecycleITest extends DbIsolatedTest {
         }
 
         final String accountId = "tenant";
-        final String orgId = "someOrdId";
+        final String orgId = "someOrgId";
         final String username = "user";
 
         // Identity header used for all public APIs calls. Internal APIs calls don't need that.
@@ -139,7 +139,7 @@ public class LifecycleITest extends DbIsolatedTest {
          */
 
         final String accountId = "tenant";
-        final String orgId = "someOrdId";
+        final String orgId = "someOrgId";
         final String username = "user";
 
         RequestDefaultBehaviorGroupPropertyList defaultBehaviorGroupProperties = new RequestDefaultBehaviorGroupPropertyList();

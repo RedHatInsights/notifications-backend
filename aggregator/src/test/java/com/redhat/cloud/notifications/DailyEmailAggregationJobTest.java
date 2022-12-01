@@ -12,6 +12,7 @@ import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
@@ -44,6 +45,7 @@ class DailyEmailAggregationJobTest {
     @AfterEach
     void tearDown() {
         helpers.purgeEmailAggregations();
+        connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
     }
 
     @Test
