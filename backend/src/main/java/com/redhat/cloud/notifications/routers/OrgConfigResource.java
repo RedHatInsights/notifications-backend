@@ -52,7 +52,7 @@ public class OrgConfigResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Response getDailyDigestTimePreference(@Context SecurityContext sec) {
         String orgId = getOrgId(sec);
-        Log.infof("Delete daily digest time preference for orgId %s", orgId);
+        Log.infof("Get daily digest time preference for orgId %s", orgId);
         AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findJobAggregationOrgConfig(orgId);
         if (null != storedParameters) {
             return Response.ok(storedParameters.getScheduledExecutionTime()).build();
