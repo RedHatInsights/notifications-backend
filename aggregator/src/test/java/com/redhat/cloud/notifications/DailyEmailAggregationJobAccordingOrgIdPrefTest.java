@@ -229,7 +229,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
 
     @Test
     @TestTransaction
-    void shouldProcessOneSubscriptionOnly() {
+    void shouldProcessOneAggregationOnly() {
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("shouldBeIgnoredOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
