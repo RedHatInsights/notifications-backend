@@ -12,10 +12,6 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Event;
-import com.redhat.cloud.notifications.ingress.Metadata;
-import com.redhat.cloud.notifications.ingress.Payload;
-import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
@@ -28,7 +24,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
-import com.redhat.cloud.notifications.models.event.TestEventConstants;
+import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
@@ -78,7 +74,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -786,42 +781,7 @@ public class EndpointResource {
      * @param orgId the org id to be set in the action.
      */
     protected void sendTestEvent(final UUID endpointId, final String orgId) {
-        Action testAction = new Action();
-
-        final var context = new com.redhat.cloud.notifications.ingress.Context();
-        context.setAdditionalProperty(TestEventConstants.TEST_ACTION_CONTEXT_TEST_EVENT, TestEventConstants.TEST_ACTION_CONTEXT_TEST_EVENT_VALUE);
-        context.setAdditionalProperty(TestEventConstants.TEST_ACTION_CONTEXT_ENDPOINT_ID, endpointId);
-        testAction.setContext(context);
-
-        /*
-         * Create a test event which will be sent along with the action.
-         */
-        Event testEvent = new Event();
-
-        Metadata metadata = new Metadata();
-        metadata.setAdditionalProperty(TestEventConstants.TEST_ACTION_METADATA_KEY, TestEventConstants.TEST_ACTION_METADATA_VALUE);
-
-        Payload payload = new Payload();
-        payload.setAdditionalProperty(TestEventConstants.TEST_ACTION_PAYLOAD_KEY, TestEventConstants.TEST_ACTION_PAYLOAD_VALUE);
-
-        testEvent.setMetadata(metadata);
-        testEvent.setPayload(payload);
-
-        Recipient recipient = new Recipient();
-        recipient.setUsers(List.of(TestEventConstants.TEST_ACTION_RECIPIENT));
-
-        /*
-         * Set the rest of the action's members.
-         */
-        testAction.setApplication(TestEventConstants.TEST_ACTION_APPLICATION);
-        testAction.setBundle(TestEventConstants.TEST_ACTION_BUNDLE);
-        testAction.setEvents(List.of(testEvent));
-        testAction.setEventType(TestEventConstants.TEST_ACTION_EVENT_TYPE);
-        testAction.setId(UUID.randomUUID());
-        testAction.setRecipients(List.of(recipient));
-        testAction.setOrgId(orgId);
-        testAction.setTimestamp(LocalDateTime.now());
-        testAction.setVersion(TestEventConstants.TEST_ACTION_VERSION);
+        final Action testAction = TestEventHelper.createTestAction(endpointId, orgId);
 
         this.emitter.send(testAction);
     }
