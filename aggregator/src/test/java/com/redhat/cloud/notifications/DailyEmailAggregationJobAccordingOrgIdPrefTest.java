@@ -46,12 +46,12 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
     @Inject
     FeatureFlipper featureFlipper;
 
-    final AggregationOrgConfig someOrgIdToProceed = new AggregationOrgConfig("someOrgId", //
-            LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), 0), //
+    final AggregationOrgConfig someOrgIdToProceed = new AggregationOrgConfig("someOrgId",
+            LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), 0),
             LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
 
-    final AggregationOrgConfig anotherOrgIdToProceed = new AggregationOrgConfig("anotherOrgId", //
-            LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), 0), //
+    final AggregationOrgConfig anotherOrgIdToProceed = new AggregationOrgConfig("anotherOrgId",
+            LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), 0),
             LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
 
     @BeforeEach

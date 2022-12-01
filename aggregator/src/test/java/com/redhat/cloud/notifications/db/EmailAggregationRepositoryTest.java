@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-class EmailAggregationResourcesTest {
+class EmailAggregationRepositoryTest {
 
     private static final ZoneId UTC = ZoneId.of("UTC");
     private static final String ORG_ID = "987654321";
