@@ -42,6 +42,37 @@ public class BehaviorGroupRepository {
     @Inject
     FeatureFlipper featureFlipper;
 
+    /**
+     * Counts all the behavior groups by their org id and event type id.
+     * @param orgId the org id to filter with.
+     * @param eventTypeId the event type id to filter with.
+     * @return the number of behaviour groups.
+     */
+    public long countByEventTypeId(final String orgId, final UUID eventTypeId) {
+        final EventType eventType = this.entityManager.find(EventType.class, eventTypeId);
+        if (eventType == null) {
+            throw new NotFoundException("Event type not found");
+        }
+
+        final String query =
+            "SELECT " +
+                "count(bg) " +
+            "FROM " +
+                "BehaviorGroup AS bg " +
+            "JOIN " +
+                "bg.behaviors b " +
+            "WHERE " +
+                "(bg.orgId = :orgId OR bg.orgId IS NULL) " +
+            "AND " +
+                "b.eventType.id = :eventTypeId";
+
+        return this.entityManager
+            .createQuery(query, Long.class)
+            .setParameter("eventTypeId", eventTypeId)
+            .setParameter("orgId", orgId)
+            .getSingleResult();
+    }
+
     public BehaviorGroup createFull(String accountId, String orgId, @Valid BehaviorGroup behaviorGroup, List<UUID> endpoints, Set<UUID> eventTypes) {
         BehaviorGroup saved = create(accountId, orgId, behaviorGroup);
         if (endpoints != null) {

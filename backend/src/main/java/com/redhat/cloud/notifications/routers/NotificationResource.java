@@ -189,9 +189,22 @@ public class NotificationResource {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the behavior groups linked to an event type.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public List<BehaviorGroup> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam @Valid Query query) {
+    public Page<BehaviorGroup> getLinkedBehaviorGroups(
+            @Context SecurityContext sec,
+            @PathParam("eventTypeId") UUID eventTypeId,
+            @BeanParam @Valid Query query,
+            @Context UriInfo uriInfo
+    ) {
         String orgId = getOrgId(sec);
-        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
+
+        final List<BehaviorGroup> behaviorGroups = this.behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
+        final long behaviorGroupCount = this.behaviorGroupRepository.countByEventTypeId(orgId, eventTypeId);
+
+        return new Page<>(
+            behaviorGroups,
+            PageLinksBuilder.build(uriInfo.getPath(), behaviorGroupCount, query.getLimit().getLimit(), query.getLimit().getOffset()),
+            new Meta(behaviorGroupCount)
+        );
     }
 
     @GET

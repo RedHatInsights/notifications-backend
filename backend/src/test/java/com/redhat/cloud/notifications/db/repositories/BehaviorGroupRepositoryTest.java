@@ -666,6 +666,79 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         }
     }
 
+    /**
+     * <p>Tests that the "count" function works as expected. For that, a specific bundle an application are created, and
+     * then:
+     *
+     *  <ul>
+     *      <li>Five behavior-group/event-type/event-type-behavior tuples are created, which are expected to be counted
+     *      as "1" each.</li>
+     *      <li>Five behavior-group/event-type-behavior tuples are created for a specific event type, which are
+     *      expected to be counted as "5" total.</li>
+     *  </ul>
+     * </p>
+     */
+    @Test
+    @Transactional
+    void countBehaviorsGroupsByEventTypeIdTest() {
+        final String accountId = "account-count-behavior-groups-by-event-type-id";
+        final String orgId = "orgid-count-behavior-groups-by-event-type-id;";
+
+        final Bundle bundle = resourceHelpers.createBundle();
+        final Application application = this.resourceHelpers.createApplication(bundle.getId());
+
+        // By creating a behavior group - event type couple every time, the "count" query should only return "1"
+        // element every time.
+        for (int i = 0; i < 5; i++) {
+            final EventType eventType = this.resourceHelpers.createEventType(
+                application.getId(),
+                String.format("count-behavior-groups-by-event-type-id-test-%s", i),
+                String.format("count behavior groups by event type id test %s", i),
+                String.format("test event type %s", i)
+            );
+
+            final BehaviorGroup behaviorGroup = this.resourceHelpers.createBehaviorGroup(
+                accountId,
+                orgId,
+                String.format("count behavior groups by event type id %s", i),
+                bundle.getId()
+            );
+
+            final var eventTypeBehavior = new EventTypeBehavior(eventType, behaviorGroup);
+            this.entityManager.persist(eventTypeBehavior);
+
+            final long result = this.behaviorGroupRepository.countByEventTypeId(orgId, eventType.getId());
+            Assertions.assertEquals(1, result, "unexpected number of behavior groups counted");
+        }
+
+        // Now let's create a single event type...
+        final EventType eventType = this.resourceHelpers.createEventType(
+            application.getId(),
+            "count-behavior-groups-by-event-type-id-test-multiple",
+            "count behavior groups by event type id test multiple",
+            "test event type multiple"
+        );
+
+        // ... and multiple behavior groups for it.
+        final int numberBehaviorGroupsForEventType = 5;
+        for (int i = 0; i < numberBehaviorGroupsForEventType; i++) {
+            final BehaviorGroup behaviorGroup = this.resourceHelpers.createBehaviorGroup(
+                accountId,
+                orgId,
+                String.format("count behavior groups by event type id %s", i),
+                bundle.getId()
+            );
+
+            EventTypeBehavior eventTypeBehavior = new EventTypeBehavior(eventType, behaviorGroup);
+            this.entityManager.persist(eventTypeBehavior);
+        }
+
+        // Since the even type was the same for the different behavior groups, we should get the number of behavior
+        // groups created for that event type.
+        final long result = this.behaviorGroupRepository.countByEventTypeId(orgId, eventType.getId());
+        Assertions.assertEquals(numberBehaviorGroupsForEventType, result, "unexpected number of behavior groups counted for a single event type");
+    }
+
     @Transactional
     EventType createEventType(Application app) {
         EventType eventType = new EventType();
