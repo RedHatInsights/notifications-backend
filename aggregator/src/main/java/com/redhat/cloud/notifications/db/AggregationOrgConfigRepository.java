@@ -4,6 +4,7 @@ import io.quarkus.logging.Log;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
@@ -16,6 +17,7 @@ public class AggregationOrgConfigRepository {
     @Inject
     EntityManager entityManager;
 
+    @Transactional
     public void createMissingDefaultConfiguration(int defaultDailyDigestHour) {
         LocalTime defaultRunningTime = LocalTime.of(defaultDailyDigestHour, 0, 0);
         String query = "INSERT INTO aggregation_org_config (org_id, scheduled_execution_time, last_run) " +
