@@ -29,7 +29,18 @@ public abstract class CreationTimestamped {
     }
 
     @PrePersist
-    public void prePersist() {
-        created = LocalDateTime.now(UTC);
+    public final void prePersist() {
+        // The 'created' field value can be set in tests.
+        if (created == null) {
+            created = LocalDateTime.now(UTC);
+        }
+        additionalPrePersist();
+    }
+
+    /**
+     * This method can be overridden from an entity to add additional instructions that should be
+     * executed before the entity is first persisted.
+     */
+    protected void additionalPrePersist() {
     }
 }
